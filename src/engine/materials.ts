@@ -84,17 +84,29 @@ export function addCartoonOutline(rootOrMesh: THREE.Object3D, thickness = 0.028,
 }
 
 /**
- * Flat 2-band cartoon albedo. Ignores Lambert's continuous N·L and the yellow rim.
- * Lit faces stay the material color; shadow faces take one cool step.
+ * Smooth 2-band cartoon albedo. Lit faces stay the material color; shadow faces take one cool step.
+ * Normals interpolate across the surface so spheres and capsules stay round.
+ * Pass flatShading: true only for cut gems and crystals.
  */
 export function facetMaterial(params: Record<string, unknown> = {}): THREE.MeshLambertMaterial {
   const cleaned: Record<string, unknown> = {};
+  let flat = false;
   for (const [key, value] of Object.entries(params)) {
     if (key === 'metalness' || key === 'roughness' || key === 'map') continue;
+    if (key === 'flatShading') {
+      flat = value === true;
+      continue;
+    }
     cleaned[key] = value;
   }
-  cleaned.flatShading = true;
+  cleaned.flatShading = flat;
   const mat = new THREE.MeshLambertMaterial(cleaned as THREE.MeshLambertMaterialParameters);
+  const flatNormal = flat
+    ? `#ifdef FLAT_SHADED
+      vCelWorld = normalize((vec4(normal, 0.0) * viewMatrix).xyz);
+    #endif
+    `
+    : '';
   mat.onBeforeCompile = (shader) => {
     shader.vertexShader = shader.vertexShader.replace(
       '#include <beginnormal_vertex>',
@@ -105,11 +117,8 @@ export function facetMaterial(params: Record<string, unknown> = {}): THREE.MeshL
     shader.fragmentShader = 'varying vec3 vCelNormal;\n' + shader.fragmentShader.replace(
       'vec3 outgoingLight = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse + totalEmissiveRadiance;',
       `vec3 vCelWorld = normalize(vCelNormal);
-      #ifdef FLAT_SHADED
-        vCelWorld = normalize((vec4(normal, 0.0) * viewMatrix).xyz);
-      #endif
-      float ndl = dot(normalize(vCelWorld), normalize(vec3(0.52, 0.78, 0.34)));
-      float cel = step(0.38, ndl);
+      ${flatNormal}float ndl = dot(normalize(vCelWorld), normalize(vec3(0.52, 0.78, 0.34)));
+      float cel = smoothstep(0.33, 0.38, ndl);
       vec3 outgoingLight = diffuseColor.rgb * mix(vec3(0.70, 0.72, 0.82), vec3(1.04), cel) + totalEmissiveRadiance;`
     );
   };

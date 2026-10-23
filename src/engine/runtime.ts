@@ -846,6 +846,7 @@ const monstersList = [];
 const resourceNodesList = [];
 const npcList = [];
 const projectilesList = [];
+const vfxList = [];
 const particlesList = [];
 const swayingFoliage = [];
 
@@ -1180,13 +1181,13 @@ function buildAllCitiesAndLandmarks() {
     stepA.position.y = 0.14;
     const stepB = new THREE.Mesh(new THREE.BoxGeometry(1.85, 0.26, 1.85), stone);
     stepB.position.y = 0.4;
-    const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.58, 2.15, 6), stone);
+    const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.58, 2.15, 14), stone);
     pillar.position.y = 1.58;
     const cap = new THREE.Mesh(new THREE.BoxGeometry(0.78, 0.16, 0.78), slate);
     cap.position.y = 2.72;
     const rune = new THREE.Mesh(
       new THREE.OctahedronGeometry(0.34, 0),
-      facetMaterial({ color: 0x7dd3fc, emissive: 0x38bdf8, emissiveIntensity: 0.55 })
+      facetMaterial({ color: 0x7dd3fc, emissive: 0x38bdf8, emissiveIntensity: 0.55, flatShading: true })
     );
     rune.position.y = 3.15;
     [stepA, stepB, pillar, cap, rune].forEach((mesh) => {
@@ -1302,7 +1303,7 @@ function createPrayerAltar(x, z, name) {
 
   const crystal = new THREE.Mesh(
     new THREE.OctahedronGeometry(0.32, 0),
-    facetMaterial({ color: 0x7dd3fc, emissive: 0x38bdf8, emissiveIntensity: 0.45 })
+    facetMaterial({ color: 0x7dd3fc, emissive: 0x38bdf8, emissiveIntensity: 0.45, flatShading: true })
   );
   crystal.position.y = 1.45;
   grp.add(crystal);
@@ -1436,75 +1437,98 @@ function buildHumanoidRig(tunicHex = 0x0284c7, hairHex = 0xfacc15, legsHex = 0xa
   const bootMat = facetMaterial({ color: 0x78350f });
   const gloveMat = facetMaterial({ color: 0xf6c7a1 });
 
-  const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.5, 0.92, 6), tunicMat);
+  const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.38, 0.88, 16), tunicMat);
   torso.position.y = 1.2;
   torso.castShadow = true;
   group.add(torso);
 
+  const collar = new THREE.Mesh(new THREE.SphereGeometry(0.29, 16, 10, 0, Math.PI * 2, 0, Math.PI * 0.52), tunicMat);
+  collar.position.y = 0.36;
+  collar.castShadow = true;
+  torso.add(collar);
+
   const headGroup = new THREE.Group();
   headGroup.position.set(0, 1.92, 0);
-  const head = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.44, 0.42), skinMat);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.25, 18, 16), skinMat);
+  head.scale.set(1.0, 1.06, 0.96);
   head.castShadow = true;
   headGroup.add(head);
-  const hairCap = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.16, 0.46), hairMat);
-  hairCap.position.y = 0.26;
+
+  const hairCap = new THREE.Mesh(
+    new THREE.SphereGeometry(0.268, 18, 14, 0, Math.PI * 2, 0, Math.PI * 0.58),
+    hairMat
+  );
+  hairCap.position.y = 0.02;
+  hairCap.rotation.x = 0.42;
+  hairCap.castShadow = true;
   headGroup.add(hairCap);
+
   const eyeMat = new THREE.MeshBasicMaterial({ color: 0x1c1917 });
-  [-0.1, 0.1].forEach((ox) => {
-    const eye = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 0.04), eyeMat);
-    eye.position.set(ox, 0.02, -0.21);
+  [-0.09, 0.09].forEach((ox) => {
+    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.036, 10, 8), eyeMat);
+    eye.scale.set(1.15, 0.78, 0.42);
+    eye.position.set(ox, 0.02, -0.232);
     eye.userData.noOutline = true;
     headGroup.add(eye);
   });
+  const nose = new THREE.Mesh(new THREE.SphereGeometry(0.032, 8, 6), skinMat);
+  nose.scale.set(0.85, 0.7, 0.9);
+  nose.position.set(0, -0.045, -0.248);
+  nose.userData.noOutline = true;
+  headGroup.add(nose);
   group.add(headGroup);
 
-  function createChunkyArm(isLeft) {
+  function createSmoothArm(isLeft) {
     const pivot = new THREE.Group();
-    pivot.position.set(isLeft ? -0.48 : 0.48, 1.52, 0);
-    const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.16, 0.72, 6), tunicMat);
-    arm.position.y = -0.36;
+    pivot.position.set(isLeft ? -0.42 : 0.42, 1.56, 0);
+    const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.125, 0.58, 14), tunicMat);
+    arm.position.y = -0.3;
     arm.castShadow = true;
     pivot.add(arm);
-    const hand = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.16, 0.18), gloveMat);
-    hand.position.y = -0.74;
+    const hand = new THREE.Mesh(new THREE.SphereGeometry(0.1, 12, 10), gloveMat);
+    hand.position.y = -0.66;
+    hand.castShadow = true;
     pivot.add(hand);
     return pivot;
   }
 
-  const leftArmPivot = createChunkyArm(true);
-  const rightArmPivot = createChunkyArm(false);
+  const leftArmPivot = createSmoothArm(true);
+  const rightArmPivot = createSmoothArm(false);
   group.add(leftArmPivot, rightArmPivot);
 
-  function createChunkyLeg(isLeft) {
+  function createSmoothLeg(isLeft) {
     const pivot = new THREE.Group();
-    pivot.position.set(isLeft ? -0.18 : 0.18, 0.72, 0);
-    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.18, 0.58, 6), legsMat);
-    leg.position.y = -0.28;
+    pivot.position.set(isLeft ? -0.16 : 0.16, 0.74, 0);
+    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.14, 0.52, 14), legsMat);
+    leg.position.y = -0.26;
     leg.castShadow = true;
     pivot.add(leg);
-    const boot = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.16, 0.34), bootMat);
-    boot.position.set(0, -0.62, -0.04);
+    const boot = new THREE.Mesh(new THREE.SphereGeometry(0.14, 14, 10), bootMat);
+    boot.scale.set(0.95, 0.72, 1.45);
+    boot.position.set(0, -0.56, 0.02);
+    boot.castShadow = true;
     pivot.add(boot);
     return pivot;
   }
 
-  const leftLegPivot = createChunkyLeg(true);
-  const rightLegPivot = createChunkyLeg(false);
+  const leftLegPivot = createSmoothLeg(true);
+  const rightLegPivot = createSmoothLeg(false);
   group.add(leftLegPivot, rightLegPivot);
 
   const hitbox = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.88, 0.88, 2.5, 6),
+    new THREE.CylinderGeometry(0.88, 0.88, 2.5, 10),
     new THREE.MeshBasicMaterial({ visible: false })
   );
   hitbox.position.y = 1.25;
   hitbox.userData.isCollider = true;
   group.add(hitbox);
-  addCartoonOutline(group, 0.028);
+  addCartoonOutline(group, 0.022);
 
   return {
     group,
     torso,
     headGroup,
+    hairCap,
     leftArmPivot,
     rightArmPivot,
     leftLegPivot,
@@ -1543,6 +1567,27 @@ function buildPlayerCharacter() {
   rebuildPlayerEquipmentMeshes();
 }
 
+function syncWhipGeometry(rig, stretch) {
+  if (!rig) return;
+  const pts = rig.rest.map((p, i) => {
+    const reach = i / Math.max(1, rig.rest.length - 1);
+    const wave = Math.sin(stretch * Math.PI + i * 0.85) * 0.18 * reach * stretch;
+    return new THREE.Vector3(
+      p.x + wave,
+      p.y + stretch * reach * 0.12,
+      p.z - stretch * reach * 1.2
+    );
+  });
+  const curve = new THREE.CatmullRomCurve3(pts);
+  if (rig.tube) {
+    rig.tube.geometry.dispose();
+    rig.tube.geometry = new THREE.TubeGeometry(curve, 22, 0.036, 8, false);
+  }
+  rig.nodes.forEach((node, i) => {
+    node.position.copy(curve.getPoint(i / Math.max(1, rig.nodes.length - 1)));
+  });
+}
+
 function rebuildPlayerEquipmentMeshes() {
   if (!player.parts || !player.parts.rightArmPivot) return;
   const rArm = player.parts.rightArmPivot;
@@ -1556,6 +1601,7 @@ function rebuildPlayerEquipmentMeshes() {
       player.parts[k] = null;
     }
   });
+  player.parts.whipRig = null;
 
   // 1. Body Armor Material
   const bodyId = STATE.equipment.body;
@@ -1616,7 +1662,7 @@ function rebuildPlayerEquipmentMeshes() {
         new THREE.Vector3(0, 0.32, -0.18),
         new THREE.Vector3(0, 0.62, 0.18)
       ]);
-      const bowGeo = new THREE.TubeGeometry(bowCurve, 6, 0.042, 5, false);
+      const bowGeo = new THREE.TubeGeometry(bowCurve, 18, 0.04, 8, false);
       const bowMat = facetMaterial({
         color: it.color || 0x92400e,
         metalness: it.id === 'ancient_bow' ? 0.7 : 0.2,
@@ -1630,12 +1676,13 @@ function rebuildPlayerEquipmentMeshes() {
 
       const strGeo = new THREE.CylinderGeometry(0.008, 0.008, 1.22, 8);
       const strMesh = new THREE.Mesh(strGeo, new THREE.MeshBasicMaterial({ color: 0xe2e8f0 }));
+      strMesh.userData.noOutline = true;
       strMesh.position.set(0, 0, 0.16);
       wepGrp.add(strMesh);
     } else if (it.style === 'magic') {
       // Sculpted Staff with Orbiting Ring & Glowing Orb
       const shaft = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.042, 0.035, 1.75, 6),
+        new THREE.CylinderGeometry(0.042, 0.035, 1.75, 14),
         facetMaterial({ color: 0x5c3a21, roughness: 0.6 })
       );
       shaft.rotation.x = Math.PI / 2.8;
@@ -1643,7 +1690,7 @@ function rebuildPlayerEquipmentMeshes() {
       wepGrp.add(shaft);
 
       const orb = new THREE.Mesh(
-        new THREE.SphereGeometry(0.17, 7, 6),
+        new THREE.SphereGeometry(0.17, 16, 12),
         facetMaterial({
           color: it.color || 0xef4444,
           emissive: it.color || 0xef4444,
@@ -1661,64 +1708,106 @@ function rebuildPlayerEquipmentMeshes() {
       halo.position.copy(orb.position);
       wepGrp.add(halo);
     } else if (it.iconKind === 'whip') {
-      // Coiled Abyssal Whip Spline
-      const whipCurve = new THREE.CatmullRomCurve3([
-        new THREE.Vector3(0, 0, 0),
-        new THREE.Vector3(0.05, 0.35, -0.25),
-        new THREE.Vector3(-0.08, 0.65, -0.55),
-        new THREE.Vector3(0.1, 0.45, -0.95),
-        new THREE.Vector3(0, 0.15, -1.25)
-      ]);
-      const whipMesh = new THREE.Mesh(
-        new THREE.TubeGeometry(whipCurve, 6, 0.042, 5, false),
-        facetMaterial({ color: it.color, roughness: 0.35, metalness: 0.4 })
-      );
-      whipMesh.castShadow = true;
-      wepGrp.add(whipMesh);
+      const rest = [
+        new THREE.Vector3(0, 0.02, 0.02),
+        new THREE.Vector3(0.07, 0.26, -0.2),
+        new THREE.Vector3(-0.09, 0.46, -0.46),
+        new THREE.Vector3(0.1, 0.34, -0.76),
+        new THREE.Vector3(-0.02, 0.14, -1.05)
+      ];
+      const tubeMat = facetMaterial({ color: 0x1c1917, emissive: 0x7f1d1d, emissiveIntensity: 0.25 });
+      const tube = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(rest), 22, 0.036, 8, false), tubeMat);
+      tube.castShadow = true;
+      wepGrp.add(tube);
+      const nodes = rest.map((pt, i) => {
+        const hot = i % 2 === 1;
+        const node = new THREE.Mesh(
+          new THREE.SphereGeometry(hot ? 0.055 : 0.042, 10, 8),
+          facetMaterial({
+            color: hot ? 0xef4444 : 0x292524,
+            emissive: hot ? 0xdc2626 : 0x000000,
+            emissiveIntensity: hot ? 0.85 : 0
+          })
+        );
+        node.position.copy(pt);
+        node.castShadow = true;
+        wepGrp.add(node);
+        return node;
+      });
+      player.parts.whipRig = { tube, nodes, rest: rest.map(p => p.clone()), wasLashing: false };
+      syncWhipGeometry(player.parts.whipRig, 0);
     } else {
-      // Beveled Extruded Scimitar / Longsword / Master Sword
       const bladeShape = new THREE.Shape();
       const isScim = it.iconKind === 'scimitar';
-      const len = it.iconKind === 'greatsword' ? 1.42 : 1.15;
-      bladeShape.moveTo(-0.045, 0);
+      const isGreat = it.iconKind === 'greatsword';
+      const len = isGreat ? 1.48 : isScim ? 1.12 : 1.2;
+      const sacred = it.id === 'master_sword' || it.id === 'deity_sword';
+      const dragon = it.id === 'dragon_scimitar';
       if (isScim) {
-        bladeShape.quadraticCurveTo(-0.08, len * 0.55, 0.04, len);
-        bladeShape.quadraticCurveTo(0.13, len * 0.6, 0.05, 0);
-      } else {
-        bladeShape.lineTo(-0.055, len * 0.82);
+        bladeShape.moveTo(-0.02, 0);
+        bladeShape.quadraticCurveTo(-0.18, len * 0.42, -0.04, len);
+        bladeShape.lineTo(0.015, len - 0.04);
+        bladeShape.quadraticCurveTo(0.05, len * 0.48, 0.055, 0);
+      } else if (isGreat) {
+        bladeShape.moveTo(-0.07, 0);
+        bladeShape.lineTo(-0.085, len * 0.78);
         bladeShape.lineTo(0, len);
-        bladeShape.lineTo(0.055, len * 0.82);
+        bladeShape.lineTo(0.085, len * 0.78);
+        bladeShape.lineTo(0.07, 0);
+      } else {
+        bladeShape.moveTo(-0.045, 0);
+        bladeShape.lineTo(-0.05, len * 0.84);
+        bladeShape.lineTo(0, len);
+        bladeShape.lineTo(0.05, len * 0.84);
         bladeShape.lineTo(0.045, 0);
       }
       bladeShape.closePath();
 
-      const extrudeSettings = { depth: 0.07, bevelEnabled: false };
-      const bladeGeo = new THREE.ExtrudeGeometry(bladeShape, extrudeSettings);
+      const bladeGeo = new THREE.ExtrudeGeometry(bladeShape, {
+        depth: isGreat ? 0.08 : 0.055,
+        bevelEnabled: true,
+        bevelThickness: 0.012,
+        bevelSize: 0.01,
+        bevelSegments: 2,
+        curveSegments: isScim ? 12 : 4
+      });
       bladeGeo.center();
       const bladeMat = facetMaterial({
-        color: it.color || 0xd1d5db,
-        metalness: 0.82,
-        roughness: 0.18,
-        emissive: it.id === 'master_sword' ? 0x38bdf8 : 0x000000,
-        emissiveIntensity: it.id === 'master_sword' ? 0.45 : 0
+        color: dragon ? 0xdc2626 : (it.color || 0xd1d5db),
+        emissive: dragon ? 0x7f1d1d : (sacred ? 0x38bdf8 : 0x000000),
+        emissiveIntensity: dragon ? 0.4 : (sacred ? 0.5 : 0)
       });
       const bladeMesh = new THREE.Mesh(bladeGeo, bladeMat);
       bladeMesh.rotation.y = Math.PI / 2;
-      bladeMesh.position.y = len * 0.5 + 0.08;
+      bladeMesh.position.y = len * 0.46 + 0.1;
       bladeMesh.castShadow = true;
       wepGrp.add(bladeMesh);
 
-      // Sculpted Crossguard & Pommel
-      const guardMat = facetMaterial({ color: it.trim || 0xfacc15, metalness: 0.8, roughness: 0.25 });
-      const guard = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.05, 0.38, 6), guardMat);
-      guard.rotation.x = Math.PI / 2;
-      guard.position.y = 0.06;
-      wepGrp.add(guard);
+      const guardMat = facetMaterial({
+        color: dragon || isGreat ? (it.trim || 0xfde047) : (it.trim || 0xfacc15),
+        emissive: sacred ? 0x1d4ed8 : 0x000000,
+        emissiveIntensity: sacred ? 0.35 : 0
+      });
+      if (dragon || isGreat) {
+        [-1, 1].forEach((side) => {
+          const wing = new THREE.Mesh(new THREE.SphereGeometry(0.11, 12, 8), guardMat);
+          wing.scale.set(0.45, 1.15, 0.28);
+          wing.position.set(0, 0.1, side * 0.16);
+          wing.rotation.z = side * -0.7;
+          wing.castShadow = true;
+          wepGrp.add(wing);
+        });
+      } else {
+        const guard = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, isScim ? 0.34 : 0.4, 12), guardMat);
+        guard.rotation.x = Math.PI / 2;
+        guard.position.y = 0.08;
+        guard.castShadow = true;
+        wepGrp.add(guard);
+      }
 
-      const pommel = new THREE.Mesh(new THREE.SphereGeometry(0.06, 7, 6), guardMat);
-      pommel.position.y = -0.16;
+      const pommel = new THREE.Mesh(new THREE.SphereGeometry(isGreat ? 0.07 : 0.055, 12, 10), guardMat);
+      pommel.position.y = -0.14;
       wepGrp.add(pommel);
-
       wepGrp.rotation.x = -Math.PI / 2.35;
     }
     rArm.add(wepGrp);
@@ -1758,31 +1847,43 @@ function rebuildPlayerEquipmentMeshes() {
     player.parts.shieldMesh = shield;
   }
 
-  // 7. Smooth Domed Full Helm with Plume on Head
+  // 7. Smooth form-fitting helm. Hair stays tucked so it never clips the dome.
   const helmId = STATE.equipment.head;
+  if (player.parts.hairCap) player.parts.hairCap.visible = !helmId;
   if (helmId && ITEMS[helmId]) {
     const it = ITEMS[helmId];
     const helmGrp = new THREE.Group();
+    const helmMat = facetMaterial({ color: it.color || 0xb87333 });
     const helmDome = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.30, 0.33, 0.40, 6),
-      facetMaterial({ color: it.color })
+      new THREE.SphereGeometry(0.285, 18, 16, 0, Math.PI * 2, 0, Math.PI * 0.78),
+      helmMat
     );
-    helmDome.position.y = 0.05;
+    helmDome.position.y = 0.02;
     helmDome.castShadow = true;
     helmGrp.add(helmDome);
-    const visor = new THREE.Mesh(
-      new THREE.BoxGeometry(0.36, 0.08, 0.08),
-      facetMaterial({ color: 0x111827 })
+
+    const brow = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.288, 0.275, 0.18, 16, 1, true),
+      facetMaterial({ color: it.trim || 0xfacc15 })
     );
-    visor.position.set(0, 0.02, -0.24);
+    brow.position.y = -0.02;
+    helmGrp.add(brow);
+
+    const visor = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.29, 0.29, 0.06, 16, 1, true, Math.PI * 0.72, Math.PI * 0.56),
+      new THREE.MeshBasicMaterial({ color: 0x111827, side: THREE.DoubleSide })
+    );
+    visor.position.y = 0.0;
+    visor.userData.noOutline = true;
     helmGrp.add(visor);
 
-    // Flowing Plume Crest on Top of Helm
     const plume = new THREE.Mesh(
-      new THREE.BoxGeometry(0.08, 0.28, 0.22),
+      new THREE.SphereGeometry(0.09, 12, 10),
       facetMaterial({ color: it.trim || 0xef4444 })
     );
-    plume.position.set(0, 0.32, 0.04);
+    plume.scale.set(0.45, 1.35, 1.65);
+    plume.position.set(0, 0.3, 0.04);
+    plume.castShadow = true;
     helmGrp.add(plume);
 
     headG.add(helmGrp);
@@ -1817,7 +1918,7 @@ function rebuildPlayerEquipmentMeshes() {
     torso.add(cape);
     player.parts.capeMesh = cape;
   }
-  if (player.meshGroup) addCartoonOutline(player.meshGroup, 0.028);
+  if (player.meshGroup) addCartoonOutline(player.meshGroup, 0.022);
 }
 
 // Smooth Sculpted Monster Rigs
@@ -1829,26 +1930,30 @@ function createMonsterMesh(def) {
     const redMat  = facetMaterial({ color: def.accentColor, roughness: 0.5 });
     const beakMat = facetMaterial({ color: 0xf59e0b, roughness: 0.4 });
 
-    const body = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.42, 0.7), bodyMat);
+    const body = new THREE.Mesh(new THREE.SphereGeometry(0.32, 16, 14), bodyMat);
+    body.scale.set(1.15, 0.9, 1.4);
     body.position.y = 0.42;
     body.castShadow = true;
     grp.add(body);
-    const head = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.28, 0.3), bodyMat);
-    head.position.set(0, 0.72, -0.28);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.16, 14, 12), bodyMat);
+    head.position.set(0, 0.74, -0.32);
+    head.castShadow = true;
     grp.add(head);
-    const comb = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.16, 0.16), redMat);
-    comb.position.set(0, 0.92, -0.28);
+    const comb = new THREE.Mesh(new THREE.SphereGeometry(0.055, 8, 6), redMat);
+    comb.scale.set(0.45, 1.35, 0.7);
+    comb.position.set(0, 0.92, -0.3);
     grp.add(comb);
-    const beak = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.18, 4), beakMat);
+    const beak = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.16, 8), beakMat);
     beak.rotation.x = -Math.PI / 2;
-    beak.position.set(0, 0.7, -0.48);
+    beak.position.set(0, 0.72, -0.48);
     grp.add(beak);
-    const tail = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.1, 0.22), bodyMat);
-    tail.position.set(0, 0.52, 0.42);
+    const tail = new THREE.Mesh(new THREE.SphereGeometry(0.12, 12, 8), bodyMat);
+    tail.scale.set(1.05, 0.5, 1.35);
+    tail.position.set(0, 0.5, 0.4);
     grp.add(tail);
-    [-0.16, 0.16].forEach((ox) => {
-      const leg = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.22, 0.06), beakMat);
-      leg.position.set(ox, 0.12, 0.05);
+    [-0.12, 0.12].forEach((ox) => {
+      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.03, 0.22, 8), beakMat);
+      leg.position.set(ox, 0.12, 0.04);
       grp.add(leg);
     });
 
@@ -1856,7 +1961,7 @@ function createMonsterMesh(def) {
     hitbox.position.y = 0.75;
     hitbox.userData.isCollider = true;
     grp.add(hitbox);
-    addCartoonOutline(grp, 0.028);
+    addCartoonOutline(grp, 0.022);
     return { group: grp, hitbox };
   }
 
@@ -1903,7 +2008,7 @@ function createMonsterMesh(def) {
     hitbox.position.y = 0.95;
     hitbox.userData.isCollider = true;
     grp.add(hitbox);
-    addCartoonOutline(grp, 0.028);
+    addCartoonOutline(grp, 0.022);
     return { group: grp, hitbox };
   }
 
@@ -1978,7 +2083,7 @@ function createMonsterMesh(def) {
     hitbox.position.y = 2.2;
     hitbox.userData.isCollider = true;
     grp.add(hitbox);
-    addCartoonOutline(grp, 0.028);
+    addCartoonOutline(grp, 0.022);
     return { group: grp, hitbox, lWing, rWing };
   }
 
@@ -2015,7 +2120,7 @@ function createMonsterMesh(def) {
       rig.headGroup.add(horn);
     });
   }
-  addCartoonOutline(rig.group, 0.028);
+  addCartoonOutline(rig.group, 0.022);
   return rig;
 }
 
@@ -2074,7 +2179,7 @@ function spawnResourceNode(nodeKey, x, z) {
     visualMesh = new THREE.Group();
 
     const barkMat = facetMaterial({ color: def.trunkColor || 0x92400e });
-    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.36, 2.2, 6), barkMat);
+    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.36, 2.2, 12), barkMat);
     trunk.position.y = 1.1;
     trunk.castShadow = true;
     visualMesh.add(trunk);
@@ -2094,7 +2199,8 @@ function spawnResourceNode(nodeKey, x, z) {
       [-0.62, 2.2, -0.32, 0.78]
     ];
     puffs.forEach(([px, py, pz, rad]) => {
-      const puff = new THREE.Mesh(new THREE.IcosahedronGeometry(rad, 0), fMat);
+      const puff = new THREE.Mesh(new THREE.SphereGeometry(rad, 16, 14), fMat);
+      puff.scale.set(1.08, 0.88, 1.08);
       puff.position.set(px, py, pz);
       puff.castShadow = true;
       visualMesh.add(puff);
@@ -2109,13 +2215,14 @@ function spawnResourceNode(nodeKey, x, z) {
   } else if (def.kind === 'rock') {
     visualMesh = new THREE.Group();
     const rockMat = facetMaterial({ color: 0x94a3b8 });
-    const baseRock = new THREE.Mesh(new THREE.DodecahedronGeometry(0.95, 0), rockMat);
+    const baseRock = new THREE.Mesh(new THREE.SphereGeometry(0.95, 16, 12), rockMat);
     baseRock.position.y = 0.7;
-    baseRock.scale.set(1.15, 0.85, 1.05);
-    const sideRock = new THREE.Mesh(new THREE.DodecahedronGeometry(0.62, 0), rockMat);
-    sideRock.position.set(0.78, 0.45, 0.2);
+    baseRock.scale.set(1.18, 0.78, 1.05);
+    const sideRock = new THREE.Mesh(new THREE.SphereGeometry(0.58, 14, 10), rockMat);
+    sideRock.position.set(0.78, 0.42, 0.2);
+    sideRock.scale.set(1.1, 0.8, 0.95);
     visualMesh.add(baseRock, sideRock);
-    const oreMat = facetMaterial({ color: def.oreColor, emissive: def.oreColor, emissiveIntensity: 0.2 });
+    const oreMat = facetMaterial({ color: def.oreColor, emissive: def.oreColor, emissiveIntensity: 0.2, flatShading: true });
     [[0.15, 0.95, 0.72], [-0.35, 0.7, -0.55]].forEach(([ox, oy, oz]) => {
       const vein = new THREE.Mesh(new THREE.OctahedronGeometry(0.28, 0), oreMat);
       vein.position.set(ox, oy, oz);
@@ -2521,22 +2628,392 @@ function spawnHitSplatOnPlayer(dmg, splatType = 'hit') {
   spawnHitSplatWorld(player.pos, dmg, splatType);
 }
 
-function spawnProjectile(fromPos, toPos, colorHex, onImpact) {
-  const orb = new THREE.Mesh(
-    new THREE.SphereGeometry(0.22, 7, 6),
-    new THREE.MeshBasicMaterial({ color: colorHex })
-  );
-  const start = fromPos.clone().add(new THREE.Vector3(0, 1.4, 0));
-  const end = toPos.clone().add(new THREE.Vector3(0, 1.2, 0));
-  orb.position.copy(start);
-  scene.add(orb);
+function glowMaterial(color, opacity = 0.92) {
+  return new THREE.MeshBasicMaterial({
+    color,
+    transparent: true,
+    opacity,
+    depthWrite: false,
+    side: THREE.DoubleSide
+  });
+}
+
+function spawnVfx(mesh, life, onTick) {
+  scene.add(mesh);
+  vfxList.push({ mesh, life, age: 0, onTick });
+}
+
+function launchProjectile(mesh, fromPos, toPos, onImpact, opts = {}) {
+  const start = fromPos.clone().add(new THREE.Vector3(0, opts.y0 ?? 1.4, 0));
+  const end = toPos.clone().add(new THREE.Vector3(0, opts.y1 ?? 1.2, 0));
+  mesh.position.copy(start);
+  scene.add(mesh);
   projectilesList.push({
-    mesh: orb,
+    mesh,
     start,
     end,
     progress: 0,
-    speed: 3.5,
-    onImpact
+    speed: opts.speed ?? 3.5,
+    arc: opts.arc ?? 1.4,
+    orient: !!opts.orient,
+    onImpact,
+    onTick: opts.onTick || null,
+    trailAcc: 0
+  });
+}
+
+function spawnProjectile(fromPos, toPos, colorHex, onImpact) {
+  const orb = new THREE.Mesh(
+    new THREE.SphereGeometry(0.22, 12, 10),
+    new THREE.MeshBasicMaterial({ color: colorHex })
+  );
+  launchProjectile(orb, fromPos, toPos, onImpact, { speed: 3.5, arc: 1.4 });
+}
+
+function spawnBurst(origin, count, color, life = 0.5, speed = 3.2) {
+  for (let i = 0; i < count; i++) {
+    const mote = new THREE.Mesh(new THREE.SphereGeometry(0.055, 8, 6), glowMaterial(color, 1));
+    mote.position.copy(origin);
+    const ang = (i / count) * Math.PI * 2 + Math.random() * 0.4;
+    const vel = new THREE.Vector3(Math.cos(ang) * speed, 1.2 + Math.random() * 2.4, Math.sin(ang) * speed);
+    spawnVfx(mote, life, (v, dt) => {
+      vel.y -= 7 * dt;
+      v.mesh.position.addScaledVector(vel, dt);
+      v.mesh.material.opacity = 1 - v.age / v.life;
+      v.mesh.scale.setScalar(1 - v.age / v.life * 0.6);
+    });
+  }
+}
+
+function spawnExpandingRing(position, color, life = 0.7, grow = 4.2, inner = 0.35, outer = 0.52) {
+  const ring = new THREE.Mesh(
+    new THREE.RingGeometry(inner, outer, 32),
+    glowMaterial(color, 0.9)
+  );
+  ring.rotation.x = -Math.PI / 2;
+  ring.position.copy(position);
+  ring.position.y += 0.08;
+  spawnVfx(ring, life, (v) => {
+    const t = v.age / v.life;
+    v.mesh.scale.setScalar(1 + t * grow);
+    const fade = t < 0.55 ? 1 : 1 - (t - 0.55) / 0.45;
+    v.mesh.material.opacity = 0.95 * fade;
+  });
+  return ring;
+}
+
+function spawnSlashArc(color, origin, yaw, opts = {}) {
+  const arc = new THREE.Mesh(
+    new THREE.RingGeometry(opts.inner ?? 0.5, opts.outer ?? 0.78, 28, 1, opts.theta0 ?? 0.25, opts.thetaLen ?? 1.65),
+    glowMaterial(color, opts.opacity ?? 0.95)
+  );
+  arc.position.copy(origin);
+  arc.lookAt(origin.x + Math.sin(yaw) * 4, origin.y, origin.z + Math.cos(yaw) * 4);
+  arc.rotateZ(opts.roll ?? 0.55);
+  const base = opts.scale ?? 1;
+  arc.scale.setScalar(base);
+  spawnVfx(arc, opts.life ?? 0.48, (v) => {
+    const t = v.age / v.life;
+    v.mesh.scale.setScalar(base * (1 + t * 0.28));
+    v.mesh.material.opacity = (opts.opacity ?? 0.95) * (1 - t);
+  });
+}
+
+function metalSlashTint(item) {
+  const tier = item?.tier;
+  if (tier === 'bronze') return 0xd97706;
+  if (tier === 'iron' || tier === 'steel' || tier === 'black') return 0x94a3b8;
+  if (tier === 'mithril') return 0x60a5fa;
+  if (tier === 'adamant') return 0x34d399;
+  if (tier === 'rune') return 0x38bdf8;
+  if (tier === 'gilded') return 0xfacc15;
+  return item?.color || 0xe2e8f0;
+}
+
+function spawnMeleeSlashEffect(weaponItem, playerPos, playerYaw, targetPos, isSpec) {
+  const id = weaponItem?.id || '';
+  const forward = new THREE.Vector3(Math.sin(playerYaw), 0, Math.cos(playerYaw));
+  const origin = playerPos.clone().add(new THREE.Vector3(0, 1.2, 0)).add(forward.clone().multiplyScalar(0.95));
+  const specScale = isSpec ? 1.35 : 1;
+  const impact = targetPos.clone().add(new THREE.Vector3(0, 1.15, 0));
+
+  if (id === 'abyssal_whip') {
+    const start = playerPos.clone().add(new THREE.Vector3(0, 1.2, 0));
+    const end = targetPos.clone().add(new THREE.Vector3(0, 1.05, 0));
+    const side = new THREE.Vector3(-Math.cos(playerYaw), 0, Math.sin(playerYaw));
+    const p1 = start.clone().lerp(end, 0.34).add(side.clone().multiplyScalar(0.72));
+    p1.y += 0.5;
+    const p2 = start.clone().lerp(end, 0.68).add(side.clone().multiplyScalar(-0.58));
+    p2.y += 0.12;
+    const curve = new THREE.CatmullRomCurve3([start, p1, p2, end]);
+    const grp = new THREE.Group();
+    grp.add(new THREE.Mesh(
+      new THREE.TubeGeometry(curve, 28, 0.1, 8, false),
+      new THREE.MeshBasicMaterial({ color: 0x1c1917, transparent: true, opacity: 0.95, side: THREE.DoubleSide })
+    ));
+    grp.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 28, 0.05, 8, false), glowMaterial(0xf87171, 1)));
+    spawnVfx(grp, 0.75, (v) => {
+      const t = v.age / v.life;
+      v.mesh.traverse((obj) => {
+        if (obj.material && obj.material.transparent) obj.material.opacity = 1 - t;
+      });
+    });
+    const crack = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.06, 8, 20), glowMaterial(0x7c3aed, 0.9));
+    crack.position.copy(end);
+    crack.lookAt(end.x, end.y + 1, end.z);
+    spawnVfx(crack, 0.48, (v) => {
+      const t = v.age / v.life;
+      v.mesh.scale.setScalar(1 + t * 1.8);
+      v.mesh.material.opacity = 0.9 * (1 - t);
+    });
+    return;
+  }
+
+  if (id === 'dragon_scimitar' || id === 'dragon_dagger') {
+    spawnSlashArc(0xdc2626, origin, playerYaw, { scale: 1.15 * specScale, roll: 0.7, life: 0.85 });
+    spawnSlashArc(0xfde047, origin.clone().add(forward.clone().multiplyScalar(0.18)), playerYaw, {
+      scale: 0.82 * specScale, roll: -0.35, inner: 0.42, outer: 0.62, life: 0.46
+    });
+    spawnBurst(impact, 8, 0xf97316, 0.48, 3.4);
+    spawnBurst(impact, 4, 0xfde047, 0.4, 2.2);
+    return;
+  }
+
+  if (id === 'rune_scimitar') {
+    spawnSlashArc(0x22d3ee, origin, playerYaw, { scale: 1.05 * specScale, life: 0.46 });
+    spawnBurst(impact, 4, 0x67e8f9, 0.4, 2.6);
+    return;
+  }
+
+  if (id === 'bandos_godsword' || id === 'master_sword' || id === 'deity_sword' || weaponItem?.iconKind === 'greatsword') {
+    const sacred = id === 'master_sword' || id === 'deity_sword';
+    const color = sacred ? 0x7dd3fc : 0xfde047;
+    spawnSlashArc(color, origin, playerYaw, { scale: 1.45 * specScale, inner: 0.7, outer: 1.05, life: 0.58, roll: 0.3 });
+    const column = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.16, 0.42, 3.5, 16, 1, true),
+      glowMaterial(color, 0.8)
+    );
+    column.position.set(targetPos.x, targetPos.y + 1.75, targetPos.z);
+    spawnVfx(column, 0.7, (v) => {
+      const t = v.age / v.life;
+      v.mesh.scale.set(1 + t * 0.4, 1, 1 + t * 0.4);
+      v.mesh.material.opacity = 0.8 * (1 - t);
+    });
+    spawnExpandingRing(targetPos.clone().setY(targetPos.y), color, 0.6, 3.2);
+    return;
+  }
+
+  spawnSlashArc(metalSlashTint(weaponItem), origin, playerYaw, { scale: specScale, life: 0.4 });
+}
+
+function spawnSpellImpact(spell, targetPos, casterPos) {
+  const id = spell?.id || '';
+  const ground = targetPos.clone();
+  if (id === 'wind_strike') {
+    spawnExpandingRing(ground, 0xe0f2fe, 1.25, 3.2, 0.28, 0.5);
+    spawnExpandingRing(ground, 0x38bdf8, 1.05, 2.2, 0.15, 0.28);
+    const gust = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.08, 0.42, 1.7, 16, 1, true),
+      glowMaterial(0xf8fafc, 0.8)
+    );
+    gust.position.set(targetPos.x, targetPos.y + 0.9, targetPos.z);
+    spawnVfx(gust, 0.7, (v) => {
+      const t = v.age / v.life;
+      v.mesh.scale.set(1 + t * 1.4, 1, 1 + t * 1.4);
+      v.mesh.material.opacity = 0.8 * (1 - t);
+    });
+    spawnBurst(targetPos.clone().add(new THREE.Vector3(0, 1.1, 0)), 6, 0x7dd3fc, 0.45, 2.4);
+    return;
+  }
+  if (id === 'fire_bolt') {
+    spawnBurst(targetPos.clone().add(new THREE.Vector3(0, 1.1, 0)), 8, 0xf97316, 0.55, 3.6);
+    spawnBurst(targetPos.clone().add(new THREE.Vector3(0, 1.1, 0)), 4, 0xef4444, 0.45, 2.4);
+    return;
+  }
+  if (id === 'ice_burst') {
+    for (let i = 0; i < 5; i++) {
+      const ang = (i / 5) * Math.PI * 2;
+      const spire = new THREE.Mesh(
+        new THREE.ConeGeometry(0.22, 1.35, 6),
+        new THREE.MeshBasicMaterial({
+          color: 0x7dd3fc,
+          transparent: true,
+          opacity: 0.72,
+          side: THREE.DoubleSide,
+          depthWrite: false
+        })
+      );
+      const x = targetPos.x + Math.cos(ang) * 0.95;
+      const z = targetPos.z + Math.sin(ang) * 0.95;
+      spire.position.set(x, targetPos.y, z);
+      spire.scale.y = 0.02;
+      spawnVfx(spire, 1.45, (v) => {
+        const grow = Math.min(1, v.age / 0.22);
+        v.mesh.scale.y = grow;
+        v.mesh.position.y = targetPos.y + (1.35 * grow) * 0.5;
+        if (v.age > 0.9) v.mesh.material.opacity = 0.72 * (1 - (v.age - 0.9) / 0.55);
+      });
+    }
+    spawnExpandingRing(ground, 0x38bdf8, 0.8, 4.6, 0.4, 0.62);
+    return;
+  }
+  if (id === 'blood_barrage') {
+    const pillar = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.42, 0.9, 4.2, 18, 1, true),
+      glowMaterial(0xdc2626, 0.88)
+    );
+    pillar.position.set(targetPos.x, targetPos.y + 2.1, targetPos.z);
+    for (let i = 0; i < 6; i++) {
+      const drop = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 6), glowMaterial(0xfb7185, 1));
+      const ang = (i / 6) * Math.PI * 2;
+      drop.position.set(Math.cos(ang) * 0.72, -1.3 + i * 0.55, Math.sin(ang) * 0.72);
+      pillar.add(drop);
+    }
+    spawnVfx(pillar, 1.35, (v, dt) => {
+      const t = v.age / v.life;
+      const pulse = 1 + Math.sin(v.age * 18) * 0.08;
+      v.mesh.scale.set(pulse, 1, pulse);
+      v.mesh.rotation.y += dt * 5;
+      v.mesh.material.opacity = 0.88 * (1 - Math.max(0, t - 0.45) / 0.55);
+    });
+    const sigil = new THREE.Mesh(new THREE.RingGeometry(0.55, 0.78, 28), glowMaterial(0xbe123c, 0.95));
+    sigil.rotation.x = -Math.PI / 2;
+    sigil.position.set(targetPos.x, targetPos.y + 0.1, targetPos.z);
+    spawnVfx(sigil, 1.2, (v) => {
+      const t = v.age / v.life;
+      v.mesh.scale.setScalar(1 + t * 2.4);
+      v.mesh.rotation.z += 0.02;
+      v.mesh.material.opacity = 0.95 * (1 - t);
+    });
+    spawnBurst(targetPos.clone().add(new THREE.Vector3(0, 1.3, 0)), 10, 0xfb7185, 0.7, 3.1);
+    const from = targetPos.clone().add(new THREE.Vector3(0, 1.4, 0));
+    const to = (casterPos || player.pos).clone().add(new THREE.Vector3(0, 1.35, 0));
+    for (let i = 0; i < 3; i++) {
+      const wisp = new THREE.Mesh(new THREE.SphereGeometry(0.18, 10, 8), glowMaterial(0xf43f5e, 1));
+      const start = from.clone();
+      const end = to.clone();
+      const side = new THREE.Vector3((i - 1) * 0.7, 0, (1 - i) * 0.35);
+      const ctrl = start.clone().lerp(end, 0.5).add(side);
+      ctrl.y += 1.8 + i * 0.25;
+      spawnVfx(wisp, 0.9, (v) => {
+        const t = v.age / v.life;
+        const a = start.clone().lerp(ctrl, t);
+        const b = ctrl.clone().lerp(end, t);
+        v.mesh.position.lerpVectors(a, b, t);
+        v.mesh.material.opacity = 1 - t * 0.2;
+      });
+    }
+  }
+}
+
+function spawnSpellProjectile(spell, fromPos, toPos, onImpact) {
+  const id = spell?.id || 'wind_strike';
+  const grp = new THREE.Group();
+  let speed = 4.2;
+  let arc = 0.7;
+  let onTick = null;
+
+  if (id === 'wind_strike') {
+    grp.add(new THREE.Mesh(new THREE.SphereGeometry(0.16, 14, 12), glowMaterial(0xf8fafc, 1)));
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.28, 0.028, 8, 20), glowMaterial(0xbae6fd, 0.95));
+    ring.rotation.x = 1.1;
+    grp.add(ring);
+    speed = 6.2;
+    arc = 0.35;
+    onTick = (p, dt) => { ring.rotation.z += dt * 9; };
+  } else if (id === 'fire_bolt') {
+    grp.add(new THREE.Mesh(new THREE.SphereGeometry(0.2, 14, 12), glowMaterial(0xf97316, 1)));
+    const core = new THREE.Mesh(new THREE.SphereGeometry(0.1, 12, 10), glowMaterial(0xfde047, 1));
+    grp.add(core);
+    speed = 4.4;
+    arc = 0.65;
+    onTick = (p, dt) => {
+      p.trailAcc += dt;
+      if (p.trailAcc < 0.03) return;
+      p.trailAcc = 0;
+      const ember = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 6), glowMaterial(Math.random() > 0.5 ? 0xf97316 : 0xfde047, 0.9));
+      ember.position.copy(p.mesh.position);
+      spawnVfx(ember, 0.32, (v) => {
+        v.mesh.scale.setScalar(1 - v.age / v.life);
+        v.mesh.material.opacity = 0.9 * (1 - v.age / v.life);
+      });
+    };
+  } else if (id === 'ice_burst') {
+    const comet = new THREE.Mesh(new THREE.SphereGeometry(0.18, 12, 10), glowMaterial(0x38bdf8, 1));
+    comet.scale.set(0.75, 1.45, 0.75);
+    grp.add(comet);
+    speed = 3.8;
+    arc = 0.45;
+  } else if (id === 'blood_barrage') {
+    const shell = new THREE.Mesh(new THREE.SphereGeometry(0.32, 16, 14), glowMaterial(0x7f1d1d, 0.85));
+    const core = new THREE.Mesh(new THREE.SphereGeometry(0.18, 14, 12), glowMaterial(0xdc2626, 1));
+    grp.add(shell, core);
+    const drops = [0, 1, 2].map((i) => {
+      const drop = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6), glowMaterial(0xfb7185, 1));
+      drop.userData.orbit = i;
+      grp.add(drop);
+      return drop;
+    });
+    speed = 2.6;
+    arc = 0.85;
+    onTick = (p, dt) => {
+      const pulse = 1 + Math.sin(p.progress * 28) * 0.14;
+      shell.scale.setScalar(pulse);
+      drops.forEach((drop, i) => {
+        const a = performance.now() * 0.008 + i * (Math.PI * 2 / 3);
+        drop.position.set(Math.cos(a) * 0.42, Math.sin(a * 1.4) * 0.12, Math.sin(a) * 0.42);
+      });
+    };
+  } else {
+    grp.add(new THREE.Mesh(new THREE.SphereGeometry(0.2, 12, 10), new THREE.MeshBasicMaterial({ color: spell?.color || 0xffffff })));
+  }
+
+  const orient = id === 'ice_burst';
+  launchProjectile(grp, fromPos, toPos, () => {
+    spawnSpellImpact(spell, toPos, fromPos);
+    if (onImpact) onImpact();
+  }, { speed, arc, orient, onTick, y0: 1.45, y1: 1.15 });
+}
+
+function spawnArrowProjectile(weapon, fromPos, toPos, onImpact) {
+  const grp = new THREE.Group();
+  const shaft = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.012, 0.015, 0.72, 8),
+    new THREE.MeshBasicMaterial({ color: 0xe7e5e4 })
+  );
+  const head = new THREE.Mesh(
+    new THREE.ConeGeometry(0.04, 0.16, 8),
+    new THREE.MeshBasicMaterial({ color: 0xf8fafc })
+  );
+  head.position.y = 0.42;
+  grp.add(shaft, head);
+  const fletchColor = weapon?.id === 'ancient_bow' ? 0x38bdf8 : weapon?.id === 'magic_bow' ? 0x34d399 : 0xf8fafc;
+  for (let i = 0; i < 3; i++) {
+    const fletch = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.09, 0.16),
+      new THREE.MeshBasicMaterial({ color: fletchColor, side: THREE.DoubleSide })
+    );
+    fletch.position.y = -0.28;
+    fletch.rotation.y = (i / 3) * Math.PI;
+    grp.add(fletch);
+  }
+  const trail = weapon?.id === 'ancient_bow' ? 0x22d3ee : weapon?.id === 'magic_bow' ? 0x34d399 : 0;
+  launchProjectile(grp, fromPos, toPos, onImpact, {
+    speed: 7.2,
+    arc: 0.28,
+    orient: true,
+    y0: 1.35,
+    y1: 1.15,
+    onTick: trail ? (p, dt) => {
+      p.trailAcc += dt;
+      if (p.trailAcc < 0.025) return;
+      p.trailAcc = 0;
+      const spark = new THREE.Mesh(new THREE.SphereGeometry(0.035, 6, 6), glowMaterial(trail, 0.85));
+      spark.position.copy(p.mesh.position);
+      spawnVfx(spark, 0.22, (v) => {
+        v.mesh.material.opacity = 0.85 * (1 - v.age / v.life);
+      });
+    } : null
   });
 }
 
@@ -2657,12 +3134,13 @@ function performPlayerAttack(monster) {
 
   if ((style === 'rapid' || style === 'ranged')) {
     SFX.bow();
-    spawnProjectile(player.pos, monster.pos, 0xfacc15, applyDamage);
+    spawnArrowProjectile(ITEMS[STATE.equipment.weapon], player.pos, monster.pos, applyDamage);
   } else if (style === 'magic') {
     SFX.magic();
     const sp = SPELLS.find(x => x.id === STATE.activeSpell) || SPELLS[0];
-    spawnProjectile(player.pos, monster.pos, sp.color, applyDamage);
+    spawnSpellProjectile(sp, player.pos, monster.pos, applyDamage);
   } else {
+    spawnMeleeSlashEffect(ITEMS[STATE.equipment.weapon], player.pos, player.yaw, monster.pos, isSpec);
     applyDamage();
   }
 }
@@ -3188,6 +3666,13 @@ function gameLoop(now) {
     const slashAngle = Math.sin(player.attackAnim * Math.PI) * 1.65;
     player.parts.rightArmPivot.rotation.x = -slashAngle;
   }
+  if (player.parts.whipRig) {
+    const stretch = player.attackAnim > 0 ? Math.sin(player.attackAnim * Math.PI) : 0;
+    if (stretch > 0.001 || player.parts.whipRig.wasLashing) {
+      syncWhipGeometry(player.parts.whipRig, stretch);
+      player.parts.whipRig.wasLashing = stretch > 0.001;
+    }
+  }
 
   if (player.spinAnim > 0) {
     player.spinAnim = Math.max(0, player.spinAnim - dt * 2.4);
@@ -3321,8 +3806,29 @@ function gameLoop(now) {
       if (p.onImpact) p.onImpact();
       projectilesList.splice(i, 1);
     } else {
+      const arc = p.arc == null ? 1.4 : p.arc;
       p.mesh.position.lerpVectors(p.start, p.end, p.progress);
-      p.mesh.position.y += Math.sin(p.progress * Math.PI) * 1.4;
+      p.mesh.position.y += Math.sin(p.progress * Math.PI) * arc;
+      if (p.orient) {
+        const aheadT = Math.min(1, p.progress + 0.06);
+        const next = new THREE.Vector3().lerpVectors(p.start, p.end, aheadT);
+        next.y += Math.sin(aheadT * Math.PI) * arc;
+        const dir = next.sub(p.mesh.position);
+        if (dir.lengthSq() > 1e-8) {
+          p.mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.normalize());
+        }
+      }
+      if (p.onTick) p.onTick(p, dt);
+    }
+  }
+
+  for (let i = vfxList.length - 1; i >= 0; i--) {
+    const v = vfxList[i];
+    v.age += dt;
+    if (v.onTick) v.onTick(v, dt);
+    if (v.age >= v.life) {
+      scene.remove(v.mesh);
+      vfxList.splice(i, 1);
     }
   }
 
