@@ -15,8 +15,9 @@ const SHADOW = new THREE.Color(PALETTE.shadow);
 /**
  * Faceted, non-metallic toon material.
  * Lambert still honors `flatShading`, and the fragment patch is a hard
- * 2-band cel: `step(0.42, NdotL)`, multiplied by a cool-violet shadow
- * and a warm `#fef08a` rim.
+ * 2-band cel: `step(0.42, NdotL)` against a world-space sun so the
+ * south face of Lumbridge Castle stays in the lit band, with a softened
+ * cool-violet shadow and a warm `#fef08a` rim.
  */
 export function facetMaterial(params: Record<string, unknown> = {}): THREE.MeshLambertMaterial {
   const cleaned: Record<string, unknown> = {};
@@ -34,13 +35,12 @@ export function facetMaterial(params: Record<string, unknown> = {}): THREE.MeshL
       shader.fragmentShader.replace(
         'vec3 outgoingLight = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse + totalEmissiveRadiance;',
         `vec3 outgoingLight = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse + totalEmissiveRadiance;
-        float ndl = 0.65;
-        #if NUM_DIR_LIGHTS > 0
-          ndl = dot(normalize(normal), directionalLights[0].direction);
-        #endif
+        vec3 nCel = normalize((vec4(normal, 0.0) * viewMatrix).xyz);
+        vec3 sunDir = normalize(vec3(0.42, 0.78, 0.55));
+        float ndl = dot(nCel, sunDir);
         float cel = step(0.42, ndl);
         vec3 shadowTint = vec3(${SHADOW.r.toFixed(6)}, ${SHADOW.g.toFixed(6)}, ${SHADOW.b.toFixed(6)});
-        vec3 celLit = mix(outgoingLight * shadowTint, outgoingLight, cel);
+        vec3 celLit = mix(outgoingLight * mix(vec3(1.0), shadowTint, 0.38), outgoingLight, cel);
         float rim = pow(1.0 - max(dot(normalize(normal), normalize(vViewPosition)), 0.0), 2.2);
         celLit += vec3(${RIM.r.toFixed(6)}, ${RIM.g.toFixed(6)}, ${RIM.b.toFixed(6)}) * rim * 0.55;
         outgoingLight = mix(celLit, outgoingLight, uCelBypass);`
@@ -56,7 +56,7 @@ export function grassMaterial(): THREE.ShaderMaterial {
       uTime: { value: 0 },
       uBase: { value: new THREE.Color(PALETTE.sage) },
       uLit: { value: new THREE.Color(PALETTE.sageLit) },
-      uLightDir: { value: new THREE.Vector3(0.45, 0.82, 0.32).normalize() },
+      uLightDir: { value: new THREE.Vector3(0.42, 0.78, 0.55).normalize() },
       uCam: { value: new THREE.Vector3() },
       uRim: { value: RIM.clone() },
       uShadow: { value: SHADOW.clone() }
@@ -94,7 +94,8 @@ export function grassMaterial(): THREE.ShaderMaterial {
         float ndl = dot(n, normalize(uLightDir));
         float cel = step(0.42, ndl);
         vec3 albedo = mix(uBase, uLit, vH);
-        vec3 col = mix(albedo * uShadow, albedo, cel);
+        vec3 shade = mix(vec3(1.0), uShadow, 0.38);
+        vec3 col = mix(albedo * shade, albedo, cel);
         vec3 viewDir = normalize(uCam - vWorld);
         float rim = pow(1.0 - max(dot(n, viewDir), 0.0), 2.2);
         col += uRim * rim * 0.45;

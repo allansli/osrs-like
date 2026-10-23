@@ -47,12 +47,21 @@ function bindQty(root: ParentNode): void {
   });
 }
 
+function bindItemTooltip(el: HTMLElement, it: ItemDef | undefined): void {
+  if (!it) return;
+  el.addEventListener('mouseenter', (ev) => bridge.showItemTooltip(ev, it));
+  el.addEventListener('mousemove', (ev) => bridge.moveItemTooltip(ev));
+  el.addEventListener('mouseleave', () => bridge.hideItemTooltip());
+  el.addEventListener('click', () => bridge.hideItemTooltip());
+}
+
 function slotButton(stack: ItemStack, action: string): HTMLButtonElement {
   const it = ITEMS[stack.id];
   const btn = document.createElement('button');
   btn.className = 'stack-slot';
   btn.dataset.action = action;
   btn.dataset.item = stack.id;
+  bindItemTooltip(btn, it);
   const tier = it?.tier && (TIER_COLORS as Record<string, string>)[it.tier];
   btn.innerHTML = `
     <span class="stack-icon">${getItemSvg(it)}</span>
@@ -105,6 +114,7 @@ function paintVaultGrid(grid: HTMLElement): void {
 export function renderBankModal(): void {
   const body = document.getElementById('bank-body');
   if (!body) return;
+  bridge.hideItemTooltip();
 
   body.innerHTML = `
     <div class="station-toolbar">
@@ -165,6 +175,7 @@ export function renderBankModal(): void {
 export function renderShopModal(): void {
   const body = document.getElementById('shop-body');
   if (!body) return;
+  bridge.hideItemTooltip();
   const filter = STATE.shopFilter || 'all';
   body.innerHTML = `
     <div class="station-toolbar">
@@ -225,6 +236,7 @@ export function renderShopModal(): void {
       </div>
       <button class="shop-buy-btn" data-buy="${it.id}">Buy</button>
     `;
+    bindItemTooltip(card, it);
     grid.appendChild(card);
   });
 

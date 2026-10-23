@@ -635,12 +635,27 @@ function updateAllUI() {
 // ============================================================================
 function closeModals() {
   document.querySelectorAll('.modal-backdrop').forEach(m => m.classList.remove('open'));
+  hideHoverTooltip();
+  hideItemTooltip();
+}
+
+function hideHoverTooltip() {
+  const tooltip = document.getElementById('hover-tooltip');
+  if (tooltip) tooltip.style.display = 'none';
+  document.body.style.cursor = 'default';
+}
+
+function openModal(id) {
+  closeModals();
+  const modal = document.getElementById(id);
+  if (modal) modal.classList.add('open');
+  hideHoverTooltip();
+  return modal;
 }
 
 function openShopModal(filter = 'all') {
-  closeModals();
   STATE.shopFilter = filter;
-  document.getElementById('shop-modal').classList.add('open');
+  openModal('shop-modal');
   renderShopModal();
 }
 
@@ -701,8 +716,7 @@ function sellAllLoot() {
 }
 
 function openSmithingModal() {
-  closeModals();
-  document.getElementById('smithing-modal').classList.add('open');
+  openModal('smithing-modal');
   renderSmithingModal();
 }
 
@@ -724,8 +738,7 @@ function craftRecipe(recipeId) {
 }
 
 function openXpTableModal(skillKey = 'attack') {
-  closeModals();
-  document.getElementById('xptable-modal').classList.add('open');
+  openModal('xptable-modal');
   const sk = STATE.skills[skillKey] || STATE.skills.attack;
   const meta = SKILLS_META[skillKey] || SKILLS_META.attack;
   const nextLvl = Math.min(99, sk.lvl + 1);
@@ -754,9 +767,7 @@ function openXpTableModal(skillKey = 'attack') {
 }
 
 function openWorldMapModal() {
-  closeModals();
-  const modal = document.getElementById('worldmap-modal');
-  if (modal) modal.classList.add('open');
+  openModal('worldmap-modal');
   renderWorldMap();
 }
 
@@ -983,6 +994,7 @@ function init3DEngine() {
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 0.94;
+  renderer.domElement.id = 'game-canvas';
   container.appendChild(renderer.domElement);
 
   STONE_TEX = createStoneMasonryTexture();
@@ -2685,6 +2697,13 @@ function showClickMarker(x, z, hexColor) {
 }
 
 function handleWorldHover(e) {
+  const onCanvas = !!(e.target && e.target.id === 'game-canvas');
+  const modalOpen = !!document.querySelector('.modal-backdrop.open');
+  if (!onCanvas || modalOpen) {
+    hideHoverTooltip();
+    if (hoverTile) hoverTile.visible = false;
+    return;
+  }
   updateHoverTile(e);
   const tooltip = document.getElementById('hover-tooltip');
   mouseVec.x = (e.clientX / window.innerWidth) * 2 - 1;
@@ -3727,25 +3746,19 @@ function refreshCombatStyleLocks() {
 }
 
 function openBankModal() {
-  closeModals();
   STATE.quests.openedBank = true;
-  const modal = document.getElementById('bank-modal');
-  if (modal) modal.classList.add('open');
+  openModal('bank-modal');
   renderBankModal();
 }
 
 function openQuestsModal() {
-  closeModals();
-  const modal = document.getElementById('quest-modal');
-  if (modal) modal.classList.add('open');
+  openModal('quest-modal');
   renderQuests();
 }
 
 function openSettingsModal() {
-  closeModals();
   syncSettingsButtons();
-  const modal = document.getElementById('settings-modal');
-  if (modal) modal.classList.add('open');
+  openModal('settings-modal');
 }
 
 function toggleAudio() {
@@ -3805,6 +3818,9 @@ function wireBridge() {
   bridge.teleportSpell = (regionId) => teleportToRegion(regionId);
   bridge.noteBank = () => { STATE.quests.openedBank = true; };
   bridge.noteQuest = () => {};
+  bridge.showItemTooltip = (ev, it) => showItemTooltip(ev, it);
+  bridge.moveItemTooltip = (ev) => moveItemTooltip(ev);
+  bridge.hideItemTooltip = () => hideItemTooltip();
   window.setCombatStyle = setCombatStyle;
   window.closeModals = closeModals;
   window.switchTab = switchTab;

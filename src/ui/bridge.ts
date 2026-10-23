@@ -1,3 +1,5 @@
+import type { ItemDef } from '../data/items';
+
 /** UI callbacks assigned by the runtime after the DOM helpers exist. */
 export const bridge = {
   chat: (_text: string, _type?: string) => {},
@@ -11,5 +13,8 @@ export const bridge = {
   toggleAudio: () => {},
   teleportSpell: (_regionId: string) => {},
   noteBank: () => {},
-  noteQuest: () => {}
+  noteQuest: () => {},
+  showItemTooltip: (_ev: MouseEvent, _it: ItemDef) => {},
+  moveItemTooltip: (_ev: MouseEvent) => {},
+  hideItemTooltip: () => {}
 };

@@ -763,7 +763,7 @@
     inset: 0;
     background: rgba(0, 0, 0, 0.68);
     backdrop-filter: blur(5px);
-    z-index: 50;
+    z-index: 80;
     display: none;
     align-items: center;
     justify-content: center;
@@ -1138,7 +1138,7 @@
 
 #item-tooltip {
   position: fixed;
-  z-index: 90;
+  z-index: 120;
   display: none;
   pointer-events: none;
   background: rgba(20, 16, 12, 0.97);
