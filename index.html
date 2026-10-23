@@ -334,6 +334,17 @@
         <button class="hud-btn" id="reset-save-btn" onclick="resetGameSave()">Reset</button>
         <button class="hud-btn" onclick="openXpTableModal()">XP Table</button>
       </div>
+      <div class="cheat-panel">
+        <h3>Developer Cheats</h3>
+        <div class="cheat-entry">
+          <input id="cheat-code-input" type="text" autocomplete="off" spellcheck="false" placeholder="Enter cheat code (skills10, gold200k)..." />
+          <button class="hud-btn" type="button" onclick="applyTypedCheat()">Apply</button>
+        </div>
+        <div class="cheat-quick">
+          <button class="hud-btn" type="button" onclick="cheatSkillsPlus10()">+10 All Skills (skills10)</button>
+          <button class="hud-btn" type="button" onclick="cheatGold200k()">+200,000 GP (gold200k)</button>
+        </div>
+      </div>
     </div>
   </div>
 </div>

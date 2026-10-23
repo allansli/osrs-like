@@ -26,6 +26,7 @@ import {
 } from '../state/adventure';
 import { moveWithCollision, isWalkable, isDeepWater } from '../state/collision';
 import { discoverShrines } from '../state/shrines';
+import { applyGold200k, applySkillsPlus10, matchCheat } from '../state/cheats';
 import { addCartoonOutline, facetMaterial, grassMaterial, PALETTE } from './materials';
 import { hexToCss, getUiSvg, getSkillSvg, getItemSvg, getPrayerSvg, getSpellSvg } from '../ui/icons';
 import { bridge } from '../ui/bridge';
@@ -3193,6 +3194,7 @@ function setupInputHandlers() {
 
   window.addEventListener('keydown', e => {
     keysPressed[e.code] = true;
+    noteCheatKey(e);
     if (e.code === 'Space' && player.isGrounded) {
       player.jumpVel = 7.8;
       player.isGrounded = false;
@@ -5126,6 +5128,49 @@ function updateHoverTile(e) {
   hoverTile.position.set(gx, getTerrainHeight(gx, gz) + 0.08, gz);
 }
 
+let cheatBuffer = '';
+
+function noteCheatKey(e) {
+  const tag = document.activeElement && document.activeElement.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+  if (!e.key || e.key.length !== 1) return;
+  cheatBuffer = (cheatBuffer + e.key.toLowerCase()).slice(-16);
+  const kind = matchCheat(cheatBuffer);
+  if (!kind) return;
+  cheatBuffer = '';
+  if (kind === 'skills') cheatSkillsPlus10();
+  else cheatGold200k();
+}
+
+function cheatSkillsPlus10() {
+  applySkillsPlus10(STATE);
+  SFX.levelUp();
+  spawnLevelUpFireworks();
+  showBanner('Cheat Activated', 'All skills increased by +10 levels!');
+  addChatMessage('Cheat code <b>skills10</b> activated: all skills increased by <b>+10</b>!', 'lvlup');
+  updateAllUI();
+  saveGameState();
+}
+
+function cheatGold200k() {
+  applyGold200k(STATE);
+  SFX.coin();
+  showBanner('Cheat Activated', '+200,000 GP added to your coin pouch!');
+  addChatMessage('Cheat code <b>gold200k</b> activated: <b>+200,000 GP</b> added!', 'loot');
+  updateAllUI();
+  saveGameState();
+}
+
+function applyTypedCheat() {
+  const input = document.getElementById('cheat-code-input');
+  if (!input) return;
+  const kind = matchCheat(input.value);
+  input.value = '';
+  if (kind === 'skills') cheatSkillsPlus10();
+  else if (kind === 'gold') cheatGold200k();
+  else addChatMessage('Unknown cheat code. Try <b>skills10</b> or <b>gold200k</b>.', 'combat');
+}
+
 function wireBridge() {
   bridge.chat = (text, type) => addChatMessage(text, type || '');
   bridge.refresh = () => updateAllUI();
@@ -5145,6 +5190,9 @@ function wireBridge() {
   bridge.claimQuest = (questId) => claimQuestReward(questId);
   bridge.locateRegion = (regionId) => locateQuestRegion(regionId);
   bridge.requestSlayer = () => requestSlayerTask();
+  window.cheatSkillsPlus10 = cheatSkillsPlus10;
+  window.cheatGold200k = cheatGold200k;
+  window.applyTypedCheat = applyTypedCheat;
   window.setCombatStyle = setCombatStyle;
   window.closeModals = closeModals;
   window.switchTab = switchTab;
@@ -5190,6 +5238,16 @@ window.addEventListener('DOMContentLoaded', () => {
     addChatMessage('Use <b>WASD / Arrows</b> or <b>Click</b> anywhere to move, fight monsters, chop trees, mine ores, or fish.', 'skill');
   }
   addChatMessage('The courtyard holds the <b>Bank booth</b>, the <b>General Store</b>, and the <b>Anvil</b>. Walk up to use them. Press <b>F1–F6</b> to switch panels and <b>Esc</b> to close a window.', 'loot');
+  addChatMessage('Cheat codes: type <b>skills10</b> to raise every skill by 10, or <b>gold200k</b> for 200,000 GP. Both are also in Settings.', 'skill');
+  const cheatInput = document.getElementById('cheat-code-input');
+  if (cheatInput) {
+    cheatInput.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter') {
+        ev.preventDefault();
+        applyTypedCheat();
+      }
+    });
+  }
   const startReg = WORLD_REGIONS.find(r => r.id === STATE.currentRegion) || WORLD_REGIONS[0];
   triggerRegionBanner(startReg);
   requestAnimationFrame(gameLoop);
