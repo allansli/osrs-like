@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="./og-banner.png" alt="RuneWilds: Breath of Gielinor — 3D Open-World Action RPG" width="100%" style="border-radius: 12px;" />
+
 # RuneWilds: Breath of Gielinor
 
 **A Zero-Dependency, Single-File 3D Open-World Action RPG**  
