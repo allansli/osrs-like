@@ -7,7 +7,8 @@
 **A Zero-Dependency, Single-File 3D Open-World Action RPG**  
 *Combining OldSchool RuneScape (OSRS) mechanics & progression with Zelda: Breath of the Wild 3D aesthetics*
 
-[![Live Demo](https://img.shields.io/badge/Play_Live-GitHub_Pages-2ea44f?style=for-the-badge&logo=github)](https://allansli.github.io/osrs-like/)
+[![Play on Vercel](https://img.shields.io/badge/Play_Live-gielinor--hero.vercel.app-000000?style=for-the-badge&logo=vercel)](https://gielinor-hero.vercel.app/)
+[![Live Demo](https://img.shields.io/badge/Mirror-GitHub_Pages-2ea44f?style=for-the-badge&logo=github)](https://allansli.github.io/osrs-like/)
 [![Three.js](https://img.shields.io/badge/3D_Engine-Three.js_+_GLSL-000000?style=for-the-badge&logo=threedotjs)](https://threejs.org/)
 [![Items](https://img.shields.io/badge/Custom_SVG_Items-201_Items_(33_Armor_Sets)-f59e0b?style=for-the-badge)](#item--equipment-progression-201-items--33-matched-sets)
 [![License: MIT](https://img.shields.io/badge/License-MIT-38bdf8?style=for-the-badge)](./LICENSE)
