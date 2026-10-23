@@ -9,6 +9,21 @@ import { STATE, applyState } from '../state/gameState';
 import { addItem, removeItem, countItem, canAddItem, sellItem, buyItem } from '../state/inventory';
 import { readSave, writeSave, SAVE_KEY, LEGACY_SAVE_KEYS } from '../state/save';
 import { prepareAttack, allowedStyles, mitigateDamage, canCastTeleport, equippedWeapon } from '../state/combat';
+import {
+  assignSlayerTask,
+  attackOptionLabel,
+  claimQuest,
+  combatLevel,
+  dharokMultiplier,
+  gatherVerb,
+  isBossLoot,
+  isRareLoot,
+  monsterThreatColor,
+  noteGather,
+  registerKill,
+  resolveDragonfire,
+  weaponSpecial
+} from '../state/adventure';
 import { moveWithCollision, isWalkable, isDeepWater } from '../state/collision';
 import { discoverShrines } from '../state/shrines';
 import { addCartoonOutline, facetMaterial, grassMaterial, PALETTE } from './materials';
@@ -105,12 +120,7 @@ function addChatMessage(text, type = '') {
 }
 
 function getCombatLevel() {
-  const s = STATE.skills;
-  const base = 0.25 * (s.defence.lvl + s.hitpoints.lvl + Math.floor(s.prayer.lvl / 2));
-  const melee = 0.325 * (s.attack.lvl + s.strength.lvl);
-  const range = 0.325 * Math.floor(s.ranged.lvl * 1.5);
-  const mage  = 0.325 * Math.floor(s.magic.lvl * 1.5);
-  return Math.max(3, Math.floor(base + Math.max(melee, range, mage)));
+  return combatLevel(STATE);
 }
 
 function getItemReqInfo(it) {
@@ -206,10 +216,16 @@ function spawnXpDrop(skillKey, amount) {
 
 let lvlBannerTimeout = null;
 function showLevelUpBanner(skillName, newLvl) {
+  showBanner('Skill Level Up', `Congratulations, your ${skillName} level is now ${newLvl}!`);
+}
+
+function showBanner(kicker, message) {
   const banner = document.getElementById('levelup-banner');
   const text = document.getElementById('levelup-text');
+  const head = document.getElementById('levelup-kicker');
   if (!banner || !text) return;
-  text.textContent = `Congratulations, your ${skillName} level is now ${newLvl}!`;
+  if (head) head.textContent = kicker;
+  text.textContent = message;
   banner.classList.add('show');
   if (lvlBannerTimeout) clearTimeout(lvlBannerTimeout);
   lvlBannerTimeout = setTimeout(() => banner.classList.remove('show'), 3500);
@@ -362,8 +378,9 @@ function setCombatStyle(style) {
 }
 
 function toggleSpecialAttack() {
-  if (STATE.specEnergy < 25 && !STATE.specArmed) {
-    addChatMessage('You need at least 25% Special Attack energy!', 'combat');
+  const spec = weaponSpecial(STATE.equipment.weapon);
+  if (STATE.specEnergy < spec.cost && !STATE.specArmed) {
+    addChatMessage(`You need at least ${spec.cost}% Special Attack energy for <b>${spec.name}</b>!`, 'combat');
     return;
   }
   STATE.specArmed = !STATE.specArmed;
@@ -452,11 +469,31 @@ function updateAllUI() {
   document.getElementById('gp-amount').textContent = `${STATE.gp.toLocaleString()} GP`;
 
   const specBtn = document.getElementById('spec-btn');
+  const spec = weaponSpecial(STATE.equipment.weapon);
   if (specBtn) {
     specBtn.classList.toggle('armed', STATE.specArmed);
     specBtn.textContent = STATE.specArmed
-      ? `SPECIAL ARMED (${Math.floor(STATE.specEnergy)}%) — Next Hit Spin-Slash!`
-      : `SPECIAL ATTACK: ${Math.floor(STATE.specEnergy)}% (Cost 25%)`;
+      ? `SPECIAL ARMED — ${spec.name} (${Math.floor(STATE.specEnergy)}%)`
+      : `SPECIAL: ${spec.name} (${Math.floor(STATE.specEnergy)}% · Cost ${spec.cost}%)`;
+  }
+  const slayerPill = document.getElementById('slayer-pill');
+  const slayerTask = STATE.quests.slayer;
+  if (slayerPill) {
+    if (slayerTask && slayerTask.remaining > 0) {
+      slayerPill.hidden = false;
+      slayerPill.textContent = `Slayer: ${slayerTask.name} ${slayerTask.remaining}/${slayerTask.total}`;
+    } else {
+      slayerPill.hidden = true;
+    }
+  }
+  const titleEl = document.getElementById('hero-title');
+  if (titleEl) {
+    if (STATE.quests.title) {
+      titleEl.hidden = false;
+      titleEl.textContent = STATE.quests.title;
+    } else {
+      titleEl.hidden = true;
+    }
   }
 
   const wepId = STATE.equipment.weapon;
@@ -637,6 +674,7 @@ function closeModals() {
   document.querySelectorAll('.modal-backdrop').forEach(m => m.classList.remove('open'));
   hideHoverTooltip();
   hideItemTooltip();
+  hideContextMenu();
 }
 
 function hideHoverTooltip() {
@@ -768,7 +806,42 @@ function openXpTableModal(skillKey = 'attack') {
 
 function openWorldMapModal() {
   openModal('worldmap-modal');
-  renderWorldMap();
+  renderWorldMap(null);
+}
+
+function locateQuestRegion(regionId) {
+  openModal('worldmap-modal');
+  renderWorldMap(regionId);
+}
+
+function claimQuestReward(questId) {
+  const result = claimQuest(STATE, questId);
+  if (!result.ok) {
+    addChatMessage(result.reason || 'You cannot claim that yet.', 'combat');
+    return;
+  }
+  SFX.coin();
+  SFX.levelUp();
+  addChatMessage(result.chat || 'Quest complete.', 'lvlup');
+  showBanner('Quest Reward', result.banner || 'Reward claimed');
+  spawnLevelUpFireworks(0xfde047);
+  updateAllUI();
+}
+
+function requestSlayerTask() {
+  const current = STATE.quests.slayer;
+  if (current && current.remaining > 0) {
+    addChatMessage(`Your Slayer task is <b>${current.remaining} ${current.name}</b>.`, 'skill');
+    updateAllUI();
+    return;
+  }
+  const result = assignSlayerTask(STATE, getCombatLevel());
+  if (!result.ok) addChatMessage(result.reason || 'Vannaka has nothing new for you.', 'combat');
+  else if (result.task) {
+    addChatMessage(`Vannaka assigns you to defeat <b>${result.task.total} ${result.task.name}</b>.`, 'lvlup');
+    SFX.prayer();
+  }
+  updateAllUI();
 }
 
 function saveGameState() {
@@ -1168,6 +1241,131 @@ function buildRiverBridge(bx, bz) {
   addCartoonOutline(grp, 0.038);
 }
 
+function buildBiomeLandmarks() {
+  const sand = facetMaterial({ color: 0xe7c07a });
+  const palm = facetMaterial({ color: 0x4ade80 });
+  const bark = facetMaterial({ color: 0x92400e });
+  const stone = facetMaterial({ color: 0xe5e7eb });
+  const gold = facetMaterial({ color: 0xfacc15 });
+  const obsidian = facetMaterial({ color: 0x1c1917 });
+  const lava = facetMaterial({ color: 0xf97316, emissive: 0xea580c, emissiveIntensity: 0.85 });
+
+  function place(builder, x, z) {
+    const grp = builder();
+    grp.position.set(x, getTerrainHeight(x, z), z);
+    addCartoonOutline(grp, 0.038);
+    scene.add(grp);
+  }
+
+  function sandstoneArch() {
+    const grp = new THREE.Group();
+    const left = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.62, 4.2, 12), sand);
+    left.position.set(-1.6, 2.1, 0);
+    const right = left.clone();
+    right.position.x = 1.6;
+    const lintel = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.7, 1.1), sand);
+    lintel.position.y = 4.3;
+    const cap = new THREE.Mesh(new THREE.SphereGeometry(0.55, 14, 10), gold);
+    cap.position.y = 4.9;
+    [left, right, lintel, cap].forEach((mesh) => { mesh.castShadow = true; grp.add(mesh); });
+    return grp;
+  }
+
+  function palmTree() {
+    const grp = new THREE.Group();
+    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.28, 3.4, 10), bark);
+    trunk.position.y = 1.7;
+    trunk.rotation.z = 0.18;
+    grp.add(trunk);
+    for (let i = 0; i < 6; i++) {
+      const frond = new THREE.Mesh(new THREE.SphereGeometry(0.55, 12, 8), palm);
+      frond.scale.set(1.8, 0.28, 0.7);
+      const ang = (i / 6) * Math.PI * 2;
+      frond.position.set(Math.cos(ang) * 0.85, 3.35, Math.sin(ang) * 0.85);
+      frond.lookAt(0, 2.4, 0);
+      grp.add(frond);
+    }
+    const dates = new THREE.Mesh(new THREE.SphereGeometry(0.22, 10, 8), gold);
+    dates.position.y = 2.7;
+    grp.add(dates);
+    return grp;
+  }
+
+  function plazaPillar() {
+    const grp = new THREE.Group();
+    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.55, 5.2, 14), stone);
+    shaft.position.y = 2.6;
+    const foot = new THREE.Mesh(new THREE.CylinderGeometry(0.78, 0.86, 0.4, 14), stone);
+    foot.position.y = 0.2;
+    const crown = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.35, 1.15), gold);
+    crown.position.y = 5.35;
+    [shaft, foot, crown].forEach((mesh) => { mesh.castShadow = true; grp.add(mesh); });
+    return grp;
+  }
+
+  function mysticMushroom(color) {
+    const grp = new THREE.Group();
+    const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.32, 1.3, 12), facetMaterial({ color: 0xf8fafc }));
+    stem.position.y = 0.65;
+    const cap = new THREE.Mesh(
+      new THREE.SphereGeometry(0.85, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.55),
+      facetMaterial({ color, emissive: color, emissiveIntensity: 0.45 })
+    );
+    cap.position.y = 1.35;
+    grp.add(stem, cap);
+    return grp;
+  }
+
+  function woodsLantern() {
+    const grp = new THREE.Group();
+    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.1, 2.2, 8), bark);
+    post.position.y = 1.1;
+    const lamp = new THREE.Mesh(
+      new THREE.SphereGeometry(0.28, 12, 10),
+      facetMaterial({ color: 0xfde047, emissive: 0xfacc15, emissiveIntensity: 0.8 })
+    );
+    lamp.position.y = 2.3;
+    grp.add(post, lamp);
+    return grp;
+  }
+
+  function obsidianSpire() {
+    const grp = new THREE.Group();
+    const spire = new THREE.Mesh(new THREE.ConeGeometry(0.85, 6.4, 7), obsidian);
+    spire.position.y = 3.2;
+    const glow = new THREE.Mesh(new THREE.SphereGeometry(0.22, 10, 8), lava);
+    glow.position.y = 5.6;
+    grp.add(spire, glow);
+    return grp;
+  }
+
+  function lavaFissure() {
+    const grp = new THREE.Group();
+    const crack = new THREE.Mesh(new THREE.BoxGeometry(3.4, 0.08, 0.35), lava);
+    crack.position.y = 0.08;
+    crack.rotation.y = 0.4;
+    const crackB = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.08, 0.22), lava);
+    crackB.position.set(0.4, 0.09, 0.45);
+    crackB.rotation.y = -0.8;
+    grp.add(crack, crackB);
+    return grp;
+  }
+
+  place(sandstoneArch, 80, 82);
+  place(palmTree, 58, 58);
+  place(palmTree, 74, 52);
+  place(plazaPillar, 70, -16);
+  place(plazaPillar, 86, -24);
+  place(plazaPillar, 78, -30);
+  place(() => mysticMushroom(0xa855f7), -66, -22);
+  place(() => mysticMushroom(0x22d3ee), -84, -26);
+  place(woodsLantern, -72, -38);
+  place(woodsLantern, -90, -34);
+  place(obsidianSpire, -58, 62);
+  place(obsidianSpire, -66, 90);
+  place(lavaFissure, -74, 70);
+}
+
 function buildAllCitiesAndLandmarks() {
   WORLD_REGIONS.forEach(reg => {
     const sx = reg.x;
@@ -1225,6 +1423,8 @@ function buildAllCitiesAndLandmarks() {
   createMerchantNPC(78, -12, 'Varrock Trade Master', 0xd97706);
   createMerchantNPC(64, 62, 'Al-Kharid Bazaar Merchant', 0xb91c1c);
   createBankBooth(2.2, 4.2);
+  createSlayerMaster(5.5, 8.5);
+  buildBiomeLandmarks();
 }
 
 function createCastleStructure(cx, cz) {
@@ -1408,6 +1608,31 @@ function createBankBooth(x, z) {
   addCartoonOutline(lintel, 0.038);
   scene.add(grp);
   npcList.push({ pos: grp.position, name: 'Lumbridge Bank', color: '#fde047', yOffset: 2.6 });
+}
+
+function createSlayerMaster(x, z) {
+  const y = getTerrainHeight(x, z);
+  const rig = buildHumanoidRig(0x4c1d95, 0x1c1917, 0x111827, 1.05);
+  rig.group.position.set(x, y, z);
+  const cape = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.72, 1.05),
+    facetMaterial({ color: 0x4c1d95, side: THREE.DoubleSide })
+  );
+  cape.position.set(0, 1.2, 0.24);
+  rig.group.add(cape);
+  addCartoonOutline(cape, 0.022);
+  const sword = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.95, 0.08), facetMaterial({ color: 0xfacc15 }));
+  sword.position.set(0, -0.72, 0.02);
+  const guard = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.08, 0.1), facetMaterial({ color: 0xfde047 }));
+  guard.position.set(0, -0.28, 0.02);
+  rig.rightArmPivot.add(sword, guard);
+  addCartoonOutline(sword, 0.022);
+  const uData = { type: 'interactive', action: 'slayer', name: 'Slayer Master Vannaka', interactRadius: 4.0 };
+  rig.group.userData = uData;
+  rig.hitbox.userData = uData;
+  worldInteractiveObjects.push(rig.hitbox);
+  scene.add(rig.group);
+  npcList.push({ pos: rig.group.position, name: 'Slayer Master Vannaka', color: '#c084fc', yOffset: 2.9 });
 }
 
 function createMerchantNPC(x, z, name, tunicColor) {
@@ -2151,6 +2376,7 @@ function spawnMonster(typeKey, x, z) {
     respawnTimer: 0,
     wanderTimer: Math.random() * 3,
     attackCooldown: 0,
+    breathCount: 0,
     inCombatWithPlayer: false,
     labelEl
   };
@@ -2335,6 +2561,8 @@ const mouseVec = new THREE.Vector2();
 let hoveredWorld = null;
 let clickMarkerMesh = null;
 let hoverTile = null;
+const rightPress = { x: 0, y: 0, dist: 0 };
+let contextTarget = null;
 
 function setupInputHandlers() {
   clickMarkerMesh = new THREE.Group();
@@ -2383,15 +2611,21 @@ function setupInputHandlers() {
 
   const canvas = renderer.domElement;
   canvas.addEventListener('contextmenu', e => e.preventDefault());
+  const canvasHost = document.getElementById('game-canvas-container');
+  if (canvasHost) canvasHost.addEventListener('contextmenu', onGameContextMenu);
 
   canvas.addEventListener('mousedown', e => {
     if (e.button === 2 || e.button === 1) {
       camState.isDragging = true;
       camState.lastMouseX = e.clientX;
       camState.lastMouseY = e.clientY;
+      rightPress.x = e.clientX;
+      rightPress.y = e.clientY;
+      rightPress.dist = 0;
       return;
     }
     if (e.button === 0) {
+      hideContextMenu();
       handleWorldClick(e);
     }
   });
@@ -2402,6 +2636,7 @@ function setupInputHandlers() {
       const dy = e.clientY - camState.lastMouseY;
       camState.lastMouseX = e.clientX;
       camState.lastMouseY = e.clientY;
+      rightPress.dist += Math.hypot(dx, dy);
       camState.manualOffset -= dx * 0.007;
       camState.pitch = Math.max(0.12, Math.min(1.15, camState.pitch + dy * 0.005));
     } else {
@@ -2497,6 +2732,121 @@ function handleWorldHover(e) {
   hoveredWorld = null;
   tooltip.style.display = 'none';
   document.body.style.cursor = 'default';
+}
+
+function hideContextMenu() {
+  const menu = document.getElementById('context-menu');
+  if (!menu) return;
+  menu.classList.remove('open');
+  menu.setAttribute('aria-hidden', 'true');
+  contextTarget = null;
+}
+
+function pointerToWorld(clientX, clientY) {
+  mouseVec.x = (clientX / window.innerWidth) * 2 - 1;
+  mouseVec.y = -(clientY / window.innerHeight) * 2 + 1;
+  raycaster.setFromCamera(mouseVec, camera);
+  const hits = raycaster.intersectObjects(worldInteractiveObjects, false);
+  const entityHit = hits.find((hit) => hit.object.userData && hit.object.userData.type && hit.object.userData.type !== 'ground');
+  const groundHits = terrainMesh ? raycaster.intersectObject(terrainMesh, false) : [];
+  return { entityHit, ground: groundHits[0] || null };
+}
+
+function onGameContextMenu(e) {
+  e.preventDefault();
+  if (rightPress.dist > 6) return;
+  if (document.querySelector('.modal-backdrop.open')) return;
+  const picked = pointerToWorld(e.clientX, e.clientY);
+  const options = [];
+  const ud = picked.entityHit ? picked.entityHit.object.userData : null;
+  contextTarget = { ud, ground: picked.ground, point: picked.entityHit ? picked.entityHit.point : (picked.ground ? picked.ground.point : null) };
+
+  if (ud && ud.type === 'monster' && ud.entity && !ud.entity.dead) {
+    const tone = monsterThreatColor(ud.entity.def.level, getCombatLevel());
+    options.push({
+      label: attackOptionLabel(ud.entity.def.name, ud.entity.def.level),
+      tone,
+      run: () => {
+        player.targetEntity = { type: 'monster', ref: ud.entity };
+        player.targetPos = null;
+        showClickMarker(ud.entity.pos.x, ud.entity.pos.z, 0xef4444);
+        updateTargetHud();
+      }
+    });
+  } else if (ud && ud.type === 'resource' && ud.entity && !ud.entity.depleted) {
+    options.push({
+      label: gatherVerb(ud.entity.def.kind, ud.entity.def.item),
+      run: () => {
+        player.targetEntity = { type: 'resource', ref: ud.entity };
+        player.targetPos = null;
+        showClickMarker(ud.entity.pos.x, ud.entity.pos.z, 0x38bdf8);
+        updateTargetHud();
+      }
+    });
+  } else if (ud && ud.type === 'interactive') {
+    let label = `Use ${ud.name}`;
+    if (ud.action === 'slayer') label = 'Talk-to Slayer Master Vannaka';
+    else if (ud.action === 'bank') label = 'Bank';
+    else if (ud.action === 'shop') label = 'Trade';
+    const anchor = picked.entityHit.object.getWorldPosition(new THREE.Vector3());
+    options.push({
+      label,
+      run: () => {
+        player.targetEntity = { type: 'interactive', ref: ud, pos: anchor };
+        player.targetPos = null;
+        showClickMarker(anchor.x, anchor.z, 0xfde047);
+      }
+    });
+  }
+
+  options.push({
+    label: 'Examine',
+    run: () => {
+      if (ud && ud.type === 'monster' && ud.entity) addChatMessage(`It's a level ${ud.entity.def.level} ${ud.entity.def.name}.`, 'skill');
+      else if (ud && ud.type === 'resource' && ud.entity) addChatMessage(`It's a ${ud.entity.def.name}.`, 'skill');
+      else if (ud && ud.type === 'interactive') addChatMessage(`It's ${ud.name}.`, 'skill');
+      else addChatMessage("It's the ground.", 'skill');
+    }
+  });
+  if (picked.ground) {
+    const pt = picked.ground.point;
+    options.push({
+      label: 'Walk here',
+      run: () => {
+        if (!isWalkable(pt.x, pt.z)) {
+          addChatMessage('You cannot walk there.', 'combat');
+          return;
+        }
+        player.targetEntity = null;
+        player.targetPos = new THREE.Vector3(pt.x, getTerrainHeight(pt.x, pt.z), pt.z);
+        showClickMarker(pt.x, pt.z, 0xfde047);
+        updateTargetHud();
+      }
+    });
+  }
+  options.push({ label: 'Cancel', run: () => {} });
+
+  const menu = document.getElementById('context-menu');
+  const list = document.getElementById('context-menu-list');
+  if (!menu || !list) return;
+  list.innerHTML = '';
+  options.forEach((opt) => {
+    const row = document.createElement('div');
+    row.className = 'osrs-menu-item' + (opt.tone ? ` threat-${opt.tone}` : '');
+    row.textContent = opt.label;
+    row.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      hideContextMenu();
+      opt.run();
+    });
+    list.appendChild(row);
+  });
+  const left = Math.min(window.innerWidth - 220, e.clientX);
+  const top = Math.min(window.innerHeight - (options.length * 24 + 28), e.clientY);
+  menu.style.left = Math.max(8, left) + 'px';
+  menu.style.top = Math.max(8, top) + 'px';
+  menu.classList.add('open');
+  menu.setAttribute('aria-hidden', 'false');
 }
 
 function handleWorldClick(e) {
@@ -2758,6 +3108,22 @@ function spawnMeleeSlashEffect(weaponItem, playerPos, playerYaw, targetPos, isSp
         if (obj.material && obj.material.transparent) obj.material.opacity = 1 - t;
       });
     });
+    if (isSpec) {
+      const p1b = start.clone().lerp(end, 0.34).add(side.clone().multiplyScalar(-0.72));
+      p1b.y += 0.5;
+      const p2b = start.clone().lerp(end, 0.68).add(side.clone().multiplyScalar(0.58));
+      p2b.y += 0.12;
+      const twin = new THREE.CatmullRomCurve3([start, p1b, p2b, end]);
+      const twinGrp = new THREE.Group();
+      twinGrp.add(new THREE.Mesh(new THREE.TubeGeometry(twin, 28, 0.08, 8, false), glowMaterial(0x6d28d9, 0.9)));
+      twinGrp.add(new THREE.Mesh(new THREE.TubeGeometry(twin, 28, 0.04, 8, false), glowMaterial(0xf87171, 1)));
+      spawnVfx(twinGrp, 0.75, (v) => {
+        const t = v.age / v.life;
+        v.mesh.traverse((obj) => {
+          if (obj.material && obj.material.transparent) obj.material.opacity = 1 - t;
+        });
+      });
+    }
     const crack = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.06, 8, 20), glowMaterial(0x7c3aed, 0.9));
     crack.position.copy(end);
     crack.lookAt(end.x, end.y + 1, end.z);
@@ -2776,6 +3142,10 @@ function spawnMeleeSlashEffect(weaponItem, playerPos, playerYaw, targetPos, isSp
     });
     spawnBurst(impact, 8, 0xf97316, 0.48, 3.4);
     spawnBurst(impact, 4, 0xfde047, 0.4, 2.2);
+    if (isSpec) {
+      spawnSlashArc(0xdc2626, origin, playerYaw, { scale: 1.25, roll: Math.PI / 2, life: 0.7, inner: 0.45, outer: 0.72 });
+      spawnSlashArc(0xfde047, origin, playerYaw, { scale: 1.05, roll: -Math.PI / 2, life: 0.55, inner: 0.35, outer: 0.55 });
+    }
     return;
   }
 
@@ -2789,17 +3159,29 @@ function spawnMeleeSlashEffect(weaponItem, playerPos, playerYaw, targetPos, isSp
     const sacred = id === 'master_sword' || id === 'deity_sword';
     const color = sacred ? 0x7dd3fc : 0xfde047;
     spawnSlashArc(color, origin, playerYaw, { scale: 1.45 * specScale, inner: 0.7, outer: 1.05, life: 0.58, roll: 0.3 });
+    const pillarH = isSpec ? (id === 'bandos_godsword' ? 7.2 : 6.4) : 3.5;
     const column = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.16, 0.42, 3.5, 16, 1, true),
+      new THREE.CylinderGeometry(isSpec ? 0.28 : 0.16, isSpec ? 0.7 : 0.42, pillarH, 16, 1, true),
       glowMaterial(color, 0.8)
     );
-    column.position.set(targetPos.x, targetPos.y + 1.75, targetPos.z);
+    column.position.set(targetPos.x, targetPos.y + pillarH * 0.5, targetPos.z);
+    if (isSpec && sacred) {
+      const goldBeam = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.08, 0.2, pillarH + 1.2, 12, 1, true),
+        glowMaterial(0xfde047, 0.85)
+      );
+      goldBeam.position.set(targetPos.x, targetPos.y + (pillarH + 1.2) * 0.5, targetPos.z);
+      spawnVfx(goldBeam, 0.85, (v) => {
+        const t = v.age / v.life;
+        v.mesh.material.opacity = 0.85 * (1 - t);
+      });
+    }
     spawnVfx(column, 0.7, (v) => {
       const t = v.age / v.life;
       v.mesh.scale.set(1 + t * 0.4, 1, 1 + t * 0.4);
       v.mesh.material.opacity = 0.8 * (1 - t);
     });
-    spawnExpandingRing(targetPos.clone().setY(targetPos.y), color, 0.6, 3.2);
+    spawnExpandingRing(targetPos.clone().setY(targetPos.y), color, isSpec ? 0.85 : 0.6, isSpec ? 6.4 : 3.2);
     return;
   }
 
@@ -3017,6 +3399,111 @@ function spawnArrowProjectile(weapon, fromPos, toPos, onImpact) {
   });
 }
 
+function spawnPiercingBeam(fromPos, toPos, color) {
+  const start = fromPos.clone().add(new THREE.Vector3(0, 1.35, 0));
+  const end = toPos.clone().add(new THREE.Vector3(0, 1.15, 0));
+  const delta = end.clone().sub(start);
+  const len = Math.max(0.2, delta.length());
+  const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, len, 10), glowMaterial(color, 0.95));
+  beam.position.copy(start.clone().add(delta.clone().multiplyScalar(0.5)));
+  beam.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), delta.clone().normalize());
+  spawnVfx(beam, 0.45, (v) => {
+    const t = v.age / v.life;
+    v.mesh.material.opacity = 0.95 * (1 - t);
+    v.mesh.scale.x = 1 + t * 2;
+    v.mesh.scale.z = 1 + t * 2;
+  });
+  spawnBurst(end, 8, color, 0.4, 3.2);
+}
+
+function spawnRareLootBeam(worldPos) {
+  const grp = new THREE.Group();
+  const gold = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.42, 6.5, 16, 1, true), glowMaterial(0xfde047, 0.88));
+  gold.position.y = 3.25;
+  const purple = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.16, 6.8, 12, 1, true), glowMaterial(0xa855f7, 0.75));
+  purple.position.y = 3.4;
+  grp.add(gold, purple);
+  grp.position.set(worldPos.x, worldPos.y, worldPos.z);
+  spawnVfx(grp, 3.5, (v, dt) => {
+    v.mesh.rotation.y += dt * 1.6;
+    const t = v.age / v.life;
+    const fade = t < 0.55 ? 1 : 1 - (t - 0.55) / 0.45;
+    gold.material.opacity = 0.88 * fade;
+    purple.material.opacity = 0.75 * fade;
+  });
+  for (let i = 0; i < 14; i++) {
+    const spark = new THREE.Mesh(new THREE.SphereGeometry(0.055, 6, 6), glowMaterial(i % 2 ? 0xfde047 : 0xc084fc, 1));
+    spark.position.set(worldPos.x, worldPos.y + 0.4, worldPos.z);
+    const ang = (i / 14) * Math.PI * 2;
+    const vel = new THREE.Vector3(Math.cos(ang) * 0.7, 1.5 + (i % 4) * 0.35, Math.sin(ang) * 0.7);
+    spawnVfx(spark, 3.5, (v, dt) => {
+      vel.y -= 0.35 * dt;
+      v.mesh.position.addScaledVector(vel, dt);
+      v.mesh.material.opacity = 1 - v.age / v.life;
+    });
+  }
+}
+
+function spawnDragonfireEffect(monster, onImpact) {
+  const from = monster.pos.clone();
+  const to = player.pos.clone();
+  spawnExpandingRing(to, 0xf97316, 1.05, 2.6, 0.45, 0.75);
+  const grp = new THREE.Group();
+  const cone = new THREE.Mesh(new THREE.ConeGeometry(0.62, 2.6, 14), glowMaterial(0xf97316, 0.92));
+  cone.rotation.x = Math.PI / 2;
+  const core = new THREE.Mesh(new THREE.ConeGeometry(0.28, 2.2, 12), glowMaterial(0xfde047, 1));
+  core.rotation.x = Math.PI / 2;
+  grp.add(cone, core);
+  launchProjectile(grp, from, to, () => {
+    spawnExpandingRing(player.pos, 0xef4444, 0.85, 4.2, 0.5, 0.8);
+    spawnBurst(player.pos.clone().add(new THREE.Vector3(0, 0.6, 0)), 12, 0xf97316, 0.6, 3.4);
+    spawnBurst(player.pos.clone().add(new THREE.Vector3(0, 0.8, 0)), 6, 0xfde047, 0.45, 2.2);
+    if (onImpact) onImpact();
+  }, { speed: 1.7, arc: 0.25, orient: true, y0: 3.2, y1: 1.1 });
+}
+
+function spawnShadowBolt(fromPos, toPos, onImpact) {
+  const grp = new THREE.Group();
+  const shell = new THREE.Mesh(new THREE.SphereGeometry(0.28, 12, 10), glowMaterial(0x1c1917, 0.95));
+  const core = new THREE.Mesh(new THREE.SphereGeometry(0.14, 10, 8), glowMaterial(0x7c3aed, 1));
+  grp.add(shell, core);
+  launchProjectile(grp, fromPos, toPos, () => {
+    spawnExpandingRing(toPos, 0x4c1d95, 0.6, 3.1, 0.32, 0.55);
+    if (onImpact) onImpact();
+  }, {
+    speed: 4.1,
+    arc: 0.35,
+    y0: 1.7,
+    y1: 1.2,
+    onTick: (_p, dt) => {
+      grp.rotation.y += dt * 9;
+      grp.rotation.z += dt * 6;
+    }
+  });
+}
+
+function spawnHellfireOrb(fromPos, toPos, onImpact) {
+  const grp = new THREE.Group();
+  grp.add(new THREE.Mesh(new THREE.SphereGeometry(0.3, 12, 10), glowMaterial(0xef4444, 1)));
+  grp.add(new THREE.Mesh(new THREE.SphereGeometry(0.14, 10, 8), glowMaterial(0xf97316, 1)));
+  launchProjectile(grp, fromPos, toPos, onImpact, {
+    speed: 3.3,
+    arc: 0.7,
+    y0: 1.8,
+    y1: 1.2,
+    onTick: (p, dt) => {
+      p.trailAcc += dt;
+      if (p.trailAcc < 0.04) return;
+      p.trailAcc = 0;
+      const ember = new THREE.Mesh(new THREE.SphereGeometry(0.05, 6, 6), glowMaterial(0xf97316, 0.95));
+      ember.position.copy(p.mesh.position);
+      spawnVfx(ember, 0.32, (v) => {
+        v.mesh.material.opacity = 0.95 * (1 - v.age / v.life);
+      });
+    }
+  });
+}
+
 function spawnLevelUpFireworks(colorHex = 0xfde047) {
   for (let i = 0; i < 16; i++) {
     const p = new THREE.Mesh(
@@ -3071,18 +3558,28 @@ function performPlayerAttack(monster) {
     const styleStrBonus = style === 'aggressive' ? 2 : (style === 'controlled' ? 1 : 0);
     const styleAtkBonus = style === 'accurate' ? 4 : (style === 'controlled' ? 2 : 0);
     maxHit = Math.max(2, Math.floor((1.5 + (s.strength.lvl + styleStrBonus) * 0.32 + bon.str * 0.22) * prayStrMult));
+    maxHit = Math.max(2, Math.floor(maxHit * dharokMultiplier(STATE)));
     accuracyScore = (s.attack.lvl + styleAtkBonus) * 1.35 + bon.atk + 12;
   }
 
+  const spec = weaponSpecial(STATE.equipment.weapon);
   let isSpec = false;
-  if (STATE.specArmed && STATE.specEnergy >= 25) {
-    isSpec = true;
-    STATE.specArmed = false;
-    STATE.specEnergy = Math.max(0, STATE.specEnergy - 25);
-    maxHit = Math.floor(maxHit * 1.55);
-    accuracyScore *= 1.5;
-    player.spinAnim = 1.0;
-    addChatMessage('You unleash a <b>Hylian Spin-Slash Special Attack</b>!', 'lvlup');
+  let specHeal = 0;
+  if (STATE.specArmed) {
+    if (STATE.specEnergy < spec.cost) {
+      STATE.specArmed = false;
+      addChatMessage(`You need ${spec.cost}% Special Attack energy to use <b>${spec.name}</b>.`, 'combat');
+      player.attackAnim = 1.0;
+    } else {
+      isSpec = true;
+      STATE.specArmed = false;
+      STATE.specEnergy = Math.max(0, STATE.specEnergy - spec.cost);
+      maxHit = Math.floor(maxHit * spec.multiplier);
+      accuracyScore *= spec.accuracy;
+      specHeal = spec.healRatio;
+      player.spinAnim = 1.0;
+      addChatMessage(`You unleash <b>${spec.name}</b>!`, 'lvlup');
+    }
   } else {
     player.attackAnim = 1.0;
   }
@@ -3102,6 +3599,11 @@ function performPlayerAttack(monster) {
 
       if (style === 'magic' && STATE.activeSpell === 'blood_barrage') {
         const healAmt = Math.max(1, Math.floor(dmg * 0.25));
+        STATE.hp = Math.min(STATE.maxHp, STATE.hp + healAmt);
+        spawnHitSplatOnPlayer(healAmt, 'heal');
+      }
+      if (specHeal > 0) {
+        const healAmt = Math.max(1, Math.floor(dmg * specHeal));
         STATE.hp = Math.min(STATE.maxHp, STATE.hp + healAmt);
         spawnHitSplatOnPlayer(healAmt, 'heal');
       }
@@ -3134,7 +3636,11 @@ function performPlayerAttack(monster) {
 
   if ((style === 'rapid' || style === 'ranged')) {
     SFX.bow();
-    spawnArrowProjectile(ITEMS[STATE.equipment.weapon], player.pos, monster.pos, applyDamage);
+    const wep = ITEMS[STATE.equipment.weapon];
+    if (isSpec && (wep?.id === 'ancient_bow' || wep?.id === 'armadyl_crossbow')) {
+      spawnPiercingBeam(player.pos, monster.pos, wep.id === 'armadyl_crossbow' ? 0xfde047 : 0x22d3ee);
+    }
+    spawnArrowProjectile(wep, player.pos, monster.pos, applyDamage);
   } else if (style === 'magic') {
     SFX.magic();
     const sp = SPELLS.find(x => x.id === STATE.activeSpell) || SPELLS[0];
@@ -3155,8 +3661,17 @@ function handleMonsterDeath(monster) {
   }
 
   addChatMessage(`Defeated <b>${monster.def.name}</b> (Lv-${monster.def.level}).`, 'combat');
-  if (monster.typeKey === 'goblin' || monster.typeKey === 'goblin_archer') STATE.quests.killedGoblin = true;
+  const kill = registerKill(STATE, monster.typeKey);
+  if (kill.slayerKillXp > 0 && !kill.slayerCompleted) {
+    addChatMessage(`Slayer progress: <b>${kill.remaining}</b> ${kill.taskName} remaining.`, 'skill');
+  }
+  if (kill.slayerCompleted) {
+    addChatMessage(`Slayer bounty: <b style="color:#ffe642">${kill.bountyGp.toLocaleString()} GP</b> and <b>${kill.bountyXp} Attack XP</b>. Streak ${STATE.quests.slayerStreak}.`, 'loot');
+    showBanner('Slayer Bounty', `${kill.taskName} complete`);
+    spawnLevelUpFireworks(0xc084fc);
+  }
 
+  let rareBeam = isBossLoot(monster.typeKey);
   if (monster.def.drops) {
     monster.def.drops.forEach(d => {
       if (Math.random() <= d.chance) {
@@ -3166,6 +3681,7 @@ function handleMonsterDeath(monster) {
           SFX.coin();
           addChatMessage(`Looted <b style="color:#ffe642">${coins} GP</b> from ${monster.def.name}.`, 'loot');
         } else if (d.id && ITEMS[d.id]) {
+          if (isRareLoot(ITEMS[d.id])) rareBeam = true;
           const qty = d.qty || 1;
           const gained = addItem(STATE, d.id, qty);
           if (gained.added > 0) addChatMessage('Looted <b>' + ITEMS[d.id].name + '</b>' + (gained.added > 1 ? ' x' + gained.added : '') + '.', 'loot');
@@ -3174,6 +3690,7 @@ function handleMonsterDeath(monster) {
       }
     });
   }
+  if (rareBeam) spawnRareLootBeam(monster.pos);
   updateAllUI();
 }
 
@@ -3186,13 +3703,27 @@ function performMonsterRetaliation(monster) {
   const monAtkScore = monster.def.atk * 1.25 + 8;
 
   const hitChance = Math.min(0.82, Math.max(0.12, monAtkScore / (monAtkScore + playerDefScore)));
+  monster.breathCount = (monster.breathCount || 0) + 1;
+  const dragonfire = monster.typeKey === 'elvarg_dragon' && monster.breathCount % 3 === 0;
+
   let dmg = 0;
+  let absorbedBreath = false;
   if (Math.random() < hitChance) {
-    dmg = Math.max(1, Math.floor(Math.random() * (monster.def.maxHit + 1)));
-    dmg = mitigateDamage(dmg, monster.def.style, STATE.activePrayers);
+    if (dragonfire) {
+      const raw = Math.max(1, Math.floor(Math.random() * 43));
+      const resolved = resolveDragonfire(raw, STATE);
+      dmg = resolved.damage;
+      absorbedBreath = resolved.absorbed && raw > 0;
+    } else {
+      dmg = Math.max(1, Math.floor(Math.random() * (monster.def.maxHit + 1)));
+      dmg = mitigateDamage(dmg, monster.def.style, STATE.activePrayers);
+    }
   }
 
   const applyHit = () => {
+    if (absorbedBreath) {
+      addChatMessage("Your shield / prayer absorbs most of Elvarg's dragonfire!", 'skill');
+    }
     if (dmg > 0) {
       STATE.hp = Math.max(0, STATE.hp - dmg);
       spawnHitSplatOnPlayer(dmg, 'hit');
@@ -3205,7 +3736,22 @@ function performMonsterRetaliation(monster) {
     updateAllUI();
   };
 
-  if (monster.def.style === 'magic') {
+  if (dragonfire) {
+    addChatMessage('Elvarg rears back and breathes <b>Dragonfire</b>!', 'combat');
+    spawnDragonfireEffect(monster, applyHit);
+    return;
+  }
+  if (monster.typeKey === 'dark_wizard') {
+    spawnShadowBolt(monster.pos, player.pos, applyHit);
+  } else if (monster.typeKey === 'goblin_archer' || monster.typeKey === 'dark_ranger') {
+    spawnArrowProjectile(null, monster.pos, player.pos, applyHit);
+  } else if (monster.typeKey === 'lesser_demon') {
+    spawnHellfireOrb(monster.pos, player.pos, applyHit);
+  } else if (monster.typeKey === 'moss_guardian') {
+    applyHit();
+    spawnExpandingRing(player.pos, 0x22c55e, 0.65, 3.6, 0.4, 0.62);
+    spawnBurst(player.pos.clone().add(new THREE.Vector3(0, 0.3, 0)), 8, 0x4ade80, 0.45, 2.4);
+  } else if (monster.def.style === 'magic') {
     spawnProjectile(monster.pos, player.pos, 0xa855f7, applyHit);
   } else if (monster.def.style === 'ranged') {
     spawnProjectile(monster.pos, player.pos, 0xfde047, applyHit);
@@ -3249,6 +3795,7 @@ function performResourceGather(node) {
   const successChance = Math.min(0.92, 0.50 + (skillLvl - def.req) * 0.02);
   if (Math.random() <= successChance) {
     addItemToInventory(def.item, 1);
+    noteGather(STATE, def.item);
     grantXp(def.skill, def.xp);
     addChatMessage(`Gathered <b>${ITEMS[def.item].name}</b>.`, 'skill');
 
@@ -3414,11 +3961,8 @@ function updateFloatingWorldLabels() {
     m.labelEl.style.left = sp.x + 'px';
     m.labelEl.style.top = sp.y + 'px';
 
-    const diff = m.def.level - playerCombatLvl;
-    let col = '#ffe642';
-    if (diff < -2) col = '#4ade80';
-    else if (diff > 3) col = '#f87171';
-    else if (diff > 0) col = '#fb923c';
+    const tone = monsterThreatColor(m.def.level, playerCombatLvl);
+    const col = tone === 'green' ? '#4ade80' : tone === 'red' ? '#f87171' : '#ffe642';
 
     const txtDiv = m.labelEl.querySelector('.label-text');
     if (txtDiv) txtDiv.style.color = col;
@@ -3580,6 +4124,7 @@ function gameLoop(now) {
           else if (act === 'bank') openBankModal();
           else if (act === 'forge') openSmithingModal();
           else if (act === 'worldmap') openWorldMapModal();
+          else if (act === 'slayer') openQuestsModal();
           else if (act === 'altar') {
             STATE.prayerPts = STATE.maxPrayerPts;
             STATE.hp = STATE.maxHp;
@@ -3719,6 +4264,7 @@ function gameLoop(now) {
       if (m.respawnTimer <= 0) {
         m.dead = false;
         m.hp = m.maxHp;
+        m.breathCount = 0;
         m.inCombatWithPlayer = false;
         m.pos.copy(m.spawnPos);
         m.rig.group.visible = true;
@@ -3989,6 +4535,9 @@ function wireBridge() {
   bridge.showItemTooltip = (ev, it) => showItemTooltip(ev, it);
   bridge.moveItemTooltip = (ev) => moveItemTooltip(ev);
   bridge.hideItemTooltip = () => hideItemTooltip();
+  bridge.claimQuest = (questId) => claimQuestReward(questId);
+  bridge.locateRegion = (regionId) => locateQuestRegion(regionId);
+  bridge.requestSlayer = () => requestSlayerTask();
   window.setCombatStyle = setCombatStyle;
   window.closeModals = closeModals;
   window.switchTab = switchTab;

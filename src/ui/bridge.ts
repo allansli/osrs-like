@@ -16,5 +16,8 @@ export const bridge = {
   noteQuest: () => {},
   showItemTooltip: (_ev: MouseEvent, _it: ItemDef) => {},
   moveItemTooltip: (_ev: MouseEvent) => {},
-  hideItemTooltip: () => {}
+  hideItemTooltip: () => {},
+  claimQuest: (_questId: string) => {},
+  locateRegion: (_regionId: string) => {},
+  requestSlayer: () => {}
 };

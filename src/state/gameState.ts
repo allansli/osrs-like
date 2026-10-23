@@ -1,4 +1,5 @@
 import { getLevelForXp, SKILL_KEYS } from '../data/skills';
+import { copyQuests, defaultQuests } from './quests';
 import type { GameState, QtyMode } from './types';
 
 export const BACKPACK_SIZE = 28;
@@ -74,7 +75,7 @@ export function createDefaultState(): GameState {
     ],
     bank: [],
     shrines: { ...STARTER_SHRINES },
-    quests: { burnedLog: false, openedBank: false, killedGoblin: false }
+    quests: defaultQuests()
   };
 }
 
@@ -89,7 +90,7 @@ export function cloneState(state: GameState = createDefaultState()): GameState {
     inventory: state.inventory.map((s) => ({ ...s })),
     bank: state.bank.map((s) => ({ ...s })),
     shrines: { ...state.shrines },
-    quests: { ...state.quests }
+    quests: copyQuests(state.quests)
   };
 }
 
@@ -124,5 +125,5 @@ export function applyState(target: GameState, next: GameState): void {
   target.inventory = next.inventory.map((s) => ({ ...s }));
   target.bank = next.bank.map((s) => ({ ...s }));
   target.shrines = { ...next.shrines };
-  target.quests = { ...next.quests };
+  target.quests = copyQuests(next.quests);
 }

@@ -10,10 +10,30 @@ export interface SkillProgress {
   lvl: number;
 }
 
+export interface SlayerTask {
+  monster: string;
+  name: string;
+  remaining: number;
+  total: number;
+}
+
 export interface QuestFlags {
   burnedLog: boolean;
   openedBank: boolean;
   killedGoblin: boolean;
+  killedArcane: boolean;
+  minedMetal: boolean;
+  killedScorpion: boolean;
+  smeltedBar: boolean;
+  choppedAncient: boolean;
+  killedMoss: boolean;
+  killedElvarg: boolean;
+  claimed: string[];
+  slayer: SlayerTask | null;
+  slayerTasksCompleted: number;
+  slayerStreak: number;
+  dragonfireWard: boolean;
+  title: string;
 }
 
 export interface GameState {

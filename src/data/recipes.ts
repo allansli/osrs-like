@@ -1,6 +1,7 @@
 import { FORGE_RECIPES as BASE_RECIPES } from './catalog';
 import { ITEMS } from './items';
 import { getLevelForXp } from './skills';
+import { noteSmelt } from '../state/quests';
 import { addItem, canAddItem, countItem, removeItem } from '../state/inventory';
 import type { GameState } from '../state/types';
 
@@ -143,6 +144,7 @@ export function tryCraft(state: GameState, recipeId: string): CraftResult {
   for (const [id, qty] of Object.entries(recipe.input)) removeItem(state, id, qty);
   if (recipe.output) addItem(state, recipe.output, outQty);
   if (recipe.kind === 'burn') state.quests.burnedLog = true;
+  if (recipe.kind === 'smelt') noteSmelt(state);
   return { ok: true, skill: recipe.skill, xp: recipe.xp, output: recipe.output, outputQty: outQty };
 }
 

@@ -4,6 +4,7 @@ import { FORGE_RECIPES, recipeById } from '../data/recipes';
 import { WORLD_REGIONS, type RegionDef } from '../data/world';
 import { buyItem, countItem, deposit, sellItem, withdraw } from '../state/inventory';
 import { STATE } from '../state/gameState';
+import { questView } from '../state/adventure';
 import { isShrineDiscovered } from '../state/shrines';
 import { canCastTeleport } from '../state/combat';
 import { SPELLS } from '../data/magic';
@@ -275,14 +276,19 @@ export function renderShopModal(): void {
   });
 }
 
-export function renderWorldMap(): void {
+let mapHighlight: string | null = null;
+
+export function renderWorldMap(highlightId?: string | null): void {
+  if (highlightId !== undefined) mapHighlight = highlightId;
   const grid = document.getElementById('worldmap-regions-grid');
   if (!grid) return;
   grid.innerHTML = '';
   (WORLD_REGIONS as RegionDef[]).forEach((reg) => {
     const known = isShrineDiscovered(STATE.shrines, reg.id);
     const card = document.createElement('div');
-    card.className = 'shop-card' + (known ? '' : ' locked-card');
+    const highlighted = mapHighlight === reg.id;
+    card.className = 'shop-card' + (known ? '' : ' locked-card') + (highlighted ? ' region-target' : '');
+    if (highlighted) card.id = 'region-target-card';
     const spell = SPELLS.find((s) => s.type === 'teleport' && s.regionId === reg.id);
     card.innerHTML = `
       <div>
@@ -319,18 +325,47 @@ export function renderWorldMap(): void {
 export function renderQuests(): void {
   const host = document.getElementById('quest-list');
   if (!host) return;
-  const rows = [
-    { name: 'Welcome to Lumbridge', detail: 'The Lumbridge Shrine starts attuned.', done: true },
-    { name: 'Kindling', detail: 'Burn any log for Cooking XP and ashes.', done: STATE.quests.burnedLog },
-    { name: 'Open the Vault', detail: 'Use the Lumbridge Bank booth in the courtyard.', done: STATE.quests.openedBank },
-    { name: 'Goblin Season', detail: 'Defeat a Goblin Raider or Goblin Archer.', done: STATE.quests.killedGoblin }
-  ];
-  host.innerHTML = rows.map((q) => `
-    <div class="quest-row ${q.done ? 'done' : ''}">
-      <div class="quest-name">${q.done ? '✓' : '○'} ${q.name}</div>
-      <div class="shop-card-desc">${q.detail}</div>
+  const task = STATE.quests.slayer;
+  const taskLine = task && task.remaining > 0
+    ? `<b>${task.name}</b> — ${task.remaining} / ${task.total} remaining`
+    : 'No active task. Ask Vannaka for one.';
+  const slayer = `
+    <div class="quest-card slayer-card">
+      <div class="quest-name">Slayer Master Vannaka</div>
+      <div class="shop-card-desc">The purple-caped master waits in the Lumbridge courtyard. Matching kills count down your task and pay a bounty.</div>
+      <div class="quest-progress">${taskLine}</div>
+      <div class="shop-card-desc">Tasks completed: ${STATE.quests.slayerTasksCompleted} · Streak: ${STATE.quests.slayerStreak}</div>
+      <div class="quest-actions">
+        <button class="quest-claim" type="button" data-slayer="assign">${task && task.remaining > 0 ? 'View Task' : 'Get a Slayer Task'}</button>
+      </div>
     </div>
-  `).join('');
+  `;
+  const cards = questView(STATE).map((quest) => {
+    const steps = quest.steps.map((step) => `<li class="${step.met ? 'met' : ''}">${step.met ? '✓' : '○'} ${step.label}</li>`).join('');
+    const claimLabel = quest.claimed ? 'Reward claimed' : 'Claim Reward';
+    const disabled = quest.claimed || !quest.complete ? ' disabled' : '';
+    return `
+      <article class="quest-card ${quest.complete ? 'done' : ''}">
+        <div class="quest-name">${quest.complete ? '✓' : '○'} ${quest.name}</div>
+        <div class="shop-card-desc">${quest.lore}</div>
+        <div class="quest-progress">${quest.done} / ${quest.total}</div>
+        <ul class="quest-steps">${steps}</ul>
+        <div class="quest-reward">Reward: ${quest.rewardText}</div>
+        <div class="quest-actions">
+          <button class="quest-claim" type="button" data-claim="${quest.id}"${disabled}>${claimLabel}</button>
+          <button class="quest-locate" type="button" data-locate="${quest.region}">Locate on Map</button>
+        </div>
+      </article>
+    `;
+  }).join('');
+  host.innerHTML = slayer + cards;
+  host.querySelector<HTMLButtonElement>('[data-slayer]')?.addEventListener('click', () => bridge.requestSlayer());
+  host.querySelectorAll<HTMLButtonElement>('[data-claim]').forEach((btn) => {
+    btn.addEventListener('click', () => bridge.claimQuest(btn.dataset.claim || ''));
+  });
+  host.querySelectorAll<HTMLButtonElement>('[data-locate]').forEach((btn) => {
+    btn.addEventListener('click', () => bridge.locateRegion(btn.dataset.locate || ''));
+  });
 }
 
 export function renderForge(): void {

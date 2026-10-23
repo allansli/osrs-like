@@ -4,6 +4,7 @@ import { getLevelForXp, SKILL_KEYS } from '../data/skills';
 import { createDefaultState } from './gameState';
 import { compactSlots } from './inventory';
 import { normalizeStyle } from './combat';
+import { normalizeQuests } from './quests';
 import { initialShrines } from './shrines';
 import type { GameState, SavedCam, SavedPose } from './types';
 
@@ -66,13 +67,7 @@ export function migrateLegacySave(raw: unknown, source: string | null = null): M
   }
   state.shrines.lumbridge = true;
 
-  if (data.quests && typeof data.quests === 'object') {
-    state.quests = {
-      burnedLog: !!data.quests.burnedLog,
-      openedBank: !!data.quests.openedBank,
-      killedGoblin: !!data.quests.killedGoblin
-    };
-  }
+  state.quests = normalizeQuests(data.quests);
 
   state.maxHp = state.skills.hitpoints.lvl;
   state.hp = typeof data.hp === 'number' ? Math.max(1, Math.min(state.maxHp, data.hp)) : state.maxHp;
