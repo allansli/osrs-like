@@ -1,4 +1,5 @@
-export type QtyMode = 1 | 5 | 10 | 'all';
+/** Shop and bank quantities. Pills use 1, 5, 10, 50, 100, 500, and all. Batch buttons also pass 1000. */
+export type QtyMode = number | 'all';
 
 export interface ItemStack {
   id: string;

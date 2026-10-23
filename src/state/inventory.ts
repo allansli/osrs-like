@@ -134,6 +134,40 @@ export function withdraw(state: GameState, itemId: string, mode: QtyMode): Trans
   return { ok: true, moved: n };
 }
 
+function shopRunes() {
+  return Object.values(ITEMS).filter((it) => it.type === 'rune' && (it.price || 0) > 0);
+}
+
+export function runePackCost(perRuneQty = 500): number {
+  const qty = Math.floor(Number(perRuneQty));
+  if (!Number.isFinite(qty) || qty <= 0) return 0;
+  return shopRunes().reduce((sum, it) => sum + (it.price || 0) * qty, 0);
+}
+
+/** Buy the same quantity of every rune in one click. Fails cleanly if GP or backpack space is short. */
+export function buyRunePack(state: GameState, perRuneQty = 500): TransferResult {
+  const qty = Math.floor(Number(perRuneQty));
+  if (!Number.isFinite(qty) || qty <= 0) return { ok: false, moved: 0, reason: 'Nothing to buy.' };
+  const runes = shopRunes();
+  if (runes.length === 0) return { ok: false, moved: 0, reason: 'The store has no runes.' };
+  const cost = runes.reduce((sum, it) => sum + (it.price || 0) * qty, 0);
+  if (state.gp < cost) {
+    return { ok: false, moved: 0, reason: `You need ${cost.toLocaleString('en-US')} GP to buy ${qty.toLocaleString('en-US')} of every rune.` };
+  }
+  const newStacks = runes.filter((it) => !state.inventory.some((slot) => slot.id === it.id)).length;
+  const free = BACKPACK_SIZE - state.inventory.length;
+  if (newStacks > free) {
+    return {
+      ok: false,
+      moved: 0,
+      reason: `Your backpack needs ${newStacks} open slot${newStacks === 1 ? '' : 's'} for new runes (${Math.max(0, free)} open).`
+    };
+  }
+  state.gp -= cost;
+  for (const it of runes) addItem(state, it.id, qty);
+  return { ok: true, moved: qty * runes.length, gp: cost };
+}
+
 export function buyItem(state: GameState, itemId: string, mode: QtyMode): TransferResult {
   const item = ITEMS[itemId];
   if (!item) return { ok: false, moved: 0, reason: 'Unknown item.' };

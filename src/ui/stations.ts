@@ -1,9 +1,9 @@
-import { ITEMS, TIER_COLORS, isStackableInBackpack, unitSellPrice, type ItemDef } from '../data/items';
+import { ITEMS, TIER_COLORS, combatClassLabel, isStackableInBackpack, itemCombatClass, unitSellPrice, type ItemDef } from '../data/items';
 import { SKILLS_META } from '../data/skills';
 import { FORGE_RECIPES, recipeById } from '../data/recipes';
 import { WORLD_REGIONS, type RegionDef } from '../data/world';
-import { buyItem, countItem, deposit, sellItem, withdraw } from '../state/inventory';
-import { STATE } from '../state/gameState';
+import { buyItem, buyRunePack, canAddItem, countItem, deposit, runePackCost, sellItem, withdraw } from '../state/inventory';
+import { BACKPACK_SIZE, STATE } from '../state/gameState';
 import { questView } from '../state/adventure';
 import { isShrineDiscovered } from '../state/shrines';
 import { canCastTeleport } from '../state/combat';
@@ -12,7 +12,8 @@ import { getItemSvg } from './icons';
 import { bridge } from './bridge';
 import type { ItemStack, QtyMode } from '../state/types';
 
-const QTYS: QtyMode[] = [1, 5, 10, 'all'];
+const QTYS: QtyMode[] = [1, 5, 10, 50, 100, 500, 'all'];
+const STACK_BATCHES = [10, 50, 100, 500, 1000] as const;
 
 function reqBadge(it: ItemDef): { canEquip: boolean; html: string } {
   if (!it.req || Object.keys(it.req).length === 0) {
@@ -36,6 +37,46 @@ function qtyPills(): string {
     const label = q === 'all' ? 'All' : String(q);
     return `<button class="qty-pill${active}" data-qty="${q}">${label}</button>`;
   }).join('')}</div>`;
+}
+
+function formatGp(amount: number): string {
+  return `${amount.toLocaleString('en-US')} GP`;
+}
+
+function batchLabel(qty: number): string {
+  return qty === 1000 ? '+1k' : `+${qty}`;
+}
+
+function affordableBuyQty(it: ItemDef): number {
+  const price = it.price || 0;
+  if (price <= 0) return 0;
+  let qty = Math.floor(STATE.gp / price);
+  if (!isStackableInBackpack(it)) {
+    qty = Math.min(qty, Math.max(0, BACKPACK_SIZE - STATE.inventory.length));
+  } else if (qty > 0 && !canAddItem(STATE, it.id, 1)) {
+    qty = 0;
+  }
+  return qty;
+}
+
+function shopBuyLabel(it: ItemDef): string {
+  const price = it.price || 0;
+  const mode = STATE.transferQty;
+  if (mode === 'all') {
+    const qty = affordableBuyQty(it);
+    return `Buy All ×${qty.toLocaleString('en-US')} (${formatGp(price * qty)})`;
+  }
+  return `Buy ×${mode.toLocaleString('en-US')} (${formatGp(price * mode)})`;
+}
+
+function runePackButtons(): string {
+  const filter = STATE.shopFilter || 'all';
+  const prominent = filter === 'all' || filter === 'supplies' || filter === 'magic' ? ' prominent' : '';
+  const button = (qty: number) => {
+    const label = qty === 100 ? 'Buy Rune Pack ×100' : 'Buy Rune Pack ×500';
+    return `<button type="button" class="rune-pack-btn" data-rune-pack="${qty}">${label} (${formatGp(runePackCost(qty))})</button>`;
+  };
+  return `<div class="rune-pack-actions${prominent}">${button(100)}${button(500)}</div>`;
 }
 
 function bindQty(root: ParentNode): void {
@@ -179,9 +220,10 @@ export function renderShopModal(): void {
   bridge.hideItemTooltip();
   const filter = STATE.shopFilter || 'all';
   body.innerHTML = `
-    <div class="station-toolbar">
+    <div class="station-toolbar shop-toolbar">
       ${qtyPills()}
-      <span class="gp-inline">${STATE.gp.toLocaleString()} GP · sell-back ${Math.round(0.65 * 100)}%</span>
+      <span class="gp-inline">${STATE.gp.toLocaleString('en-US')} GP · sell-back ${Math.round(0.65 * 100)}%</span>
+      ${runePackButtons()}
       <div class="filter-pills" id="shop-filter-pills"></div>
     </div>
     <div class="station-panes">
@@ -198,44 +240,70 @@ export function renderShopModal(): void {
 
   const filters = [
     ['all', 'All'],
+    ['melee', 'Melee'],
+    ['ranged', 'Ranged'],
+    ['magic', 'Magic'],
+    ['all_around', 'All-Around'],
     ['usable', 'Can Equip Now'],
     ['pairs', 'Top & Bottom Sets'],
-    ['weapons', 'Weapons'],
-    ['armor', 'Armor'],
     ['food', 'Food & Potions'],
-    ['supplies', 'Runes, Ammo & Supplies']
+    ['supplies', 'Runes & Supplies']
   ];
   const pills = body.querySelector('#shop-filter-pills')!;
   filters.forEach(([id, label]) => {
     const b = document.createElement('button');
-    b.className = 'filter-pill' + (filter === id ? ' active' : '');
+    b.className = 'filter-pill filter-' + id + (filter === id ? ' active' : '');
+    b.dataset.shopFilter = id;
     b.textContent = label;
     b.onclick = () => { STATE.shopFilter = id; renderShopModal(); };
     pills.appendChild(b);
   });
 
   const grid = body.querySelector('#shop-items-grid')!;
+  const entries: { it: ItemDef; req: { canEquip: boolean; html: string }; combat: ReturnType<typeof itemCombatClass> }[] = [];
   Object.values(ITEMS).forEach((it) => {
     if (filter !== 'supplies' && (it.type === 'resource' || it.type === 'bones' || it.type === 'bar')) return;
     if (filter === 'supplies' && !['rune', 'ammo', 'resource', 'bones', 'bar', 'food', 'potion'].includes(it.type)) return;
     const req = reqBadge(it);
+    const combat = itemCombatClass(it);
     if (filter === 'usable' && !req.canEquip) return;
     if (filter === 'pairs' && !['body', 'legs'].includes(it.slot || '')) return;
-    if (filter === 'weapons' && it.slot !== 'weapon') return;
-    if (filter === 'armor' && !['head', 'body', 'shield', 'legs', 'feet', 'hands'].includes(it.slot || '')) return;
     if (filter === 'food' && !['food', 'potion'].includes(it.type)) return;
+    if (filter === 'melee' || filter === 'ranged' || filter === 'magic' || filter === 'all_around') {
+      if (combat !== filter) return;
+    }
+    entries.push({ it, req, combat });
+  });
+  if (filter === 'supplies') {
+    const rank = (type: string) => (type === 'rune' ? 0 : type === 'ammo' ? 1 : 2);
+    entries.sort((a, b) => rank(a.it.type) - rank(b.it.type));
+  }
+  entries.forEach(({ it, req, combat }) => {
+    const stackable = isStackableInBackpack(it);
+    const batches = stackable
+      ? `<div class="shop-batch-row">${STACK_BATCHES.map((qty) => {
+          const cost = (it.price || 0) * qty;
+          return `<button type="button" class="shop-batch-btn" data-buy-batch="${qty}" data-batch-item="${it.id}" title="Buy ${qty.toLocaleString('en-US')} for ${formatGp(cost)}">${batchLabel(qty)}</button>`;
+        }).join('')}</div>`
+      : '';
     const card = document.createElement('div');
-    card.className = 'shop-card';
+    card.className = 'shop-card combat-' + combat + (stackable ? ' stackable-card' : '');
     card.innerHTML = `
       <div class="shop-card-top">
         <div class="shop-card-icon">${getItemSvg(it)}</div>
         <div>
-          <div class="shop-card-name">${it.name}</div>
-          <div class="shop-card-desc">${it.slot ? it.slot : it.type} · ${it.price.toLocaleString()} GP</div>
+          <div class="shop-card-name-row">
+            <div class="shop-card-name">${it.name}</div>
+            <span class="combat-class-badge ${combat}">${combatClassLabel(combat)}</span>
+          </div>
+          <div class="shop-card-desc">${it.slot ? it.slot : it.type} · ${it.price.toLocaleString('en-US')} GP</div>
           ${req.html}
         </div>
       </div>
-      <button class="shop-buy-btn" data-buy="${it.id}">Buy</button>
+      <div class="shop-card-actions">
+        <button type="button" class="shop-buy-btn" data-buy="${it.id}">${shopBuyLabel(it)}</button>
+        ${batches}
+      </div>
     `;
     bindItemTooltip(card, it);
     grid.appendChild(card);
@@ -251,13 +319,38 @@ export function renderShopModal(): void {
   });
 
   bindQty(body);
+  const reportBuy = (result: { ok: boolean; moved: number; reason?: string; gp?: number }, name: string) => {
+    if (!result.ok) bridge.chat(result.reason || 'Cannot buy that.', 'combat');
+    else {
+      bridge.coin();
+      bridge.chat(`Bought ${result.moved.toLocaleString('en-US')} × <b>${name}</b> for ${result.gp?.toLocaleString('en-US')} GP.`, 'loot');
+    }
+    bridge.refresh();
+  };
   body.querySelectorAll<HTMLButtonElement>('[data-buy]').forEach((btn) => {
-    btn.onclick = () => {
-      const result = buyItem(STATE, btn.dataset.buy || '', STATE.transferQty);
-      if (!result.ok) bridge.chat(result.reason || 'Cannot buy that.', 'combat');
+    btn.onclick = (ev) => {
+      ev.stopPropagation();
+      const id = btn.dataset.buy || '';
+      reportBuy(buyItem(STATE, id, STATE.transferQty), ITEMS[id]?.name || id);
+    };
+  });
+  body.querySelectorAll<HTMLButtonElement>('[data-buy-batch]').forEach((btn) => {
+    btn.onclick = (ev) => {
+      ev.stopPropagation();
+      const id = btn.dataset.batchItem || '';
+      const qty = Number(btn.dataset.buyBatch || 0);
+      reportBuy(buyItem(STATE, id, qty), ITEMS[id]?.name || id);
+    };
+  });
+  body.querySelectorAll<HTMLButtonElement>('[data-rune-pack]').forEach((btn) => {
+    btn.onclick = (ev) => {
+      ev.stopPropagation();
+      const qty = Number(btn.dataset.runePack || 500);
+      const result = buyRunePack(STATE, qty);
+      if (!result.ok) bridge.chat(result.reason || 'Cannot buy that rune pack.', 'combat');
       else {
         bridge.coin();
-        bridge.chat(`Bought ${result.moved} × <b>${ITEMS[btn.dataset.buy || '']?.name}</b> for ${result.gp?.toLocaleString()} GP.`, 'loot');
+        bridge.chat(`Bought a rune pack: <b>${qty.toLocaleString('en-US')}</b> of every rune (${result.moved.toLocaleString('en-US')} runes) for ${result.gp?.toLocaleString('en-US')} GP.`, 'loot');
       }
       bridge.refresh();
     };
