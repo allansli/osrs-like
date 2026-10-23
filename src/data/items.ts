@@ -69,3 +69,75 @@ export function unitSellPrice(item: ItemDef | null | undefined): number {
   if (!item) return 1;
   return Math.max(1, Math.floor((item.price || 10) * SELL_RATIO));
 }
+
+export type CombatClass = 'melee' | 'ranged' | 'magic' | 'all_around' | 'supply';
+
+const ALL_AROUND_IDS = new Set([
+  'champion_tunic', 'champion_leggings', 'champion_circlet',
+  'zora_armor', 'zora_greaves', 'barrows_gloves', 'infernal_cape', 'elysian_shield',
+  'amulet_accuracy', 'amulet_power', 'amulet_glory', 'amulet_fury',
+  'hylian_tunic', 'hylian_trousers', 'hylian_hood', 'hylian_cape', 'obsidian_cape',
+  'leather_boots'
+]);
+
+const RANGED_IDS = new Set([
+  'robin_hat', 'ranger_boots', 'pegasian_boots', 'leather_gloves',
+  'ava_accumulator', 'necklace_anguish', 'archers_ring'
+]);
+
+const MAGIC_IDS = new Set(['eternal_boots', 'god_cape', 'occult_necklace', 'seers_ring']);
+
+const MELEE_IDS = new Set([
+  'neitiznot_helm', 'hylian_shield', 'primordial_boots', 'ferocious_gloves',
+  'fire_cape', 'amulet_torture', 'warrior_ring', 'berserker_ring', 'ultor_ring',
+  'wooden_shield'
+]);
+
+const RANGED_PREFIXES = ['green_dhide_', 'blue_dhide_', 'red_dhide_', 'black_dhide_', 'sheikah_', 'armadyl_', 'masori_'];
+const MAGIC_PREFIXES = ['wizard_', 'mystic_', 'infinity_', 'ahrim_', 'ancestral_'];
+const MELEE_PREFIXES = [
+  'bronze_', 'iron_', 'steel_', 'black_', 'white_', 'mith_', 'addy_', 'rune_',
+  'gilded_', 'granite_', 'dragon_', 'dharok_', 'torag_', 'bandos_', 'justiciar_',
+  'inquisitor_', 'torva_', 'deity_'
+];
+
+function hasPrefix(id: string, prefixes: string[]): boolean {
+  return prefixes.some((prefix) => id.startsWith(prefix));
+}
+
+function spansStyles(item: ItemDef): boolean {
+  const melee = (item.atk || 0) + (item.str || 0);
+  const ranged = item.rng || 0;
+  const magic = item.mag || 0;
+  return (melee > 0 && (ranged > 0 || magic > 0)) || (ranged > 0 && magic > 0);
+}
+
+/** Shop combat class. Weapons follow their style; named hybrid pieces stay all-around. */
+export function itemCombatClass(item: ItemDef | null | undefined): CombatClass {
+  if (!item) return 'supply';
+  if (item.type === 'rune') return 'magic';
+  if (item.type === 'ammo') return 'ranged';
+  if (item.type === 'food' || item.type === 'potion') return 'all_around';
+  if (item.type !== 'equip') return 'supply';
+
+  if (item.style === 'ranged') return 'ranged';
+  if (item.style === 'magic') return 'magic';
+  if (item.style === 'melee') return 'melee';
+
+  if (ALL_AROUND_IDS.has(item.id)) return 'all_around';
+  if (RANGED_IDS.has(item.id) || hasPrefix(item.id, RANGED_PREFIXES)) return 'ranged';
+  if (MAGIC_IDS.has(item.id) || hasPrefix(item.id, MAGIC_PREFIXES)) return 'magic';
+  if (MELEE_IDS.has(item.id) || hasPrefix(item.id, MELEE_PREFIXES)) return 'melee';
+  if (spansStyles(item)) return 'all_around';
+  if ((item.rng || 0) > 0) return 'ranged';
+  if ((item.mag || 0) > 0) return 'magic';
+  return 'melee';
+}
+
+export function combatClassLabel(kind: CombatClass): string {
+  if (kind === 'all_around') return 'All-Around';
+  if (kind === 'melee') return 'Melee';
+  if (kind === 'ranged') return 'Ranged';
+  if (kind === 'magic') return 'Magic';
+  return 'Supply';
+}

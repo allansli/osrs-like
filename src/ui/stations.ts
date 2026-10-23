@@ -1,4 +1,4 @@
-import { ITEMS, TIER_COLORS, isStackableInBackpack, unitSellPrice, type ItemDef } from '../data/items';
+import { ITEMS, TIER_COLORS, combatClassLabel, isStackableInBackpack, itemCombatClass, unitSellPrice, type ItemDef } from '../data/items';
 import { SKILLS_META } from '../data/skills';
 import { FORGE_RECIPES, recipeById } from '../data/recipes';
 import { WORLD_REGIONS, type RegionDef } from '../data/world';
@@ -71,7 +71,7 @@ function shopBuyLabel(it: ItemDef): string {
 
 function runePackButtons(): string {
   const filter = STATE.shopFilter || 'all';
-  const prominent = filter === 'all' || filter === 'supplies' ? ' prominent' : '';
+  const prominent = filter === 'all' || filter === 'supplies' || filter === 'magic' ? ' prominent' : '';
   const button = (qty: number) => {
     const label = qty === 100 ? 'Buy Rune Pack ×100' : 'Buy Rune Pack ×500';
     return `<button type="button" class="rune-pack-btn" data-rune-pack="${qty}">${label} (${formatGp(runePackCost(qty))})</button>`;
@@ -240,40 +240,45 @@ export function renderShopModal(): void {
 
   const filters = [
     ['all', 'All'],
+    ['melee', 'Melee'],
+    ['ranged', 'Ranged'],
+    ['magic', 'Magic'],
+    ['all_around', 'All-Around'],
     ['usable', 'Can Equip Now'],
     ['pairs', 'Top & Bottom Sets'],
-    ['weapons', 'Weapons'],
-    ['armor', 'Armor'],
     ['food', 'Food & Potions'],
-    ['supplies', 'Runes, Ammo & Supplies']
+    ['supplies', 'Runes & Supplies']
   ];
   const pills = body.querySelector('#shop-filter-pills')!;
   filters.forEach(([id, label]) => {
     const b = document.createElement('button');
-    b.className = 'filter-pill' + (filter === id ? ' active' : '');
+    b.className = 'filter-pill filter-' + id + (filter === id ? ' active' : '');
+    b.dataset.shopFilter = id;
     b.textContent = label;
     b.onclick = () => { STATE.shopFilter = id; renderShopModal(); };
     pills.appendChild(b);
   });
 
   const grid = body.querySelector('#shop-items-grid')!;
-  const entries: { it: ItemDef; req: { canEquip: boolean; html: string } }[] = [];
+  const entries: { it: ItemDef; req: { canEquip: boolean; html: string }; combat: ReturnType<typeof itemCombatClass> }[] = [];
   Object.values(ITEMS).forEach((it) => {
     if (filter !== 'supplies' && (it.type === 'resource' || it.type === 'bones' || it.type === 'bar')) return;
     if (filter === 'supplies' && !['rune', 'ammo', 'resource', 'bones', 'bar', 'food', 'potion'].includes(it.type)) return;
     const req = reqBadge(it);
+    const combat = itemCombatClass(it);
     if (filter === 'usable' && !req.canEquip) return;
     if (filter === 'pairs' && !['body', 'legs'].includes(it.slot || '')) return;
-    if (filter === 'weapons' && it.slot !== 'weapon') return;
-    if (filter === 'armor' && !['head', 'body', 'shield', 'legs', 'feet', 'hands'].includes(it.slot || '')) return;
     if (filter === 'food' && !['food', 'potion'].includes(it.type)) return;
-    entries.push({ it, req });
+    if (filter === 'melee' || filter === 'ranged' || filter === 'magic' || filter === 'all_around') {
+      if (combat !== filter) return;
+    }
+    entries.push({ it, req, combat });
   });
   if (filter === 'supplies') {
     const rank = (type: string) => (type === 'rune' ? 0 : type === 'ammo' ? 1 : 2);
     entries.sort((a, b) => rank(a.it.type) - rank(b.it.type));
   }
-  entries.forEach(({ it, req }) => {
+  entries.forEach(({ it, req, combat }) => {
     const stackable = isStackableInBackpack(it);
     const batches = stackable
       ? `<div class="shop-batch-row">${STACK_BATCHES.map((qty) => {
@@ -282,12 +287,15 @@ export function renderShopModal(): void {
         }).join('')}</div>`
       : '';
     const card = document.createElement('div');
-    card.className = 'shop-card' + (stackable ? ' stackable-card' : '');
+    card.className = 'shop-card combat-' + combat + (stackable ? ' stackable-card' : '');
     card.innerHTML = `
       <div class="shop-card-top">
         <div class="shop-card-icon">${getItemSvg(it)}</div>
         <div>
-          <div class="shop-card-name">${it.name}</div>
+          <div class="shop-card-name-row">
+            <div class="shop-card-name">${it.name}</div>
+            <span class="combat-class-badge ${combat}">${combatClassLabel(combat)}</span>
+          </div>
           <div class="shop-card-desc">${it.slot ? it.slot : it.type} · ${it.price.toLocaleString('en-US')} GP</div>
           ${req.html}
         </div>

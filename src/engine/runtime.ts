@@ -28,6 +28,19 @@ import { moveWithCollision, isWalkable, isDeepWater } from '../state/collision';
 import { discoverShrines } from '../state/shrines';
 import { applyGold200k, applySkillsPlus10, matchCheat } from '../state/cheats';
 import { addCartoonOutline, facetMaterial, grassMaterial, PALETTE } from './materials';
+import {
+  buildAmuletVisual,
+  buildBodyVisual,
+  buildBootVisual,
+  buildCapeVisual,
+  buildGloveVisual,
+  buildHeadVisual,
+  buildLegsVisual,
+  buildRingVisual,
+  buildShieldVisual,
+  buildWeaponVisual,
+  headShowsHair
+} from './playerGear';
 import { hexToCss, getUiSvg, getSkillSvg, getItemSvg, getPrayerSvg, getSpellSvg } from '../ui/icons';
 import { bridge } from '../ui/bridge';
 import {
@@ -1820,14 +1833,27 @@ function rebuildPlayerEquipmentMeshes() {
   const lArm = player.parts.leftArmPivot;
   const headG = player.parts.headGroup;
   const torso = player.parts.torso;
+  const lLeg = player.parts.leftLegPivot;
+  const rLeg = player.parts.rightLegPivot;
 
-  ['wepMesh', 'shieldMesh', 'helmMesh', 'capeMesh', 'amuletMesh'].forEach(k => {
-    if (player.parts[k] && player.parts[k].parent) {
-      player.parts[k].parent.remove(player.parts[k]);
-      player.parts[k] = null;
-    }
+  const gearKeys = [
+    'wepMesh', 'shieldMesh', 'helmMesh', 'capeMesh', 'amuletMesh', 'ringMesh',
+    'bodyArmorMesh', 'bodyArmL', 'bodyArmR',
+    'legsArmorMesh', 'legsArmorL', 'legsArmorR',
+    'feetMeshL', 'feetMeshR', 'handsMeshL', 'handsMeshR'
+  ];
+  gearKeys.forEach((key) => {
+    const node = player.parts[key];
+    if (node && node.parent) node.parent.remove(node);
+    player.parts[key] = null;
   });
   player.parts.whipRig = null;
+
+  const mount = (parent, node, key) => {
+    if (!parent || !node) return;
+    parent.add(node);
+    player.parts[key] = node;
+  };
 
   // 1. Body Armor Material
   const bodyId = STATE.equipment.body;
@@ -1872,278 +1898,78 @@ function rebuildPlayerEquipmentMeshes() {
     player.parts.gloveMat.metalness = 0.1;
   }
 
-  // 5. Sculpted 3D Weapon in Right Hand
-  const wepId = STATE.equipment.weapon;
-  if (wepId && ITEMS[wepId]) {
-    const it = ITEMS[wepId];
-    const wepGrp = new THREE.Group();
-    wepGrp.position.set(0, -0.70, -0.12);
+  const equip = (slot) => {
+    const id = STATE.equipment[slot];
+    return id && ITEMS[id] ? ITEMS[id] : null;
+  };
 
-    if (it.style === 'ranged') {
-      // Smooth Recurve Bow with String & Arrow
-      const bowCurve = new THREE.CatmullRomCurve3([
-        new THREE.Vector3(0, -0.62, 0.18),
-        new THREE.Vector3(0, -0.32, -0.18),
-        new THREE.Vector3(0, 0, -0.26),
-        new THREE.Vector3(0, 0.32, -0.18),
-        new THREE.Vector3(0, 0.62, 0.18)
-      ]);
-      const bowGeo = new THREE.TubeGeometry(bowCurve, 18, 0.04, 8, false);
-      const bowMat = facetMaterial({
-        color: it.color || 0x92400e,
-        metalness: it.id === 'ancient_bow' ? 0.7 : 0.2,
-        roughness: 0.35,
-        emissive: it.id === 'ancient_bow' ? 0x0284c7 : 0x000000,
-        emissiveIntensity: it.id === 'ancient_bow' ? 0.5 : 0
-      });
-      const bowMesh = new THREE.Mesh(bowGeo, bowMat);
-      bowMesh.castShadow = true;
-      wepGrp.add(bowMesh);
-
-      const strGeo = new THREE.CylinderGeometry(0.008, 0.008, 1.22, 8);
-      const strMesh = new THREE.Mesh(strGeo, new THREE.MeshBasicMaterial({ color: 0xe2e8f0 }));
-      strMesh.userData.noOutline = true;
-      strMesh.position.set(0, 0, 0.16);
-      wepGrp.add(strMesh);
-    } else if (it.style === 'magic') {
-      // Sculpted Staff with Orbiting Ring & Glowing Orb
-      const shaft = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.042, 0.035, 1.75, 14),
-        facetMaterial({ color: 0x5c3a21, roughness: 0.6 })
-      );
-      shaft.rotation.x = Math.PI / 2.8;
-      shaft.castShadow = true;
-      wepGrp.add(shaft);
-
-      const orb = new THREE.Mesh(
-        new THREE.SphereGeometry(0.17, 16, 12),
-        facetMaterial({
-          color: it.color || 0xef4444,
-          emissive: it.color || 0xef4444,
-          emissiveIntensity: 0.85,
-          roughness: 0.1
-        })
-      );
-      orb.position.set(0, 0.42, -0.78);
-      wepGrp.add(orb);
-
-      const halo = new THREE.Mesh(
-        new THREE.TorusGeometry(0.24, 0.022, 5, 8),
-        facetMaterial({ color: it.trim || 0xfde047, metalness: 0.85, roughness: 0.2 })
-      );
-      halo.position.copy(orb.position);
-      wepGrp.add(halo);
-    } else if (it.iconKind === 'whip') {
-      const rest = [
-        new THREE.Vector3(0, 0.02, 0.02),
-        new THREE.Vector3(0.07, 0.26, -0.2),
-        new THREE.Vector3(-0.09, 0.46, -0.46),
-        new THREE.Vector3(0.1, 0.34, -0.76),
-        new THREE.Vector3(-0.02, 0.14, -1.05)
-      ];
-      const tubeMat = facetMaterial({ color: 0x1c1917, emissive: 0x7f1d1d, emissiveIntensity: 0.25 });
-      const tube = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(rest), 22, 0.036, 8, false), tubeMat);
-      tube.castShadow = true;
-      wepGrp.add(tube);
-      const nodes = rest.map((pt, i) => {
-        const hot = i % 2 === 1;
-        const node = new THREE.Mesh(
-          new THREE.SphereGeometry(hot ? 0.055 : 0.042, 10, 8),
-          facetMaterial({
-            color: hot ? 0xef4444 : 0x292524,
-            emissive: hot ? 0xdc2626 : 0x000000,
-            emissiveIntensity: hot ? 0.85 : 0
-          })
-        );
-        node.position.copy(pt);
-        node.castShadow = true;
-        wepGrp.add(node);
-        return node;
-      });
-      player.parts.whipRig = { tube, nodes, rest: rest.map(p => p.clone()), wasLashing: false };
-      syncWhipGeometry(player.parts.whipRig, 0);
-    } else {
-      const bladeShape = new THREE.Shape();
-      const isScim = it.iconKind === 'scimitar';
-      const isGreat = it.iconKind === 'greatsword';
-      const len = isGreat ? 1.48 : isScim ? 1.12 : 1.2;
-      const sacred = it.id === 'master_sword' || it.id === 'deity_sword';
-      const dragon = it.id === 'dragon_scimitar';
-      if (isScim) {
-        bladeShape.moveTo(-0.02, 0);
-        bladeShape.quadraticCurveTo(-0.18, len * 0.42, -0.04, len);
-        bladeShape.lineTo(0.015, len - 0.04);
-        bladeShape.quadraticCurveTo(0.05, len * 0.48, 0.055, 0);
-      } else if (isGreat) {
-        bladeShape.moveTo(-0.07, 0);
-        bladeShape.lineTo(-0.085, len * 0.78);
-        bladeShape.lineTo(0, len);
-        bladeShape.lineTo(0.085, len * 0.78);
-        bladeShape.lineTo(0.07, 0);
-      } else {
-        bladeShape.moveTo(-0.045, 0);
-        bladeShape.lineTo(-0.05, len * 0.84);
-        bladeShape.lineTo(0, len);
-        bladeShape.lineTo(0.05, len * 0.84);
-        bladeShape.lineTo(0.045, 0);
-      }
-      bladeShape.closePath();
-
-      const bladeGeo = new THREE.ExtrudeGeometry(bladeShape, {
-        depth: isGreat ? 0.08 : 0.055,
-        bevelEnabled: true,
-        bevelThickness: 0.012,
-        bevelSize: 0.01,
-        bevelSegments: 2,
-        curveSegments: isScim ? 12 : 4
-      });
-      bladeGeo.center();
-      const bladeMat = facetMaterial({
-        color: dragon ? 0xdc2626 : (it.color || 0xd1d5db),
-        emissive: dragon ? 0x7f1d1d : (sacred ? 0x38bdf8 : 0x000000),
-        emissiveIntensity: dragon ? 0.4 : (sacred ? 0.5 : 0)
-      });
-      const bladeMesh = new THREE.Mesh(bladeGeo, bladeMat);
-      bladeMesh.rotation.y = Math.PI / 2;
-      bladeMesh.position.y = len * 0.46 + 0.1;
-      bladeMesh.castShadow = true;
-      wepGrp.add(bladeMesh);
-
-      const guardMat = facetMaterial({
-        color: dragon || isGreat ? (it.trim || 0xfde047) : (it.trim || 0xfacc15),
-        emissive: sacred ? 0x1d4ed8 : 0x000000,
-        emissiveIntensity: sacred ? 0.35 : 0
-      });
-      if (dragon || isGreat) {
-        [-1, 1].forEach((side) => {
-          const wing = new THREE.Mesh(new THREE.SphereGeometry(0.11, 12, 8), guardMat);
-          wing.scale.set(0.45, 1.15, 0.28);
-          wing.position.set(0, 0.1, side * 0.16);
-          wing.rotation.z = side * -0.7;
-          wing.castShadow = true;
-          wepGrp.add(wing);
-        });
-      } else {
-        const guard = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, isScim ? 0.34 : 0.4, 12), guardMat);
-        guard.rotation.x = Math.PI / 2;
-        guard.position.y = 0.08;
-        guard.castShadow = true;
-        wepGrp.add(guard);
-      }
-
-      const pommel = new THREE.Mesh(new THREE.SphereGeometry(isGreat ? 0.07 : 0.055, 12, 10), guardMat);
-      pommel.position.y = -0.14;
-      wepGrp.add(pommel);
-      wepGrp.rotation.x = -Math.PI / 2.35;
-    }
-    rArm.add(wepGrp);
-    player.parts.wepMesh = wepGrp;
+  const weapon = equip('weapon');
+  if (weapon) {
+    const visual = buildWeaponVisual(weapon);
+    visual.group.position.set(0, -0.70, -0.12);
+    mount(rArm, visual.group, 'wepMesh');
+    player.parts.whipRig = visual.whipRig;
+    if (visual.whipRig) syncWhipGeometry(visual.whipRig, 0);
   }
 
-  // 6. Sculpted Beveled Kite Shield / Defender in Left Hand
-  const shId = STATE.equipment.shield;
-  if (shId && ITEMS[shId]) {
-    const it = ITEMS[shId];
-    const shShape = new THREE.Shape();
-    shShape.moveTo(0, -0.45);
-    shShape.quadraticCurveTo(0.32, -0.22, 0.34, 0.28);
-    shShape.quadraticCurveTo(0, 0.40, -0.34, 0.28);
-    shShape.quadraticCurveTo(-0.32, -0.22, 0, -0.45);
-
-    const shGeo = new THREE.ExtrudeGeometry(shShape, { depth: 0.06, bevelEnabled: false });
-    const shMat = facetMaterial({
-      color: it.color || 0x854d0e,
-      metalness: it.id === 'wooden_shield' ? 0.15 : 0.72,
-      roughness: it.id === 'wooden_shield' ? 0.7 : 0.25
-    });
-    const shield = new THREE.Mesh(shGeo, shMat);
-    shield.rotation.y = Math.PI / 2;
-    shield.position.set(-0.18, -0.45, -0.06);
-    shield.castShadow = true;
-
-    // Gold Shield Boss Crest
-    const trim = new THREE.Mesh(
-      new THREE.BoxGeometry(0.46, 0.08, 0.04),
-      facetMaterial({ color: it.trim || 0xfacc15 })
-    );
-    trim.position.set(0, 0.08, 0.05);
-    shield.add(trim);
-
-    lArm.add(shield);
-    player.parts.shieldMesh = shield;
+  const shieldItem = equip('shield');
+  if (shieldItem) {
+    const shield = buildShieldVisual(shieldItem);
+    const defender = shield.userData.silhouette === 'defender';
+    shield.position.set(defender ? 0.02 : -0.16, defender ? -0.64 : -0.48, defender ? -0.14 : -0.08);
+    mount(lArm, shield, 'shieldMesh');
   }
 
-  // 7. Smooth form-fitting helm. Hair stays tucked so it never clips the dome.
-  const helmId = STATE.equipment.head;
-  if (player.parts.hairCap) player.parts.hairCap.visible = !helmId;
-  if (helmId && ITEMS[helmId]) {
-    const it = ITEMS[helmId];
-    const helmGrp = new THREE.Group();
-    const helmMat = facetMaterial({ color: it.color || 0xb87333 });
-    const helmDome = new THREE.Mesh(
-      new THREE.SphereGeometry(0.285, 18, 16, 0, Math.PI * 2, 0, Math.PI * 0.78),
-      helmMat
-    );
-    helmDome.position.y = 0.02;
-    helmDome.castShadow = true;
-    helmGrp.add(helmDome);
+  const headItem = equip('head');
+  if (player.parts.hairCap) player.parts.hairCap.visible = headShowsHair(headItem);
+  if (headItem) mount(headG, buildHeadVisual(headItem), 'helmMesh');
 
-    const brow = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.288, 0.275, 0.18, 16, 1, true),
-      facetMaterial({ color: it.trim || 0xfacc15 })
-    );
-    brow.position.y = -0.02;
-    helmGrp.add(brow);
-
-    const visor = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.29, 0.29, 0.06, 16, 1, true, Math.PI * 0.72, Math.PI * 0.56),
-      new THREE.MeshBasicMaterial({ color: 0x111827, side: THREE.DoubleSide })
-    );
-    visor.position.y = 0.0;
-    visor.userData.noOutline = true;
-    helmGrp.add(visor);
-
-    const plume = new THREE.Mesh(
-      new THREE.SphereGeometry(0.09, 12, 10),
-      facetMaterial({ color: it.trim || 0xef4444 })
-    );
-    plume.scale.set(0.45, 1.35, 1.65);
-    plume.position.set(0, 0.3, 0.04);
-    plume.castShadow = true;
-    helmGrp.add(plume);
-
-    headG.add(helmGrp);
-    player.parts.helmMesh = helmGrp;
+  const bodyItem = equip('body');
+  if (bodyItem) {
+    const body = buildBodyVisual(bodyItem);
+    mount(torso, body.torso, 'bodyArmorMesh');
+    mount(lArm, body.left, 'bodyArmL');
+    mount(rArm, body.right, 'bodyArmR');
   }
 
-  // 8. Flowing Curved Cloth Cape on Back
-  const capeId = STATE.equipment.cape;
-  if (capeId && ITEMS[capeId]) {
-    const it = ITEMS[capeId];
-    const capeGeo = new THREE.PlaneGeometry(0.68, 1.18, 12, 16);
-    const pos = capeGeo.attributes.position;
-    for (let i = 0; i < pos.count; i++) {
-      const u = pos.getX(i);
-      const v = pos.getY(i);
-      // Taper narrower at shoulders, wider at bottom, with gentle cylindrical drape
-      const t = (0.59 - v) / 1.18;
-      pos.setX(i, u * (0.72 + t * 0.42));
-      pos.setZ(i, Math.cos(u * 3.0) * 0.06 + t * 0.12);
-    }
-    capeGeo.computeVertexNormals();
-    const capeMat = facetMaterial({
-      color: it.color,
-      emissive: it.id === 'fire_cape' ? 0x9a3412 : 0x000000,
-      emissiveIntensity: it.id === 'fire_cape' ? 0.45 : 0,
-      roughness: 0.55,
-      side: THREE.DoubleSide
-    });
-    const cape = new THREE.Mesh(capeGeo, capeMat);
-    cape.position.set(0, 0.02, 0.34);
-    cape.castShadow = true;
-    torso.add(cape);
-    player.parts.capeMesh = cape;
+  const legsItem = equip('legs');
+  if (legsItem) {
+    const legs = buildLegsVisual(legsItem);
+    mount(torso, legs.torso, 'legsArmorMesh');
+    mount(lLeg, legs.left, 'legsArmorL');
+    mount(rLeg, legs.right, 'legsArmorR');
   }
+
+  const neck = equip('neck');
+  if (neck) mount(torso, buildAmuletVisual(neck), 'amuletMesh');
+
+  const ring = equip('ring');
+  if (ring) {
+    const ringMesh = buildRingVisual(ring);
+    ringMesh.position.x = 0.11;
+    mount(rArm, ringMesh, 'ringMesh');
+  }
+
+  const feet = equip('feet');
+  if (feet) {
+    mount(lLeg, buildBootVisual(feet, true), 'feetMeshL');
+    mount(rLeg, buildBootVisual(feet, false), 'feetMeshR');
+  }
+
+  const hands = equip('hands');
+  if (hands) {
+    mount(lArm, buildGloveVisual(hands), 'handsMeshL');
+    mount(rArm, buildGloveVisual(hands), 'handsMeshR');
+  }
+
+  const capeItem = equip('cape');
+  if (capeItem) {
+    const cape = buildCapeVisual(capeItem);
+    if (cape.userData.silhouette === 'ava') cape.position.set(0, 0.06, 0.3);
+    else cape.position.set(0, 0.02, 0.34);
+    mount(torso, cape, 'capeMesh');
+  }
+
   if (player.meshGroup) addCartoonOutline(player.meshGroup, 0.022);
 }
 

@@ -872,7 +872,75 @@
   }
   .shop-card-icon svg { width: 28px; height: 28px; }
   .shop-card-name { font-size: 12px; font-weight: 800; color: #f3ead6; }
+  .shop-card-name-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 6px;
+  }
   .shop-card-desc { font-size: 10px; color: #a6967a; line-height: 1.3; }
+  .combat-class-badge {
+    flex-shrink: 0;
+    margin-top: 1px;
+    padding: 2px 6px;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    line-height: 1.2;
+  }
+  .combat-class-badge.melee {
+    color: #fff7ed;
+    background: linear-gradient(180deg, #d97706, #9f1239);
+    border-color: #fdba74;
+  }
+  .combat-class-badge.ranged {
+    color: #ecfdf5;
+    background: linear-gradient(180deg, #059669, #065f46);
+    border-color: #6ee7b7;
+  }
+  .combat-class-badge.magic {
+    color: #f5f3ff;
+    background: linear-gradient(180deg, #4f46e5, #6d28d9);
+    border-color: #c4b5fd;
+  }
+  .combat-class-badge.all_around {
+    color: #042f2e;
+    background: linear-gradient(90deg, #22d3ee, #facc15);
+    border-color: #fef08a;
+  }
+  .combat-class-badge.supply {
+    color: #e7e5e4;
+    background: #44403c;
+    border-color: #78716c;
+  }
+  .shop-card.combat-melee { box-shadow: inset 3px 0 0 #f97316; }
+  .shop-card.combat-ranged { box-shadow: inset 3px 0 0 #34d399; }
+  .shop-card.combat-magic { box-shadow: inset 3px 0 0 #818cf8; }
+  .shop-card.combat-all_around { box-shadow: inset 3px 0 0 #22d3ee; }
+  .shop-card.combat-supply { box-shadow: inset 3px 0 0 #a8a29e; }
+  #shop-filter-pills .filter-pill.active.filter-melee {
+    background: linear-gradient(180deg, #ea580c, #9f1239);
+    color: #fff7ed;
+    border-color: #fdba74;
+  }
+  #shop-filter-pills .filter-pill.active.filter-ranged {
+    background: linear-gradient(180deg, #059669, #047857);
+    color: #ecfdf5;
+    border-color: #6ee7b7;
+  }
+  #shop-filter-pills .filter-pill.active.filter-magic {
+    background: linear-gradient(180deg, #4f46e5, #6d28d9);
+    color: #f5f3ff;
+    border-color: #c4b5fd;
+  }
+  #shop-filter-pills .filter-pill.active.filter-all_around {
+    background: linear-gradient(90deg, #22d3ee, #facc15);
+    color: #042f2e;
+    border-color: #fef08a;
+  }
   .shop-buy-btn {
     background: linear-gradient(180deg, #85581A, #54360c);
     border: 1px solid var(--botw-gold);
