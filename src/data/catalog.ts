@@ -401,7 +401,7 @@ export const MONSTER_TYPES = {
   },
   goblin: {
     name: 'Goblin Raider', level: 2, hp: 8, maxHit: 2, atk: 3, def: 2, scale: 0.9,
-    style: 'melee', bodyColor: 0x4d7c0f, accentColor: 0x78350f, kind: 'goblin', weaponColor: 0xb87333,
+    style: 'melee', bodyColor: 0x65a30d, accentColor: 0x78350f, kind: 'goblin', weaponColor: 0xb87333,
     drops: [{ id: 'bones', chance: 1.0 }, { gp: [12, 36], chance: 0.9 }, { id: 'iron_plate', chance: 0.16 }, { id: 'iron_legs', chance: 0.16 }, { id: 'shrimp', chance: 0.35 }]
   },
   scorpion: {
@@ -421,12 +421,12 @@ export const MONSTER_TYPES = {
   },
   moss_guardian: {
     name: 'Moss Guardian', level: 45, hp: 78, maxHit: 15, atk: 42, def: 38, scale: 1.72,
-    style: 'melee', bodyColor: 0x15803d, accentColor: 0x4ade80, kind: 'guardian', weaponColor: 0x166534,
+    style: 'melee', bodyColor: 0x44403c, accentColor: 0x16a34a, kind: 'guardian', weaponColor: 0x3f6212,
     drops: [{ id: 'big_bones', chance: 1.0 }, { gp: [200, 500], chance: 1.0 }, { id: 'rune_plate', chance: 0.22 }, { id: 'rune_legs', chance: 0.22 }, { id: 'green_dhide_body', chance: 0.24 }, { id: 'green_dhide_chaps', chance: 0.24 }]
   },
   lesser_demon: {
-    name: 'Lesser Demon', level: 68, hp: 125, maxHit: 22, atk: 64, def: 55, scale: 1.85,
-    style: 'melee', bodyColor: 0xb91c1c, accentColor: 0x1c1917, kind: 'demon', weaponColor: 0xf97316,
+    name: 'Lesser Demon', level: 68, hp: 125, maxHit: 22, atk: 64, def: 55, scale: 1.8,
+    style: 'melee', bodyColor: 0xdc2626, accentColor: 0x111827, kind: 'demon', weaponColor: 0xf97316,
     drops: [{ id: 'dragon_bones', chance: 1.0 }, { gp: [450, 980], chance: 1.0 }, { id: 'dragon_chain', chance: 0.20 }, { id: 'dragon_legs', chance: 0.20 }, { id: 'dragon_scimitar', chance: 0.18 }, { id: 'shark', chance: 0.65 }]
   },
   elvarg_dragon: {

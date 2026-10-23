@@ -44,8 +44,8 @@ export const MONSTER_TYPES: Record<string, MonsterDef> = {
     def: 3,
     scale: 0.92,
     style: 'ranged',
-    bodyColor: 0x4d7c0f,
-    accentColor: 0x78350f,
+    bodyColor: 0x65a30d,
+    accentColor: 0x451a03,
     kind: 'archer',
     weaponColor: 0x92400e,
     drops: [
