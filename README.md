@@ -1,11 +1,11 @@
 <div align="center">
 
-<img src="./og-banner.png" alt="RuneWilds: Breath of Gielinor — 3D Open-World Action RPG" width="100%" style="border-radius: 12px;" />
+<img src="./og-banner.png" alt="Gielinor Hero — 3D Open-World Action RPG" width="100%" style="border-radius: 12px;" />
 
-# RuneWilds: Breath of Gielinor
+# Gielinor Hero
 
-**A Zero-Dependency, Single-File 3D Open-World Action RPG**  
-*Combining OldSchool RuneScape (OSRS) mechanics & progression with Zelda: Breath of the Wild 3D aesthetics*
+**A 3D open-world action RPG**  
+*OldSchool RuneScape mechanics and progression in a Breath of the Wild gouache world*
 
 [![Play on Vercel](https://img.shields.io/badge/Play_Live-gielinor--hero.vercel.app-000000?style=for-the-badge&logo=vercel)](https://gielinor-hero.vercel.app/)
 [![Live Demo](https://img.shields.io/badge/Mirror-GitHub_Pages-2ea44f?style=for-the-badge&logo=github)](https://allansli.github.io/osrs-like/)
@@ -21,7 +21,7 @@
 
 ## Overview
 
-**RuneWilds: Breath of Gielinor** is a complete 3D open-world RPG built inside a single self-contained HTML file ([`index.html`](./index.html)) with zero external assets or build steps required. Everything—from the custom GLSL sky and water shaders to the 201 vector SVG item icons, sculpted 3D meshes, OSRS experience curves, and Web Audio sound effects—is generated procedurally at runtime.
+**Gielinor Hero** is a 3D open-world RPG. The Vite + TypeScript client keeps the procedural GLSL sky and water, vector item icons, OSRS experience curve, and Web Audio effects, and adds a bank vault, shrine discovery, and faceted gouache rendering.
 
 ---
 
@@ -59,8 +59,8 @@
 - **Pre-Purchase Requirement Badges**: Every shop and forge card displays the exact skill level required to equip or craft the item—color-coded **Green (`Can Equip`)** or **Red (`Your Lv: X`)**—plus a **Can Equip Now** shop filter.
 
 ### 4. Automatic `localStorage` Persistence
-- Progress is saved automatically on every action, every 2 seconds while exploring, and on page unload (`runewilds_save_v3`):
-  - All 12 skill levels & XP, GP pouch, 28-slot inventory, and 10-slot worn equipment
+- Progress is saved automatically on every action, every 2 seconds while exploring, and on page unload (`gielinor_hero_save_v1`). Older `runewilds_save_v3` and `runewilds_save_v2` saves migrate forward, stacking duplicate resources, runes, and bones.
+  - All 12 skill levels & XP, GP pouch, 28-slot backpack, bank vault, and 10-slot worn equipment
   - Hitpoints, Prayer points, Special Attack energy, active Prayers, combat style, and selected spell
   - Exact 3D world position (`x, y, z`), character yaw, camera angle/zoom, and time-of-day preset
 
@@ -83,7 +83,9 @@
 | Input | Action |
 | :--- | :--- |
 | **W / A / S / D** or **Arrow Keys** | Move character relative to camera orientation |
-| **Left-Click (World)** | Walk to terrain, attack monster, chop tree, mine ore, fish, or interact with Shrine/Altar/Forge/Shop |
+| **Left-Click (World)** | Walk to terrain, attack monster, chop tree, mine ore, fish, or walk up to the Bank, General Store, Anvil, Shrine, or Altar |
+| **F1–F6** | Switch the Combat, Skills, Inventory, Equipment, Prayer, and Magic panels |
+| **Esc** | Close the open window |
 | **Right-Click + Drag** or **Q / E** | Orbit camera around character (`N` compass button resets camera behind player) |
 | **Mouse Wheel** | Zoom camera in / out |
 | **Spacebar** | Jump |
@@ -97,39 +99,30 @@
 
 ```mermaid
 flowchart LR
-  subgraph SingleFile["index.html (Zero External Assets)"]
-    UI["OSRS + BotW HUD\n6 Tabs & 4 Modals"]
-    SVG["Procedural Vector SVG Engine\n201 Items, 12 Skills, Prayers & Spells"]
-    STATE["RPG State Machine\nLv 1–99 XP, Combat Triangle, 33 Armor Sets"]
-    THREE["Three.js WebGL Engine\nLathe/Tube/Extrude Meshes & GLSL Shaders"]
-    AUDIO["Web Audio Synthesizer\nProcedural Combat, Skilling & Level-Up SFX"]
-    STORE["localStorage Persistence\nAuto-Save State & 3D Coordinates"]
+  subgraph Client["Vite + TypeScript"]
+    UI["HUD, Bank, and Shop\nsrc/ui"]
+    DATA["Items, skills, recipes\nsrc/data"]
+    STATE["Save, combat, collision\nsrc/state"]
+    ENGINE["Faceted world renderer\nsrc/engine"]
   end
 
   UI <--> STATE
-  SVG --> UI
-  STATE <--> THREE
-  STATE --> AUDIO
-  STATE <--> STORE
+  DATA --> STATE
+  STATE <--> ENGINE
 ```
 
 ---
 
 ## Running Locally
 
-Because the entire game lives in [`index.html`](./index.html), you can run it directly without installing any packages:
-
 ```bash
-# Clone the repository
-git clone https://github.com/allansli/osrs-like.git
-cd osrs-like
-
-# Option 1: Open index.html directly in any browser
-start index.html
-
-# Option 2: Serve over local HTTP
-npx serve .
+npm install
+npm run dev
+npm test
+npm run build
 ```
+
+`npm run dev` serves the game locally. `npm test` runs the Vitest suite for saves, stacking, combat styles, shrines, collision, and log crafting. `npm run build` typechecks and writes `dist/`.
 
 ---
 
