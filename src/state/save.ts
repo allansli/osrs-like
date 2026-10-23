@@ -36,7 +36,7 @@ export function migrateLegacySave(raw: unknown, source: string | null = null): M
   if (typeof data.currentRegion === 'string') state.currentRegion = data.currentRegion;
   if (typeof data.timeOfDay === 'number') state.timeOfDay = data.timeOfDay % 3;
   if (typeof data.audioEnabled === 'boolean') state.audioEnabled = data.audioEnabled;
-  if (data.transferQty === 1 || data.transferQty === 5 || data.transferQty === 10 || data.transferQty === 'all') {
+  if (data.transferQty === 'all' || data.transferQty === 1 || data.transferQty === 5 || data.transferQty === 10 || data.transferQty === 50 || data.transferQty === 100 || data.transferQty === 500 || data.transferQty === 1000) {
     state.transferQty = data.transferQty;
   }
 

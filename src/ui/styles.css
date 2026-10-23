@@ -884,6 +884,75 @@
     cursor: pointer;
   }
   .shop-buy-btn:hover { filter: brightness(1.18); }
+  .shop-buy-btn { line-height: 1.25; white-space: normal; }
+
+  #shop-items-grid {
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  }
+
+  .shop-card-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .shop-batch-row {
+    display: flex;
+    gap: 4px;
+  }
+
+  .shop-batch-btn {
+    flex: 1 1 0;
+    background: #241c14;
+    color: #fef08a;
+    border: 1px solid #6e5d45;
+    border-radius: 4px;
+    padding: 4px 0;
+    font-size: 10px;
+    font-weight: 800;
+    cursor: pointer;
+    line-height: 1.2;
+  }
+  .shop-batch-btn:hover {
+    border-color: var(--osrs-gold);
+    background: #3a2d1c;
+  }
+
+  #shop-body .shop-toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 4;
+    background: #2a231b;
+    margin: -14px -16px 10px;
+    padding: 12px 16px 10px;
+    border-bottom: 1px solid #594a34;
+  }
+
+  #shop-body .rune-pack-actions,
+  #shop-body #shop-filter-pills {
+    flex: 1 1 100%;
+  }
+
+  .rune-pack-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .rune-pack-btn {
+    background: linear-gradient(180deg, #3f6212, #14532d);
+    border: 1px solid #86efac;
+    color: #ecfccb;
+    border-radius: 999px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+  }
+  .rune-pack-actions.prominent .rune-pack-btn {
+    box-shadow: 0 0 0 1px #bef264, 0 0 16px rgba(190, 242, 100, 0.35);
+  }
+  .rune-pack-btn:hover { filter: brightness(1.12); }
 
   /* XP Table */
   .xp-table-grid {
