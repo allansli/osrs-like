@@ -63,12 +63,10 @@ function slotButton(stack: ItemStack, action: string): HTMLButtonElement {
   return btn;
 }
 
-export function renderBankModal(): void {
-  const body = document.getElementById('bank-body');
-  if (!body) return;
+function visibleBankSlots(): ItemStack[] {
   const query = (STATE.bankQuery || '').trim().toLowerCase();
   const filter = STATE.bankFilter;
-  const bank = STATE.bank.filter((slot) => {
+  return STATE.bank.filter((slot) => {
     const it = ITEMS[slot.id];
     if (!it) return false;
     if (query && !it.name.toLowerCase().includes(query)) return false;
@@ -77,6 +75,36 @@ export function renderBankModal(): void {
     if (filter === 'runes' && it.type !== 'rune' && it.type !== 'ammo') return false;
     return true;
   });
+}
+
+function bindTransfer(btn: HTMLButtonElement): void {
+  btn.onclick = () => {
+    const id = btn.dataset.item || '';
+    const mode = STATE.transferQty;
+    const result = btn.dataset.action === 'withdraw' ? withdraw(STATE, id, mode) : deposit(STATE, id, mode);
+    if (!result.ok) bridge.chat(result.reason || 'Transfer failed.', 'combat');
+    else bridge.chat(`${btn.dataset.action === 'withdraw' ? 'Withdrew' : 'Deposited'} ${result.moved} × ${ITEMS[id]?.name}.`, 'loot');
+    bridge.refresh();
+  };
+}
+
+function paintVaultGrid(grid: HTMLElement): void {
+  const bank = visibleBankSlots();
+  grid.replaceChildren();
+  if (bank.length === 0) {
+    grid.innerHTML = `<div class="empty-note">The vault is empty. Deposit from your backpack.</div>`;
+    return;
+  }
+  bank.forEach((slot) => {
+    const btn = slotButton(slot, 'withdraw');
+    bindTransfer(btn);
+    grid.appendChild(btn);
+  });
+}
+
+export function renderBankModal(): void {
+  const body = document.getElementById('bank-body');
+  if (!body) return;
 
   body.innerHTML = `
     <div class="station-toolbar">
@@ -104,6 +132,7 @@ export function renderBankModal(): void {
     ['runes', 'Runes & Ammo']
   ];
   const filterHost = body.querySelector('#bank-filters')!;
+  const filter = STATE.bankFilter;
   filters.forEach(([id, label]) => {
     const b = document.createElement('button');
     b.className = 'filter-pill' + (filter === id ? ' active' : '');
@@ -112,31 +141,25 @@ export function renderBankModal(): void {
     filterHost.appendChild(b);
   });
 
-  const grid = body.querySelector('#bank-grid')!;
-  if (bank.length === 0) {
-    grid.innerHTML = `<div class="empty-note">The vault is empty. Deposit from your backpack.</div>`;
-  }
-  bank.forEach((slot) => grid.appendChild(slotButton(slot, 'withdraw')));
+  paintVaultGrid(body.querySelector<HTMLElement>('#bank-grid')!);
 
   const pack = body.querySelector('#bank-pack')!;
   if (STATE.inventory.length === 0) pack.innerHTML = `<div class="empty-note">Backpack empty.</div>`;
-  STATE.inventory.forEach((slot) => pack.appendChild(slotButton(slot, 'deposit')));
+  STATE.inventory.forEach((slot) => {
+    const btn = slotButton(slot, 'deposit');
+    bindTransfer(btn);
+    pack.appendChild(btn);
+  });
 
   bindQty(body);
   const search = body.querySelector<HTMLInputElement>('#bank-search');
   if (search) {
-    search.oninput = () => { STATE.bankQuery = search.value; renderBankModal(); search.focus(); };
-  }
-  body.querySelectorAll<HTMLButtonElement>('.stack-slot').forEach((btn) => {
-    btn.onclick = () => {
-      const id = btn.dataset.item || '';
-      const mode = STATE.transferQty;
-      const result = btn.dataset.action === 'withdraw' ? withdraw(STATE, id, mode) : deposit(STATE, id, mode);
-      if (!result.ok) bridge.chat(result.reason || 'Transfer failed.', 'combat');
-      else bridge.chat(`${btn.dataset.action === 'withdraw' ? 'Withdrew' : 'Deposited'} ${result.moved} × ${ITEMS[id]?.name}.`, 'loot');
-      bridge.refresh();
+    search.oninput = () => {
+      STATE.bankQuery = search.value;
+      const grid = body.querySelector<HTMLElement>('#bank-grid');
+      if (grid) paintVaultGrid(grid);
     };
-  });
+  }
 }
 
 export function renderShopModal(): void {
