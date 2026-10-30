@@ -195,8 +195,51 @@ export function sellItem(state: GameState, itemId: string, mode: QtyMode): Trans
   const n = resolveQty(mode, have);
   if (n <= 0) return { ok: false, moved: 0, reason: 'Nothing to sell.' };
   const unit = unitSellPrice(item);
-  removeFrom(state.inventory, itemId, n);
-  const gp = unit * n;
+  // removeFrom walks every slot, so unstackable copies of the same item sell together.
+  const removed = removeFrom(state.inventory, itemId, n);
+  const gp = unit * removed;
   state.gp += gp;
-  return { ok: true, moved: n, gp, unit };
+  return { ok: true, moved: removed, gp, unit };
+}
+
+const GATHERED_TYPES = new Set(['resource', 'bones', 'bar']);
+
+/** Ores, raw fish, logs, bars, and bones — the goods the General Store bulk-buys. */
+export function isGatheredGood(itemId: string): boolean {
+  const item = ITEMS[itemId];
+  return !!item && GATHERED_TYPES.has(item.type);
+}
+
+export function isUnequippedGear(itemId: string): boolean {
+  const item = ITEMS[itemId];
+  return !!item && item.type === 'equip';
+}
+
+export function quoteInventorySale(state: GameState, match: (itemId: string) => boolean): number {
+  let gp = 0;
+  for (const slot of state.inventory) {
+    if (!match(slot.id)) continue;
+    const item = ITEMS[slot.id];
+    if (!item) continue;
+    gp += unitSellPrice(item) * (slot.qty || 0);
+  }
+  return gp;
+}
+
+export function sellInventoryMatch(
+  state: GameState,
+  match: (itemId: string) => boolean,
+  emptyReason = 'Nothing to sell.'
+): TransferResult {
+  const ids = Array.from(new Set(state.inventory.map((slot) => slot.id).filter(match)));
+  let moved = 0;
+  let gp = 0;
+  for (const id of ids) {
+    const result = sellItem(state, id, 'all');
+    if (!result.ok) continue;
+    moved += result.moved;
+    gp += result.gp || 0;
+  }
+  if (moved <= 0) return { ok: false, moved: 0, gp: 0, reason: emptyReason };
+  return { ok: true, moved, gp };
 }

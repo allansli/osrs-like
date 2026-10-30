@@ -205,7 +205,7 @@
 
   <!-- TAB 3: INVENTORY -->
   <div class="tab-content active" id="tab-inventory">
-    <div class="panel-header-title">Inventory (<span id="inv-count">0</span>/28) — Left-Click Use • Right-Click Sell</div>
+    <div class="panel-header-title">Inventory (<span id="inv-count">0</span>/28) — Left-Click Use • Right-Click Choose Option</div>
     <div id="inventory-grid"></div>
   </div>
 
@@ -243,10 +243,7 @@
   <div class="modal-window wide">
     <div class="modal-header">
       <h2>Lumbridge General Store</h2>
-      <div style="display:flex; gap:10px; align-items:center;">
-        <button class="hud-btn" onclick="sellAllLoot()">Sell Resources</button>
-        <button class="modal-close" onclick="closeModals()">X</button>
-      </div>
+      <button class="modal-close" onclick="closeModals()">X</button>
     </div>
     <div class="modal-body" id="shop-body"></div>
   </div>

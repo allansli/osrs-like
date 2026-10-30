@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import type { ItemDef } from '../data/items';
+import { LEAN_RIG } from './humanoid';
 import { facetMaterial } from './materials';
 
 export type GearSilhouette =
@@ -158,21 +159,21 @@ function kiteGeometry(bevel: boolean): THREE.ExtrudeGeometry {
 }
 
 function buildHelmShell(group: THREE.Group, item: ItemDef, withVisor: boolean): void {
-  const dome = part(group, new THREE.SphereGeometry(0.29, 18, 14, 0, Math.PI * 2, 0, Math.PI * 0.72), mat(item.color), 0, 0.04, 0);
+  const dome = part(group, new THREE.SphereGeometry(LEAN_RIG.headRadius + 0.03, 18, 14, 0, Math.PI * 2, 0, Math.PI * 0.72), mat(item.color), 0, 0.02, 0);
   dome.scale.set(1, 0.92, 1.02);
-  const brow = part(group, new THREE.TorusGeometry(0.27, 0.028, 6, 16), mat(item.trim), 0, -0.02, 0);
+  const brow = part(group, new THREE.TorusGeometry(LEAN_RIG.headRadius + 0.012, 0.02, 6, 16), mat(item.trim), 0, -0.02, 0);
   brow.rotation.x = Math.PI / 2;
   if (withVisor) {
     const visor = part(
       group,
-      new THREE.BoxGeometry(0.2, 0.05, 0.04),
+      new THREE.BoxGeometry(0.16, 0.04, 0.03),
       mat(0x111827),
-      0, -0.02, -0.26
+      0, -0.015, -0.2
     );
     visor.userData.noOutline = true;
-    part(group, new THREE.BoxGeometry(0.045, 0.16, 0.03), mat(item.trim), 0, -0.02, -0.27);
+    part(group, new THREE.BoxGeometry(0.036, 0.12, 0.025), mat(item.trim), 0, -0.015, -0.21);
   }
-  const plume = part(group, new THREE.SphereGeometry(0.07, 10, 8), mat(item.trim), 0, 0.28, 0.05);
+  const plume = part(group, new THREE.SphereGeometry(0.05, 10, 8), mat(item.trim), 0, 0.22, 0.04);
   plume.scale.set(0.4, 1.5, 0.7);
 }
 
@@ -183,33 +184,33 @@ export function buildHeadVisual(item: ItemDef): THREE.Group {
   const trim = mat(item.trim);
 
   if (silhouette === 'wizard-hat') {
-    const brim = part(group, new THREE.CylinderGeometry(0.34, 0.34, 0.035, 18), color, 0, 0.08, 0);
+    const brim = part(group, new THREE.CylinderGeometry(0.26, 0.26, 0.03, 18), color, 0, 0.06, 0);
     brim.scale.set(1, 1, 0.86);
-    const peak = part(group, new THREE.ConeGeometry(0.16, 0.48, 12), color, 0, 0.32, -0.02);
+    const peak = part(group, new THREE.ConeGeometry(0.125, 0.4, 12), color, 0, 0.26, -0.02);
     peak.rotation.x = 0.18;
-    const band = part(group, new THREE.TorusGeometry(0.15, 0.02, 6, 14), trim, 0, 0.12, -0.01);
+    const band = part(group, new THREE.TorusGeometry(0.12, 0.016, 6, 14), trim, 0, 0.1, -0.01);
     band.rotation.x = Math.PI / 2;
     return group;
   }
 
   if (silhouette === 'robin-hat') {
-    const cap = part(group, new THREE.SphereGeometry(0.22, 14, 10, 0, Math.PI * 2, 0, Math.PI * 0.55), color, 0, 0.16, 0.02);
+    const cap = part(group, new THREE.SphereGeometry(0.185, 14, 10, 0, Math.PI * 2, 0, Math.PI * 0.55), color, 0, 0.12, 0.02);
     cap.scale.set(1.15, 0.55, 1.05);
     cap.rotation.z = -0.35;
     cap.rotation.x = 0.2;
-    const feather = part(group, new THREE.ConeGeometry(0.035, 0.28, 6), mat(item.trim || 0xef4444), 0.16, 0.28, 0);
+    const feather = part(group, new THREE.ConeGeometry(0.03, 0.22, 6), mat(item.trim || 0xef4444), 0.12, 0.22, 0);
     feather.rotation.z = -0.7;
     feather.rotation.x = -0.3;
     return group;
   }
 
   if (silhouette === 'hood' || silhouette === 'sheikah-mask') {
-    const cowl = part(group, new THREE.SphereGeometry(0.3, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.62), color, 0, 0.04, 0.02);
-    cowl.scale.set(1.05, 1.05, 1.12);
-    const hem = part(group, new THREE.TorusGeometry(0.27, 0.02, 6, 14), trim, 0, -0.08, -0.02);
+    const cowl = part(group, new THREE.SphereGeometry(0.23, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.62), color, 0, 0.03, 0.02);
+    cowl.scale.set(1.05, 1.05, 1.08);
+    const hem = part(group, new THREE.TorusGeometry(0.21, 0.016, 6, 14), trim, 0, -0.06, -0.02);
     hem.rotation.x = Math.PI / 2.2;
     if (silhouette === 'sheikah-mask') {
-      const mask = part(group, new THREE.BoxGeometry(0.28, 0.12, 0.06), mat(0x111827), 0, -0.08, -0.24);
+      const mask = part(group, new THREE.BoxGeometry(0.22, 0.1, 0.05), mat(0x111827), 0, -0.06, -0.19);
       mask.userData.noOutline = true;
       [-0.07, 0.07].forEach((x) => {
         const eye = part(group, new THREE.SphereGeometry(0.028, 8, 6), glow(item.trim || 0xef4444, 0.9), x, 0.02, -0.25);
@@ -220,7 +221,7 @@ export function buildHeadVisual(item: ItemDef): THREE.Group {
   }
 
   if (silhouette === 'circlet') {
-    const band = part(group, new THREE.TorusGeometry(0.25, 0.018, 6, 18), trim, 0, 0.06, 0);
+    const band = part(group, new THREE.TorusGeometry(LEAN_RIG.headRadius + 0.006, 0.014, 6, 18), trim, 0, 0.05, 0);
     band.rotation.x = Math.PI / 2;
     part(group, new THREE.OctahedronGeometry(0.055), glow(item.color, 0.85), 0, 0.1, -0.24);
     return group;
@@ -229,30 +230,31 @@ export function buildHeadVisual(item: ItemDef): THREE.Group {
   buildHelmShell(group, item, true);
   if (silhouette === 'neitiznot-helm') {
     [-1, 1].forEach((side) => {
-      const wing = part(group, new THREE.SphereGeometry(0.1, 10, 8), mat(0xf8fafc), side * 0.28, 0.08, 0);
+      const wing = part(group, new THREE.SphereGeometry(0.08, 10, 8), mat(0xf8fafc), side * 0.22, 0.06, 0);
       wing.scale.set(0.28, 1.15, 0.7);
       wing.rotation.z = side * 0.55;
     });
   }
   if (silhouette === 'horned-helm') {
     [-1, 1].forEach((side) => {
-      const horn = part(group, new THREE.ConeGeometry(0.045, 0.26, 7), trim, side * 0.18, 0.2, 0);
+      const horn = part(group, new THREE.ConeGeometry(0.036, 0.2, 7), trim, side * 0.14, 0.16, 0);
       horn.rotation.z = side * -0.85;
       horn.rotation.x = 0.3;
     });
     part(group, new THREE.BoxGeometry(0.22, 0.04, 0.04), trim, 0, -0.08, -0.28);
   }
   if (silhouette === 'armadyl-helm') {
-    const beak = part(group, new THREE.ConeGeometry(0.07, 0.22, 7), trim, 0, -0.02, -0.32);
+    const beak = part(group, new THREE.ConeGeometry(0.055, 0.18, 7), trim, 0, -0.02, -0.24);
     beak.rotation.x = Math.PI / 2.2;
   }
   return group;
 }
 
 function pauldron(parent: THREE.Group, item: ItemDef, x: number, scale = 1): THREE.Mesh {
-  const dome = part(parent, new THREE.SphereGeometry(0.15 * scale, 12, 10), mat(item.color), x, 0.36, 0);
-  dome.scale.set(1.15, 0.72, 1);
-  const rim = part(parent, new THREE.TorusGeometry(0.13 * scale, 0.018, 5, 12), mat(item.trim), x, 0.3, 0);
+  const shoulderY = LEAN_RIG.shoulderY - LEAN_RIG.torsoY;
+  const dome = part(parent, new THREE.SphereGeometry(0.09 * scale, 12, 10), mat(item.color), x, shoulderY + 0.02, 0);
+  dome.scale.set(1.05, 0.62, 0.85);
+  const rim = part(parent, new THREE.TorusGeometry(0.078 * scale, 0.012, 5, 12), mat(item.trim), x, shoulderY - 0.04, 0);
   rim.rotation.x = Math.PI / 2;
   return dome;
 }
@@ -265,47 +267,47 @@ export function buildBodyVisual(item: ItemDef): AnchoredVisual {
   const plateLike = silhouette === 'plate-body' || silhouette === 'bandos-chest' || silhouette === 'trim-plate';
 
   if (plateLike) {
-    pauldron(torso, item, -0.42, silhouette === 'bandos-chest' ? 0.85 : 1);
-    pauldron(torso, item, 0.42, silhouette === 'bandos-chest' ? 1.25 : 1);
-    part(torso, new THREE.BoxGeometry(0.34, 0.42, 0.08), mat(item.trim), 0, 0.02, -0.24);
-    part(torso, new THREE.TorusGeometry(0.3, 0.03, 6, 14), mat(item.trim), 0, -0.32, 0).rotation.x = Math.PI / 2;
+    pauldron(torso, item, -LEAN_RIG.shoulderX, silhouette === 'bandos-chest' ? 0.85 : 1);
+    pauldron(torso, item, LEAN_RIG.shoulderX, silhouette === 'bandos-chest' ? 1.2 : 1);
+    part(torso, new THREE.BoxGeometry(0.26, 0.36, 0.05), mat(item.trim), 0, 0.04, -0.16);
+    part(torso, new THREE.TorusGeometry(0.185, 0.02, 6, 14), mat(item.trim), 0, -0.34, 0).rotation.x = Math.PI / 2;
     if (silhouette === 'bandos-chest') {
-      const spike = part(torso, new THREE.ConeGeometry(0.05, 0.22, 6), mat(item.trim), 0.5, 0.5, 0);
+      const spike = part(torso, new THREE.ConeGeometry(0.04, 0.16, 6), mat(item.trim), 0.32, 0.32, 0);
       spike.rotation.z = -0.6;
     }
     if (silhouette === 'trim-plate') {
-      part(torso, new THREE.BoxGeometry(0.16, 0.16, 0.04), glow(item.trim, 0.25), 0, 0.12, -0.29);
-      part(torso, new THREE.BoxGeometry(0.4, 0.06, 0.05), mat(item.color), 0, -0.16, -0.26);
+      part(torso, new THREE.BoxGeometry(0.12, 0.12, 0.03), glow(item.trim, 0.25), 0, 0.1, -0.19);
+      part(torso, new THREE.BoxGeometry(0.3, 0.045, 0.035), mat(item.color), 0, -0.14, -0.17);
     }
     return { torso, left: null, right: null };
   }
 
   if (silhouette === 'dhide-body') {
-    [-0.4, 0.4].forEach((x) => {
-      const pad = part(torso, new THREE.SphereGeometry(0.1, 10, 8), mat(item.color), x, 0.34, -0.02);
-      pad.scale.set(1.2, 0.55, 0.9);
-      part(torso, new THREE.SphereGeometry(0.025, 6, 6), mat(item.trim), x, 0.36, -0.1);
+    [-LEAN_RIG.shoulderX, LEAN_RIG.shoulderX].forEach((x) => {
+      const pad = part(torso, new THREE.SphereGeometry(0.075, 10, 8), mat(item.color), x, 0.26, -0.02);
+      pad.scale.set(1.1, 0.5, 0.8);
+      part(torso, new THREE.SphereGeometry(0.02, 6, 6), mat(item.trim), x, 0.28, -0.08);
     });
-    part(torso, new THREE.BoxGeometry(0.46, 0.04, 0.04), mat(item.trim), 0, 0.18, -0.22);
-    part(torso, new THREE.BoxGeometry(0.04, 0.4, 0.04), mat(item.trim), -0.1, -0.02, -0.22);
-    part(torso, new THREE.BoxGeometry(0.04, 0.4, 0.04), mat(item.trim), 0.1, -0.02, -0.22);
+    part(torso, new THREE.BoxGeometry(0.32, 0.03, 0.03), mat(item.trim), 0, 0.14, -0.16);
+    part(torso, new THREE.BoxGeometry(0.03, 0.32, 0.03), mat(item.trim), -0.08, 0, -0.16);
+    part(torso, new THREE.BoxGeometry(0.03, 0.32, 0.03), mat(item.trim), 0.08, 0, -0.16);
     return { torso, left: null, right: null };
   }
 
   if (silhouette === 'robe-top') {
-    const stole = part(torso, new THREE.BoxGeometry(0.5, 0.12, 0.18), mat(item.trim), 0, 0.32, -0.02);
-    stole.rotation.x = 0.15;
-    const cuffGeo = () => new THREE.CylinderGeometry(0.13, 0.1, 0.1, 10);
-    part(left, cuffGeo(), mat(item.color), 0, -0.5, 0);
-    part(left, new THREE.TorusGeometry(0.12, 0.016, 5, 10), mat(item.trim), 0, -0.55, 0).rotation.x = Math.PI / 2;
-    part(right, cuffGeo(), mat(item.color), 0, -0.5, 0);
-    part(right, new THREE.TorusGeometry(0.12, 0.016, 5, 10), mat(item.trim), 0, -0.55, 0).rotation.x = Math.PI / 2;
+    const stole = part(torso, new THREE.BoxGeometry(0.36, 0.08, 0.1), mat(item.trim), 0, 0.28, -0.02);
+    stole.rotation.x = 0.12;
+    const cuffGeo = () => new THREE.CylinderGeometry(0.074, 0.06, 0.08, 10);
+    part(left, cuffGeo(), mat(item.color), 0, -0.58, 0);
+    part(left, new THREE.TorusGeometry(0.072, 0.01, 5, 10), mat(item.trim), 0, -0.62, 0).rotation.x = Math.PI / 2;
+    part(right, cuffGeo(), mat(item.color), 0, -0.58, 0);
+    part(right, new THREE.TorusGeometry(0.072, 0.01, 5, 10), mat(item.trim), 0, -0.62, 0).rotation.x = Math.PI / 2;
     return { torso, left, right };
   }
 
-  part(torso, new THREE.BoxGeometry(0.08, 0.55, 0.04), mat(item.trim), -0.12, 0.02, -0.24);
-  part(torso, new THREE.TorusGeometry(0.28, 0.025, 6, 12), mat(item.trim), 0, 0.3, 0).rotation.x = Math.PI / 2.1;
-  part(torso, new THREE.BoxGeometry(0.46, 0.045, 0.05), mat(item.trim), 0, -0.34, -0.02);
+  part(torso, new THREE.BoxGeometry(0.05, 0.42, 0.03), mat(item.trim), -0.08, 0.02, -0.16);
+  part(torso, new THREE.TorusGeometry(0.2, 0.016, 6, 12), mat(item.trim), 0, 0.26, 0).rotation.x = Math.PI / 2.1;
+  part(torso, new THREE.BoxGeometry(0.32, 0.035, 0.04), mat(item.trim), 0, -0.34, -0.02);
   return { torso, left: null, right: null };
 }
 
@@ -316,47 +318,48 @@ export function buildLegsVisual(item: ItemDef): AnchoredVisual {
   const right = tag(new THREE.Group(), item, silhouette);
 
   if (silhouette === 'robe-skirt') {
-    const skirt = part(torso, new THREE.CylinderGeometry(0.28, 0.44, 0.68, 16), mat(item.color), 0, -0.72, 0);
-    skirt.scale.set(1, 1, 0.82);
-    part(torso, new THREE.TorusGeometry(0.4, 0.02, 5, 14), mat(item.trim), 0, -1.02, 0).rotation.x = Math.PI / 2;
-    part(torso, new THREE.BoxGeometry(0.04, 0.6, 0.02), mat(item.trim), 0, -0.72, -0.34);
+    const skirt = part(torso, new THREE.CylinderGeometry(LEAN_RIG.skirtRadiusTop, LEAN_RIG.skirtRadiusBottom, 0.86, 16), mat(item.color), 0, -0.67, 0);
+    skirt.scale.set(1, 1, 0.76);
+    part(torso, new THREE.TorusGeometry(0.26, 0.014, 5, 14), mat(item.trim), 0, -1.06, 0).rotation.x = Math.PI / 2;
+    part(torso, new THREE.BoxGeometry(0.03, 0.7, 0.016), mat(item.trim), 0, -0.68, -0.2);
     return { torso, left: null, right: null };
   }
 
   if (silhouette === 'tassets') {
-    const fauld = part(torso, new THREE.CylinderGeometry(0.32, 0.38, 0.22, 12), mat(item.color), 0, -0.48, 0);
-    fauld.scale.set(1, 1, 0.78);
-    part(torso, new THREE.BoxGeometry(0.16, 0.28, 0.04), mat(item.trim), -0.2, -0.62, -0.16);
-    part(torso, new THREE.BoxGeometry(0.16, 0.28, 0.04), mat(item.trim), 0.2, -0.62, -0.16);
+    const fauld = part(torso, new THREE.CylinderGeometry(0.18, LEAN_RIG.skirtRadiusBottom, 0.18, 12), mat(item.color), 0, -0.4, 0);
+    fauld.scale.set(1, 1, 0.76);
+    part(torso, new THREE.BoxGeometry(0.1, 0.22, 0.03), mat(item.trim), -0.12, -0.52, -0.12);
+    part(torso, new THREE.BoxGeometry(0.1, 0.22, 0.03), mat(item.trim), 0.12, -0.52, -0.12);
     [left, right].forEach((leg) => {
-      part(leg, new THREE.SphereGeometry(0.1, 10, 8), mat(item.trim), 0, -0.18, -0.06).scale.set(1.1, 0.7, 0.7);
+      part(leg, new THREE.SphereGeometry(0.065, 10, 8), mat(item.trim), 0, -0.22, -0.04).scale.set(1.05, 0.65, 0.65);
     });
     return { torso, left, right };
   }
 
   if (silhouette === 'dhide-chaps') {
-    part(torso, new THREE.TorusGeometry(0.3, 0.028, 5, 12), mat(item.trim), 0, -0.42, 0).rotation.x = Math.PI / 2;
-    part(torso, new THREE.BoxGeometry(0.08, 0.05, 0.04), mat(item.color), 0, -0.42, -0.28);
+    part(torso, new THREE.TorusGeometry(0.18, 0.018, 5, 12), mat(item.trim), 0, -0.36, 0).rotation.x = Math.PI / 2;
+    part(torso, new THREE.BoxGeometry(0.06, 0.04, 0.03), mat(item.color), 0, -0.36, -0.16);
     [left, right].forEach((leg) => {
-      const chap = part(leg, new THREE.BoxGeometry(0.16, 0.28, 0.06), mat(item.color), 0, -0.16, -0.08);
+      const chap = part(leg, new THREE.BoxGeometry(0.11, 0.46, 0.04), mat(item.color), 0, -0.28, -0.05);
       chap.scale.set(1, 1, 0.8);
-      part(leg, new THREE.BoxGeometry(0.06, 0.04, 0.03), mat(item.trim), 0, -0.08, -0.12);
+      part(leg, new THREE.BoxGeometry(0.05, 0.03, 0.02), mat(item.trim), 0, -0.12, -0.08);
     });
     return { torso, left, right };
   }
 
   if (silhouette === 'trousers') {
-    part(torso, new THREE.BoxGeometry(0.4, 0.04, 0.06), mat(item.trim), 0, -0.46, 0);
+    part(torso, new THREE.BoxGeometry(0.26, 0.035, 0.045), mat(item.trim), 0, -0.36, 0);
     [left, right].forEach((leg, index) => {
-      part(leg, new THREE.BoxGeometry(0.04, 0.32, 0.02), mat(item.trim), index === 0 ? 0.08 : -0.08, -0.2, -0.1);
+      part(leg, new THREE.BoxGeometry(0.03, 0.5, 0.016), mat(item.trim), index === 0 ? 0.05 : -0.05, -0.32, -0.06);
     });
     return { torso, left, right };
   }
 
   [left, right].forEach((leg) => {
-    part(leg, new THREE.SphereGeometry(0.09, 10, 8), mat(item.trim), 0, -0.16, -0.08).scale.set(1.2, 0.65, 0.75);
-    part(leg, new THREE.BoxGeometry(0.12, 0.28, 0.04), mat(item.color), 0, -0.38, -0.1);
-    part(leg, new THREE.BoxGeometry(0.1, 0.04, 0.03), mat(item.trim), 0, -0.28, -0.13);
+    part(leg, new THREE.SphereGeometry(0.06, 10, 8), mat(item.trim), 0, -0.4, -0.05).scale.set(1.1, 0.6, 0.7);
+    part(leg, new THREE.BoxGeometry(0.09, 0.34, 0.03), mat(item.color), 0, -0.22, -0.06);
+    part(leg, new THREE.BoxGeometry(0.08, 0.28, 0.025), mat(item.color), 0, -0.58, -0.05);
+    part(leg, new THREE.BoxGeometry(0.08, 0.03, 0.02), mat(item.trim), 0, -0.36, -0.08);
   });
   return { torso: null, left, right };
 }
@@ -590,77 +593,80 @@ export function buildShieldVisual(item: ItemDef): THREE.Group {
 
 export function buildAmuletVisual(item: ItemDef): THREE.Group {
   const group = tag(new THREE.Group(), item, 'amulet');
-  const chain = part(group, new THREE.TorusGeometry(0.18, 0.016, 6, 16), mat(item.trim || 0xfacc15), 0, 0.34, -0.18);
+  const chain = part(group, new THREE.TorusGeometry(0.09, 0.012, 6, 16), mat(item.trim || 0xfacc15), 0, LEAN_RIG.neckY - LEAN_RIG.torsoY, -0.02);
   chain.rotation.x = Math.PI / 2.15;
   const gemMat = glow(item.color, 0.55);
-  const gemZ = -0.42;
+  const gemZ = -0.2;
   if (item.id === 'amulet_torture') {
-    part(group, new THREE.ConeGeometry(0.05, 0.12, 6), gemMat, 0, 0.12, gemZ);
-    part(group, new THREE.ConeGeometry(0.04, 0.1, 5), mat(item.trim), -0.05, 0.14, gemZ + 0.02).rotation.z = 0.6;
-    part(group, new THREE.ConeGeometry(0.04, 0.1, 5), mat(item.trim), 0.05, 0.14, gemZ + 0.02).rotation.z = -0.6;
+    part(group, new THREE.ConeGeometry(0.04, 0.1, 6), gemMat, 0, 0.26, gemZ);
+    part(group, new THREE.ConeGeometry(0.032, 0.08, 5), mat(item.trim), -0.04, 0.28, gemZ + 0.02).rotation.z = 0.6;
+    part(group, new THREE.ConeGeometry(0.032, 0.08, 5), mat(item.trim), 0.04, 0.28, gemZ + 0.02).rotation.z = -0.6;
   } else if (item.id === 'necklace_anguish') {
-    const pendant = part(group, new THREE.TorusGeometry(0.06, 0.02, 6, 12), gemMat, 0, 0.12, gemZ);
+    const pendant = part(group, new THREE.TorusGeometry(0.045, 0.014, 6, 12), gemMat, 0, 0.26, gemZ);
     pendant.rotation.x = Math.PI / 2;
   } else if (item.id === 'occult_necklace') {
-    part(group, new THREE.OctahedronGeometry(0.07), gemMat, 0, 0.12, gemZ);
-    part(group, new THREE.TorusGeometry(0.09, 0.012, 5, 12), mat(item.trim), 0, 0.12, gemZ);
+    part(group, new THREE.OctahedronGeometry(0.05), gemMat, 0, 0.26, gemZ);
+    part(group, new THREE.TorusGeometry(0.065, 0.01, 5, 12), mat(item.trim), 0, 0.26, gemZ);
   } else if (item.id === 'amulet_power') {
-    part(group, new THREE.SphereGeometry(0.06, 12, 10), gemMat, 0, 0.12, gemZ);
+    part(group, new THREE.SphereGeometry(0.045, 12, 10), gemMat, 0, 0.26, gemZ);
   } else {
-    part(group, new THREE.OctahedronGeometry(item.id === 'amulet_fury' ? 0.085 : 0.065), gemMat, 0, 0.12, gemZ);
+    part(group, new THREE.OctahedronGeometry(item.id === 'amulet_fury' ? 0.06 : 0.048), gemMat, 0, 0.26, gemZ);
   }
   return group;
 }
 
 export function buildRingVisual(item: ItemDef): THREE.Group {
   const group = tag(new THREE.Group(), item, 'ring');
-  const band = part(group, new THREE.TorusGeometry(0.045, 0.012, 6, 12), mat(item.trim), 0, -0.66, -0.08);
+  const band = part(group, new THREE.TorusGeometry(0.038, 0.008, 6, 12), mat(item.trim), 0, LEAN_RIG.handY + 0.06, -0.02);
   band.rotation.y = Math.PI / 2;
-  part(group, new THREE.OctahedronGeometry(0.028), glow(item.color, 0.85), 0, -0.62, -0.12);
+  part(group, new THREE.OctahedronGeometry(0.02), glow(item.color, 0.85), 0, LEAN_RIG.handY + 0.1, -0.05);
   return group;
 }
 
 export function buildBootVisual(item: ItemDef, isLeft: boolean): THREE.Group {
   const silhouette = gearSilhouette(item);
   const group = tag(new THREE.Group(), item, silhouette);
-  part(group, new THREE.CylinderGeometry(0.145, 0.15, 0.12, 10), mat(item.trim), 0, -0.4, 0.02);
+  part(group, new THREE.CylinderGeometry(0.086, 0.09, 0.05, 10), mat(item.trim), 0, -0.68, 0.01);
   if (silhouette === 'pegasian-boots') {
-    const wing = part(group, new THREE.SphereGeometry(0.11, 10, 8), mat(0xf8fafc), isLeft ? -0.12 : 0.12, -0.46, 0.02);
-    wing.scale.set(0.32, 1.05, 1.25);
+    const wing = part(group, new THREE.SphereGeometry(0.08, 10, 8), mat(0xf8fafc), isLeft ? -0.09 : 0.09, -0.76, 0.01);
+    wing.scale.set(0.28, 0.9, 1.1);
     wing.rotation.z = isLeft ? 0.7 : -0.7;
   } else if (silhouette === 'primordial-boots') {
-    const spike = part(group, new THREE.ConeGeometry(0.04, 0.16, 6), glow(item.trim, 0.45), isLeft ? -0.1 : 0.1, -0.32, 0.06);
+    const spike = part(group, new THREE.ConeGeometry(0.03, 0.12, 6), glow(item.trim, 0.45), isLeft ? -0.08 : 0.08, -0.7, 0.04);
     spike.rotation.z = isLeft ? 0.9 : -0.9;
   } else if (silhouette === 'eternal-boots') {
-    part(group, new THREE.OctahedronGeometry(0.055), glow(item.color, 0.8), 0, -0.32, -0.08);
+    part(group, new THREE.OctahedronGeometry(0.04), glow(item.color, 0.8), 0, -0.7, -0.05);
   }
   return group;
 }
 
 export function buildGloveVisual(item: ItemDef): THREE.Group {
   const group = tag(new THREE.Group(), item, 'gloves');
-  part(group, new THREE.CylinderGeometry(0.115, 0.125, 0.16, 10), mat(item.trim), 0, -0.46, 0);
-  part(group, new THREE.TorusGeometry(0.12, 0.014, 5, 10), mat(item.color), 0, -0.38, 0).rotation.x = Math.PI / 2;
+  part(group, new THREE.CylinderGeometry(0.068, 0.072, 0.1, 10), mat(item.trim), 0, -0.58, 0);
+  part(group, new THREE.TorusGeometry(0.07, 0.01, 5, 10), mat(item.color), 0, -0.52, 0).rotation.x = Math.PI / 2;
   return group;
 }
 
 function clothCape(item: ItemDef, lava: boolean): THREE.Group {
   const group = new THREE.Group();
-  const geo = new THREE.PlaneGeometry(0.7, 1.15, 10, 14);
+  const geo = new THREE.PlaneGeometry(0.46, 1.22, 10, 14);
   const pos = geo.attributes.position;
   for (let i = 0; i < pos.count; i++) {
     const u = pos.getX(i);
     const v = pos.getY(i);
-    const t = (0.58 - v) / 1.15;
-    pos.setX(i, u * (0.7 + t * 0.45));
-    pos.setZ(i, Math.cos(u * 3) * 0.05 + t * 0.1);
+    const t = (0.61 - v) / 1.22;
+    pos.setX(i, u * (0.78 + t * 0.32));
+    pos.setZ(i, Math.cos(u * 4) * 0.03 + t * 0.08);
   }
   geo.computeVertexNormals();
-  const cloth = new THREE.Mesh(geo, mat(item.color, lava ? { emissive: item.color, emissiveIntensity: 0.35 } : {}));
+  const cloth = new THREE.Mesh(geo, mat(item.color, {
+    side: THREE.DoubleSide,
+    ...(lava ? { emissive: item.color, emissiveIntensity: 0.35 } : {})
+  }));
   cloth.castShadow = true;
   group.add(cloth);
-  part(group, new THREE.BoxGeometry(0.62, 0.05, 0.04), lava ? glow(item.trim, 0.85) : mat(item.trim), 0, -0.52, 0.08);
-  part(group, new THREE.SphereGeometry(0.06, 8, 6), mat(item.trim), 0, 0.52, -0.02);
+  part(group, new THREE.BoxGeometry(0.38, 0.04, 0.03), lava ? glow(item.trim, 0.85) : mat(item.trim), 0, -0.56, 0.05);
+  part(group, new THREE.SphereGeometry(0.045, 8, 6), mat(item.trim), 0, 0.56, -0.02);
   if (lava) {
     [-0.18, 0, 0.18].forEach((x) => {
       part(group, new THREE.SphereGeometry(0.035, 6, 6), glow(item.trim, 0.9), x, -0.46, 0.1);
@@ -673,7 +679,7 @@ export function buildCapeVisual(item: ItemDef): THREE.Group {
   const silhouette = gearSilhouette(item);
   const group = tag(new THREE.Group(), item, silhouette);
   if (silhouette === 'ava') {
-    part(group, new THREE.BoxGeometry(0.36, 0.42, 0.16), mat(item.color), 0, 0.02, 0.16);
+    part(group, new THREE.BoxGeometry(0.26, 0.36, 0.12), mat(item.color), 0, 0.08, 0.1);
     const quiver = part(group, new THREE.CylinderGeometry(0.07, 0.08, 0.55, 8), mat(item.trim), 0.16, 0.32, 0.12);
     quiver.rotation.z = -0.3;
     part(group, new THREE.ConeGeometry(0.025, 0.16, 5), mat(0xfde68a), 0.2, 0.58, 0.08).rotation.z = -0.3;
