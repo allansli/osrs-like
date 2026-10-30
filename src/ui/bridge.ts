@@ -19,5 +19,8 @@ export const bridge = {
   hideItemTooltip: () => {},
   claimQuest: (_questId: string) => {},
   locateRegion: (_regionId: string) => {},
-  requestSlayer: () => {}
+  requestSlayer: () => {},
+  showSellMenu: (_ev: MouseEvent, _index: number) => {},
+  sellGathered: () => {},
+  sellGear: () => {}
 };

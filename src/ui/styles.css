@@ -1217,6 +1217,101 @@
   font-weight: 700;
 }
 
+.shop-pack-pane h3 {
+  margin-bottom: 6px;
+}
+
+.sell-bulk-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.sell-bulk-btn {
+  background: linear-gradient(180deg, #3f6212, #14532d);
+  border: 1px solid #86efac;
+  color: #ecfccb;
+  border-radius: 6px;
+  padding: 7px 8px;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  text-align: left;
+  line-height: 1.3;
+}
+
+.sell-bulk-btn.gear {
+  background: linear-gradient(180deg, #85581A, #54360c);
+  border-color: #fde047;
+  color: #fef9c3;
+}
+
+.sell-bulk-btn:hover {
+  filter: brightness(1.12);
+}
+
+#shop-pack.backpack-grid {
+  grid-template-columns: 1fr;
+}
+
+.sell-card {
+  background: #1d1812;
+  border: 1px solid #6e5d45;
+  border-radius: 6px;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.sell-card-main {
+  display: grid;
+  grid-template-columns: 34px 1fr auto;
+  gap: 6px;
+  align-items: center;
+  background: transparent;
+  color: #f6f2e4;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  position: relative;
+}
+
+.sell-quick-row {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 3px;
+}
+
+.sell-quick {
+  background: #241c14;
+  color: #fef08a;
+  border: 1px solid #6e5d45;
+  border-radius: 4px;
+  padding: 3px 0 2px;
+  font-size: 9px;
+  font-weight: 800;
+  cursor: pointer;
+  line-height: 1.15;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.sell-quick-gp {
+  color: #ffe642;
+  font-size: 8px;
+  font-weight: 700;
+}
+
+.sell-quick:hover {
+  border-color: var(--osrs-gold);
+  background: #3a2d1c;
+}
+
 .qty-badge {
   background: #111;
   color: #ffe642;
@@ -1381,7 +1476,8 @@
   position: fixed;
   z-index: 140;
   display: none;
-  min-width: 196px;
+  min-width: 220px;
+  width: max-content;
   background: #3e3529;
   border: 2px solid #0c0a09;
   box-shadow: 2px 2px 0 #000;
@@ -1407,6 +1503,7 @@
   cursor: pointer;
   background: #5b5346;
   border-top: 1px solid #2a241c;
+  white-space: nowrap;
 }
 
 .osrs-menu-item:hover {

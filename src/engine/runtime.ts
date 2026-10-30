@@ -6,7 +6,7 @@ import { PRAYERS, SPELLS } from '../data/magic';
 import { tryCraft, isLogId } from '../data/recipes';
 import { WORLD_REGIONS, MONSTER_TYPES, RESOURCE_NODES_DEF } from '../data/world';
 import { STATE, applyState } from '../state/gameState';
-import { addItem, removeItem, countItem, canAddItem, sellItem, buyItem } from '../state/inventory';
+import { addItem, removeItem, countItem, canAddItem, sellItem, buyItem, sellInventoryMatch, isGatheredGood, isUnequippedGear } from '../state/inventory';
 import { readSave, writeSave, SAVE_KEY, LEGACY_SAVE_KEYS } from '../state/save';
 import { prepareAttack, allowedStyles, mitigateDamage, canCastTeleport, equippedWeapon } from '../state/combat';
 import {
@@ -28,6 +28,7 @@ import { moveWithCollision, isWalkable, isDeepWater } from '../state/collision';
 import { discoverShrines } from '../state/shrines';
 import { applyGold200k, applySkillsPlus10, matchCheat } from '../state/cheats';
 import { addCartoonOutline, facetMaterial, grassMaterial, PALETTE } from './materials';
+import { buildHumanoidRig, LEAN_RIG } from './humanoid';
 import {
   buildAmuletVisual,
   buildBodyVisual,
@@ -262,18 +263,47 @@ function removeItemsFromInventory(itemId, count = 1) {
   return removed;
 }
 
-function sellInventoryItem(index) {
+function sellInventoryItem(index, qtyMode) {
   const slot = STATE.inventory[index];
   if (!slot) return;
   const item = ITEMS[slot.id];
-  const result = sellItem(STATE, slot.id, 1);
+  const mode = qtyMode ?? STATE.transferQty ?? 1;
+  const result = sellItem(STATE, slot.id, mode);
   if (!result.ok) {
     addChatMessage(result.reason || 'Cannot sell that.', 'combat');
     return;
   }
   SFX.coin();
-  addChatMessage('Sold <b>' + (item ? item.name : slot.id) + '</b> for <b style="color:#ffe642">' + result.gp.toLocaleString() + ' GP</b> (65%).', 'loot');
+  const name = item ? item.name : slot.id;
+  addChatMessage('Sold <b>' + result.moved + ' × ' + name + '</b> for <b style="color:#ffe642">' + result.gp.toLocaleString() + ' GP</b> (65%).', 'loot');
   updateAllUI();
+}
+
+function sellPayoutLabel(itemId, mode) {
+  const item = ITEMS[itemId];
+  const have = countItem(STATE, itemId);
+  const n = mode === 'all' ? have : Math.min(mode, have);
+  const gp = (item ? unitSellPrice(item) : 1) * Math.max(0, n);
+  return { n, gp };
+}
+
+function showSellChooseMenu(e, index) {
+  const slot = STATE.inventory[index];
+  if (!slot || !ITEMS[slot.id]) return;
+  const modes = [1, 5, 10, 50, 'all'];
+  const options = modes.map((mode) => {
+    const payout = sellPayoutLabel(slot.id, mode);
+    const label = mode === 'all'
+      ? 'Sell All (' + payout.gp.toLocaleString() + ' GP)'
+      : 'Sell ' + mode + ' (' + payout.gp.toLocaleString() + ' GP)';
+    return {
+      label,
+      tone: 'yellow',
+      run: () => sellInventoryItem(index, mode)
+    };
+  });
+  options.push({ label: 'Cancel', run: () => {} });
+  openChooseMenu(e.clientX, e.clientY, options);
 }
 
 function handleInventoryClick(index) {
@@ -545,14 +575,17 @@ function updateAllUI() {
       } else if (it.heal) {
         statsInfo = ` (Heals +${it.heal} HP)`;
       }
-      const sellVal = Math.max(1, Math.floor((it.price || 10) * 0.65));
       const reqInfo = getItemReqInfo(it);
-      slotDiv.title = `${it.name}${statsInfo}\n${reqInfo.plain}\nLeft-Click: Use/Equip | Right-Click: Sell (+${sellVal} GP)`;
+      slotDiv.title = `${it.name}${statsInfo}\n${reqInfo.plain}\nLeft-Click: Use/Equip | Right-Click: Choose Option`;
       slotDiv.onclick = () => handleInventoryClick(i);
       slotDiv.onmouseenter = (ev) => showItemTooltip(ev, it);
       slotDiv.onmousemove = (ev) => moveItemTooltip(ev);
       slotDiv.onmouseleave = () => hideItemTooltip();
-      slotDiv.oncontextmenu = (e) => { e.preventDefault(); sellInventoryItem(i); };
+      slotDiv.oncontextmenu = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        showSellChooseMenu(e, i);
+      };
     }
     invGrid.appendChild(slotDiv);
   }
@@ -745,26 +778,25 @@ function buyShopPair(topId, bottomId) {
 }
 
 function sellAllLoot() {
-  let soldCount = 0;
-  let earnedGp = 0;
-  const ids = Array.from(new Set(STATE.inventory.map(slot => slot.id)));
-  ids.forEach(id => {
-    const it = ITEMS[id];
-    if (!it || (it.type !== 'resource' && it.type !== 'bones' && it.type !== 'bar')) return;
-    const qty = countItem(STATE, id);
-    const result = sellItem(STATE, id, 'all');
-    if (result.ok) {
-      soldCount += qty;
-      earnedGp += result.gp || 0;
-    }
-  });
-  if (soldCount > 0) {
-    SFX.coin();
-    addChatMessage('Sold ' + soldCount + ' gathered goods for <b style="color:#ffe642">' + earnedGp.toLocaleString() + ' GP</b> (65%).', 'loot');
-    updateAllUI();
-  } else {
-    addChatMessage('No raw resources in your backpack to bulk-sell.');
+  const result = sellInventoryMatch(STATE, isGatheredGood, 'No raw resources in your backpack to bulk-sell.');
+  if (!result.ok) {
+    addChatMessage(result.reason || 'No raw resources in your backpack to bulk-sell.');
+    return;
   }
+  SFX.coin();
+  addChatMessage('Sold ' + result.moved + ' gathered goods for <b style="color:#ffe642">' + (result.gp || 0).toLocaleString() + ' GP</b> (65%).', 'loot');
+  updateAllUI();
+}
+
+function sellAllUnequippedGear() {
+  const result = sellInventoryMatch(STATE, isUnequippedGear, 'No unequipped gear in your backpack to sell.');
+  if (!result.ok) {
+    addChatMessage(result.reason || 'No unequipped gear in your backpack to sell.');
+    return;
+  }
+  SFX.coin();
+  addChatMessage('Sold ' + result.moved + ' unequipped gear for <b style="color:#ffe642">' + (result.gp || 0).toLocaleString() + ' GP</b> (65%).', 'loot');
+  updateAllUI();
 }
 
 function openSmithingModal() {
@@ -1629,14 +1661,14 @@ function createSlayerMaster(x, z) {
   const rig = buildHumanoidRig(0x4c1d95, 0x1c1917, 0x111827, 1.05);
   rig.group.position.set(x, y, z);
   const cape = new THREE.Mesh(
-    new THREE.PlaneGeometry(0.72, 1.05),
+    new THREE.PlaneGeometry(0.5, 1.15),
     facetMaterial({ color: 0x4c1d95, side: THREE.DoubleSide })
   );
-  cape.position.set(0, 1.2, 0.24);
+  cape.position.set(0, 1.32, 0.2);
   rig.group.add(cape);
   addCartoonOutline(cape, 0.022);
   const sword = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.95, 0.08), facetMaterial({ color: 0xfacc15 }));
-  sword.position.set(0, -0.72, 0.02);
+  sword.position.set(0, LEAN_RIG.handY, 0.02);
   const guard = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.08, 0.1), facetMaterial({ color: 0xfde047 }));
   guard.position.set(0, -0.28, 0.02);
   rig.rightArmPivot.add(sword, guard);
@@ -1665,121 +1697,6 @@ function createMerchantNPC(x, z, name, tunicColor) {
 // ============================================================================
 // 8. SMOOTH SCULPTED 3D CHARACTER, 10-SLOT GEAR, MONSTERS & ORGANIC TREES
 // ============================================================================
-function buildHumanoidRig(tunicHex = 0x0284c7, hairHex = 0xfacc15, legsHex = 0xa1887f, scale = 1.0) {
-  const group = new THREE.Group();
-  group.scale.set(scale, scale, scale);
-
-  const skinMat = facetMaterial({ color: 0xffd7b5 });
-  const tunicMat = facetMaterial({ color: tunicHex });
-  const legsMat = facetMaterial({ color: legsHex });
-  const hairMat = facetMaterial({ color: hairHex });
-  const bootMat = facetMaterial({ color: 0x78350f });
-  const gloveMat = facetMaterial({ color: 0xf6c7a1 });
-
-  const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.38, 0.88, 16), tunicMat);
-  torso.position.y = 1.2;
-  torso.castShadow = true;
-  group.add(torso);
-
-  const collar = new THREE.Mesh(new THREE.SphereGeometry(0.29, 16, 10, 0, Math.PI * 2, 0, Math.PI * 0.52), tunicMat);
-  collar.position.y = 0.36;
-  collar.castShadow = true;
-  torso.add(collar);
-
-  const headGroup = new THREE.Group();
-  headGroup.position.set(0, 1.92, 0);
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.25, 18, 16), skinMat);
-  head.scale.set(1.0, 1.06, 0.96);
-  head.castShadow = true;
-  headGroup.add(head);
-
-  const hairCap = new THREE.Mesh(
-    new THREE.SphereGeometry(0.268, 18, 14, 0, Math.PI * 2, 0, Math.PI * 0.58),
-    hairMat
-  );
-  hairCap.position.y = 0.02;
-  hairCap.rotation.x = 0.42;
-  hairCap.castShadow = true;
-  headGroup.add(hairCap);
-
-  const eyeMat = new THREE.MeshBasicMaterial({ color: 0x1c1917 });
-  [-0.09, 0.09].forEach((ox) => {
-    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.036, 10, 8), eyeMat);
-    eye.scale.set(1.15, 0.78, 0.42);
-    eye.position.set(ox, 0.02, -0.232);
-    eye.userData.noOutline = true;
-    headGroup.add(eye);
-  });
-  const nose = new THREE.Mesh(new THREE.SphereGeometry(0.032, 8, 6), skinMat);
-  nose.scale.set(0.85, 0.7, 0.9);
-  nose.position.set(0, -0.045, -0.248);
-  nose.userData.noOutline = true;
-  headGroup.add(nose);
-  group.add(headGroup);
-
-  function createSmoothArm(isLeft) {
-    const pivot = new THREE.Group();
-    pivot.position.set(isLeft ? -0.42 : 0.42, 1.56, 0);
-    const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.125, 0.58, 14), tunicMat);
-    arm.position.y = -0.3;
-    arm.castShadow = true;
-    pivot.add(arm);
-    const hand = new THREE.Mesh(new THREE.SphereGeometry(0.1, 12, 10), gloveMat);
-    hand.position.y = -0.66;
-    hand.castShadow = true;
-    pivot.add(hand);
-    return pivot;
-  }
-
-  const leftArmPivot = createSmoothArm(true);
-  const rightArmPivot = createSmoothArm(false);
-  group.add(leftArmPivot, rightArmPivot);
-
-  function createSmoothLeg(isLeft) {
-    const pivot = new THREE.Group();
-    pivot.position.set(isLeft ? -0.16 : 0.16, 0.74, 0);
-    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.14, 0.52, 14), legsMat);
-    leg.position.y = -0.26;
-    leg.castShadow = true;
-    pivot.add(leg);
-    const boot = new THREE.Mesh(new THREE.SphereGeometry(0.14, 14, 10), bootMat);
-    boot.scale.set(0.95, 0.72, 1.45);
-    boot.position.set(0, -0.56, 0.02);
-    boot.castShadow = true;
-    pivot.add(boot);
-    return pivot;
-  }
-
-  const leftLegPivot = createSmoothLeg(true);
-  const rightLegPivot = createSmoothLeg(false);
-  group.add(leftLegPivot, rightLegPivot);
-
-  const hitbox = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.88, 0.88, 2.5, 10),
-    new THREE.MeshBasicMaterial({ visible: false })
-  );
-  hitbox.position.y = 1.25;
-  hitbox.userData.isCollider = true;
-  group.add(hitbox);
-  addCartoonOutline(group, 0.022);
-
-  return {
-    group,
-    torso,
-    headGroup,
-    hairCap,
-    leftArmPivot,
-    rightArmPivot,
-    leftLegPivot,
-    rightLegPivot,
-    tunicMat,
-    legsMat,
-    bootMat,
-    gloveMat,
-    hitbox
-  };
-}
-
 function buildPlayerCharacter() {
   const rig = buildHumanoidRig(0x0284c7, 0xfacc15, 0xa1887f, 1.06);
   player.meshGroup = rig.group;
@@ -1906,7 +1823,7 @@ function rebuildPlayerEquipmentMeshes() {
   const weapon = equip('weapon');
   if (weapon) {
     const visual = buildWeaponVisual(weapon);
-    visual.group.position.set(0, -0.70, -0.12);
+    visual.group.position.set(0, LEAN_RIG.handY, -0.08);
     mount(rArm, visual.group, 'wepMesh');
     player.parts.whipRig = visual.whipRig;
     if (visual.whipRig) syncWhipGeometry(visual.whipRig, 0);
@@ -1916,7 +1833,7 @@ function rebuildPlayerEquipmentMeshes() {
   if (shieldItem) {
     const shield = buildShieldVisual(shieldItem);
     const defender = shield.userData.silhouette === 'defender';
-    shield.position.set(defender ? 0.02 : -0.16, defender ? -0.64 : -0.48, defender ? -0.14 : -0.08);
+    shield.position.set(defender ? 0.0 : -0.08, defender ? LEAN_RIG.handY + 0.04 : -0.46, defender ? -0.1 : -0.05);
     mount(lArm, shield, 'shieldMesh');
   }
 
@@ -1946,7 +1863,7 @@ function rebuildPlayerEquipmentMeshes() {
   const ring = equip('ring');
   if (ring) {
     const ringMesh = buildRingVisual(ring);
-    ringMesh.position.x = 0.11;
+    ringMesh.position.set(0, 0, 0);
     mount(rArm, ringMesh, 'ringMesh');
   }
 
@@ -1965,12 +1882,12 @@ function rebuildPlayerEquipmentMeshes() {
   const capeItem = equip('cape');
   if (capeItem) {
     const cape = buildCapeVisual(capeItem);
-    if (cape.userData.silhouette === 'ava') cape.position.set(0, 0.06, 0.3);
-    else cape.position.set(0, 0.02, 0.34);
+    if (cape.userData.silhouette === 'ava') cape.position.set(0, 0.1, 0.18);
+    else cape.position.set(0, -0.04, 0.2);
     mount(torso, cape, 'capeMesh');
   }
 
-  if (player.meshGroup) addCartoonOutline(player.meshGroup, 0.022);
+  if (player.meshGroup) addCartoonOutline(player.meshGroup, LEAN_RIG.outline);
 }
 
 // Bespoke OSRS × Zelda monster silhouettes. Each species owns its anatomy.
@@ -3046,6 +2963,13 @@ function setupInputHandlers() {
     keysPressed[e.code] = false;
   });
 
+  document.addEventListener('mousedown', (e) => {
+    const menu = document.getElementById('context-menu');
+    if (!menu || !menu.classList.contains('open')) return;
+    if (menu.contains(e.target)) return;
+    hideContextMenu();
+  });
+
   const canvas = renderer.domElement;
   canvas.addEventListener('contextmenu', e => e.preventDefault());
   const canvasHost = document.getElementById('game-canvas-container');
@@ -3262,7 +3186,10 @@ function onGameContextMenu(e) {
     });
   }
   options.push({ label: 'Cancel', run: () => {} });
+  openChooseMenu(e.clientX, e.clientY, options);
+}
 
+function openChooseMenu(clientX, clientY, options) {
   const menu = document.getElementById('context-menu');
   const list = document.getElementById('context-menu-list');
   if (!menu || !list) return;
@@ -3270,6 +3197,7 @@ function onGameContextMenu(e) {
   options.forEach((opt) => {
     const row = document.createElement('div');
     row.className = 'osrs-menu-item' + (opt.tone ? ` threat-${opt.tone}` : '');
+    row.setAttribute('role', 'menuitem');
     row.textContent = opt.label;
     row.addEventListener('click', (ev) => {
       ev.stopPropagation();
@@ -3278,8 +3206,8 @@ function onGameContextMenu(e) {
     });
     list.appendChild(row);
   });
-  const left = Math.min(window.innerWidth - 220, e.clientX);
-  const top = Math.min(window.innerHeight - (options.length * 24 + 28), e.clientY);
+  const left = Math.min(window.innerWidth - 280, clientX);
+  const top = Math.min(window.innerHeight - (options.length * 24 + 36), clientY);
   menu.style.left = Math.max(8, left) + 'px';
   menu.style.top = Math.max(8, top) + 'px';
   menu.classList.add('open');
@@ -5016,6 +4944,9 @@ function wireBridge() {
   bridge.claimQuest = (questId) => claimQuestReward(questId);
   bridge.locateRegion = (regionId) => locateQuestRegion(regionId);
   bridge.requestSlayer = () => requestSlayerTask();
+  bridge.showSellMenu = (ev, index) => showSellChooseMenu(ev, index);
+  bridge.sellGathered = () => sellAllLoot();
+  bridge.sellGear = () => sellAllUnequippedGear();
   window.cheatSkillsPlus10 = cheatSkillsPlus10;
   window.cheatGold200k = cheatGold200k;
   window.applyTypedCheat = applyTypedCheat;
@@ -5039,6 +4970,7 @@ function wireBridge() {
   window.buyShopItem = buyShopItem;
   window.buyShopPair = buyShopPair;
   window.sellAllLoot = sellAllLoot;
+  window.sellAllUnequippedGear = sellAllUnequippedGear;
   window.unequipSlot = unequipSlot;
   window.toggleSpecialAttack = toggleSpecialAttack;
   window.togglePrayer = togglePrayer;

@@ -2,7 +2,7 @@ import { ITEMS, TIER_COLORS, combatClassLabel, isStackableInBackpack, itemCombat
 import { SKILLS_META } from '../data/skills';
 import { FORGE_RECIPES, recipeById } from '../data/recipes';
 import { WORLD_REGIONS, type RegionDef } from '../data/world';
-import { buyItem, buyRunePack, canAddItem, countItem, deposit, runePackCost, sellItem, withdraw } from '../state/inventory';
+import { buyItem, buyRunePack, canAddItem, countItem, deposit, isGatheredGood, isUnequippedGear, quoteInventorySale, runePackCost, sellItem, withdraw } from '../state/inventory';
 import { BACKPACK_SIZE, STATE } from '../state/gameState';
 import { questView } from '../state/adventure';
 import { isShrineDiscovered } from '../state/shrines';
@@ -87,6 +87,30 @@ function bindQty(root: ParentNode): void {
       bridge.refresh();
     };
   });
+}
+
+const SELL_QUICK: QtyMode[] = [1, 5, 10, 50, 'all'];
+
+function sellQty(itemId: string, mode: QtyMode): number {
+  const have = countItem(STATE, itemId);
+  if (mode === 'all') return have;
+  return Math.min(mode, have);
+}
+
+function sellGp(itemId: string, mode: QtyMode): number {
+  const item = ITEMS[itemId];
+  if (!item) return 0;
+  return unitSellPrice(item) * sellQty(itemId, mode);
+}
+
+function reportSell(id: string, mode: QtyMode): void {
+  const result = sellItem(STATE, id, mode);
+  if (!result.ok) bridge.chat(result.reason || 'Cannot sell that.', 'combat');
+  else {
+    bridge.coin();
+    bridge.chat(`Sold ${result.moved} × <b>${ITEMS[id]?.name}</b> for ${result.gp?.toLocaleString('en-US')} GP (65%).`, 'loot');
+  }
+  bridge.refresh();
 }
 
 function bindItemTooltip(el: HTMLElement, it: ItemDef | undefined): void {
@@ -231,8 +255,9 @@ export function renderShopModal(): void {
         <h3>General Store</h3>
         <div class="shop-grid" id="shop-items-grid"></div>
       </section>
-      <section class="pane">
+      <section class="pane shop-pack-pane">
         <h3>Backpack — click to sell</h3>
+        <div class="sell-bulk-bar" id="shop-pack-toolbar"></div>
         <div class="stack-grid backpack-grid" id="shop-pack"></div>
       </section>
     </div>
@@ -309,13 +334,82 @@ export function renderShopModal(): void {
     grid.appendChild(card);
   });
 
+  const resourceGp = quoteInventorySale(STATE, isGatheredGood);
+  const gearGp = quoteInventorySale(STATE, isUnequippedGear);
+  const toolbar = body.querySelector('#shop-pack-toolbar')!;
+  const resourceBtn = document.createElement('button');
+  resourceBtn.type = 'button';
+  resourceBtn.className = 'sell-bulk-btn';
+  resourceBtn.textContent = `Sell All Resources (+${resourceGp.toLocaleString('en-US')} GP)`;
+  resourceBtn.title = 'Ores, raw fish, logs, bars, and bones at 65%.';
+  resourceBtn.onclick = () => bridge.sellGathered();
+  const gearBtn = document.createElement('button');
+  gearBtn.type = 'button';
+  gearBtn.className = 'sell-bulk-btn gear';
+  gearBtn.textContent = `Sell All Unequipped Gear (+${gearGp.toLocaleString('en-US')} GP)`;
+  gearBtn.title = 'Every unequipped weapon and armour piece in the backpack, at 65%.';
+  gearBtn.onclick = () => bridge.sellGear();
+  toolbar.append(resourceBtn, gearBtn);
+
   const pack = body.querySelector('#shop-pack')!;
   if (STATE.inventory.length === 0) pack.innerHTML = `<div class="empty-note">Nothing to sell.</div>`;
-  STATE.inventory.forEach((slot) => {
-    const btn = slotButton(slot, 'sell');
-    const unit = unitSellPrice(ITEMS[slot.id]);
-    btn.title = `Sell for ${unit} GP each`;
-    pack.appendChild(btn);
+  STATE.inventory.forEach((slot, index) => {
+    const it = ITEMS[slot.id];
+    const card = document.createElement('div');
+    card.className = 'sell-card';
+    card.dataset.index = String(index);
+    card.dataset.item = slot.id;
+
+    const main = document.createElement('button');
+    main.type = 'button';
+    main.className = 'sell-card-main';
+    main.dataset.action = 'sell';
+    main.dataset.item = slot.id;
+    const mode = STATE.transferQty;
+    const cardGp = sellGp(slot.id, mode);
+    const modeLabel = mode === 'all' ? 'all' : `×${mode}`;
+    main.title = `Sell ${modeLabel} for ${cardGp.toLocaleString('en-US')} GP (65%)`;
+    const tier = it?.tier && (TIER_COLORS as Record<string, string>)[it.tier];
+    main.innerHTML = `
+      <span class="stack-icon">${getItemSvg(it)}</span>
+      <span class="stack-name">${it?.name || slot.id}</span>
+      <span class="qty-badge">${slot.qty}</span>
+      ${tier ? `<span class="item-tier-dot" style="background:${tier}"></span>` : ''}
+    `;
+    bindItemTooltip(main, it);
+    main.onclick = (ev) => {
+      ev.stopPropagation();
+      reportSell(slot.id, STATE.transferQty);
+    };
+
+    const row = document.createElement('div');
+    row.className = 'sell-quick-row';
+    SELL_QUICK.forEach((qty) => {
+      const quick = document.createElement('button');
+      quick.type = 'button';
+      quick.className = 'sell-quick';
+      const gp = sellGp(slot.id, qty);
+      const gpLabel = gp.toLocaleString('en-US');
+      const verb = qty === 'all' ? 'All' : `-${qty}`;
+      quick.dataset.sellMode = String(qty);
+      quick.title = qty === 'all'
+        ? `Sell All for ${gpLabel} GP (65%)`
+        : `Sell ${qty} for ${gpLabel} GP (65%)`;
+      quick.innerHTML = `<span>${verb}</span><span class="sell-quick-gp">${gpLabel}</span>`;
+      quick.onclick = (ev) => {
+        ev.stopPropagation();
+        reportSell(slot.id, qty);
+      };
+      row.appendChild(quick);
+    });
+
+    card.oncontextmenu = (ev) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      bridge.showSellMenu(ev, index);
+    };
+    card.append(main, row);
+    pack.appendChild(card);
   });
 
   bindQty(body);
@@ -351,18 +445,6 @@ export function renderShopModal(): void {
       else {
         bridge.coin();
         bridge.chat(`Bought a rune pack: <b>${qty.toLocaleString('en-US')}</b> of every rune (${result.moved.toLocaleString('en-US')} runes) for ${result.gp?.toLocaleString('en-US')} GP.`, 'loot');
-      }
-      bridge.refresh();
-    };
-  });
-  body.querySelectorAll<HTMLButtonElement>('[data-action="sell"]').forEach((btn) => {
-    btn.onclick = () => {
-      const id = btn.dataset.item || '';
-      const result = sellItem(STATE, id, STATE.transferQty);
-      if (!result.ok) bridge.chat(result.reason || 'Cannot sell that.', 'combat');
-      else {
-        bridge.coin();
-        bridge.chat(`Sold ${result.moved} × <b>${ITEMS[id]?.name}</b> for ${result.gp?.toLocaleString()} GP (65%).`, 'loot');
       }
       bridge.refresh();
     };
