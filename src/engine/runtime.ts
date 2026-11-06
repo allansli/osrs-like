@@ -13,15 +13,19 @@ import {
   assignSlayerTask,
   adventureTracker,
   attackOptionLabel,
+  applyRespawn,
   claimQuest,
   combatLevel,
+  deathNotice,
   dharokMultiplier,
   gatherVerb,
   isBossLoot,
+  hitSplatKind,
   isRareLoot,
   monsterThreatColor,
   noteGather,
   registerKill,
+  RESPAWN_SECONDS,
   resolveDragonfire,
   slayerCard,
   weaponSpecial
@@ -1010,6 +1014,8 @@ const player = {
   attackAnim: 0,
   spinAnim: 0,
   actionCooldown: 0,
+  downed: false,
+  downedTimer: 0,
   meshGroup: null,
   parts: {}
 };
@@ -2997,7 +3003,7 @@ function setupInputHandlers() {
   window.addEventListener('keydown', e => {
     keysPressed[e.code] = true;
     noteCheatKey(e);
-    if (e.code === 'Space' && player.isGrounded) {
+    if (e.code === 'Space' && player.isGrounded && !player.downed) {
       player.jumpVel = 7.8;
       player.isGrounded = false;
       SFX.jump();
@@ -3046,7 +3052,7 @@ function setupInputHandlers() {
     }
     if (e.button === 0) {
       hideContextMenu();
-      handleWorldClick(e);
+      if (!player.downed) handleWorldClick(e);
     }
   });
 
@@ -3393,7 +3399,8 @@ function spawnHitSplatWorld(worldPos, dmg, splatType = 'hit') {
   el.className = `hitsplat ${splatType}`;
   el.style.left = screenPos.x + 'px';
   el.style.top = screenPos.y + 'px';
-  el.textContent = splatType === 'heal' ? `+${dmg}` : dmg;
+  const label = splatType === 'heal' ? `+${dmg}` : String(dmg);
+  el.innerHTML = `<span class="hitsplat-num">${label}</span>`;
   document.getElementById('world-labels').appendChild(el);
   setTimeout(() => el.remove(), 1050);
 }
@@ -3953,7 +3960,7 @@ function spawnLevelUpFireworks(colorHex = 0xfde047) {
 }
 
 function performPlayerAttack(monster) {
-  if (monster.dead) return;
+  if (monster.dead || player.downed) return;
   const prep = prepareAttack(STATE);
   if (!prep.ok) {
     addChatMessage(prep.reason, 'combat');
@@ -4019,7 +4026,7 @@ function performPlayerAttack(monster) {
     if (dmg > 0) {
       SFX.hit();
       monster.hp = Math.max(0, monster.hp - dmg);
-      spawnHitSplatWorld(monster.pos, dmg, (dmg >= maxHit || isSpec) ? 'maxhit' : 'hit');
+      spawnHitSplatWorld(monster.pos, dmg, isSpec ? 'maxhit' : hitSplatKind(dmg, maxHit));
 
       if (style === 'magic' && STATE.activeSpell === 'blood_barrage') {
         const healAmt = Math.max(1, Math.floor(dmg * 0.25));
@@ -4119,7 +4126,7 @@ function handleMonsterDeath(monster) {
 }
 
 function performMonsterRetaliation(monster) {
-  if (monster.dead || STATE.hp <= 0) return;
+  if (monster.dead || player.downed || STATE.hp <= 0) return;
   monster.attackAnim = 1;
   const bon = getEquipmentBonuses();
   const defLvl = STATE.skills.defence.lvl + (STATE.combatStyle === 'defensive' ? 3 : 0);
@@ -4151,7 +4158,7 @@ function performMonsterRetaliation(monster) {
     }
     if (dmg > 0) {
       STATE.hp = Math.max(0, STATE.hp - dmg);
-      spawnHitSplatOnPlayer(dmg, 'hit');
+      spawnHitSplatOnPlayer(dmg, hitSplatKind(dmg, monster.def.maxHit));
       if (STATE.hp <= 0) {
         handlePlayerDeath();
       }
@@ -4186,12 +4193,43 @@ function performMonsterRetaliation(monster) {
 }
 
 function handlePlayerDeath() {
-  addChatMessage('<b>Oh dear, you have fallen in battle!</b> You awaken in Lumbridge Haven with all your gear and GP intact.', 'combat');
-  STATE.hp = STATE.maxHp;
-  STATE.prayerPts = STATE.maxPrayerPts;
+  if (player.downed) return;
+  player.downed = true;
+  player.downedTimer = RESPAWN_SECONDS;
+  player.targetEntity = null;
+  player.targetPos = null;
+  STATE.hp = 0;
   STATE.activePrayers.clear();
-  monstersList.forEach(m => m.inCombatWithPlayer = false);
-  teleportToRegion('lumbridge');
+  monstersList.forEach(m => { m.inCombatWithPlayer = false; });
+  const notice = deathNotice();
+  const overlay = document.getElementById('death-overlay');
+  if (overlay) {
+    overlay.hidden = false;
+    const title = document.getElementById('death-title');
+    const body = document.getElementById('death-body');
+    if (title) title.textContent = notice.title;
+    if (body) body.textContent = notice.body;
+  }
+  const count = document.getElementById('death-count');
+  if (count) count.textContent = String(Math.ceil(RESPAWN_SECONDS));
+  updateAllUI();
+}
+
+function finishRespawn() {
+  applyRespawn(STATE);
+  player.downed = false;
+  player.downedTimer = 0;
+  const overlay = document.getElementById('death-overlay');
+  if (overlay) overlay.hidden = true;
+  const reg = WORLD_REGIONS.find(r => r.id === 'lumbridge');
+  if (reg) {
+    player.pos.set(reg.x, getTerrainHeight(reg.x, reg.z + 4), reg.z + 4);
+    player.yaw = Math.PI;
+    camState.yaw = Math.PI;
+    camState.manualOffset = 0;
+    triggerRegionBanner(reg);
+  }
+  addChatMessage(`<b>${deathNotice().title}</b> ${deathNotice().body}`, 'combat');
   updateAllUI();
 }
 
@@ -4394,7 +4432,7 @@ function updateFloatingWorldLabels() {
       playerOverheadEl.style.top = sp.y + 'px';
       if (playerOverheadEl.dataset.prayer !== overheadPrayerId) {
         playerOverheadEl.dataset.prayer = overheadPrayerId;
-        playerOverheadEl.innerHTML = `<div class="overhead-prayer-badge">${getPrayerSvg(overheadPrayerId)}</div>`;
+        playerOverheadEl.innerHTML = `<div class="overhead-prayer-badge overhead-${overheadPrayerId}">${getPrayerSvg(overheadPrayerId)}</div>`;
       }
     } else {
       playerOverheadEl.style.display = 'none';
@@ -4491,6 +4529,19 @@ function gameLoop(now) {
   lastFrameTime = now;
   const elapsedSec = now * 0.001;
 
+  if (player.downed) {
+    player.downedTimer -= dt;
+    const count = document.getElementById('death-count');
+    if (count) count.textContent = String(Math.max(0, Math.ceil(player.downedTimer)));
+    if (player.downedTimer <= 0) finishRespawn();
+  } else if (getEquipmentBonuses().matchedSet) {
+    setBonusTimer += dt;
+    if (setBonusTimer > 1.7) {
+      setBonusTimer = 0;
+      spawnExpandingRing(player.pos, 0xfde047, 0.55, 1.8, 0.42, 0.55);
+    }
+  }
+
   if (waterUniforms) waterUniforms.uTime.value = elapsedSec;
   if (skyUniforms) skyUniforms.uTime.value = elapsedSec;
   if (skyDomeMesh) skyDomeMesh.position.copy(player.pos);
@@ -4519,16 +4570,21 @@ function gameLoop(now) {
   if (keysPressed['KeyQ']) camState.manualOffset += turnSpeed * dt;
   if (keysPressed['KeyE']) camState.manualOffset -= turnSpeed * dt;
 
-  if (keysPressed['KeyA'] || keysPressed['ArrowLeft']) {
+  if (player.downed) {
+    player.targetPos = null;
+    player.targetEntity = null;
+  }
+
+  if (!player.downed && (keysPressed['KeyA'] || keysPressed['ArrowLeft'])) {
     player.yaw += turnSpeed * dt;
   }
-  if (keysPressed['KeyD'] || keysPressed['ArrowRight']) {
+  if (!player.downed && (keysPressed['KeyD'] || keysPressed['ArrowRight'])) {
     player.yaw -= turnSpeed * dt;
   }
 
   let forwardInput = 0;
-  if (keysPressed['KeyW'] || keysPressed['ArrowUp']) forwardInput += 1;
-  if (keysPressed['KeyS'] || keysPressed['ArrowDown']) forwardInput -= 0.75;
+  if (!player.downed && (keysPressed['KeyW'] || keysPressed['ArrowUp'])) forwardInput += 1;
+  if (!player.downed && (keysPressed['KeyS'] || keysPressed['ArrowDown'])) forwardInput -= 0.75;
 
   if (forwardInput !== 0) {
     manualMoving = true;
@@ -4879,6 +4935,7 @@ function gameLoop(now) {
   renderer.render(scene, camera);
 }
 
+let setBonusTimer = 0;
 let lastAutoSaveTime = 0;
 let labelTick = 0;
 let miniTick = 1;

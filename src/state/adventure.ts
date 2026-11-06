@@ -222,6 +222,30 @@ export interface WeaponSpec {
   kind: 'melee' | 'ranged';
 }
 
+export const RESPAWN_SECONDS = 3.2;
+
+export function deathNotice(): { title: string; body: string } {
+  return {
+    title: 'Oh dear, you are dead.',
+    body: 'You keep your gear and coins. You will wake in Lumbridge Haven.'
+  };
+}
+
+export function applyRespawn(state: GameState): void {
+  state.hp = Math.max(1, state.maxHp || 1);
+  state.prayerPts = state.maxPrayerPts;
+  state.activePrayers.clear();
+  state.currentRegion = 'lumbridge';
+}
+
+/** Red splat for a hit, a heavier splat on a max hit, blue when the swing misses. */
+export function hitSplatKind(damage: number, maxHit: number): 'miss' | 'hit' | 'maxhit' {
+  const dealt = Math.max(0, Math.floor(damage));
+  if (dealt <= 0) return 'miss';
+  if (maxHit > 0 && dealt >= maxHit) return 'maxhit';
+  return 'hit';
+}
+
 export function combatLevel(state: GameState): number {
   const skills = state.skills;
   const defence = skills.defence?.lvl || 1;
