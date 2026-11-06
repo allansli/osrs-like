@@ -409,6 +409,52 @@ const gear = {
   }
 };
 
+const biomes = {
+  'korok-moss'(u, v) {
+    const clump = fbm(u, v, 4, 5, 5);
+    const tuft = Math.pow(fbm(u, v, 15, 8, 6), 2);
+    let col = mix([214, 228, 150], [72, 110, 48], clump);
+    col = mix(col, [236, 240, 170], tuft * 0.7);
+    return col;
+  },
+  'peak-volcanic'(u, v) {
+    const crack = Math.pow(1 - Math.abs(fbm(u, v, 3, 4, 4) * 2 - 1), 1.5);
+    const ash = Math.pow(fbm(u, v, 12, 5, 5), 2.6);
+    const ember = Math.pow(fbm(u, v, 21, 2, 2), 5);
+    let col = mix([240, 232, 220], [42, 30, 28], ash);
+    col = mix(col, [28, 16, 16], crack * 0.7);
+    col = mix(col, [244, 110, 42], ember);
+    return col;
+  },
+  'varrock-cobble'(u, v) {
+    const cols = 4;
+    const rows = 5;
+    const rowIndex = Math.floor(v * rows);
+    const x = (u + (rowIndex % 2) * 0.5) % 1;
+    const fx = (x * cols) % 1;
+    const fy = (v * rows) % 1;
+    const edge = Math.min(fx, 1 - fx, fy, 1 - fy);
+    const mortar = smooth(edge, 0.06, 0.16);
+    const grit = fbm(u, v, 9, 6, 6);
+    let col = mix([150, 146, 138], [226, 222, 210], mortar);
+    col = mix(col, [176, 170, 156], grit * 0.35);
+    return col;
+  },
+  'alkharid-sand'(u, v) {
+    const crack = Math.pow(1 - Math.abs(fbm(u, v, 2, 3, 3) * 2 - 1), 2.4);
+    const dune = 0.5 + 0.5 * Math.sin(v * Math.PI * 2 * 5 + fbm(u, v, 8, 2, 2) * 2);
+    let col = mix([236, 214, 156], [168, 132, 78], dune);
+    col = mix(col, [110, 78, 48], crack * 0.75);
+    return col;
+  }
+};
+
+function smooth(edge, a, b) {
+  const t = Math.max(0, Math.min(1, (edge - a) / (b - a)));
+  return t * t * (3 - 2 * t);
+}
+
 writeSet(root, recipes);
 writeSet(join(root, 'creatures'), creatures);
 writeSet(join(root, 'gear'), gear);
+writeSet(join(root, 'biomes'), biomes);

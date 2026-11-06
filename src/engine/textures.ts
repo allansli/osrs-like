@@ -33,6 +33,24 @@ export const CREATURE_IDS = [
 
 export type CreatureId = (typeof CREATURE_IDS)[number];
 
+/** Regional ground and rock tiles in /public/textures/biomes. */
+export const BIOME_IDS = ['korok-moss', 'peak-volcanic', 'varrock-cobble', 'alkharid-sand'] as const;
+
+export type BiomeId = (typeof BIOME_IDS)[number];
+
+export function biomeAlbedoId(id: BiomeId): string {
+  return `biome:${id}`;
+}
+
+/** Which painted ground tile wins at a world position. Null keeps the valley blend. */
+export function biomeGroundId(x: number, z: number): BiomeId | null {
+  if (x > 40 && z > 36) return 'alkharid-sand';
+  if (x < -40 && z > 36) return 'peak-volcanic';
+  if (x < -40 && z < 0) return 'korok-moss';
+  if (Math.hypot(x - 78, z + 20) < 22) return 'varrock-cobble';
+  return null;
+}
+
 const SPECIES_HIDE: Record<string, CreatureId> = {
   chicken: 'chicken-feathers',
   goblin: 'goblin-hide',
@@ -255,9 +273,10 @@ export function assignProjectedUvs(
     const nx = Math.abs(norm.getX(i));
     const ny = Math.abs(norm.getY(i));
     const nz = Math.abs(norm.getZ(i));
-    if (ny >= nx && ny >= nz) uv.setXY(i, x / divisor, z / divisor);
-    else if (nx >= nz) uv.setXY(i, z / divisor, y / divisor);
-    else uv.setXY(i, x / divisor, y / divisor);
+    const weight = Math.max(nx + ny + nz, 1e-5);
+    const u = (ny * x + nx * z + nz * x) / (weight * divisor);
+    const v = (ny * z + nx * y + nz * y) / (weight * divisor);
+    uv.setXY(i, u, v);
   }
   if (minSpan > 0) {
     let minU = Infinity;
@@ -314,6 +333,11 @@ const TERRAIN_PARS = `
 uniform sampler2D uDirtMap;
 uniform sampler2D uSandMap;
 uniform sampler2D uStoneMap;
+uniform sampler2D uKorokMap;
+uniform sampler2D uVolcanicMap;
+uniform sampler2D uCobbleMap;
+uniform sampler2D uCrackedSandMap;
+uniform float uMetersPerTile;
 uniform vec3 uSage;
 uniform vec3 uSageLit;
 uniform vec3 uSageShade;
@@ -344,6 +368,15 @@ if (weightSum < 0.2) {
   weightSum = grassW + dirtW + sandW + stoneW;
 }
 vec3 albedoTex = (grassTex * grassW + dirtTex * dirtW + sandTex * sandW + stoneTex * stoneW) / max(weightSum, 0.0001);
+vec2 worldXZ = vMapUv * uMetersPerTile;
+float desertBiome = smoothstep(32.0, 46.0, worldXZ.y) * smoothstep(32.0, 48.0, worldXZ.x);
+float peakBiome = smoothstep(28.0, 42.0, worldXZ.y) * smoothstep(-32.0, -46.0, worldXZ.x);
+float korokBiome = smoothstep(-4.0, -18.0, worldXZ.y) * smoothstep(-32.0, -46.0, worldXZ.x);
+float plazaBiome = 1.0 - smoothstep(12.0, 22.0, distance(worldXZ, vec2(78.0, -20.0)));
+albedoTex = mix(albedoTex, texture2D(uKorokMap, vMapUv).rgb, korokBiome);
+albedoTex = mix(albedoTex, texture2D(uVolcanicMap, vMapUv).rgb, peakBiome);
+albedoTex = mix(albedoTex, texture2D(uCrackedSandMap, vMapUv).rgb, desertBiome);
+albedoTex = mix(albedoTex, texture2D(uCobbleMap, vMapUv).rgb, plazaBiome);
 diffuseColor *= vec4(albedoTex, 1.0);
 `;
 
@@ -352,6 +385,10 @@ export function terrainMaterial(loader?: AlbedoLoader): THREE.MeshLambertMateria
   const dirt = loadAlbedo('dirt', GROUND_REPEAT, loader);
   const sand = loadAlbedo('sand', GROUND_REPEAT, loader);
   const stone = loadAlbedo('stone', GROUND_REPEAT, loader);
+  const korok = loadAlbedo(biomeAlbedoId('korok-moss'), GROUND_REPEAT, loader);
+  const volcanic = loadAlbedo(biomeAlbedoId('peak-volcanic'), GROUND_REPEAT, loader);
+  const cobble = loadAlbedo(biomeAlbedoId('varrock-cobble'), GROUND_REPEAT, loader);
+  const cracked = loadAlbedo(biomeAlbedoId('alkharid-sand'), GROUND_REPEAT, loader);
   const mat = facetMaterial({ vertexColors: true, map: grass });
   mat.userData.albedoSpace = 'ground';
   const previous = mat.onBeforeCompile;
@@ -360,6 +397,11 @@ export function terrainMaterial(loader?: AlbedoLoader): THREE.MeshLambertMateria
     shader.uniforms.uDirtMap = { value: dirt };
     shader.uniforms.uSandMap = { value: sand };
     shader.uniforms.uStoneMap = { value: stone };
+    shader.uniforms.uKorokMap = { value: korok };
+    shader.uniforms.uVolcanicMap = { value: volcanic };
+    shader.uniforms.uCobbleMap = { value: cobble };
+    shader.uniforms.uCrackedSandMap = { value: cracked };
+    shader.uniforms.uMetersPerTile = { value: GROUND_TILE_METERS };
     shader.uniforms.uSage = { value: new THREE.Color(PALETTE.sage) };
     shader.uniforms.uSageLit = { value: new THREE.Color(PALETTE.sageLit) };
     shader.uniforms.uSageShade = { value: new THREE.Color(PALETTE.sageShade) };

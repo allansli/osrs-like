@@ -11,6 +11,7 @@ import { addCartoonOutline, facetMaterial } from '../src/engine/materials';
 import { buildBodyVisual, buildRingVisual, buildShieldVisual, buildWeaponVisual } from '../src/engine/playerGear';
 import {
   ALBEDO_IDS,
+  BIOME_IDS,
   CREATURE_IDS,
   GROUND_REPEAT,
   GROUND_TILE_METERS,
@@ -20,6 +21,8 @@ import {
   albedoUrl,
   assignGroundUvs,
   assignProjectedUvs,
+  biomeAlbedoId,
+  biomeGroundId,
   creatureAlbedoId,
   gearAlbedoId,
   loadAlbedo,
@@ -245,7 +248,57 @@ describe('uv mapping and terrain blend', () => {
     expect(shader.uniforms.uDirtMap.value).toBeTruthy();
     expect(shader.uniforms.uSandMap.value).toBeTruthy();
     expect(shader.uniforms.uStoneMap.value).toBeTruthy();
+    expect(shader.fragmentShader).toContain('texture2D(uKorokMap, vMapUv)');
+    expect(shader.fragmentShader).toContain('texture2D(uVolcanicMap, vMapUv)');
+    expect(shader.fragmentShader).toContain('texture2D(uCobbleMap, vMapUv)');
+    expect(shader.fragmentShader).toContain('texture2D(uCrackedSandMap, vMapUv)');
+    expect(shader.uniforms.uKorokMap.value).toBeTruthy();
     expect((shader.uniforms.uSand.value as THREE.Color).getStyle()).toBe(new THREE.Color('#e7c27a').getStyle());
+  });
+});
+
+describe('biome ground tiles', () => {
+  it('picks Korok, Peak, Varrock, and Al-Kharid tiles by world position', () => {
+    expect(biomeGroundId(-80, -20)).toBe('korok-moss');
+    expect(biomeGroundId(-70, 70)).toBe('peak-volcanic');
+    expect(biomeGroundId(78, -20)).toBe('varrock-cobble');
+    expect(biomeGroundId(70, 70)).toBe('alkharid-sand');
+    expect(biomeGroundId(0, 0)).toBeNull();
+    expect(biomeAlbedoId('korok-moss')).toBe('biome:korok-moss');
+  });
+
+  it('ships a seamless 256 gouache tile for each regional ground', () => {
+    const dir = join(TEXTURE_DIR, 'biomes');
+    const files = readdirSync(dir).filter((name) => name.endsWith('.png')).sort();
+    expect(files).toEqual([...BIOME_IDS].map((id) => `${id}.png`).sort());
+    for (const file of files) {
+      const image = decodePng(readFileSync(join(dir, file)));
+      expect(image.width).toBe(256);
+      expect(image.height).toBe(256);
+      let sum = 0;
+      let sumSq = 0;
+      let seam = 0;
+      let neighbor = 0;
+      const count = image.width * image.height;
+      for (let i = 0; i < count; i++) {
+        const luma = (image.rgba[i * 4] + image.rgba[i * 4 + 1] + image.rgba[i * 4 + 2]) / 3;
+        sum += luma;
+        sumSq += luma * luma;
+        expect(luma).toBeGreaterThan(150);
+      }
+      const mean = sum / count;
+      expect(sumSq / count - mean * mean).toBeGreaterThan(12);
+      for (let y = 0; y < image.height; y++) {
+        for (let c = 0; c < 3; c++) {
+          const edge = image.rgba[(y * image.width + image.width - 1) * 4 + c];
+          const wrap = image.rgba[y * image.width * 4 + c];
+          const next = image.rgba[(y * image.width + 1) * 4 + c];
+          seam += Math.abs(edge - wrap);
+          neighbor += Math.abs(wrap - next);
+        }
+      }
+      expect(seam / image.height).toBeLessThan((neighbor / image.height) * 2.5 + 8);
+    }
   });
 });
 

@@ -34,6 +34,8 @@ import {
   applyAlbedo,
   assignGroundUvs,
   BIOME_COLORS,
+  biomeAlbedoId,
+  biomeGroundId,
   sealAlbedoUvs,
   speciesAlbedo,
   terrainMaterial
@@ -1295,22 +1297,25 @@ function buildRiverBridge(bx, bz) {
     rail.castShadow = true;
     grp.add(rail);
   });
+  sealAlbedoUvs(grp);
   scene.add(grp);
   addCartoonOutline(grp, 0.038);
 }
 
 function buildBiomeLandmarks() {
-  const sand = albedoMaterial(0xe7c07a, 'sand');
+  const sand = albedoMaterial(0xe7c07a, biomeAlbedoId('alkharid-sand'));
   const palm = albedoMaterial(0x4ade80, 'grass');
   const bark = albedoMaterial(0x92400e, 'bark');
-  const stone = albedoMaterial(0xe5e7eb, 'stone');
+  const moss = albedoMaterial(0x4ade80, biomeAlbedoId('korok-moss'));
+  const stone = albedoMaterial(0xe5e7eb, biomeAlbedoId('varrock-cobble'));
   const gold = facetMaterial({ color: 0xfacc15 });
-  const obsidian = albedoMaterial(0x1c1917, 'stone');
+  const obsidian = albedoMaterial(0xa8a29e, biomeAlbedoId('peak-volcanic'));
   const lava = facetMaterial({ color: 0xf97316, emissive: 0xea580c, emissiveIntensity: 0.85 });
 
   function place(builder, x, z) {
     const grp = builder();
     grp.position.set(x, getTerrainHeight(x, z), z);
+    sealAlbedoUvs(grp);
     addCartoonOutline(grp, 0.038);
     scene.add(grp);
   }
@@ -1376,7 +1381,7 @@ function buildBiomeLandmarks() {
 
   function woodsLantern() {
     const grp = new THREE.Group();
-    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.1, 2.2, 8), bark);
+    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.1, 2.2, 8), moss);
     post.position.y = 1.1;
     const lamp = new THREE.Mesh(
       new THREE.SphereGeometry(0.28, 12, 10),
@@ -1538,6 +1543,7 @@ function createCastleStructure(cx, cz) {
     grp.add(finial);
   });
   box(3.2, 0.45, 1.5, timberMat, 0, 4.6, 8);
+  sealAlbedoUvs(grp);
   addCartoonOutline(grp, 0.03);
   scene.add(grp);
 }
@@ -2828,7 +2834,8 @@ function spawnResourceNode(nodeKey, x, z) {
     grp.add(depletedMesh);
   } else if (def.kind === 'rock') {
     visualMesh = new THREE.Group();
-    const rockMat = albedoMaterial(0x94a3b8, 'stone');
+    const rockBiome = biomeGroundId(x, z);
+    const rockMat = albedoMaterial(0x94a3b8, rockBiome ? biomeAlbedoId(rockBiome) : 'stone');
     const baseRock = new THREE.Mesh(new THREE.SphereGeometry(0.95, 16, 12), rockMat);
     baseRock.position.y = 0.7;
     baseRock.scale.set(1.18, 0.78, 1.05);
@@ -2875,6 +2882,7 @@ function spawnResourceNode(nodeKey, x, z) {
   hitbox.position.y = 1.5;
   hitbox.userData.isCollider = true;
   grp.add(hitbox);
+  sealAlbedoUvs(grp);
   addCartoonOutline(grp, 0.038);
 
   const rObj = {
