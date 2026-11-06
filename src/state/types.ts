@@ -29,6 +29,16 @@ export interface QuestFlags {
   choppedAncient: boolean;
   killedMoss: boolean;
   killedElvarg: boolean;
+  cookedMeal: boolean;
+  buriedBones: boolean;
+  boughtWares: boolean;
+  soldWares: boolean;
+  worePlate: boolean;
+  offeredPrayer: boolean;
+  caughtFish: boolean;
+  choppedMaple: boolean;
+  minedRunite: boolean;
+  killedDemon: boolean;
   claimed: string[];
   slayer: SlayerTask | null;
   slayerTasksCompleted: number;

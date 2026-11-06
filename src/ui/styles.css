@@ -1448,21 +1448,93 @@
   50% { box-shadow: 0 0 0 8px rgba(253, 224, 71, 0.95); }
 }
 
-.slayer-pill[hidden],
 .hero-title[hidden] {
   display: none !important;
 }
 
-.slayer-pill {
-  margin-top: 6px;
-  display: inline-block;
-  background: #2e1065;
-  color: #e9d5ff;
-  border: 1px solid #c084fc;
-  border-radius: 999px;
-  padding: 3px 10px;
-  font-size: 12px;
+.quest-tracker,
+.slayer-widget {
+  margin-top: 8px;
+  width: 248px;
+  padding: 8px 10px 9px;
+  background: rgba(20, 16, 12, 0.92);
+  border: 1px solid var(--osrs-border);
+  border-radius: 8px;
+}
+
+.slayer-widget {
+  border-color: #7c3aed;
+}
+
+.slayer-widget.empty {
+  opacity: 0.85;
+}
+
+.tracker-kicker {
+  font-size: 10px;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: var(--botw-gold);
   font-weight: 800;
+}
+
+.slayer-widget .tracker-kicker {
+  color: #d8b4fe;
+}
+
+#quest-tracker-title,
+#slayer-widget-name {
+  margin-top: 2px;
+  font-size: 14px;
+  font-weight: 800;
+  color: #fff;
+}
+
+#quest-tracker-step,
+#slayer-widget-detail {
+  margin-top: 2px;
+  font-size: 12px;
+  color: #e7e0d0;
+  line-height: 1.35;
+}
+
+.tracker-meter {
+  margin-top: 6px;
+  height: 6px;
+  background: #2a241c;
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+#quest-tracker-fill,
+#slayer-widget-fill {
+  height: 100%;
+  width: 0%;
+  background: #fde047;
+}
+
+#slayer-widget-fill {
+  background: #c084fc;
+}
+
+.landmark-label {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+}
+
+.landmark-name {
+  padding: 3px 8px;
+  background: rgba(12, 10, 8, 0.82);
+  border: 1px solid rgba(255, 244, 214, 0.55);
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  text-shadow: 0 1px 2px #000;
 }
 
 .hero-title {

@@ -94,7 +94,18 @@
     <button class="hud-btn" id="btn-settings" onclick="openSettingsModal()">Settings</button>
   </div>
 
-  <div id="slayer-pill" class="slayer-pill" hidden></div>
+  <div id="quest-tracker" class="quest-tracker">
+    <div class="tracker-kicker">Active quest</div>
+    <div id="quest-tracker-title">Lumbridge Foundations</div>
+    <div id="quest-tracker-step">Open the Lumbridge Bank</div>
+    <div class="tracker-meter"><div id="quest-tracker-fill"></div></div>
+  </div>
+  <div id="slayer-widget" class="slayer-widget empty">
+    <div class="tracker-kicker">Slayer</div>
+    <div id="slayer-widget-name">No task</div>
+    <div id="slayer-widget-detail">Speak with Slayer Master Vannaka</div>
+    <div class="tracker-meter"><div id="slayer-widget-fill"></div></div>
+  </div>
   <div id="target-hud">
     <div class="target-title">
       <span id="target-name">Goblin Raider</span>

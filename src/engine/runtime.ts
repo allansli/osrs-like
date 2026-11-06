@@ -11,6 +11,7 @@ import { readSave, writeSave, SAVE_KEY, LEGACY_SAVE_KEYS } from '../state/save';
 import { prepareAttack, allowedStyles, mitigateDamage, canCastTeleport, equippedWeapon } from '../state/combat';
 import {
   assignSlayerTask,
+  adventureTracker,
   attackOptionLabel,
   claimQuest,
   combatLevel,
@@ -22,8 +23,10 @@ import {
   noteGather,
   registerKill,
   resolveDragonfire,
+  slayerCard,
   weaponSpecial
 } from '../state/adventure';
+import { noteBury, notePlate, notePrayerOffered, notePurchase, noteSale } from '../state/quests';
 import { moveWithCollision, isWalkable, isDeepWater } from '../state/collision';
 import { discoverShrines } from '../state/shrines';
 import { applyGold200k, applySkillsPlus10, matchCheat } from '../state/cheats';
@@ -286,6 +289,7 @@ function sellInventoryItem(index, qtyMode) {
     return;
   }
   SFX.coin();
+  noteSale(STATE);
   const name = item ? item.name : slot.id;
   addChatMessage('Sold <b>' + result.moved + ' × ' + name + '</b> for <b style="color:#ffe642">' + result.gp.toLocaleString() + ' GP</b> (65%).', 'loot');
   updateAllUI();
@@ -362,6 +366,7 @@ function handleInventoryClick(index) {
     removeItem(STATE, item.id, 1);
     SFX.prayer();
     addChatMessage('You bury the <b>' + item.name + '</b> beneath the soil.', 'skill');
+    noteBury(STATE);
     grantXp('prayer', item.xp || 0);
     return;
   }
@@ -378,6 +383,7 @@ function handleInventoryClick(index) {
     removeItem(STATE, item.id, 1);
     if (prevEquipped && ITEMS[prevEquipped]) addItem(STATE, prevEquipped, 1);
     STATE.equipment[item.slot] = item.id;
+    if (item.slot === 'body' && (item.id.includes('plate') || item.id.includes('chain'))) notePlate(STATE);
     SFX.coin();
     addChatMessage('Equipped <b>' + item.name + '</b> (' + item.slot + ').', 'skill');
     if (item.slot === 'weapon') {
@@ -461,6 +467,7 @@ function togglePrayer(prayerId) {
       PRAYERS.filter(o => o.overhead && o.id !== prayerId).forEach(o => STATE.activePrayers.delete(o.id));
     }
     STATE.activePrayers.add(prayerId);
+    notePrayerOffered(STATE);
     SFX.prayer();
   }
   updateAllUI();
@@ -532,16 +539,23 @@ function updateAllUI() {
       ? `SPECIAL ARMED — ${spec.name} (${Math.floor(STATE.specEnergy)}%)`
       : `SPECIAL: ${spec.name} (${Math.floor(STATE.specEnergy)}% · Cost ${spec.cost}%)`;
   }
-  const slayerPill = document.getElementById('slayer-pill');
-  const slayerTask = STATE.quests.slayer;
-  if (slayerPill) {
-    if (slayerTask && slayerTask.remaining > 0) {
-      slayerPill.hidden = false;
-      slayerPill.textContent = `Slayer: ${slayerTask.name} ${slayerTask.remaining}/${slayerTask.total}`;
-    } else {
-      slayerPill.hidden = true;
-    }
-  }
+  const tracker = adventureTracker(STATE);
+  const trackerTitle = document.getElementById('quest-tracker-title');
+  const trackerStep = document.getElementById('quest-tracker-step');
+  const trackerFill = document.getElementById('quest-tracker-fill');
+  if (trackerTitle) trackerTitle.textContent = tracker.title;
+  if (trackerStep) trackerStep.textContent = tracker.detail;
+  if (trackerFill) trackerFill.style.width = `${Math.round((tracker.done / Math.max(1, tracker.total)) * 100)}%`;
+
+  const card = slayerCard(STATE);
+  const slayerName = document.getElementById('slayer-widget-name');
+  const slayerDetail = document.getElementById('slayer-widget-detail');
+  const slayerFill = document.getElementById('slayer-widget-fill');
+  const slayerWidget = document.getElementById('slayer-widget');
+  if (slayerName) slayerName.textContent = card.name;
+  if (slayerDetail) slayerDetail.textContent = card.detail;
+  if (slayerFill) slayerFill.style.width = `${Math.round(card.ratio * 100)}%`;
+  if (slayerWidget) slayerWidget.classList.toggle('empty', card.empty);
   const titleEl = document.getElementById('hero-title');
   if (titleEl) {
     if (STATE.quests.title) {
@@ -765,6 +779,7 @@ function buyShopItem(itemId) {
   if (!result.ok) addChatMessage(result.reason || 'Cannot buy that.', 'combat');
   else {
     SFX.coin();
+    notePurchase(STATE);
     addChatMessage('Purchased <b>' + result.moved + ' × ' + ITEMS[itemId].name + '</b> for ' + (result.gp || 0).toLocaleString() + ' GP.', 'loot');
   }
   updateAllUI();
@@ -784,6 +799,7 @@ function buyShopPair(topId, bottomId) {
     updateAllUI();
     return;
   }
+  notePurchase(STATE);
   SFX.coin();
   addChatMessage('Purchased matched pair <b>' + ITEMS[topId].name + '</b> + <b>' + ITEMS[bottomId].name + '</b>.', 'loot');
   updateAllUI();
@@ -4316,9 +4332,49 @@ function worldToScreen(vec3) {
   };
 }
 
+const LANDMARKS = [
+  { name: 'Lumbridge Castle', x: 0, z: -25, y: 12.4, color: '#bfdbfe' },
+  { name: 'Varrock Grand Plaza', x: 78, z: -20, y: 6.2, color: '#fde047' },
+  { name: 'Al-Kharid Arch', x: 80, z: 82, y: 6.4, color: '#fdba74' },
+  { name: 'Korok Lantern Grove', x: -72, z: -38, y: 4.2, color: '#86efac' },
+  { name: "Dragon's Peak Spire", x: -58, z: 62, y: 8.2, color: '#fca5a5' }
+];
+let landmarkEls = null;
 let playerOverheadEl = null;
+function updateLandmarkLabels() {
+  const host = document.getElementById('world-labels');
+  if (!host) return;
+  if (!landmarkEls) {
+    landmarkEls = LANDMARKS.map((mark) => {
+      const el = document.createElement('div');
+      el.className = 'landmark-label';
+      el.innerHTML = `<div class="landmark-name" style="color:${mark.color}">${mark.name}</div>`;
+      host.appendChild(el);
+      return el;
+    });
+  }
+  LANDMARKS.forEach((mark, index) => {
+    const el = landmarkEls[index];
+    const dist = Math.hypot(player.pos.x - mark.x, player.pos.z - mark.z);
+    if (dist > 78) {
+      el.style.display = 'none';
+      return;
+    }
+    const sp = worldToScreen(new THREE.Vector3(mark.x, getTerrainHeight(mark.x, mark.z) + mark.y, mark.z));
+    if (!sp.visible) {
+      el.style.display = 'none';
+      return;
+    }
+    el.style.display = 'flex';
+    el.style.left = sp.x + 'px';
+    el.style.top = sp.y + 'px';
+    el.style.opacity = dist < 16 ? '1' : String(Math.max(0.55, 1 - (dist - 16) / 80));
+  });
+}
+
 function updateFloatingWorldLabels() {
   const playerCombatLvl = getCombatLevel();
+  updateLandmarkLabels();
 
   // Player Overhead Prayer SVG Badge
   if (!playerOverheadEl) {
