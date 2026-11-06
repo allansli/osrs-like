@@ -85,22 +85,37 @@ export function addCartoonOutline(rootOrMesh: THREE.Object3D, thickness = 0.028,
 
 /**
  * Smooth 2-band cartoon albedo. Lit faces stay the material color; shadow faces take one cool step.
+ * An optional `map` is sampled by the Lambert `map_fragment` chunk into `diffuseColor` before the cel step,
+ * so the texture tints the color token. No normal or roughness maps.
  * Normals interpolate across the surface so spheres and capsules stay round.
  * Pass flatShading: true only for cut gems and crystals.
  */
 export function facetMaterial(params: Record<string, unknown> = {}): THREE.MeshLambertMaterial {
   const cleaned: Record<string, unknown> = {};
   let flat = false;
+  let map: THREE.Texture | null = null;
   for (const [key, value] of Object.entries(params)) {
-    if (key === 'metalness' || key === 'roughness' || key === 'map') continue;
+    if (key === 'metalness' || key === 'roughness') continue;
     if (key === 'flatShading') {
       flat = value === true;
       continue;
     }
+    if (key === 'map') {
+      map = (value as THREE.Texture) || null;
+      continue;
+    }
     cleaned[key] = value;
+  }
+  if (map) {
+    map.wrapS = THREE.RepeatWrapping;
+    map.wrapT = THREE.RepeatWrapping;
+    map.magFilter = THREE.LinearFilter;
+    map.colorSpace = THREE.SRGBColorSpace;
+    cleaned.map = map;
   }
   cleaned.flatShading = flat;
   const mat = new THREE.MeshLambertMaterial(cleaned as THREE.MeshLambertMaterialParameters);
+  if (map) mat.userData.albedoSpace = 'prop';
   const flatNormal = flat
     ? `#ifdef FLAT_SHADED
       vCelWorld = normalize((vec4(normal, 0.0) * viewMatrix).xyz);

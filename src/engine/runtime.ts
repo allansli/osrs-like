@@ -28,6 +28,15 @@ import { moveWithCollision, isWalkable, isDeepWater } from '../state/collision';
 import { discoverShrines } from '../state/shrines';
 import { applyGold200k, applySkillsPlus10, matchCheat } from '../state/cheats';
 import { addCartoonOutline, facetMaterial, grassMaterial, PALETTE } from './materials';
+import {
+  albedoForItem,
+  albedoMaterial,
+  applyAlbedo,
+  assignGroundUvs,
+  BIOME_COLORS,
+  sealAlbedoUvs,
+  terrainMaterial
+} from './textures';
 import { buildHumanoidRig, LEAN_RIG } from './humanoid';
 import {
   buildAmuletVisual,
@@ -1033,9 +1042,9 @@ function getBiomeColor(x, z, h) {
   if (h < -0.05) return dirt;
   if (z > -22 && z < 8 && x > -8 && x < 82 && Math.abs(z - (-x * 0.22)) < 2.6) return dirt;
   if (Math.hypot(x - 78, z + 20) < 18) return dirt;
-  if (x > 40 && z > 36) return new THREE.Color('#e7c27a');
-  if (x < -40 && z > 36) return new THREE.Color(h > 3.1 ? '#f97316' : '#78716c');
-  if (x < -40 && z < 0) return new THREE.Color('#16a34a');
+  if (x > 40 && z > 36) return new THREE.Color(BIOME_COLORS.sand);
+  if (x < -40 && z > 36) return new THREE.Color(h > 3.1 ? BIOME_COLORS.lava : BIOME_COLORS.crag);
+  if (x < -40 && z < 0) return new THREE.Color(BIOME_COLORS.canopy);
   const band = Math.abs(Math.floor(x / 7) + Math.floor(z / 7) * 2) % 3;
   return grass[band];
 }
@@ -1085,6 +1094,7 @@ function init3DEngine() {
   buildPlayerCharacter();
   spawnAllResourcesAndMonsters();
   buildAtmosphericParticles();
+  sealAlbedoUvs(scene);
 
   window.addEventListener('resize', onWindowResize);
   setupInputHandlers();
@@ -1175,8 +1185,9 @@ function buildTerrainAndWater() {
   }
   geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
   geo.computeVertexNormals();
+  assignGroundUvs(geo);
 
-  const mat = facetMaterial({ vertexColors: true });
+  const mat = terrainMaterial();
   terrainMesh = new THREE.Mesh(geo, mat);
   terrainMesh.receiveShadow = true;
   terrainMesh.userData = { type: 'ground' };
@@ -1260,8 +1271,8 @@ function buildTerrainAndWater() {
 function buildRiverBridge(bx, bz) {
   const grp = new THREE.Group();
   grp.position.set(bx, 0, bz);
-  const woodMat = facetMaterial({ color: 0x92400e });
-  const stoneMat = facetMaterial({ color: 0xe5e7eb });
+  const woodMat = albedoMaterial(0x92400e, 'wood');
+  const stoneMat = albedoMaterial(0xe5e7eb, 'stone');
 
   for (let i = -7; i <= 7; i++) {
     const t = i / 7;
@@ -1288,12 +1299,12 @@ function buildRiverBridge(bx, bz) {
 }
 
 function buildBiomeLandmarks() {
-  const sand = facetMaterial({ color: 0xe7c07a });
-  const palm = facetMaterial({ color: 0x4ade80 });
-  const bark = facetMaterial({ color: 0x92400e });
-  const stone = facetMaterial({ color: 0xe5e7eb });
+  const sand = albedoMaterial(0xe7c07a, 'sand');
+  const palm = albedoMaterial(0x4ade80, 'grass');
+  const bark = albedoMaterial(0x92400e, 'bark');
+  const stone = albedoMaterial(0xe5e7eb, 'stone');
   const gold = facetMaterial({ color: 0xfacc15 });
-  const obsidian = facetMaterial({ color: 0x1c1917 });
+  const obsidian = albedoMaterial(0x1c1917, 'stone');
   const lava = facetMaterial({ color: 0xf97316, emissive: 0xea580c, emissiveIntensity: 0.85 });
 
   function place(builder, x, z) {
@@ -1419,8 +1430,8 @@ function buildAllCitiesAndLandmarks() {
     const sy = getTerrainHeight(sx, sz);
     const shrineGroup = new THREE.Group();
     shrineGroup.position.set(sx, sy, sz);
-    const stone = facetMaterial({ color: 0xe5e7eb });
-    const slate = facetMaterial({ color: 0x475569 });
+    const stone = albedoMaterial(0xe5e7eb, 'stone');
+    const slate = albedoMaterial(0x475569, 'slate');
     const stepA = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.28, 2.6), slate);
     stepA.position.y = 0.14;
     const stepB = new THREE.Mesh(new THREE.BoxGeometry(1.85, 0.26, 1.85), stone);
@@ -1477,10 +1488,10 @@ function createCastleStructure(cx, cz) {
   const grp = new THREE.Group();
   const y = getTerrainHeight(cx, cz);
   grp.position.set(cx, y, cz);
-  const stoneMat = facetMaterial({ color: 0xe5e7eb });
-  const roofMat = facetMaterial({ color: 0x475569 });
+  const stoneMat = albedoMaterial(0xe5e7eb, 'stone');
+  const roofMat = albedoMaterial(0x475569, 'slate');
   const goldMat = facetMaterial({ color: 0xfacc15 });
-  const timberMat = facetMaterial({ color: 0xc8b48a });
+  const timberMat = albedoMaterial(0xc8b48a, 'wood');
   function box(w, h, d, mat, x, yy, z) {
     const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
     mesh.position.set(x, yy, z);
@@ -1535,12 +1546,12 @@ function createPrayerAltar(x, z, name) {
   const grp = new THREE.Group();
   grp.position.set(x, y, z);
 
-  const marbleMat = facetMaterial({ color: 0xf8fafc });
+  const marbleMat = albedoMaterial(0xf8fafc, 'stone');
   const base = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.85, 1.15), marbleMat);
   base.position.y = 0.42;
   base.castShadow = true;
   grp.add(base);
-  const slab = new THREE.Mesh(new THREE.BoxGeometry(2.7, 0.18, 1.4), facetMaterial({ color: 0xe5e7eb }));
+  const slab = new THREE.Mesh(new THREE.BoxGeometry(2.7, 0.18, 1.4), albedoMaterial(0xe5e7eb, 'stone'));
   slab.position.y = 0.92;
   grp.add(slab);
   const goldTrim = new THREE.Mesh(new THREE.BoxGeometry(2.15, 0.08, 0.12), facetMaterial({ color: 0xfacc15 }));
@@ -1570,7 +1581,7 @@ function createForgeStation(x, z, name) {
   grp.position.set(x, y, z);
 
   // Sculpted Blacksmith Horn Anvil (Lathe + Extruded Bevel Top)
-  const ironMat = facetMaterial({ color: 0x334155, metalness: 0.78, roughness: 0.28 });
+  const ironMat = albedoMaterial(0x334155, 'iron');
   const anvilBase = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.82, 0.75, 6), ironMat);
   anvilBase.position.set(-1.2, 0.38, 0);
   anvilBase.castShadow = true;
@@ -1590,7 +1601,7 @@ function createForgeStation(x, z, name) {
 
   const furnace = new THREE.Mesh(
     new THREE.BoxGeometry(1.7, 2.4, 1.5),
-    facetMaterial({ color: 0x92400e })
+    albedoMaterial(0x92400e, 'wood')
   );
   furnace.position.set(1.3, 1.2, 0);
   furnace.castShadow = true;
@@ -1617,7 +1628,7 @@ function createBankBooth(x, z) {
   const y = getTerrainHeight(x, z);
   const grp = new THREE.Group();
   grp.position.set(x, y, z);
-  const wood = facetMaterial({ color: 0x6b4423 });
+  const wood = albedoMaterial(0x6b4423, 'wood');
   const gold = facetMaterial({ color: 0xfacc15 });
   const counter = new THREE.Mesh(new THREE.BoxGeometry(2.4, 1.05, 0.7), wood);
   counter.position.set(0, 0.55, 0.4);
@@ -1662,7 +1673,7 @@ function createSlayerMaster(x, z) {
   rig.group.position.set(x, y, z);
   const cape = new THREE.Mesh(
     new THREE.PlaneGeometry(0.5, 1.15),
-    facetMaterial({ color: 0x4c1d95, side: THREE.DoubleSide })
+    albedoMaterial(0x4c1d95, 'cloth', { side: THREE.DoubleSide })
   );
   cape.position.set(0, 1.32, 0.2);
   rig.group.add(cape);
@@ -1778,10 +1789,12 @@ function rebuildPlayerEquipmentMeshes() {
     player.parts.tunicMat.color.setHex(ITEMS[bodyId].color || 0x0284c7);
     player.parts.tunicMat.metalness = bodyId === 'champion_tunic' ? 0.1 : 0.65;
     player.parts.tunicMat.roughness = bodyId === 'champion_tunic' ? 0.5 : 0.28;
+    applyAlbedo(player.parts.tunicMat, albedoForItem(ITEMS[bodyId]));
   } else {
     player.parts.tunicMat.color.setHex(0x0284c7);
     player.parts.tunicMat.metalness = 0.08;
     player.parts.tunicMat.roughness = 0.52;
+    applyAlbedo(player.parts.tunicMat, 'cloth');
   }
 
   // 2. Leg Armor Material (Platelegs / Tassets / Trousers)
@@ -1790,9 +1803,11 @@ function rebuildPlayerEquipmentMeshes() {
     player.parts.legsMat.color.setHex(ITEMS[legsId].color || 0xa1887f);
     player.parts.legsMat.metalness = legsId === 'hylian_trousers' ? 0.05 : 0.65;
     player.parts.legsMat.roughness = legsId === 'hylian_trousers' ? 0.65 : 0.28;
+    applyAlbedo(player.parts.legsMat, albedoForItem(ITEMS[legsId]));
   } else {
     player.parts.legsMat.color.setHex(0xa1887f);
     player.parts.legsMat.metalness = 0.05;
+    applyAlbedo(player.parts.legsMat, 'cloth');
   }
 
   // 3. Boots Material (Feet)
@@ -1800,9 +1815,11 @@ function rebuildPlayerEquipmentMeshes() {
   if (feetId && ITEMS[feetId]) {
     player.parts.bootMat.color.setHex(ITEMS[feetId].color || 0x5c3a21);
     player.parts.bootMat.metalness = feetId === 'leather_boots' ? 0.1 : 0.65;
+    applyAlbedo(player.parts.bootMat, albedoForItem(ITEMS[feetId]));
   } else {
     player.parts.bootMat.color.setHex(0x5c3a21);
     player.parts.bootMat.metalness = 0.1;
+    applyAlbedo(player.parts.bootMat, 'leather');
   }
 
   // 4. Gauntlets Material (Hands)
@@ -1810,9 +1827,11 @@ function rebuildPlayerEquipmentMeshes() {
   if (handsId && ITEMS[handsId]) {
     player.parts.gloveMat.color.setHex(ITEMS[handsId].color || 0x78350f);
     player.parts.gloveMat.metalness = handsId === 'leather_gloves' ? 0.1 : 0.6;
+    applyAlbedo(player.parts.gloveMat, albedoForItem(ITEMS[handsId]));
   } else {
     player.parts.gloveMat.color.setHex(0x78350f);
     player.parts.gloveMat.metalness = 0.1;
+    applyAlbedo(player.parts.gloveMat, 'leather');
   }
 
   const equip = (slot) => {
@@ -1887,7 +1906,10 @@ function rebuildPlayerEquipmentMeshes() {
     mount(torso, cape, 'capeMesh');
   }
 
-  if (player.meshGroup) addCartoonOutline(player.meshGroup, LEAN_RIG.outline);
+  if (player.meshGroup) {
+    addCartoonOutline(player.meshGroup, LEAN_RIG.outline);
+    sealAlbedoUvs(player.meshGroup);
+  }
 }
 
 // Bespoke OSRS × Zelda monster silhouettes. Each species owns its anatomy.
@@ -1935,15 +1957,15 @@ function glowEye(parent, x, y, z, color, radius = 0.045) {
   return eye;
 }
 
-function paint(color, extra = {}) {
-  return facetMaterial({ color, ...extra });
+function paint(color, extra = {}, family = null) {
+  return family ? albedoMaterial(color, family, extra) : facetMaterial({ color, ...extra });
 }
 
 function addQuiver(parent, x, y, z, leatherHex, fletchHex) {
   const quiver = new THREE.Group();
   quiver.position.set(x, y, z);
   quiver.rotation.x = -0.55;
-  monsterPart(quiver, new THREE.CylinderGeometry(0.09, 0.12, 0.46, 10), paint(leatherHex));
+  monsterPart(quiver, new THREE.CylinderGeometry(0.09, 0.12, 0.46, 10), paint(leatherHex, {}, 'leather'));
   for (let i = 0; i < 4; i++) {
     const shaft = monsterPart(
       quiver,
@@ -1970,7 +1992,7 @@ function addStrungBow(pivot, length, color, bend) {
     new THREE.Vector3(0, half * 0.45, -bend),
     new THREE.Vector3(0, half, 0.1)
   ]);
-  monsterPart(bow, new THREE.TubeGeometry(curve, 16, 0.03, 8, false), paint(color));
+  monsterPart(bow, new THREE.TubeGeometry(curve, 16, 0.03, 8, false), paint(color, {}, 'wood'));
   const string = monsterPart(
     bow,
     new THREE.CylinderGeometry(0.006, 0.006, length * 0.96, 6),
@@ -2023,12 +2045,12 @@ function buildGoblinMesh(def, role) {
   const group = new THREE.Group();
   group.scale.setScalar(def.scale || 0.9);
   const skin = paint(0x65a30d);
-  const leather = paint(0x78350f);
-  const rag = paint(0x92400e);
-  const dark = paint(0x451a03);
-  const iron = paint(0x9ca3af);
-  const bronze = paint(0xb87333);
-  const wood = paint(0x92400e);
+  const leather = paint(0x78350f, {}, 'leather');
+  const rag = paint(0x92400e, {}, 'cloth');
+  const dark = paint(0x451a03, {}, 'cloth');
+  const iron = paint(0x9ca3af, {}, 'iron');
+  const bronze = paint(0xb87333, {}, 'iron');
+  const wood = paint(0x92400e, {}, 'wood');
 
   const torso = new THREE.Group();
   torso.position.set(0, 1.02, 0);
@@ -2127,7 +2149,7 @@ function buildGoblinMesh(def, role) {
 function buildScorpionMesh() {
   const grp = new THREE.Group();
   grp.scale.setScalar(1.28);
-  const shell = paint(0xb45309);
+  const shell = paint(0xb45309, {}, 'leather');
   const dark = paint(0x451a03);
   const venom = paint(0xef4444, { emissive: 0xb91c1c, emissiveIntensity: 0.85 });
 
@@ -2194,10 +2216,10 @@ function buildScorpionMesh() {
 function buildDarkWizard(def) {
   const group = new THREE.Group();
   group.scale.setScalar(def.scale || 1);
-  const robe = paint(0x1e1b4b);
+  const robe = paint(0x1e1b4b, {}, 'cloth');
   const trim = paint(0x9333ea, { emissive: 0x6d28d9, emissiveIntensity: 0.35 });
   const charcoal = paint(0x111827);
-  const wood = paint(0x44403c);
+  const wood = paint(0x44403c, {}, 'wood');
 
   const skirt = monsterPart(group, new THREE.CylinderGeometry(0.2, 0.68, 1.48, 18), robe, 0, 0.76, 0);
   const hem = monsterPart(group, new THREE.TorusGeometry(0.66, 0.035, 8, 18), trim, 0, 0.06, 0);
@@ -2268,9 +2290,9 @@ function buildDarkWizard(def) {
 function buildDarkRanger(def) {
   const group = new THREE.Group();
   group.scale.setScalar(def.scale || 1);
-  const cloth = paint(0x18181b);
-  const hide = paint(0x166534);
-  const cloakMat = paint(0x27272a);
+  const cloth = paint(0x18181b, {}, 'cloth');
+  const hide = paint(0x166534, {}, 'leather');
+  const cloakMat = paint(0x27272a, {}, 'cloth');
 
   monsterPart(group, new THREE.CylinderGeometry(0.24, 0.3, 0.72, 14), cloth, 0, 1.18, 0);
   const chest = monsterPart(group, new THREE.BoxGeometry(0.62, 0.36, 0.3), hide, 0, 1.34, -0.04);
@@ -2309,7 +2331,7 @@ function buildDarkRanger(def) {
   function leg(isLeft) {
     const pivot = monsterPivot(isLeft ? -0.15 : 0.15, 0.78, 0);
     monsterPart(pivot, new THREE.CylinderGeometry(0.1, 0.09, 0.5, 12), cloth, 0, -0.26, 0);
-    const boot = monsterPart(pivot, new THREE.SphereGeometry(0.11, 10, 8), paint(0x1c1917), 0, -0.54, 0.02);
+    const boot = monsterPart(pivot, new THREE.SphereGeometry(0.11, 10, 8), paint(0x1c1917, {}, 'leather'), 0, -0.54, 0.02);
     boot.scale.set(0.9, 0.6, 1.35);
     return pivot;
   }
@@ -2327,10 +2349,10 @@ function buildHillGiant(def) {
   group.scale.setScalar(def.scale || 1.55);
   const skin = paint(0xd6a87c);
   const beardMat = paint(0x5c3a21);
-  const fur = paint(0x78350f);
+  const fur = paint(0x78350f, {}, 'leather');
   const bone = paint(0xf5f5f4);
-  const wood = paint(0x5c3a21);
-  const stone = paint(0x78716c);
+  const wood = paint(0x5c3a21, {}, 'wood');
+  const stone = paint(0x78716c, {}, 'stone');
 
   const belly = monsterPart(group, new THREE.SphereGeometry(0.46, 16, 14), skin, 0, 1.12, 0.02);
   belly.scale.set(1.2, 1.05, 0.92);
@@ -2401,9 +2423,9 @@ function buildHillGiant(def) {
 function buildMossGuardian(def) {
   const group = new THREE.Group();
   group.scale.setScalar(def.scale || 1.72);
-  const stone = paint(0x44403c);
-  const bark = paint(0x3f6212);
-  const moss = paint(0x16a34a);
+  const stone = paint(0x44403c, {}, 'stone');
+  const bark = paint(0x3f6212, {}, 'bark');
+  const moss = paint(0x16a34a, {}, 'grass');
 
   const core = monsterPart(group, new THREE.SphereGeometry(0.5, 16, 14), stone, 0.06, 1.2, 0);
   core.scale.set(1.25, 1.05, 0.95);
@@ -2468,7 +2490,7 @@ function buildLesserDemon(def) {
   const skin = paint(0xdc2626);
   const hornMat = paint(0x111827);
   const mane = paint(0x1f2937);
-  const hoofMat = paint(0x111827);
+  const hoofMat = paint(0x111827, {}, 'leather');
 
   const waist = monsterPart(group, new THREE.SphereGeometry(0.28, 14, 12), skin, 0, 1.02, 0);
   waist.scale.set(0.85, 1.15, 0.7);
@@ -2504,7 +2526,7 @@ function buildLesserDemon(def) {
     depth: 0.045, bevelEnabled: true, bevelSize: 0.02, bevelThickness: 0.02
   });
   wingGeo.rotateX(Math.PI / 2);
-  const wingMat = paint(0x111827);
+  const wingMat = paint(0x111827, {}, 'leather');
   const lWing = new THREE.Mesh(wingGeo, wingMat);
   lWing.scale.x = -1;
   lWing.position.set(-0.28, 1.5, 0.12);
@@ -2568,7 +2590,7 @@ function buildLesserDemon(def) {
 
 function buildElvargMesh(def) {
   const grp = new THREE.Group();
-  const scaleMat = paint(def.bodyColor);
+  const scaleMat = paint(def.bodyColor, {}, 'leather');
   const goldMat = paint(def.accentColor);
   const eyeMat = new THREE.MeshBasicMaterial({ color: 0xfde047 });
 
@@ -2757,7 +2779,7 @@ function spawnResourceNode(nodeKey, x, z) {
     grp.scale.set(s, s, s);
     visualMesh = new THREE.Group();
 
-    const barkMat = facetMaterial({ color: def.trunkColor || 0x92400e });
+    const barkMat = albedoMaterial(def.trunkColor || 0x92400e, 'bark');
     const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.36, 2.2, 12), barkMat);
     trunk.position.y = 1.1;
     trunk.castShadow = true;
@@ -2771,7 +2793,7 @@ function spawnResourceNode(nodeKey, x, z) {
       yew_tree: 0x166534,
       magic_tree: 0x2dd4bf
     }[nodeKey] || def.foliageColor || 0x4ade80;
-    const fMat = facetMaterial({ color: foliageHex });
+    const fMat = albedoMaterial(foliageHex, 'grass');
     const puffs = [
       [0, 2.55, 0, 1.25],
       [0.72, 2.15, 0.28, 0.82],
@@ -2793,7 +2815,7 @@ function spawnResourceNode(nodeKey, x, z) {
     grp.add(depletedMesh);
   } else if (def.kind === 'rock') {
     visualMesh = new THREE.Group();
-    const rockMat = facetMaterial({ color: 0x94a3b8 });
+    const rockMat = albedoMaterial(0x94a3b8, 'stone');
     const baseRock = new THREE.Mesh(new THREE.SphereGeometry(0.95, 16, 12), rockMat);
     baseRock.position.y = 0.7;
     baseRock.scale.set(1.18, 0.78, 1.05);
@@ -2811,7 +2833,7 @@ function spawnResourceNode(nodeKey, x, z) {
 
     depletedMesh = new THREE.Mesh(
       new THREE.DodecahedronGeometry(0.85, 0),
-      facetMaterial({ color: 0x64748b })
+      albedoMaterial(0x64748b, 'stone')
     );
     depletedMesh.scale.set(0.95, 0.75, 0.95);
     depletedMesh.visible = false;

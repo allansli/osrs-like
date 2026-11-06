@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import type { ItemDef } from '../data/items';
 import { LEAN_RIG } from './humanoid';
 import { facetMaterial } from './materials';
+import { albedoForItem, albedoMaterial, type AlbedoId } from './textures';
 
 export type GearSilhouette =
   | 'wizard-hat' | 'robin-hat' | 'hood' | 'sheikah-mask' | 'circlet'
@@ -34,8 +35,13 @@ export interface AnchoredVisual {
   right: THREE.Group | null;
 }
 
-function mat(color: number | undefined, extra: Record<string, unknown> = {}): THREE.Material {
+function mat(color: number | undefined, extra: Record<string, unknown> = {}, family?: AlbedoId | null): THREE.Material {
+  if (family) return albedoMaterial(color ?? 0x9ca3af, family, extra);
   return facetMaterial({ color: color ?? 0x9ca3af, ...extra });
+}
+
+function worn(item: ItemDef, extra: Record<string, unknown> = {}): THREE.Material {
+  return albedoMaterial(item.color ?? 0x9ca3af, albedoForItem(item), extra);
 }
 
 function glow(color: number | undefined, intensity = 0.55): THREE.Material {
@@ -159,7 +165,7 @@ function kiteGeometry(bevel: boolean): THREE.ExtrudeGeometry {
 }
 
 function buildHelmShell(group: THREE.Group, item: ItemDef, withVisor: boolean): void {
-  const dome = part(group, new THREE.SphereGeometry(LEAN_RIG.headRadius + 0.03, 18, 14, 0, Math.PI * 2, 0, Math.PI * 0.72), mat(item.color), 0, 0.02, 0);
+  const dome = part(group, new THREE.SphereGeometry(LEAN_RIG.headRadius + 0.03, 18, 14, 0, Math.PI * 2, 0, Math.PI * 0.72), worn(item), 0, 0.02, 0);
   dome.scale.set(1, 0.92, 1.02);
   const brow = part(group, new THREE.TorusGeometry(LEAN_RIG.headRadius + 0.012, 0.02, 6, 16), mat(item.trim), 0, -0.02, 0);
   brow.rotation.x = Math.PI / 2;
@@ -180,7 +186,7 @@ function buildHelmShell(group: THREE.Group, item: ItemDef, withVisor: boolean): 
 export function buildHeadVisual(item: ItemDef): THREE.Group {
   const silhouette = gearSilhouette(item);
   const group = tag(new THREE.Group(), item, silhouette);
-  const color = mat(item.color);
+  const color = worn(item);
   const trim = mat(item.trim);
 
   if (silhouette === 'wizard-hat') {
@@ -252,7 +258,7 @@ export function buildHeadVisual(item: ItemDef): THREE.Group {
 
 function pauldron(parent: THREE.Group, item: ItemDef, x: number, scale = 1): THREE.Mesh {
   const shoulderY = LEAN_RIG.shoulderY - LEAN_RIG.torsoY;
-  const dome = part(parent, new THREE.SphereGeometry(0.09 * scale, 12, 10), mat(item.color), x, shoulderY + 0.02, 0);
+  const dome = part(parent, new THREE.SphereGeometry(0.09 * scale, 12, 10), worn(item), x, shoulderY + 0.02, 0);
   dome.scale.set(1.05, 0.62, 0.85);
   const rim = part(parent, new THREE.TorusGeometry(0.078 * scale, 0.012, 5, 12), mat(item.trim), x, shoulderY - 0.04, 0);
   rim.rotation.x = Math.PI / 2;
@@ -277,14 +283,14 @@ export function buildBodyVisual(item: ItemDef): AnchoredVisual {
     }
     if (silhouette === 'trim-plate') {
       part(torso, new THREE.BoxGeometry(0.12, 0.12, 0.03), glow(item.trim, 0.25), 0, 0.1, -0.19);
-      part(torso, new THREE.BoxGeometry(0.3, 0.045, 0.035), mat(item.color), 0, -0.14, -0.17);
+      part(torso, new THREE.BoxGeometry(0.3, 0.045, 0.035), worn(item), 0, -0.14, -0.17);
     }
     return { torso, left: null, right: null };
   }
 
   if (silhouette === 'dhide-body') {
     [-LEAN_RIG.shoulderX, LEAN_RIG.shoulderX].forEach((x) => {
-      const pad = part(torso, new THREE.SphereGeometry(0.075, 10, 8), mat(item.color), x, 0.26, -0.02);
+      const pad = part(torso, new THREE.SphereGeometry(0.075, 10, 8), worn(item), x, 0.26, -0.02);
       pad.scale.set(1.1, 0.5, 0.8);
       part(torso, new THREE.SphereGeometry(0.02, 6, 6), mat(item.trim), x, 0.28, -0.08);
     });
@@ -298,9 +304,9 @@ export function buildBodyVisual(item: ItemDef): AnchoredVisual {
     const stole = part(torso, new THREE.BoxGeometry(0.36, 0.08, 0.1), mat(item.trim), 0, 0.28, -0.02);
     stole.rotation.x = 0.12;
     const cuffGeo = () => new THREE.CylinderGeometry(0.074, 0.06, 0.08, 10);
-    part(left, cuffGeo(), mat(item.color), 0, -0.58, 0);
+    part(left, cuffGeo(), worn(item), 0, -0.58, 0);
     part(left, new THREE.TorusGeometry(0.072, 0.01, 5, 10), mat(item.trim), 0, -0.62, 0).rotation.x = Math.PI / 2;
-    part(right, cuffGeo(), mat(item.color), 0, -0.58, 0);
+    part(right, cuffGeo(), worn(item), 0, -0.58, 0);
     part(right, new THREE.TorusGeometry(0.072, 0.01, 5, 10), mat(item.trim), 0, -0.62, 0).rotation.x = Math.PI / 2;
     return { torso, left, right };
   }
@@ -318,7 +324,7 @@ export function buildLegsVisual(item: ItemDef): AnchoredVisual {
   const right = tag(new THREE.Group(), item, silhouette);
 
   if (silhouette === 'robe-skirt') {
-    const skirt = part(torso, new THREE.CylinderGeometry(LEAN_RIG.skirtRadiusTop, LEAN_RIG.skirtRadiusBottom, 0.86, 16), mat(item.color), 0, -0.67, 0);
+    const skirt = part(torso, new THREE.CylinderGeometry(LEAN_RIG.skirtRadiusTop, LEAN_RIG.skirtRadiusBottom, 0.86, 16), worn(item), 0, -0.67, 0);
     skirt.scale.set(1, 1, 0.76);
     part(torso, new THREE.TorusGeometry(0.26, 0.014, 5, 14), mat(item.trim), 0, -1.06, 0).rotation.x = Math.PI / 2;
     part(torso, new THREE.BoxGeometry(0.03, 0.7, 0.016), mat(item.trim), 0, -0.68, -0.2);
@@ -326,7 +332,7 @@ export function buildLegsVisual(item: ItemDef): AnchoredVisual {
   }
 
   if (silhouette === 'tassets') {
-    const fauld = part(torso, new THREE.CylinderGeometry(0.18, LEAN_RIG.skirtRadiusBottom, 0.18, 12), mat(item.color), 0, -0.4, 0);
+    const fauld = part(torso, new THREE.CylinderGeometry(0.18, LEAN_RIG.skirtRadiusBottom, 0.18, 12), worn(item), 0, -0.4, 0);
     fauld.scale.set(1, 1, 0.76);
     part(torso, new THREE.BoxGeometry(0.1, 0.22, 0.03), mat(item.trim), -0.12, -0.52, -0.12);
     part(torso, new THREE.BoxGeometry(0.1, 0.22, 0.03), mat(item.trim), 0.12, -0.52, -0.12);
@@ -338,9 +344,9 @@ export function buildLegsVisual(item: ItemDef): AnchoredVisual {
 
   if (silhouette === 'dhide-chaps') {
     part(torso, new THREE.TorusGeometry(0.18, 0.018, 5, 12), mat(item.trim), 0, -0.36, 0).rotation.x = Math.PI / 2;
-    part(torso, new THREE.BoxGeometry(0.06, 0.04, 0.03), mat(item.color), 0, -0.36, -0.16);
+    part(torso, new THREE.BoxGeometry(0.06, 0.04, 0.03), worn(item), 0, -0.36, -0.16);
     [left, right].forEach((leg) => {
-      const chap = part(leg, new THREE.BoxGeometry(0.11, 0.46, 0.04), mat(item.color), 0, -0.28, -0.05);
+      const chap = part(leg, new THREE.BoxGeometry(0.11, 0.46, 0.04), worn(item), 0, -0.28, -0.05);
       chap.scale.set(1, 1, 0.8);
       part(leg, new THREE.BoxGeometry(0.05, 0.03, 0.02), mat(item.trim), 0, -0.12, -0.08);
     });
@@ -357,8 +363,8 @@ export function buildLegsVisual(item: ItemDef): AnchoredVisual {
 
   [left, right].forEach((leg) => {
     part(leg, new THREE.SphereGeometry(0.06, 10, 8), mat(item.trim), 0, -0.4, -0.05).scale.set(1.1, 0.6, 0.7);
-    part(leg, new THREE.BoxGeometry(0.09, 0.34, 0.03), mat(item.color), 0, -0.22, -0.06);
-    part(leg, new THREE.BoxGeometry(0.08, 0.28, 0.025), mat(item.color), 0, -0.58, -0.05);
+    part(leg, new THREE.BoxGeometry(0.09, 0.34, 0.03), worn(item), 0, -0.22, -0.06);
+    part(leg, new THREE.BoxGeometry(0.08, 0.28, 0.025), worn(item), 0, -0.58, -0.05);
     part(leg, new THREE.BoxGeometry(0.08, 0.03, 0.02), mat(item.trim), 0, -0.36, -0.08);
   });
   return { torso: null, left, right };
@@ -372,8 +378,8 @@ function aimForward(group: THREE.Group, angle = -Math.PI / 2.45): THREE.Group {
 function buildBow(item: ItemDef, ancient: boolean): THREE.Group {
   const group = new THREE.Group();
   const limb = ancient
-    ? mat(item.color, { emissive: item.trim || 0x38e8ff, emissiveIntensity: 0.65 })
-    : mat(item.color);
+    ? worn(item, { emissive: item.trim || 0x38e8ff, emissiveIntensity: 0.65 })
+    : worn(item);
   const curve = new THREE.CatmullRomCurve3([
     new THREE.Vector3(0, -0.62, 0.16),
     new THREE.Vector3(0, -0.3, -0.16),
@@ -428,7 +434,7 @@ function buildBlade(item: ItemDef, kind: 'scimitar' | 'sword' | 'greatsword'): T
     curveSegments: isScim ? 12 : 4
   });
   bladeGeo.center();
-  const blade = part(group, bladeGeo, mat(item.color, sacred ? { emissive: item.color, emissiveIntensity: 0.45 } : {}), 0, len * 0.46 + 0.1, 0);
+  const blade = part(group, bladeGeo, worn(item, sacred ? { emissive: item.color, emissiveIntensity: 0.45 } : {}), 0, len * 0.46 + 0.1, 0);
   blade.rotation.y = Math.PI / 2;
   const guardMat = mat(item.trim, sacred ? { emissive: item.trim, emissiveIntensity: 0.3 } : {});
   if (isGreat) {
@@ -450,7 +456,7 @@ export function buildWeaponVisual(item: ItemDef): WeaponVisual {
   const group = tag(new THREE.Group(), item, silhouette);
 
   if (silhouette === 'crossbow') {
-    part(group, new THREE.BoxGeometry(0.08, 0.06, 0.7), mat(item.color), 0, 0, 0.05);
+    part(group, new THREE.BoxGeometry(0.08, 0.06, 0.7), worn(item), 0, 0, 0.05);
     const prod = part(group, new THREE.TorusGeometry(0.22, 0.022, 6, 14, Math.PI), mat(item.trim), 0, 0, -0.24);
     prod.rotation.y = Math.PI / 2;
     const string = part(group, new THREE.CylinderGeometry(0.006, 0.006, 0.42, 6), mat(0xe2e8f0), 0, 0, -0.24);
@@ -470,8 +476,8 @@ export function buildWeaponVisual(item: ItemDef): WeaponVisual {
   }
 
   if (silhouette === 'greataxe') {
-    part(group, new THREE.CylinderGeometry(0.035, 0.045, 1.25, 8), mat(0x78350f), 0, 0.28, 0);
-    const head = part(group, new THREE.TorusGeometry(0.24, 0.06, 6, 14, Math.PI * 1.45), mat(item.color), 0, 0.92, 0);
+    part(group, new THREE.CylinderGeometry(0.035, 0.045, 1.25, 8), mat(0x78350f, {}, 'wood'), 0, 0.28, 0);
+    const head = part(group, new THREE.TorusGeometry(0.24, 0.06, 6, 14, Math.PI * 1.45), worn(item), 0, 0.92, 0);
     head.rotation.y = Math.PI / 2;
     const edge = part(group, new THREE.TorusGeometry(0.27, 0.018, 5, 14, Math.PI * 1.25), glow(item.trim, 0.35), 0, 0.92, 0);
     edge.rotation.y = Math.PI / 2;
@@ -479,8 +485,8 @@ export function buildWeaponVisual(item: ItemDef): WeaponVisual {
   }
 
   if (silhouette === 'mace') {
-    part(group, new THREE.CylinderGeometry(0.03, 0.035, 0.85, 8), mat(0x44403c), 0, 0.2, 0);
-    part(group, new THREE.SphereGeometry(0.11, 12, 10), mat(item.color), 0, 0.68, 0);
+    part(group, new THREE.CylinderGeometry(0.03, 0.035, 0.85, 8), mat(0x44403c, {}, 'wood'), 0, 0.2, 0);
+    part(group, new THREE.SphereGeometry(0.11, 12, 10), worn(item), 0, 0.68, 0);
     for (let i = 0; i < 6; i++) {
       const spike = part(group, new THREE.ConeGeometry(0.03, 0.12, 5), mat(item.trim), 0, 0.68, 0);
       const angle = (i / 6) * Math.PI * 2;
@@ -491,14 +497,14 @@ export function buildWeaponVisual(item: ItemDef): WeaponVisual {
   }
 
   if (silhouette === 'wand') {
-    part(group, new THREE.CylinderGeometry(0.02, 0.028, 0.55, 8), mat(0x3f3f46), 0, 0.12, 0);
+    part(group, new THREE.CylinderGeometry(0.02, 0.028, 0.55, 8), mat(0x3f3f46, {}, 'wood'), 0, 0.12, 0);
     part(group, new THREE.TorusGeometry(0.04, 0.012, 6, 10), mat(item.trim), 0, 0.36, 0).rotation.x = Math.PI / 2;
     part(group, new THREE.OctahedronGeometry(0.07), glow(item.color, 0.9), 0, 0.48, 0);
     return { group: aimForward(group, -Math.PI / 2.7), whipRig: null };
   }
 
   if (silhouette === 'staff' || silhouette === 'ancient-staff' || silhouette === 'ahrim-staff') {
-    part(group, new THREE.CylinderGeometry(0.04, 0.035, 1.55, 10), mat(item.id === 'ahrim_staff' ? item.color : 0x5c3a21), 0, 0.35, 0);
+    part(group, new THREE.CylinderGeometry(0.04, 0.035, 1.55, 10), mat(item.id === 'ahrim_staff' ? item.color : 0x5c3a21, {}, 'wood'), 0, 0.35, 0);
     if (silhouette === 'ancient-staff') {
       const crest = part(group, new THREE.OctahedronGeometry(0.16), glow(item.color, 0.8), 0, 1.2, 0);
       crest.rotation.z = Math.PI / 4;
@@ -523,7 +529,7 @@ export function buildWeaponVisual(item: ItemDef): WeaponVisual {
       new THREE.Vector3(0.1, 0.34, -0.76),
       new THREE.Vector3(-0.02, 0.14, -1.05)
     ];
-    const tube = part(group, new THREE.TubeGeometry(new THREE.CatmullRomCurve3(rest), 22, 0.034, 8, false), mat(0x1c1917, { emissive: item.color, emissiveIntensity: 0.35 }));
+    const tube = part(group, new THREE.TubeGeometry(new THREE.CatmullRomCurve3(rest), 22, 0.034, 8, false), mat(0x1c1917, { emissive: item.color, emissiveIntensity: 0.35 }, 'leather'));
     const nodes = rest.map((pt, index) => {
       const hot = index % 2 === 1;
       const node = part(
@@ -552,7 +558,7 @@ export function buildShieldVisual(item: ItemDef): THREE.Group {
   const group = tag(new THREE.Group(), item, silhouette);
 
   if (silhouette === 'defender') {
-    part(group, new THREE.CylinderGeometry(0.03, 0.035, 0.42, 8), mat(item.color), 0, 0, 0);
+    part(group, new THREE.CylinderGeometry(0.03, 0.035, 0.42, 8), worn(item), 0, 0, 0);
     part(group, new THREE.ConeGeometry(0.05, 0.16, 6), mat(item.trim), 0, 0.28, 0);
     [-0.35, 0.35].forEach((rot) => {
       const spike = part(group, new THREE.ConeGeometry(0.028, 0.12, 5), mat(item.trim), 0, 0.05, 0);
@@ -567,7 +573,7 @@ export function buildShieldVisual(item: ItemDef): THREE.Group {
     const shell = part(
       group,
       kiteGeometry(false),
-      mat(item.color, { emissive: item.color, emissiveIntensity: 0.45, transparent: true, opacity: 0.72 })
+      worn(item, { emissive: item.color, emissiveIntensity: 0.45, transparent: true, opacity: 0.72 })
     );
     shell.rotation.y = Math.PI / 2;
     part(group, new THREE.TorusGeometry(0.12, 0.02, 6, 12), glow(item.trim, 0.7), 0.06, 0.05, 0);
@@ -575,7 +581,7 @@ export function buildShieldVisual(item: ItemDef): THREE.Group {
     return group;
   }
 
-  const kite = part(group, kiteGeometry(true), mat(item.color));
+  const kite = part(group, kiteGeometry(true), worn(item));
   kite.rotation.y = Math.PI / 2;
   if (silhouette === 'hylian-shield') {
     part(group, new THREE.TorusGeometry(0.3, 0.025, 5, 16), mat(0xfacc15), 0.05, 0.02, 0);
@@ -643,7 +649,7 @@ export function buildBootVisual(item: ItemDef, isLeft: boolean): THREE.Group {
 export function buildGloveVisual(item: ItemDef): THREE.Group {
   const group = tag(new THREE.Group(), item, 'gloves');
   part(group, new THREE.CylinderGeometry(0.068, 0.072, 0.1, 10), mat(item.trim), 0, -0.58, 0);
-  part(group, new THREE.TorusGeometry(0.07, 0.01, 5, 10), mat(item.color), 0, -0.52, 0).rotation.x = Math.PI / 2;
+  part(group, new THREE.TorusGeometry(0.07, 0.01, 5, 10), worn(item), 0, -0.52, 0).rotation.x = Math.PI / 2;
   return group;
 }
 
@@ -659,7 +665,7 @@ function clothCape(item: ItemDef, lava: boolean): THREE.Group {
     pos.setZ(i, Math.cos(u * 4) * 0.03 + t * 0.08);
   }
   geo.computeVertexNormals();
-  const cloth = new THREE.Mesh(geo, mat(item.color, {
+  const cloth = new THREE.Mesh(geo, worn(item, {
     side: THREE.DoubleSide,
     ...(lava ? { emissive: item.color, emissiveIntensity: 0.35 } : {})
   }));
@@ -679,11 +685,11 @@ export function buildCapeVisual(item: ItemDef): THREE.Group {
   const silhouette = gearSilhouette(item);
   const group = tag(new THREE.Group(), item, silhouette);
   if (silhouette === 'ava') {
-    part(group, new THREE.BoxGeometry(0.26, 0.36, 0.12), mat(item.color), 0, 0.08, 0.1);
+    part(group, new THREE.BoxGeometry(0.26, 0.36, 0.12), worn(item), 0, 0.08, 0.1);
     const quiver = part(group, new THREE.CylinderGeometry(0.07, 0.08, 0.55, 8), mat(item.trim), 0.16, 0.32, 0.12);
     quiver.rotation.z = -0.3;
     part(group, new THREE.ConeGeometry(0.025, 0.16, 5), mat(0xfde68a), 0.2, 0.58, 0.08).rotation.z = -0.3;
-    part(group, new THREE.ConeGeometry(0.02, 0.14, 5), mat(item.color), 0.12, 0.55, 0.14).rotation.z = -0.15;
+    part(group, new THREE.ConeGeometry(0.02, 0.14, 5), worn(item), 0.12, 0.55, 0.14).rotation.z = -0.15;
     return group;
   }
   group.add(clothCape(item, silhouette === 'lava-cape'));

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { addCartoonOutline, facetMaterial } from './materials';
+import { albedoMaterial } from './textures';
 
 /** Classic OSRS lean athletic proportions. Gear mounts in playerGear.ts use the same anchors. */
 export const LEAN_RIG = {
@@ -77,12 +78,12 @@ export function buildHumanoidRig(
   group.scale.set(scale, scale, scale);
 
   const skinMat = facetMaterial({ color: 0xffd7b5 });
-  const tunicMat = facetMaterial({ color: tunicHex });
-  const legsMat = facetMaterial({ color: legsHex });
+  const tunicMat = albedoMaterial(tunicHex, 'cloth');
+  const legsMat = albedoMaterial(legsHex, 'cloth');
   const hairMat = facetMaterial({ color: hairHex });
-  const bootMat = facetMaterial({ color: 0x78350f });
-  const gloveMat = facetMaterial({ color: 0xf6c7a1 });
-  const beltLeather = facetMaterial({ color: 0x3f2a1d });
+  const bootMat = albedoMaterial(0x78350f, 'leather');
+  const gloveMat = albedoMaterial(0xf6c7a1, 'leather');
+  const beltLeather = albedoMaterial(0x3f2a1d, 'leather');
 
   const torso = new THREE.Group();
   torso.position.y = LEAN_RIG.torsoY;
