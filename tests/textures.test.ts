@@ -8,18 +8,20 @@ import { describe, expect, it } from 'vitest';
 import { ITEMS } from '../src/data/items';
 import { buildHumanoidRig } from '../src/engine/humanoid';
 import { addCartoonOutline, facetMaterial } from '../src/engine/materials';
-import { buildBodyVisual, buildShieldVisual, buildWeaponVisual } from '../src/engine/playerGear';
+import { buildBodyVisual, buildRingVisual, buildShieldVisual, buildWeaponVisual } from '../src/engine/playerGear';
 import {
   ALBEDO_IDS,
   CREATURE_IDS,
   GROUND_REPEAT,
   GROUND_TILE_METERS,
   PROP_REPEAT,
+  GEAR_IDS,
   albedoForItem,
   albedoUrl,
   assignGroundUvs,
   assignProjectedUvs,
   creatureAlbedoId,
+  gearAlbedoId,
   loadAlbedo,
   speciesAlbedo,
   terrainMaterial
@@ -248,35 +250,47 @@ describe('uv mapping and terrain blend', () => {
 });
 
 describe('gear and body families', () => {
-  it('picks cloth, leather, wood, and iron without dropping the item color', () => {
-    expect(albedoForItem(ITEMS.hylian_tunic)).toBe('cloth');
-    expect(albedoForItem(ITEMS.green_dhide_body)).toBe('leather');
-    expect(albedoForItem(ITEMS.wooden_shield)).toBe('wood');
-    expect(albedoForItem(ITEMS.rune_plate)).toBe('iron');
-    expect(albedoForItem(ITEMS.shortbow)).toBe('wood');
-    expect(albedoForItem(ITEMS.leather_boots)).toBe('leather');
-    expect(albedoForItem(ITEMS.rune_boots)).toBe('iron');
+  it('picks a gear tile per material tier and keeps the item color', () => {
+    expect(albedoForItem(ITEMS.hylian_tunic)).toBe(gearAlbedoId('cloth'));
+    expect(albedoForItem(ITEMS.green_dhide_body)).toBe(gearAlbedoId('hide'));
+    expect(albedoForItem(ITEMS.wooden_shield)).toBe(gearAlbedoId('wood'));
+    expect(albedoForItem(ITEMS.bronze_plate)).toBe(gearAlbedoId('bronze'));
+    expect(albedoForItem(ITEMS.iron_plate)).toBe(gearAlbedoId('iron'));
+    expect(albedoForItem(ITEMS.steel_plate)).toBe(gearAlbedoId('steel'));
+    expect(albedoForItem(ITEMS.mith_plate)).toBe(gearAlbedoId('mithril'));
+    expect(albedoForItem(ITEMS.addy_plate)).toBe(gearAlbedoId('adamant'));
+    expect(albedoForItem(ITEMS.rune_plate)).toBe(gearAlbedoId('rune'));
+    expect(albedoForItem(ITEMS.shortbow)).toBe(gearAlbedoId('wood'));
+    expect(albedoForItem(ITEMS.leather_boots)).toBe(gearAlbedoId('leather'));
+    expect(albedoForItem(ITEMS.rune_boots)).toBe(gearAlbedoId('rune'));
+    expect(albedoForItem(ITEMS.berserker_ring)).toBe(gearAlbedoId('rune'));
+    expect(albedoForItem(ITEMS.amulet_glory)).toBe(gearAlbedoId('rune'));
+
+    const ring = buildRingVisual(ITEMS.berserker_ring);
+    const ringMeshes = solidMeshes(ring);
+    expect(ringMeshes.some((mesh) => (mesh.material as THREE.MeshLambertMaterial).userData.albedoId === gearAlbedoId('rune'))).toBe(true);
+    expect(ringMeshes.some((mesh) => !(mesh.material as THREE.MeshLambertMaterial).map)).toBe(true);
 
     const plate = buildBodyVisual(ITEMS.rune_plate);
     const painted = solidMeshes(plate.torso!).find((mesh) => (mesh.material as THREE.MeshLambertMaterial).map);
     const plateMat = painted!.material as THREE.MeshLambertMaterial;
     expect(plateMat.color.getHex()).toBe(ITEMS.rune_plate.color);
-    expect(plateMat.userData.albedoId).toBe('iron');
+    expect(plateMat.userData.albedoId).toBe(gearAlbedoId('rune'));
 
     const shield = buildShieldVisual(ITEMS.wooden_shield);
-    const shieldMat = solidMeshes(shield).find((mesh) => (mesh.material as THREE.MeshLambertMaterial).userData.albedoId === 'wood')!
+    const shieldMat = solidMeshes(shield).find((mesh) => (mesh.material as THREE.MeshLambertMaterial).userData.albedoId === gearAlbedoId('wood'))!
       .material as THREE.MeshLambertMaterial;
     expect(shieldMat.color.getHex()).toBe(ITEMS.wooden_shield.color);
 
     const bow = buildWeaponVisual(ITEMS.shortbow);
-    const bowMat = solidMeshes(bow.group).find((mesh) => (mesh.material as THREE.MeshLambertMaterial).userData.albedoId === 'wood')!
+    const bowMat = solidMeshes(bow.group).find((mesh) => (mesh.material as THREE.MeshLambertMaterial).userData.albedoId === gearAlbedoId('wood'))!
       .material as THREE.MeshLambertMaterial;
     expect(bowMat.map).toBeTruthy();
 
     const rig = buildHumanoidRig();
-    expect(rig.tunicMat.userData.albedoId).toBe('cloth');
+    expect(rig.tunicMat.userData.albedoId).toBe(gearAlbedoId('cloth'));
     expect(rig.tunicMat.color.getHex()).toBe(0x0284c7);
-    expect(rig.bootMat.userData.albedoId).toBe('leather');
+    expect(rig.bootMat.userData.albedoId).toBe(gearAlbedoId('leather'));
     expect(rig.gloveMat.map).toBeTruthy();
     const headMat = rig.head.material as THREE.MeshLambertMaterial;
     const hairMat = rig.hairCap.material as THREE.MeshLambertMaterial;
@@ -287,6 +301,30 @@ describe('gear and body families', () => {
     expect(hairMat.color.getHex()).toBe(0xfacc15);
     const eye = solidMeshes(rig.group).find((mesh) => mesh.userData.part === 'eye');
     expect((eye!.material as THREE.MeshLambertMaterial).userData.albedoId).toBe(creatureAlbedoId('eyes'));
+  });
+});
+
+describe('gear tier albedos', () => {
+  it('ships a 256 gouache tile for every metal tier plus wood, hide, leather, and cloth', () => {
+    const dir = join(TEXTURE_DIR, 'gear');
+    const files = readdirSync(dir).filter((name) => name.endsWith('.png')).sort();
+    expect(files).toEqual([...GEAR_IDS].map((id) => `${id}.png`).sort());
+    for (const file of files) {
+      const image = decodePng(readFileSync(join(dir, file)));
+      expect(image.width).toBe(256);
+      expect(image.height).toBe(256);
+      let sum = 0;
+      let sumSq = 0;
+      const count = image.width * image.height;
+      for (let i = 0; i < count; i++) {
+        const luma = (image.rgba[i * 4] + image.rgba[i * 4 + 1] + image.rgba[i * 4 + 2]) / 3;
+        sum += luma;
+        sumSq += luma * luma;
+        expect(luma).toBeGreaterThan(150);
+      }
+      const mean = sum / count;
+      expect(sumSq / count - mean * mean).toBeGreaterThan(12);
+    }
   });
 });
 

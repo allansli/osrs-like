@@ -122,35 +122,86 @@ export function loadAlbedo(id: string, repeat = PROP_REPEAT, loader?: AlbedoLoad
   return tex;
 }
 
+/** Material-tier tiles in /public/textures/gear. Trims and gems stay flat. */
+export const GEAR_IDS = [
+  'bronze',
+  'iron',
+  'steel',
+  'mithril',
+  'adamant',
+  'rune',
+  'wood',
+  'hide',
+  'leather',
+  'cloth'
+] as const;
+
+export type GearId = (typeof GEAR_IDS)[number];
+
+const TIER_GEAR: Record<string, GearId> = {
+  bronze: 'bronze',
+  iron: 'iron',
+  steel: 'steel',
+  black: 'steel',
+  white: 'steel',
+  mithril: 'mithril',
+  adamant: 'adamant',
+  rune: 'rune',
+  gilded: 'rune',
+  dragon: 'rune',
+  barrows: 'rune',
+  bandos: 'rune',
+  raids: 'rune',
+  botw: 'rune'
+};
+
+export function gearAlbedoId(id: GearId): string {
+  return `gear:${id}`;
+}
+
+function tierGear(tier: string | undefined): GearId {
+  return (tier && TIER_GEAR[tier]) || 'iron';
+}
+
 /**
- * Family for a worn item. The material color stays the item token; the map only tints it.
- * Gold trim, gems, and skin stay untextured.
+ * Gear tile for a worn item. The material color stays the item token; the map only tints it.
+ * Gold trim, gems, and skin stay untextured. Higher metals share the rune tile and keep their token.
  */
-export function albedoForItem(item: { id?: string; iconKind?: string; slot?: string } | null | undefined): AlbedoId | null {
+export function albedoForItem(
+  item: { id?: string; iconKind?: string; slot?: string; tier?: string } | null | undefined
+): string | null {
+  const gear = gearFamily(item);
+  return gear ? gearAlbedoId(gear) : null;
+}
+
+export function gearFamily(
+  item: { id?: string; iconKind?: string; slot?: string; tier?: string } | null | undefined
+): GearId | null {
   if (!item) return null;
   const id = item.id || '';
   const kind = item.iconKind || '';
   const slot = item.slot || '';
   if (id === 'wooden_shield') return 'wood';
   if (kind === 'bow' || kind === 'staff' || kind === 'wand') return 'wood';
-  if (kind === 'whip' || kind.startsWith('dhide') || id.includes('dhide')) return 'leather';
+  if (kind === 'whip' || kind.startsWith('dhide') || id.includes('dhide')) return 'hide';
   if (['tunic', 'trousers', 'robe_top', 'robe_bottom', 'cape', 'hat', 'hood'].includes(kind) || slot === 'cape') {
     return 'cloth';
   }
   if (slot === 'feet') {
     if (id.includes('mystic') || id.includes('eternal')) return 'cloth';
     if (id.includes('leather') || id.includes('ranger') || id.includes('pegasian') || id.includes('primordial')) return 'leather';
-    return 'iron';
+    return tierGear(item.tier);
   }
   if (slot === 'hands') {
     if (id.includes('mystic')) return 'cloth';
-    if (id.includes('leather') || id.includes('dhide') || id.includes('barrows')) return 'leather';
-    return 'iron';
+    if (id.includes('leather') || id.includes('barrows')) return 'leather';
+    return tierGear(item.tier);
   }
   if (['scimitar', 'sword', 'greatsword', 'mace', 'greataxe', 'crossbow', 'body', 'legs', 'head'].includes(kind)) {
-    return 'iron';
+    return tierGear(item.tier);
   }
-  if (slot === 'shield' || slot === 'body' || slot === 'legs' || slot === 'weapon' || slot === 'head') return 'iron';
+  if (slot === 'shield' || slot === 'body' || slot === 'legs' || slot === 'weapon' || slot === 'head') return tierGear(item.tier);
+  if (slot === 'neck' || slot === 'ring') return tierGear(item.tier);
   return null;
 }
 

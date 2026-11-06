@@ -1769,7 +1769,7 @@ function rebuildPlayerEquipmentMeshes() {
     'wepMesh', 'shieldMesh', 'helmMesh', 'capeMesh', 'amuletMesh', 'ringMesh',
     'bodyArmorMesh', 'bodyArmL', 'bodyArmR',
     'legsArmorMesh', 'legsArmorL', 'legsArmorR',
-    'feetMeshL', 'feetMeshR', 'handsMeshL', 'handsMeshR'
+    'feetMeshL', 'feetMeshR', 'handsMeshL', 'handsMeshR', 'setBonusCue'
   ];
   gearKeys.forEach((key) => {
     const node = player.parts[key];
@@ -1795,7 +1795,7 @@ function rebuildPlayerEquipmentMeshes() {
     player.parts.tunicMat.color.setHex(0x0284c7);
     player.parts.tunicMat.metalness = 0.08;
     player.parts.tunicMat.roughness = 0.52;
-    applyAlbedo(player.parts.tunicMat, 'cloth');
+    applyAlbedo(player.parts.tunicMat, 'gear:cloth');
   }
 
   // 2. Leg Armor Material (Platelegs / Tassets / Trousers)
@@ -1808,7 +1808,7 @@ function rebuildPlayerEquipmentMeshes() {
   } else {
     player.parts.legsMat.color.setHex(0xa1887f);
     player.parts.legsMat.metalness = 0.05;
-    applyAlbedo(player.parts.legsMat, 'cloth');
+    applyAlbedo(player.parts.legsMat, 'gear:cloth');
   }
 
   // 3. Boots Material (Feet)
@@ -1820,7 +1820,7 @@ function rebuildPlayerEquipmentMeshes() {
   } else {
     player.parts.bootMat.color.setHex(0x5c3a21);
     player.parts.bootMat.metalness = 0.1;
-    applyAlbedo(player.parts.bootMat, 'leather');
+    applyAlbedo(player.parts.bootMat, 'gear:leather');
   }
 
   // 4. Gauntlets Material (Hands)
@@ -1832,7 +1832,7 @@ function rebuildPlayerEquipmentMeshes() {
   } else {
     player.parts.gloveMat.color.setHex(0x78350f);
     player.parts.gloveMat.metalness = 0.1;
-    applyAlbedo(player.parts.gloveMat, 'leather');
+    applyAlbedo(player.parts.gloveMat, 'gear:leather');
   }
 
   const equip = (slot) => {
@@ -1905,6 +1905,18 @@ function rebuildPlayerEquipmentMeshes() {
     if (cape.userData.silhouette === 'ava') cape.position.set(0, 0.1, 0.18);
     else cape.position.set(0, -0.04, 0.2);
     mount(torso, cape, 'capeMesh');
+  }
+
+  if (getEquipmentBonuses().matchedSet && torso) {
+    const cue = new THREE.Mesh(
+      new THREE.TorusGeometry(LEAN_RIG.beltRadius + 0.03, 0.016, 8, 24),
+      facetMaterial({ color: 0xfde047, emissive: 0xfacc15, emissiveIntensity: 0.7 })
+    );
+    cue.rotation.x = Math.PI / 2;
+    cue.position.y = LEAN_RIG.beltY - LEAN_RIG.torsoY;
+    cue.userData.setBonusCue = true;
+    cue.userData.noOutline = true;
+    mount(torso, cue, 'setBonusCue');
   }
 
   if (player.meshGroup) {

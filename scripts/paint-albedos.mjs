@@ -328,5 +328,87 @@ const creatures = {
   }
 };
 
+/** Gear tiers. The item color token supplies bronze/rune hue; the tile supplies the hammer, grain, or weave. */
+const gear = {
+  bronze(u, v) {
+    const dent = fbm(u, v, 2, 4, 4);
+    const pit = Math.pow(fbm(u, v, 14, 7, 7), 3);
+    let col = mix([236, 196, 140], [120, 72, 36], dent);
+    col = mix(col, [96, 58, 32], pit * 0.7);
+    return col;
+  },
+  iron(u, v) {
+    const dent = fbm(u, v, 6, 5, 5);
+    const scratch = 0.5 + 0.5 * Math.sin(u * Math.PI * 2 * 11 + fbm(u, v, 3, 2, 2));
+    let col = mix([214, 220, 228], [86, 96, 112], dent);
+    col = mix(col, [168, 176, 188], scratch * 0.45);
+    return col;
+  },
+  steel(u, v) {
+    const brush = 0.5 + 0.5 * Math.sin(v * Math.PI * 2 * 16 + fbm(u, v, 4, 2, 3) * 1.5);
+    const dent = fbm(u, v, 9, 4, 4);
+    let col = mix([236, 240, 244], [150, 162, 176], 1 - brush);
+    col = mix(col, [112, 124, 140], dent * 0.45);
+    return col;
+  },
+  mithril(u, v) {
+    const grain = fbm(u, v, 5, 6, 3);
+    const spark = Math.pow(fbm(u, v, 17, 8, 8), 4);
+    let col = mix([196, 214, 236], [96, 124, 176], grain);
+    col = mix(col, [236, 244, 252], spark);
+    return col;
+  },
+  adamant(u, v) {
+    const facet = fbm(u, v, 8, 4, 4);
+    const edge = Math.pow(Math.abs(Math.sin(u * Math.PI * 2 * 5 + v * 2)), 0.4);
+    let col = mix([186, 214, 176], [64, 112, 84], facet);
+    col = mix(col, [220, 236, 200], edge * 0.4);
+    return col;
+  },
+  rune(u, v) {
+    const chevron = 0.5 + 0.5 * Math.sin((u + v) * Math.PI * 2 * 6);
+    const plate = fbm(u, v, 3, 3, 3);
+    let col = mix([170, 214, 230], [48, 112, 150], plate);
+    col = mix(col, [230, 246, 252], chevron * 0.45);
+    return col;
+  },
+  wood(u, v) {
+    const grain = 0.5 + 0.5 * Math.sin(v * Math.PI * 2 * 14 + fbm(u, v, 2, 2, 3) * 2.4);
+    const eye = knot(u, v, 0.28, 0.7, 110, 180);
+    let col = mix([236, 206, 150], [132, 84, 42], grain);
+    col = mix(col, [96, 58, 32], eye);
+    return col;
+  },
+  hide(u, v) {
+    const cols = 7;
+    const rows = 9;
+    const rowIndex = Math.floor(v * rows);
+    const x = (u + (rowIndex % 2) * 0.5) % 1;
+    const dx = (x * cols) % 1 - 0.5;
+    const dy = (v * rows) % 1 - 0.5;
+    const scale = Math.max(0, 1 - Math.hypot(dx, dy) * 2.2);
+    const pore = fbm(u, v, 6, 5, 5);
+    let col = mix([150, 112, 72], [230, 196, 150], Math.pow(scale, 0.55));
+    col = mix(col, [120, 84, 52], pore * 0.3);
+    return col;
+  },
+  leather(u, v) {
+    const pore = fbm(u, v, 7, 8, 8);
+    const crease = Math.pow(Math.abs(Math.sin(v * Math.PI * 2 * 3 + fbm(u, v, 2, 2, 2) * 2)), 0.4);
+    let col = mix([232, 186, 140], [96, 52, 28], pore);
+    col = mix(col, [236, 210, 176], crease * 0.5);
+    return col;
+  },
+  cloth(u, v) {
+    const warp = 0.5 + 0.5 * Math.sin(u * Math.PI * 2 * 16);
+    const weft = 0.5 + 0.5 * Math.sin(v * Math.PI * 2 * 16);
+    const nap = fbm(u, v, 5, 3, 3);
+    let col = mix([160, 148, 128], [240, 234, 220], warp * 0.6 + weft * 0.4);
+    col = mix(col, [128, 112, 92], nap * 0.4);
+    return col;
+  }
+};
+
 writeSet(root, recipes);
 writeSet(join(root, 'creatures'), creatures);
+writeSet(join(root, 'gear'), gear);

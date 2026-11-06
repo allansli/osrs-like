@@ -78,12 +78,12 @@ export function buildHumanoidRig(
   group.scale.set(scale, scale, scale);
 
   const skinMat = albedoMaterial(0xffd7b5, creatureAlbedoId('skin'));
-  const tunicMat = albedoMaterial(tunicHex, 'cloth');
-  const legsMat = albedoMaterial(legsHex, 'cloth');
+  const tunicMat = albedoMaterial(tunicHex, 'gear:cloth');
+  const legsMat = albedoMaterial(legsHex, 'gear:cloth');
   const hairMat = albedoMaterial(hairHex, creatureAlbedoId('hair'));
-  const bootMat = albedoMaterial(0x78350f, 'leather');
-  const gloveMat = albedoMaterial(0xf6c7a1, 'leather');
-  const beltLeather = albedoMaterial(0x3f2a1d, 'leather');
+  const bootMat = albedoMaterial(0x78350f, 'gear:leather');
+  const gloveMat = albedoMaterial(0xf6c7a1, 'gear:leather');
+  const beltLeather = albedoMaterial(0x3f2a1d, 'gear:leather');
 
   const torso = new THREE.Group();
   torso.position.y = LEAN_RIG.torsoY;

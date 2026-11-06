@@ -44,6 +44,11 @@ function worn(item: ItemDef, extra: Record<string, unknown> = {}): THREE.Materia
   return albedoMaterial(item.color ?? 0x9ca3af, albedoForItem(item), extra);
 }
 
+/** Metal band for neck and ring. The gem stays a flat emissive token. */
+function wornBand(item: ItemDef): THREE.Material {
+  return albedoMaterial(item.trim || item.color || 0xfacc15, albedoForItem(item));
+}
+
 function glow(color: number | undefined, intensity = 0.55): THREE.Material {
   const hex = color ?? 0xfde047;
   return mat(hex, { emissive: hex, emissiveIntensity: intensity });
@@ -599,7 +604,7 @@ export function buildShieldVisual(item: ItemDef): THREE.Group {
 
 export function buildAmuletVisual(item: ItemDef): THREE.Group {
   const group = tag(new THREE.Group(), item, 'amulet');
-  const chain = part(group, new THREE.TorusGeometry(0.09, 0.012, 6, 16), mat(item.trim || 0xfacc15), 0, LEAN_RIG.neckY - LEAN_RIG.torsoY, -0.02);
+  const chain = part(group, new THREE.TorusGeometry(0.09, 0.012, 6, 16), wornBand(item), 0, LEAN_RIG.neckY - LEAN_RIG.torsoY, -0.02);
   chain.rotation.x = Math.PI / 2.15;
   const gemMat = glow(item.color, 0.55);
   const gemZ = -0.2;
@@ -623,7 +628,7 @@ export function buildAmuletVisual(item: ItemDef): THREE.Group {
 
 export function buildRingVisual(item: ItemDef): THREE.Group {
   const group = tag(new THREE.Group(), item, 'ring');
-  const band = part(group, new THREE.TorusGeometry(0.038, 0.008, 6, 12), mat(item.trim), 0, LEAN_RIG.handY + 0.06, -0.02);
+  const band = part(group, new THREE.TorusGeometry(0.038, 0.008, 6, 12), wornBand(item), 0, LEAN_RIG.handY + 0.06, -0.02);
   band.rotation.y = Math.PI / 2;
   part(group, new THREE.OctahedronGeometry(0.02), glow(item.color, 0.85), 0, LEAN_RIG.handY + 0.1, -0.05);
   return group;
