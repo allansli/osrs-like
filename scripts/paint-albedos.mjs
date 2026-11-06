@@ -242,23 +242,26 @@ const creatures = {
     const pore = fbm(u, v, 4, 9, 9);
     const blush = fbm(u, v, 12, 3, 3);
     const crease = Math.pow(Math.abs(Math.sin(v * Math.PI * 2 * 2 + fbm(u, v, 8, 2, 2) * 1.4)), 0.55);
-    let col = mix([244, 228, 210], [78, 42, 36], pore);
-    col = mix(col, [236, 120, 108], blush * 0.55);
-    col = mix(col, [150, 96, 78], (1 - crease) * 0.45);
+    const freckle = Math.pow(fbm(u, v, 21, 14, 14), 6);
+    let col = mix([246, 230, 212], [70, 36, 30], pore);
+    col = mix(col, [236, 110, 98], blush * 0.6);
+    col = mix(col, [140, 86, 68], (1 - crease) * 0.5);
+    col = mix(col, [96, 52, 36], freckle);
     return col;
   },
   hair(u, v) {
-    const strand = 0.5 + 0.5 * Math.sin(u * Math.PI * 2 * 18 + fbm(u, v, 3, 2, 6) * 2.2);
+    const strand = 0.5 + 0.5 * Math.sin(u * Math.PI * 2 * 22 + fbm(u, v, 3, 2, 6) * 2.4);
     const clump = fbm(u, v, 15, 4, 3);
-    let col = mix([214, 196, 150], [112, 84, 48], 1 - strand);
-    col = mix(col, [230, 214, 176], clump * 0.4);
+    let col = mix([230, 210, 160], [84, 56, 28], 1 - strand);
+    col = mix(col, [240, 226, 190], clump * 0.45);
     return col;
   },
   eyes(u, v) {
-    const spoke = 0.5 + 0.5 * Math.sin(Math.atan2(v - 0.5, u - 0.5) * 10 + fbm(u, v, 6, 4, 4) * 3);
-    const ring = Math.abs(Math.sin(Math.hypot(Math.min(Math.abs(u - 0.5), 0.5), Math.min(Math.abs(v - 0.5), 0.5)) * Math.PI * 8));
-    let col = mix([214, 206, 186], [120, 96, 64], spoke);
-    col = mix(col, [176, 150, 112], ring * 0.45);
+    const fiber = 0.5 + 0.5 * Math.sin(u * Math.PI * 2 * 9 + fbm(u, v, 6, 3, 5) * 2.2);
+    const ring = 0.5 + 0.5 * Math.sin(v * Math.PI * 2 * 4 + fiber);
+    let col = mix([236, 214, 176], [72, 42, 24], fiber);
+    col = mix(col, [48, 28, 18], Math.pow(ring, 3) * 0.55);
+    col = mix(col, [244, 236, 214], (1 - fiber) * 0.25);
     return col;
   },
   'goblin-hide'(u, v) {
@@ -288,10 +291,10 @@ const creatures = {
     const fy = (v * rows) % 1;
     const dx = fx - 0.5;
     const dy = fy - 0.5;
-    const scale = Math.max(0, 1 - Math.sqrt(dx * dx + dy * dy) * 2.1);
+    const scale = Math.max(0, 1 - Math.sqrt(dx * dx + dy * dy) * 2.15);
     const sheen = fbm(u, v, 4, 3, 3);
-    let col = mix([150, 158, 132], [228, 230, 196], Math.pow(scale, 0.6));
-    col = mix(col, [236, 236, 214], sheen * 0.3);
+    let col = mix([92, 108, 78], [236, 236, 206], Math.pow(scale, 0.45));
+    col = mix(col, [250, 246, 220], sheen * scale * 0.55);
     return col;
   },
   'moss-bark'(u, v) {

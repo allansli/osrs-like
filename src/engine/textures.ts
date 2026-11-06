@@ -301,8 +301,56 @@ export function assignProjectedUvs(
       }
     }
   }
+  stitchUvWraps(geometry, metersPerTile);
   uv.needsUpdate = true;
   geometry.userData.albedoUv = true;
+}
+
+/**
+ * Close a wrap seam on a short edge. Large faces keep their span so a wall still tiles.
+ */
+function stitchUvWraps(geometry: THREE.BufferGeometry, metersPerTile: number): void {
+  const uv = geometry.getAttribute('uv') as THREE.BufferAttribute | undefined;
+  const pos = geometry.getAttribute('position') as THREE.BufferAttribute | undefined;
+  if (!uv || !pos) return;
+  const index = geometry.getIndex();
+  const triCount = index ? index.count / 3 : Math.floor(pos.count / 3);
+  const at = (n: number) => (index ? index.getX(n) : n);
+  const limit = metersPerTile * 0.65;
+  for (let t = 0; t < triCount; t++) {
+    const ids = [at(t * 3), at(t * 3 + 1), at(t * 3 + 2)];
+    const anchor = ids[0];
+    for (const i of ids.slice(1)) {
+      const dist = Math.hypot(
+        pos.getX(i) - pos.getX(anchor),
+        pos.getY(i) - pos.getY(anchor),
+        pos.getZ(i) - pos.getZ(anchor)
+      );
+      if (dist > limit) continue;
+      const du = uv.getX(i) - uv.getX(anchor);
+      const dv = uv.getY(i) - uv.getY(anchor);
+      if (Math.abs(du) > 0.5) uv.setX(i, uv.getX(i) - Math.round(du));
+      if (Math.abs(dv) > 0.5) uv.setY(i, uv.getY(i) - Math.round(dv));
+    }
+  }
+}
+
+/** Slide a creature's albedo so two of the same species do not share one stamp. */
+export function offsetAlbedoPhase(root: THREE.Object3D, phaseU: number, phaseV: number): void {
+  root.traverse((obj) => {
+    const mesh = obj as THREE.Mesh;
+    if (!mesh.isMesh || !mesh.geometry) return;
+    const material = mesh.material as THREE.MeshLambertMaterial | undefined;
+    const id = material?.userData?.albedoId;
+    if (typeof id !== 'string' || !id.startsWith('creature:')) return;
+    const uv = mesh.geometry.getAttribute('uv') as THREE.BufferAttribute | undefined;
+    if (!uv) return;
+    for (let i = 0; i < uv.count; i++) {
+      uv.setXY(i, uv.getX(i) + phaseU, uv.getY(i) + phaseV);
+    }
+    uv.needsUpdate = true;
+    mesh.geometry.userData.albedoPhase = [phaseU, phaseV];
+  });
 }
 
 /** Ground UVs follow world XZ so hills do not flip to a side projection. */

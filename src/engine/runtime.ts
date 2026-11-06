@@ -43,6 +43,7 @@ import {
   BIOME_COLORS,
   biomeAlbedoId,
   biomeGroundId,
+  offsetAlbedoPhase,
   sealAlbedoUvs,
   speciesAlbedo,
   terrainMaterial
@@ -2768,6 +2769,8 @@ function spawnMonster(typeKey, x, z) {
   const def = MONSTER_TYPES[typeKey];
   if (!def) return;
   const rig = createMonsterMesh(def, typeKey);
+  const phase = ((Math.abs(x) * 12.9898 + Math.abs(z) * 78.233) % 1);
+  offsetAlbedoPhase(rig.group, phase, (phase * 1.618) % 1);
   const y = getTerrainHeight(x, z);
   rig.group.position.set(x, y, z);
 
@@ -5133,6 +5136,29 @@ function wireBridge() {
   window.handleSpellClick = handleSpellClick;
   window.teleportToRegion = teleportToRegion;
   window.resetCameraBehindPlayer = resetCameraBehindPlayer;
+  window.dismissOnboarding = dismissOnboarding;
+  window.replayOnboarding = replayOnboarding;
+}
+
+const INTRO_KEY = 'gielinor_hero_intro_v1';
+
+function dismissOnboarding() {
+  const board = document.getElementById('onboarding');
+  if (board) board.hidden = true;
+  try { localStorage.setItem(INTRO_KEY, '1'); } catch (e) {}
+}
+
+function replayOnboarding() {
+  closeModals();
+  const board = document.getElementById('onboarding');
+  if (board) board.hidden = false;
+}
+
+function maybeShowOnboarding() {
+  let seen = false;
+  try { seen = localStorage.getItem(INTRO_KEY) === '1'; } catch (e) {}
+  const board = document.getElementById('onboarding');
+  if (board) board.hidden = seen;
 }
 
 // ============================================================================
@@ -5145,6 +5171,7 @@ window.addEventListener('DOMContentLoaded', () => {
   init3DEngine();
   applyLoadedStateToHud();
   updateAllUI();
+  maybeShowOnboarding();
   addChatMessage('Welcome to <b>Gielinor Hero</b>.', 'lvlup');
   if (hadSave) {
     addChatMessage('Restored your saved progress & world state from <b>localStorage</b>.', 'skill');

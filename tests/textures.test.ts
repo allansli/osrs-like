@@ -26,6 +26,7 @@ import {
   creatureAlbedoId,
   gearAlbedoId,
   loadAlbedo,
+  offsetAlbedoPhase,
   speciesAlbedo,
   terrainMaterial
 } from '../src/engine/textures';
@@ -218,6 +219,20 @@ describe('uv mapping and terrain blend', () => {
       beadMax = Math.max(beadMax, beadUv.getX(i));
     }
     expect(beadMax - beadMin).toBeGreaterThanOrEqual(1);
+  });
+
+  it('slides creature tiles and leaves untextured meshes alone', () => {
+    const painted = new THREE.Mesh(new THREE.SphereGeometry(0.2, 8, 6), new THREE.MeshLambertMaterial());
+    (painted.material as THREE.MeshLambertMaterial).userData.albedoId = 'creature:dragon-scale';
+    const beforeU = painted.geometry.getAttribute('uv').getX(3);
+    const beforeV = painted.geometry.getAttribute('uv').getY(3);
+    offsetAlbedoPhase(painted, 0.33, 0.12);
+    expect(painted.geometry.getAttribute('uv').getX(3)).toBeCloseTo(beforeU + 0.33);
+    expect(painted.geometry.getAttribute('uv').getY(3)).toBeCloseTo(beforeV + 0.12);
+    const bare = new THREE.Mesh(new THREE.SphereGeometry(0.2, 8, 6), new THREE.MeshLambertMaterial());
+    const bareBefore = bare.geometry.getAttribute('uv').getX(3);
+    offsetAlbedoPhase(bare, 0.5, 0.5);
+    expect(bare.geometry.getAttribute('uv').getX(3)).toBeCloseTo(bareBefore);
   });
 
   it('blends grass, dirt, sand, and stone in the terrain cel shader', () => {

@@ -45,6 +45,20 @@
   <div id="levelup-text" style="font-size:16px; font-weight:800; margin-top:3px; color:#fff;">Congratulations, your Attack level is now 2!</div>
 </div>
 
+<div id="onboarding" hidden>
+  <div class="death-card onboard-card">
+    <h2>Welcome to Gielinor</h2>
+    <p>A short guide before you step into Lumbridge.</p>
+    <ul class="onboard-list">
+      <li><b>WASD</b> walks. <b>Left click</b> the ground, a monster, or a shop.</li>
+      <li><b>Right drag</b> orbits the camera. The compass resets it behind you.</li>
+      <li><b>F1–F6</b> open combat, skills, inventory, equipment, prayer, and magic.</li>
+      <li>The tracker under your health shows the next quest step and your Slayer task.</li>
+    </ul>
+    <button class="hud-btn" type="button" onclick="dismissOnboarding()">Enter Gielinor</button>
+  </div>
+</div>
+
 <div id="death-overlay" hidden>
   <div class="death-card">
     <h2 id="death-title">Oh dear, you are dead.</h2>
@@ -342,6 +356,11 @@
       <button class="modal-close" onclick="closeModals()">X</button>
     </div>
     <div class="modal-body">
+      <div class="onboard-list settings-help">
+        <div><b>Move</b> WASD or click the ground.</div>
+        <div><b>Camera</b> Right-drag, or Q and E. Mouse wheel zooms.</div>
+        <div><b>Fight</b> Click a monster. F arms the special attack. Space jumps.</div>
+      </div>
       <div class="settings-grid">
         <button class="hud-btn active" id="xp-rate-btn" onclick="toggleXpMultiplier()">10x League XP</button>
         <button class="hud-btn" id="time-of-day-btn" onclick="cycleTimeOfDay()">Golden Hour</button>
@@ -349,6 +368,7 @@
         <button class="hud-btn" id="save-status-btn" onclick="manualSaveToast()">Save</button>
         <button class="hud-btn" id="reset-save-btn" onclick="resetGameSave()">Reset</button>
         <button class="hud-btn" onclick="openXpTableModal()">XP Table</button>
+        <button class="hud-btn" type="button" onclick="replayOnboarding()">Show introduction</button>
       </div>
       <div class="cheat-panel">
         <h3>Developer Cheats</h3>

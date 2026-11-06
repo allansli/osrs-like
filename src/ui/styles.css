@@ -74,6 +74,38 @@
     color: #fde047;
   }
 
+  #onboarding {
+    position: absolute;
+    inset: 0;
+    z-index: 90;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(8, 6, 5, 0.78);
+  }
+
+  #onboarding[hidden] {
+    display: none;
+  }
+
+  .onboard-list {
+    margin: 12px 0 16px;
+    padding-left: 18px;
+    text-align: left;
+    color: #e7e0d0;
+    font-size: 14px;
+    line-height: 1.45;
+  }
+
+  .settings-help {
+    margin-bottom: 12px;
+    padding: 8px 10px;
+    list-style: none;
+    background: #19140e;
+    border: 1px solid var(--osrs-border);
+    border-radius: 8px;
+  }
+
   #game-canvas-container {
     position: absolute;
     inset: 0;
