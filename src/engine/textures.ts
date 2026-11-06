@@ -17,6 +17,43 @@ export const ALBEDO_IDS = [
 
 export type AlbedoId = (typeof ALBEDO_IDS)[number];
 
+/** Species and player identity maps in /public/textures/creatures. */
+export const CREATURE_IDS = [
+  'skin',
+  'hair',
+  'eyes',
+  'goblin-hide',
+  'scorpion-chitin',
+  'dragon-scale',
+  'moss-bark',
+  'demon-hide',
+  'giant-fur',
+  'chicken-feathers'
+] as const;
+
+export type CreatureId = (typeof CREATURE_IDS)[number];
+
+const SPECIES_HIDE: Record<string, CreatureId> = {
+  chicken: 'chicken-feathers',
+  goblin: 'goblin-hide',
+  goblin_archer: 'goblin-hide',
+  scorpion: 'scorpion-chitin',
+  moss_guardian: 'moss-bark',
+  lesser_demon: 'demon-hide',
+  hill_giant: 'giant-fur',
+  elvarg_dragon: 'dragon-scale'
+};
+
+export function creatureAlbedoId(id: CreatureId): string {
+  return `creature:${id}`;
+}
+
+/** Unique hide/scale/feather albedo for a monster type. Robed humans stay on cloth. */
+export function speciesAlbedo(typeKey: string): string | null {
+  const id = SPECIES_HIDE[typeKey];
+  return id ? creatureAlbedoId(id) : null;
+}
+
 /** Three.js Texture.repeat. Ground sits in the brief's 2–4 band, props in 1–2. */
 export const GROUND_REPEAT = 3;
 export const PROP_REPEAT = 1.5;
@@ -59,11 +96,14 @@ const defaultLoader: AlbedoLoader = {
   }
 };
 
-export function albedoUrl(id: AlbedoId): string {
+export function albedoUrl(id: string): string {
+  if (id.startsWith('creature:')) return `/textures/creatures/${id.slice('creature:'.length)}.png`;
+  if (id.startsWith('gear:')) return `/textures/gear/${id.slice('gear:'.length)}.png`;
+  if (id.startsWith('biome:')) return `/textures/biomes/${id.slice('biome:'.length)}.png`;
   return `/textures/${id}.png`;
 }
 
-export function loadAlbedo(id: AlbedoId, repeat = PROP_REPEAT, loader?: AlbedoLoader): THREE.Texture {
+export function loadAlbedo(id: string, repeat = PROP_REPEAT, loader?: AlbedoLoader): THREE.Texture {
   const key = `${id}:${repeat}`;
   if (!loader) {
     const cached = cache.get(key);
@@ -116,7 +156,7 @@ export function albedoForItem(item: { id?: string; iconKind?: string; slot?: str
 
 export function albedoMaterial(
   color: number,
-  id: AlbedoId | null,
+  id: string | null,
   extra: Record<string, unknown> = {}
 ): THREE.MeshLambertMaterial {
   const mat = facetMaterial({
@@ -128,7 +168,7 @@ export function albedoMaterial(
   return mat;
 }
 
-export function applyAlbedo(material: THREE.MeshLambertMaterial, id: AlbedoId | null): void {
+export function applyAlbedo(material: THREE.MeshLambertMaterial, id: string | null): void {
   const next = id ? loadAlbedo(id, PROP_REPEAT) : null;
   if (material.map !== next) {
     material.map = next;

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import { addCartoonOutline, facetMaterial } from './materials';
-import { albedoMaterial } from './textures';
+import { addCartoonOutline } from './materials';
+import { albedoMaterial, creatureAlbedoId } from './textures';
 
 /** Classic OSRS lean athletic proportions. Gear mounts in playerGear.ts use the same anchors. */
 export const LEAN_RIG = {
@@ -77,10 +77,10 @@ export function buildHumanoidRig(
   const group = new THREE.Group();
   group.scale.set(scale, scale, scale);
 
-  const skinMat = facetMaterial({ color: 0xffd7b5 });
+  const skinMat = albedoMaterial(0xffd7b5, creatureAlbedoId('skin'));
   const tunicMat = albedoMaterial(tunicHex, 'cloth');
   const legsMat = albedoMaterial(legsHex, 'cloth');
-  const hairMat = facetMaterial({ color: hairHex });
+  const hairMat = albedoMaterial(hairHex, creatureAlbedoId('hair'));
   const bootMat = albedoMaterial(0x78350f, 'leather');
   const gloveMat = albedoMaterial(0xf6c7a1, 'leather');
   const beltLeather = albedoMaterial(0x3f2a1d, 'leather');
@@ -138,13 +138,20 @@ export function buildHumanoidRig(
   hairCap.rotation.x = 0.35;
   headGroup.add(hairCap);
 
-  const eyeMat = new THREE.MeshBasicMaterial({ color: 0x1c1917 });
+  const eyeMat = albedoMaterial(0xc4845a, creatureAlbedoId('eyes'));
+  const pupilMat = new THREE.MeshBasicMaterial({ color: 0x1c1917 });
   [-0.068, 0.068].forEach((ox) => {
     const eye = new THREE.Mesh(new THREE.SphereGeometry(0.028, 10, 8), eyeMat);
     eye.scale.set(1.1, 0.72, 0.4);
     eye.position.set(ox, 0.02, -0.178);
     eye.userData.noOutline = true;
+    eye.userData.part = 'eye';
     headGroup.add(eye);
+    const pupil = new THREE.Mesh(new THREE.SphereGeometry(0.012, 8, 6), pupilMat);
+    pupil.position.set(ox, 0.02, -0.19);
+    pupil.userData.noOutline = true;
+    pupil.userData.part = 'pupil';
+    headGroup.add(pupil);
   });
   const nose = new THREE.Mesh(new THREE.SphereGeometry(0.024, 8, 6), skinMat);
   nose.scale.set(0.8, 0.65, 0.85);

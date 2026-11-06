@@ -35,6 +35,7 @@ import {
   assignGroundUvs,
   BIOME_COLORS,
   sealAlbedoUvs,
+  speciesAlbedo,
   terrainMaterial
 } from './textures';
 import { buildHumanoidRig, LEAN_RIG } from './humanoid';
@@ -2006,7 +2007,7 @@ function addStrungBow(pivot, length, color, bend) {
 
 function buildChickenMesh(def) {
   const grp = new THREE.Group();
-  const bodyMat = paint(def.bodyColor);
+  const bodyMat = paint(def.bodyColor, {}, speciesAlbedo('chicken'));
   const redMat = paint(def.accentColor);
   const beakMat = paint(0xf59e0b);
 
@@ -2044,7 +2045,7 @@ function buildChickenMesh(def) {
 function buildGoblinMesh(def, role) {
   const group = new THREE.Group();
   group.scale.setScalar(def.scale || 0.9);
-  const skin = paint(0x65a30d);
+  const skin = paint(0x65a30d, {}, speciesAlbedo('goblin'));
   const leather = paint(0x78350f, {}, 'leather');
   const rag = paint(0x92400e, {}, 'cloth');
   const dark = paint(0x451a03, {}, 'cloth');
@@ -2149,8 +2150,8 @@ function buildGoblinMesh(def, role) {
 function buildScorpionMesh() {
   const grp = new THREE.Group();
   grp.scale.setScalar(1.28);
-  const shell = paint(0xb45309, {}, 'leather');
-  const dark = paint(0x451a03);
+  const shell = paint(0xb45309, {}, speciesAlbedo('scorpion'));
+  const dark = paint(0x451a03, {}, speciesAlbedo('scorpion'));
   const venom = paint(0xef4444, { emissive: 0xb91c1c, emissiveIntensity: 0.85 });
 
   for (let i = 0; i < 3; i++) {
@@ -2347,9 +2348,9 @@ function buildDarkRanger(def) {
 function buildHillGiant(def) {
   const group = new THREE.Group();
   group.scale.setScalar(def.scale || 1.55);
-  const skin = paint(0xd6a87c);
-  const beardMat = paint(0x5c3a21);
-  const fur = paint(0x78350f, {}, 'leather');
+  const skin = paint(0xd6a87c, {}, speciesAlbedo('hill_giant'));
+  const beardMat = paint(0x5c3a21, {}, speciesAlbedo('hill_giant'));
+  const fur = paint(0x78350f, {}, speciesAlbedo('hill_giant'));
   const bone = paint(0xf5f5f4);
   const wood = paint(0x5c3a21, {}, 'wood');
   const stone = paint(0x78716c, {}, 'stone');
@@ -2423,8 +2424,8 @@ function buildHillGiant(def) {
 function buildMossGuardian(def) {
   const group = new THREE.Group();
   group.scale.setScalar(def.scale || 1.72);
-  const stone = paint(0x44403c, {}, 'stone');
-  const bark = paint(0x3f6212, {}, 'bark');
+  const stone = paint(0x44403c, {}, speciesAlbedo('moss_guardian'));
+  const bark = paint(0x3f6212, {}, speciesAlbedo('moss_guardian'));
   const moss = paint(0x16a34a, {}, 'grass');
 
   const core = monsterPart(group, new THREE.SphereGeometry(0.5, 16, 14), stone, 0.06, 1.2, 0);
@@ -2487,7 +2488,7 @@ function buildMossGuardian(def) {
 function buildLesserDemon(def) {
   const group = new THREE.Group();
   group.scale.setScalar(def.scale || 1.8);
-  const skin = paint(0xdc2626);
+  const skin = paint(0xdc2626, {}, speciesAlbedo('lesser_demon'));
   const hornMat = paint(0x111827);
   const mane = paint(0x1f2937);
   const hoofMat = paint(0x111827, {}, 'leather');
@@ -2590,7 +2591,7 @@ function buildLesserDemon(def) {
 
 function buildElvargMesh(def) {
   const grp = new THREE.Group();
-  const scaleMat = paint(def.bodyColor, {}, 'leather');
+  const scaleMat = paint(def.bodyColor, {}, speciesAlbedo('elvarg_dragon'));
   const goldMat = paint(def.accentColor);
   const eyeMat = new THREE.MeshBasicMaterial({ color: 0xfde047 });
 

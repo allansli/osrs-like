@@ -215,21 +215,118 @@ function png(rgba) {
   ]);
 }
 
-mkdirSync(root, { recursive: true });
-for (const [id, recipe] of Object.entries(recipes)) {
-  const rgba = paint(recipe);
-  writeFileSync(join(root, `${id}.png`), png(rgba));
-  let min = 255;
-  let sum = 0;
-  let sumSq = 0;
-  const count = SIZE * SIZE;
-  for (let i = 0; i < count; i++) {
-    const luma = (rgba[i * 4] + rgba[i * 4 + 1] + rgba[i * 4 + 2]) / 3;
-    min = Math.min(min, luma);
-    sum += luma;
-    sumSq += luma * luma;
+function writeSet(dir, set) {
+  mkdirSync(dir, { recursive: true });
+  for (const [id, recipe] of Object.entries(set)) {
+    const rgba = paint(recipe);
+    writeFileSync(join(dir, `${id}.png`), png(rgba));
+    let min = 255;
+    let sum = 0;
+    let sumSq = 0;
+    const count = SIZE * SIZE;
+    for (let i = 0; i < count; i++) {
+      const luma = (rgba[i * 4] + rgba[i * 4 + 1] + rgba[i * 4 + 2]) / 3;
+      min = Math.min(min, luma);
+      sum += luma;
+      sumSq += luma * luma;
+    }
+    const mean = sum / count;
+    const variance = sumSq / count - mean * mean;
+    console.log(`${dir.split('/').slice(-2).join('/')}/${id}.png  min ${min.toFixed(1)}  mean ${mean.toFixed(1)}  var ${variance.toFixed(1)}`);
   }
-  const mean = sum / count;
-  const variance = sumSq / count - mean * mean;
-  console.log(`${id}.png  min ${min.toFixed(1)}  mean ${mean.toFixed(1)}  var ${variance.toFixed(1)}`);
 }
+
+/** Identity albedos. High-key so skin, hair, and hide tokens still tint the paint. */
+const creatures = {
+  skin(u, v) {
+    const pore = fbm(u, v, 4, 9, 9);
+    const blush = fbm(u, v, 12, 3, 3);
+    const crease = Math.pow(Math.abs(Math.sin(v * Math.PI * 2 * 2 + fbm(u, v, 8, 2, 2) * 1.4)), 0.55);
+    let col = mix([244, 228, 210], [78, 42, 36], pore);
+    col = mix(col, [236, 120, 108], blush * 0.55);
+    col = mix(col, [150, 96, 78], (1 - crease) * 0.45);
+    return col;
+  },
+  hair(u, v) {
+    const strand = 0.5 + 0.5 * Math.sin(u * Math.PI * 2 * 18 + fbm(u, v, 3, 2, 6) * 2.2);
+    const clump = fbm(u, v, 15, 4, 3);
+    let col = mix([214, 196, 150], [112, 84, 48], 1 - strand);
+    col = mix(col, [230, 214, 176], clump * 0.4);
+    return col;
+  },
+  eyes(u, v) {
+    const spoke = 0.5 + 0.5 * Math.sin(Math.atan2(v - 0.5, u - 0.5) * 10 + fbm(u, v, 6, 4, 4) * 3);
+    const ring = Math.abs(Math.sin(Math.hypot(Math.min(Math.abs(u - 0.5), 0.5), Math.min(Math.abs(v - 0.5), 0.5)) * Math.PI * 8));
+    let col = mix([214, 206, 186], [120, 96, 64], spoke);
+    col = mix(col, [176, 150, 112], ring * 0.45);
+    return col;
+  },
+  'goblin-hide'(u, v) {
+    const wart = Math.pow(fbm(u, v, 5, 7, 7), 3);
+    const pore = fbm(u, v, 13, 5, 8);
+    let col = mix([214, 214, 150], [96, 120, 48], pore);
+    col = mix(col, [230, 220, 160], wart);
+    return col;
+  },
+  'scorpion-chitin'(u, v) {
+    const bands = 7;
+    const row = v * bands;
+    const frac = row - Math.floor(row);
+    const plate = Math.pow(Math.sin(frac * Math.PI), 0.45);
+    const pit = fbm(u, v, 9, 6, 4);
+    let col = mix([168, 132, 96], [230, 206, 160], plate);
+    col = mix(col, [140, 112, 82], pit * 0.4);
+    return col;
+  },
+  'dragon-scale'(u, v) {
+    const cols = 6;
+    const rows = 8;
+    const rowIndex = Math.floor(v * rows);
+    const shift = (rowIndex % 2) * 0.5;
+    const x = (u + shift) % 1;
+    const fx = (x * cols) % 1;
+    const fy = (v * rows) % 1;
+    const dx = fx - 0.5;
+    const dy = fy - 0.5;
+    const scale = Math.max(0, 1 - Math.sqrt(dx * dx + dy * dy) * 2.1);
+    const sheen = fbm(u, v, 4, 3, 3);
+    let col = mix([150, 158, 132], [228, 230, 196], Math.pow(scale, 0.6));
+    col = mix(col, [236, 236, 214], sheen * 0.3);
+    return col;
+  },
+  'moss-bark'(u, v) {
+    const ridge = Math.pow(Math.abs(Math.sin(u * Math.PI * 2 * 5 + fbm(u, v, 7, 2, 4) * 1.6)), 0.35);
+    const moss = Math.pow(fbm(u, v, 16, 6, 6), 2);
+    let col = mix([206, 176, 132], [110, 78, 48], 1 - ridge);
+    col = mix(col, [176, 196, 120], moss * 0.65);
+    return col;
+  },
+  'demon-hide'(u, v) {
+    const crack = Math.pow(1 - Math.abs(fbm(u, v, 3, 5, 5) * 2 - 1), 2.2);
+    const pore = Math.pow(fbm(u, v, 11, 6, 6), 2.4);
+    const welt = fbm(u, v, 19, 3, 3);
+    let col = mix([244, 220, 206], [48, 16, 22], pore);
+    col = mix(col, [28, 10, 14], crack * 0.75);
+    col = mix(col, [250, 236, 220], welt * 0.45);
+    return col;
+  },
+  'giant-fur'(u, v) {
+    const tuft = 0.5 + 0.5 * Math.sin(u * Math.PI * 2 * 10 + fbm(u, v, 6, 2, 5) * 2.6);
+    const under = fbm(u, v, 18, 3, 4);
+    let col = mix([226, 206, 176], [132, 102, 74], 1 - tuft);
+    col = mix(col, [236, 220, 196], under * 0.35);
+    return col;
+  },
+  'chicken-feathers'(u, v) {
+    const vane = 0.5 + 0.5 * Math.sin(u * Math.PI * 2 * 14 + v * 3.2);
+    const barb = Math.pow(Math.abs(Math.sin(v * Math.PI * 2 * 9)), 0.4);
+    const fluff = fbm(u, v, 8, 4, 4);
+    let col = mix([236, 228, 196], [176, 156, 112], 1 - vane);
+    col = mix(col, [150, 124, 86], (1 - barb) * 0.35);
+    col = mix(col, [240, 236, 214], fluff * 0.3);
+    return col;
+  }
+};
+
+writeSet(root, recipes);
+writeSet(join(root, 'creatures'), creatures);

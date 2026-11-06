@@ -11,13 +11,17 @@ import { addCartoonOutline, facetMaterial } from '../src/engine/materials';
 import { buildBodyVisual, buildShieldVisual, buildWeaponVisual } from '../src/engine/playerGear';
 import {
   ALBEDO_IDS,
+  CREATURE_IDS,
   GROUND_REPEAT,
   GROUND_TILE_METERS,
   PROP_REPEAT,
   albedoForItem,
+  albedoUrl,
   assignGroundUvs,
   assignProjectedUvs,
+  creatureAlbedoId,
   loadAlbedo,
+  speciesAlbedo,
   terrainMaterial
 } from '../src/engine/textures';
 
@@ -274,6 +278,51 @@ describe('gear and body families', () => {
     expect(rig.tunicMat.color.getHex()).toBe(0x0284c7);
     expect(rig.bootMat.userData.albedoId).toBe('leather');
     expect(rig.gloveMat.map).toBeTruthy();
-    expect(rig.head.material).toMatchObject({ map: null });
+    const headMat = rig.head.material as THREE.MeshLambertMaterial;
+    const hairMat = rig.hairCap.material as THREE.MeshLambertMaterial;
+    expect(headMat.map).toBeTruthy();
+    expect(headMat.userData.albedoId).toBe(creatureAlbedoId('skin'));
+    expect(headMat.color.getHex()).toBe(0xffd7b5);
+    expect(hairMat.userData.albedoId).toBe(creatureAlbedoId('hair'));
+    expect(hairMat.color.getHex()).toBe(0xfacc15);
+    const eye = solidMeshes(rig.group).find((mesh) => mesh.userData.part === 'eye');
+    expect((eye!.material as THREE.MeshLambertMaterial).userData.albedoId).toBe(creatureAlbedoId('eyes'));
+  });
+});
+
+describe('creature identity albedos', () => {
+  it('maps each hunted species onto its own hide and keeps the player on skin', () => {
+    expect(speciesAlbedo('goblin')).toBe('creature:goblin-hide');
+    expect(speciesAlbedo('goblin_archer')).toBe('creature:goblin-hide');
+    expect(speciesAlbedo('scorpion')).toBe('creature:scorpion-chitin');
+    expect(speciesAlbedo('elvarg_dragon')).toBe('creature:dragon-scale');
+    expect(speciesAlbedo('moss_guardian')).toBe('creature:moss-bark');
+    expect(speciesAlbedo('lesser_demon')).toBe('creature:demon-hide');
+    expect(speciesAlbedo('hill_giant')).toBe('creature:giant-fur');
+    expect(speciesAlbedo('chicken')).toBe('creature:chicken-feathers');
+    expect(speciesAlbedo('dark_wizard')).toBeNull();
+    expect(albedoUrl(creatureAlbedoId('skin'))).toBe('/textures/creatures/skin.png');
+  });
+
+  it('ships a 256 gouache tile for skin, hair, eyes, and every species hide', () => {
+    const dir = join(TEXTURE_DIR, 'creatures');
+    const files = readdirSync(dir).filter((name) => name.endsWith('.png')).sort();
+    expect(files).toEqual([...CREATURE_IDS].map((id) => `${id}.png`).sort());
+    for (const file of files) {
+      const image = decodePng(readFileSync(join(dir, file)));
+      expect(image.width).toBe(256);
+      expect(image.height).toBe(256);
+      let sum = 0;
+      let sumSq = 0;
+      const count = image.width * image.height;
+      for (let i = 0; i < count; i++) {
+        const luma = (image.rgba[i * 4] + image.rgba[i * 4 + 1] + image.rgba[i * 4 + 2]) / 3;
+        sum += luma;
+        sumSq += luma * luma;
+        expect(luma).toBeGreaterThan(150);
+      }
+      const mean = sum / count;
+      expect(sumSq / count - mean * mean).toBeGreaterThan(12);
+    }
   });
 });
