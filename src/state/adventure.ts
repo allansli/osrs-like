@@ -130,8 +130,88 @@ export const QUEST_DEFS: QuestDef[] = [
     items: [{ id: 'dragon_bones', qty: 10 }],
     ward: true,
     title: 'Dragon Slayer'
+  },
+  {
+    id: 'cook',
+    name: "Cook's Errand",
+    region: 'lumbridge',
+    lore: 'The Lumbridge range wants a hot meal, a buried bone, and a coin spent at the shop.',
+    rewardText: '800 GP, 400 Cooking XP, and 5 Cooked Shrimp.',
+    steps: [
+      { label: 'Cook any fish', met: (s) => s.quests.cookedMeal },
+      { label: 'Bury any bones', met: (s) => s.quests.buriedBones },
+      { label: 'Buy an item from a shop', met: (s) => s.quests.boughtWares }
+    ],
+    gp: 800,
+    xp: { cooking: 400 },
+    items: [{ id: 'shrimp', qty: 5 }]
+  },
+  {
+    id: 'plaza',
+    name: 'Plaza Patron',
+    region: 'varrock',
+    lore: 'Offer a prayer in the capital, strap on a platebody, and break a dark caster.',
+    rewardText: '2,000 GP and 500 Prayer XP.',
+    steps: [
+      { label: 'Activate any prayer', met: (s) => s.quests.offeredPrayer },
+      { label: 'Equip a platebody', met: (s) => s.quests.worePlate || plateWorn(s) },
+      { label: 'Defeat a Dark Wizard or Dark Ranger', met: (s) => s.quests.killedArcane }
+    ],
+    gp: 2000,
+    xp: { prayer: 500 },
+    items: []
+  },
+  {
+    id: 'oasis',
+    name: 'Oasis Nets',
+    region: 'desert',
+    lore: 'Net a catch, sell something in the dunes, and find the desert shrine.',
+    rewardText: '2,500 GP and 400 Fishing XP.',
+    steps: [
+      { label: 'Catch any raw fish', met: (s) => s.quests.caughtFish },
+      { label: 'Sell an item to a merchant', met: (s) => s.quests.soldWares },
+      { label: 'Discover the Al-Kharid shrine', met: (s) => !!s.shrines.desert }
+    ],
+    gp: 2500,
+    xp: { fishing: 400 },
+    items: []
+  },
+  {
+    id: 'maple',
+    name: 'Maple Path',
+    region: 'woods',
+    lore: 'Fell a maple, cook a meal for the road, and listen for the Korok shrine.',
+    rewardText: '4,000 GP and a Maple Shortbow.',
+    steps: [
+      { label: 'Chop a maple log', met: (s) => s.quests.choppedMaple },
+      { label: 'Cook any fish', met: (s) => s.quests.cookedMeal },
+      { label: 'Discover the Korok Woods shrine', met: (s) => !!s.shrines.woods }
+    ],
+    gp: 4000,
+    xp: {},
+    items: [{ id: 'maple_bow', qty: 1 }]
+  },
+  {
+    id: 'demon',
+    name: 'Demon Gate',
+    region: 'wilderness',
+    lore: "Mine runite on the crag, slay a Lesser Demon, and find Dragon's Peak shrine.",
+    rewardText: '12,000 GP, 800 Strength XP, and 3 Cooked Sharks.',
+    steps: [
+      { label: 'Mine runite ore', met: (s) => s.quests.minedRunite },
+      { label: 'Defeat a Lesser Demon', met: (s) => s.quests.killedDemon },
+      { label: "Discover the Dragon's Peak shrine", met: (s) => !!s.shrines.wilderness }
+    ],
+    gp: 12000,
+    xp: { strength: 800 },
+    items: [{ id: 'shark', qty: 3 }]
   }
 ];
+
+function plateWorn(state: GameState): boolean {
+  const id = state.equipment.body || '';
+  return id.includes('plate') || id.includes('chain');
+}
 
 export interface WeaponSpec {
   name: string;
@@ -140,6 +220,30 @@ export interface WeaponSpec {
   healRatio: number;
   accuracy: number;
   kind: 'melee' | 'ranged';
+}
+
+export const RESPAWN_SECONDS = 3.2;
+
+export function deathNotice(): { title: string; body: string } {
+  return {
+    title: 'Oh dear, you are dead.',
+    body: 'You keep your gear and coins. You will wake in Lumbridge Haven.'
+  };
+}
+
+export function applyRespawn(state: GameState): void {
+  state.hp = Math.max(1, state.maxHp || 1);
+  state.prayerPts = state.maxPrayerPts;
+  state.activePrayers.clear();
+  state.currentRegion = 'lumbridge';
+}
+
+/** Red splat for a hit, a heavier splat on a max hit, blue when the swing misses. */
+export function hitSplatKind(damage: number, maxHit: number): 'miss' | 'hit' | 'maxhit' {
+  const dealt = Math.max(0, Math.floor(damage));
+  if (dealt <= 0) return 'miss';
+  if (maxHit > 0 && dealt >= maxHit) return 'maxhit';
+  return 'hit';
 }
 
 export function combatLevel(state: GameState): number {
@@ -352,6 +456,7 @@ export function registerKill(state: GameState, typeKey: string): KillResult {
   if (typeKey === 'scorpion') quests.killedScorpion = true;
   if (typeKey === 'moss_guardian') quests.killedMoss = true;
   if (typeKey === 'elvarg_dragon') quests.killedElvarg = true;
+  if (typeKey === 'lesser_demon') quests.killedDemon = true;
 
   const result: KillResult = {
     slayerKillXp: 0,
@@ -394,6 +499,64 @@ export interface AssignResult {
   ok: boolean;
   reason?: string;
   task: SlayerTask | null;
+}
+
+export interface TrackerLine {
+  title: string;
+  detail: string;
+  done: number;
+  total: number;
+}
+
+/** The earliest open quest, or a claim prompt when its steps are finished. */
+export function adventureTracker(state: GameState): TrackerLine {
+  const views = questView(state);
+  for (const quest of views) {
+    if (quest.claimed) continue;
+    if (quest.complete) {
+      return {
+        title: quest.name,
+        detail: 'Claim the reward in the Adventure Log',
+        done: quest.done,
+        total: quest.total
+      };
+    }
+    const step = quest.steps.find((entry) => !entry.met);
+    return {
+      title: quest.name,
+      detail: step ? step.label : 'Continue the quest',
+      done: quest.done,
+      total: quest.total
+    };
+  }
+  return { title: 'Adventure log', detail: 'Every quest is claimed', done: views.length, total: views.length };
+}
+
+export interface SlayerCard {
+  name: string;
+  detail: string;
+  ratio: number;
+  empty: boolean;
+}
+
+export function slayerCard(state: GameState): SlayerCard {
+  const task = state.quests.slayer;
+  const streak = state.quests.slayerStreak;
+  if (!task || task.remaining <= 0) {
+    return {
+      name: 'No task',
+      detail: streak > 0 ? `Streak ${streak} · ask Vannaka` : 'Speak with Slayer Master Vannaka',
+      ratio: 0,
+      empty: true
+    };
+  }
+  const done = Math.max(0, task.total - task.remaining);
+  return {
+    name: task.name,
+    detail: `${task.remaining} left · streak ${streak}`,
+    ratio: task.total > 0 ? done / task.total : 0,
+    empty: false
+  };
 }
 
 export function assignSlayerTask(state: GameState, combat: number): AssignResult {

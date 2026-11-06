@@ -12,6 +12,16 @@ export function defaultQuests(): QuestFlags {
     choppedAncient: false,
     killedMoss: false,
     killedElvarg: false,
+    cookedMeal: false,
+    buriedBones: false,
+    boughtWares: false,
+    soldWares: false,
+    worePlate: false,
+    offeredPrayer: false,
+    caughtFish: false,
+    choppedMaple: false,
+    minedRunite: false,
+    killedDemon: false,
     claimed: [],
     slayer: null,
     slayerTasksCompleted: 0,
@@ -44,6 +54,16 @@ export function normalizeQuests(raw: unknown): QuestFlags {
     'choppedAncient',
     'killedMoss',
     'killedElvarg',
+    'cookedMeal',
+    'buriedBones',
+    'boughtWares',
+    'soldWares',
+    'worePlate',
+    'offeredPrayer',
+    'caughtFish',
+    'choppedMaple',
+    'minedRunite',
+    'killedDemon',
     'dragonfireWard'
   ] as const;
   for (const key of flags) {
@@ -76,6 +96,33 @@ export function normalizeQuests(raw: unknown): QuestFlags {
 export function noteGather(state: { quests: QuestFlags }, itemId: string): void {
   if (itemId === 'iron_ore' || itemId === 'mithril_ore') state.quests.minedMetal = true;
   if (itemId === 'yew_logs' || itemId === 'magic_logs') state.quests.choppedAncient = true;
+  if (itemId === 'maple_logs') state.quests.choppedMaple = true;
+  if (itemId === 'runite_ore') state.quests.minedRunite = true;
+  if (itemId.startsWith('raw_')) state.quests.caughtFish = true;
+}
+
+export function noteCook(state: { quests: QuestFlags }): void {
+  state.quests.cookedMeal = true;
+}
+
+export function noteBury(state: { quests: QuestFlags }): void {
+  state.quests.buriedBones = true;
+}
+
+export function notePurchase(state: { quests: QuestFlags }): void {
+  state.quests.boughtWares = true;
+}
+
+export function noteSale(state: { quests: QuestFlags }): void {
+  state.quests.soldWares = true;
+}
+
+export function notePlate(state: { quests: QuestFlags }): void {
+  state.quests.worePlate = true;
+}
+
+export function notePrayerOffered(state: { quests: QuestFlags }): void {
+  state.quests.offeredPrayer = true;
 }
 
 export function noteSmelt(state: { quests: QuestFlags }): void {

@@ -11,19 +11,26 @@ import { readSave, writeSave, SAVE_KEY, LEGACY_SAVE_KEYS } from '../state/save';
 import { prepareAttack, allowedStyles, mitigateDamage, canCastTeleport, equippedWeapon } from '../state/combat';
 import {
   assignSlayerTask,
+  adventureTracker,
   attackOptionLabel,
+  applyRespawn,
   claimQuest,
   combatLevel,
+  deathNotice,
   dharokMultiplier,
   gatherVerb,
   isBossLoot,
+  hitSplatKind,
   isRareLoot,
   monsterThreatColor,
   noteGather,
   registerKill,
+  RESPAWN_SECONDS,
   resolveDragonfire,
+  slayerCard,
   weaponSpecial
 } from '../state/adventure';
+import { noteBury, notePlate, notePrayerOffered, notePurchase, noteSale } from '../state/quests';
 import { moveWithCollision, isWalkable, isDeepWater } from '../state/collision';
 import { discoverShrines } from '../state/shrines';
 import { applyGold200k, applySkillsPlus10, matchCheat } from '../state/cheats';
@@ -34,7 +41,11 @@ import {
   applyAlbedo,
   assignGroundUvs,
   BIOME_COLORS,
+  biomeAlbedoId,
+  biomeGroundId,
+  offsetAlbedoPhase,
   sealAlbedoUvs,
+  speciesAlbedo,
   terrainMaterial
 } from './textures';
 import { buildHumanoidRig, LEAN_RIG } from './humanoid';
@@ -283,6 +294,7 @@ function sellInventoryItem(index, qtyMode) {
     return;
   }
   SFX.coin();
+  noteSale(STATE);
   const name = item ? item.name : slot.id;
   addChatMessage('Sold <b>' + result.moved + ' × ' + name + '</b> for <b style="color:#ffe642">' + result.gp.toLocaleString() + ' GP</b> (65%).', 'loot');
   updateAllUI();
@@ -359,6 +371,7 @@ function handleInventoryClick(index) {
     removeItem(STATE, item.id, 1);
     SFX.prayer();
     addChatMessage('You bury the <b>' + item.name + '</b> beneath the soil.', 'skill');
+    noteBury(STATE);
     grantXp('prayer', item.xp || 0);
     return;
   }
@@ -375,6 +388,7 @@ function handleInventoryClick(index) {
     removeItem(STATE, item.id, 1);
     if (prevEquipped && ITEMS[prevEquipped]) addItem(STATE, prevEquipped, 1);
     STATE.equipment[item.slot] = item.id;
+    if (item.slot === 'body' && (item.id.includes('plate') || item.id.includes('chain'))) notePlate(STATE);
     SFX.coin();
     addChatMessage('Equipped <b>' + item.name + '</b> (' + item.slot + ').', 'skill');
     if (item.slot === 'weapon') {
@@ -458,6 +472,7 @@ function togglePrayer(prayerId) {
       PRAYERS.filter(o => o.overhead && o.id !== prayerId).forEach(o => STATE.activePrayers.delete(o.id));
     }
     STATE.activePrayers.add(prayerId);
+    notePrayerOffered(STATE);
     SFX.prayer();
   }
   updateAllUI();
@@ -529,16 +544,23 @@ function updateAllUI() {
       ? `SPECIAL ARMED — ${spec.name} (${Math.floor(STATE.specEnergy)}%)`
       : `SPECIAL: ${spec.name} (${Math.floor(STATE.specEnergy)}% · Cost ${spec.cost}%)`;
   }
-  const slayerPill = document.getElementById('slayer-pill');
-  const slayerTask = STATE.quests.slayer;
-  if (slayerPill) {
-    if (slayerTask && slayerTask.remaining > 0) {
-      slayerPill.hidden = false;
-      slayerPill.textContent = `Slayer: ${slayerTask.name} ${slayerTask.remaining}/${slayerTask.total}`;
-    } else {
-      slayerPill.hidden = true;
-    }
-  }
+  const tracker = adventureTracker(STATE);
+  const trackerTitle = document.getElementById('quest-tracker-title');
+  const trackerStep = document.getElementById('quest-tracker-step');
+  const trackerFill = document.getElementById('quest-tracker-fill');
+  if (trackerTitle) trackerTitle.textContent = tracker.title;
+  if (trackerStep) trackerStep.textContent = tracker.detail;
+  if (trackerFill) trackerFill.style.width = `${Math.round((tracker.done / Math.max(1, tracker.total)) * 100)}%`;
+
+  const card = slayerCard(STATE);
+  const slayerName = document.getElementById('slayer-widget-name');
+  const slayerDetail = document.getElementById('slayer-widget-detail');
+  const slayerFill = document.getElementById('slayer-widget-fill');
+  const slayerWidget = document.getElementById('slayer-widget');
+  if (slayerName) slayerName.textContent = card.name;
+  if (slayerDetail) slayerDetail.textContent = card.detail;
+  if (slayerFill) slayerFill.style.width = `${Math.round(card.ratio * 100)}%`;
+  if (slayerWidget) slayerWidget.classList.toggle('empty', card.empty);
   const titleEl = document.getElementById('hero-title');
   if (titleEl) {
     if (STATE.quests.title) {
@@ -762,6 +784,7 @@ function buyShopItem(itemId) {
   if (!result.ok) addChatMessage(result.reason || 'Cannot buy that.', 'combat');
   else {
     SFX.coin();
+    notePurchase(STATE);
     addChatMessage('Purchased <b>' + result.moved + ' × ' + ITEMS[itemId].name + '</b> for ' + (result.gp || 0).toLocaleString() + ' GP.', 'loot');
   }
   updateAllUI();
@@ -781,6 +804,7 @@ function buyShopPair(topId, bottomId) {
     updateAllUI();
     return;
   }
+  notePurchase(STATE);
   SFX.coin();
   addChatMessage('Purchased matched pair <b>' + ITEMS[topId].name + '</b> + <b>' + ITEMS[bottomId].name + '</b>.', 'loot');
   updateAllUI();
@@ -991,6 +1015,8 @@ const player = {
   attackAnim: 0,
   spinAnim: 0,
   actionCooldown: 0,
+  downed: false,
+  downedTimer: 0,
   meshGroup: null,
   parts: {}
 };
@@ -1294,22 +1320,25 @@ function buildRiverBridge(bx, bz) {
     rail.castShadow = true;
     grp.add(rail);
   });
+  sealAlbedoUvs(grp);
   scene.add(grp);
   addCartoonOutline(grp, 0.038);
 }
 
 function buildBiomeLandmarks() {
-  const sand = albedoMaterial(0xe7c07a, 'sand');
+  const sand = albedoMaterial(0xe7c07a, biomeAlbedoId('alkharid-sand'));
   const palm = albedoMaterial(0x4ade80, 'grass');
   const bark = albedoMaterial(0x92400e, 'bark');
-  const stone = albedoMaterial(0xe5e7eb, 'stone');
+  const moss = albedoMaterial(0x4ade80, biomeAlbedoId('korok-moss'));
+  const stone = albedoMaterial(0xe5e7eb, biomeAlbedoId('varrock-cobble'));
   const gold = facetMaterial({ color: 0xfacc15 });
-  const obsidian = albedoMaterial(0x1c1917, 'stone');
+  const obsidian = albedoMaterial(0xa8a29e, biomeAlbedoId('peak-volcanic'));
   const lava = facetMaterial({ color: 0xf97316, emissive: 0xea580c, emissiveIntensity: 0.85 });
 
   function place(builder, x, z) {
     const grp = builder();
     grp.position.set(x, getTerrainHeight(x, z), z);
+    sealAlbedoUvs(grp);
     addCartoonOutline(grp, 0.038);
     scene.add(grp);
   }
@@ -1375,7 +1404,7 @@ function buildBiomeLandmarks() {
 
   function woodsLantern() {
     const grp = new THREE.Group();
-    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.1, 2.2, 8), bark);
+    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.1, 2.2, 8), moss);
     post.position.y = 1.1;
     const lamp = new THREE.Mesh(
       new THREE.SphereGeometry(0.28, 12, 10),
@@ -1537,6 +1566,7 @@ function createCastleStructure(cx, cz) {
     grp.add(finial);
   });
   box(3.2, 0.45, 1.5, timberMat, 0, 4.6, 8);
+  sealAlbedoUvs(grp);
   addCartoonOutline(grp, 0.03);
   scene.add(grp);
 }
@@ -1768,7 +1798,7 @@ function rebuildPlayerEquipmentMeshes() {
     'wepMesh', 'shieldMesh', 'helmMesh', 'capeMesh', 'amuletMesh', 'ringMesh',
     'bodyArmorMesh', 'bodyArmL', 'bodyArmR',
     'legsArmorMesh', 'legsArmorL', 'legsArmorR',
-    'feetMeshL', 'feetMeshR', 'handsMeshL', 'handsMeshR'
+    'feetMeshL', 'feetMeshR', 'handsMeshL', 'handsMeshR', 'setBonusCue'
   ];
   gearKeys.forEach((key) => {
     const node = player.parts[key];
@@ -1794,7 +1824,7 @@ function rebuildPlayerEquipmentMeshes() {
     player.parts.tunicMat.color.setHex(0x0284c7);
     player.parts.tunicMat.metalness = 0.08;
     player.parts.tunicMat.roughness = 0.52;
-    applyAlbedo(player.parts.tunicMat, 'cloth');
+    applyAlbedo(player.parts.tunicMat, 'gear:cloth');
   }
 
   // 2. Leg Armor Material (Platelegs / Tassets / Trousers)
@@ -1807,7 +1837,7 @@ function rebuildPlayerEquipmentMeshes() {
   } else {
     player.parts.legsMat.color.setHex(0xa1887f);
     player.parts.legsMat.metalness = 0.05;
-    applyAlbedo(player.parts.legsMat, 'cloth');
+    applyAlbedo(player.parts.legsMat, 'gear:cloth');
   }
 
   // 3. Boots Material (Feet)
@@ -1819,7 +1849,7 @@ function rebuildPlayerEquipmentMeshes() {
   } else {
     player.parts.bootMat.color.setHex(0x5c3a21);
     player.parts.bootMat.metalness = 0.1;
-    applyAlbedo(player.parts.bootMat, 'leather');
+    applyAlbedo(player.parts.bootMat, 'gear:leather');
   }
 
   // 4. Gauntlets Material (Hands)
@@ -1831,7 +1861,7 @@ function rebuildPlayerEquipmentMeshes() {
   } else {
     player.parts.gloveMat.color.setHex(0x78350f);
     player.parts.gloveMat.metalness = 0.1;
-    applyAlbedo(player.parts.gloveMat, 'leather');
+    applyAlbedo(player.parts.gloveMat, 'gear:leather');
   }
 
   const equip = (slot) => {
@@ -1904,6 +1934,18 @@ function rebuildPlayerEquipmentMeshes() {
     if (cape.userData.silhouette === 'ava') cape.position.set(0, 0.1, 0.18);
     else cape.position.set(0, -0.04, 0.2);
     mount(torso, cape, 'capeMesh');
+  }
+
+  if (getEquipmentBonuses().matchedSet && torso) {
+    const cue = new THREE.Mesh(
+      new THREE.TorusGeometry(LEAN_RIG.beltRadius + 0.03, 0.016, 8, 24),
+      facetMaterial({ color: 0xfde047, emissive: 0xfacc15, emissiveIntensity: 0.7 })
+    );
+    cue.rotation.x = Math.PI / 2;
+    cue.position.y = LEAN_RIG.beltY - LEAN_RIG.torsoY;
+    cue.userData.setBonusCue = true;
+    cue.userData.noOutline = true;
+    mount(torso, cue, 'setBonusCue');
   }
 
   if (player.meshGroup) {
@@ -2006,7 +2048,7 @@ function addStrungBow(pivot, length, color, bend) {
 
 function buildChickenMesh(def) {
   const grp = new THREE.Group();
-  const bodyMat = paint(def.bodyColor);
+  const bodyMat = paint(def.bodyColor, {}, speciesAlbedo('chicken'));
   const redMat = paint(def.accentColor);
   const beakMat = paint(0xf59e0b);
 
@@ -2044,7 +2086,7 @@ function buildChickenMesh(def) {
 function buildGoblinMesh(def, role) {
   const group = new THREE.Group();
   group.scale.setScalar(def.scale || 0.9);
-  const skin = paint(0x65a30d);
+  const skin = paint(0x65a30d, {}, speciesAlbedo('goblin'));
   const leather = paint(0x78350f, {}, 'leather');
   const rag = paint(0x92400e, {}, 'cloth');
   const dark = paint(0x451a03, {}, 'cloth');
@@ -2149,8 +2191,8 @@ function buildGoblinMesh(def, role) {
 function buildScorpionMesh() {
   const grp = new THREE.Group();
   grp.scale.setScalar(1.28);
-  const shell = paint(0xb45309, {}, 'leather');
-  const dark = paint(0x451a03);
+  const shell = paint(0xb45309, {}, speciesAlbedo('scorpion'));
+  const dark = paint(0x451a03, {}, speciesAlbedo('scorpion'));
   const venom = paint(0xef4444, { emissive: 0xb91c1c, emissiveIntensity: 0.85 });
 
   for (let i = 0; i < 3; i++) {
@@ -2347,9 +2389,9 @@ function buildDarkRanger(def) {
 function buildHillGiant(def) {
   const group = new THREE.Group();
   group.scale.setScalar(def.scale || 1.55);
-  const skin = paint(0xd6a87c);
-  const beardMat = paint(0x5c3a21);
-  const fur = paint(0x78350f, {}, 'leather');
+  const skin = paint(0xd6a87c, {}, speciesAlbedo('hill_giant'));
+  const beardMat = paint(0x5c3a21, {}, speciesAlbedo('hill_giant'));
+  const fur = paint(0x78350f, {}, speciesAlbedo('hill_giant'));
   const bone = paint(0xf5f5f4);
   const wood = paint(0x5c3a21, {}, 'wood');
   const stone = paint(0x78716c, {}, 'stone');
@@ -2423,8 +2465,8 @@ function buildHillGiant(def) {
 function buildMossGuardian(def) {
   const group = new THREE.Group();
   group.scale.setScalar(def.scale || 1.72);
-  const stone = paint(0x44403c, {}, 'stone');
-  const bark = paint(0x3f6212, {}, 'bark');
+  const stone = paint(0x44403c, {}, speciesAlbedo('moss_guardian'));
+  const bark = paint(0x3f6212, {}, speciesAlbedo('moss_guardian'));
   const moss = paint(0x16a34a, {}, 'grass');
 
   const core = monsterPart(group, new THREE.SphereGeometry(0.5, 16, 14), stone, 0.06, 1.2, 0);
@@ -2487,7 +2529,7 @@ function buildMossGuardian(def) {
 function buildLesserDemon(def) {
   const group = new THREE.Group();
   group.scale.setScalar(def.scale || 1.8);
-  const skin = paint(0xdc2626);
+  const skin = paint(0xdc2626, {}, speciesAlbedo('lesser_demon'));
   const hornMat = paint(0x111827);
   const mane = paint(0x1f2937);
   const hoofMat = paint(0x111827, {}, 'leather');
@@ -2590,7 +2632,7 @@ function buildLesserDemon(def) {
 
 function buildElvargMesh(def) {
   const grp = new THREE.Group();
-  const scaleMat = paint(def.bodyColor, {}, 'leather');
+  const scaleMat = paint(def.bodyColor, {}, speciesAlbedo('elvarg_dragon'));
   const goldMat = paint(def.accentColor);
   const eyeMat = new THREE.MeshBasicMaterial({ color: 0xfde047 });
 
@@ -2727,6 +2769,8 @@ function spawnMonster(typeKey, x, z) {
   const def = MONSTER_TYPES[typeKey];
   if (!def) return;
   const rig = createMonsterMesh(def, typeKey);
+  const phase = ((Math.abs(x) * 12.9898 + Math.abs(z) * 78.233) % 1);
+  offsetAlbedoPhase(rig.group, phase, (phase * 1.618) % 1);
   const y = getTerrainHeight(x, z);
   rig.group.position.set(x, y, z);
 
@@ -2815,7 +2859,8 @@ function spawnResourceNode(nodeKey, x, z) {
     grp.add(depletedMesh);
   } else if (def.kind === 'rock') {
     visualMesh = new THREE.Group();
-    const rockMat = albedoMaterial(0x94a3b8, 'stone');
+    const rockBiome = biomeGroundId(x, z);
+    const rockMat = albedoMaterial(0x94a3b8, rockBiome ? biomeAlbedoId(rockBiome) : 'stone');
     const baseRock = new THREE.Mesh(new THREE.SphereGeometry(0.95, 16, 12), rockMat);
     baseRock.position.y = 0.7;
     baseRock.scale.set(1.18, 0.78, 1.05);
@@ -2862,6 +2907,7 @@ function spawnResourceNode(nodeKey, x, z) {
   hitbox.position.y = 1.5;
   hitbox.userData.isCollider = true;
   grp.add(hitbox);
+  sealAlbedoUvs(grp);
   addCartoonOutline(grp, 0.038);
 
   const rObj = {
@@ -2960,7 +3006,7 @@ function setupInputHandlers() {
   window.addEventListener('keydown', e => {
     keysPressed[e.code] = true;
     noteCheatKey(e);
-    if (e.code === 'Space' && player.isGrounded) {
+    if (e.code === 'Space' && player.isGrounded && !player.downed) {
       player.jumpVel = 7.8;
       player.isGrounded = false;
       SFX.jump();
@@ -3009,7 +3055,7 @@ function setupInputHandlers() {
     }
     if (e.button === 0) {
       hideContextMenu();
-      handleWorldClick(e);
+      if (!player.downed) handleWorldClick(e);
     }
   });
 
@@ -3356,7 +3402,8 @@ function spawnHitSplatWorld(worldPos, dmg, splatType = 'hit') {
   el.className = `hitsplat ${splatType}`;
   el.style.left = screenPos.x + 'px';
   el.style.top = screenPos.y + 'px';
-  el.textContent = splatType === 'heal' ? `+${dmg}` : dmg;
+  const label = splatType === 'heal' ? `+${dmg}` : String(dmg);
+  el.innerHTML = `<span class="hitsplat-num">${label}</span>`;
   document.getElementById('world-labels').appendChild(el);
   setTimeout(() => el.remove(), 1050);
 }
@@ -3916,7 +3963,7 @@ function spawnLevelUpFireworks(colorHex = 0xfde047) {
 }
 
 function performPlayerAttack(monster) {
-  if (monster.dead) return;
+  if (monster.dead || player.downed) return;
   const prep = prepareAttack(STATE);
   if (!prep.ok) {
     addChatMessage(prep.reason, 'combat');
@@ -3982,7 +4029,7 @@ function performPlayerAttack(monster) {
     if (dmg > 0) {
       SFX.hit();
       monster.hp = Math.max(0, monster.hp - dmg);
-      spawnHitSplatWorld(monster.pos, dmg, (dmg >= maxHit || isSpec) ? 'maxhit' : 'hit');
+      spawnHitSplatWorld(monster.pos, dmg, isSpec ? 'maxhit' : hitSplatKind(dmg, maxHit));
 
       if (style === 'magic' && STATE.activeSpell === 'blood_barrage') {
         const healAmt = Math.max(1, Math.floor(dmg * 0.25));
@@ -4082,7 +4129,7 @@ function handleMonsterDeath(monster) {
 }
 
 function performMonsterRetaliation(monster) {
-  if (monster.dead || STATE.hp <= 0) return;
+  if (monster.dead || player.downed || STATE.hp <= 0) return;
   monster.attackAnim = 1;
   const bon = getEquipmentBonuses();
   const defLvl = STATE.skills.defence.lvl + (STATE.combatStyle === 'defensive' ? 3 : 0);
@@ -4114,7 +4161,7 @@ function performMonsterRetaliation(monster) {
     }
     if (dmg > 0) {
       STATE.hp = Math.max(0, STATE.hp - dmg);
-      spawnHitSplatOnPlayer(dmg, 'hit');
+      spawnHitSplatOnPlayer(dmg, hitSplatKind(dmg, monster.def.maxHit));
       if (STATE.hp <= 0) {
         handlePlayerDeath();
       }
@@ -4149,12 +4196,43 @@ function performMonsterRetaliation(monster) {
 }
 
 function handlePlayerDeath() {
-  addChatMessage('<b>Oh dear, you have fallen in battle!</b> You awaken in Lumbridge Haven with all your gear and GP intact.', 'combat');
-  STATE.hp = STATE.maxHp;
-  STATE.prayerPts = STATE.maxPrayerPts;
+  if (player.downed) return;
+  player.downed = true;
+  player.downedTimer = RESPAWN_SECONDS;
+  player.targetEntity = null;
+  player.targetPos = null;
+  STATE.hp = 0;
   STATE.activePrayers.clear();
-  monstersList.forEach(m => m.inCombatWithPlayer = false);
-  teleportToRegion('lumbridge');
+  monstersList.forEach(m => { m.inCombatWithPlayer = false; });
+  const notice = deathNotice();
+  const overlay = document.getElementById('death-overlay');
+  if (overlay) {
+    overlay.hidden = false;
+    const title = document.getElementById('death-title');
+    const body = document.getElementById('death-body');
+    if (title) title.textContent = notice.title;
+    if (body) body.textContent = notice.body;
+  }
+  const count = document.getElementById('death-count');
+  if (count) count.textContent = String(Math.ceil(RESPAWN_SECONDS));
+  updateAllUI();
+}
+
+function finishRespawn() {
+  applyRespawn(STATE);
+  player.downed = false;
+  player.downedTimer = 0;
+  const overlay = document.getElementById('death-overlay');
+  if (overlay) overlay.hidden = true;
+  const reg = WORLD_REGIONS.find(r => r.id === 'lumbridge');
+  if (reg) {
+    player.pos.set(reg.x, getTerrainHeight(reg.x, reg.z + 4), reg.z + 4);
+    player.yaw = Math.PI;
+    camState.yaw = Math.PI;
+    camState.manualOffset = 0;
+    triggerRegionBanner(reg);
+  }
+  addChatMessage(`<b>${deathNotice().title}</b> ${deathNotice().body}`, 'combat');
   updateAllUI();
 }
 
@@ -4295,9 +4373,49 @@ function worldToScreen(vec3) {
   };
 }
 
+const LANDMARKS = [
+  { name: 'Lumbridge Castle', x: 0, z: -25, y: 12.4, color: '#bfdbfe' },
+  { name: 'Varrock Grand Plaza', x: 78, z: -20, y: 6.2, color: '#fde047' },
+  { name: 'Al-Kharid Arch', x: 80, z: 82, y: 6.4, color: '#fdba74' },
+  { name: 'Korok Lantern Grove', x: -72, z: -38, y: 4.2, color: '#86efac' },
+  { name: "Dragon's Peak Spire", x: -58, z: 62, y: 8.2, color: '#fca5a5' }
+];
+let landmarkEls = null;
 let playerOverheadEl = null;
+function updateLandmarkLabels() {
+  const host = document.getElementById('world-labels');
+  if (!host) return;
+  if (!landmarkEls) {
+    landmarkEls = LANDMARKS.map((mark) => {
+      const el = document.createElement('div');
+      el.className = 'landmark-label';
+      el.innerHTML = `<div class="landmark-name" style="color:${mark.color}">${mark.name}</div>`;
+      host.appendChild(el);
+      return el;
+    });
+  }
+  LANDMARKS.forEach((mark, index) => {
+    const el = landmarkEls[index];
+    const dist = Math.hypot(player.pos.x - mark.x, player.pos.z - mark.z);
+    if (dist > 78) {
+      el.style.display = 'none';
+      return;
+    }
+    const sp = worldToScreen(new THREE.Vector3(mark.x, getTerrainHeight(mark.x, mark.z) + mark.y, mark.z));
+    if (!sp.visible) {
+      el.style.display = 'none';
+      return;
+    }
+    el.style.display = 'flex';
+    el.style.left = sp.x + 'px';
+    el.style.top = sp.y + 'px';
+    el.style.opacity = dist < 16 ? '1' : String(Math.max(0.55, 1 - (dist - 16) / 80));
+  });
+}
+
 function updateFloatingWorldLabels() {
   const playerCombatLvl = getCombatLevel();
+  updateLandmarkLabels();
 
   // Player Overhead Prayer SVG Badge
   if (!playerOverheadEl) {
@@ -4317,7 +4435,7 @@ function updateFloatingWorldLabels() {
       playerOverheadEl.style.top = sp.y + 'px';
       if (playerOverheadEl.dataset.prayer !== overheadPrayerId) {
         playerOverheadEl.dataset.prayer = overheadPrayerId;
-        playerOverheadEl.innerHTML = `<div class="overhead-prayer-badge">${getPrayerSvg(overheadPrayerId)}</div>`;
+        playerOverheadEl.innerHTML = `<div class="overhead-prayer-badge overhead-${overheadPrayerId}">${getPrayerSvg(overheadPrayerId)}</div>`;
       }
     } else {
       playerOverheadEl.style.display = 'none';
@@ -4414,6 +4532,19 @@ function gameLoop(now) {
   lastFrameTime = now;
   const elapsedSec = now * 0.001;
 
+  if (player.downed) {
+    player.downedTimer -= dt;
+    const count = document.getElementById('death-count');
+    if (count) count.textContent = String(Math.max(0, Math.ceil(player.downedTimer)));
+    if (player.downedTimer <= 0) finishRespawn();
+  } else if (getEquipmentBonuses().matchedSet) {
+    setBonusTimer += dt;
+    if (setBonusTimer > 1.7) {
+      setBonusTimer = 0;
+      spawnExpandingRing(player.pos, 0xfde047, 0.55, 1.8, 0.42, 0.55);
+    }
+  }
+
   if (waterUniforms) waterUniforms.uTime.value = elapsedSec;
   if (skyUniforms) skyUniforms.uTime.value = elapsedSec;
   if (skyDomeMesh) skyDomeMesh.position.copy(player.pos);
@@ -4442,16 +4573,21 @@ function gameLoop(now) {
   if (keysPressed['KeyQ']) camState.manualOffset += turnSpeed * dt;
   if (keysPressed['KeyE']) camState.manualOffset -= turnSpeed * dt;
 
-  if (keysPressed['KeyA'] || keysPressed['ArrowLeft']) {
+  if (player.downed) {
+    player.targetPos = null;
+    player.targetEntity = null;
+  }
+
+  if (!player.downed && (keysPressed['KeyA'] || keysPressed['ArrowLeft'])) {
     player.yaw += turnSpeed * dt;
   }
-  if (keysPressed['KeyD'] || keysPressed['ArrowRight']) {
+  if (!player.downed && (keysPressed['KeyD'] || keysPressed['ArrowRight'])) {
     player.yaw -= turnSpeed * dt;
   }
 
   let forwardInput = 0;
-  if (keysPressed['KeyW'] || keysPressed['ArrowUp']) forwardInput += 1;
-  if (keysPressed['KeyS'] || keysPressed['ArrowDown']) forwardInput -= 0.75;
+  if (!player.downed && (keysPressed['KeyW'] || keysPressed['ArrowUp'])) forwardInput += 1;
+  if (!player.downed && (keysPressed['KeyS'] || keysPressed['ArrowDown'])) forwardInput -= 0.75;
 
   if (forwardInput !== 0) {
     manualMoving = true;
@@ -4802,6 +4938,7 @@ function gameLoop(now) {
   renderer.render(scene, camera);
 }
 
+let setBonusTimer = 0;
 let lastAutoSaveTime = 0;
 let labelTick = 0;
 let miniTick = 1;
@@ -4999,6 +5136,29 @@ function wireBridge() {
   window.handleSpellClick = handleSpellClick;
   window.teleportToRegion = teleportToRegion;
   window.resetCameraBehindPlayer = resetCameraBehindPlayer;
+  window.dismissOnboarding = dismissOnboarding;
+  window.replayOnboarding = replayOnboarding;
+}
+
+const INTRO_KEY = 'gielinor_hero_intro_v1';
+
+function dismissOnboarding() {
+  const board = document.getElementById('onboarding');
+  if (board) board.hidden = true;
+  try { localStorage.setItem(INTRO_KEY, '1'); } catch (e) {}
+}
+
+function replayOnboarding() {
+  closeModals();
+  const board = document.getElementById('onboarding');
+  if (board) board.hidden = false;
+}
+
+function maybeShowOnboarding() {
+  let seen = false;
+  try { seen = localStorage.getItem(INTRO_KEY) === '1'; } catch (e) {}
+  const board = document.getElementById('onboarding');
+  if (board) board.hidden = seen;
 }
 
 // ============================================================================
@@ -5011,6 +5171,7 @@ window.addEventListener('DOMContentLoaded', () => {
   init3DEngine();
   applyLoadedStateToHud();
   updateAllUI();
+  maybeShowOnboarding();
   addChatMessage('Welcome to <b>Gielinor Hero</b>.', 'lvlup');
   if (hadSave) {
     addChatMessage('Restored your saved progress & world state from <b>localStorage</b>.', 'skill');

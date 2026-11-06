@@ -17,6 +17,61 @@ export const ALBEDO_IDS = [
 
 export type AlbedoId = (typeof ALBEDO_IDS)[number];
 
+/** Species and player identity maps in /public/textures/creatures. */
+export const CREATURE_IDS = [
+  'skin',
+  'hair',
+  'eyes',
+  'goblin-hide',
+  'scorpion-chitin',
+  'dragon-scale',
+  'moss-bark',
+  'demon-hide',
+  'giant-fur',
+  'chicken-feathers'
+] as const;
+
+export type CreatureId = (typeof CREATURE_IDS)[number];
+
+/** Regional ground and rock tiles in /public/textures/biomes. */
+export const BIOME_IDS = ['korok-moss', 'peak-volcanic', 'varrock-cobble', 'alkharid-sand'] as const;
+
+export type BiomeId = (typeof BIOME_IDS)[number];
+
+export function biomeAlbedoId(id: BiomeId): string {
+  return `biome:${id}`;
+}
+
+/** Which painted ground tile wins at a world position. Null keeps the valley blend. */
+export function biomeGroundId(x: number, z: number): BiomeId | null {
+  if (x > 40 && z > 36) return 'alkharid-sand';
+  if (x < -40 && z > 36) return 'peak-volcanic';
+  if (x < -40 && z < 0) return 'korok-moss';
+  if (Math.hypot(x - 78, z + 20) < 22) return 'varrock-cobble';
+  return null;
+}
+
+const SPECIES_HIDE: Record<string, CreatureId> = {
+  chicken: 'chicken-feathers',
+  goblin: 'goblin-hide',
+  goblin_archer: 'goblin-hide',
+  scorpion: 'scorpion-chitin',
+  moss_guardian: 'moss-bark',
+  lesser_demon: 'demon-hide',
+  hill_giant: 'giant-fur',
+  elvarg_dragon: 'dragon-scale'
+};
+
+export function creatureAlbedoId(id: CreatureId): string {
+  return `creature:${id}`;
+}
+
+/** Unique hide/scale/feather albedo for a monster type. Robed humans stay on cloth. */
+export function speciesAlbedo(typeKey: string): string | null {
+  const id = SPECIES_HIDE[typeKey];
+  return id ? creatureAlbedoId(id) : null;
+}
+
 /** Three.js Texture.repeat. Ground sits in the brief's 2–4 band, props in 1–2. */
 export const GROUND_REPEAT = 3;
 export const PROP_REPEAT = 1.5;
@@ -59,11 +114,14 @@ const defaultLoader: AlbedoLoader = {
   }
 };
 
-export function albedoUrl(id: AlbedoId): string {
+export function albedoUrl(id: string): string {
+  if (id.startsWith('creature:')) return `/textures/creatures/${id.slice('creature:'.length)}.png`;
+  if (id.startsWith('gear:')) return `/textures/gear/${id.slice('gear:'.length)}.png`;
+  if (id.startsWith('biome:')) return `/textures/biomes/${id.slice('biome:'.length)}.png`;
   return `/textures/${id}.png`;
 }
 
-export function loadAlbedo(id: AlbedoId, repeat = PROP_REPEAT, loader?: AlbedoLoader): THREE.Texture {
+export function loadAlbedo(id: string, repeat = PROP_REPEAT, loader?: AlbedoLoader): THREE.Texture {
   const key = `${id}:${repeat}`;
   if (!loader) {
     const cached = cache.get(key);
@@ -82,41 +140,92 @@ export function loadAlbedo(id: AlbedoId, repeat = PROP_REPEAT, loader?: AlbedoLo
   return tex;
 }
 
+/** Material-tier tiles in /public/textures/gear. Trims and gems stay flat. */
+export const GEAR_IDS = [
+  'bronze',
+  'iron',
+  'steel',
+  'mithril',
+  'adamant',
+  'rune',
+  'wood',
+  'hide',
+  'leather',
+  'cloth'
+] as const;
+
+export type GearId = (typeof GEAR_IDS)[number];
+
+const TIER_GEAR: Record<string, GearId> = {
+  bronze: 'bronze',
+  iron: 'iron',
+  steel: 'steel',
+  black: 'steel',
+  white: 'steel',
+  mithril: 'mithril',
+  adamant: 'adamant',
+  rune: 'rune',
+  gilded: 'rune',
+  dragon: 'rune',
+  barrows: 'rune',
+  bandos: 'rune',
+  raids: 'rune',
+  botw: 'rune'
+};
+
+export function gearAlbedoId(id: GearId): string {
+  return `gear:${id}`;
+}
+
+function tierGear(tier: string | undefined): GearId {
+  return (tier && TIER_GEAR[tier]) || 'iron';
+}
+
 /**
- * Family for a worn item. The material color stays the item token; the map only tints it.
- * Gold trim, gems, and skin stay untextured.
+ * Gear tile for a worn item. The material color stays the item token; the map only tints it.
+ * Gold trim, gems, and skin stay untextured. Higher metals share the rune tile and keep their token.
  */
-export function albedoForItem(item: { id?: string; iconKind?: string; slot?: string } | null | undefined): AlbedoId | null {
+export function albedoForItem(
+  item: { id?: string; iconKind?: string; slot?: string; tier?: string } | null | undefined
+): string | null {
+  const gear = gearFamily(item);
+  return gear ? gearAlbedoId(gear) : null;
+}
+
+export function gearFamily(
+  item: { id?: string; iconKind?: string; slot?: string; tier?: string } | null | undefined
+): GearId | null {
   if (!item) return null;
   const id = item.id || '';
   const kind = item.iconKind || '';
   const slot = item.slot || '';
   if (id === 'wooden_shield') return 'wood';
   if (kind === 'bow' || kind === 'staff' || kind === 'wand') return 'wood';
-  if (kind === 'whip' || kind.startsWith('dhide') || id.includes('dhide')) return 'leather';
+  if (kind === 'whip' || kind.startsWith('dhide') || id.includes('dhide')) return 'hide';
   if (['tunic', 'trousers', 'robe_top', 'robe_bottom', 'cape', 'hat', 'hood'].includes(kind) || slot === 'cape') {
     return 'cloth';
   }
   if (slot === 'feet') {
     if (id.includes('mystic') || id.includes('eternal')) return 'cloth';
     if (id.includes('leather') || id.includes('ranger') || id.includes('pegasian') || id.includes('primordial')) return 'leather';
-    return 'iron';
+    return tierGear(item.tier);
   }
   if (slot === 'hands') {
     if (id.includes('mystic')) return 'cloth';
-    if (id.includes('leather') || id.includes('dhide') || id.includes('barrows')) return 'leather';
-    return 'iron';
+    if (id.includes('leather') || id.includes('barrows')) return 'leather';
+    return tierGear(item.tier);
   }
   if (['scimitar', 'sword', 'greatsword', 'mace', 'greataxe', 'crossbow', 'body', 'legs', 'head'].includes(kind)) {
-    return 'iron';
+    return tierGear(item.tier);
   }
-  if (slot === 'shield' || slot === 'body' || slot === 'legs' || slot === 'weapon' || slot === 'head') return 'iron';
+  if (slot === 'shield' || slot === 'body' || slot === 'legs' || slot === 'weapon' || slot === 'head') return tierGear(item.tier);
+  if (slot === 'neck' || slot === 'ring') return tierGear(item.tier);
   return null;
 }
 
 export function albedoMaterial(
   color: number,
-  id: AlbedoId | null,
+  id: string | null,
   extra: Record<string, unknown> = {}
 ): THREE.MeshLambertMaterial {
   const mat = facetMaterial({
@@ -128,7 +237,7 @@ export function albedoMaterial(
   return mat;
 }
 
-export function applyAlbedo(material: THREE.MeshLambertMaterial, id: AlbedoId | null): void {
+export function applyAlbedo(material: THREE.MeshLambertMaterial, id: string | null): void {
   const next = id ? loadAlbedo(id, PROP_REPEAT) : null;
   if (material.map !== next) {
     material.map = next;
@@ -164,9 +273,10 @@ export function assignProjectedUvs(
     const nx = Math.abs(norm.getX(i));
     const ny = Math.abs(norm.getY(i));
     const nz = Math.abs(norm.getZ(i));
-    if (ny >= nx && ny >= nz) uv.setXY(i, x / divisor, z / divisor);
-    else if (nx >= nz) uv.setXY(i, z / divisor, y / divisor);
-    else uv.setXY(i, x / divisor, y / divisor);
+    const weight = Math.max(nx + ny + nz, 1e-5);
+    const u = (ny * x + nx * z + nz * x) / (weight * divisor);
+    const v = (ny * z + nx * y + nz * y) / (weight * divisor);
+    uv.setXY(i, u, v);
   }
   if (minSpan > 0) {
     let minU = Infinity;
@@ -191,8 +301,56 @@ export function assignProjectedUvs(
       }
     }
   }
+  stitchUvWraps(geometry, metersPerTile);
   uv.needsUpdate = true;
   geometry.userData.albedoUv = true;
+}
+
+/**
+ * Close a wrap seam on a short edge. Large faces keep their span so a wall still tiles.
+ */
+function stitchUvWraps(geometry: THREE.BufferGeometry, metersPerTile: number): void {
+  const uv = geometry.getAttribute('uv') as THREE.BufferAttribute | undefined;
+  const pos = geometry.getAttribute('position') as THREE.BufferAttribute | undefined;
+  if (!uv || !pos) return;
+  const index = geometry.getIndex();
+  const triCount = index ? index.count / 3 : Math.floor(pos.count / 3);
+  const at = (n: number) => (index ? index.getX(n) : n);
+  const limit = metersPerTile * 0.65;
+  for (let t = 0; t < triCount; t++) {
+    const ids = [at(t * 3), at(t * 3 + 1), at(t * 3 + 2)];
+    const anchor = ids[0];
+    for (const i of ids.slice(1)) {
+      const dist = Math.hypot(
+        pos.getX(i) - pos.getX(anchor),
+        pos.getY(i) - pos.getY(anchor),
+        pos.getZ(i) - pos.getZ(anchor)
+      );
+      if (dist > limit) continue;
+      const du = uv.getX(i) - uv.getX(anchor);
+      const dv = uv.getY(i) - uv.getY(anchor);
+      if (Math.abs(du) > 0.5) uv.setX(i, uv.getX(i) - Math.round(du));
+      if (Math.abs(dv) > 0.5) uv.setY(i, uv.getY(i) - Math.round(dv));
+    }
+  }
+}
+
+/** Slide a creature's albedo so two of the same species do not share one stamp. */
+export function offsetAlbedoPhase(root: THREE.Object3D, phaseU: number, phaseV: number): void {
+  root.traverse((obj) => {
+    const mesh = obj as THREE.Mesh;
+    if (!mesh.isMesh || !mesh.geometry) return;
+    const material = mesh.material as THREE.MeshLambertMaterial | undefined;
+    const id = material?.userData?.albedoId;
+    if (typeof id !== 'string' || !id.startsWith('creature:')) return;
+    const uv = mesh.geometry.getAttribute('uv') as THREE.BufferAttribute | undefined;
+    if (!uv) return;
+    for (let i = 0; i < uv.count; i++) {
+      uv.setXY(i, uv.getX(i) + phaseU, uv.getY(i) + phaseV);
+    }
+    uv.needsUpdate = true;
+    mesh.geometry.userData.albedoPhase = [phaseU, phaseV];
+  });
 }
 
 /** Ground UVs follow world XZ so hills do not flip to a side projection. */
@@ -223,6 +381,11 @@ const TERRAIN_PARS = `
 uniform sampler2D uDirtMap;
 uniform sampler2D uSandMap;
 uniform sampler2D uStoneMap;
+uniform sampler2D uKorokMap;
+uniform sampler2D uVolcanicMap;
+uniform sampler2D uCobbleMap;
+uniform sampler2D uCrackedSandMap;
+uniform float uMetersPerTile;
 uniform vec3 uSage;
 uniform vec3 uSageLit;
 uniform vec3 uSageShade;
@@ -253,6 +416,15 @@ if (weightSum < 0.2) {
   weightSum = grassW + dirtW + sandW + stoneW;
 }
 vec3 albedoTex = (grassTex * grassW + dirtTex * dirtW + sandTex * sandW + stoneTex * stoneW) / max(weightSum, 0.0001);
+vec2 worldXZ = vMapUv * uMetersPerTile;
+float desertBiome = smoothstep(32.0, 46.0, worldXZ.y) * smoothstep(32.0, 48.0, worldXZ.x);
+float peakBiome = smoothstep(28.0, 42.0, worldXZ.y) * smoothstep(-32.0, -46.0, worldXZ.x);
+float korokBiome = smoothstep(-4.0, -18.0, worldXZ.y) * smoothstep(-32.0, -46.0, worldXZ.x);
+float plazaBiome = 1.0 - smoothstep(12.0, 22.0, distance(worldXZ, vec2(78.0, -20.0)));
+albedoTex = mix(albedoTex, texture2D(uKorokMap, vMapUv).rgb, korokBiome);
+albedoTex = mix(albedoTex, texture2D(uVolcanicMap, vMapUv).rgb, peakBiome);
+albedoTex = mix(albedoTex, texture2D(uCrackedSandMap, vMapUv).rgb, desertBiome);
+albedoTex = mix(albedoTex, texture2D(uCobbleMap, vMapUv).rgb, plazaBiome);
 diffuseColor *= vec4(albedoTex, 1.0);
 `;
 
@@ -261,6 +433,10 @@ export function terrainMaterial(loader?: AlbedoLoader): THREE.MeshLambertMateria
   const dirt = loadAlbedo('dirt', GROUND_REPEAT, loader);
   const sand = loadAlbedo('sand', GROUND_REPEAT, loader);
   const stone = loadAlbedo('stone', GROUND_REPEAT, loader);
+  const korok = loadAlbedo(biomeAlbedoId('korok-moss'), GROUND_REPEAT, loader);
+  const volcanic = loadAlbedo(biomeAlbedoId('peak-volcanic'), GROUND_REPEAT, loader);
+  const cobble = loadAlbedo(biomeAlbedoId('varrock-cobble'), GROUND_REPEAT, loader);
+  const cracked = loadAlbedo(biomeAlbedoId('alkharid-sand'), GROUND_REPEAT, loader);
   const mat = facetMaterial({ vertexColors: true, map: grass });
   mat.userData.albedoSpace = 'ground';
   const previous = mat.onBeforeCompile;
@@ -269,6 +445,11 @@ export function terrainMaterial(loader?: AlbedoLoader): THREE.MeshLambertMateria
     shader.uniforms.uDirtMap = { value: dirt };
     shader.uniforms.uSandMap = { value: sand };
     shader.uniforms.uStoneMap = { value: stone };
+    shader.uniforms.uKorokMap = { value: korok };
+    shader.uniforms.uVolcanicMap = { value: volcanic };
+    shader.uniforms.uCobbleMap = { value: cobble };
+    shader.uniforms.uCrackedSandMap = { value: cracked };
+    shader.uniforms.uMetersPerTile = { value: GROUND_TILE_METERS };
     shader.uniforms.uSage = { value: new THREE.Color(PALETTE.sage) };
     shader.uniforms.uSageLit = { value: new THREE.Color(PALETTE.sageLit) };
     shader.uniforms.uSageShade = { value: new THREE.Color(PALETTE.sageShade) };

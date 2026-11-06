@@ -8,16 +8,26 @@ import { describe, expect, it } from 'vitest';
 import { ITEMS } from '../src/data/items';
 import { buildHumanoidRig } from '../src/engine/humanoid';
 import { addCartoonOutline, facetMaterial } from '../src/engine/materials';
-import { buildBodyVisual, buildShieldVisual, buildWeaponVisual } from '../src/engine/playerGear';
+import { buildBodyVisual, buildRingVisual, buildShieldVisual, buildWeaponVisual } from '../src/engine/playerGear';
 import {
   ALBEDO_IDS,
+  BIOME_IDS,
+  CREATURE_IDS,
   GROUND_REPEAT,
   GROUND_TILE_METERS,
   PROP_REPEAT,
+  GEAR_IDS,
   albedoForItem,
+  albedoUrl,
   assignGroundUvs,
   assignProjectedUvs,
+  biomeAlbedoId,
+  biomeGroundId,
+  creatureAlbedoId,
+  gearAlbedoId,
   loadAlbedo,
+  offsetAlbedoPhase,
+  speciesAlbedo,
   terrainMaterial
 } from '../src/engine/textures';
 
@@ -211,6 +221,20 @@ describe('uv mapping and terrain blend', () => {
     expect(beadMax - beadMin).toBeGreaterThanOrEqual(1);
   });
 
+  it('slides creature tiles and leaves untextured meshes alone', () => {
+    const painted = new THREE.Mesh(new THREE.SphereGeometry(0.2, 8, 6), new THREE.MeshLambertMaterial());
+    (painted.material as THREE.MeshLambertMaterial).userData.albedoId = 'creature:dragon-scale';
+    const beforeU = painted.geometry.getAttribute('uv').getX(3);
+    const beforeV = painted.geometry.getAttribute('uv').getY(3);
+    offsetAlbedoPhase(painted, 0.33, 0.12);
+    expect(painted.geometry.getAttribute('uv').getX(3)).toBeCloseTo(beforeU + 0.33);
+    expect(painted.geometry.getAttribute('uv').getY(3)).toBeCloseTo(beforeV + 0.12);
+    const bare = new THREE.Mesh(new THREE.SphereGeometry(0.2, 8, 6), new THREE.MeshLambertMaterial());
+    const bareBefore = bare.geometry.getAttribute('uv').getX(3);
+    offsetAlbedoPhase(bare, 0.5, 0.5);
+    expect(bare.geometry.getAttribute('uv').getX(3)).toBeCloseTo(bareBefore);
+  });
+
   it('blends grass, dirt, sand, and stone in the terrain cel shader', () => {
     const mat = terrainMaterial({
       load(url: string) {
@@ -239,41 +263,172 @@ describe('uv mapping and terrain blend', () => {
     expect(shader.uniforms.uDirtMap.value).toBeTruthy();
     expect(shader.uniforms.uSandMap.value).toBeTruthy();
     expect(shader.uniforms.uStoneMap.value).toBeTruthy();
+    expect(shader.fragmentShader).toContain('texture2D(uKorokMap, vMapUv)');
+    expect(shader.fragmentShader).toContain('texture2D(uVolcanicMap, vMapUv)');
+    expect(shader.fragmentShader).toContain('texture2D(uCobbleMap, vMapUv)');
+    expect(shader.fragmentShader).toContain('texture2D(uCrackedSandMap, vMapUv)');
+    expect(shader.uniforms.uKorokMap.value).toBeTruthy();
     expect((shader.uniforms.uSand.value as THREE.Color).getStyle()).toBe(new THREE.Color('#e7c27a').getStyle());
   });
 });
 
+describe('biome ground tiles', () => {
+  it('picks Korok, Peak, Varrock, and Al-Kharid tiles by world position', () => {
+    expect(biomeGroundId(-80, -20)).toBe('korok-moss');
+    expect(biomeGroundId(-70, 70)).toBe('peak-volcanic');
+    expect(biomeGroundId(78, -20)).toBe('varrock-cobble');
+    expect(biomeGroundId(70, 70)).toBe('alkharid-sand');
+    expect(biomeGroundId(0, 0)).toBeNull();
+    expect(biomeAlbedoId('korok-moss')).toBe('biome:korok-moss');
+  });
+
+  it('ships a seamless 256 gouache tile for each regional ground', () => {
+    const dir = join(TEXTURE_DIR, 'biomes');
+    const files = readdirSync(dir).filter((name) => name.endsWith('.png')).sort();
+    expect(files).toEqual([...BIOME_IDS].map((id) => `${id}.png`).sort());
+    for (const file of files) {
+      const image = decodePng(readFileSync(join(dir, file)));
+      expect(image.width).toBe(256);
+      expect(image.height).toBe(256);
+      let sum = 0;
+      let sumSq = 0;
+      let seam = 0;
+      let neighbor = 0;
+      const count = image.width * image.height;
+      for (let i = 0; i < count; i++) {
+        const luma = (image.rgba[i * 4] + image.rgba[i * 4 + 1] + image.rgba[i * 4 + 2]) / 3;
+        sum += luma;
+        sumSq += luma * luma;
+        expect(luma).toBeGreaterThan(150);
+      }
+      const mean = sum / count;
+      expect(sumSq / count - mean * mean).toBeGreaterThan(12);
+      for (let y = 0; y < image.height; y++) {
+        for (let c = 0; c < 3; c++) {
+          const edge = image.rgba[(y * image.width + image.width - 1) * 4 + c];
+          const wrap = image.rgba[y * image.width * 4 + c];
+          const next = image.rgba[(y * image.width + 1) * 4 + c];
+          seam += Math.abs(edge - wrap);
+          neighbor += Math.abs(wrap - next);
+        }
+      }
+      expect(seam / image.height).toBeLessThan((neighbor / image.height) * 2.5 + 8);
+    }
+  });
+});
+
 describe('gear and body families', () => {
-  it('picks cloth, leather, wood, and iron without dropping the item color', () => {
-    expect(albedoForItem(ITEMS.hylian_tunic)).toBe('cloth');
-    expect(albedoForItem(ITEMS.green_dhide_body)).toBe('leather');
-    expect(albedoForItem(ITEMS.wooden_shield)).toBe('wood');
-    expect(albedoForItem(ITEMS.rune_plate)).toBe('iron');
-    expect(albedoForItem(ITEMS.shortbow)).toBe('wood');
-    expect(albedoForItem(ITEMS.leather_boots)).toBe('leather');
-    expect(albedoForItem(ITEMS.rune_boots)).toBe('iron');
+  it('picks a gear tile per material tier and keeps the item color', () => {
+    expect(albedoForItem(ITEMS.hylian_tunic)).toBe(gearAlbedoId('cloth'));
+    expect(albedoForItem(ITEMS.green_dhide_body)).toBe(gearAlbedoId('hide'));
+    expect(albedoForItem(ITEMS.wooden_shield)).toBe(gearAlbedoId('wood'));
+    expect(albedoForItem(ITEMS.bronze_plate)).toBe(gearAlbedoId('bronze'));
+    expect(albedoForItem(ITEMS.iron_plate)).toBe(gearAlbedoId('iron'));
+    expect(albedoForItem(ITEMS.steel_plate)).toBe(gearAlbedoId('steel'));
+    expect(albedoForItem(ITEMS.mith_plate)).toBe(gearAlbedoId('mithril'));
+    expect(albedoForItem(ITEMS.addy_plate)).toBe(gearAlbedoId('adamant'));
+    expect(albedoForItem(ITEMS.rune_plate)).toBe(gearAlbedoId('rune'));
+    expect(albedoForItem(ITEMS.shortbow)).toBe(gearAlbedoId('wood'));
+    expect(albedoForItem(ITEMS.leather_boots)).toBe(gearAlbedoId('leather'));
+    expect(albedoForItem(ITEMS.rune_boots)).toBe(gearAlbedoId('rune'));
+    expect(albedoForItem(ITEMS.berserker_ring)).toBe(gearAlbedoId('rune'));
+    expect(albedoForItem(ITEMS.amulet_glory)).toBe(gearAlbedoId('rune'));
+
+    const ring = buildRingVisual(ITEMS.berserker_ring);
+    const ringMeshes = solidMeshes(ring);
+    expect(ringMeshes.some((mesh) => (mesh.material as THREE.MeshLambertMaterial).userData.albedoId === gearAlbedoId('rune'))).toBe(true);
+    expect(ringMeshes.some((mesh) => !(mesh.material as THREE.MeshLambertMaterial).map)).toBe(true);
 
     const plate = buildBodyVisual(ITEMS.rune_plate);
     const painted = solidMeshes(plate.torso!).find((mesh) => (mesh.material as THREE.MeshLambertMaterial).map);
     const plateMat = painted!.material as THREE.MeshLambertMaterial;
     expect(plateMat.color.getHex()).toBe(ITEMS.rune_plate.color);
-    expect(plateMat.userData.albedoId).toBe('iron');
+    expect(plateMat.userData.albedoId).toBe(gearAlbedoId('rune'));
 
     const shield = buildShieldVisual(ITEMS.wooden_shield);
-    const shieldMat = solidMeshes(shield).find((mesh) => (mesh.material as THREE.MeshLambertMaterial).userData.albedoId === 'wood')!
+    const shieldMat = solidMeshes(shield).find((mesh) => (mesh.material as THREE.MeshLambertMaterial).userData.albedoId === gearAlbedoId('wood'))!
       .material as THREE.MeshLambertMaterial;
     expect(shieldMat.color.getHex()).toBe(ITEMS.wooden_shield.color);
 
     const bow = buildWeaponVisual(ITEMS.shortbow);
-    const bowMat = solidMeshes(bow.group).find((mesh) => (mesh.material as THREE.MeshLambertMaterial).userData.albedoId === 'wood')!
+    const bowMat = solidMeshes(bow.group).find((mesh) => (mesh.material as THREE.MeshLambertMaterial).userData.albedoId === gearAlbedoId('wood'))!
       .material as THREE.MeshLambertMaterial;
     expect(bowMat.map).toBeTruthy();
 
     const rig = buildHumanoidRig();
-    expect(rig.tunicMat.userData.albedoId).toBe('cloth');
+    expect(rig.tunicMat.userData.albedoId).toBe(gearAlbedoId('cloth'));
     expect(rig.tunicMat.color.getHex()).toBe(0x0284c7);
-    expect(rig.bootMat.userData.albedoId).toBe('leather');
+    expect(rig.bootMat.userData.albedoId).toBe(gearAlbedoId('leather'));
     expect(rig.gloveMat.map).toBeTruthy();
-    expect(rig.head.material).toMatchObject({ map: null });
+    const headMat = rig.head.material as THREE.MeshLambertMaterial;
+    const hairMat = rig.hairCap.material as THREE.MeshLambertMaterial;
+    expect(headMat.map).toBeTruthy();
+    expect(headMat.userData.albedoId).toBe(creatureAlbedoId('skin'));
+    expect(headMat.color.getHex()).toBe(0xffd7b5);
+    expect(hairMat.userData.albedoId).toBe(creatureAlbedoId('hair'));
+    expect(hairMat.color.getHex()).toBe(0xfacc15);
+    const eye = solidMeshes(rig.group).find((mesh) => mesh.userData.part === 'eye');
+    expect((eye!.material as THREE.MeshLambertMaterial).userData.albedoId).toBe(creatureAlbedoId('eyes'));
+  });
+});
+
+describe('gear tier albedos', () => {
+  it('ships a 256 gouache tile for every metal tier plus wood, hide, leather, and cloth', () => {
+    const dir = join(TEXTURE_DIR, 'gear');
+    const files = readdirSync(dir).filter((name) => name.endsWith('.png')).sort();
+    expect(files).toEqual([...GEAR_IDS].map((id) => `${id}.png`).sort());
+    for (const file of files) {
+      const image = decodePng(readFileSync(join(dir, file)));
+      expect(image.width).toBe(256);
+      expect(image.height).toBe(256);
+      let sum = 0;
+      let sumSq = 0;
+      const count = image.width * image.height;
+      for (let i = 0; i < count; i++) {
+        const luma = (image.rgba[i * 4] + image.rgba[i * 4 + 1] + image.rgba[i * 4 + 2]) / 3;
+        sum += luma;
+        sumSq += luma * luma;
+        expect(luma).toBeGreaterThan(150);
+      }
+      const mean = sum / count;
+      expect(sumSq / count - mean * mean).toBeGreaterThan(12);
+    }
+  });
+});
+
+describe('creature identity albedos', () => {
+  it('maps each hunted species onto its own hide and keeps the player on skin', () => {
+    expect(speciesAlbedo('goblin')).toBe('creature:goblin-hide');
+    expect(speciesAlbedo('goblin_archer')).toBe('creature:goblin-hide');
+    expect(speciesAlbedo('scorpion')).toBe('creature:scorpion-chitin');
+    expect(speciesAlbedo('elvarg_dragon')).toBe('creature:dragon-scale');
+    expect(speciesAlbedo('moss_guardian')).toBe('creature:moss-bark');
+    expect(speciesAlbedo('lesser_demon')).toBe('creature:demon-hide');
+    expect(speciesAlbedo('hill_giant')).toBe('creature:giant-fur');
+    expect(speciesAlbedo('chicken')).toBe('creature:chicken-feathers');
+    expect(speciesAlbedo('dark_wizard')).toBeNull();
+    expect(albedoUrl(creatureAlbedoId('skin'))).toBe('/textures/creatures/skin.png');
+  });
+
+  it('ships a 256 gouache tile for skin, hair, eyes, and every species hide', () => {
+    const dir = join(TEXTURE_DIR, 'creatures');
+    const files = readdirSync(dir).filter((name) => name.endsWith('.png')).sort();
+    expect(files).toEqual([...CREATURE_IDS].map((id) => `${id}.png`).sort());
+    for (const file of files) {
+      const image = decodePng(readFileSync(join(dir, file)));
+      expect(image.width).toBe(256);
+      expect(image.height).toBe(256);
+      let sum = 0;
+      let sumSq = 0;
+      const count = image.width * image.height;
+      for (let i = 0; i < count; i++) {
+        const luma = (image.rgba[i * 4] + image.rgba[i * 4 + 1] + image.rgba[i * 4 + 2]) / 3;
+        sum += luma;
+        sumSq += luma * luma;
+        expect(luma).toBeGreaterThan(150);
+      }
+      const mean = sum / count;
+      expect(sumSq / count - mean * mean).toBeGreaterThan(12);
+    }
   });
 });

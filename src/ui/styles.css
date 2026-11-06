@@ -32,6 +32,80 @@
     color: var(--botw-cream);
   }
 
+  #death-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 80;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(8, 6, 5, 0.72);
+  }
+
+  #death-overlay[hidden] {
+    display: none;
+  }
+
+  .death-card {
+    width: min(420px, calc(100% - 32px));
+    padding: 22px 24px 18px;
+    text-align: center;
+    background: #1d1812;
+    border: 2px solid #d8b556;
+    border-radius: 10px;
+  }
+
+  .death-card h2 {
+    font-size: 22px;
+    color: #fff;
+  }
+
+  .death-card p {
+    margin-top: 8px;
+    color: #e7e0d0;
+    font-size: 14px;
+    line-height: 1.4;
+  }
+
+  #death-count {
+    margin-top: 12px;
+    font-size: 28px;
+    font-weight: 800;
+    color: #fde047;
+  }
+
+  #onboarding {
+    position: absolute;
+    inset: 0;
+    z-index: 90;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(8, 6, 5, 0.78);
+  }
+
+  #onboarding[hidden] {
+    display: none;
+  }
+
+  .onboard-list {
+    margin: 12px 0 16px;
+    padding-left: 18px;
+    text-align: left;
+    color: #e7e0d0;
+    font-size: 14px;
+    line-height: 1.45;
+  }
+
+  .settings-help {
+    margin-bottom: 12px;
+    padding: 8px 10px;
+    list-style: none;
+    background: #19140e;
+    border: 1px solid var(--osrs-border);
+    border-radius: 8px;
+  }
+
   #game-canvas-container {
     position: absolute;
     inset: 0;
@@ -82,54 +156,72 @@
   }
 
   .overhead-prayer-badge {
-    width: 28px;
-    height: 28px;
-    filter: drop-shadow(0 0 6px rgba(255, 230, 110, 0.95));
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px;
+    border-radius: 50%;
+    background: rgba(12, 10, 8, 0.78);
+    border: 2px solid #fde047;
+    box-sizing: border-box;
     margin-bottom: 2px;
     animation: pulsePrayer 1.4s infinite ease-in-out;
   }
+
+  .overhead-prayer-badge svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  .overhead-prayer-badge.overhead-prot_melee { border-color: #f87171; }
+  .overhead-prayer-badge.overhead-prot_magic { border-color: #38bdf8; }
+  .overhead-prayer-badge.overhead-prot_ranged { border-color: #4ade80; }
+  .overhead-prayer-badge.overhead-piety { border-color: #fde047; }
 
   @keyframes pulsePrayer {
     0%, 100% { transform: scale(1); }
     50% { transform: scale(1.12); }
   }
 
-  /* Hit Splat Animations */
+  /* OSRS-style hit splats: a jagged plate with the number on top. */
   .hitsplat {
     position: absolute;
     transform: translate(-50%, -50%);
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
+    width: 46px;
+    height: 40px;
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: 900;
-    font-size: 13px;
+    font-size: 16px;
     color: #fff;
-    text-shadow: 1px 1px 2px #000;
-    box-shadow: 0 3px 8px rgba(0,0,0,0.75), inset 0 1px 2px rgba(255,255,255,0.45);
     pointer-events: none;
     animation: splatFloat 1.05s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
   }
 
-  .hitsplat.hit {
-    background: radial-gradient(circle at 35% 35%, #ff4d4d, #990000);
-    border: 1.5px solid #fecaca;
+  .hitsplat::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: #d31313;
+    clip-path: polygon(50% 0%, 70% 14%, 100% 28%, 82% 48%, 92% 86%, 50% 68%, 8% 86%, 18% 48%, 0% 28%, 30% 14%);
   }
-  .hitsplat.maxhit {
-    background: radial-gradient(circle at 35% 35%, #ff9900, #b91c1c);
-    border: 2px solid #fde047;
-    transform: translate(-50%, -50%) scale(1.2);
+
+  .hitsplat-num {
+    position: relative;
+    z-index: 1;
+    color: #fff;
+    text-shadow: 0 1px 0 #1c1610, 1px 0 0 #1c1610;
+    font-family: Georgia, 'Palatino Linotype', serif;
   }
-  .hitsplat.miss {
-    background: radial-gradient(circle at 35% 35%, #3b82f6, #1e3a8a);
-    border: 1.5px solid #bfdbfe;
-  }
-  .hitsplat.heal {
-    background: radial-gradient(circle at 35% 35%, #22c55e, #14532d);
-    border: 1.5px solid #bbf7d0;
-  }
+
+  .hitsplat.hit::before { background: #d31313; }
+  .hitsplat.maxhit { font-size: 18px; }
+  .hitsplat.maxhit::before { background: #9a3412; }
+  .hitsplat.miss::before { background: #1d4ed8; }
+  .hitsplat.heal::before { background: #15803d; }
 
   @keyframes splatFloat {
     0% { opacity: 0; transform: translate(-50%, -20%) scale(0.4); }
@@ -1448,21 +1540,93 @@
   50% { box-shadow: 0 0 0 8px rgba(253, 224, 71, 0.95); }
 }
 
-.slayer-pill[hidden],
 .hero-title[hidden] {
   display: none !important;
 }
 
-.slayer-pill {
-  margin-top: 6px;
-  display: inline-block;
-  background: #2e1065;
-  color: #e9d5ff;
-  border: 1px solid #c084fc;
-  border-radius: 999px;
-  padding: 3px 10px;
-  font-size: 12px;
+.quest-tracker,
+.slayer-widget {
+  margin-top: 8px;
+  width: 248px;
+  padding: 8px 10px 9px;
+  background: rgba(20, 16, 12, 0.92);
+  border: 1px solid var(--osrs-border);
+  border-radius: 8px;
+}
+
+.slayer-widget {
+  border-color: #7c3aed;
+}
+
+.slayer-widget.empty {
+  opacity: 0.85;
+}
+
+.tracker-kicker {
+  font-size: 10px;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: var(--botw-gold);
   font-weight: 800;
+}
+
+.slayer-widget .tracker-kicker {
+  color: #d8b4fe;
+}
+
+#quest-tracker-title,
+#slayer-widget-name {
+  margin-top: 2px;
+  font-size: 14px;
+  font-weight: 800;
+  color: #fff;
+}
+
+#quest-tracker-step,
+#slayer-widget-detail {
+  margin-top: 2px;
+  font-size: 12px;
+  color: #e7e0d0;
+  line-height: 1.35;
+}
+
+.tracker-meter {
+  margin-top: 6px;
+  height: 6px;
+  background: #2a241c;
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+#quest-tracker-fill,
+#slayer-widget-fill {
+  height: 100%;
+  width: 0%;
+  background: #fde047;
+}
+
+#slayer-widget-fill {
+  background: #c084fc;
+}
+
+.landmark-label {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+}
+
+.landmark-name {
+  padding: 3px 8px;
+  background: rgba(12, 10, 8, 0.82);
+  border: 1px solid rgba(255, 244, 214, 0.55);
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  text-shadow: 0 1px 2px #000;
 }
 
 .hero-title {
