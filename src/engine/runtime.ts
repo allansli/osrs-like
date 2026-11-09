@@ -49,6 +49,14 @@ import {
   terrainMaterial
 } from './textures';
 import { buildHumanoidRig, LEAN_RIG } from './humanoid';
+import { loadBlenderHeroTemplate, upgradeHumanoidRigWithGltf } from './blenderHero';
+import { loadBlenderGearTemplate } from './blenderGear';
+import { loadBlenderMonstersTemplate, upgradeMonsterRigWithGltf } from './blenderMonsters';
+import {
+  loadBlenderWorldTemplate,
+  upgradeResourceNodeWithGltf,
+  upgradeWorldPropWithGltf
+} from './blenderWorld';
 import {
   buildAmuletVisual,
   buildBodyVisual,
@@ -110,6 +118,12 @@ const SFX = (() => {
   return {
     hit: () => { tone(165, 'sawtooth', 0.12, 0.15, 55); tone(95, 'square', 0.09, 0.11, 42); },
     miss: () => { tone(310, 'sine', 0.11, 0.07, 175); },
+    slash: () => { tone(420, 'triangle', 0.08, 0.12, 180); },
+    heavyChop: () => { tone(120, 'sawtooth', 0.16, 0.18, 40); tone(65, 'square', 0.12, 0.15, 30); },
+    crush: () => { tone(180, 'square', 0.11, 0.16, 50); tone(90, 'sine', 0.14, 0.14, 40); },
+    whipCrack: () => { tone(880, 'sawtooth', 0.04, 0.18, 220); setTimeout(() => tone(140, 'triangle', 0.09, 0.15, 60), 25); },
+    crossbow: () => { tone(720, 'square', 0.06, 0.12, 280); setTimeout(() => tone(420, 'sine', 0.09, 0.10, 160), 30); },
+    flinch: () => { tone(140, 'sine', 0.10, 0.11, 80); },
     bow: () => { tone(540, 'triangle', 0.14, 0.10, 185); },
     magic: () => { tone(440, 'sine', 0.28, 0.13, 880); setTimeout(() => tone(660, 'triangle', 0.22, 0.09, 1120), 60); },
     chop: () => { tone(135, 'triangle', 0.09, 0.14, 70); },
@@ -186,6 +200,7 @@ function getItemReqInfo(it) {
 
 function getEquipmentBonuses() {
   let atk = 0, str = 0, def = 0, rng = 0, mag = 0;
+  const setCounts = {};
   for (const slot of Object.keys(STATE.equipment)) {
     const itemId = STATE.equipment[slot];
     if (itemId && ITEMS[itemId]) {
@@ -195,12 +210,46 @@ function getEquipmentBonuses() {
       def += (it.def || 0);
       rng += (it.rng || 0);
       mag += (it.mag || 0);
+      if (it.setName) {
+        setCounts[it.setName] = (setCounts[it.setName] || 0) + 1;
+      }
     }
   }
+
   const bodyIt = STATE.equipment.body ? ITEMS[STATE.equipment.body] : null;
   const legsIt = STATE.equipment.legs ? ITEMS[STATE.equipment.legs] : null;
+
+  let dominantSetName = null;
+  let dominantCount = 0;
+  for (const [sName, count] of Object.entries(setCounts)) {
+    if (count > dominantCount) {
+      dominantSetName = sName;
+      dominantCount = count;
+    }
+  }
+
   let matchedSet = null;
-  if (bodyIt && legsIt && bodyIt.pairId === legsIt.id) {
+  let isFullKit = false;
+
+  if (dominantSetName && dominantCount >= 4) {
+    // 4+ matching kit pieces = Full Kit Set Bonus (+20% combat bonuses)
+    matchedSet = `${dominantSetName} (${dominantCount} pcs)`;
+    isFullKit = true;
+    atk = Math.ceil(atk * 1.20);
+    str = Math.ceil(str * 1.20);
+    def = Math.ceil(def * 1.20);
+    rng = Math.ceil(rng * 1.20);
+    mag = Math.ceil(mag * 1.20);
+  } else if (dominantSetName && dominantCount >= 3) {
+    // 3 matching kit pieces = Tri-piece bonus (+15% combat bonuses)
+    matchedSet = `${dominantSetName} (${dominantCount} pcs)`;
+    atk = Math.ceil(atk * 1.15);
+    str = Math.ceil(str * 1.15);
+    def = Math.ceil(def * 1.15);
+    rng = Math.ceil(rng * 1.15);
+    mag = Math.ceil(mag * 1.15);
+  } else if (bodyIt && legsIt && bodyIt.pairId === legsIt.id) {
+    // Matched Top & Bottom pair = Pair bonus (+10% combat bonuses)
     matchedSet = bodyIt.setName || `${bodyIt.name} & ${legsIt.name}`;
     atk = Math.ceil(atk * 1.10);
     str = Math.ceil(str * 1.10);
@@ -208,7 +257,8 @@ function getEquipmentBonuses() {
     rng = Math.ceil(rng * 1.10);
     mag = Math.ceil(mag * 1.10);
   }
-  return { atk, str, def, rng, mag, matchedSet };
+
+  return { atk, str, def, rng, mag, matchedSet, isFullKit, dominantCount, dominantSetName };
 }
 
 function grantXp(skillKey, baseAmount) {
@@ -679,7 +729,13 @@ function updateAllUI() {
   const bon = getEquipmentBonuses();
   let pairStatusHtml = '';
   if (bon.matchedSet) {
-    pairStatusHtml = `<div style="margin-top:3px; color:#4ade80; font-weight:800;">Matched Pair: ${bon.matchedSet} (+10% Set Bonus)</div>`;
+    if (bon.isFullKit) {
+      pairStatusHtml = `<div style="margin-top:3px; color:#facc15; font-weight:800; text-shadow:0 0 10px rgba(250,204,21,0.6);">★ FULL KIT BONUS: ${bon.matchedSet} (+20% All Stats) ★</div>`;
+    } else if (bon.dominantCount && bon.dominantCount >= 3) {
+      pairStatusHtml = `<div style="margin-top:3px; color:#38bdf8; font-weight:800;">Set Synergy: ${bon.matchedSet} (+15% Stats) · Add 4th piece for Full Kit!</div>`;
+    } else {
+      pairStatusHtml = `<div style="margin-top:3px; color:#4ade80; font-weight:800;">Matched Pair: ${bon.matchedSet} (+10% Set Bonus)</div>`;
+    }
   } else {
     const bIt = STATE.equipment.body ? ITEMS[STATE.equipment.body] : null;
     const lIt = STATE.equipment.legs ? ITEMS[STATE.equipment.legs] : null;
@@ -962,8 +1018,8 @@ function loadGameState() {
     if (migrated.cam && camState) {
       camState.yaw = migrated.cam.yaw;
       camState.manualOffset = migrated.cam.manualOffset;
-      camState.pitch = migrated.cam.pitch;
-      camState.distance = migrated.cam.distance;
+      camState.pitch = Math.min(migrated.cam.pitch, 0.42);
+      camState.distance = Math.min(migrated.cam.distance, 9.5);
     }
     return true;
   } catch (e) {
@@ -1018,6 +1074,13 @@ const player = {
   downed: false,
   downedTimer: 0,
   meshGroup: null,
+  currentSpeed: 0,
+  yawVelocity: 0,
+  bankRoll: 0,
+  capeAngleX: -0.12,
+  capeAngleY: 0,
+  capeAngleZ: 0,
+  activeWeaponKind: 'scimitar',
   parts: {}
 };
 
@@ -1025,8 +1088,9 @@ const camState = {
   yaw: 0.48,
   manualOffset: 0,
   pitch: 0.24,
-  distance: 11.0,
+  distance: 8.5,
   currentLookAt: new THREE.Vector3(-4, 2, -3),
+  shake: 0,
   isDragging: false,
   lastMouseX: 0,
   lastMouseY: 0
@@ -1075,30 +1139,153 @@ function getBiomeColor(x, z, h) {
   return grass[band];
 }
 
+const _tmpScratchVec = new THREE.Vector3();
+const _camTargetVec = new THREE.Vector3();
+const _lookTargetVec = new THREE.Vector3();
+
+type QualityTier = 'performance' | 'balanced' | 'high' | 'ultra';
+let currentQuality: QualityTier = 'balanced';
+let outlinesEnabled = true;
+
+function getQualityDpr(tier: QualityTier): number {
+  const dpr = typeof window !== 'undefined' ? (window.devicePixelRatio || 1) : 1;
+  switch (tier) {
+    case 'performance': return 1.0;
+    case 'balanced': return Math.min(dpr, 1.25);
+    case 'high': return Math.min(dpr, 1.5);
+    case 'ultra': return Math.min(dpr, 2.0);
+  }
+}
+
+function applyQualityTier(tier: QualityTier): void {
+  currentQuality = tier;
+  const dpr = getQualityDpr(tier);
+  if (renderer && typeof window !== 'undefined') {
+    renderer.setPixelRatio(dpr);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    if (tier === 'performance') {
+      renderer.shadowMap.enabled = false;
+    } else {
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      if (sunLight) {
+        sunLight.castShadow = true;
+        const res = tier === 'ultra' ? 2048 : (tier === 'high' ? 2048 : 1024);
+        sunLight.shadow.mapSize.set(res, res);
+      }
+    }
+  }
+  const dprEl = document.getElementById('perf-dpr');
+  if (dprEl) dprEl.textContent = `${dpr.toFixed(2)}x DPR`;
+  syncGraphicsButtons();
+}
+
+function cycleGraphicsQuality(): void {
+  const tiers: QualityTier[] = ['performance', 'balanced', 'high', 'ultra'];
+  const nextIdx = (tiers.indexOf(currentQuality) + 1) % tiers.length;
+  applyQualityTier(tiers[nextIdx]);
+  addChatMessage(`Graphics Quality set to <b>${tiers[nextIdx].toUpperCase()}</b> (${getQualityDpr(tiers[nextIdx]).toFixed(2)}x DPR).`, 'skill');
+}
+
+function toggleOutlines(): void {
+  outlinesEnabled = !outlinesEnabled;
+  if (scene) {
+    scene.traverse((obj) => {
+      if (obj.userData?.isOutline) {
+        obj.visible = outlinesEnabled;
+      }
+    });
+  }
+  syncGraphicsButtons();
+  addChatMessage(`Cartoon Outlines <b>${outlinesEnabled ? 'Enabled' : 'Disabled (Ultra FPS)'}</b>.`, 'skill');
+}
+
+function syncGraphicsButtons(): void {
+  const gBtn = document.getElementById('graphics-quality-btn');
+  if (gBtn) gBtn.textContent = `Graphics: ${currentQuality.charAt(0).toUpperCase() + currentQuality.slice(1)}`;
+  const oBtn = document.getElementById('outlines-toggle-btn');
+  if (oBtn) oBtn.textContent = outlinesEnabled ? 'Outlines: On' : 'Outlines: Off';
+}
+
+const telemetryInfo = {
+  gpuName: 'Detecting GPU...',
+  vendor: '',
+  isHardwareAccelerated: true,
+  fps: 60,
+  frameTimeMs: 16.6
+};
+let frameCounter = 0;
+let lastFpsTime = performance.now();
+
+function initGpuTelemetry(gl: WebGLRenderingContext | WebGL2RenderingContext): void {
+  try {
+    const dbg = gl.getExtension('WEBGL_debug_renderer_info');
+    if (dbg) {
+      telemetryInfo.gpuName = gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) || 'WebGL Renderer';
+      telemetryInfo.vendor = gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL) || '';
+    } else {
+      telemetryInfo.gpuName = (gl.getParameter(gl.RENDERER) as string) || 'WebGL';
+    }
+  } catch {
+    telemetryInfo.gpuName = 'Hardware WebGL';
+  }
+
+  const lower = telemetryInfo.gpuName.toLowerCase();
+  let cleanName = telemetryInfo.gpuName;
+  const match = telemetryInfo.gpuName.match(/NVIDIA GeForce [^,)]+|Radeon [^,)]+|Intel\(R\) [^,)]+/i);
+  if (match) cleanName = match[0];
+
+  telemetryInfo.isHardwareAccelerated = !/swiftshader|software|llvmpipe|basic render/i.test(lower);
+
+  const nameEl = document.getElementById('perf-gpu-name');
+  const dotEl = document.getElementById('perf-dot');
+  if (nameEl) {
+    if (!telemetryInfo.isHardwareAccelerated) {
+      nameEl.textContent = 'CPU SwiftShader (GPU Acceleration OFF!)';
+      nameEl.title = 'Hardware acceleration is disabled in your browser. Enable it in chrome://settings/system!';
+      if (dotEl) dotEl.className = 'perf-status-dot warning';
+    } else {
+      nameEl.textContent = cleanName;
+      nameEl.title = telemetryInfo.gpuName;
+      if (dotEl) dotEl.className = 'perf-status-dot';
+    }
+  }
+}
+
 function init3DEngine() {
   const container = document.getElementById('game-canvas-container');
   scene = new THREE.Scene();
-  scene.fog = new THREE.FogExp2(0xbae6fd, 0.00145);
+  scene.fog = new THREE.FogExp2(0x9ab0c2, 0.0028);
 
   camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.5, 360);
 
-  renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+  renderer = new THREE.WebGLRenderer({
+    antialias: true,
+    powerPreference: 'high-performance',
+    precision: 'highp',
+    stencil: false,
+    depth: true
+  });
   renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer.shadowMap.enabled = false;
+  renderer.setPixelRatio(getQualityDpr(currentQuality));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
-  renderer.toneMapping = THREE.NoToneMapping;
-  renderer.toneMappingExposure = 1;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.05;
   renderer.domElement.id = 'game-canvas';
   container.appendChild(renderer.domElement);
 
-  hemiLight = new THREE.HemisphereLight(0xfffbeb, 0x4a5c3a, 0.56);
+  initGpuTelemetry(renderer.getContext());
+  applyQualityTier('balanced');
+
+  hemiLight = new THREE.HemisphereLight(0xa5b8c9, 0x333d32, 0.52);
   scene.add(hemiLight);
 
-  ambientLight = new THREE.AmbientLight(0xffedd5, 0.22);
+  ambientLight = new THREE.AmbientLight(0x617282, 0.28);
   scene.add(ambientLight);
 
-  sunLight = new THREE.DirectionalLight(0xfff4d2, 1.05);
+  sunLight = new THREE.DirectionalLight(0xf8f5ed, 1.15);
   sunLight.position.set(45, 68, 35);
   sunLight.castShadow = true;
   sunLight.shadow.mapSize.width = 2048;
@@ -1119,7 +1306,6 @@ function init3DEngine() {
   buildAllCitiesAndLandmarks();
   buildPlayerCharacter();
   spawnAllResourcesAndMonsters();
-  buildAtmosphericParticles();
   sealAlbedoUvs(scene);
 
   window.addEventListener('resize', onWindowResize);
@@ -1141,22 +1327,21 @@ function buildSkyDomeShader() {
     side: THREE.BackSide,
     depthWrite: false,
     vertexShader: `
-      varying vec3 vWorldPos;
+      varying vec3 vNormPos;
       void main() {
-        vec4 wp = modelMatrix * vec4(position, 1.0);
-        vWorldPos = wp.xyz;
-        gl_Position = projectionMatrix * viewMatrix * wp;
+        vNormPos = normalize(position);
+        gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(position, 1.0);
       }
     `,
     fragmentShader: `
       uniform vec3 uTopColor;
       uniform vec3 uMidColor;
       uniform vec3 uHorizonColor;
-      varying vec3 vWorldPos;
+      varying vec3 vNormPos;
       void main() {
-        float h = clamp(normalize(vWorldPos).y, 0.0, 1.0);
-        vec3 col = mix(uHorizonColor, uMidColor, smoothstep(0.0, 0.22, h));
-        col = mix(col, uTopColor, smoothstep(0.22, 0.72, h));
+        float h = clamp(vNormPos.y, 0.0, 1.0);
+        vec3 col = mix(uHorizonColor, uMidColor, smoothstep(0.0, 0.28, h));
+        col = mix(col, uTopColor, smoothstep(0.28, 0.85, h));
         gl_FragColor = vec4(col, 1.0);
       }
     `
@@ -1170,25 +1355,25 @@ function cycleTimeOfDay() {
   STATE.timeOfDay = (STATE.timeOfDay + 1) % 3;
   const btn = document.getElementById('time-of-day-btn');
   if (STATE.timeOfDay === 0) {
-    skyUniforms.uTopColor.value.setHex(0x3b82f6);
-    skyUniforms.uMidColor.value.setHex(0xbae6fd);
-    skyUniforms.uHorizonColor.value.setHex(0xfef3c7);
-    scene.fog.color.setHex(0xbae6fd);
-    scene.fog.density = 0.00145;
+    skyUniforms.uTopColor.value.setHex(0x253545);
+    skyUniforms.uMidColor.value.setHex(0x5a6875);
+    skyUniforms.uHorizonColor.value.setHex(0x8a8a92);
+    scene.fog.color.setHex(0x8a8a92);
+    scene.fog.density = 0.0030;
     if (btn) btn.textContent = 'Golden Hour';
   } else if (STATE.timeOfDay === 1) {
-    skyUniforms.uTopColor.value.setHex(0x2563eb);
-    skyUniforms.uMidColor.value.setHex(0x7dd3fc);
-    skyUniforms.uHorizonColor.value.setHex(0xe0f2fe);
-    scene.fog.color.setHex(0xbae6fd);
-    scene.fog.density = 0.0012;
+    skyUniforms.uTopColor.value.setHex(0x2e4359);
+    skyUniforms.uMidColor.value.setHex(0x5f788e);
+    skyUniforms.uHorizonColor.value.setHex(0x9ab0c2);
+    scene.fog.color.setHex(0x9ab0c2);
+    scene.fog.density = 0.0028;
     if (btn) btn.textContent = 'High Noon';
   } else {
-    skyUniforms.uTopColor.value.setHex(0x1e1b4b);
-    skyUniforms.uMidColor.value.setHex(0x312e81);
-    skyUniforms.uHorizonColor.value.setHex(0x1e293b);
-    scene.fog.color.setHex(0x1e293b);
-    scene.fog.density = 0.0022;
+    skyUniforms.uTopColor.value.setHex(0x090e14);
+    skyUniforms.uMidColor.value.setHex(0x141d27);
+    skyUniforms.uHorizonColor.value.setHex(0x1e2936);
+    scene.fog.color.setHex(0x1e2936);
+    scene.fog.density = 0.0042;
     if (btn) btn.textContent = 'Starry Night';
   }
 }
@@ -1254,9 +1439,9 @@ function buildTerrainAndWater() {
       varying float vWave;
       void main() {
         float rip = sin(vWorldPos.x * 0.45 + uTime * 0.7) * cos(vWorldPos.z * 0.32);
-        float foam = step(0.62, rip);
+        float foam = smoothstep(0.48, 0.78, rip);
         vec3 col = mix(uDeepColor, uShallowColor, foam);
-        gl_FragColor = vec4(col, 0.92);
+        gl_FragColor = vec4(col, 0.94);
       }
     `
   });
@@ -1297,8 +1482,8 @@ function buildTerrainAndWater() {
 function buildRiverBridge(bx, bz) {
   const grp = new THREE.Group();
   grp.position.set(bx, 0, bz);
-  const woodMat = albedoMaterial(0x92400e, 'wood');
-  const stoneMat = albedoMaterial(0xe5e7eb, 'stone');
+  const woodMat = albedoMaterial(0x42352a, 'wood');
+  const stoneMat = albedoMaterial(0x505a63, 'stone');
 
   for (let i = -7; i <= 7; i++) {
     const t = i / 7;
@@ -1323,6 +1508,10 @@ function buildRiverBridge(bx, bz) {
   sealAlbedoUvs(grp);
   scene.add(grp);
   addCartoonOutline(grp, 0.038);
+  loadBlenderWorldTemplate().then((gltf) => {
+    if (!gltf) return;
+    upgradeWorldPropWithGltf(grp, 'World_river_bridge', gltf, { outlineThickness: 0.035 });
+  });
 }
 
 function buildBiomeLandmarks() {
@@ -1335,12 +1524,18 @@ function buildBiomeLandmarks() {
   const obsidian = albedoMaterial(0xa8a29e, biomeAlbedoId('peak-volcanic'));
   const lava = facetMaterial({ color: 0xf97316, emissive: 0xea580c, emissiveIntensity: 0.85 });
 
-  function place(builder, x, z) {
+  function place(builder, x, z, worldAssetName, overrides = {}) {
     const grp = builder();
     grp.position.set(x, getTerrainHeight(x, z), z);
     sealAlbedoUvs(grp);
     addCartoonOutline(grp, 0.038);
     scene.add(grp);
+    if (worldAssetName) {
+      loadBlenderWorldTemplate().then((gltf) => {
+        if (!gltf) return;
+        upgradeWorldPropWithGltf(grp, worldAssetName, gltf, { overrides, outlineThickness: 0.035 });
+      });
+    }
   }
 
   function sandstoneArch() {
@@ -1437,19 +1632,19 @@ function buildBiomeLandmarks() {
     return grp;
   }
 
-  place(sandstoneArch, 80, 82);
-  place(palmTree, 58, 58);
-  place(palmTree, 74, 52);
-  place(plazaPillar, 70, -16);
-  place(plazaPillar, 86, -24);
-  place(plazaPillar, 78, -30);
-  place(() => mysticMushroom(0xa855f7), -66, -22);
-  place(() => mysticMushroom(0x22d3ee), -84, -26);
-  place(woodsLantern, -72, -38);
-  place(woodsLantern, -90, -34);
-  place(obsidianSpire, -58, 62);
-  place(obsidianSpire, -66, 90);
-  place(lavaFissure, -74, 70);
+  place(sandstoneArch, 80, 82, 'World_sandstone_arch');
+  place(palmTree, 58, 58, 'World_palm_tree');
+  place(palmTree, 74, 52, 'World_palm_tree');
+  place(plazaPillar, 70, -16, 'World_plaza_pillar');
+  place(plazaPillar, 86, -24, 'World_plaza_pillar');
+  place(plazaPillar, 78, -30, 'World_plaza_pillar');
+  place(() => mysticMushroom(0xa855f7), -66, -22, 'World_mystic_mushroom', { mushroomHex: 0xa855f7 });
+  place(() => mysticMushroom(0x22d3ee), -84, -26, 'World_mystic_mushroom', { mushroomHex: 0x22d3ee });
+  place(woodsLantern, -72, -38, 'World_woods_lantern');
+  place(woodsLantern, -90, -34, 'World_woods_lantern');
+  place(obsidianSpire, -58, 62, 'World_obsidian_spire');
+  place(obsidianSpire, -66, 90, 'World_obsidian_spire');
+  place(lavaFissure, -74, 70, 'World_lava_fissure');
 }
 
 function buildAllCitiesAndLandmarks() {
@@ -1459,8 +1654,8 @@ function buildAllCitiesAndLandmarks() {
     const sy = getTerrainHeight(sx, sz);
     const shrineGroup = new THREE.Group();
     shrineGroup.position.set(sx, sy, sz);
-    const stone = albedoMaterial(0xe5e7eb, 'stone');
-    const slate = albedoMaterial(0x475569, 'slate');
+    const stone = albedoMaterial(0x525c66, 'stone');
+    const slate = albedoMaterial(0x2d333b, 'slate');
     const stepA = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.28, 2.6), slate);
     stepA.position.y = 0.14;
     const stepB = new THREE.Mesh(new THREE.BoxGeometry(1.85, 0.26, 1.85), stone);
@@ -1471,7 +1666,7 @@ function buildAllCitiesAndLandmarks() {
     cap.position.y = 2.72;
     const rune = new THREE.Mesh(
       new THREE.OctahedronGeometry(0.34, 0),
-      facetMaterial({ color: 0x7dd3fc, emissive: 0x38bdf8, emissiveIntensity: 0.55, flatShading: true })
+      facetMaterial({ color: 0x5d8096, emissive: 0x2d4857, emissiveIntensity: 0.45, flatShading: true })
     );
     rune.position.y = 3.15;
     [stepA, stepB, pillar, cap, rune].forEach((mesh) => {
@@ -1491,6 +1686,13 @@ function buildAllCitiesAndLandmarks() {
     worldInteractiveObjects.push(pillar, rune);
     addCartoonOutline(shrineGroup, 0.038);
     scene.add(shrineGroup);
+    loadBlenderWorldTemplate().then((gltf) => {
+      if (!gltf) return;
+      upgradeWorldPropWithGltf(shrineGroup, 'World_shrine', gltf, {
+        interactiveObjectsList: worldInteractiveObjects,
+        outlineThickness: 0.035
+      });
+    });
   });
 
   // 2. Sculpted Lumbridge Castle Keep & Cylindrical Battlement Towers
@@ -1517,10 +1719,10 @@ function createCastleStructure(cx, cz) {
   const grp = new THREE.Group();
   const y = getTerrainHeight(cx, cz);
   grp.position.set(cx, y, cz);
-  const stoneMat = albedoMaterial(0xe5e7eb, 'stone');
-  const roofMat = albedoMaterial(0x475569, 'slate');
-  const goldMat = facetMaterial({ color: 0xfacc15 });
-  const timberMat = albedoMaterial(0xc8b48a, 'wood');
+  const stoneMat = albedoMaterial(0x525c66, 'stone');
+  const roofMat = albedoMaterial(0x2d333b, 'slate');
+  const goldMat = facetMaterial({ color: 0x8f7d4e });
+  const timberMat = albedoMaterial(0x42352a, 'wood');
   function box(w, h, d, mat, x, yy, z) {
     const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
     mesh.position.set(x, yy, z);
@@ -1569,6 +1771,10 @@ function createCastleStructure(cx, cz) {
   sealAlbedoUvs(grp);
   addCartoonOutline(grp, 0.03);
   scene.add(grp);
+  loadBlenderWorldTemplate().then((gltf) => {
+    if (!gltf) return;
+    upgradeWorldPropWithGltf(grp, 'World_castle', gltf, { outlineThickness: 0.03 });
+  });
 }
 
 function createPrayerAltar(x, z, name) {
@@ -1576,21 +1782,21 @@ function createPrayerAltar(x, z, name) {
   const grp = new THREE.Group();
   grp.position.set(x, y, z);
 
-  const marbleMat = albedoMaterial(0xf8fafc, 'stone');
+  const marbleMat = albedoMaterial(0x6b7280, 'stone');
   const base = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.85, 1.15), marbleMat);
   base.position.y = 0.42;
   base.castShadow = true;
   grp.add(base);
-  const slab = new THREE.Mesh(new THREE.BoxGeometry(2.7, 0.18, 1.4), albedoMaterial(0xe5e7eb, 'stone'));
+  const slab = new THREE.Mesh(new THREE.BoxGeometry(2.7, 0.18, 1.4), albedoMaterial(0x525c66, 'stone'));
   slab.position.y = 0.92;
   grp.add(slab);
-  const goldTrim = new THREE.Mesh(new THREE.BoxGeometry(2.15, 0.08, 0.12), facetMaterial({ color: 0xfacc15 }));
+  const goldTrim = new THREE.Mesh(new THREE.BoxGeometry(2.15, 0.08, 0.12), facetMaterial({ color: 0x8f7d4e }));
   goldTrim.position.set(0, 0.7, 0.58);
   grp.add(goldTrim);
 
   const crystal = new THREE.Mesh(
     new THREE.OctahedronGeometry(0.32, 0),
-    facetMaterial({ color: 0x7dd3fc, emissive: 0x38bdf8, emissiveIntensity: 0.45, flatShading: true })
+    facetMaterial({ color: 0x5d8096, emissive: 0x2d4857, emissiveIntensity: 0.35, flatShading: true })
   );
   crystal.position.y = 1.45;
   grp.add(crystal);
@@ -1603,6 +1809,13 @@ function createPrayerAltar(x, z, name) {
   addCartoonOutline(grp, 0.038);
   scene.add(grp);
   npcList.push({ pos: grp.position, name, color: '#38bdf8', yOffset: 3.4 });
+  loadBlenderWorldTemplate().then((gltf) => {
+    if (!gltf) return;
+    upgradeWorldPropWithGltf(grp, 'World_altar', gltf, {
+      interactiveObjectsList: worldInteractiveObjects,
+      outlineThickness: 0.035
+    });
+  });
 }
 
 function createForgeStation(x, z, name) {
@@ -1652,6 +1865,13 @@ function createForgeStation(x, z, name) {
   addCartoonOutline(grp, 0.038);
   scene.add(grp);
   npcList.push({ pos: grp.position, name, color: '#ff981f', yOffset: 3.5 });
+  loadBlenderWorldTemplate().then((gltf) => {
+    if (!gltf) return;
+    upgradeWorldPropWithGltf(grp, 'World_forge', gltf, {
+      interactiveObjectsList: worldInteractiveObjects,
+      outlineThickness: 0.035
+    });
+  });
 }
 
 function createBankBooth(x, z) {
@@ -1695,31 +1915,56 @@ function createBankBooth(x, z) {
   addCartoonOutline(lintel, 0.038);
   scene.add(grp);
   npcList.push({ pos: grp.position, name: 'Lumbridge Bank', color: '#fde047', yOffset: 2.6 });
+  loadBlenderHeroTemplate().then((gltf) => {
+    if (!gltf) return;
+    const anim = upgradeHumanoidRigWithGltf(rig, gltf, 0x1e3a8a, 0xfacc15, 0x334155, { isPlayer: false });
+    if (anim) npcAnimatorsList.push(anim);
+  });
+  loadBlenderWorldTemplate().then((gltf) => {
+    if (!gltf) return;
+    upgradeWorldPropWithGltf(grp, 'World_bank_booth', gltf, {
+      keepChildren: (ch) => ch === sign || ch === rig.group,
+      interactiveObjectsList: worldInteractiveObjects,
+      outlineThickness: 0.035
+    });
+  });
 }
 
 function createSlayerMaster(x, z) {
   const y = getTerrainHeight(x, z);
   const rig = buildHumanoidRig(0x4c1d95, 0x1c1917, 0x111827, 1.05);
   rig.group.position.set(x, y, z);
-  const cape = new THREE.Mesh(
-    new THREE.PlaneGeometry(0.5, 1.15),
-    albedoMaterial(0x4c1d95, 'cloth', { side: THREE.DoubleSide })
-  );
-  cape.position.set(0, 1.32, 0.2);
-  rig.group.add(cape);
-  addCartoonOutline(cape, 0.022);
-  const sword = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.95, 0.08), facetMaterial({ color: 0xfacc15 }));
-  sword.position.set(0, LEAN_RIG.handY, 0.02);
-  const guard = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.08, 0.1), facetMaterial({ color: 0xfde047 }));
-  guard.position.set(0, -0.28, 0.02);
-  rig.rightArmPivot.add(sword, guard);
-  addCartoonOutline(sword, 0.022);
+  let vannakaWep = null;
+  let vannakaCape = null;
+  const attachVannakaGear = () => {
+    if (vannakaWep && vannakaWep.parent) vannakaWep.parent.remove(vannakaWep);
+    if (vannakaCape && vannakaCape.parent) vannakaCape.parent.remove(vannakaCape);
+    const wepVis = buildWeaponVisual(ITEMS.godsword || ITEMS.rune_2h || { id: 'godsword', iconKind: 'greatsword', slot: 'weapon', color: 0xfacc15, trim: 0xfde047 });
+    wepVis.group.position.set(0, LEAN_RIG.handY, -0.08);
+    rig.rightArmPivot.add(wepVis.group);
+    vannakaWep = wepVis.group;
+    addCartoonOutline(vannakaWep, 0.02);
+
+    const capeVis = buildCapeVisual({ id: 'slayer_cape', slot: 'cape', color: 0x4c1d95, trim: 0xfacc15 });
+    capeVis.position.set(0, 0.285, 0.175);
+    rig.torso.add(capeVis);
+    vannakaCape = capeVis;
+    addCartoonOutline(vannakaCape, 0.02);
+  };
+  attachVannakaGear();
   const uData = { type: 'interactive', action: 'slayer', name: 'Slayer Master Vannaka', interactRadius: 4.0 };
   rig.group.userData = uData;
   rig.hitbox.userData = uData;
   worldInteractiveObjects.push(rig.hitbox);
   scene.add(rig.group);
   npcList.push({ pos: rig.group.position, name: 'Slayer Master Vannaka', color: '#c084fc', yOffset: 2.9 });
+  Promise.all([loadBlenderHeroTemplate(), loadBlenderGearTemplate()]).then(([heroGltf]) => {
+    if (heroGltf) {
+      const anim = upgradeHumanoidRigWithGltf(rig, heroGltf, 0x4c1d95, 0x1c1917, 0x111827, { isPlayer: false });
+      if (anim) npcAnimatorsList.push(anim);
+    }
+    attachVannakaGear();
+  });
 }
 
 function createMerchantNPC(x, z, name, tunicColor) {
@@ -1732,8 +1977,24 @@ function createMerchantNPC(x, z, name, tunicColor) {
   worldInteractiveObjects.push(rig.hitbox);
   scene.add(rig.group);
   npcList.push({ pos: rig.group.position, name, color: '#ffe642', yOffset: 2.85 });
+  Promise.all([loadBlenderHeroTemplate(), loadBlenderGearTemplate()]).then(([heroGltf]) => {
+    if (heroGltf) {
+      const anim = upgradeHumanoidRigWithGltf(rig, heroGltf, tunicColor, 0xfacc15, 0x334155, { isPlayer: false });
+      if (anim) npcAnimatorsList.push(anim);
+    }
+    const hatItem = name.includes('Varrock')
+      ? { id: 'wizard_hat', slot: 'head', iconKind: 'hat', color: tunicColor, trim: 0xfacc15 }
+      : name.includes('Al-Kharid')
+      ? { id: 'hood', slot: 'head', iconKind: 'hood', color: tunicColor, trim: 0xfacc15 }
+      : { id: 'circlet', slot: 'head', iconKind: 'circlet', color: 0x38bdf8, trim: 0xfacc15 };
+    const hat = buildHeadVisual(hatItem);
+    rig.headGroup.add(hat);
+    addCartoonOutline(hat, 0.018);
+  });
 }
 
+
+const npcAnimatorsList = [];
 
 // ============================================================================
 // 8. SMOOTH SCULPTED 3D CHARACTER, 10-SLOT GEAR, MONSTERS & ORGANIC TREES
@@ -1762,6 +2023,19 @@ function buildPlayerCharacter() {
   scene.add(player.meshGroup);
 
   rebuildPlayerEquipmentMeshes();
+
+  loadBlenderHeroTemplate().then((gltf) => {
+    if (!gltf) return;
+    const animator = upgradeHumanoidRigWithGltf(rig, gltf, 0x38444e, 0x4a3728, 0x2a2522, { isPlayer: true });
+    if (animator) {
+      player.blenderAnimator = animator;
+      rebuildPlayerEquipmentMeshes();
+    }
+  });
+  loadBlenderGearTemplate().then((gearGltf) => {
+    if (!gearGltf) return;
+    rebuildPlayerEquipmentMeshes();
+  });
 }
 
 function syncWhipGeometry(rig, stretch) {
@@ -1859,9 +2133,9 @@ function rebuildPlayerEquipmentMeshes() {
     player.parts.gloveMat.metalness = handsId === 'leather_gloves' ? 0.1 : 0.6;
     applyAlbedo(player.parts.gloveMat, albedoForItem(ITEMS[handsId]));
   } else {
-    player.parts.gloveMat.color.setHex(0x78350f);
-    player.parts.gloveMat.metalness = 0.1;
-    applyAlbedo(player.parts.gloveMat, 'gear:leather');
+    player.parts.gloveMat.color.setHex(0xffd7b5);
+    player.parts.gloveMat.metalness = 0.05;
+    applyAlbedo(player.parts.gloveMat, 'creature:skin');
   }
 
   const equip = (slot) => {
@@ -1887,7 +2161,15 @@ function rebuildPlayerEquipmentMeshes() {
   }
 
   const headItem = equip('head');
-  if (player.parts.hairCap) player.parts.hairCap.visible = headShowsHair(headItem);
+  const showHair = headShowsHair(headItem);
+  if (player.parts.hairCap) player.parts.hairCap.visible = showHair;
+  if (headG) {
+    headG.traverse((ch) => {
+      if (ch.name === 'HairCap' || ch.name.startsWith('Sideburn_')) {
+        ch.visible = showHair;
+      }
+    });
+  }
   if (headItem) mount(headG, buildHeadVisual(headItem), 'helmMesh');
 
   const bodyItem = equip('body');
@@ -1931,15 +2213,21 @@ function rebuildPlayerEquipmentMeshes() {
   const capeItem = equip('cape');
   if (capeItem) {
     const cape = buildCapeVisual(capeItem);
-    if (cape.userData.silhouette === 'ava') cape.position.set(0, 0.1, 0.18);
-    else cape.position.set(0, -0.04, 0.2);
+    if (cape.userData.silhouette === 'ava') cape.position.set(0, 0.16, 0.14);
+    else cape.position.set(0, 0.285, 0.175);
     mount(torso, cape, 'capeMesh');
   }
 
-  if (getEquipmentBonuses().matchedSet && torso) {
+  const currentBon = getEquipmentBonuses();
+  if (currentBon.matchedSet && torso) {
+    const isFull = currentBon.isFullKit;
     const cue = new THREE.Mesh(
-      new THREE.TorusGeometry(LEAN_RIG.beltRadius + 0.03, 0.016, 8, 24),
-      facetMaterial({ color: 0xfde047, emissive: 0xfacc15, emissiveIntensity: 0.7 })
+      new THREE.TorusGeometry(LEAN_RIG.beltRadius + 0.03, isFull ? 0.024 : 0.016, 8, 24),
+      facetMaterial({
+        color: isFull ? 0x38bdf8 : 0xfde047,
+        emissive: isFull ? 0x0284c7 : 0xfacc15,
+        emissiveIntensity: isFull ? 0.95 : 0.7
+      })
     );
     cue.rotation.x = Math.PI / 2;
     cue.position.y = LEAN_RIG.beltY - LEAN_RIG.torsoY;
@@ -2740,23 +3028,71 @@ function createMonsterMesh(def, typeKey) {
 
 function poseMonsterLimbs(m, moving, now, dt) {
   const rig = m.rig;
-  if (!rig) return;
-  if (m.attackAnim > 0) {
-    m.attackAnim = Math.max(0, m.attackAnim - dt * 3.4);
-    const slash = Math.sin(m.attackAnim * Math.PI) * 1.35;
-    if (rig.rightArmPivot) rig.rightArmPivot.rotation.x = -slash;
-    if (rig.leftArmPivot) rig.leftArmPivot.rotation.x = slash * 0.35;
+  if (!rig || m.isDying) return;
+
+  const groundY = getTerrainHeight(m.pos.x, m.pos.z);
+
+  // Flinch Reaction on Hit
+  if (m.flinch > 0) {
+    m.flinch = Math.max(0, m.flinch - dt * 3.8);
+    const curve = Math.sin(m.flinch * Math.PI);
+    rig.group.position.y = groundY + curve * 0.16;
+    rig.group.rotation.x = curve * 0.24;
+    if (rig.headGroup) rig.headGroup.rotation.x = -curve * 0.36;
+    if (rig.rightArmPivot) rig.rightArmPivot.rotation.x = curve * 0.45;
+    if (rig.leftArmPivot) rig.leftArmPivot.rotation.x = curve * 0.35;
     return;
   }
+  rig.group.rotation.x = 0;
+
+  // Distinct Attack Animations
+  if (m.attackAnim > 0) {
+    m.attackAnim = Math.max(0, m.attackAnim - dt * 3.2);
+    const progress = Math.sin(m.attackAnim * Math.PI);
+    if (m.typeKey === 'elvarg_dragon') {
+      if (rig.headGroup) rig.headGroup.rotation.x = -0.35 + progress * 0.65;
+      if (rig.lWing && rig.rWing) {
+        rig.lWing.rotation.z = 0.2 + progress * 0.55;
+        rig.rWing.rotation.z = -0.2 - progress * 0.55;
+      }
+      rig.group.position.y = groundY + progress * 0.32;
+    } else if (m.typeKey === 'dark_wizard') {
+      if (rig.rightArmPivot) rig.rightArmPivot.rotation.x = -1.65 * progress;
+      if (rig.leftArmPivot) rig.leftArmPivot.rotation.x = -1.45 * progress;
+      if (rig.headGroup) rig.headGroup.rotation.x = -0.25 * progress;
+      rig.group.position.y = groundY + progress * 0.12;
+    } else if (m.typeKey === 'moss_guardian' || m.typeKey === 'hill_giant') {
+      if (rig.rightArmPivot) rig.rightArmPivot.rotation.x = -1.8 * progress;
+      if (rig.leftArmPivot) rig.leftArmPivot.rotation.x = -1.8 * progress;
+      rig.group.position.y = groundY + progress * 0.22;
+    } else if (m.typeKey === 'goblin' || m.typeKey === 'hobgoblin') {
+      if (rig.rightArmPivot) rig.rightArmPivot.rotation.x = -1.55 * progress;
+      if (rig.leftArmPivot) rig.leftArmPivot.rotation.x = progress * 0.4;
+      rig.group.position.y = groundY + progress * 0.25;
+    } else {
+      const slash = progress * 1.45;
+      if (rig.rightArmPivot) rig.rightArmPivot.rotation.x = -slash;
+      if (rig.leftArmPivot) rig.leftArmPivot.rotation.x = slash * 0.4;
+      rig.group.position.y = groundY + progress * 0.1;
+    }
+    return;
+  }
+
+  // Locomotion Walk Poses
   if (moving && rig.leftLegPivot && rig.rightLegPivot) {
-    const s = Math.sin(now * (m.inCombatWithPlayer ? 0.01 : 0.007)) * (m.inCombatWithPlayer ? 0.5 : 0.35);
+    const s = Math.sin(now * (m.inCombatWithPlayer ? 0.01 : 0.007)) * (m.inCombatWithPlayer ? 0.52 : 0.38);
     rig.leftLegPivot.rotation.x = s;
     rig.rightLegPivot.rotation.x = -s;
     if (rig.leftArmPivot) rig.leftArmPivot.rotation.x = -s * 0.75;
     if (rig.rightArmPivot) rig.rightArmPivot.rotation.x = s * 0.75;
+    rig.group.position.y = groundY + Math.abs(Math.sin(now * 0.014)) * 0.06;
     return;
   }
+
+  // Idle Breathing & Ambient Alive Pose
   const breath = Math.sin(now * 0.003) * 0.07;
+  rig.group.position.y = groundY + Math.abs(breath) * 0.04;
+  if (rig.headGroup) rig.headGroup.rotation.y = Math.sin(now * 0.0016) * 0.14;
   if (rig.leftLegPivot && rig.rightLegPivot) {
     rig.leftLegPivot.rotation.x *= 0.86;
     rig.rightLegPivot.rotation.x *= 0.86;
@@ -2791,6 +3127,10 @@ function spawnMonster(typeKey, x, z) {
     hp: def.hp,
     maxHp: def.hp,
     dead: false,
+    isDying: false,
+    dyingTimer: 0,
+    flinch: 0,
+    flashTimer: 0,
     respawnTimer: 0,
     wanderTimer: Math.random() * 3,
     attackCooldown: 0,
@@ -2806,6 +3146,10 @@ function spawnMonster(typeKey, x, z) {
   worldInteractiveObjects.push(rig.hitbox);
   scene.add(rig.group);
   monstersList.push(mObj);
+  loadBlenderMonstersTemplate().then((gltf) => {
+    if (!gltf) return;
+    upgradeMonsterRigWithGltf(mObj, gltf);
+  });
 }
 
 // Smooth Organic Branching Trees & Sculpted Weathered Ore Boulders
@@ -2830,13 +3174,13 @@ function spawnResourceNode(nodeKey, x, z) {
     visualMesh.add(trunk);
 
     const foliageHex = {
-      normal_tree: 0x4ade80,
-      oak_tree: 0x22c55e,
-      willow_tree: 0x16a34a,
-      maple_tree: 0x4ade80,
-      yew_tree: 0x166534,
-      magic_tree: 0x2dd4bf
-    }[nodeKey] || def.foliageColor || 0x4ade80;
+      normal_tree: 0x334835,
+      oak_tree: 0x3e4f38,
+      willow_tree: 0x48523c,
+      maple_tree: 0x5c4228,
+      yew_tree: 0x223628,
+      magic_tree: 0x35545b
+    }[nodeKey] || def.foliageColor || 0x334835;
     const fMat = albedoMaterial(foliageHex, 'grass');
     const puffs = [
       [0, 2.55, 0, 1.25],
@@ -2887,7 +3231,7 @@ function spawnResourceNode(nodeKey, x, z) {
     visualMesh = new THREE.Group();
     const ring1 = new THREE.Mesh(
       new THREE.TorusGeometry(1.15, 0.05, 5, 8),
-      new THREE.MeshBasicMaterial({ color: 0xbae6fd })
+      new THREE.MeshBasicMaterial({ color: 0x7a96a3 })
     );
     ring1.rotation.x = Math.PI / 2;
     ring1.position.y = 0.06;
@@ -2927,6 +3271,10 @@ function spawnResourceNode(nodeKey, x, z) {
   worldInteractiveObjects.push(hitbox);
   scene.add(grp);
   resourceNodesList.push(rObj);
+  loadBlenderWorldTemplate().then((gltf) => {
+    if (!gltf) return;
+    upgradeResourceNodeWithGltf(rObj, gltf);
+  });
 }
 
 function spawnAllResourcesAndMonsters() {
@@ -2968,8 +3316,114 @@ function spawnAllResourcesAndMonsters() {
   [[-92, 68], [-88, 76], [-74, 92]].forEach(([x, z]) => spawnResourceNode('runite_rock', x, z));
 }
 
+let atmosphericMotes = null;
+
+function createSoftMoteTexture(): THREE.Texture | null {
+  if (typeof document === 'undefined') return null;
+  const canvas = document.createElement('canvas');
+  canvas.width = 32;
+  canvas.height = 32;
+  const ctx = canvas.getContext('2d');
+  if (ctx) {
+    const gradient = ctx.createRadialGradient(16, 16, 0, 16, 16, 16);
+    gradient.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
+    gradient.addColorStop(0.35, 'rgba(255, 235, 175, 0.55)');
+    gradient.addColorStop(0.7, 'rgba(255, 205, 120, 0.15)');
+    gradient.addColorStop(1, 'rgba(255, 180, 80, 0)');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, 32, 32);
+  }
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.needsUpdate = true;
+  return tex;
+}
+
 function buildAtmosphericParticles() {
-  // Cartoon skies stay clear. Dust motes read as noise, so the world has none.
+  const count = 120;
+  const geo = new THREE.BufferGeometry();
+  const positions = new Float32Array(count * 3);
+  const colors = new Float32Array(count * 3);
+  const phases = new Float32Array(count);
+  const speeds = new Float32Array(count);
+
+  for (let i = 0; i < count; i++) {
+    positions[i * 3 + 0] = (Math.random() - 0.5) * 44;
+    positions[i * 3 + 1] = 0.5 + Math.random() * 7;
+    positions[i * 3 + 2] = (Math.random() - 0.5) * 44;
+    colors[i * 3 + 0] = 0.96;
+    colors[i * 3 + 1] = 0.82;
+    colors[i * 3 + 2] = 0.45;
+    phases[i] = Math.random() * Math.PI * 2;
+    speeds[i] = 0.25 + Math.random() * 0.50;
+  }
+
+  geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+  const softMap = createSoftMoteTexture();
+  const mat = new THREE.PointsMaterial({
+    size: 0.075,
+    ...(softMap ? { map: softMap } : {}),
+    vertexColors: true,
+    transparent: true,
+    opacity: 0.42,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending
+  });
+
+  atmosphericMotes = {
+    points: new THREE.Points(geo, mat),
+    positions,
+    colors,
+    phases,
+    speeds,
+    count
+  };
+  scene.add(atmosphericMotes.points);
+}
+
+function updateAtmosphericParticles(dt, now) {
+  if (!atmosphericMotes) return;
+  const px = player.pos.x;
+  const pz = player.pos.z;
+  const curRegId = STATE.currentRegion;
+  const isCrandor = curRegId === 'crandor';
+  const isDraynor = curRegId === 'draynor' || curRegId === 'wilderness';
+  const posAttr = atmosphericMotes.points.geometry.attributes.position;
+  const colAttr = atmosphericMotes.points.geometry.attributes.color;
+
+  const targetR = isCrandor ? 1.0 : (isDraynor ? 0.72 : 0.98);
+  const targetG = isCrandor ? 0.38 : (isDraynor ? 0.45 : 0.88);
+  const targetB = isCrandor ? 0.12 : (isDraynor ? 0.95 : 0.52);
+
+  for (let i = 0; i < atmosphericMotes.count; i++) {
+    const i3 = i * 3;
+    atmosphericMotes.phases[i] += dt * atmosphericMotes.speeds[i];
+
+    posAttr.array[i3 + 0] += Math.sin(atmosphericMotes.phases[i] * 0.7) * dt * 0.5 + 0.32 * dt;
+    posAttr.array[i3 + 1] += (isCrandor ? 0.75 : Math.sin(atmosphericMotes.phases[i])) * dt * 0.35;
+    posAttr.array[i3 + 2] += Math.cos(atmosphericMotes.phases[i] * 0.8) * dt * 0.45 + 0.22 * dt;
+
+    const dx = posAttr.array[i3 + 0] - px;
+    const dz = posAttr.array[i3 + 2] - pz;
+    if (dx > 22) posAttr.array[i3 + 0] -= 44;
+    if (dx < -22) posAttr.array[i3 + 0] += 44;
+    if (dz > 22) posAttr.array[i3 + 2] -= 44;
+    if (dz < -22) posAttr.array[i3 + 2] += 44;
+
+    const terrainH = getTerrainHeight(posAttr.array[i3 + 0], posAttr.array[i3 + 2]);
+    if (posAttr.array[i3 + 1] < terrainH + 0.3) {
+      posAttr.array[i3 + 1] = terrainH + 0.3 + Math.random() * 5.5;
+    } else if (posAttr.array[i3 + 1] > terrainH + 9.0) {
+      posAttr.array[i3 + 1] = terrainH + 0.5;
+    }
+
+    colAttr.array[i3 + 0] += (targetR - colAttr.array[i3 + 0]) * Math.min(1, dt * 2);
+    colAttr.array[i3 + 1] += (targetG - colAttr.array[i3 + 1]) * Math.min(1, dt * 2);
+    colAttr.array[i3 + 2] += (targetB - colAttr.array[i3 + 2]) * Math.min(1, dt * 2);
+  }
+  posAttr.needsUpdate = true;
+  colAttr.needsUpdate = true;
 }
 
 
@@ -3103,7 +3557,8 @@ function setupInputHandlers() {
 
 function resetCameraBehindPlayer() {
   camState.manualOffset = 0;
-  camState.pitch = 0.34;
+  camState.pitch = 0.24;
+  camState.distance = 8.5;
 }
 
 function showClickMarker(x, z, hexColor) {
@@ -3589,6 +4044,24 @@ function spawnMeleeSlashEffect(weaponItem, playerPos, playerYaw, targetPos, isSp
     return;
   }
 
+  if (id === 'dharok_greataxe' || weaponItem?.iconKind === 'greataxe') {
+    // Massive two-handed vertical downward chop
+    spawnSlashArc(0xa3e635, origin, playerYaw, { scale: 1.55 * specScale, roll: Math.PI / 2, life: 0.55 });
+    spawnExpandingRing(targetPos.clone().setY(targetPos.y), 0xa3e635, isSpec ? 0.8 : 0.55, isSpec ? 6.2 : 3.8);
+    spawnBurst(impact, 10, 0x78350f, 0.5, 3.4);
+    spawnBurst(impact, 8, 0xbef264, 0.42, 2.8);
+    return;
+  }
+
+  if (id === 'inquisitor_mace' || weaponItem?.iconKind === 'mace') {
+    // Heavy blunt crushing slam with holy radiance
+    spawnSlashArc(0xfacc15, origin, playerYaw, { scale: 1.35 * specScale, roll: Math.PI / 2.3, life: 0.48 });
+    spawnExpandingRing(targetPos.clone().setY(targetPos.y), 0xfacc15, 0.6, 3.6);
+    spawnBurst(impact, 12, 0xfde047, 0.45, 3.8);
+    spawnBurst(impact, 6, 0xffffff, 0.35, 2.4);
+    return;
+  }
+
   if (id === 'bandos_godsword' || id === 'master_sword' || id === 'deity_sword' || weaponItem?.iconKind === 'greatsword') {
     const sacred = id === 'master_sword' || id === 'deity_sword';
     const color = sacred ? 0x7dd3fc : 0xfde047;
@@ -3722,8 +4195,43 @@ function spawnSpellImpact(spell, targetPos, casterPos) {
   }
 }
 
+function spawnRunicCircle(pos, colorHex, life = 0.85, scale = 1.0) {
+  const grp = new THREE.Group();
+  grp.position.set(pos.x, getTerrainHeight(pos.x, pos.z) + 0.05, pos.z);
+
+  const outerRing = new THREE.Mesh(new THREE.RingGeometry(0.72 * scale, 0.82 * scale, 32), glowMaterial(colorHex, 0.9));
+  outerRing.rotation.x = -Math.PI / 2;
+  grp.add(outerRing);
+
+  const innerRing = new THREE.Mesh(new THREE.RingGeometry(0.36 * scale, 0.42 * scale, 24), glowMaterial(colorHex, 0.95));
+  innerRing.rotation.x = -Math.PI / 2;
+  grp.add(innerRing);
+
+  const glyphs = new THREE.Group();
+  for (let a = 0; a < 8; a++) {
+    const spoke = new THREE.Mesh(new THREE.PlaneGeometry(0.04 * scale, 0.36 * scale), glowMaterial(colorHex, 0.9));
+    spoke.rotation.x = -Math.PI / 2;
+    spoke.rotation.z = (a / 8) * Math.PI * 2;
+    spoke.position.set(Math.cos(spoke.rotation.z) * 0.56 * scale, 0, Math.sin(spoke.rotation.z) * 0.56 * scale);
+    glyphs.add(spoke);
+  }
+  grp.add(glyphs);
+
+  spawnVfx(grp, life, (v, dt) => {
+    const t = v.age / v.life;
+    glyphs.rotation.y += dt * 2.5;
+    outerRing.rotation.z -= dt * 1.5;
+    const fade = t < 0.6 ? 1 : 1 - (t - 0.6) / 0.4;
+    v.mesh.traverse((obj) => {
+      if (obj.material && obj.material.transparent) obj.material.opacity = fade * 0.92;
+    });
+  });
+}
+
 function spawnSpellProjectile(spell, fromPos, toPos, onImpact) {
   const id = spell?.id || 'wind_strike';
+  const spellColor = id === 'fire_bolt' ? 0xf97316 : (id === 'ice_burst' ? 0x38bdf8 : (id === 'blood_barrage' ? 0xf43f5e : 0xa855f7));
+  spawnRunicCircle(fromPos, spellColor, 0.8, 1.15);
   const grp = new THREE.Group();
   let speed = 4.2;
   let arc = 0.7;
@@ -3996,6 +4504,11 @@ function performPlayerAttack(monster) {
     accuracyScore = (s.attack.lvl + styleAtkBonus) * 1.35 + bon.atk + 12;
   }
 
+  const wepId = STATE.equipment.weapon;
+  const wepDef = wepId ? (ITEMS[wepId] || null) : null;
+  const wepKind = wepDef?.iconKind || 'scimitar';
+  player.activeWeaponKind = wepKind;
+
   const spec = weaponSpecial(STATE.equipment.weapon);
   let isSpec = false;
   let specHeal = 0;
@@ -4012,10 +4525,39 @@ function performPlayerAttack(monster) {
       accuracyScore *= spec.accuracy;
       specHeal = spec.healRatio;
       player.spinAnim = 1.0;
+      if (player.blenderAnimator) {
+        if (wpKindIsChop(wepKind)) player.blenderAnimator.playAction('Chop', 1.35);
+        else player.blenderAnimator.playAction('SpinSlash', 1.25);
+      }
       addChatMessage(`You unleash <b>${spec.name}</b>!`, 'lvlup');
     }
   } else {
     player.attackAnim = 1.0;
+    if (player.blenderAnimator) {
+      if (wepKind === 'greataxe') {
+        player.blenderAnimator.playAction('Chop', 1.05);
+      } else if (wepKind === 'mace') {
+        player.blenderAnimator.playAction('Chop', 1.25);
+      } else if (wepKind === 'bow') {
+        player.blenderAnimator.playAction('Ranged', 1.3);
+      } else if (wepKind === 'crossbow') {
+        player.blenderAnimator.playAction('Ranged', 1.45);
+      } else if (wepKind === 'staff' || wepKind === 'wand') {
+        player.blenderAnimator.playAction('Cast', wepKind === 'wand' ? 1.4 : 1.15);
+      } else if (wepKind === 'greatsword') {
+        player.blenderAnimator.playAction('Slash', 0.95);
+      } else if (wepKind === 'whip') {
+        player.blenderAnimator.playAction('Slash', 1.45);
+      } else if (style === 'rapid' || style === 'ranged') {
+        player.blenderAnimator.playAction('Ranged', 1.2);
+      } else if (style === 'magic') {
+        player.blenderAnimator.playAction('Cast', 1.2);
+      } else if (style === 'aggressive') {
+        player.blenderAnimator.playAction('Lunge', 1.25);
+      } else {
+        player.blenderAnimator.playAction('Slash', 1.25);
+      }
+    }
   }
 
   const monsterDefRoll = monster.def.def * 1.1 + 4;
@@ -4028,8 +4570,14 @@ function performPlayerAttack(monster) {
     monster.inCombatWithPlayer = true;
     if (dmg > 0) {
       SFX.hit();
+      monster.flinch = 1.0;
+      monster.flashTimer = 0.12;
       monster.hp = Math.max(0, monster.hp - dmg);
       spawnHitSplatWorld(monster.pos, dmg, isSpec ? 'maxhit' : hitSplatKind(dmg, maxHit));
+
+      if (isSpec || wepKind === 'greataxe' || wepKind === 'greatsword' || dmg >= maxHit * 0.75) {
+        camState.shake = Math.min(0.12, 0.04 + (dmg / maxHit) * 0.06);
+      }
 
       if (style === 'magic' && STATE.activeSpell === 'blood_barrage') {
         const healAmt = Math.max(1, Math.floor(dmg * 0.25));
@@ -4069,7 +4617,8 @@ function performPlayerAttack(monster) {
   };
 
   if ((style === 'rapid' || style === 'ranged')) {
-    SFX.bow();
+    if (wepKind === 'crossbow') SFX.crossbow();
+    else SFX.bow();
     const wep = ITEMS[STATE.equipment.weapon];
     if (isSpec && (wep?.id === 'ancient_bow' || wep?.id === 'armadyl_crossbow')) {
       spawnPiercingBeam(player.pos, monster.pos, wep.id === 'armadyl_crossbow' ? 0xfde047 : 0x22d3ee);
@@ -4080,19 +4629,29 @@ function performPlayerAttack(monster) {
     const sp = SPELLS.find(x => x.id === STATE.activeSpell) || SPELLS[0];
     spawnSpellProjectile(sp, player.pos, monster.pos, applyDamage);
   } else {
+    if (wepKind === 'greataxe' || wepKind === 'greatsword') SFX.heavyChop();
+    else if (wepKind === 'mace') SFX.crush();
+    else if (wepKind === 'whip') SFX.whipCrack();
+    else SFX.slash();
     spawnMeleeSlashEffect(ITEMS[STATE.equipment.weapon], player.pos, player.yaw, monster.pos, isSpec);
     applyDamage();
   }
 }
 
+function wpKindIsChop(kind) {
+  return kind === 'greataxe' || kind === 'mace';
+}
+
 function handleMonsterDeath(monster) {
+  monster.isDying = true;
+  monster.dyingTimer = 0.85;
   monster.dead = true;
   monster.inCombatWithPlayer = false;
-  monster.respawnTimer = 6.5;
-  monster.rig.group.visible = false;
+  monster.respawnTimer = 7.5;
   if (player.targetEntity && player.targetEntity.ref === monster) {
     player.targetEntity = null;
   }
+  spawnBurst(monster.pos.clone().add(new THREE.Vector3(0, 0.8, 0)), 6, 0x64748b, 0.6, 1.4);
 
   addChatMessage(`Defeated <b>${monster.def.name}</b> (Lv-${monster.def.level}).`, 'combat');
   const kill = registerKill(STATE, monster.typeKey);
@@ -4254,9 +4813,16 @@ function performResourceGather(node) {
   }
 
   player.attackAnim = 1.0;
-  if (def.skill === 'woodcutting') SFX.chop();
-  else if (def.skill === 'mining') SFX.mine();
-  else SFX.fish();
+  if (def.skill === 'woodcutting') {
+    SFX.chop();
+    if (player.blenderAnimator) player.blenderAnimator.playAction('Chop', 1.2);
+  } else if (def.skill === 'mining') {
+    SFX.mine();
+    if (player.blenderAnimator) player.blenderAnimator.playAction('Mine', 1.2);
+  } else {
+    SFX.fish();
+    if (player.blenderAnimator) player.blenderAnimator.playAction('Fish', 1.15);
+  }
 
   const successChance = Math.min(0.92, 0.50 + (skillLvl - def.req) * 0.02);
   if (Math.random() <= successChance) {
@@ -4294,9 +4860,6 @@ function renderMinimap() {
   ctx.translate(cx, cy);
   ctx.rotate(camState.yaw - Math.PI);
 
-  const compass = document.getElementById('compass-badge');
-  if (compass) compass.style.transform = `rotate(${(camState.yaw - Math.PI)}rad)`;
-
   WORLD_REGIONS.forEach(reg => {
     const rx = (reg.x - player.pos.x) * scale;
     const rz = (reg.z - player.pos.z) * scale;
@@ -4310,7 +4873,7 @@ function renderMinimap() {
   });
 
   // River Strip
-  ctx.strokeStyle = '#0ea5e9';
+  ctx.strokeStyle = '#223842';
   ctx.lineWidth = 14;
   ctx.beginPath();
   for (let z = -110; z <= 110; z += 10) {
@@ -4322,33 +4885,33 @@ function renderMinimap() {
   }
   ctx.stroke();
 
-  // Resource Nodes (Cyan)
+  // Resource Nodes (Muted Slate / Iron)
   resourceNodesList.forEach(r => {
     if (r.depleted) return;
     const px = (r.pos.x - player.pos.x) * scale;
     const pz = (r.pos.z - player.pos.z) * scale;
-    ctx.fillStyle = '#38bdf8';
+    ctx.fillStyle = '#64748b';
     ctx.fillRect(px - 2, pz - 2, 4, 4);
   });
 
-  // NPCs, Altars & Forges (Gold)
+  // NPCs, Altars & Forges (Nordic Muted Brass)
   npcList.forEach(n => {
     const px = (n.pos.x - player.pos.x) * scale;
     const pz = (n.pos.z - player.pos.z) * scale;
     ctx.beginPath();
     ctx.arc(px, pz, 3.5, 0, Math.PI * 2);
-    ctx.fillStyle = '#fde047';
+    ctx.fillStyle = '#c5a059';
     ctx.fill();
   });
 
-  // Live Monsters (Red / Boss Orange)
+  // Live Monsters (Nordic Blood Crimson)
   monstersList.forEach(m => {
     if (m.dead) return;
     const px = (m.pos.x - player.pos.x) * scale;
     const pz = (m.pos.z - player.pos.z) * scale;
     ctx.beginPath();
     ctx.arc(px, pz, m.typeKey === 'elvarg_dragon' ? 5.5 : 3.2, 0, Math.PI * 2);
-    ctx.fillStyle = m.typeKey === 'elvarg_dragon' ? '#f97316' : '#ef4444';
+    ctx.fillStyle = m.typeKey === 'elvarg_dragon' ? '#b91c1c' : '#881337';
     ctx.fill();
   });
 
@@ -4364,13 +4927,17 @@ function renderMinimap() {
   ctx.stroke();
 }
 
-function worldToScreen(vec3) {
-  const v = vec3.clone().project(camera);
+function worldToScreenPos(x, y, z) {
+  _tmpScratchVec.set(x, y, z).project(camera);
   return {
-    x: (v.x * 0.5 + 0.5) * window.innerWidth,
-    y: (-(v.y * 0.5) + 0.5) * window.innerHeight,
-    visible: v.z < 1.0
+    x: (_tmpScratchVec.x * 0.5 + 0.5) * window.innerWidth,
+    y: (-(_tmpScratchVec.y * 0.5) + 0.5) * window.innerHeight,
+    visible: _tmpScratchVec.z < 1.0
   };
+}
+
+function worldToScreen(vec3) {
+  return worldToScreenPos(vec3.x, vec3.y, vec3.z);
 }
 
 const LANDMARKS = [
@@ -4401,7 +4968,8 @@ function updateLandmarkLabels() {
       el.style.display = 'none';
       return;
     }
-    const sp = worldToScreen(new THREE.Vector3(mark.x, getTerrainHeight(mark.x, mark.z) + mark.y, mark.z));
+    const my = getTerrainHeight(mark.x, mark.z) + mark.y;
+    const sp = worldToScreenPos(mark.x, my, mark.z);
     if (!sp.visible) {
       el.style.display = 'none';
       return;
@@ -4428,7 +4996,7 @@ function updateFloatingWorldLabels() {
     if (p.overhead && STATE.activePrayers.has(p.id)) overheadPrayerId = p.id;
   });
   if (overheadPrayerId) {
-    const sp = worldToScreen(player.pos.clone().add(new THREE.Vector3(0, 2.8, 0)));
+    const sp = worldToScreenPos(player.pos.x, player.pos.y + 2.8, player.pos.z);
     if (sp.visible) {
       playerOverheadEl.style.display = 'flex';
       playerOverheadEl.style.left = sp.x + 'px';
@@ -4458,7 +5026,7 @@ function updateFloatingWorldLabels() {
       return;
     }
     const topY = m.typeKey === 'elvarg_dragon' ? 4.6 : (2.4 * (m.def.scale || 1));
-    const sp = worldToScreen(m.pos.clone().add(new THREE.Vector3(0, topY, 0)));
+    const sp = worldToScreenPos(m.pos.x, m.pos.y + topY, m.pos.z);
     if (!sp.visible) {
       m.labelEl.style.display = 'none';
       return;
@@ -4503,7 +5071,7 @@ function updateFloatingWorldLabels() {
       n.el.style.display = 'none';
       return;
     }
-    const sp = worldToScreen(n.pos.clone().add(new THREE.Vector3(0, n.yOffset || 2.8, 0)));
+    const sp = worldToScreenPos(n.pos.x, n.pos.y + (n.yOffset || 2.8), n.pos.z);
     if (!sp.visible) {
       n.el.style.display = 'none';
       return;
@@ -4539,9 +5107,16 @@ function gameLoop(now) {
     if (player.downedTimer <= 0) finishRespawn();
   } else if (getEquipmentBonuses().matchedSet) {
     setBonusTimer += dt;
-    if (setBonusTimer > 1.7) {
+    const bon = getEquipmentBonuses();
+    const threshold = bon.isFullKit ? 1.25 : 1.7;
+    if (setBonusTimer > threshold) {
       setBonusTimer = 0;
-      spawnExpandingRing(player.pos, 0xfde047, 0.55, 1.8, 0.42, 0.55);
+      if (bon.isFullKit) {
+        spawnExpandingRing(player.pos, 0x94a3b8, 0.55, 2.2, 0.45, 0.65);
+        spawnExpandingRing(player.pos, 0xc5a059, 0.35, 1.5, 0.35, 0.45);
+      } else {
+        spawnExpandingRing(player.pos, 0xc5a059, 0.55, 1.8, 0.42, 0.55);
+      }
     }
   }
 
@@ -4589,15 +5164,17 @@ function gameLoop(now) {
   if (!player.downed && (keysPressed['KeyW'] || keysPressed['ArrowUp'])) forwardInput += 1;
   if (!player.downed && (keysPressed['KeyS'] || keysPressed['ArrowDown'])) forwardInput -= 0.75;
 
+  let hasMoveIntent = false;
+  let moveDirX = 0;
+  let moveDirZ = 0;
+
   if (forwardInput !== 0) {
-    manualMoving = true;
+    hasMoveIntent = true;
     player.targetPos = null;
     player.targetEntity = null;
-    const vx = Math.sin(player.yaw) * forwardInput * moveSpeed;
-    const vz = Math.cos(player.yaw) * forwardInput * moveSpeed;
-    const stepped = moveWithCollision(player.pos.x, player.pos.z, vx * dt, vz * dt);
-    player.pos.x = stepped.x;
-    player.pos.z = stepped.z;
+    const sign = forwardInput > 0 ? 1 : -0.75;
+    moveDirX = Math.sin(player.yaw) * sign;
+    moveDirZ = Math.cos(player.yaw) * sign;
     if (!camState.isDragging) {
       camState.manualOffset *= Math.pow(0.15, dt);
     }
@@ -4635,10 +5212,9 @@ function gameLoop(now) {
       player.yaw = lerpAngle(player.yaw, desiredYaw, Math.min(1, dt * 10));
 
       if (dist > stopDist) {
-        manualMoving = true;
-        const stepped = moveWithCollision(player.pos.x, player.pos.z, (dx / dist) * moveSpeed * dt, (dz / dist) * moveSpeed * dt);
-        player.pos.x = stepped.x;
-        player.pos.z = stepped.z;
+        hasMoveIntent = true;
+        moveDirX = dx / dist;
+        moveDirZ = dz / dist;
         if (!camState.isDragging) camState.manualOffset *= Math.pow(0.25, dt);
       } else {
         if (tType === 'interactive') {
@@ -4673,16 +5249,29 @@ function gameLoop(now) {
     const dz = player.targetPos.z - player.pos.z;
     const dist = Math.hypot(dx, dz);
     if (dist > 0.45) {
-      manualMoving = true;
+      hasMoveIntent = true;
       const desiredYaw = Math.atan2(dx, dz);
       player.yaw = lerpAngle(player.yaw, desiredYaw, Math.min(1, dt * 10));
-      const stepped = moveWithCollision(player.pos.x, player.pos.z, (dx / dist) * moveSpeed * dt, (dz / dist) * moveSpeed * dt);
-      player.pos.x = stepped.x;
-      player.pos.z = stepped.z;
+      moveDirX = dx / dist;
+      moveDirZ = dz / dist;
       if (!camState.isDragging) camState.manualOffset *= Math.pow(0.25, dt);
     } else {
       player.targetPos = null;
     }
+  }
+
+  // Smooth Acceleration & Deceleration Momentum
+  const targetSpeed = hasMoveIntent ? moveSpeed : 0;
+  const accelRate = hasMoveIntent ? 16 : 12;
+  player.currentSpeed = (player.currentSpeed ?? 0) + (targetSpeed - (player.currentSpeed ?? 0)) * Math.min(1, dt * accelRate);
+  if (!hasMoveIntent && Math.abs(player.currentSpeed) < 0.05) {
+    player.currentSpeed = 0;
+  }
+
+  if (player.currentSpeed > 0.02 && (moveDirX !== 0 || moveDirZ !== 0)) {
+    const stepped = moveWithCollision(player.pos.x, player.pos.z, moveDirX * player.currentSpeed * dt, moveDirZ * player.currentSpeed * dt);
+    player.pos.x = stepped.x;
+    player.pos.z = stepped.z;
   }
 
   if (player.actionCooldown > 0) player.actionCooldown -= dt;
@@ -4697,43 +5286,164 @@ function gameLoop(now) {
       player.jumpVel = 0;
     }
   } else {
-    player.pos.y = groundY;
+    // Smooth terrain follow
+    player.pos.y += (groundY - player.pos.y) * Math.min(1, dt * 18);
   }
 
-  player.isMoving = manualMoving;
+  player.isMoving = player.currentSpeed > 0.4;
   player.meshGroup.position.copy(player.pos);
-  player.meshGroup.rotation.y = player.yaw + Math.PI;
 
-  if (player.isMoving) {
-    player.animTime += dt * 11;
-    const swing = Math.sin(player.animTime) * 0.65;
-    player.parts.leftLegPivot.rotation.x = swing;
-    player.parts.rightLegPivot.rotation.x = -swing;
-    player.parts.leftArmPivot.rotation.x = -swing * 0.6;
-    if (player.attackAnim <= 0) {
-      player.parts.rightArmPivot.rotation.x = swing * 0.6;
+  // Smooth Yaw & Turning Angular Velocity
+  const lastMeshYaw = player.meshGroup.rotation.y;
+  const targetMeshYaw = player.yaw + Math.PI;
+  player.meshGroup.rotation.y = lerpAngle(player.meshGroup.rotation.y, targetMeshYaw, Math.min(1, dt * 12));
+
+  let turnDelta = (player.meshGroup.rotation.y - lastMeshYaw) / Math.max(0.001, dt);
+  if (turnDelta > Math.PI) turnDelta -= Math.PI * 2;
+  if (turnDelta < -Math.PI) turnDelta += Math.PI * 2;
+  player.yawVelocity = (player.yawVelocity ?? 0) * 0.8 + turnDelta * 0.2;
+
+  // Dynamic Bank Roll (lean subtly into turns while running)
+  const targetBank = player.isMoving ? THREE.MathUtils.clamp(-player.yawVelocity * 0.07, -0.20, 0.20) : 0;
+  player.bankRoll = (player.bankRoll ?? 0) + (targetBank - (player.bankRoll ?? 0)) * Math.min(1, dt * 10);
+  player.meshGroup.rotation.z = player.bankRoll;
+
+  // Dynamic cape physics: realistic cloth aerodynamics in Three.js coordinates
+  // Note: with Y-up & -Z forward, negative rotation.x swings cape BACKWARD (+Z away from body).
+  const updateCapePhysics = (isMoving, animTime) => {
+    if (!player.parts.capeMesh) return;
+    const isAva = player.parts.capeMesh.userData?.silhouette === 'ava';
+    if (isAva) {
+      player.parts.capeMesh.rotation.set(0, 0, 0);
+      return;
     }
-    if (player.parts.capeMesh) {
-      player.parts.capeMesh.rotation.x = 0.28 + Math.sin(player.animTime * 2) * 0.12;
+
+    // Dynamic backward leg clearance:
+    // In our rig, positive rotation.x swings thigh backward (+Z into the cape volume)
+    const leftLegRx = player.parts.leftLegPivot?.rotation.x ?? 0;
+    const rightLegRx = player.parts.rightLegPivot?.rotation.x ?? 0;
+    const maxRearLegKick = Math.max(0, leftLegRx, rightLegRx);
+    const rearLegClearance = maxRearLegKick * 0.55;
+
+    const speedRatio = player.currentSpeed / moveSpeed;
+    // Aerodynamic wind billow pushes cape BACKWARD (negative pitch) in slipstream
+    const windFlare = speedRatio * 0.44;
+
+    const flutter = isMoving
+      ? (Math.sin(animTime * 2.2) * 0.05 + Math.cos(animTime * 4.4) * 0.02)
+      : (Math.sin(animTime * 0.8) * 0.012);
+
+    // Resting backward drape: -0.12 rad cleanly arches backward past buttocks & belt
+    const baseBackwardDrape = isMoving ? 0.28 : 0.12;
+    const targetWorldBackwardPitch = -(baseBackwardDrape + windFlare + rearLegClearance + flutter);
+
+    // Counteract torso pitch so torso forward lean never pulls cape into the body
+    const torsoPitch = player.parts.torso?.rotation.x ?? 0;
+    const targetLocalPitch = targetWorldBackwardPitch - torsoPitch;
+
+    // Centrifugal roll & inertia during turns: cloth swings outward away from turn
+    const targetRoll = THREE.MathUtils.clamp(player.yawVelocity * 0.22, -0.38, 0.38) + (isMoving ? Math.sin(animTime * 1.8) * 0.03 : 0);
+    const targetYaw = THREE.MathUtils.clamp(-player.yawVelocity * 0.10, -0.20, 0.20);
+
+    player.capeAngleX = (player.capeAngleX ?? -0.12) + (targetLocalPitch - (player.capeAngleX ?? -0.12)) * Math.min(1, dt * 10);
+    player.capeAngleZ = (player.capeAngleZ ?? 0) + (targetRoll - (player.capeAngleZ ?? 0)) * Math.min(1, dt * 8);
+    player.capeAngleY = (player.capeAngleY ?? 0) + (targetYaw - (player.capeAngleY ?? 0)) * Math.min(1, dt * 8);
+
+    player.parts.capeMesh.rotation.x = player.capeAngleX;
+    player.parts.capeMesh.rotation.z = player.capeAngleZ;
+    player.parts.capeMesh.rotation.y = player.capeAngleY;
+
+    if (player.parts.capeMesh.userData?.silhouette === 'lava-cape' && Math.random() < 0.22) {
+      const emberPos = player.pos.clone().add(new THREE.Vector3(
+        -Math.sin(player.yaw) * 0.45 + (Math.random() - 0.5) * 0.2,
+        0.5 + Math.random() * 0.3,
+        -Math.cos(player.yaw) * 0.45 + (Math.random() - 0.5) * 0.2
+      ));
+      spawnBurst(emberPos, 1, 0xf97316, 0.35, 0.6);
+    }
+  };
+
+  if (player.blenderAnimator) {
+    player.animTime += dt * (player.isMoving ? 4.5 : 2.0);
+    player.blenderAnimator.setMoving(player.isMoving);
+    player.blenderAnimator.setWalkSpeed(player.currentSpeed / moveSpeed);
+    player.blenderAnimator.update(dt);
+    updateCapePhysics(player.isMoving, player.animTime);
+
+    if (player.attackAnim > 0) {
+      player.attackAnim = Math.max(0, player.attackAnim - dt * 3.6);
     }
   } else {
-    player.animTime += dt * 2.2;
-    const breath = Math.sin(player.animTime) * 0.04;
-    player.parts.leftLegPivot.rotation.x *= 0.85;
-    player.parts.rightLegPivot.rotation.x *= 0.85;
-    player.parts.leftArmPivot.rotation.x = breath;
-    if (player.attackAnim <= 0) {
-      player.parts.rightArmPivot.rotation.x = -breath;
+    if (player.isMoving) {
+      player.animTime += dt * (player.currentSpeed / moveSpeed * 10);
+      const phase = player.animTime;
+      const swing = Math.sin(phase) * 0.62;
+      const bob = Math.cos(phase * 2) * 0.03;
+      const sway = Math.sin(phase) * 0.02;
+
+      player.parts.leftLegPivot.rotation.x = swing;
+      player.parts.rightLegPivot.rotation.x = -swing;
+      player.parts.leftLegPivot.rotation.z = sway * 0.5;
+      player.parts.rightLegPivot.rotation.z = -sway * 0.5;
+
+      if (player.parts.leftKneePivot) player.parts.leftKneePivot.rotation.x = 0.15 + Math.max(0, -swing) * 0.85;
+      if (player.parts.rightKneePivot) player.parts.rightKneePivot.rotation.x = 0.15 + Math.max(0, swing) * 0.85;
+
+      if (player.parts.torso) {
+        player.parts.torso.rotation.x = 0.12 + Math.cos(phase * 2) * 0.02;
+        player.parts.torso.rotation.y = -Math.sin(phase) * 0.12;
+      }
+
+      player.parts.leftArmPivot.rotation.x = -swing * 0.58;
+      if (player.parts.leftElbowPivot) player.parts.leftElbowPivot.rotation.x = -0.35 - Math.max(0, swing) * 0.5;
+
+      if (player.attackAnim <= 0) {
+        player.parts.rightArmPivot.rotation.x = swing * 0.58;
+        if (player.parts.rightElbowPivot) player.parts.rightElbowPivot.rotation.x = -0.35 - Math.max(0, -swing) * 0.5;
+      }
+      updateCapePhysics(true, player.animTime);
+    } else {
+      player.animTime += dt * 2.0;
+      const breath = Math.sin(player.animTime) * 0.035;
+      player.parts.leftLegPivot.rotation.x *= 0.85;
+      player.parts.rightLegPivot.rotation.x *= 0.85;
+      if (player.parts.torso) {
+        player.parts.torso.rotation.x = breath * 0.5;
+        player.parts.torso.rotation.y *= 0.88;
+      }
+      player.parts.leftArmPivot.rotation.x = breath;
+      if (player.parts.leftElbowPivot) player.parts.leftElbowPivot.rotation.x = -0.32 - breath * 0.5;
+      if (player.attackAnim <= 0) {
+        player.parts.rightArmPivot.rotation.x = -breath;
+        if (player.parts.rightElbowPivot) player.parts.rightElbowPivot.rotation.x = -0.32 + breath * 0.5;
+      }
+      updateCapePhysics(false, player.animTime);
     }
-    if (player.parts.capeMesh) {
-      player.parts.capeMesh.rotation.x = 0.08 + breath * 0.5;
+
+    if (player.attackAnim > 0) {
+      player.attackAnim = Math.max(0, player.attackAnim - dt * 3.6);
+      const slashAngle = Math.sin(player.attackAnim * Math.PI) * 1.65;
+      const k = player.activeWeaponKind;
+      if (k === 'greataxe') {
+        player.parts.rightArmPivot.rotation.x = -slashAngle;
+        if (player.parts.leftArmPivot) player.parts.leftArmPivot.rotation.x = -slashAngle * 0.85;
+      } else if (k === 'greatsword') {
+        player.parts.rightArmPivot.rotation.x = -slashAngle * 1.1;
+        if (player.parts.leftArmPivot) player.parts.leftArmPivot.rotation.x = -slashAngle * 0.9;
+      } else if (k === 'mace') {
+        player.parts.rightArmPivot.rotation.x = -slashAngle * 1.15;
+      } else if (k === 'bow' || k === 'crossbow') {
+        if (player.parts.leftArmPivot) player.parts.leftArmPivot.rotation.x = -1.2;
+        player.parts.rightArmPivot.rotation.x = -slashAngle * 0.8;
+      } else if (k === 'staff' || k === 'wand') {
+        player.parts.rightArmPivot.rotation.x = -1.35 * Math.sin(player.attackAnim * Math.PI);
+      } else {
+        player.parts.rightArmPivot.rotation.x = -slashAngle;
+      }
     }
   }
-
-  if (player.attackAnim > 0) {
-    player.attackAnim = Math.max(0, player.attackAnim - dt * 3.6);
-    const slashAngle = Math.sin(player.attackAnim * Math.PI) * 1.65;
-    player.parts.rightArmPivot.rotation.x = -slashAngle;
+  for (let i = 0; i < npcAnimatorsList.length; i++) {
+    npcAnimatorsList[i].update(dt);
   }
   if (player.parts.whipRig) {
     const stretch = player.attackAnim > 0 ? Math.sin(player.attackAnim * Math.PI) : 0;
@@ -4772,10 +5482,18 @@ function gameLoop(now) {
   const terrainUnderCam = getTerrainHeight(camTargetX, camTargetZ);
   const camTargetY = Math.max(terrainUnderCam + 1.2, player.pos.y + 1.85 + vertDist);
 
-  camera.position.lerp(new THREE.Vector3(camTargetX, camTargetY, camTargetZ), Math.min(1, dt * 12));
-  const lookTarget = new THREE.Vector3(player.pos.x, player.pos.y + 1.85, player.pos.z);
-  camState.currentLookAt.lerp(lookTarget, Math.min(1, dt * 14));
+  _camTargetVec.set(camTargetX, camTargetY, camTargetZ);
+  camera.position.lerp(_camTargetVec, Math.min(1, dt * 12));
+  _lookTargetVec.set(player.pos.x, player.pos.y + 1.85, player.pos.z);
+  camState.currentLookAt.lerp(_lookTargetVec, Math.min(1, dt * 14));
   camera.lookAt(camState.currentLookAt);
+
+  // Micro-Camera Shake Impulse
+  if (camState.shake > 0.001) {
+    camState.shake *= Math.pow(0.012, dt);
+    camera.position.x += (Math.random() - 0.5) * camState.shake;
+    camera.position.y += (Math.random() - 0.5) * camState.shake;
+  }
 
   sunLight.position.set(player.pos.x + 38, player.pos.y + 58, player.pos.z + 28);
   sunLight.target.position.copy(player.pos);
@@ -4783,14 +5501,32 @@ function gameLoop(now) {
 
   // Monsters Update
   monstersList.forEach(m => {
+    if (m.isDying) {
+      m.dyingTimer -= dt;
+      const progress = Math.max(0, 1 - m.dyingTimer / 0.85);
+      m.rig.group.rotation.x = progress * (Math.PI / 2.3);
+      m.rig.group.position.y = getTerrainHeight(m.pos.x, m.pos.z) - progress * 0.45;
+      if (m.dyingTimer <= 0) {
+        m.isDying = false;
+        m.rig.group.visible = false;
+        m.rig.group.rotation.x = 0;
+      }
+      return;
+    }
+
     if (m.dead) {
       m.respawnTimer -= dt;
       if (m.respawnTimer <= 0) {
         m.dead = false;
+        m.isDying = false;
         m.hp = m.maxHp;
         m.breathCount = 0;
+        m.flinch = 0;
         m.inCombatWithPlayer = false;
         m.pos.copy(m.spawnPos);
+        m.rig.group.position.copy(m.spawnPos);
+        m.rig.group.position.y = getTerrainHeight(m.spawnPos.x, m.spawnPos.z);
+        m.rig.group.rotation.set(0, 0, 0);
         m.rig.group.visible = true;
       }
       return;
@@ -4809,7 +5545,8 @@ function gameLoop(now) {
       if (dist > 26) {
         m.inCombatWithPlayer = false;
       } else {
-        m.rig.group.rotation.y = Math.atan2(dx, dz) + Math.PI;
+        const targetMonYaw = Math.atan2(dx, dz) + Math.PI;
+        m.rig.group.rotation.y = lerpAngle(m.rig.group.rotation.y, targetMonYaw, Math.min(1, dt * 9));
         const atkRange = (m.def.style === 'magic' || m.def.style === 'ranged') ? 11.0 : 2.9;
         if (dist > atkRange) {
           const stepped = moveWithCollision(m.pos.x, m.pos.z, (dx / dist) * 5.2 * dt, (dz / dist) * 5.2 * dt);
@@ -4839,7 +5576,8 @@ function gameLoop(now) {
         const dz = m.wanderTarget.z - m.pos.z;
         const dist = Math.hypot(dx, dz);
         if (dist > 0.3) {
-          m.rig.group.rotation.y = Math.atan2(dx, dz) + Math.PI;
+          const targetWanderYaw = Math.atan2(dx, dz) + Math.PI;
+          m.rig.group.rotation.y = lerpAngle(m.rig.group.rotation.y, targetWanderYaw, Math.min(1, dt * 7));
           const stepped = moveWithCollision(m.pos.x, m.pos.z, (dx / dist) * 1.8 * dt, (dz / dist) * 1.8 * dt);
           m.pos.x = stepped.x;
           m.pos.z = stepped.z;
@@ -4925,9 +5663,11 @@ function gameLoop(now) {
       });
     }
   }
-  if (miniTick >= 0.12 || Math.abs(camState.yaw - lastMiniYaw) > 0.03) {
+  const compass = document.getElementById('compass-badge');
+  if (compass) compass.style.transform = `rotate(${(camState.yaw - Math.PI)}rad)`;
+
+  if (miniTick >= 0.08 || Math.hypot(player.pos.x - lastLabelX, player.pos.z - lastLabelZ) > 0.4) {
     miniTick = 0;
-    lastMiniYaw = camState.yaw;
     renderMinimap();
   }
   const tickArc = document.getElementById('tick-arc');
@@ -4936,6 +5676,22 @@ function gameLoop(now) {
     grassInstanced.material.uniforms.uTime.value = elapsedSec;
   }
   renderer.render(scene, camera);
+
+  frameCounter++;
+  if (now - lastFpsTime >= 500) {
+    const elapsed = now - lastFpsTime;
+    telemetryInfo.fps = Math.round((frameCounter * 1000) / elapsed);
+    telemetryInfo.frameTimeMs = Number((elapsed / frameCounter).toFixed(1));
+    frameCounter = 0;
+    lastFpsTime = now;
+
+    const fpsEl = document.getElementById('perf-fps');
+    if (fpsEl) fpsEl.textContent = `${telemetryInfo.fps} FPS (${telemetryInfo.frameTimeMs}ms)`;
+    const callsEl = document.getElementById('perf-calls');
+    if (callsEl && renderer) {
+      callsEl.textContent = `${renderer.info.render.calls} calls • ${Math.round(renderer.info.render.triangles / 1000)}k tris`;
+    }
+  }
 }
 
 let setBonusTimer = 0;
@@ -4966,6 +5722,7 @@ function onWindowResize() {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(getQualityDpr(currentQuality));
 }
 
 
@@ -4994,6 +5751,7 @@ function openQuestsModal() {
 
 function openSettingsModal() {
   syncSettingsButtons();
+  syncGraphicsButtons();
   openModal('settings-modal');
 }
 
@@ -5120,6 +5878,8 @@ function wireBridge() {
   window.openBankModal = openBankModal;
   window.openQuestsModal = openQuestsModal;
   window.openSettingsModal = openSettingsModal;
+  window.cycleGraphicsQuality = cycleGraphicsQuality;
+  window.toggleOutlines = toggleOutlines;
   window.toggleXpMultiplier = toggleXpMultiplier;
   window.cycleTimeOfDay = cycleTimeOfDay;
   window.toggleAudio = toggleAudio;
@@ -5191,5 +5951,6 @@ window.addEventListener('DOMContentLoaded', () => {
   }
   const startReg = WORLD_REGIONS.find(r => r.id === STATE.currentRegion) || WORLD_REGIONS[0];
   triggerRegionBanner(startReg);
+  (window as unknown as { __DEBUG?: unknown }).__DEBUG = { STATE, player, camState, rebuildPlayerEquipmentMeshes, ITEMS };
   requestAnimationFrame(gameLoop);
 });

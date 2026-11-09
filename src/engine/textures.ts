@@ -260,10 +260,16 @@ export function assignProjectedUvs(
   minSpan = 1
 ): void {
   if (geometry.userData.albedoUv) return;
-  const uv = geometry.getAttribute('uv') as THREE.BufferAttribute | undefined;
   const pos = geometry.getAttribute('position') as THREE.BufferAttribute | undefined;
-  if (!uv || !pos) return;
-  geometry.computeVertexNormals();
+  if (!pos) return;
+  let uv = geometry.getAttribute('uv') as THREE.BufferAttribute | undefined;
+  if (!uv) {
+    uv = new THREE.BufferAttribute(new Float32Array(pos.count * 2), 2);
+    geometry.setAttribute('uv', uv);
+  }
+  if (!geometry.getAttribute('normal')) {
+    geometry.computeVertexNormals();
+  }
   const norm = geometry.getAttribute('normal') as THREE.BufferAttribute;
   const divisor = metersPerTile * textureRepeat;
   for (let i = 0; i < pos.count; i++) {
@@ -310,9 +316,13 @@ export function assignProjectedUvs(
  * Close a wrap seam on a short edge. Large faces keep their span so a wall still tiles.
  */
 function stitchUvWraps(geometry: THREE.BufferGeometry, metersPerTile: number): void {
-  const uv = geometry.getAttribute('uv') as THREE.BufferAttribute | undefined;
   const pos = geometry.getAttribute('position') as THREE.BufferAttribute | undefined;
-  if (!uv || !pos) return;
+  if (!pos) return;
+  let uv = geometry.getAttribute('uv') as THREE.BufferAttribute | undefined;
+  if (!uv) {
+    uv = new THREE.BufferAttribute(new Float32Array(pos.count * 2), 2);
+    geometry.setAttribute('uv', uv);
+  }
   const index = geometry.getIndex();
   const triCount = index ? index.count / 3 : Math.floor(pos.count / 3);
   const at = (n: number) => (index ? index.getX(n) : n);
@@ -355,9 +365,13 @@ export function offsetAlbedoPhase(root: THREE.Object3D, phaseU: number, phaseV: 
 
 /** Ground UVs follow world XZ so hills do not flip to a side projection. */
 export function assignGroundUvs(geometry: THREE.BufferGeometry): void {
-  const uv = geometry.getAttribute('uv') as THREE.BufferAttribute | undefined;
   const pos = geometry.getAttribute('position') as THREE.BufferAttribute | undefined;
-  if (!uv || !pos) return;
+  if (!pos) return;
+  let uv = geometry.getAttribute('uv') as THREE.BufferAttribute | undefined;
+  if (!uv) {
+    uv = new THREE.BufferAttribute(new Float32Array(pos.count * 2), 2);
+    geometry.setAttribute('uv', uv);
+  }
   const divisor = GROUND_TILE_METERS * GROUND_REPEAT;
   for (let i = 0; i < pos.count; i++) {
     uv.setXY(i, pos.getX(i) / divisor, pos.getZ(i) / divisor);

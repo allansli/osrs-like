@@ -1,19 +1,20 @@
 import * as THREE from 'three';
 import type { ItemDef } from '../data/items';
+import { cloneBlenderGearNode, hasBlenderGearTemplate } from './blenderGear';
 import { LEAN_RIG } from './humanoid';
 import { facetMaterial } from './materials';
 import { albedoForItem, albedoMaterial, type AlbedoId } from './textures';
 
 export type GearSilhouette =
-  | 'wizard-hat' | 'robin-hat' | 'hood' | 'sheikah-mask' | 'circlet'
+  | 'wizard-hat' | 'infinity-hat' | 'robin-hat' | 'hood' | 'sheikah-mask' | 'circlet'
   | 'helm' | 'neitiznot-helm' | 'horned-helm' | 'armadyl-helm'
   | 'plate-body' | 'bandos-chest' | 'trim-plate' | 'dhide-body' | 'robe-top' | 'tunic'
   | 'robe-skirt' | 'tassets' | 'dhide-chaps' | 'platelegs' | 'trousers'
-  | 'crossbow' | 'bow' | 'ancient-bow' | 'greataxe' | 'mace' | 'wand'
-  | 'staff' | 'ancient-staff' | 'ahrim-staff' | 'whip' | 'scimitar' | 'sword' | 'greatsword'
-  | 'defender' | 'elysian' | 'hylian-shield' | 'kiteshield'
+  | 'crossbow' | 'bow' | 'ancient-bow' | 'twisted-bow' | 'blowpipe' | 'greataxe' | 'mace' | 'wand'
+  | 'staff' | 'ancient-staff' | 'ahrim-staff' | 'shadow-staff' | 'whip' | 'scimitar' | 'sword' | 'greatsword'
+  | 'defender' | 'elysian' | 'arcane-shield' | 'ward' | 'twisted-buckler' | 'book' | 'hylian-shield' | 'kiteshield'
   | 'amulet' | 'ring'
-  | 'pegasian-boots' | 'primordial-boots' | 'eternal-boots' | 'boots'
+  | 'pegasian-boots' | 'primordial-boots' | 'eternal-boots' | 'infinity-boots' | 'boots'
   | 'gloves' | 'ava' | 'lava-cape' | 'cape'
   | 'none';
 
@@ -74,12 +75,15 @@ export function gearSilhouette(item: ItemDef | null | undefined): GearSilhouette
   const id = item.id;
   const kind = item.iconKind || '';
 
-  if (item.slot === 'weapon' || ['scimitar', 'sword', 'greatsword', 'bow', 'crossbow', 'staff', 'wand', 'whip', 'greataxe', 'mace'].includes(kind)) {
+  if (item.slot === 'weapon' || ['scimitar', 'sword', 'greatsword', 'bow', 'crossbow', 'staff', 'wand', 'whip', 'greataxe', 'mace', 'blowpipe'].includes(kind)) {
+    if (kind === 'blowpipe' || id === 'toxic_blowpipe') return 'blowpipe';
     if (kind === 'crossbow') return 'crossbow';
-    if (kind === 'bow') return id === 'ancient_bow' ? 'ancient-bow' : 'bow';
+    if (id === 'twisted_bow') return 'twisted-bow';
+    if (kind === 'bow') return (id === 'ancient_bow' || id === 'crystal_bow') ? 'ancient-bow' : 'bow';
     if (kind === 'greataxe') return 'greataxe';
     if (kind === 'mace') return 'mace';
     if (kind === 'wand') return 'wand';
+    if (id === 'tumeken_shadow') return 'shadow-staff';
     if (kind === 'staff') {
       if (id === 'ancient_staff') return 'ancient-staff';
       if (id === 'ahrim_staff') return 'ahrim-staff';
@@ -92,10 +96,11 @@ export function gearSilhouette(item: ItemDef | null | undefined): GearSilhouette
   }
 
   if (item.slot === 'head' || ['hat', 'hood', 'circlet', 'head'].includes(kind)) {
+    if (id === 'infinity_hat') return 'infinity-hat';
     if (id === 'robin_hat') return 'robin-hat';
     if (kind === 'hat') return 'wizard-hat';
     if (id === 'sheikah_mask') return 'sheikah-mask';
-    if (kind === 'hood') return 'hood';
+    if (kind === 'hood' || id === 'karil_coif' || id === 'masori_mask') return 'hood';
     if (kind === 'circlet') return 'circlet';
     if (id === 'neitiznot_helm') return 'neitiznot-helm';
     if (id === 'dharok_helm' || id === 'torva_helm' || id === 'dragon_helm') return 'horned-helm';
@@ -121,6 +126,10 @@ export function gearSilhouette(item: ItemDef | null | undefined): GearSilhouette
   }
 
   if (item.slot === 'shield') {
+    if (kind === 'book' || id === 'mages_book' || id.startsWith('tome_')) return 'book';
+    if (id === 'arcane_shield') return 'arcane-shield';
+    if (kind === 'ward' || id === 'elidinis_ward' || id === 'odium_ward') return 'ward';
+    if (kind === 'buckler' || id === 'twisted_buckler') return 'twisted-buckler';
     if (kind === 'defender' || id === 'dragon_defender') return 'defender';
     if (id === 'elysian_shield') return 'elysian';
     if (id === 'hylian_shield') return 'hylian-shield';
@@ -130,9 +139,10 @@ export function gearSilhouette(item: ItemDef | null | undefined): GearSilhouette
   if (item.slot === 'neck') return 'amulet';
   if (item.slot === 'ring') return 'ring';
   if (item.slot === 'feet') {
+    if (id === 'infinity_boots') return 'infinity-boots';
     if (id === 'pegasian_boots') return 'pegasian-boots';
     if (id === 'primordial_boots') return 'primordial-boots';
-    if (id === 'eternal_boots') return 'eternal-boots';
+    if (id === 'eternal_boots' || id === 'ancestral_boots') return 'eternal-boots';
     return 'boots';
   }
   if (item.slot === 'hands') return 'gloves';
@@ -190,9 +200,32 @@ function buildHelmShell(group: THREE.Group, item: ItemDef, withVisor: boolean): 
 
 export function buildHeadVisual(item: ItemDef): THREE.Group {
   const silhouette = gearSilhouette(item);
+  if (hasBlenderGearTemplate()) {
+    const bNode = cloneBlenderGearNode(`Gear_${silhouette}`, item);
+    if (bNode) return tag(bNode, item, silhouette);
+  }
   const group = tag(new THREE.Group(), item, silhouette);
   const color = worn(item);
   const trim = mat(item.trim);
+
+  if (silhouette === 'infinity-hat') {
+    const brim = part(group, new THREE.CylinderGeometry(0.28, 0.28, 0.024, 20), color, 0, 0.05, 0);
+    brim.scale.set(1.05, 1, 0.92);
+    const brimRim = part(group, new THREE.TorusGeometry(0.27, 0.015, 6, 20), trim, 0, 0.05, 0);
+    brimRim.rotation.x = Math.PI / 2;
+    const curve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(0, 0.05, 0),
+      new THREE.Vector3(0, 0.20, 0.02),
+      new THREE.Vector3(0, 0.35, 0.08),
+      new THREE.Vector3(0, 0.46, 0.16)
+    ]);
+    part(group, new THREE.TubeGeometry(curve, 14, 0.12, 8, false), color, 0, 0, 0);
+    const orbit = part(group, new THREE.TorusGeometry(0.16, 0.014, 6, 16), glow(item.trim || 0xf472b6, 0.8), 0, 0.26, 0.04);
+    orbit.rotation.x = Math.PI / 3;
+    orbit.rotation.y = 0.4;
+    part(group, new THREE.SphereGeometry(0.042, 8, 8), glow(item.trim || 0xf472b6, 0.9), 0, 0.48, 0.18);
+    return group;
+  }
 
   if (silhouette === 'wizard-hat') {
     const brim = part(group, new THREE.CylinderGeometry(0.26, 0.26, 0.03, 18), color, 0, 0.06, 0);
@@ -272,6 +305,18 @@ function pauldron(parent: THREE.Group, item: ItemDef, x: number, scale = 1): THR
 
 export function buildBodyVisual(item: ItemDef): AnchoredVisual {
   const silhouette = gearSilhouette(item);
+  if (hasBlenderGearTemplate()) {
+    const bTorso = cloneBlenderGearNode(`Gear_${silhouette}_torso`, item) || cloneBlenderGearNode(`Gear_${silhouette}`, item);
+    const bLeft = cloneBlenderGearNode(`Gear_${silhouette}_armL`, item);
+    const bRight = cloneBlenderGearNode(`Gear_${silhouette}_armR`, item);
+    if (bTorso || bLeft || bRight) {
+      return {
+        torso: bTorso ? tag(bTorso, item, silhouette) : null,
+        left: bLeft ? tag(bLeft, item, silhouette) : null,
+        right: bRight ? tag(bRight, item, silhouette) : null
+      };
+    }
+  }
   const torso = tag(new THREE.Group(), item, silhouette);
   const left = tag(new THREE.Group(), item, silhouette);
   const right = tag(new THREE.Group(), item, silhouette);
@@ -324,6 +369,18 @@ export function buildBodyVisual(item: ItemDef): AnchoredVisual {
 
 export function buildLegsVisual(item: ItemDef): AnchoredVisual {
   const silhouette = gearSilhouette(item);
+  if (hasBlenderGearTemplate()) {
+    const bTorso = cloneBlenderGearNode(`Gear_${silhouette}_torso`, item) || cloneBlenderGearNode(`Gear_${silhouette}`, item);
+    const bLeft = cloneBlenderGearNode(`Gear_${silhouette}_legL`, item);
+    const bRight = cloneBlenderGearNode(`Gear_${silhouette}_legR`, item);
+    if (bTorso || bLeft || bRight) {
+      return {
+        torso: bTorso ? tag(bTorso, item, silhouette) : null,
+        left: bLeft ? tag(bLeft, item, silhouette) : null,
+        right: bRight ? tag(bRight, item, silhouette) : null
+      };
+    }
+  }
   const torso = tag(new THREE.Group(), item, silhouette);
   const left = tag(new THREE.Group(), item, silhouette);
   const right = tag(new THREE.Group(), item, silhouette);
@@ -458,6 +515,16 @@ function buildBlade(item: ItemDef, kind: 'scimitar' | 'sword' | 'greatsword'): T
 
 export function buildWeaponVisual(item: ItemDef): WeaponVisual {
   const silhouette = gearSilhouette(item);
+  if (hasBlenderGearTemplate() && silhouette !== 'whip') {
+    const sacred = item.id === 'master_sword' || item.id === 'deity_sword' || silhouette === 'ancient-bow';
+    const bWep = cloneBlenderGearNode(`Gear_${silhouette}`, item, {
+      primaryExtra: sacred ? { emissive: item.color, emissiveIntensity: 0.45 } : undefined,
+      glowHex: silhouette === 'staff' || silhouette === 'ancient-staff' || silhouette === 'wand' ? item.color : undefined
+    });
+    if (bWep) {
+      return { group: tag(bWep, item, silhouette), whipRig: null };
+    }
+  }
   const group = tag(new THREE.Group(), item, silhouette);
 
   if (silhouette === 'crossbow') {
@@ -472,6 +539,44 @@ export function buildWeaponVisual(item: ItemDef): WeaponVisual {
     const tip = part(group, new THREE.ConeGeometry(0.02, 0.07, 6), glow(0xfef08a, 0.85), 0, 0.02, -0.18);
     tip.rotation.x = -Math.PI / 2;
     group.rotation.x = -0.45;
+    return { group, whipRig: null };
+  }
+
+  if (silhouette === 'blowpipe') {
+    part(group, new THREE.CylinderGeometry(0.026, 0.036, 0.76, 10), worn(item), 0, 0.12, 0);
+    [-0.03, 0.03].forEach((side) => {
+      const fang = part(group, new THREE.ConeGeometry(0.015, 0.09, 5), mat(item.trim || 0x34d399), side, 0.46, 0.01);
+      fang.rotation.z = side > 0 ? -0.2 : 0.2;
+    });
+    part(group, new THREE.SphereGeometry(0.045, 8, 8), glow(item.trim || 0x10b981, 0.9), 0, 0.42, 0);
+    part(group, new THREE.TorusGeometry(0.038, 0.012, 6, 12), mat(0x18181b), 0, -0.24, 0).rotation.x = Math.PI / 2;
+    return { group: aimForward(group, -Math.PI / 2.3), whipRig: null };
+  }
+
+  if (silhouette === 'twisted-bow') {
+    const bowCurve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(0, -0.74, 0.20),
+      new THREE.Vector3(0, -0.42, -0.18),
+      new THREE.Vector3(0, 0, -0.26),
+      new THREE.Vector3(0, 0.42, -0.18),
+      new THREE.Vector3(0, 0.74, 0.20)
+    ]);
+    part(group, new THREE.TubeGeometry(bowCurve, 20, 0.042, 8, false), worn(item), 0, 0, 0);
+    const vineCurve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(0.02, -0.68, 0.16),
+      new THREE.Vector3(-0.02, -0.32, -0.14),
+      new THREE.Vector3(0.02, 0, -0.22),
+      new THREE.Vector3(-0.02, 0.32, -0.14),
+      new THREE.Vector3(0.02, 0.68, 0.16)
+    ]);
+    part(group, new THREE.TubeGeometry(vineCurve, 18, 0.022, 6, false), mat(item.trim || 0xfde047), 0, 0, 0);
+    [-1, 1].forEach((dir) => {
+      part(group, new THREE.ConeGeometry(0.035, 0.16, 5), glow(item.trim || 0xfde047, 0.6), 0, dir * 0.78, 0.22).rotation.x = dir * 0.3;
+    });
+    const strMat = glow(item.trim || 0xfde047, 0.85);
+    const string = part(group, new THREE.CylinderGeometry(0.008, 0.008, 1.48, 6), strMat, 0, 0, 0.20);
+    string.userData.noOutline = true;
+    part(group, new THREE.CylinderGeometry(0.05, 0.05, 0.18, 8), mat(0x18181b), 0, 0, -0.24);
     return { group, whipRig: null };
   }
 
@@ -508,6 +613,18 @@ export function buildWeaponVisual(item: ItemDef): WeaponVisual {
     return { group: aimForward(group, -Math.PI / 2.7), whipRig: null };
   }
 
+  if (silhouette === 'shadow-staff') {
+    part(group, new THREE.CylinderGeometry(0.036, 0.04, 1.62, 10), mat(0x78350f, {}, 'wood'), 0, 0.36, 0);
+    part(group, new THREE.TorusGeometry(0.22, 0.022, 6, 16), mat(item.trim || 0xfacc15), 0, 1.28, 0);
+    part(group, new THREE.SphereGeometry(0.12, 14, 12), glow(0x38bdf8, 0.95), 0, 1.28, 0);
+    for (let i = 0; i < 6; i++) {
+      const ang = (i / 6) * Math.PI * 2;
+      const ray = part(group, new THREE.ConeGeometry(0.024, 0.12, 4), glow(item.trim || 0xfacc15, 0.8), 0, 1.28 + Math.sin(ang) * 0.26, Math.cos(ang) * 0.26);
+      ray.rotation.x = -ang;
+    }
+    return { group: aimForward(group, -Math.PI / 2.8), whipRig: null };
+  }
+
   if (silhouette === 'staff' || silhouette === 'ancient-staff' || silhouette === 'ahrim-staff') {
     part(group, new THREE.CylinderGeometry(0.04, 0.035, 1.55, 10), mat(item.id === 'ahrim_staff' ? item.color : 0x5c3a21, {}, 'wood'), 0, 0.35, 0);
     if (silhouette === 'ancient-staff') {
@@ -527,6 +644,10 @@ export function buildWeaponVisual(item: ItemDef): WeaponVisual {
   }
 
   if (silhouette === 'whip') {
+    if (hasBlenderGearTemplate()) {
+      const bWhip = cloneBlenderGearNode('Gear_whip', item);
+      if (bWhip) group.add(bWhip);
+    }
     const rest = [
       new THREE.Vector3(0, 0.02, 0.02),
       new THREE.Vector3(0.07, 0.26, -0.2),
@@ -560,7 +681,71 @@ export function buildWeaponVisual(item: ItemDef): WeaponVisual {
 
 export function buildShieldVisual(item: ItemDef): THREE.Group {
   const silhouette = gearSilhouette(item);
+  if (hasBlenderGearTemplate()) {
+    const bShield = cloneBlenderGearNode(`Gear_${silhouette}`, item, {
+      primaryExtra: silhouette === 'elysian' ? { emissive: item.color, emissiveIntensity: 0.45, transparent: true, opacity: 0.82 } : undefined
+    });
+    if (bShield) return tag(bShield, item, silhouette);
+  }
   const group = tag(new THREE.Group(), item, silhouette);
+
+  if (silhouette === 'book') {
+    const cover = part(group, new THREE.BoxGeometry(0.06, 0.32, 0.24), worn(item), 0.05, 0.02, 0);
+    const pages = part(group, new THREE.BoxGeometry(0.045, 0.29, 0.21), mat(0xfef3c7), 0.052, 0.02, 0);
+    pages.userData.noOutline = true;
+    [[-0.13, -0.09], [-0.13, 0.09], [0.13, -0.09], [0.13, 0.09]].forEach(([y, z]) => {
+      part(group, new THREE.BoxGeometry(0.068, 0.035, 0.035), mat(item.trim || 0xfacc15), 0.05, 0.02 + y, z);
+    });
+    part(group, new THREE.BoxGeometry(0.066, 0.33, 0.03), mat(item.trim || 0xfacc15), 0.05, 0.02, -0.11);
+    const isFire = item.id.includes('fire');
+    const isWater = item.id.includes('water');
+    const sigilColor = isFire ? 0xf97316 : isWater ? 0x38bdf8 : (item.trim || 0xfacc15);
+    part(group, new THREE.OctahedronGeometry(0.045), glow(sigilColor, 0.95), 0.085, 0.02, 0);
+    part(group, new THREE.TorusGeometry(0.06, 0.01, 6, 14), mat(item.trim || 0xfacc15), 0.082, 0.02, 0).rotation.y = Math.PI / 2;
+    return group;
+  }
+
+  if (silhouette === 'arcane-shield') {
+    const shell = part(
+      group,
+      kiteGeometry(false),
+      worn(item, { emissive: item.color, emissiveIntensity: 0.45, transparent: true, opacity: 0.78 })
+    );
+    shell.rotation.y = Math.PI / 2;
+    part(group, new THREE.TorusGeometry(0.14, 0.02, 6, 14), glow(0x93c5fd, 0.85), 0.06, 0.05, 0);
+    part(group, new THREE.OctahedronGeometry(0.07), glow(0x38bdf8, 1.0), 0.08, 0.05, 0);
+    [0, Math.PI / 2, Math.PI, Math.PI * 1.5].forEach((ang) => {
+      const ray = part(group, new THREE.ConeGeometry(0.024, 0.16, 4), glow(0x60a5fa, 0.9), 0.07, 0.05 + Math.sin(ang) * 0.16, Math.cos(ang) * 0.16);
+      ray.rotation.x = -ang;
+    });
+    return group;
+  }
+
+  if (silhouette === 'ward') {
+    const wardPlate = part(group, new THREE.CylinderGeometry(0.22, 0.16, 0.04, 6), worn(item), 0.04, 0.02, 0);
+    wardPlate.rotation.z = Math.PI / 2;
+    part(group, new THREE.SphereGeometry(0.065, 10, 8), glow(item.trim || 0xf59e0b, 0.9), 0.07, 0.02, 0);
+    part(group, new THREE.TorusGeometry(0.11, 0.015, 6, 12), mat(item.trim || 0xfacc15), 0.06, 0.02, 0).rotation.y = Math.PI / 2;
+    [-0.13, 0.13].forEach((z) => {
+      const wing = part(group, new THREE.ConeGeometry(0.035, 0.18, 5), mat(item.trim || 0xfacc15), 0.06, -0.06, z);
+      wing.rotation.x = z > 0 ? 0.6 : -0.6;
+    });
+    return group;
+  }
+
+  if (silhouette === 'twisted-buckler') {
+    const disc = part(group, new THREE.SphereGeometry(0.22, 14, 10, 0, Math.PI * 2, 0, Math.PI * 0.45), worn(item), 0.04, 0.02, 0);
+    disc.rotation.z = Math.PI / 2;
+    part(group, new THREE.TorusGeometry(0.19, 0.016, 6, 16), mat(item.trim || 0xfacc15), 0.05, 0.02, 0).rotation.y = Math.PI / 2;
+    part(group, new THREE.ConeGeometry(0.055, 0.14, 6), glow(0x22c55e, 0.7), 0.11, 0.02, 0).rotation.z = -Math.PI / 2;
+    for (let i = 0; i < 4; i++) {
+      const ang = (i / 4) * Math.PI * 2;
+      const horn = part(group, new THREE.ConeGeometry(0.026, 0.13, 5), mat(0xe2e8f0), 0.07, 0.02 + Math.sin(ang) * 0.16, Math.cos(ang) * 0.16);
+      horn.rotation.x = -ang;
+      horn.rotation.z = -0.4;
+    }
+    return group;
+  }
 
   if (silhouette === 'defender') {
     part(group, new THREE.CylinderGeometry(0.03, 0.035, 0.42, 8), worn(item), 0, 0, 0);
@@ -603,6 +788,10 @@ export function buildShieldVisual(item: ItemDef): THREE.Group {
 }
 
 export function buildAmuletVisual(item: ItemDef): THREE.Group {
+  if (hasBlenderGearTemplate()) {
+    const bAmulet = cloneBlenderGearNode('Gear_amulet', item, { glowHex: item.color });
+    if (bAmulet) return tag(bAmulet, item, 'amulet');
+  }
   const group = tag(new THREE.Group(), item, 'amulet');
   const chain = part(group, new THREE.TorusGeometry(0.09, 0.012, 6, 16), wornBand(item), 0, LEAN_RIG.neckY - LEAN_RIG.torsoY, -0.02);
   chain.rotation.x = Math.PI / 2.15;
@@ -627,6 +816,10 @@ export function buildAmuletVisual(item: ItemDef): THREE.Group {
 }
 
 export function buildRingVisual(item: ItemDef): THREE.Group {
+  if (hasBlenderGearTemplate()) {
+    const bRing = cloneBlenderGearNode('Gear_ring', item, { glowHex: item.color });
+    if (bRing) return tag(bRing, item, 'ring');
+  }
   const group = tag(new THREE.Group(), item, 'ring');
   const band = part(group, new THREE.TorusGeometry(0.038, 0.008, 6, 12), wornBand(item), 0, LEAN_RIG.handY + 0.06, -0.02);
   band.rotation.y = Math.PI / 2;
@@ -636,6 +829,13 @@ export function buildRingVisual(item: ItemDef): THREE.Group {
 
 export function buildBootVisual(item: ItemDef, isLeft: boolean): THREE.Group {
   const silhouette = gearSilhouette(item);
+  if (hasBlenderGearTemplate()) {
+    const suffix = isLeft ? 'L' : 'R';
+    const bBoot =
+      cloneBlenderGearNode(`Gear_${silhouette}_${suffix}`, item) ||
+      cloneBlenderGearNode(`Gear_boots_${suffix}`, item);
+    if (bBoot) return tag(bBoot, item, silhouette);
+  }
   const group = tag(new THREE.Group(), item, silhouette);
   part(group, new THREE.CylinderGeometry(0.086, 0.09, 0.05, 10), mat(item.trim), 0, -0.68, 0.01);
   if (silhouette === 'pegasian-boots') {
@@ -647,11 +847,22 @@ export function buildBootVisual(item: ItemDef, isLeft: boolean): THREE.Group {
     spike.rotation.z = isLeft ? 0.9 : -0.9;
   } else if (silhouette === 'eternal-boots') {
     part(group, new THREE.OctahedronGeometry(0.04), glow(item.color, 0.8), 0, -0.7, -0.05);
+  } else if (silhouette === 'infinity-boots') {
+    const toe = part(group, new THREE.ConeGeometry(0.04, 0.14, 6), worn(item), 0, -0.74, -0.14);
+    toe.rotation.x = -Math.PI / 2.3;
+    part(group, new THREE.SphereGeometry(0.022, 6, 6), glow(item.trim || 0xf472b6, 0.9), 0, -0.71, -0.22);
   }
   return group;
 }
 
-export function buildGloveVisual(item: ItemDef): THREE.Group {
+export function buildGloveVisual(item: ItemDef, isLeft = false): THREE.Group {
+  if (hasBlenderGearTemplate()) {
+    const suffix = isLeft ? 'L' : 'R';
+    const bGlove =
+      cloneBlenderGearNode(`Gear_gloves_${suffix}`, item) ||
+      cloneBlenderGearNode('Gear_gloves_L', item);
+    if (bGlove) return tag(bGlove, item, 'gloves');
+  }
   const group = tag(new THREE.Group(), item, 'gloves');
   part(group, new THREE.CylinderGeometry(0.068, 0.072, 0.1, 10), mat(item.trim), 0, -0.58, 0);
   part(group, new THREE.TorusGeometry(0.07, 0.01, 5, 10), worn(item), 0, -0.52, 0).rotation.x = Math.PI / 2;
@@ -660,14 +871,16 @@ export function buildGloveVisual(item: ItemDef): THREE.Group {
 
 function clothCape(item: ItemDef, lava: boolean): THREE.Group {
   const group = new THREE.Group();
-  const geo = new THREE.PlaneGeometry(0.46, 1.22, 10, 14);
+  const geo = new THREE.PlaneGeometry(0.48, 0.84, 12, 16);
+  geo.translate(0, -0.42, 0);
   const pos = geo.attributes.position;
   for (let i = 0; i < pos.count; i++) {
     const u = pos.getX(i);
     const v = pos.getY(i);
-    const t = (0.61 - v) / 1.22;
-    pos.setX(i, u * (0.78 + t * 0.32));
-    pos.setZ(i, Math.cos(u * 4) * 0.03 + t * 0.08);
+    const t = -v / 0.84;
+    pos.setX(i, u * (0.82 + t * 0.42));
+    // Curvature: gentle backward arch away from the spine and buttocks with flared hem
+    pos.setZ(i, 0.04 + Math.cos(u * 3.2) * 0.025 + t * 0.16 + t * t * 0.08);
   }
   geo.computeVertexNormals();
   const cloth = new THREE.Mesh(geo, worn(item, {
@@ -676,11 +889,12 @@ function clothCape(item: ItemDef, lava: boolean): THREE.Group {
   }));
   cloth.castShadow = true;
   group.add(cloth);
-  part(group, new THREE.BoxGeometry(0.38, 0.04, 0.03), lava ? glow(item.trim, 0.85) : mat(item.trim), 0, -0.56, 0.05);
-  part(group, new THREE.SphereGeometry(0.045, 8, 6), mat(item.trim), 0, 0.56, -0.02);
+  part(group, new THREE.BoxGeometry(0.52, 0.04, 0.03), lava ? glow(item.trim, 0.85) : mat(item.trim), 0, -0.82, 0.28);
+  part(group, new THREE.SphereGeometry(0.042, 8, 6), mat(item.trim), -0.14, 0, 0.04);
+  part(group, new THREE.SphereGeometry(0.042, 8, 6), mat(item.trim), 0.14, 0, 0.04);
   if (lava) {
     [-0.18, 0, 0.18].forEach((x) => {
-      part(group, new THREE.SphereGeometry(0.035, 6, 6), glow(item.trim, 0.9), x, -0.46, 0.1);
+      part(group, new THREE.SphereGeometry(0.035, 6, 6), glow(item.trim, 0.9), x, -0.78, 0.27);
     });
   }
   return group;
@@ -688,6 +902,14 @@ function clothCape(item: ItemDef, lava: boolean): THREE.Group {
 
 export function buildCapeVisual(item: ItemDef): THREE.Group {
   const silhouette = gearSilhouette(item);
+  if (hasBlenderGearTemplate()) {
+    const lava = silhouette === 'lava-cape';
+    const bCape = cloneBlenderGearNode(`Gear_${silhouette}`, item, {
+      doubleSided: true,
+      primaryExtra: lava ? { emissive: item.color, emissiveIntensity: 0.35 } : undefined
+    });
+    if (bCape) return tag(bCape, item, silhouette);
+  }
   const group = tag(new THREE.Group(), item, silhouette);
   if (silhouette === 'ava') {
     part(group, new THREE.BoxGeometry(0.26, 0.36, 0.12), worn(item), 0, 0.08, 0.1);

@@ -6,7 +6,14 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "blender:all": "node scripts/run-blender.mjs all",
+    "blender:hero": "node scripts/run-blender.mjs hero",
+    "blender:gear": "node scripts/run-blender.mjs gear",
+    "blender:monsters": "node scripts/run-blender.mjs monsters",
+    "blender:world": "node scripts/run-blender.mjs world",
+    "blender:open": "node scripts/run-blender.mjs open",
+    "blender:export": "node scripts/run-blender.mjs export"
   },
   "dependencies": {
     "three": "^0.169.0"

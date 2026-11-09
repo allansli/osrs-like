@@ -16,7 +16,7 @@ export const LEAN_RIG = {
   neckRadiusTop: 0.052,
   neckRadiusBottom: 0.066,
   neckHeight: 0.28,
-  headY: 2.02,
+  headY: 1.86,
   headRadius: 0.195,
   shoulderX: 0.28,
   shoulderY: 1.5,

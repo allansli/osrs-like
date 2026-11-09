@@ -14,20 +14,20 @@ export const SKILLS_META = {
 };
 
 export const TIER_COLORS = {
-  bronze:   '#b87333',
-  iron:     '#9ca3af',
-  steel:    '#cbd5e1',
-  black:    '#334155',
-  white:    '#f8fafc',
-  mithril:  '#3b82f6',
-  adamant:  '#10b981',
-  rune:     '#06b6d4',
-  gilded:   '#facc15',
-  dragon:   '#dc2626',
-  barrows:  '#65a30d',
-  bandos:   '#d97706',
-  raids:    '#a855f7',
-  botw:     '#38e8ff'
+  bronze:   '#9e6a38',
+  iron:     '#68717d',
+  steel:    '#94a1b0',
+  black:    '#2c323b',
+  white:    '#cfd6dd',
+  mithril:  '#4a6785',
+  adamant:  '#385446',
+  rune:     '#3d5e75',
+  gilded:   '#bfa15f',
+  dragon:   '#8f2929',
+  barrows:  '#4b543b',
+  bandos:   '#7c5932',
+  raids:    '#5d4573',
+  botw:     '#4f7887'
 };
 
 export const ITEMS = {
@@ -39,30 +39,36 @@ export const ITEMS = {
   steel_longsword:   { id: 'steel_longsword',   name: 'Steel Longsword',            type: 'equip', slot: 'weapon', iconKind: 'sword',      style: 'melee',  tier: 'steel',   atk: 17,  str: 16,  req: { attack: 10 }, price: 290,   color: 0xe2e8f0, trim: 0xfacc15 },
   black_scimitar:    { id: 'black_scimitar',    name: 'Black Knight Scimitar',      type: 'equip', slot: 'weapon', iconKind: 'scimitar',   style: 'melee',  tier: 'black',   atk: 21,  str: 20,  req: { attack: 15 }, price: 440,   color: 0x1e293b, trim: 0xfacc15 },
   white_scimitar:    { id: 'white_scimitar',    name: 'White Knight Scimitar',      type: 'equip', slot: 'weapon', iconKind: 'scimitar',   style: 'melee',  tier: 'white',   atk: 22,  str: 20,  req: { attack: 15 }, price: 480,   color: 0xf8fafc, trim: 0xfacc15 },
-  mith_scimitar:     { id: 'mith_scimitar',     name: 'Mithril Scimitar',           type: 'equip', slot: 'weapon', iconKind: 'scimitar',   style: 'melee',  tier: 'mithril', atk: 26,  str: 25,  req: { attack: 20 }, price: 580,   color: 0x2563eb, trim: 0x93c5fd },
-  addy_scimitar:     { id: 'addy_scimitar',     name: 'Adamant Scimitar',           type: 'equip', slot: 'weapon', iconKind: 'scimitar',   style: 'melee',  tier: 'adamant', atk: 35,  str: 34,  req: { attack: 30 }, price: 1350,  color: 0x059669, trim: 0x6ee7b7 },
-  rune_scimitar:     { id: 'rune_scimitar',     name: 'Rune Scimitar',              type: 'equip', slot: 'weapon', iconKind: 'scimitar',   style: 'melee',  tier: 'rune',    atk: 47,  str: 46,  req: { attack: 40 }, price: 3900,  color: 0x06b6d4, trim: 0xa5f3fc },
-  gilded_scimitar:   { id: 'gilded_scimitar',   name: 'Gilded Scimitar',            type: 'equip', slot: 'weapon', iconKind: 'scimitar',   style: 'melee',  tier: 'gilded',  atk: 52,  str: 50,  req: { attack: 45 }, price: 6800,  color: 0xfacc15, trim: 0xfef08a },
-  dragon_scimitar:   { id: 'dragon_scimitar',   name: 'Dragon Scimitar',            type: 'equip', slot: 'weapon', iconKind: 'scimitar',   style: 'melee',  tier: 'dragon',  atk: 67,  str: 66,  req: { attack: 60 }, price: 12000, color: 0xdc2626, trim: 0xfde047 },
-  dharok_greataxe:   { id: 'dharok_greataxe',   name: "Dharok's Greataxe",          type: 'equip', slot: 'weapon', iconKind: 'greataxe',   style: 'melee',  tier: 'barrows', atk: 76,  str: 88,  req: { attack: 70 }, price: 19500, color: 0x4d7c0f, trim: 0xa3e635 },
-  abyssal_whip:      { id: 'abyssal_whip',      name: 'Abyssal Whip',               type: 'equip', slot: 'weapon', iconKind: 'whip',       style: 'melee',  tier: 'dragon',  atk: 82,  str: 82,  req: { attack: 70 }, price: 24000, color: 0x991b1b, trim: 0xf87171 },
-  inquisitor_mace:   { id: 'inquisitor_mace',   name: "Inquisitor's Mace",          type: 'equip', slot: 'weapon', iconKind: 'mace',       style: 'melee',  tier: 'raids',   atk: 89,  str: 90,  req: { attack: 75 }, price: 29000, color: 0x7f1d1d, trim: 0xfacc15 },
-  bandos_godsword:   { id: 'bandos_godsword',   name: 'Bandos Godsword',            type: 'equip', slot: 'weapon', iconKind: 'greatsword', style: 'melee',  tier: 'bandos',  atk: 94,  str: 98,  req: { attack: 75 }, price: 32000, color: 0xd97706, trim: 0xfef08a },
-  master_sword:      { id: 'master_sword',      name: 'Master Sword of Hyrule',     type: 'equip', slot: 'weapon', iconKind: 'greatsword', style: 'melee',  tier: 'botw',    atk: 108, str: 105, req: { attack: 75 }, price: 45000, color: 0x60a5fa, trim: 0x818cf8 },
-  deity_sword:       { id: 'deity_sword',       name: 'Fierce Deity Helix Blade',   type: 'equip', slot: 'weapon', iconKind: 'greatsword', style: 'melee',  tier: 'botw',    atk: 118, str: 116, req: { attack: 80 }, price: 58000, color: 0x38bdf8, trim: 0xfef08a },
+  mith_scimitar:     { id: 'mith_scimitar',     name: 'Mithril Scimitar',           type: 'equip', slot: 'weapon', iconKind: 'scimitar',   style: 'melee',  tier: 'mithril', atk: 26,  str: 25,  req: { attack: 20 }, price: 580,   color: 0x4a6785, trim: 0x7593b0 },
+  addy_scimitar:     { id: 'addy_scimitar',     name: 'Adamant Scimitar',           type: 'equip', slot: 'weapon', iconKind: 'scimitar',   style: 'melee',  tier: 'adamant', atk: 35,  str: 34,  req: { attack: 30 }, price: 1350,  color: 0x385446, trim: 0x5a7868 },
+  rune_scimitar:     { id: 'rune_scimitar',     name: 'Rune Scimitar',              type: 'equip', slot: 'weapon', iconKind: 'scimitar',   style: 'melee',  tier: 'rune',    atk: 47,  str: 46,  req: { attack: 40 }, price: 3900,  color: 0x3d5e75, trim: 0x7694a8 },
+  gilded_scimitar:   { id: 'gilded_scimitar',   name: 'Gilded Scimitar',            type: 'equip', slot: 'weapon', iconKind: 'scimitar',   style: 'melee',  tier: 'gilded',  atk: 52,  str: 50,  req: { attack: 45 }, price: 6800,  color: 0xbfa15f, trim: 0xd8c28c },
+  dragon_scimitar:   { id: 'dragon_scimitar',   name: 'Dragon Scimitar',            type: 'equip', slot: 'weapon', iconKind: 'scimitar',   style: 'melee',  tier: 'dragon',  atk: 67,  str: 66,  req: { attack: 60 }, price: 12000, color: 0x6e2424, trim: 0x9e7b42 },
+  dharok_greataxe:   { id: 'dharok_greataxe',   name: "Dharok's Greataxe",          type: 'equip', slot: 'weapon', iconKind: 'greataxe',   style: 'melee',  tier: 'barrows', atk: 76,  str: 88,  req: { attack: 70 }, price: 19500, color: 0x4b543b, trim: 0x7a8565 },
+  abyssal_whip:      { id: 'abyssal_whip',      name: 'Abyssal Whip',               type: 'equip', slot: 'weapon', iconKind: 'whip',       style: 'melee',  tier: 'dragon',  atk: 82,  str: 82,  req: { attack: 70 }, price: 24000, color: 0x6e1b1b, trim: 0x9e3838 },
+  inquisitor_mace:   { id: 'inquisitor_mace',   name: "Inquisitor's Mace",          type: 'equip', slot: 'weapon', iconKind: 'mace',       style: 'melee',  tier: 'raids',   atk: 89,  str: 90,  req: { attack: 75 }, price: 29000, color: 0x5a1e1e, trim: 0x9e8046 },
+  bandos_godsword:   { id: 'bandos_godsword',   name: 'Bandos Godsword',            type: 'equip', slot: 'weapon', iconKind: 'greatsword', style: 'melee',  tier: 'bandos',  atk: 94,  str: 98,  req: { attack: 75 }, price: 32000, color: 0x7c5932, trim: 0xb89a62 },
+  master_sword:      { id: 'master_sword',      name: 'Master Sword of Hyrule',     type: 'equip', slot: 'weapon', iconKind: 'greatsword', style: 'melee',  tier: 'botw',    atk: 108, str: 105, req: { attack: 75 }, price: 45000, color: 0x4a6b8a, trim: 0x6878a0 },
+  deity_sword:       { id: 'deity_sword',       name: 'Fierce Deity Helix Blade',   type: 'equip', slot: 'weapon', iconKind: 'greatsword', style: 'melee',  tier: 'botw',    atk: 118, str: 116, req: { attack: 80 }, price: 58000, color: 0x3d5a73, trim: 0x9e8548 },
 
   shortbow:          { id: 'shortbow',          name: 'Oak Shortbow',               type: 'equip', slot: 'weapon', iconKind: 'bow',        style: 'ranged', tier: 'bronze',  rng: 16,  req: { ranged: 1 },  price: 95,    color: 0x92400e, trim: 0xfde68a },
   willow_bow:        { id: 'willow_bow',        name: 'Willow Longbow',             type: 'equip', slot: 'weapon', iconKind: 'bow',        style: 'ranged', tier: 'iron',    rng: 28,  req: { ranged: 15 }, price: 450,   color: 0x65a30d, trim: 0xfef08a },
   yew_bow:           { id: 'yew_bow',           name: 'Yew Compound Bow',           type: 'equip', slot: 'weapon', iconKind: 'bow',        style: 'ranged', tier: 'rune',    rng: 50,  req: { ranged: 35 }, price: 2100,  color: 0xca8a04, trim: 0x38bdf8 },
-  rune_crossbow:     { id: 'rune_crossbow',     name: 'Rune Crossbow',              type: 'equip', slot: 'weapon', iconKind: 'crossbow',   style: 'ranged', tier: 'rune',    rng: 64,  req: { ranged: 45 }, price: 4800,  color: 0x06b6d4, trim: 0xa5f3fc },
-  ancient_bow:       { id: 'ancient_bow',       name: 'Sheikah Ancient Bow',        type: 'equip', slot: 'weapon', iconKind: 'bow',        style: 'ranged', tier: 'botw',    rng: 88,  req: { ranged: 60 }, price: 16000, color: 0x0284c7, trim: 0x38e8ff },
-  armadyl_crossbow:  { id: 'armadyl_crossbow',  name: 'Armadyl Crossbow',           type: 'equip', slot: 'weapon', iconKind: 'crossbow',   style: 'ranged', tier: 'raids',   rng: 102, req: { ranged: 70 }, price: 28000, color: 0xfef08a, trim: 0x94a3b8 },
+  rune_crossbow:     { id: 'rune_crossbow',     name: 'Rune Crossbow',              type: 'equip', slot: 'weapon', iconKind: 'crossbow',   style: 'ranged', tier: 'rune',    rng: 64,  req: { ranged: 45 }, price: 4800,  color: 0x3d5e75, trim: 0x7694a8 },
+  ancient_bow:       { id: 'ancient_bow',       name: 'Sheikah Ancient Bow',        type: 'equip', slot: 'weapon', iconKind: 'bow',        style: 'ranged', tier: 'botw',    rng: 88,  req: { ranged: 60 }, price: 16000, color: 0x2b4a62, trim: 0x4a7894 },
+  armadyl_crossbow:  { id: 'armadyl_crossbow',  name: 'Armadyl Crossbow',           type: 'equip', slot: 'weapon', iconKind: 'crossbow',   style: 'ranged', tier: 'raids',   rng: 102, req: { ranged: 70 }, price: 28000, color: 0xb8c0cb, trim: 0x7a8594 },
+  karil_crossbow:    { id: 'karil_crossbow',    setName: "Karil's Barrows Set",     name: "Karil's Crossbow",           type: 'equip', slot: 'weapon', iconKind: 'crossbow',   style: 'ranged', tier: 'barrows', rng: 84,  req: { ranged: 65 }, price: 16500, color: 0x451a03, trim: 0x6e7855 },
+  crystal_bow:       { id: 'crystal_bow',       setName: 'Crystal Elven Set',       name: 'Crystal Bow of Song',        type: 'equip', slot: 'weapon', iconKind: 'bow',        style: 'ranged', tier: 'botw',    rng: 94,  req: { ranged: 70 }, price: 24000, color: 0x4a7082, trim: 0x82a5b8 },
+  toxic_blowpipe:    { id: 'toxic_blowpipe',    name: 'Zulrah Toxic Blowpipe',      type: 'equip', slot: 'weapon', iconKind: 'blowpipe',   style: 'ranged', tier: 'dragon',  rng: 82,  req: { ranged: 75 }, price: 29000, color: 0x245a42, trim: 0x488a68 },
+  twisted_bow:       { id: 'twisted_bow',       name: 'Twisted Elder Bow',          type: 'equip', slot: 'weapon', iconKind: 'bow',        style: 'ranged', tier: 'raids',   rng: 122, req: { ranged: 85 }, price: 68000, color: 0x2d4f32, trim: 0x8a7038 },
 
-  fire_staff:        { id: 'fire_staff',        name: 'Staff of Fire',              type: 'equip', slot: 'weapon', iconKind: 'staff',      style: 'magic',  tier: 'mithril', mag: 24,  atk: 8,  str: 7,  req: { magic: 1 },  price: 320,   color: 0xef4444, trim: 0xfde047 },
-  mystic_staff:      { id: 'mystic_staff',      name: 'Mystic Water Staff',         type: 'equip', slot: 'weapon', iconKind: 'staff',      style: 'magic',  tier: 'rune',    mag: 46,  atk: 16, str: 14, req: { magic: 30 }, price: 2400,  color: 0x0ea5e9, trim: 0xe0f2fe },
-  ancient_staff:     { id: 'ancient_staff',     name: 'Ancient Sceptre',            type: 'equip', slot: 'weapon', iconKind: 'staff',      style: 'magic',  tier: 'dragon',  mag: 75,  atk: 28, str: 24, req: { magic: 50 }, price: 11000, color: 0xa855f7, trim: 0xfde047 },
-  ahrim_staff:       { id: 'ahrim_staff',       name: "Ahrim's Barrows Staff",      type: 'equip', slot: 'weapon', iconKind: 'staff',      style: 'magic',  tier: 'barrows', mag: 88,  atk: 34, str: 30, req: { magic: 65 }, price: 18500, color: 0x65a30d, trim: 0xd9f99d },
-  kodai_wand:        { id: 'kodai_wand',        name: 'Kodai Elder Wand',           type: 'equip', slot: 'weapon', iconKind: 'wand',       style: 'magic',  tier: 'raids',   mag: 112, atk: 40, str: 35, req: { magic: 75 }, price: 36000, color: 0xc084fc, trim: 0xfef08a },
+  fire_staff:        { id: 'fire_staff',        name: 'Staff of Fire',              type: 'equip', slot: 'weapon', iconKind: 'staff',      style: 'magic',  tier: 'mithril', mag: 24,  atk: 8,  str: 7,  req: { magic: 1 },  price: 320,   color: 0x6e2424, trim: 0x9e7b42 },
+  mystic_staff:      { id: 'mystic_staff',      name: 'Mystic Water Staff',         type: 'equip', slot: 'weapon', iconKind: 'staff',      style: 'magic',  tier: 'rune',    mag: 46,  atk: 16, str: 14, req: { magic: 30 }, price: 2400,  color: 0x2d4f68, trim: 0x5a7e99 },
+  ancient_staff:     { id: 'ancient_staff',     name: 'Ancient Sceptre',            type: 'equip', slot: 'weapon', iconKind: 'staff',      style: 'magic',  tier: 'dragon',  mag: 75,  atk: 28, str: 24, req: { magic: 50 }, price: 11000, color: 0x4a325e, trim: 0x8a7038 },
+  ahrim_staff:       { id: 'ahrim_staff',       setName: "Ahrim's Barrows Set",     name: "Ahrim's Barrows Staff",      type: 'equip', slot: 'weapon', iconKind: 'staff',      style: 'magic',  tier: 'barrows', mag: 88,  atk: 34, str: 30, req: { magic: 65 }, price: 18500, color: 0x4b543b, trim: 0x768260 },
+  kodai_wand:        { id: 'kodai_wand',        name: 'Kodai Elder Wand',           type: 'equip', slot: 'weapon', iconKind: 'wand',       style: 'magic',  tier: 'raids',   mag: 112, atk: 40, str: 35, req: { magic: 75 }, price: 36000, color: 0x4e3e63, trim: 0x9a8048 },
+  trident_seas:      { id: 'trident_seas',      name: 'Trident of the Seas',        type: 'equip', slot: 'weapon', iconKind: 'staff',      style: 'magic',  tier: 'dragon',  mag: 86,  atk: 22, str: 18, req: { magic: 75 }, price: 22000, color: 0x2b5463, trim: 0x4d7f94 },
+  tumeken_shadow:    { id: 'tumeken_shadow',    name: "Tumeken's Solar Shadow",     type: 'equip', slot: 'weapon', iconKind: 'staff',      style: 'magic',  tier: 'raids',   mag: 130, atk: 35, str: 30, req: { magic: 85 }, price: 72000, color: 0x7a5b32, trim: 0x4a7894 },
 
   // =========================================================================
   // 2. COMPLETE MATCHED TOP (body) & BOTTOM (legs) PAIRS — 33 FULL SETS (66 ITEMS)
@@ -94,64 +100,64 @@ export const ITEMS = {
   white_legs:        { id: 'white_legs',        pairId: 'white_plate',       setName: 'White Knight Set',      name: 'White Knight Cuisse',     type: 'equip', slot: 'legs', iconKind: 'legs',        tier: 'white',   def: 21, atk: 2,  req: { defence: 15 }, price: 540,   color: 0xf8fafc, trim: 0xfacc15 },
 
   // Pair 7: Mithril Plate Set (Lv 20)
-  mith_plate:        { id: 'mith_plate',        pairId: 'mith_legs',         setName: 'Mithril Plate Set',     name: 'Mithril Platebody',       type: 'equip', slot: 'body', iconKind: 'body',        tier: 'mithril', def: 32, req: { defence: 20 }, price: 850,   color: 0x2563eb, trim: 0x93c5fd },
-  mith_legs:         { id: 'mith_legs',         pairId: 'mith_plate',        setName: 'Mithril Plate Set',     name: 'Mithril Platelegs',       type: 'equip', slot: 'legs', iconKind: 'legs',        tier: 'mithril', def: 24, req: { defence: 20 }, price: 680,   color: 0x2563eb, trim: 0x93c5fd },
+  mith_plate:        { id: 'mith_plate',        pairId: 'mith_legs',         setName: 'Mithril Plate Set',     name: 'Mithril Platebody',       type: 'equip', slot: 'body', iconKind: 'body',        tier: 'mithril', def: 32, req: { defence: 20 }, price: 850,   color: 0x4a6785, trim: 0x7593b0 },
+  mith_legs:         { id: 'mith_legs',         pairId: 'mith_plate',        setName: 'Mithril Plate Set',     name: 'Mithril Platelegs',       type: 'equip', slot: 'legs', iconKind: 'legs',        tier: 'mithril', def: 24, req: { defence: 20 }, price: 680,   color: 0x4a6785, trim: 0x7593b0 },
 
   // Pair 8: Adamant Plate Set (Lv 30)
-  addy_plate:        { id: 'addy_plate',        pairId: 'addy_legs',         setName: 'Adamant Plate Set',     name: 'Adamant Platebody',       type: 'equip', slot: 'body', iconKind: 'body',        tier: 'adamant', def: 44, req: { defence: 30 }, price: 2100,  color: 0x059669, trim: 0x6ee7b7 },
-  addy_legs:         { id: 'addy_legs',         pairId: 'addy_plate',        setName: 'Adamant Plate Set',     name: 'Adamant Platelegs',       type: 'equip', slot: 'legs', iconKind: 'legs',        tier: 'adamant', def: 33, req: { defence: 30 }, price: 1550,  color: 0x059669, trim: 0x6ee7b7 },
+  addy_plate:        { id: 'addy_plate',        pairId: 'addy_legs',         setName: 'Adamant Plate Set',     name: 'Adamant Platebody',       type: 'equip', slot: 'body', iconKind: 'body',        tier: 'adamant', def: 44, req: { defence: 30 }, price: 2100,  color: 0x385446, trim: 0x5a7868 },
+  addy_legs:         { id: 'addy_legs',         pairId: 'addy_plate',        setName: 'Adamant Plate Set',     name: 'Adamant Platelegs',       type: 'equip', slot: 'legs', iconKind: 'legs',        tier: 'adamant', def: 33, req: { defence: 30 }, price: 1550,  color: 0x385446, trim: 0x5a7868 },
 
   // Pair 9: Rune Plate Set (Lv 40)
-  rune_plate:        { id: 'rune_plate',        pairId: 'rune_legs',         setName: 'Rune Plate Set',        name: 'Rune Platebody',          type: 'equip', slot: 'body', iconKind: 'body',        tier: 'rune',    def: 58, req: { defence: 40 }, price: 5200,  color: 0x06b6d4, trim: 0xa5f3fc },
-  rune_legs:         { id: 'rune_legs',         pairId: 'rune_plate',        setName: 'Rune Plate Set',        name: 'Rune Platelegs',          type: 'equip', slot: 'legs', iconKind: 'legs',        tier: 'rune',    def: 44, req: { defence: 40 }, price: 3800,  color: 0x06b6d4, trim: 0xa5f3fc },
+  rune_plate:        { id: 'rune_plate',        pairId: 'rune_legs',         setName: 'Rune Plate Set',        name: 'Rune Platebody',          type: 'equip', slot: 'body', iconKind: 'body',        tier: 'rune',    def: 58, req: { defence: 40 }, price: 5200,  color: 0x3d5e75, trim: 0x7694a8 },
+  rune_legs:         { id: 'rune_legs',         pairId: 'rune_plate',        setName: 'Rune Plate Set',        name: 'Rune Platelegs',          type: 'equip', slot: 'legs', iconKind: 'legs',        tier: 'rune',    def: 44, req: { defence: 40 }, price: 3800,  color: 0x3d5e75, trim: 0x7694a8 },
 
   // Pair 10: Gilded Treasure Set (Lv 45)
-  gilded_plate:      { id: 'gilded_plate',      pairId: 'gilded_legs',       setName: 'Gilded Treasure Set',   name: 'Gilded Platebody',        type: 'equip', slot: 'body', iconKind: 'body',        tier: 'gilded',  def: 62, str: 3,  req: { defence: 45 }, price: 8200,  color: 0xfacc15, trim: 0xfef08a },
-  gilded_legs:       { id: 'gilded_legs',       pairId: 'gilded_plate',      setName: 'Gilded Treasure Set',   name: 'Gilded Platelegs',        type: 'equip', slot: 'legs', iconKind: 'legs',        tier: 'gilded',  def: 48, str: 2,  req: { defence: 45 }, price: 6500,  color: 0xfacc15, trim: 0xfef08a },
+  gilded_plate:      { id: 'gilded_plate',      pairId: 'gilded_legs',       setName: 'Gilded Treasure Set',   name: 'Gilded Platebody',        type: 'equip', slot: 'body', iconKind: 'body',        tier: 'gilded',  def: 62, str: 3,  req: { defence: 45 }, price: 8200,  color: 0xbfa15f, trim: 0xd8c28c },
+  gilded_legs:       { id: 'gilded_legs',       pairId: 'gilded_plate',      setName: 'Gilded Treasure Set',   name: 'Gilded Platelegs',        type: 'equip', slot: 'legs', iconKind: 'legs',        tier: 'gilded',  def: 48, str: 2,  req: { defence: 45 }, price: 6500,  color: 0xbfa15f, trim: 0xd8c28c },
 
   // Pair 11: Granite Fortress Set (Lv 50)
-  granite_body:      { id: 'granite_body',      pairId: 'granite_legs',      setName: 'Granite Fortress Set',  name: 'Granite Platebody',       type: 'equip', slot: 'body', iconKind: 'body',        tier: 'steel',   def: 66, str: 2,  req: { defence: 50 }, price: 9600,  color: 0x64748b, trim: 0x94a3b8 },
-  granite_legs:      { id: 'granite_legs',      pairId: 'granite_body',      setName: 'Granite Fortress Set',  name: 'Granite Platelegs',       type: 'equip', slot: 'legs', iconKind: 'legs',        tier: 'steel',   def: 51, str: 2,  req: { defence: 50 }, price: 7400,  color: 0x64748b, trim: 0x94a3b8 },
+  granite_body:      { id: 'granite_body',      pairId: 'granite_legs',      setName: 'Granite Fortress Set',  name: 'Granite Platebody',       type: 'equip', slot: 'body', iconKind: 'body',        tier: 'steel',   def: 66, str: 2,  req: { defence: 50 }, price: 9600,  color: 0x5a6370, trim: 0x7e8896 },
+  granite_legs:      { id: 'granite_legs',      pairId: 'granite_body',      setName: 'Granite Fortress Set',  name: 'Granite Platelegs',       type: 'equip', slot: 'legs', iconKind: 'legs',        tier: 'steel',   def: 51, str: 2,  req: { defence: 50 }, price: 7400,  color: 0x5a6370, trim: 0x7e8896 },
 
   // Pair 12: Dragon Armor Set (Lv 60)
-  dragon_chain:      { id: 'dragon_chain',      pairId: 'dragon_legs',       setName: 'Dragon Armor Set',      name: 'Dragon Platebody',        type: 'equip', slot: 'body', iconKind: 'body',        tier: 'dragon',  def: 72, str: 5,  req: { defence: 60 }, price: 14500, color: 0xdc2626, trim: 0xfacc15 },
-  dragon_legs:       { id: 'dragon_legs',       pairId: 'dragon_chain',      setName: 'Dragon Armor Set',      name: 'Dragon Platelegs',        type: 'equip', slot: 'legs', iconKind: 'legs',        tier: 'dragon',  def: 56, str: 4,  req: { defence: 60 }, price: 11500, color: 0xdc2626, trim: 0xfacc15 },
+  dragon_chain:      { id: 'dragon_chain',      pairId: 'dragon_legs',       setName: 'Dragon Armor Set',      name: 'Dragon Platebody',        type: 'equip', slot: 'body', iconKind: 'body',        tier: 'dragon',  def: 72, str: 5,  req: { defence: 60 }, price: 14500, color: 0x6e2424, trim: 0x9e7b42 },
+  dragon_legs:       { id: 'dragon_legs',       pairId: 'dragon_chain',      setName: 'Dragon Armor Set',      name: 'Dragon Platelegs',        type: 'equip', slot: 'legs', iconKind: 'legs',        tier: 'dragon',  def: 56, str: 4,  req: { defence: 60 }, price: 11500, color: 0x6e2424, trim: 0x9e7b42 },
 
   // Pair 13: Dharok's Barrows Set (Lv 70)
-  dharok_body:       { id: 'dharok_body',       pairId: 'dharok_legs',       setName: "Dharok's Barrows Set",  name: "Dharok's Platebody",      type: 'equip', slot: 'body', iconKind: 'body',        tier: 'barrows', def: 78, str: 8,  req: { defence: 70 }, price: 19500, color: 0x3f6212, trim: 0xa3e635 },
-  dharok_legs:       { id: 'dharok_legs',       pairId: 'dharok_body',       setName: "Dharok's Barrows Set",  name: "Dharok's Platelegs",      type: 'equip', slot: 'legs', iconKind: 'legs',        tier: 'barrows', def: 62, str: 6,  req: { defence: 70 }, price: 16500, color: 0x3f6212, trim: 0xa3e635 },
+  dharok_body:       { id: 'dharok_body',       pairId: 'dharok_legs',       setName: "Dharok's Barrows Set",  name: "Dharok's Platebody",      type: 'equip', slot: 'body', iconKind: 'body',        tier: 'barrows', def: 78, str: 8,  req: { defence: 70 }, price: 19500, color: 0x4b543b, trim: 0x7a8565 },
+  dharok_legs:       { id: 'dharok_legs',       pairId: 'dharok_body',       setName: "Dharok's Barrows Set",  name: "Dharok's Platelegs",      type: 'equip', slot: 'legs', iconKind: 'legs',        tier: 'barrows', def: 62, str: 6,  req: { defence: 70 }, price: 16500, color: 0x4b543b, trim: 0x7a8565 },
 
   // Pair 14: Torag's Barrows Set (Lv 70)
-  torag_body:        { id: 'torag_body',        pairId: 'torag_legs',        setName: "Torag's Barrows Set",   name: "Torag's Platebody",       type: 'equip', slot: 'body', iconKind: 'body',        tier: 'barrows', def: 82, str: 5,  req: { defence: 70 }, price: 18500, color: 0x365314, trim: 0xfde047 },
-  torag_legs:        { id: 'torag_legs',        pairId: 'torag_body',        setName: "Torag's Barrows Set",   name: "Torag's Platelegs",       type: 'equip', slot: 'legs', iconKind: 'legs',        tier: 'barrows', def: 66, str: 4,  req: { defence: 70 }, price: 15500, color: 0x365314, trim: 0xfde047 },
+  torag_body:        { id: 'torag_body',        pairId: 'torag_legs',        setName: "Torag's Barrows Set",   name: "Torag's Platebody",       type: 'equip', slot: 'body', iconKind: 'body',        tier: 'barrows', def: 82, str: 5,  req: { defence: 70 }, price: 18500, color: 0x3e4532, trim: 0x8a7845 },
+  torag_legs:        { id: 'torag_legs',        pairId: 'torag_body',        setName: "Torag's Barrows Set",   name: "Torag's Platelegs",       type: 'equip', slot: 'legs', iconKind: 'legs',        tier: 'barrows', def: 66, str: 4,  req: { defence: 70 }, price: 15500, color: 0x3e4532, trim: 0x8a7845 },
 
   // Pair 15: Bandos War God Set (Lv 65)
-  bandos_chest:      { id: 'bandos_chest',      pairId: 'bandos_tassets',    setName: 'Bandos War God Set',    name: 'Bandos Chestplate',       type: 'equip', slot: 'body', iconKind: 'body',        tier: 'bandos',  def: 80, str: 12, req: { defence: 65 }, price: 26000, color: 0x57534e, trim: 0xd97706 },
-  bandos_tassets:    { id: 'bandos_tassets',    pairId: 'bandos_chest',      setName: 'Bandos War God Set',    name: 'Bandos Tassets',          type: 'equip', slot: 'legs', iconKind: 'tassets',     tier: 'bandos',  def: 64, str: 10, req: { defence: 65 }, price: 22000, color: 0x78716c, trim: 0xd97706 },
+  bandos_chest:      { id: 'bandos_chest',      pairId: 'bandos_tassets',    setName: 'Bandos War God Set',    name: 'Bandos Chestplate',       type: 'equip', slot: 'body', iconKind: 'body',        tier: 'bandos',  def: 80, str: 12, req: { defence: 65 }, price: 26000, color: 0x52483d, trim: 0x9e7b45 },
+  bandos_tassets:    { id: 'bandos_tassets',    pairId: 'bandos_chest',      setName: 'Bandos War God Set',    name: 'Bandos Tassets',          type: 'equip', slot: 'legs', iconKind: 'tassets',     tier: 'bandos',  def: 64, str: 10, req: { defence: 65 }, price: 22000, color: 0x655c50, trim: 0x9e7b45 },
 
   // Pair 16: Justiciar Paladin Set (Lv 75)
-  justiciar_body:    { id: 'justiciar_body',    pairId: 'justiciar_legs',    setName: 'Justiciar Paladin Set', name: 'Justiciar Chestguard',    type: 'equip', slot: 'body', iconKind: 'body',        tier: 'raids',   def: 94, str: 6,  req: { defence: 75 }, price: 31000, color: 0xe2e8f0, trim: 0x38bdf8 },
-  justiciar_legs:    { id: 'justiciar_legs',    pairId: 'justiciar_body',    setName: 'Justiciar Paladin Set', name: 'Justiciar Legguards',     type: 'equip', slot: 'legs', iconKind: 'tassets',     tier: 'raids',   def: 76, str: 5,  req: { defence: 75 }, price: 26500, color: 0xe2e8f0, trim: 0x38bdf8 },
+  justiciar_body:    { id: 'justiciar_body',    pairId: 'justiciar_legs',    setName: 'Justiciar Paladin Set', name: 'Justiciar Chestguard',    type: 'equip', slot: 'body', iconKind: 'body',        tier: 'raids',   def: 94, str: 6,  req: { defence: 75 }, price: 31000, color: 0xb8c0cb, trim: 0x486b85 },
+  justiciar_legs:    { id: 'justiciar_legs',    pairId: 'justiciar_body',    setName: 'Justiciar Paladin Set', name: 'Justiciar Legguards',     type: 'equip', slot: 'legs', iconKind: 'tassets',     tier: 'raids',   def: 76, str: 5,  req: { defence: 75 }, price: 26500, color: 0xb8c0cb, trim: 0x486b85 },
 
   // Pair 17: Inquisitor's Crush Set (Lv 75)
-  inquisitor_body:   { id: 'inquisitor_body',   pairId: 'inquisitor_legs',   setName: "Inquisitor's Set",      name: "Inquisitor's Hauberk",    type: 'equip', slot: 'body', iconKind: 'body',        tier: 'raids',   def: 76, atk: 16, str: 14, req: { defence: 75 }, price: 34000, color: 0x7f1d1d, trim: 0xd97706 },
-  inquisitor_legs:   { id: 'inquisitor_legs',   pairId: 'inquisitor_body',   setName: "Inquisitor's Set",      name: "Inquisitor's Plateskirt", type: 'equip', slot: 'legs', iconKind: 'tassets',     tier: 'raids',   def: 60, atk: 12, str: 11, req: { defence: 75 }, price: 29000, color: 0x7f1d1d, trim: 0xd97706 },
+  inquisitor_body:   { id: 'inquisitor_body',   pairId: 'inquisitor_legs',   setName: "Inquisitor's Set",      name: "Inquisitor's Hauberk",    type: 'equip', slot: 'body', iconKind: 'body',        tier: 'raids',   def: 76, atk: 16, str: 14, req: { defence: 75 }, price: 34000, color: 0x5a1e1e, trim: 0x9e7b42 },
+  inquisitor_legs:   { id: 'inquisitor_legs',   pairId: 'inquisitor_body',   setName: "Inquisitor's Set",      name: "Inquisitor's Plateskirt", type: 'equip', slot: 'legs', iconKind: 'tassets',     tier: 'raids',   def: 60, atk: 12, str: 11, req: { defence: 75 }, price: 29000, color: 0x5a1e1e, trim: 0x9e7b42 },
 
   // Pair 18: Torva Ancient Nex Set (Lv 80)
-  torva_body:        { id: 'torva_body',        pairId: 'torva_legs',        setName: 'Torva Ancient Set',     name: 'Torva Platebody',         type: 'equip', slot: 'body', iconKind: 'body',        tier: 'raids',   def: 98, str: 18, atk: 12, req: { defence: 80 }, price: 48000, color: 0x4c1d95, trim: 0xc084fc },
-  torva_legs:        { id: 'torva_legs',        pairId: 'torva_body',        setName: 'Torva Ancient Set',     name: 'Torva Platelegs',         type: 'equip', slot: 'legs', iconKind: 'tassets',     tier: 'raids',   def: 80, str: 14, atk: 10, req: { defence: 80 }, price: 42000, color: 0x4c1d95, trim: 0xc084fc },
+  torva_body:        { id: 'torva_body',        pairId: 'torva_legs',        setName: 'Torva Ancient Set',     name: 'Torva Platebody',         type: 'equip', slot: 'body', iconKind: 'body',        tier: 'raids',   def: 98, str: 18, atk: 12, req: { defence: 80 }, price: 48000, color: 0x2e2738, trim: 0x58446b },
+  torva_legs:        { id: 'torva_legs',        pairId: 'torva_body',        setName: 'Torva Ancient Set',     name: 'Torva Platelegs',         type: 'equip', slot: 'legs', iconKind: 'tassets',     tier: 'raids',   def: 80, str: 14, atk: 10, req: { defence: 80 }, price: 42000, color: 0x2e2738, trim: 0x58446b },
 
   // Pair 19: Champion of Hyrule Set (Lv 50)
-  champion_tunic:    { id: 'champion_tunic',    pairId: 'champion_leggings', setName: 'Champion of Hyrule Set',name: "Champion's Tunic",        type: 'equip', slot: 'body', iconKind: 'tunic',       tier: 'botw',    def: 84, str: 12, rng: 12, mag: 12, req: { defence: 50 }, price: 19000, color: 0x0284c7, trim: 0xfde047 },
-  champion_leggings: { id: 'champion_leggings', pairId: 'champion_tunic',    setName: 'Champion of Hyrule Set',name: "Champion's Trousers",     type: 'equip', slot: 'legs', iconKind: 'trousers',    tier: 'botw',    def: 66, str: 9,  rng: 9,  mag: 9,  req: { defence: 50 }, price: 15500, color: 0xd6c7ab, trim: 0x0284c7 },
+  champion_tunic:    { id: 'champion_tunic',    pairId: 'champion_leggings', setName: 'Champion of Hyrule Set',name: "Champion's Tunic",        type: 'equip', slot: 'body', iconKind: 'tunic',       tier: 'botw',    def: 84, str: 12, rng: 12, mag: 12, req: { defence: 50 }, price: 19000, color: 0x2d4f68, trim: 0x8a7542 },
+  champion_leggings: { id: 'champion_leggings', pairId: 'champion_tunic',    setName: 'Champion of Hyrule Set',name: "Champion's Trousers",     type: 'equip', slot: 'legs', iconKind: 'trousers',    tier: 'botw',    def: 66, str: 9,  rng: 9,  mag: 9,  req: { defence: 50 }, price: 15500, color: 0xa89f8e, trim: 0x2d4f68 },
 
   // Pair 20: Zora Royal Domain Set (Lv 55)
-  zora_armor:        { id: 'zora_armor',        pairId: 'zora_greaves',      setName: 'Zora Royal Set',        name: 'Zora Scale Cuirass',      type: 'equip', slot: 'body', iconKind: 'body',        tier: 'botw',    def: 76, atk: 14, mag: 14, req: { defence: 55 }, price: 21000, color: 0x0ea5e9, trim: 0xe0f2fe },
-  zora_greaves:      { id: 'zora_greaves',      pairId: 'zora_armor',        setName: 'Zora Royal Set',        name: 'Zora Scale Greaves',      type: 'equip', slot: 'legs', iconKind: 'legs',        tier: 'botw',    def: 60, atk: 10, mag: 10, req: { defence: 55 }, price: 17000, color: 0x0ea5e9, trim: 0xe0f2fe },
+  zora_armor:        { id: 'zora_armor',        pairId: 'zora_greaves',      setName: 'Zora Royal Set',        name: 'Zora Scale Cuirass',      type: 'equip', slot: 'body', iconKind: 'body',        tier: 'botw',    def: 76, atk: 14, mag: 14, req: { defence: 55 }, price: 21000, color: 0x2d5668, trim: 0x6a8c9c },
+  zora_greaves:      { id: 'zora_greaves',      pairId: 'zora_armor',        setName: 'Zora Royal Set',        name: 'Zora Scale Greaves',      type: 'equip', slot: 'legs', iconKind: 'legs',        tier: 'botw',    def: 60, atk: 10, mag: 10, req: { defence: 55 }, price: 17000, color: 0x2d5668, trim: 0x6a8c9c },
 
   // Pair 21: Fierce Deity Set (Lv 80)
-  deity_armor:       { id: 'deity_armor',       pairId: 'deity_trousers',    setName: 'Fierce Deity Set',      name: 'Fierce Deity Cuirass',    type: 'equip', slot: 'body', iconKind: 'body',        tier: 'botw',    def: 104,str: 22, atk: 18, req: { defence: 80 }, price: 54000, color: 0x1e3a8a, trim: 0x38bdf8 },
-  deity_trousers:    { id: 'deity_trousers',    pairId: 'deity_armor',       setName: 'Fierce Deity Set',      name: 'Fierce Deity Leggings',   type: 'equip', slot: 'legs', iconKind: 'tassets',     tier: 'botw',    def: 86, str: 18, atk: 14, req: { defence: 80 }, price: 46000, color: 0x1e3a8a, trim: 0x38bdf8 },
+  deity_armor:       { id: 'deity_armor',       pairId: 'deity_trousers',    setName: 'Fierce Deity Set',      name: 'Fierce Deity Cuirass',    type: 'equip', slot: 'body', iconKind: 'body',        tier: 'botw',    def: 104,str: 22, atk: 18, req: { defence: 80 }, price: 54000, color: 0x223042, trim: 0x44607e },
+  deity_trousers:    { id: 'deity_trousers',    pairId: 'deity_armor',       setName: 'Fierce Deity Set',      name: 'Fierce Deity Leggings',   type: 'equip', slot: 'legs', iconKind: 'tassets',     tier: 'botw',    def: 86, str: 18, atk: 14, req: { defence: 80 }, price: 46000, color: 0x223042, trim: 0x44607e },
 
   // Pair 22: Green Dragonhide Ranged Set (Lv 20 Ranged)
   green_dhide_body:  { id: 'green_dhide_body',  pairId: 'green_dhide_chaps', setName: "Green D'hide Set",      name: "Green D'hide Body",       type: 'equip', slot: 'body', iconKind: 'dhide_body',  tier: 'adamant', def: 28, rng: 22, req: { ranged: 20 },  price: 1100,  color: 0x16a34a, trim: 0x86efac },
@@ -190,8 +196,8 @@ export const ITEMS = {
   mystic_bottom:     { id: 'mystic_bottom',     pairId: 'mystic_top',        setName: 'Mystic Robe Set',       name: 'Mystic Robe Bottom',      type: 'equip', slot: 'legs', iconKind: 'robe_bottom', tier: 'rune',    def: 18, mag: 22, req: { magic: 20 },  price: 1400,  color: 0x1e40af, trim: 0x38bdf8 },
 
   // Pair 31: Infinity Runecrafter Set (Lv 45 Magic)
-  infinity_top:      { id: 'infinity_top',      pairId: 'infinity_bottom',   setName: 'Infinity Robe Set',     name: 'Infinity Top',            type: 'equip', slot: 'body', iconKind: 'robe_top',    tier: 'raids',   def: 36, mag: 44, req: { magic: 45 },  price: 7200,  color: 0x9333ea, trim: 0xf472b6 },
-  infinity_bottom:   { id: 'infinity_bottom',   pairId: 'infinity_top',      setName: 'Infinity Robe Set',     name: 'Infinity Bottoms',        type: 'equip', slot: 'legs', iconKind: 'robe_bottom', tier: 'raids',   def: 28, mag: 35, req: { magic: 45 },  price: 5800,  color: 0x9333ea, trim: 0xf472b6 },
+  infinity_top:      { id: 'infinity_top',      pairId: 'infinity_bottom',   setName: 'Infinity Robe Set',     name: 'Infinity Top',            type: 'equip', slot: 'body', iconKind: 'robe_top',    tier: 'raids',   def: 36, mag: 44, req: { magic: 45 },  price: 7200,  color: 0x4b3366, trim: 0x8a6382 },
+  infinity_bottom:   { id: 'infinity_bottom',   pairId: 'infinity_top',      setName: 'Infinity Robe Set',     name: 'Infinity Bottoms',        type: 'equip', slot: 'legs', iconKind: 'robe_bottom', tier: 'raids',   def: 28, mag: 35, req: { magic: 45 },  price: 5800,  color: 0x4b3366, trim: 0x8a6382 },
 
   // Pair 32: Ahrim's Barrows Magic Set (Lv 65 Magic)
   ahrim_top:         { id: 'ahrim_top',         pairId: 'ahrim_bottom',      setName: "Ahrim's Barrows Set",   name: "Ahrim's Robetop",         type: 'equip', slot: 'body', iconKind: 'robe_top',    tier: 'barrows', def: 54, mag: 62, req: { magic: 65 },  price: 17500, color: 0x3f6212, trim: 0xa3e635 },
@@ -200,6 +206,18 @@ export const ITEMS = {
   // Pair 33: Ancestral Archmage Set (Lv 75 Magic)
   ancestral_top:     { id: 'ancestral_top',     pairId: 'ancestral_bottom',  setName: 'Ancestral Robe Set',    name: 'Ancestral Robe Top',      type: 'equip', slot: 'body', iconKind: 'robe_top',    tier: 'raids',   def: 68, mag: 88, req: { magic: 75 },  price: 39000, color: 0x6366f1, trim: 0xfde047 },
   ancestral_bottom:  { id: 'ancestral_bottom',  pairId: 'ancestral_top',     setName: 'Ancestral Robe Set',    name: 'Ancestral Robe Bottom',   type: 'equip', slot: 'legs', iconKind: 'robe_bottom', tier: 'raids',   def: 54, mag: 72, req: { magic: 75 },  price: 33000, color: 0x6366f1, trim: 0xfde047 },
+
+  // Pair 34: Karil's Barrows Ranged Set (Lv 65 Ranged)
+  karil_top:         { id: 'karil_top',         pairId: 'karil_skirt',       setName: "Karil's Barrows Set",   name: "Karil's Leathertop",      type: 'equip', slot: 'body', iconKind: 'dhide_body',  tier: 'barrows', def: 52, rng: 64, req: { ranged: 65, defence: 65 }, price: 18000, color: 0x451a03, trim: 0xa3e635 },
+  karil_skirt:       { id: 'karil_skirt',       pairId: 'karil_top',         setName: "Karil's Barrows Set",   name: "Karil's Leatherskirt",    type: 'equip', slot: 'legs', iconKind: 'dhide_chaps', tier: 'barrows', def: 42, rng: 52, req: { ranged: 65, defence: 65 }, price: 15000, color: 0x451a03, trim: 0xa3e635 },
+
+  // Pair 35: Crystal Elven Ranged Set (Lv 70 Ranged)
+  crystal_body:      { id: 'crystal_body',      pairId: 'crystal_legs',      setName: 'Crystal Elven Set',     name: 'Crystal Body Armor',      type: 'equip', slot: 'body', iconKind: 'dhide_body',  tier: 'botw',    def: 66, rng: 74, req: { ranged: 70, defence: 70 }, price: 25000, color: 0x06b6d4, trim: 0xa5f3fc },
+  crystal_legs:      { id: 'crystal_legs',      pairId: 'crystal_body',      setName: 'Crystal Elven Set',     name: 'Crystal Leg Armor',       type: 'equip', slot: 'legs', iconKind: 'dhide_chaps', tier: 'botw',    def: 52, rng: 58, req: { ranged: 70, defence: 70 }, price: 21000, color: 0x06b6d4, trim: 0xa5f3fc },
+
+  // Pair 36: Bloodbark Vampire Magic Set (Lv 60 Magic)
+  bloodbark_top:     { id: 'bloodbark_top',     pairId: 'bloodbark_bottom',  setName: 'Bloodbark Robe Set',    name: 'Bloodbark Body',          type: 'equip', slot: 'body', iconKind: 'robe_top',    tier: 'dragon',  def: 56, mag: 54, req: { magic: 60, defence: 60 }, price: 14000, color: 0x881337, trim: 0xf43f5e },
+  bloodbark_bottom:  { id: 'bloodbark_bottom',  pairId: 'bloodbark_top',     setName: 'Bloodbark Robe Set',    name: 'Bloodbark Legs',          type: 'equip', slot: 'legs', iconKind: 'robe_bottom', tier: 'dragon',  def: 44, mag: 42, req: { magic: 60, defence: 60 }, price: 11500, color: 0x881337, trim: 0xf43f5e },
 
   // =========================================================================
   // 3. HELMETS, HATS, HOODS & CIRCLETS (head)
@@ -210,23 +228,27 @@ export const ITEMS = {
   steel_helm:        { id: 'steel_helm',        name: 'Steel Full Helm',            type: 'equip', slot: 'head', iconKind: 'head',    tier: 'steel',   def: 12, req: { defence: 10 }, price: 240,   color: 0xcbd5e1, trim: 0xf8fafc },
   black_helm:        { id: 'black_helm',        name: 'Black Full Helm',            type: 'equip', slot: 'head', iconKind: 'head',    tier: 'black',   def: 14, req: { defence: 15 }, price: 360,   color: 0x1e293b, trim: 0xfacc15 },
   white_helm:        { id: 'white_helm',        name: 'White Knight Sallet',        type: 'equip', slot: 'head', iconKind: 'head',    tier: 'white',   def: 15, req: { defence: 15 }, price: 390,   color: 0xf8fafc, trim: 0xfacc15 },
-  mith_helm:         { id: 'mith_helm',         name: 'Mithril Full Helm',          type: 'equip', slot: 'head', iconKind: 'head',    tier: 'mithril', def: 17, req: { defence: 20 }, price: 420,   color: 0x2563eb, trim: 0x93c5fd },
-  addy_helm:         { id: 'addy_helm',         name: 'Adamant Full Helm',          type: 'equip', slot: 'head', iconKind: 'head',    tier: 'adamant', def: 23, req: { defence: 30 }, price: 960,   color: 0x059669, trim: 0x6ee7b7 },
-  rune_helm:         { id: 'rune_helm',         name: 'Rune Full Helm',             type: 'equip', slot: 'head', iconKind: 'head',    tier: 'rune',    def: 31, req: { defence: 40 }, price: 2200,  color: 0x06b6d4, trim: 0xa5f3fc },
-  gilded_helm:       { id: 'gilded_helm',       name: 'Gilded Full Helm',           type: 'equip', slot: 'head', iconKind: 'head',    tier: 'gilded',  def: 35, req: { defence: 45 }, price: 4500,  color: 0xfacc15, trim: 0xfef08a },
-  dragon_helm:       { id: 'dragon_helm',       name: 'Dragon Full Helm',           type: 'equip', slot: 'head', iconKind: 'head',    tier: 'dragon',  def: 44, str: 3,  req: { defence: 60 }, price: 7800,  color: 0xdc2626, trim: 0xfacc15 },
-  neitiznot_helm:    { id: 'neitiznot_helm',    name: 'Helm of Neitiznot',          type: 'equip', slot: 'head', iconKind: 'head',    tier: 'bandos',  def: 48, str: 6,  atk: 4,  req: { defence: 55 }, price: 11500, color: 0xe2e8f0, trim: 0xfacc15 },
-  dharok_helm:       { id: 'dharok_helm',       name: "Dharok's Barrows Helm",      type: 'equip', slot: 'head', iconKind: 'head',    tier: 'barrows', def: 52, str: 5,  req: { defence: 70 }, price: 12500, color: 0x3f6212, trim: 0xa3e635 },
-  justiciar_helm:    { id: 'justiciar_helm',    name: 'Justiciar Faceguard',        type: 'equip', slot: 'head', iconKind: 'head',    tier: 'raids',   def: 60, str: 4,  req: { defence: 75 }, price: 19000, color: 0xe2e8f0, trim: 0x38bdf8 },
-  torva_helm:        { id: 'torva_helm',        name: 'Torva Full Helm',            type: 'equip', slot: 'head', iconKind: 'head',    tier: 'raids',   def: 64, str: 10, atk: 6,  req: { defence: 80 }, price: 29000, color: 0x4c1d95, trim: 0xc084fc },
-  champion_circlet:  { id: 'champion_circlet',  name: 'Diamond Royal Circlet',      type: 'equip', slot: 'head', iconKind: 'circlet', tier: 'botw',    def: 46, str: 8,  rng: 8,  mag: 8,  req: { defence: 50 }, price: 14000, color: 0x38bdf8, trim: 0xfacc15 },
-  robin_hat:         { id: 'robin_hat',         name: 'Robin Hood Ranger Hat',      type: 'equip', slot: 'head', iconKind: 'hat',     tier: 'adamant', def: 14, rng: 18, req: { ranged: 25 },  price: 2800,  color: 0x16a34a, trim: 0xef4444 },
-  sheikah_mask:      { id: 'sheikah_mask',      name: 'Sheikah Stealth Mask',       type: 'equip', slot: 'head', iconKind: 'hood',    tier: 'botw',    def: 28, rng: 30, req: { ranged: 55 },  price: 8500,  color: 0x312e81, trim: 0xef4444 },
-  armadyl_helm:      { id: 'armadyl_helm',      name: 'Armadyl Beaked Helm',        type: 'equip', slot: 'head', iconKind: 'head',    tier: 'raids',   def: 42, rng: 40, req: { ranged: 70 },  price: 16500, color: 0xe2e8f0, trim: 0xfacc15 },
-  wizard_hat:        { id: 'wizard_hat',        name: 'Blue Wizard Hat',            type: 'equip', slot: 'head', iconKind: 'hat',     tier: 'mithril', def: 3,  mag: 8,  req: { magic: 1 },   price: 90,    color: 0x1d4ed8, trim: 0xfde047 },
-  mystic_hat:        { id: 'mystic_hat',        name: 'Mystic Pointed Hat',         type: 'equip', slot: 'head', iconKind: 'hat',     tier: 'rune',    def: 12, mag: 16, req: { magic: 20 },  price: 950,   color: 0x1e40af, trim: 0x38bdf8 },
-  ahrim_hood:        { id: 'ahrim_hood',        name: "Ahrim's Barrows Hood",       type: 'equip', slot: 'head', iconKind: 'hood',    tier: 'barrows', def: 28, mag: 32, req: { magic: 65 },  price: 9800,  color: 0x3f6212, trim: 0xa3e635 },
-  ancestral_hat:     { id: 'ancestral_hat',     name: 'Ancestral Archmage Hat',     type: 'equip', slot: 'head', iconKind: 'hat',     tier: 'raids',   def: 38, mag: 48, req: { magic: 75 },  price: 22000, color: 0x6366f1, trim: 0xfde047 },
+  mith_helm:         { id: 'mith_helm',         name: 'Mithril Full Helm',          type: 'equip', slot: 'head', iconKind: 'head',    tier: 'mithril', def: 17, req: { defence: 20 }, price: 420,   color: 0x4a6785, trim: 0x7593b0 },
+  addy_helm:         { id: 'addy_helm',         name: 'Adamant Full Helm',          type: 'equip', slot: 'head', iconKind: 'head',    tier: 'adamant', def: 23, req: { defence: 30 }, price: 960,   color: 0x385446, trim: 0x5a7868 },
+  rune_helm:         { id: 'rune_helm',         name: 'Rune Full Helm',             type: 'equip', slot: 'head', iconKind: 'head',    tier: 'rune',    def: 31, req: { defence: 40 }, price: 2200,  color: 0x3d5e75, trim: 0x7694a8 },
+  gilded_helm:       { id: 'gilded_helm',       name: 'Gilded Full Helm',           type: 'equip', slot: 'head', iconKind: 'head',    tier: 'gilded',  def: 35, req: { defence: 45 }, price: 4500,  color: 0xbfa15f, trim: 0xd8c28c },
+  dragon_helm:       { id: 'dragon_helm',       name: 'Dragon Full Helm',           type: 'equip', slot: 'head', iconKind: 'head',    tier: 'dragon',  def: 44, str: 3,  req: { defence: 60 }, price: 7800,  color: 0x6e2424, trim: 0x9e7b42 },
+  neitiznot_helm:    { id: 'neitiznot_helm',    name: 'Helm of Neitiznot',          type: 'equip', slot: 'head', iconKind: 'head',    tier: 'bandos',  def: 48, str: 6,  atk: 4,  req: { defence: 55 }, price: 11500, color: 0x8a96a4, trim: 0x9e7b42 },
+  dharok_helm:       { id: 'dharok_helm',       name: "Dharok's Barrows Helm",      type: 'equip', slot: 'head', iconKind: 'head',    tier: 'barrows', def: 52, str: 5,  req: { defence: 70 }, price: 12500, color: 0x4b543b, trim: 0x7a8565 },
+  justiciar_helm:    { id: 'justiciar_helm',    name: 'Justiciar Faceguard',        type: 'equip', slot: 'head', iconKind: 'head',    tier: 'raids',   def: 60, str: 4,  req: { defence: 75 }, price: 19000, color: 0xb8c0cb, trim: 0x486b85 },
+  torva_helm:        { id: 'torva_helm',        name: 'Torva Full Helm',            type: 'equip', slot: 'head', iconKind: 'head',    tier: 'raids',   def: 64, str: 10, atk: 6,  req: { defence: 80 }, price: 29000, color: 0x2e2738, trim: 0x58446b },
+  champion_circlet:  { id: 'champion_circlet',  name: 'Diamond Royal Circlet',      type: 'equip', slot: 'head', iconKind: 'circlet', tier: 'botw',    def: 46, str: 8,  rng: 8,  mag: 8,  req: { defence: 50 }, price: 14000, color: 0x3d5a73, trim: 0x9e8548 },
+  robin_hat:         { id: 'robin_hat',         name: 'Robin Hood Ranger Hat',      type: 'equip', slot: 'head', iconKind: 'hat',     tier: 'adamant', def: 14, rng: 18, req: { ranged: 25 },  price: 2800,  color: 0x2d4436, trim: 0x6e2424 },
+  sheikah_mask:      { id: 'sheikah_mask',      name: 'Sheikah Stealth Mask',       type: 'equip', slot: 'head', iconKind: 'hood',    tier: 'botw',    def: 28, rng: 30, req: { ranged: 55 },  price: 8500,  color: 0x221f38, trim: 0x6e2424 },
+  armadyl_helm:      { id: 'armadyl_helm',      setName: 'Armadyl Ranged Set',    name: 'Armadyl Beaked Helm',        type: 'equip', slot: 'head', iconKind: 'head',    tier: 'raids',   def: 42, rng: 40, req: { ranged: 70 },  price: 16500, color: 0xb8c0cb, trim: 0x9e8046 },
+  wizard_hat:        { id: 'wizard_hat',        setName: 'Blue Wizard Set',       name: 'Blue Wizard Hat',            type: 'equip', slot: 'head', iconKind: 'hat',     tier: 'mithril', def: 3,  mag: 8,  req: { magic: 1 },   price: 90,    color: 0x223554, trim: 0x8a7038 },
+  mystic_hat:        { id: 'mystic_hat',        setName: 'Mystic Robe Set',       name: 'Mystic Pointed Hat',         type: 'equip', slot: 'head', iconKind: 'hat',     tier: 'rune',    def: 12, mag: 16, req: { magic: 20 },  price: 950,   color: 0x253b5e, trim: 0x4a7894 },
+  ahrim_hood:        { id: 'ahrim_hood',        setName: "Ahrim's Barrows Set",   name: "Ahrim's Barrows Hood",       type: 'equip', slot: 'head', iconKind: 'hood',    tier: 'barrows', def: 28, mag: 32, req: { magic: 65 },  price: 9800,  color: 0x4b543b, trim: 0x768260 },
+  ancestral_hat:     { id: 'ancestral_hat',     setName: 'Ancestral Robe Set',    name: 'Ancestral Archmage Hat',     type: 'equip', slot: 'head', iconKind: 'hat',     tier: 'raids',   def: 38, mag: 48, req: { magic: 75 },  price: 22000, color: 0x3d3558, trim: 0x8a7038 },
+  infinity_hat:      { id: 'infinity_hat',      setName: 'Infinity Robe Set',     name: 'Infinity Hat',               type: 'equip', slot: 'head', iconKind: 'hat',     tier: 'raids',   def: 18, mag: 24, req: { magic: 45 },  price: 5400,  color: 0x4b3366, trim: 0x8a6382 },
+  masori_mask:       { id: 'masori_mask',       setName: 'Masori Ranger Set',     name: 'Masori Mask (f)',            type: 'equip', slot: 'head', iconKind: 'hood',    tier: 'gilded',  def: 44, rng: 46, req: { ranged: 80 }, price: 26000, color: 0x7c5932, trim: 0xb89a62 },
+  karil_coif:        { id: 'karil_coif',        setName: "Karil's Barrows Set",   name: "Karil's Coif",               type: 'equip', slot: 'head', iconKind: 'hood',    tier: 'barrows', def: 26, rng: 30, req: { ranged: 65, defence: 65 }, price: 9200, color: 0x451a03, trim: 0x6e7855 },
+  crystal_helm:      { id: 'crystal_helm',      setName: 'Crystal Elven Set',     name: 'Crystal Helm',               type: 'equip', slot: 'head', iconKind: 'head',    tier: 'botw',    def: 32, rng: 36, req: { ranged: 70, defence: 70 }, price: 14000, color: 0x4a7082, trim: 0x82a5b8 },
 
   // =========================================================================
   // 4. SHIELDS & DEFENDERS (shield)
@@ -236,32 +258,47 @@ export const ITEMS = {
   iron_shield:       { id: 'iron_shield',       name: 'Iron Kiteshield',            type: 'equip', slot: 'shield', tier: 'iron',    def: 12, req: { defence: 5 },  price: 140,   color: 0x9ca3af, trim: 0xd1d5db },
   steel_shield:      { id: 'steel_shield',      name: 'Steel Kiteshield',           type: 'equip', slot: 'shield', tier: 'steel',   def: 16, req: { defence: 10 }, price: 310,   color: 0xcbd5e1, trim: 0xf8fafc },
   black_shield:      { id: 'black_shield',      name: 'Black Kiteshield',           type: 'equip', slot: 'shield', tier: 'black',   def: 19, req: { defence: 15 }, price: 450,   color: 0x1e293b, trim: 0xfacc15 },
-  mith_shield:       { id: 'mith_shield',       name: 'Mithril Kiteshield',         type: 'equip', slot: 'shield', tier: 'mithril', def: 22, req: { defence: 20 }, price: 540,   color: 0x2563eb, trim: 0x93c5fd },
-  addy_shield:       { id: 'addy_shield',       name: 'Adamant Kiteshield',         type: 'equip', slot: 'shield', tier: 'adamant', def: 30, req: { defence: 30 }, price: 1250,  color: 0x059669, trim: 0x6ee7b7 },
-  rune_shield:       { id: 'rune_shield',       name: 'Rune Kiteshield',            type: 'equip', slot: 'shield', tier: 'rune',    def: 42, req: { defence: 40 }, price: 3200,  color: 0x06b6d4, trim: 0xa5f3fc },
-  gilded_shield:     { id: 'gilded_shield',     name: 'Gilded Kiteshield',          type: 'equip', slot: 'shield', tier: 'gilded',  def: 46, req: { defence: 45 }, price: 5600,  color: 0xfacc15, trim: 0xfef08a },
-  dragon_defender:   { id: 'dragon_defender',   name: 'Dragon Defender',            type: 'equip', slot: 'shield', iconKind: 'defender', tier: 'dragon', def: 28, atk: 18, str: 14, req: { defence: 50 }, price: 9800, color: 0xdc2626, trim: 0xfde047 },
-  hylian_shield:     { id: 'hylian_shield',     name: 'Hylian Royal Shield',        type: 'equip', slot: 'shield', tier: 'botw',    def: 65, str: 8,  atk: 6,  req: { defence: 45 }, price: 15000, color: 0x1d4ed8, trim: 0xfacc15 },
-  elysian_shield:    { id: 'elysian_shield',    name: 'Elysian Spirit Shield',      type: 'equip', slot: 'shield', tier: 'raids',   def: 85, mag: 15, rng: 15, req: { defence: 75 }, price: 42000, color: 0x38bdf8, trim: 0xe0f2fe },
+  mith_shield:       { id: 'mith_shield',       name: 'Mithril Kiteshield',         type: 'equip', slot: 'shield', tier: 'mithril', def: 22, req: { defence: 20 }, price: 540,   color: 0x4a6785, trim: 0x7593b0 },
+  addy_shield:       { id: 'addy_shield',       name: 'Adamant Kiteshield',         type: 'equip', slot: 'shield', tier: 'adamant', def: 30, req: { defence: 30 }, price: 1250,  color: 0x385446, trim: 0x5a7868 },
+  rune_shield:       { id: 'rune_shield',       name: 'Rune Kiteshield',            type: 'equip', slot: 'shield', tier: 'rune',    def: 42, req: { defence: 40 }, price: 3200,  color: 0x3d5e75, trim: 0x7694a8 },
+  gilded_shield:     { id: 'gilded_shield',     name: 'Gilded Kiteshield',          type: 'equip', slot: 'shield', tier: 'gilded',  def: 46, req: { defence: 45 }, price: 5600,  color: 0xbfa15f, trim: 0xd8c28c },
+  dragon_defender:   { id: 'dragon_defender',   name: 'Dragon Defender',            type: 'equip', slot: 'shield', iconKind: 'defender', tier: 'dragon', def: 28, atk: 18, str: 14, req: { defence: 50 }, price: 9800, color: 0x6e2424, trim: 0x9e7b42 },
+  hylian_shield:     { id: 'hylian_shield',     name: 'Hylian Royal Shield',        type: 'equip', slot: 'shield', tier: 'botw',    def: 65, str: 8,  atk: 6,  req: { defence: 45 }, price: 15000, color: 0x2d4f68, trim: 0x9e8548 },
+  elysian_shield:    { id: 'elysian_shield',    name: 'Elysian Spirit Shield',      type: 'equip', slot: 'shield', tier: 'raids',   def: 85, mag: 15, rng: 15, req: { defence: 75 }, price: 42000, color: 0x3d5e75, trim: 0xa8c2d4 },
+  arcane_shield:     { id: 'arcane_shield',     name: 'Arcane Spirit Shield',       type: 'equip', slot: 'shield', iconKind: 'shield',   tier: 'raids',   def: 78, mag: 38, req: { defence: 75, magic: 70 }, price: 44000, color: 0x3a536b, trim: 0x688aa6 },
+  elidinis_ward:     { id: 'elidinis_ward',     name: "Elidinis' Sun Ward",         type: 'equip', slot: 'shield', iconKind: 'ward',     tier: 'raids',   def: 64, mag: 46, req: { defence: 80, magic: 80 }, price: 49000, color: 0x7c5932, trim: 0x4a7894 },
+  mages_book:        { id: 'mages_book',        name: "Mage's Book of Spells",      type: 'equip', slot: 'shield', iconKind: 'book',     tier: 'raids',   def: 20, mag: 32, req: { magic: 60 }, price: 13500, color: 0x221f38, trim: 0x9e8046 },
+  tome_of_fire:      { id: 'tome_of_fire',      name: 'Tome of Fire',               type: 'equip', slot: 'shield', iconKind: 'book',     tier: 'dragon',  def: 14, mag: 26, req: { magic: 50 }, price: 8900,  color: 0x6e2424, trim: 0xb89a62 },
+  tome_of_water:     { id: 'tome_of_water',     name: 'Tome of Water',              type: 'equip', slot: 'shield', iconKind: 'book',     tier: 'mithril', def: 14, mag: 26, req: { magic: 50 }, price: 8900,  color: 0x2d4f68, trim: 0x6a8c9c },
+  twisted_buckler:   { id: 'twisted_buckler',   name: 'Twisted Dragonfang Buckler', type: 'equip', slot: 'shield', iconKind: 'buckler',  tier: 'raids',   def: 52, rng: 34, req: { defence: 75, ranged: 75 }, price: 34000, color: 0x2d4436, trim: 0x9e8046 },
+  odium_ward:        { id: 'odium_ward',        name: 'Odium Amber Ward',           type: 'equip', slot: 'shield', iconKind: 'ward',     tier: 'dragon',  def: 42, rng: 24, req: { defence: 60 }, price: 11000, color: 0x7c5932, trim: 0xa87832 },
 
   // =========================================================================
   // 5. BOOTS & GREAVES (feet)
   // =========================================================================
-  leather_boots:     { id: 'leather_boots',     name: 'Traveler Boots',             type: 'equip', slot: 'feet', tier: 'bronze',  def: 3,  req: { defence: 1 },  price: 30,    color: 0x5c3a21, trim: 0xa16207 },
-  bronze_boots:      { id: 'bronze_boots',      name: 'Bronze Greaves',             type: 'equip', slot: 'feet', tier: 'bronze',  def: 4,  req: { defence: 1 },  price: 45,    color: 0xb87333, trim: 0xd97706 },
-  iron_boots:        { id: 'iron_boots',        name: 'Iron Greaves',               type: 'equip', slot: 'feet', tier: 'iron',    def: 6,  str: 1,  req: { defence: 5 },  price: 120,   color: 0x9ca3af, trim: 0xd1d5db },
-  steel_boots:       { id: 'steel_boots',       name: 'Steel Greaves',              type: 'equip', slot: 'feet', tier: 'steel',   def: 9,  str: 1,  req: { defence: 10 }, price: 240,   color: 0xcbd5e1, trim: 0xf8fafc },
-  mith_boots:        { id: 'mith_boots',        name: 'Mithril Greaves',            type: 'equip', slot: 'feet', tier: 'mithril', def: 12, str: 2,  req: { defence: 20 }, price: 480,   color: 0x2563eb, trim: 0x93c5fd },
-  addy_boots:        { id: 'addy_boots',        name: 'Adamant Greaves',            type: 'equip', slot: 'feet', tier: 'adamant', def: 14, str: 2,  req: { defence: 30 }, price: 950,   color: 0x059669, trim: 0x6ee7b7 },
-  rune_boots:        { id: 'rune_boots',        name: 'Rune Greaves',               type: 'equip', slot: 'feet', tier: 'rune',    def: 17, str: 3,  req: { defence: 40 }, price: 1900,  color: 0x06b6d4, trim: 0xa5f3fc },
-  gilded_boots:      { id: 'gilded_boots',      name: 'Gilded Greaves',             type: 'equip', slot: 'feet', tier: 'gilded',  def: 19, str: 4,  req: { defence: 45 }, price: 3600,  color: 0xfacc15, trim: 0xfef08a },
-  dragon_boots:      { id: 'dragon_boots',      name: 'Dragon Boots',               type: 'equip', slot: 'feet', tier: 'dragon',  def: 24, str: 7,  req: { defence: 60 }, price: 6400,  color: 0xdc2626, trim: 0xfde047 },
-  bandos_boots:      { id: 'bandos_boots',      name: 'Bandos Warboots',            type: 'equip', slot: 'feet', tier: 'bandos',  def: 28, str: 6,  req: { defence: 65 }, price: 8200,  color: 0x57534e, trim: 0xd97706 },
-  primordial_boots:  { id: 'primordial_boots',  name: 'Primordial Boots',           type: 'equip', slot: 'feet', tier: 'raids',   def: 32, str: 12, atk: 8,  req: { defence: 75 }, price: 18500, color: 0xb91c1c, trim: 0xfde047 },
+  leather_boots:     { id: 'leather_boots',     name: 'Traveler Boots',             type: 'equip', slot: 'feet', tier: 'bronze',  def: 3,  req: { defence: 1 },  price: 30,    color: 0x3e2c1c, trim: 0x6e5235 },
+  bronze_boots:      { id: 'bronze_boots',      name: 'Bronze Greaves',             type: 'equip', slot: 'feet', tier: 'bronze',  def: 4,  req: { defence: 1 },  price: 45,    color: 0x8a623a, trim: 0xa88448 },
+  iron_boots:        { id: 'iron_boots',        name: 'Iron Greaves',               type: 'equip', slot: 'feet', tier: 'iron',    def: 6,  str: 1,  req: { defence: 5 },  price: 120,   color: 0x525c68, trim: 0x7a8594 },
+  steel_boots:       { id: 'steel_boots',       name: 'Steel Greaves',              type: 'equip', slot: 'feet', tier: 'steel',   def: 9,  str: 1,  req: { defence: 10 }, price: 240,   color: 0x707d8c, trim: 0x98a5b5 },
+  mith_boots:        { id: 'mith_boots',        name: 'Mithril Greaves',            type: 'equip', slot: 'feet', tier: 'mithril', def: 12, str: 2,  req: { defence: 20 }, price: 480,   color: 0x4a6785, trim: 0x7593b0 },
+  addy_boots:        { id: 'addy_boots',        name: 'Adamant Greaves',            type: 'equip', slot: 'feet', tier: 'adamant', def: 14, str: 2,  req: { defence: 30 }, price: 950,   color: 0x385446, trim: 0x5a7868 },
+  rune_boots:        { id: 'rune_boots',        name: 'Rune Greaves',               type: 'equip', slot: 'feet', tier: 'rune',    def: 17, str: 3,  req: { defence: 40 }, price: 1900,  color: 0x3d5e75, trim: 0x7694a8 },
+  gilded_boots:      { id: 'gilded_boots',      name: 'Gilded Greaves',             type: 'equip', slot: 'feet', tier: 'gilded',  def: 19, str: 4,  req: { defence: 45 }, price: 3600,  color: 0xbfa15f, trim: 0xd8c28c },
+  dragon_boots:      { id: 'dragon_boots',      name: 'Dragon Boots',               type: 'equip', slot: 'feet', tier: 'dragon',  def: 24, str: 7,  req: { defence: 60 }, price: 6400,  color: 0x6e2424, trim: 0x9e7b42 },
+  bandos_boots:      { id: 'bandos_boots',      name: 'Bandos Warboots',            type: 'equip', slot: 'feet', tier: 'bandos',  def: 28, str: 6,  req: { defence: 65 }, price: 8200,  color: 0x52483d, trim: 0x9e7b45 },
+  primordial_boots:  { id: 'primordial_boots',  name: 'Primordial Boots',           type: 'equip', slot: 'feet', tier: 'raids',   def: 32, str: 12, atk: 8,  req: { defence: 75 }, price: 18500, color: 0x5e1b1b, trim: 0x9e7b42 },
   ranger_boots:      { id: 'ranger_boots',      name: 'Robin Ranger Boots',         type: 'equip', slot: 'feet', tier: 'adamant', def: 12, rng: 16, req: { ranged: 30 },  price: 4200,  color: 0x16a34a, trim: 0x86efac },
   pegasian_boots:    { id: 'pegasian_boots',    name: 'Pegasian Winged Boots',      type: 'equip', slot: 'feet', tier: 'raids',   def: 24, rng: 28, req: { ranged: 75 },  price: 18500, color: 0x10b981, trim: 0xfef08a },
-  mystic_boots:      { id: 'mystic_boots',      name: 'Mystic Boots',               type: 'equip', slot: 'feet', tier: 'rune',    def: 10, mag: 12, req: { magic: 20 },   price: 850,   color: 0x1e40af, trim: 0x38bdf8 },
+  mystic_boots:      { id: 'mystic_boots',      setName: 'Mystic Robe Set',       name: 'Mystic Boots',               type: 'equip', slot: 'feet', tier: 'rune',    def: 10, mag: 12, req: { magic: 20 },   price: 850,   color: 0x1e40af, trim: 0x38bdf8 },
   eternal_boots:     { id: 'eternal_boots',     name: 'Eternal Archmage Boots',     type: 'equip', slot: 'feet', tier: 'raids',   def: 24, mag: 28, req: { magic: 75 },   price: 18500, color: 0x7e22ce, trim: 0xe9d5ff },
+  infinity_boots:    { id: 'infinity_boots',    setName: 'Infinity Robe Set',     name: 'Infinity Boots',             type: 'equip', slot: 'feet', tier: 'raids',   def: 14, mag: 16, req: { magic: 45 },   price: 4800,  color: 0x4b3366, trim: 0x8a6382 },
+  wizard_boots:      { id: 'wizard_boots',      setName: 'Blue Wizard Set',       name: 'Blue Wizard Boots',          type: 'equip', slot: 'feet', tier: 'mithril', def: 3,  mag: 6,  req: { magic: 1 },    price: 110,   color: 0x1d4ed8, trim: 0xfde047 },
+  ancestral_boots:   { id: 'ancestral_boots',   setName: 'Ancestral Robe Set',    name: 'Ancestral Archmage Boots',   type: 'equip', slot: 'feet', tier: 'raids',   def: 22, mag: 26, req: { magic: 75 },   price: 16500, color: 0x6366f1, trim: 0xfde047 },
+  green_dhide_boots: { id: 'green_dhide_boots', name: "Green D'hide Boots",        type: 'equip', slot: 'feet', tier: 'adamant', def: 8,  rng: 10, req: { ranged: 20 },  price: 650,   color: 0x16a34a, trim: 0x86efac },
+  blue_dhide_boots:  { id: 'blue_dhide_boots',  name: "Blue D'hide Boots",         type: 'equip', slot: 'feet', tier: 'mithril', def: 11, rng: 12, req: { ranged: 35 },  price: 1450,  color: 0x2563eb, trim: 0x93c5fd },
+  red_dhide_boots:   { id: 'red_dhide_boots',   name: "Red D'hide Boots",          type: 'equip', slot: 'feet', tier: 'dragon',  def: 13, rng: 15, req: { ranged: 50 },  price: 2500,  color: 0xb91c1c, trim: 0xfca5a5 },
+  black_dhide_boots: { id: 'black_dhide_boots', name: "Black D'hide Boots",        type: 'equip', slot: 'feet', tier: 'black',   def: 16, rng: 19, req: { ranged: 60 },  price: 3800,  color: 0x18181b, trim: 0xa1a1aa },
+  bloodbark_boots:   { id: 'bloodbark_boots',   setName: 'Bloodbark Robe Set',    name: 'Bloodbark Boots',            type: 'equip', slot: 'feet', tier: 'dragon',  def: 18, mag: 18, req: { magic: 60, defence: 60 }, price: 6800, color: 0x881337, trim: 0xf43f5e },
 
   // =========================================================================
   // 6. GAUNTLETS & VAMBRACES (hands)
@@ -269,14 +306,20 @@ export const ITEMS = {
   leather_gloves:    { id: 'leather_gloves',    name: 'Leather Vambraces',          type: 'equip', slot: 'hands', tier: 'bronze',  def: 3,  rng: 3,  req: { defence: 1 },  price: 35,    color: 0x78350f, trim: 0xb45309 },
   bronze_gloves:     { id: 'bronze_gloves',     name: 'Bronze Gauntlets',           type: 'equip', slot: 'hands', tier: 'bronze',  def: 4,  str: 1,  req: { defence: 1 },  price: 45,    color: 0xb87333, trim: 0xd97706 },
   iron_gloves:       { id: 'iron_gloves',       name: 'Iron Gauntlets',             type: 'equip', slot: 'hands', tier: 'iron',    def: 6,  str: 2,  req: { defence: 5 },  price: 110,   color: 0x9ca3af, trim: 0xe5e7eb },
-  mith_gloves:       { id: 'mith_gloves',       name: 'Mithril Gauntlets',          type: 'equip', slot: 'hands', tier: 'mithril', def: 9,  str: 4,  req: { defence: 20 }, price: 420,   color: 0x2563eb, trim: 0x93c5fd },
-  rune_gloves:       { id: 'rune_gloves',       name: 'Rune Gauntlets',             type: 'equip', slot: 'hands', tier: 'rune',    def: 12, atk: 6,  str: 6,  req: { defence: 35 }, price: 1600,  color: 0x06b6d4, trim: 0xa5f3fc },
-  dragon_gloves:     { id: 'dragon_gloves',     name: 'Dragon Gauntlets',           type: 'equip', slot: 'hands', tier: 'dragon',  def: 15, atk: 9,  str: 9,  req: { defence: 55 }, price: 4500,  color: 0xdc2626, trim: 0xfacc15 },
+  mith_gloves:       { id: 'mith_gloves',       name: 'Mithril Gauntlets',          type: 'equip', slot: 'hands', tier: 'mithril', def: 9,  str: 4,  req: { defence: 20 }, price: 420,   color: 0x4a6785, trim: 0x7593b0 },
+  rune_gloves:       { id: 'rune_gloves',       name: 'Rune Gauntlets',             type: 'equip', slot: 'hands', tier: 'rune',    def: 12, atk: 6,  str: 6,  req: { defence: 35 }, price: 1600,  color: 0x3d5e75, trim: 0x7694a8 },
+  dragon_gloves:     { id: 'dragon_gloves',     name: 'Dragon Gauntlets',           type: 'equip', slot: 'hands', tier: 'dragon',  def: 15, atk: 9,  str: 9,  req: { defence: 55 }, price: 4500,  color: 0x6e2424, trim: 0x9e7b42 },
   barrows_gloves:    { id: 'barrows_gloves',    name: 'Barrows Gloves',             type: 'equip', slot: 'hands', tier: 'barrows', def: 18, atk: 12, str: 12, rng: 12, mag: 10, req: { defence: 45 }, price: 7500, color: 0x451a03, trim: 0xfacc15 },
   ferocious_gloves:  { id: 'ferocious_gloves',  name: 'Ferocious Hydra Gloves',     type: 'equip', slot: 'hands', tier: 'raids',   def: 20, atk: 18, str: 16, req: { defence: 75 }, price: 17500, color: 0x991b1b, trim: 0xfde047 },
   green_dhide_vamb:  { id: 'green_dhide_vamb',  name: "Green D'hide Vambraces",     type: 'equip', slot: 'hands', tier: 'adamant', def: 8,  rng: 11, req: { ranged: 20 },  price: 550,   color: 0x16a34a, trim: 0x86efac },
+  blue_dhide_vamb:   { id: 'blue_dhide_vamb',   name: "Blue D'hide Vambraces",      type: 'equip', slot: 'hands', tier: 'mithril', def: 10, rng: 13, req: { ranged: 35 },  price: 1200,  color: 0x2563eb, trim: 0x93c5fd },
+  red_dhide_vamb:    { id: 'red_dhide_vamb',    name: "Red D'hide Vambraces",       type: 'equip', slot: 'hands', tier: 'dragon',  def: 12, rng: 15, req: { ranged: 50 },  price: 2100,  color: 0xb91c1c, trim: 0xfca5a5 },
   black_dhide_vamb:  { id: 'black_dhide_vamb',  name: "Black D'hide Vambraces",     type: 'equip', slot: 'hands', tier: 'black',   def: 14, rng: 18, req: { ranged: 60 },  price: 3200,  color: 0x18181b, trim: 0xa1a1aa },
-  mystic_gloves:     { id: 'mystic_gloves',     name: 'Mystic Gloves',              type: 'equip', slot: 'hands', tier: 'rune',    def: 6,  mag: 10, req: { magic: 20 },   price: 650,   color: 0x1e40af, trim: 0x38bdf8 },
+  armadyl_bracers:   { id: 'armadyl_bracers',   setName: 'Armadyl Ranged Set',    name: 'Armadyl Vambraces',          type: 'equip', slot: 'hands', tier: 'raids',   def: 18, rng: 24, req: { ranged: 70 },  price: 12500, color: 0xe2e8f0, trim: 0xfacc15 },
+  mystic_gloves:     { id: 'mystic_gloves',     setName: 'Mystic Robe Set',       name: 'Mystic Gloves',              type: 'equip', slot: 'hands', tier: 'rune',    def: 6,  mag: 10, req: { magic: 20 },   price: 650,   color: 0x1e40af, trim: 0x38bdf8 },
+  infinity_gloves:   { id: 'infinity_gloves',   setName: 'Infinity Robe Set',     name: 'Infinity Gloves',            type: 'equip', slot: 'hands', tier: 'raids',   def: 10, mag: 14, req: { magic: 45 },   price: 3600,  color: 0x4b3366, trim: 0x8a6382 },
+  wizard_gloves:     { id: 'wizard_gloves',     setName: 'Blue Wizard Set',       name: 'Blue Wizard Gloves',         type: 'equip', slot: 'hands', tier: 'mithril', def: 2,  mag: 5,  req: { magic: 1 },    price: 95,    color: 0x1d4ed8, trim: 0xfde047 },
+  ancestral_gloves:  { id: 'ancestral_gloves',  setName: 'Ancestral Robe Set',    name: 'Ancestral Archmage Bracers', type: 'equip', slot: 'hands', tier: 'raids',   def: 16, mag: 20, req: { magic: 75 },   price: 13500, color: 0x6366f1, trim: 0xfde047 },
 
   // =========================================================================
   // 7. CAPES, AMULETS & RINGS (cape, neck, ring)

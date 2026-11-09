@@ -41,6 +41,10 @@ const AMMO_BY_WEAPON: Record<string, string | null> = {
   yew_bow: 'bronze_arrow',
   magic_bow: 'bronze_arrow',
   ancient_bow: null,
+  crystal_bow: null,
+  toxic_blowpipe: null,
+  twisted_bow: 'bronze_arrow',
+  karil_crossbow: 'bronze_bolts',
   rune_crossbow: 'bronze_bolts',
   armadyl_crossbow: 'bronze_bolts'
 };
@@ -82,10 +86,16 @@ const ALL_AROUND_IDS = new Set([
 
 const RANGED_IDS = new Set([
   'robin_hat', 'ranger_boots', 'pegasian_boots', 'leather_gloves',
-  'ava_accumulator', 'necklace_anguish', 'archers_ring'
+  'ava_accumulator', 'necklace_anguish', 'archers_ring',
+  'twisted_buckler', 'odium_ward', 'toxic_blowpipe', 'twisted_bow',
+  'crystal_bow', 'karil_crossbow'
 ]);
 
-const MAGIC_IDS = new Set(['eternal_boots', 'god_cape', 'occult_necklace', 'seers_ring']);
+const MAGIC_IDS = new Set([
+  'eternal_boots', 'god_cape', 'occult_necklace', 'seers_ring',
+  'mages_book', 'tome_of_fire', 'tome_of_water', 'arcane_shield', 'elidinis_ward',
+  'trident_seas', 'tumeken_shadow'
+]);
 
 const MELEE_IDS = new Set([
   'neitiznot_helm', 'hylian_shield', 'primordial_boots', 'ferocious_gloves',
@@ -93,8 +103,13 @@ const MELEE_IDS = new Set([
   'wooden_shield'
 ]);
 
-const RANGED_PREFIXES = ['green_dhide_', 'blue_dhide_', 'red_dhide_', 'black_dhide_', 'sheikah_', 'armadyl_', 'masori_'];
-const MAGIC_PREFIXES = ['wizard_', 'mystic_', 'infinity_', 'ahrim_', 'ancestral_'];
+const RANGED_PREFIXES = [
+  'green_dhide_', 'blue_dhide_', 'red_dhide_', 'black_dhide_',
+  'sheikah_', 'armadyl_', 'masori_', 'karil_', 'crystal_'
+];
+const MAGIC_PREFIXES = [
+  'wizard_', 'mystic_', 'infinity_', 'ahrim_', 'ancestral_', 'bloodbark_'
+];
 const MELEE_PREFIXES = [
   'bronze_', 'iron_', 'steel_', 'black_', 'white_', 'mith_', 'addy_', 'rune_',
   'gilded_', 'granite_', 'dragon_', 'dharok_', 'torag_', 'bandos_', 'justiciar_',

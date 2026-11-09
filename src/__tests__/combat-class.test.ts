@@ -82,6 +82,26 @@ const EXPECTED: Record<string, CombatClass> = {
   bronze_bolts: 'ranged',
   arrow_shaft: 'ranged',
   feather: 'ranged',
+  karil_top: 'ranged',
+  karil_skirt: 'ranged',
+  karil_coif: 'ranged',
+  karil_crossbow: 'ranged',
+  crystal_body: 'ranged',
+  crystal_legs: 'ranged',
+  crystal_helm: 'ranged',
+  crystal_bow: 'ranged',
+  toxic_blowpipe: 'ranged',
+  twisted_bow: 'ranged',
+  twisted_buckler: 'ranged',
+  odium_ward: 'ranged',
+  armadyl_bracers: 'ranged',
+  green_dhide_boots: 'ranged',
+  blue_dhide_boots: 'ranged',
+  red_dhide_boots: 'ranged',
+  black_dhide_boots: 'ranged',
+  blue_dhide_vamb: 'ranged',
+  red_dhide_vamb: 'ranged',
+  masori_mask: 'ranged',
   fire_staff: 'magic',
   mystic_staff: 'magic',
   ancient_staff: 'magic',
@@ -90,17 +110,34 @@ const EXPECTED: Record<string, CombatClass> = {
   wizard_hat: 'magic',
   wizard_top: 'magic',
   wizard_bottom: 'magic',
+  wizard_boots: 'magic',
+  wizard_gloves: 'magic',
   mystic_hat: 'magic',
   mystic_top: 'magic',
   mystic_bottom: 'magic',
+  infinity_hat: 'magic',
   infinity_top: 'magic',
   infinity_bottom: 'magic',
+  infinity_boots: 'magic',
+  infinity_gloves: 'magic',
   ahrim_hood: 'magic',
   ahrim_top: 'magic',
   ahrim_bottom: 'magic',
   ancestral_hat: 'magic',
   ancestral_top: 'magic',
   ancestral_bottom: 'magic',
+  ancestral_boots: 'magic',
+  ancestral_gloves: 'magic',
+  bloodbark_top: 'magic',
+  bloodbark_bottom: 'magic',
+  bloodbark_boots: 'magic',
+  mages_book: 'magic',
+  tome_of_fire: 'magic',
+  tome_of_water: 'magic',
+  arcane_shield: 'magic',
+  elidinis_ward: 'magic',
+  trident_seas: 'magic',
+  tumeken_shadow: 'magic',
   eternal_boots: 'magic',
   god_cape: 'magic',
   occult_necklace: 'magic',
@@ -140,11 +177,14 @@ const EXPECTED: Record<string, CombatClass> = {
 
 const SILHOUETTES: Record<string, GearSilhouette> = {
   wizard_hat: 'wizard-hat',
+  infinity_hat: 'infinity-hat',
   mystic_hat: 'wizard-hat',
   ancestral_hat: 'wizard-hat',
   robin_hat: 'robin-hat',
   hylian_hood: 'hood',
   ahrim_hood: 'hood',
+  karil_coif: 'hood',
+  masori_mask: 'hood',
   sheikah_mask: 'sheikah-mask',
   champion_circlet: 'circlet',
   neitiznot_helm: 'neitiznot-helm',
@@ -152,6 +192,7 @@ const SILHOUETTES: Record<string, GearSilhouette> = {
   torva_helm: 'horned-helm',
   dragon_helm: 'horned-helm',
   armadyl_helm: 'armadyl-helm',
+  crystal_helm: 'helm',
   bronze_helm: 'helm',
   justiciar_helm: 'helm',
   bandos_chest: 'bandos-chest',
@@ -162,13 +203,19 @@ const SILHOUETTES: Record<string, GearSilhouette> = {
   green_dhide_body: 'dhide-body',
   armadyl_body: 'dhide-body',
   masori_body: 'dhide-body',
+  karil_top: 'dhide-body',
+  crystal_body: 'dhide-body',
   wizard_top: 'robe-top',
   ancestral_top: 'robe-top',
+  bloodbark_top: 'robe-top',
+  infinity_top: 'robe-top',
   hylian_tunic: 'tunic',
   champion_tunic: 'tunic',
   sheikah_top: 'tunic',
   wizard_bottom: 'robe-skirt',
   ancestral_bottom: 'robe-skirt',
+  bloodbark_bottom: 'robe-skirt',
+  infinity_bottom: 'robe-skirt',
   bandos_tassets: 'tassets',
   justiciar_legs: 'tassets',
   inquisitor_legs: 'tassets',
@@ -176,14 +223,20 @@ const SILHOUETTES: Record<string, GearSilhouette> = {
   deity_trousers: 'tassets',
   green_dhide_chaps: 'dhide-chaps',
   masori_chaps: 'dhide-chaps',
+  karil_skirt: 'dhide-chaps',
+  crystal_legs: 'dhide-chaps',
   hylian_trousers: 'trousers',
   champion_leggings: 'trousers',
   bronze_legs: 'platelegs',
   rune_crossbow: 'crossbow',
   armadyl_crossbow: 'crossbow',
+  karil_crossbow: 'crossbow',
   shortbow: 'bow',
   magic_bow: 'bow',
   ancient_bow: 'ancient-bow',
+  crystal_bow: 'ancient-bow',
+  twisted_bow: 'twisted-bow',
+  toxic_blowpipe: 'blowpipe',
   dharok_greataxe: 'greataxe',
   inquisitor_mace: 'mace',
   kodai_wand: 'wand',
@@ -191,6 +244,8 @@ const SILHOUETTES: Record<string, GearSilhouette> = {
   mystic_staff: 'staff',
   ancient_staff: 'ancient-staff',
   ahrim_staff: 'ahrim-staff',
+  tumeken_shadow: 'shadow-staff',
+  trident_seas: 'staff',
   abyssal_whip: 'whip',
   bronze_scimitar: 'scimitar',
   steel_longsword: 'sword',
@@ -198,6 +253,13 @@ const SILHOUETTES: Record<string, GearSilhouette> = {
   master_sword: 'greatsword',
   dragon_defender: 'defender',
   elysian_shield: 'elysian',
+  arcane_shield: 'arcane-shield',
+  elidinis_ward: 'ward',
+  odium_ward: 'ward',
+  twisted_buckler: 'twisted-buckler',
+  mages_book: 'book',
+  tome_of_fire: 'book',
+  tome_of_water: 'book',
   hylian_shield: 'hylian-shield',
   wooden_shield: 'kiteshield',
   gilded_shield: 'kiteshield',
@@ -207,8 +269,11 @@ const SILHOUETTES: Record<string, GearSilhouette> = {
   pegasian_boots: 'pegasian-boots',
   primordial_boots: 'primordial-boots',
   eternal_boots: 'eternal-boots',
+  infinity_boots: 'infinity-boots',
   leather_boots: 'boots',
   ferocious_gloves: 'gloves',
+  infinity_gloves: 'gloves',
+  armadyl_bracers: 'gloves',
   ava_accumulator: 'ava',
   fire_cape: 'lava-cape',
   infernal_cape: 'lava-cape',
@@ -317,5 +382,47 @@ describe('gear silhouettes', () => {
     expect(plate.torso).toBeNull();
     expect(plate.left?.children.length).toBeGreaterThan(0);
     expect(plate.right?.children.length).toBeGreaterThan(0);
+  });
+
+  it('completes the full Infinity kit across head, body, legs, boots, and gloves', () => {
+    const pieces = [
+      ITEMS.infinity_hat,
+      ITEMS.infinity_top,
+      ITEMS.infinity_bottom,
+      ITEMS.infinity_boots,
+      ITEMS.infinity_gloves
+    ];
+    for (const piece of pieces) {
+      expect(piece).toBeTruthy();
+      expect(piece.setName).toBe('Infinity Robe Set');
+      expect(piece.tier).toBe('raids');
+      expect(piece.req?.magic).toBe(45);
+      expect((piece.mag || 0)).toBeGreaterThan(0);
+      expect(itemCombatClass(piece)).toBe('magic');
+    }
+  });
+
+  it('provides dedicated magic shields and ranged bucklers with offensive stats', () => {
+    const magicOffhands = [
+      ITEMS.mages_book,
+      ITEMS.tome_of_fire,
+      ITEMS.tome_of_water,
+      ITEMS.arcane_shield,
+      ITEMS.elidinis_ward
+    ];
+    for (const offhand of magicOffhands) {
+      expect(offhand).toBeTruthy();
+      expect(offhand.slot).toBe('shield');
+      expect((offhand.mag || 0)).toBeGreaterThan(0);
+      expect(itemCombatClass(offhand)).toBe('magic');
+    }
+
+    const rangedOffhands = [ITEMS.twisted_buckler, ITEMS.odium_ward];
+    for (const buckler of rangedOffhands) {
+      expect(buckler).toBeTruthy();
+      expect(buckler.slot).toBe('shield');
+      expect((buckler.rng || 0)).toBeGreaterThan(0);
+      expect(itemCombatClass(buckler)).toBe('ranged');
+    }
   });
 });

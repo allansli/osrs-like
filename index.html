@@ -116,6 +116,20 @@
     <button class="hud-btn" id="btn-settings" onclick="openSettingsModal()">Settings</button>
   </div>
 
+  <div id="perf-hud" class="perf-hud" title="Hardware Acceleration & FPS Status (Click to cycle Graphics Quality)" onclick="cycleGraphicsQuality()">
+    <div class="perf-row">
+      <span class="perf-status-dot" id="perf-dot"></span>
+      <span id="perf-gpu-name">GPU: Detecting...</span>
+    </div>
+    <div class="perf-row-sub">
+      <span id="perf-fps">-- FPS</span>
+      <span class="perf-sep">•</span>
+      <span id="perf-calls">-- calls</span>
+      <span class="perf-sep">•</span>
+      <span id="perf-dpr">1.25x</span>
+    </div>
+  </div>
+
   <div id="quest-tracker" class="quest-tracker">
     <div class="tracker-kicker">Active quest</div>
     <div id="quest-tracker-title">Lumbridge Foundations</div>
@@ -362,6 +376,8 @@
         <div><b>Fight</b> Click a monster. F arms the special attack. Space jumps.</div>
       </div>
       <div class="settings-grid">
+        <button class="hud-btn" id="graphics-quality-btn" onclick="cycleGraphicsQuality()">Graphics: Balanced</button>
+        <button class="hud-btn" id="outlines-toggle-btn" onclick="toggleOutlines()">Outlines: On</button>
         <button class="hud-btn active" id="xp-rate-btn" onclick="toggleXpMultiplier()">10x League XP</button>
         <button class="hud-btn" id="time-of-day-btn" onclick="cycleTimeOfDay()">Golden Hour</button>
         <button class="hud-btn active" id="audio-btn" onclick="toggleAudio()">Audio On</button>

@@ -5,7 +5,10 @@ import type { GameState, SlayerTask } from './types';
 
 export const RARE_TIERS = ['rune', 'gilded', 'dragon', 'barrows', 'bandos', 'raids', 'botw'] as const;
 
-const DRAGONFIRE_WARDS = ['hylian_shield', 'elysian_shield', 'dragon_defender'] as const;
+const DRAGONFIRE_WARDS = [
+  'hylian_shield', 'elysian_shield', 'dragon_defender',
+  'arcane_shield', 'elidinis_ward', 'tome_of_fire', 'twisted_buckler'
+] as const;
 
 export interface SlayerBand {
   monster: string;
@@ -219,7 +222,7 @@ export interface WeaponSpec {
   multiplier: number;
   healRatio: number;
   accuracy: number;
-  kind: 'melee' | 'ranged';
+  kind: 'melee' | 'ranged' | 'magic';
 }
 
 export const RESPAWN_SECONDS = 3.2;
@@ -307,6 +310,20 @@ export function weaponSpecial(weaponId: string | null | undefined): WeaponSpec {
       return { name: 'Ancient Piercing Shot', cost: 25, multiplier: 1.7, healRatio: 0, accuracy: 1.5, kind: 'ranged' };
     case 'armadyl_crossbow':
       return { name: 'Armadyl Eye', cost: 25, multiplier: 1.7, healRatio: 0, accuracy: 1.5, kind: 'ranged' };
+    case 'toxic_blowpipe':
+      return { name: 'Toxic Siphon', cost: 25, multiplier: 1.6, healRatio: 0.35, accuracy: 1.6, kind: 'ranged' };
+    case 'twisted_bow':
+      return { name: 'Dragon Tempest', cost: 50, multiplier: 2.1, healRatio: 0, accuracy: 2.0, kind: 'ranged' };
+    case 'crystal_bow':
+      return { name: 'Crystal Resonance', cost: 25, multiplier: 1.65, healRatio: 0, accuracy: 1.6, kind: 'ranged' };
+    case 'karil_crossbow':
+      return { name: 'Tainted Barrage', cost: 25, multiplier: 1.6, healRatio: 0, accuracy: 1.5, kind: 'ranged' };
+    case 'kodai_wand':
+      return { name: 'Ancient Freeze', cost: 25, multiplier: 1.7, healRatio: 0, accuracy: 1.7, kind: 'magic' };
+    case 'tumeken_shadow':
+      return { name: 'Solar Cataclysm', cost: 50, multiplier: 2.2, healRatio: 0, accuracy: 2.0, kind: 'magic' };
+    case 'trident_seas':
+      return { name: 'Tidal Surge', cost: 25, multiplier: 1.65, healRatio: 0.15, accuracy: 1.6, kind: 'magic' };
     default:
       return { name: 'Hylian Spin-Slash', cost: 25, multiplier: 1.55, healRatio: 0, accuracy: 1.5, kind: 'melee' };
   }
