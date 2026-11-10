@@ -50,6 +50,11 @@ export interface HumanoidRig {
   rightArmPivot: THREE.Group;
   leftLegPivot: THREE.Group;
   rightLegPivot: THREE.Group;
+  leftElbowPivot?: THREE.Group;
+  rightElbowPivot?: THREE.Group;
+  leftKneePivot?: THREE.Group;
+  rightKneePivot?: THREE.Group;
+  bracerMat?: THREE.MeshLambertMaterial;
   tunicMat: THREE.MeshLambertMaterial;
   legsMat: THREE.MeshLambertMaterial;
   bootMat: THREE.MeshLambertMaterial;

@@ -2116,28 +2116,19 @@ def build_body_and_leg_armors(mats: dict[str, bpy.types.Material]):
             f"Gear_platelegs_{suffix}",
             showcase_pos=(s1 + side * 0.11, stand_y - 0.34, stand_z),
         )
-        # Armored thigh cuisses with horizontal fluting
+        # Armored thigh cuisses with horizontal fluting, fitted to Kai's athletic proportions
         lgb.add_lofted(
             [
-                (-0.36, 0.080, 0.084, 0.0, -0.008, 0.20),
-                (-0.08, 0.095, 0.096, 0.0, -0.006, 0.20),
+                (-0.36, 0.136, 0.140, 0.0, -0.005, 0.20),
+                (-0.08, 0.146, 0.148, 0.0, -0.005, 0.20),
             ],
             mats["primary"],
             vertices=14,
         )
         # Articulated knee poleyn with flared lateral side wing fan
-        lgb.add_beveled_box(0.120, 0.090, 0.058, mats["trim"], ty=-0.40, tz=-0.068)
+        lgb.add_beveled_box(0.140, 0.095, 0.065, mats["trim"], ty=-0.38, tz=-0.075)
         lgb.add_curved_spike(
-            0.028, 0.10, -0.02, mats["trim"], bend_x=side * 0.04, tx=side * 0.065, ty=-0.40, tz=-0.05, rz=-side * 0.75
-        )
-        # Greave with prominent sharp front shin ridge
-        lgb.add_lofted(
-            [
-                (-0.66, 0.070, 0.076, 0.0, -0.006, 0.18, 0.0, 0.015),
-                (-0.43, 0.078, 0.084, 0.0, -0.008, 0.18, 0.0, 0.018),
-            ],
-            mats["primary"],
-            vertices=14,
+            0.028, 0.10, -0.02, mats["trim"], bend_x=side * 0.04, tx=side * 0.085, ty=-0.38, tz=-0.05, rz=-side * 0.75
         )
 
     # -------------------------------------------------------------------------
@@ -2234,19 +2225,19 @@ def build_body_and_leg_armors(mats: dict[str, bpy.types.Material]):
             f"Gear_tassets_{suffix}",
             showcase_pos=(s3 + side * 0.11, stand_y - 0.34, stand_z),
         )
-        # Heavy curved barbarian thigh guard
+        # Heavy curved barbarian thigh guard fitted to Kai's proportions
         lgb.add_beveled_box(
-            0.115,
+            0.145,
             0.24,
-            0.070,
+            0.082,
             mats["primary"],
-            tx=side * 0.025,
+            tx=side * 0.035,
             ty=-0.20,
             tz=-0.04,
             rz=side * 0.15,
         )
         # Studded knee plate
-        lgb.add_beveled_box(0.110, 0.085, 0.058, mats["trim"], ty=-0.38, tz=-0.065)
+        lgb.add_beveled_box(0.130, 0.085, 0.058, mats["trim"], ty=-0.38, tz=-0.065)
 
     # -------------------------------------------------------------------------
     # Stand 4: Gear_dhide-body_torso + Gear_dhide-chaps_torso / legL / legR
@@ -2285,18 +2276,18 @@ def build_body_and_leg_armors(mats: dict[str, bpy.types.Material]):
         )
         lgb.add_lofted(
             [
-                (-0.52, 0.076, 0.080, 0.0, -0.006, 0.16),
-                (-0.08, 0.092, 0.094, 0.0, -0.006, 0.18),
+                (-0.36, 0.134, 0.138, 0.0, -0.005, 0.16),
+                (-0.08, 0.144, 0.146, 0.0, -0.005, 0.18),
             ],
             mats["primary"],
             vertices=14,
         )
         # Criss-cross outer-thigh laced drawstrings
         for lace_y in (-0.14, -0.22, -0.30):
-            lgb.add_beveled_box(0.032, 0.016, 0.024, mats["leather"], tx=side * 0.082, ty=lace_y, tz=-0.02)
+            lgb.add_beveled_box(0.032, 0.016, 0.024, mats["leather"], tx=side * 0.125, ty=lace_y, tz=-0.02)
         # Studded dragon leather knee patch
-        lgb.add_beveled_box(0.105, 0.075, 0.048, mats["trim"], ty=-0.38, tz=-0.078)
-        lgb.add_gem(0.022, 0.022, 0.016, mats["glow"], ty=-0.38, tz=-0.098, sides=6)
+        lgb.add_beveled_box(0.130, 0.085, 0.055, mats["trim"], ty=-0.38, tz=-0.078)
+        lgb.add_gem(0.024, 0.024, 0.018, mats["glow"], ty=-0.38, tz=-0.098, sides=6)
 
     # -------------------------------------------------------------------------
     # Stand 5: Gear_robe-top_torso + armL/armR + Gear_robe-skirt_torso

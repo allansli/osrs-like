@@ -177,6 +177,10 @@ export function upgradeHumanoidRigWithGltf(
   const rightArmPivot = heroRoot.getObjectByName('RightArmPivot') as THREE.Group | undefined;
   const leftLegPivot = heroRoot.getObjectByName('LeftLegPivot') as THREE.Group | undefined;
   const rightLegPivot = heroRoot.getObjectByName('RightLegPivot') as THREE.Group | undefined;
+  const leftElbowPivot = heroRoot.getObjectByName('LeftElbowPivot') as THREE.Group | undefined;
+  const rightElbowPivot = heroRoot.getObjectByName('RightElbowPivot') as THREE.Group | undefined;
+  const leftKneePivot = heroRoot.getObjectByName('LeftKneePivot') as THREE.Group | undefined;
+  const rightKneePivot = heroRoot.getObjectByName('RightKneePivot') as THREE.Group | undefined;
 
   if (!torso || !headGroup || !leftArmPivot || !rightArmPivot || !leftLegPivot || !rightLegPivot) {
     console.warn('[BlenderHero] Missing expected pivot groups in hero.glb');
@@ -308,6 +312,11 @@ export function upgradeHumanoidRigWithGltf(
   rig.rightArmPivot = rightArmPivot;
   rig.leftLegPivot = leftLegPivot;
   rig.rightLegPivot = rightLegPivot;
+  if (leftElbowPivot) rig.leftElbowPivot = leftElbowPivot;
+  if (rightElbowPivot) rig.rightElbowPivot = rightElbowPivot;
+  if (leftKneePivot) rig.leftKneePivot = leftKneePivot;
+  if (rightKneePivot) rig.rightKneePivot = rightKneePivot;
+  rig.bracerMat = bracerMat;
   rig.tunicMat = tunicMat;
   rig.legsMat = legsMat;
   rig.bootMat = bootMat;

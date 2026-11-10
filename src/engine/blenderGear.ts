@@ -15,7 +15,7 @@ export function hasBlenderGearTemplate(): boolean {
   return loadedGearRoot !== null;
 }
 
-export function loadBlenderGearTemplate(url = '/models/gear.glb?v=4503_v2'): Promise<GLTF | null> {
+export function loadBlenderGearTemplate(url = '/models/gear.glb?v=4503_v3'): Promise<GLTF | null> {
   if (typeof window === 'undefined' || typeof document === 'undefined') {
     return Promise.resolve(null);
   }
