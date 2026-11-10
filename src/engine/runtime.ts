@@ -1971,7 +1971,11 @@ function createSlayerMaster(x, z) {
     addCartoonOutline(vannakaWep, 0.02);
 
     const capeVis = buildCapeVisual({ id: 'slayer_cape', slot: 'cape', color: 0x4c1d95, trim: 0xfacc15 });
-    capeVis.position.set(0, 0.285, 0.175);
+    if (rig.group.userData.isBlenderHero || rig.leftElbowPivot) {
+      capeVis.position.set(0, 0.22, 0.02);
+    } else {
+      capeVis.position.set(0, 0.285, 0.175);
+    }
     rig.torso.add(capeVis);
     vannakaCape = capeVis;
     addCartoonOutline(vannakaCape, 0.02);
@@ -2287,13 +2291,25 @@ function rebuildPlayerEquipmentMeshes() {
   }
 
   const neck = equip('neck');
-  if (neck) mount(torso, buildAmuletVisual(neck), 'amuletMesh');
+  if (neck) {
+    const amulet = buildAmuletVisual(neck);
+    if (isBlenderHero) {
+      amulet.position.set(0, -0.16, -0.04);
+    }
+    mount(torso, amulet, 'amuletMesh');
+  }
 
   const ring = equip('ring');
   if (ring) {
     const ringMesh = buildRingVisual(ring);
-    ringMesh.position.set(0, 0, 0);
-    mount(rArm, ringMesh, 'ringMesh');
+    if (player.parts.rightElbowPivot) {
+      ringMesh.position.set(0.19, 0.30, 0.10);
+      ringMesh.scale.set(0.7, 0.7, 0.7);
+      mount(player.parts.rightElbowPivot, ringMesh, 'ringMesh');
+    } else {
+      ringMesh.position.set(0, 0, 0);
+      mount(rArm, ringMesh, 'ringMesh');
+    }
   }
 
   const feet = equip('feet');
@@ -2301,8 +2317,8 @@ function rebuildPlayerEquipmentMeshes() {
     const bootL = buildBootVisual(feet, true);
     const bootR = buildBootVisual(feet, false);
     if (player.parts.leftKneePivot && player.parts.rightKneePivot) {
-      bootL.position.set(0, 0.38, 0);
-      bootR.position.set(0, 0.38, 0);
+      bootL.position.set(-0.11, 0.38, -0.01);
+      bootR.position.set(0.085, 0.38, -0.01);
       mount(player.parts.leftKneePivot, bootL, 'feetMeshL');
       mount(player.parts.rightKneePivot, bootR, 'feetMeshR');
     } else {
@@ -2330,8 +2346,8 @@ function rebuildPlayerEquipmentMeshes() {
     const gloveL = buildGloveVisual(hands, true);
     const gloveR = buildGloveVisual(hands, false);
     if (player.parts.leftElbowPivot && player.parts.rightElbowPivot) {
-      gloveL.position.set(-0.19, -0.28, 0.08);
-      gloveR.position.set(0.19, -0.28, 0.08);
+      gloveL.position.set(-0.18, 0.32, 0.08);
+      gloveR.position.set(0.18, 0.32, 0.08);
       mount(player.parts.leftElbowPivot, gloveL, 'handsMeshL');
       mount(player.parts.rightElbowPivot, gloveR, 'handsMeshR');
     } else {
@@ -2352,8 +2368,13 @@ function rebuildPlayerEquipmentMeshes() {
   const capeItem = equip('cape');
   if (capeItem) {
     const cape = buildCapeVisual(capeItem);
-    if (cape.userData.silhouette === 'ava') cape.position.set(0, 0.16, 0.14);
-    else cape.position.set(0, 0.285, 0.175);
+    if (isBlenderHero) {
+      if (cape.userData.silhouette === 'ava') cape.position.set(0, 0.12, 0.02);
+      else cape.position.set(0, 0.22, 0.02);
+    } else {
+      if (cape.userData.silhouette === 'ava') cape.position.set(0, 0.16, 0.14);
+      else cape.position.set(0, 0.285, 0.175);
+    }
     mount(torso, cape, 'capeMesh');
   }
 
