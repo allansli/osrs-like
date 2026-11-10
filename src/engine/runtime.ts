@@ -5556,12 +5556,14 @@ function gameLoop(now) {
         player.parts.torso.rotation.y = -Math.sin(phase) * 0.12;
       }
 
-      player.parts.leftArmPivot.rotation.x = -swing * 0.58;
-      if (player.parts.leftElbowPivot) player.parts.leftElbowPivot.rotation.x = -0.35 - Math.max(0, swing) * 0.5;
+      player.parts.leftArmPivot.rotation.x = 0.10 - swing * 0.58;
+      player.parts.leftArmPivot.rotation.z = 0.28;
+      if (player.parts.leftElbowPivot) player.parts.leftElbowPivot.rotation.x = 0.45 + Math.max(0, -swing) * 0.25;
 
       if (player.attackAnim <= 0) {
-        player.parts.rightArmPivot.rotation.x = swing * 0.58;
-        if (player.parts.rightElbowPivot) player.parts.rightElbowPivot.rotation.x = -0.35 - Math.max(0, -swing) * 0.5;
+        player.parts.rightArmPivot.rotation.x = 0.10 + swing * 0.58;
+        player.parts.rightArmPivot.rotation.z = -0.28;
+        if (player.parts.rightElbowPivot) player.parts.rightElbowPivot.rotation.x = 0.45 + Math.max(0, swing) * 0.25;
       }
       updateCapePhysics(true, player.animTime);
     } else {
@@ -5575,11 +5577,13 @@ function gameLoop(now) {
         player.parts.torso.rotation.x = breath * 0.5;
         player.parts.torso.rotation.y *= 0.88;
       }
-      player.parts.leftArmPivot.rotation.x = breath;
-      if (player.parts.leftElbowPivot) player.parts.leftElbowPivot.rotation.x = -0.32 - breath * 0.5;
+      player.parts.leftArmPivot.rotation.x = 0.10 + breath;
+      player.parts.leftArmPivot.rotation.z = 0.28;
+      if (player.parts.leftElbowPivot) player.parts.leftElbowPivot.rotation.x = 0.60 + breath * 0.5;
       if (player.attackAnim <= 0) {
-        player.parts.rightArmPivot.rotation.x = -breath;
-        if (player.parts.rightElbowPivot) player.parts.rightElbowPivot.rotation.x = -0.32 + breath * 0.5;
+        player.parts.rightArmPivot.rotation.x = 0.10 - breath;
+        player.parts.rightArmPivot.rotation.z = -0.28;
+        if (player.parts.rightElbowPivot) player.parts.rightElbowPivot.rotation.x = 0.50 - breath * 0.5;
       }
       updateCapePhysics(false, player.animTime);
     }
@@ -6062,6 +6066,13 @@ function wireBridge() {
   window.resetCameraBehindPlayer = resetCameraBehindPlayer;
   window.dismissOnboarding = dismissOnboarding;
   window.replayOnboarding = replayOnboarding;
+  (window as any).__DEV_ACCESS__ = {
+    player,
+    camera,
+    camState,
+    scene,
+    getAnimator: () => player.blenderAnimator,
+  };
 }
 
 const INTRO_KEY = 'gielinor_hero_intro_v1';

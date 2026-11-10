@@ -127,7 +127,7 @@ export class BlenderHeroAnimator {
 
 let cachedTemplatePromise: Promise<GLTF | null> | null = null;
 
-export function loadBlenderHeroTemplate(url = '/models/hero.glb?v=kai4503_v3'): Promise<GLTF | null> {
+export function loadBlenderHeroTemplate(url = '/models/hero.glb?v=kai4503_v5'): Promise<GLTF | null> {
   if (typeof window === 'undefined' || typeof document === 'undefined') {
     return Promise.resolve(null);
   }

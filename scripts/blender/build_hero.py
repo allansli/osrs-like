@@ -119,7 +119,7 @@ def build_action(pivots: dict, action_name: str, total_frames: int, sample_fn):
         obj.rotation_euler = Euler((0.0, 0.0, 0.0), "XYZ")
 
 def build_all_animations(pivots: dict):
-    # 1. Idle (Heroic upright stance, natural breathing, straight vertical legs)
+    # 1. Idle (Heroic warrior stance, elbows bent forward, arms tucked inward along flank)
     def sample_idle(u: float):
         ang = u * 2.0 * math.pi
         breath = math.sin(ang)
@@ -142,15 +142,15 @@ def build_all_animations(pivots: dict):
                 "pos": (sway_x * 0.5, bob * 0.7, 0.0),
             },
             "LeftArmPivot": {
-                "rot": (0.04 - breath * 0.02, 0.02, -0.06 - sway * 0.02),
+                "rot": (0.10 + breath * 0.015, 0.05, 0.28 - sway * 0.02),
                 "pos": (sway_x, bob, 0.0),
             },
             "RightArmPivot": {
-                "rot": (0.04 - breath * 0.02, -0.02, 0.06 + sway * 0.02),
+                "rot": (0.10 + breath * 0.015, -0.05, -0.28 + sway * 0.02),
                 "pos": (sway_x, bob, 0.0),
             },
-            "LeftElbowPivot": {"rot": (-0.18 + breath * 0.03, 0.0, 0.0)},
-            "RightElbowPivot": {"rot": (-0.18 + breath * 0.03, 0.0, 0.0)},
+            "LeftElbowPivot": {"rot": (0.60 + breath * 0.03, -0.05, 0.0)},
+            "RightElbowPivot": {"rot": (0.50 + breath * 0.03, 0.05, 0.0)},
             "LeftLegPivot": {
                 "rot": (0.0, -torso_yaw * 0.25, -sway * 0.012),
                 "pos": (0.0, 0.0, 0.0),
@@ -165,7 +165,7 @@ def build_all_animations(pivots: dict):
 
     build_action(pivots, "Idle", 48, sample_idle)
 
-    # 2. Walk Cycle (Fluid, backward knee flexion, straight stride)
+    # 2. Walk Cycle (Fluid warrior stride, elbows bent forward, arms swinging along flanks)
     def sample_walk(u: float):
         ang = u * 2.0 * math.pi
         l_phase = math.sin(ang)
@@ -180,8 +180,8 @@ def build_all_animations(pivots: dict):
         l_knee = -math.sin(ang) * 0.75 if math.sin(ang) > 0 else 0.0
         r_knee = math.sin(ang) * 0.75 if math.sin(ang) < 0 else 0.0
 
-        arm_swing = 0.48
-        elbow_swing = 0.35
+        arm_swing = 0.45
+        elbow_swing = 0.25
 
         return {
             "Torso": {
@@ -193,18 +193,18 @@ def build_all_animations(pivots: dict):
                 "pos": (sway * 0.25, dip * 0.8, 0.0),
             },
             "LeftArmPivot": {
-                "rot": (-r_stride * arm_swing, 0.0, -0.06),
+                "rot": (0.10 + r_stride * arm_swing, 0.05, 0.28),
                 "pos": (sway * 0.5, dip, 0.0),
             },
             "RightArmPivot": {
-                "rot": (-l_stride * arm_swing, 0.0, 0.06),
+                "rot": (0.10 + l_stride * arm_swing, -0.05, -0.28),
                 "pos": (sway * 0.5, dip, 0.0),
             },
             "LeftElbowPivot": {
-                "rot": (-0.25 - max(0.0, -r_stride) * elbow_swing, 0.0, 0.0),
+                "rot": (0.45 + max(0.0, r_stride) * elbow_swing, 0.0, 0.0),
             },
             "RightElbowPivot": {
-                "rot": (-0.25 - max(0.0, -l_stride) * elbow_swing, 0.0, 0.0),
+                "rot": (0.45 + max(0.0, l_stride) * elbow_swing, 0.0, 0.0),
             },
             "LeftLegPivot": {
                 "rot": (l_stride, 0.0, sway * 0.2),
@@ -224,35 +224,36 @@ def build_all_animations(pivots: dict):
     def sample_slash(u: float):
         if u < 0.28:
             t = u / 0.28
-            r_arm_x = 0.15 - t * 1.35
-            r_arm_y = -t * 0.55
-            r_arm_z = t * 0.45
+            r_arm_x = 0.10 - t * 0.75
+            r_arm_y = -0.05 - t * 0.35
+            r_arm_z = -0.28 + t * 0.45
             torso_yaw = -t * 0.42
             torso_pitch = 0.04
         elif u < 0.48:
             t = (u - 0.28) / 0.20
             strike = math.sin(t * math.pi * 0.5)
-            r_arm_x = -1.20 + strike * 2.25
-            r_arm_y = -0.55 + strike * 1.05
-            r_arm_z = 0.45 - strike * 0.75
+            r_arm_x = -0.65 + strike * 1.85
+            r_arm_y = -0.40 + strike * 0.85
+            r_arm_z = 0.17 - strike * 0.45
             torso_yaw = -0.42 + strike * 0.95
             torso_pitch = 0.04 + strike * 0.14
         else:
             t = (u - 0.48) / 0.52
             decay = math.exp(-t * 3.5)
-            r_arm_x = 1.05 * decay + 0.10 * (1 - decay)
-            r_arm_y = 0.50 * decay
-            r_arm_z = -0.30 * decay
+            r_arm_x = 1.20 * decay + 0.10 * (1 - decay)
+            r_arm_y = 0.45 * decay - 0.05 * (1 - decay)
+            r_arm_z = -0.28
             torso_yaw = 0.53 * decay
             torso_pitch = 0.18 * decay
 
+        decay_val = math.exp(-max(0.0, u - 0.48) / 0.52 * 3.5) if u >= 0.48 else 1.0
         return {
             "Torso": {"rot": (torso_pitch, torso_yaw, 0.0), "pos": (0.0, 0.0, 0.0)},
             "HeadGroup": {"rot": (0.0, -torso_yaw * 0.5, 0.0), "pos": (0.0, 0.0, 0.0)},
             "RightArmPivot": {"rot": (r_arm_x, r_arm_y, r_arm_z)},
-            "RightElbowPivot": {"rot": (-0.45, 0.0, 0.0)},
-            "LeftArmPivot": {"rot": (-0.35, 0.25, -0.35)},
-            "LeftElbowPivot": {"rot": (-0.65, 0.0, 0.0)},
+            "RightElbowPivot": {"rot": (0.45 * decay_val + 0.50 * (1 - decay_val), 0.0, 0.0)},
+            "LeftArmPivot": {"rot": (0.12, 0.10, 0.28)},
+            "LeftElbowPivot": {"rot": (0.65, 0.0, 0.0)},
             "LeftLegPivot": {"rot": (0.12, 0.0, 0.0)},
             "RightLegPivot": {"rot": (-0.18, 0.0, 0.0)},
             "LeftKneePivot": {"rot": (-0.10, 0.0, 0.0)},
@@ -267,10 +268,10 @@ def build_all_animations(pivots: dict):
         return {
             "Torso": {"rot": (0.24 * thrust, 0.0, 0.0), "pos": (0.0, -0.06 * thrust, -0.16 * thrust)},
             "HeadGroup": {"rot": (-0.15 * thrust, 0.0, 0.0)},
-            "RightArmPivot": {"rot": (0.95 * thrust, 0.0, -0.15 * thrust)},
-            "RightElbowPivot": {"rot": (-0.15 * (1 - thrust), 0.0, 0.0)},
-            "LeftArmPivot": {"rot": (-0.65 * thrust, 0.35, -0.45)},
-            "LeftElbowPivot": {"rot": (-0.55, 0.0, 0.0)},
+            "RightArmPivot": {"rot": (0.10 * (1 - thrust) + 1.15 * thrust, 0.0, -0.28 * (1 - thrust) - 0.10 * thrust)},
+            "RightElbowPivot": {"rot": (0.50 * (1 - thrust) + 0.15 * thrust, 0.0, 0.0)},
+            "LeftArmPivot": {"rot": (0.10 * (1 - thrust) - 0.35 * thrust, 0.12, 0.28)},
+            "LeftElbowPivot": {"rot": (0.60, 0.0, 0.0)},
             "LeftLegPivot": {"rot": (0.35 * thrust, 0.0, 0.0)},
             "RightLegPivot": {"rot": (-0.45 * thrust, 0.0, 0.0)},
             "LeftKneePivot": {"rot": (-0.28 * thrust, 0.0, 0.0)},
@@ -285,10 +286,10 @@ def build_all_animations(pivots: dict):
         return {
             "Torso": {"rot": (0.04, -0.55 * draw, 0.0)},
             "HeadGroup": {"rot": (0.0, 0.45 * draw, 0.0)},
-            "LeftArmPivot": {"rot": (1.45 * draw, -0.25 * draw, -0.12)},
-            "LeftElbowPivot": {"rot": (-0.08 * draw, 0.0, 0.0)},
-            "RightArmPivot": {"rot": (1.35 * draw, 0.35 * draw, 0.45 * draw)},
-            "RightElbowPivot": {"rot": (-1.35 * draw, 0.0, 0.0)},
+            "LeftArmPivot": {"rot": (0.10 * (1 - draw) + 1.45 * draw, 0.05 * (1 - draw) - 0.20 * draw, 0.28 * (1 - draw) + 0.10 * draw)},
+            "LeftElbowPivot": {"rot": (0.60 * (1 - draw) + 0.15 * draw, 0.0, 0.0)},
+            "RightArmPivot": {"rot": (0.10 * (1 - draw) + 1.25 * draw, -0.05 * (1 - draw) + 0.25 * draw, -0.28 * (1 - draw) - 0.15 * draw)},
+            "RightElbowPivot": {"rot": (0.50 * (1 - draw) + 1.25 * draw, 0.0, 0.0)},
             "LeftLegPivot": {"rot": (0.12 * draw, 0.0, 0.0)},
             "RightLegPivot": {"rot": (-0.18 * draw, 0.0, 0.0)},
             "LeftKneePivot": {"rot": (-0.06 * draw, 0.0, 0.0)},
@@ -304,10 +305,10 @@ def build_all_animations(pivots: dict):
         return {
             "Torso": {"rot": (-0.12 * t, 0.0, 0.0), "pos": (0.0, 0.04 * t, 0.0)},
             "HeadGroup": {"rot": (0.18 * t, 0.0, 0.0)},
-            "LeftArmPivot": {"rot": (1.55 * t + pulse, -0.35 * t, -0.35 * t)},
-            "RightArmPivot": {"rot": (1.55 * t + pulse, 0.35 * t, 0.35 * t)},
-            "LeftElbowPivot": {"rot": (-0.45 * t, 0.0, 0.0)},
-            "RightElbowPivot": {"rot": (-0.45 * t, 0.0, 0.0)},
+            "LeftArmPivot": {"rot": (0.10 * (1 - t) + 1.45 * t + pulse, 0.05 * (1 - t) - 0.20 * t, 0.28 * (1 - t) + 0.15 * t)},
+            "RightArmPivot": {"rot": (0.10 * (1 - t) + 1.45 * t + pulse, -0.05 * (1 - t) + 0.20 * t, -0.28 * (1 - t) - 0.15 * t)},
+            "LeftElbowPivot": {"rot": (0.60 * (1 - t) + 0.45 * t, 0.0, 0.0)},
+            "RightElbowPivot": {"rot": (0.50 * (1 - t) + 0.45 * t, 0.0, 0.0)},
             "LeftLegPivot": {"rot": (0.0, 0.0, -0.05 * t)},
             "RightLegPivot": {"rot": (0.0, 0.0, 0.05 * t)},
             "LeftKneePivot": {"rot": (0.0, 0.0, 0.0)},
@@ -334,10 +335,10 @@ def build_all_animations(pivots: dict):
         return {
             "Torso": {"rot": (torso_p, 0.0, 0.0)},
             "HeadGroup": {"rot": (-torso_p * 0.8, 0.0, 0.0)},
-            "RightArmPivot": {"rot": (arm, 0.15, 0.10)},
-            "LeftArmPivot": {"rot": (arm * 0.85, -0.25, -0.15)},
-            "RightElbowPivot": {"rot": (-0.55, 0.0, 0.0)},
-            "LeftElbowPivot": {"rot": (-0.75, 0.0, 0.0)},
+            "RightArmPivot": {"rot": (0.10 * (1 - t) + arm, 0.10, -0.20)},
+            "LeftArmPivot": {"rot": (0.10 * (1 - t) + arm * 0.85, -0.15, 0.20)},
+            "RightElbowPivot": {"rot": (0.55, 0.0, 0.0)},
+            "LeftElbowPivot": {"rot": (0.65, 0.0, 0.0)},
             "LeftLegPivot": {"rot": (0.12, 0.0, 0.0)},
             "RightLegPivot": {"rot": (-0.12, 0.0, 0.0)},
             "LeftKneePivot": {"rot": (-0.10, 0.0, 0.0)},
@@ -364,10 +365,10 @@ def build_all_animations(pivots: dict):
         return {
             "Torso": {"rot": (torso_p, 0.15 * math.sin(u * math.pi), 0.0)},
             "HeadGroup": {"rot": (-torso_p * 0.7, 0.0, 0.0)},
-            "RightArmPivot": {"rot": (arm, 0.20, 0.15)},
-            "RightElbowPivot": {"rot": (-0.65, 0.0, 0.0)},
-            "LeftArmPivot": {"rot": (-0.25, 0.15, -0.20)},
-            "LeftElbowPivot": {"rot": (-0.45, 0.0, 0.0)},
+            "RightArmPivot": {"rot": (0.10 * (1 - t) + arm, 0.15, -0.20)},
+            "RightElbowPivot": {"rot": (0.60, 0.0, 0.0)},
+            "LeftArmPivot": {"rot": (0.15, 0.10, 0.28)},
+            "LeftElbowPivot": {"rot": (0.65, 0.0, 0.0)},
             "LeftLegPivot": {"rot": (0.15, 0.0, 0.0)},
             "RightLegPivot": {"rot": (-0.15, 0.0, 0.0)},
             "LeftKneePivot": {"rot": (-0.12, 0.0, 0.0)},
@@ -383,10 +384,10 @@ def build_all_animations(pivots: dict):
         return {
             "Torso": {"rot": (0.04 + bob * 0.3, 0.0, 0.0)},
             "HeadGroup": {"rot": (0.08, 0.0, 0.0)},
-            "RightArmPivot": {"rot": (0.75 + bob + tug, 0.12, 0.10)},
-            "LeftArmPivot": {"rot": (0.65 + bob + tug, -0.15, -0.10)},
-            "RightElbowPivot": {"rot": (-0.45, 0.0, 0.0)},
-            "LeftElbowPivot": {"rot": (-0.55, 0.0, 0.0)},
+            "RightArmPivot": {"rot": (0.70 + bob + tug, 0.10, -0.20)},
+            "LeftArmPivot": {"rot": (0.60 + bob + tug, -0.12, 0.20)},
+            "RightElbowPivot": {"rot": (0.55, 0.0, 0.0)},
+            "LeftElbowPivot": {"rot": (0.65, 0.0, 0.0)},
             "LeftLegPivot": {"rot": (0.0, 0.0, 0.0)},
             "RightLegPivot": {"rot": (0.0, 0.0, 0.0)},
             "LeftKneePivot": {"rot": (0.0, 0.0, 0.0)},
@@ -404,8 +405,8 @@ def build_all_animations(pivots: dict):
             "HeadGroup": {"rot": (0.0, spin_yaw * 0.85, 0.0)},
             "RightArmPivot": {"rot": (arm_out, 0.0, 0.35)},
             "LeftArmPivot": {"rot": (arm_out, 0.0, -0.35)},
-            "RightElbowPivot": {"rot": (-0.25, 0.0, 0.0)},
-            "LeftElbowPivot": {"rot": (-0.25, 0.0, 0.0)},
+            "RightElbowPivot": {"rot": (0.35, 0.0, 0.0)},
+            "LeftElbowPivot": {"rot": (0.35, 0.0, 0.0)},
             "LeftLegPivot": {"rot": (-0.08, 0.0, 0.0)},
             "RightLegPivot": {"rot": (0.08, 0.0, 0.0)},
             "LeftKneePivot": {"rot": (-0.15, 0.0, 0.0)},
