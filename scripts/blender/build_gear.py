@@ -27,7 +27,37 @@ import os
 import sys
 import bpy
 import bmesh
-from mathutils import Vector, Euler
+from mathutils import Vector, Euler, Matrix
+
+
+# =============================================================================
+# BlendSwap Asset Cache & Loader
+# =============================================================================
+BLEND_ASSET_CACHE: dict[str, bpy.types.Object] = {}
+
+def get_blend_object(blend_rel_path: str, obj_name: str) -> bpy.types.Object | None:
+    cache_key = f"{blend_rel_path}::{obj_name}"
+    if cache_key in BLEND_ASSET_CACHE:
+        return BLEND_ASSET_CACHE[cache_key]
+    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+    blend_file = os.path.join(repo_root, blend_rel_path)
+    if not os.path.exists(blend_file):
+        return None
+    try:
+        with bpy.data.libraries.load(blend_file) as (df, dt):
+            if obj_name in df.objects:
+                dt.objects = [obj_name]
+            else:
+                return None
+        if dt.objects:
+            obj = dt.objects[0]
+            bpy.context.collection.objects.link(obj)
+            BLEND_ASSET_CACHE[cache_key] = obj
+            return obj
+    except Exception as e:
+        print(f"[BlendAsset] Error loading {obj_name} from {blend_file}: {e}")
+        return None
+    return None
 
 
 # =============================================================================
@@ -191,6 +221,107 @@ class GearBuilder:
         mesh = bpy.data.meshes.new(mesh_name)
         bm.to_mesh(mesh)
         bm.free()
+
+        for poly in mesh.polygons:
+            poly.use_smooth = smooth
+
+        obj = bpy.data.objects.new(mesh_name, mesh)
+        obj.location = (0.0, 0.0, 0.0)
+        obj.rotation_euler = Euler((0.0, 0.0, 0.0), "XYZ")
+        obj.scale = (1.0, 1.0, 1.0)
+        if no_outline:
+            obj["noOutline"] = True
+        obj.data.materials.append(mat)
+        bpy.context.collection.objects.link(obj)
+        obj.parent = self.root
+        return obj
+
+    def add_imported_mesh_parts(
+        self,
+        src_obj: bpy.types.Object,
+        mat_mapping: dict[int, bpy.types.Material],
+        local_matrix: Matrix | None = None,
+        apply_world: bool = False,
+        smooth: bool = True,
+        no_outline: bool = False,
+    ):
+        bm_src = bmesh.new()
+        bm_src.from_mesh(src_obj.data)
+        if apply_world:
+            bm_src.transform(src_obj.matrix_world)
+        if local_matrix:
+            bm_src.transform(local_matrix)
+
+        for m_idx, mat in mat_mapping.items():
+            bm_part = bm_src.copy()
+            del_faces = [f for f in bm_part.faces if f.material_index != m_idx]
+            bmesh.ops.delete(bm_part, geom=del_faces, context="FACES")
+            del_verts = [v for v in bm_part.verts if not v.link_faces]
+            bmesh.ops.delete(bm_part, geom=del_verts, context="VERTS")
+            if not bm_part.faces:
+                bm_part.free()
+                continue
+
+            bmesh.ops.recalc_face_normals(bm_part, faces=bm_part.faces)
+
+            for v in bm_part.verts:
+                bx, by, bz = self._xform(v.co.x, v.co.y, v.co.z)
+                v.co.x = bx
+                v.co.y = by
+                v.co.z = bz
+
+            self.part_idx += 1
+            suffix = "_string" if no_outline else ""
+            mesh_name = f"{self.root_name}_{self.part_idx:02d}_{mat.name}{suffix}"
+            mesh = bpy.data.meshes.new(mesh_name)
+            bm_part.to_mesh(mesh)
+            bm_part.free()
+
+            for poly in mesh.polygons:
+                poly.use_smooth = smooth
+
+            obj = bpy.data.objects.new(mesh_name, mesh)
+            obj.location = (0.0, 0.0, 0.0)
+            obj.rotation_euler = Euler((0.0, 0.0, 0.0), "XYZ")
+            obj.scale = (1.0, 1.0, 1.0)
+            if no_outline:
+                obj["noOutline"] = True
+            obj.data.materials.append(mat)
+            bpy.context.collection.objects.link(obj)
+            obj.parent = self.root
+
+        bm_src.free()
+
+    def add_imported_mesh(
+        self,
+        src_obj: bpy.types.Object,
+        mat: bpy.types.Material,
+        local_matrix: Matrix | None = None,
+        apply_world: bool = False,
+        smooth: bool = True,
+        no_outline: bool = False,
+    ):
+        bm_src = bmesh.new()
+        bm_src.from_mesh(src_obj.data)
+        if apply_world:
+            bm_src.transform(src_obj.matrix_world)
+        if local_matrix:
+            bm_src.transform(local_matrix)
+
+        bmesh.ops.recalc_face_normals(bm_src, faces=bm_src.faces)
+
+        for v in bm_src.verts:
+            bx, by, bz = self._xform(v.co.x, v.co.y, v.co.z)
+            v.co.x = bx
+            v.co.y = by
+            v.co.z = bz
+
+        self.part_idx += 1
+        suffix = "_string" if no_outline else ""
+        mesh_name = f"{self.root_name}_{self.part_idx:02d}_{mat.name}{suffix}"
+        mesh = bpy.data.meshes.new(mesh_name)
+        bm_src.to_mesh(mesh)
+        bm_src.free()
 
         for poly in mesh.polygons:
             poly.use_smooth = smooth
@@ -674,208 +805,223 @@ def build_weapons(mats: dict[str, bpy.types.Material]):
     xs = [-4.68 + i * 0.78 for i in range(13)]
     aim_melee = -math.pi / 2.45
 
-    # 1. Gear_scimitar: Iconic OSRS Dragon/Rune Scimitar
+    # 1. Gear_scimitar: Handpainted Curved Scimitar / Falchion (#22839)
     gb = GearBuilder(
         "Gear_scimitar",
         showcase_pos=(xs[0], row_y, row_z),
         showcase_rot=(-aim_melee, math.pi / 2.0, 0.0),
         group_rx=aim_melee,
     )
-    gb.add_torus(
-        0.048, 0.016, mats["trim"], arc=math.pi * 1.35, ty=-0.155, rz=math.pi * 0.82
-    )
-    gb.add_gem(0.022, 0.026, 0.022, mats["glow"], ty=-0.145)
-    gb.add_lofted(
-        [
-            (-0.13, 0.022, 0.028),
-            (-0.07, 0.025, 0.032),
-            (0.00, 0.026, 0.033),
-            (0.065, 0.023, 0.029),
-        ],
-        mats["leather"],
-        vertices=14,
-    )
-    for gy in (-0.11, -0.04, 0.03):
-        gb.add_torus(0.027, 0.005, mats["trim"], ty=gy, scale_z=1.18)
-    gb.add_tube_path(
-        [
-            (0.0, 0.045, -0.19, 0.012, 0.012),
-            (0.0, 0.075, -0.11, 0.020, 0.018),
-            (0.0, 0.082, 0.00, 0.028, 0.026),
-            (0.0, 0.088, 0.11, 0.020, 0.018),
-            (0.0, 0.125, 0.19, 0.012, 0.012),
-        ],
-        mats["trim"],
-        sides=10,
-    )
-    gb.add_beveled_box(0.046, 0.055, 0.085, mats["trim"], ty=0.095, tz=-0.01)
-    gb.add_forged_blade(
-        [
-            (0.11, -0.045, 0.035, -0.010, 0.020),
-            (0.28, -0.068, 0.030, -0.018, 0.021),
-            (0.48, -0.105, 0.022, -0.032, 0.022),
-            (0.68, -0.148, 0.018, -0.045, 0.022),
-            (0.88, -0.172, 0.025, -0.052, 0.020),
-            (1.04, -0.145, 0.042, -0.035, 0.016),
-            (1.15, -0.082, 0.032, -0.015, 0.011),
-            (1.22, -0.015, 0.010, -0.005, 0.003),
-        ],
-        mats["primary"],
-    )
-    gb.add_tube_path(
-        [
-            (0.0, 0.18, 0.005, 0.023, 0.009),
-            (0.0, 0.48, -0.012, 0.024, 0.011),
-            (0.0, 0.76, -0.026, 0.023, 0.011),
-            (0.0, 0.98, -0.015, 0.018, 0.008),
-        ],
-        mats["dark"],
-        sides=8,
-    )
+    src_scim = get_blend_object("blender/examples/weapons_22839/handpainted weapons 2-79.blend", "sword_b")
+    if src_scim:
+        m = Matrix.Translation(Vector((0.0, -0.05, 0.0))) @ Matrix.Scale(0.42, 4)
+        gb.add_imported_mesh_parts(src_scim, {0: mats["primary"], 1: mats["trim"]}, local_matrix=m)
+    else:
+        gb.add_torus(
+            0.048, 0.016, mats["trim"], arc=math.pi * 1.35, ty=-0.155, rz=math.pi * 0.82
+        )
+        gb.add_gem(0.022, 0.026, 0.022, mats["glow"], ty=-0.145)
+        gb.add_lofted(
+            [
+                (-0.13, 0.022, 0.028),
+                (-0.07, 0.025, 0.032),
+                (0.00, 0.026, 0.033),
+                (0.065, 0.023, 0.029),
+            ],
+            mats["leather"],
+            vertices=14,
+        )
+        for gy in (-0.11, -0.04, 0.03):
+            gb.add_torus(0.027, 0.005, mats["trim"], ty=gy, scale_z=1.18)
+        gb.add_tube_path(
+            [
+                (0.0, 0.045, -0.19, 0.012, 0.012),
+                (0.0, 0.075, -0.11, 0.020, 0.018),
+                (0.0, 0.082, 0.00, 0.028, 0.026),
+                (0.0, 0.088, 0.11, 0.020, 0.018),
+                (0.0, 0.125, 0.19, 0.012, 0.012),
+            ],
+            mats["trim"],
+            sides=10,
+        )
+        gb.add_beveled_box(0.046, 0.055, 0.085, mats["trim"], ty=0.095, tz=-0.01)
+        gb.add_forged_blade(
+            [
+                (0.11, -0.045, 0.035, -0.010, 0.020),
+                (0.28, -0.068, 0.030, -0.018, 0.021),
+                (0.48, -0.105, 0.022, -0.032, 0.022),
+                (0.68, -0.148, 0.018, -0.045, 0.022),
+                (0.88, -0.172, 0.025, -0.052, 0.020),
+                (1.04, -0.145, 0.042, -0.035, 0.016),
+                (1.15, -0.082, 0.032, -0.015, 0.011),
+                (1.22, -0.015, 0.010, -0.005, 0.003),
+            ],
+            mats["primary"],
+        )
+        gb.add_tube_path(
+            [
+                (0.0, 0.18, 0.005, 0.023, 0.009),
+                (0.0, 0.48, -0.012, 0.024, 0.011),
+                (0.0, 0.76, -0.026, 0.023, 0.011),
+                (0.0, 0.98, -0.015, 0.018, 0.008),
+            ],
+            mats["dark"],
+            sides=8,
+        )
 
-    # 2. Gear_sword: Knightly Broadsword / Master Sword
+    # 2. Gear_sword: Handpainted Knightly Broadsword (#22839)
     gb = GearBuilder(
         "Gear_sword",
         showcase_pos=(xs[1], row_y, row_z),
         showcase_rot=(-aim_melee, math.pi / 2.0, 0.0),
         group_rx=aim_melee,
     )
-    gb.add_lofted(
-        [
-            (-0.185, 0.012, 0.012),
-            (-0.155, 0.038, 0.042),
-            (-0.125, 0.022, 0.024),
-        ],
-        mats["trim"],
-        vertices=8,
-        smooth=False,
-    )
-    gb.add_gem(0.024, 0.020, 0.016, mats["glow"], ty=-0.155)
-    gb.add_lofted(
-        [
-            (-0.125, 0.021, 0.026),
-            (-0.03, 0.025, 0.031),
-            (0.065, 0.022, 0.028),
-        ],
-        mats["leather"],
-        vertices=14,
-    )
-    for gy in (-0.09, -0.03, 0.03):
-        gb.add_torus(0.026, 0.0045, mats["trim"], ty=gy, rx=0.22, scale_z=1.18)
-    gb.add_tube_path(
-        [
-            (0.0, 0.115, -0.17, 0.012, 0.012),
-            (0.0, 0.088, -0.10, 0.022, 0.020),
-            (0.0, 0.078, 0.00, 0.030, 0.028),
-            (0.0, 0.088, 0.10, 0.022, 0.020),
-            (0.0, 0.115, 0.17, 0.012, 0.012),
-        ],
-        mats["trim"],
-        sides=10,
-    )
-    gb.add_gem(0.032, 0.034, 0.028, mats["glow"], ty=0.085)
-    gb.add_forged_blade(
-        [
-            (0.10, -0.052, 0.052, 0.0, 0.021),
-            (0.24, -0.060, 0.060, 0.0, 0.022),
-            (0.32, -0.048, 0.048, 0.0, 0.020),
-            (0.75, -0.052, 0.052, 0.0, 0.019),
-            (1.06, -0.044, 0.044, 0.0, 0.015),
-            (1.28, -0.004, 0.004, 0.0, 0.002),
-        ],
-        mats["primary"],
-    )
-    gb.add_beveled_box(0.044, 0.48, 0.018, mats["dark"], ty=0.46)
-    for oy, oz in ((0.22, 0.0), (0.17, -0.016), (0.17, 0.016)):
-        gb.add_gem(0.023, 0.022, 0.014, mats["glow"], ty=oy, tz=oz, sides=4)
+    src_swd = get_blend_object("blender/examples/weapons_22839/handpainted weapons 2-79.blend", "sword_a")
+    if src_swd:
+        m = Matrix.Translation(Vector((0.0, -0.05, 0.0))) @ Matrix.Scale(0.42, 4)
+        gb.add_imported_mesh_parts(src_swd, {0: mats["primary"], 1: mats["trim"]}, local_matrix=m)
+    else:
+        gb.add_lofted(
+            [
+                (-0.185, 0.012, 0.012),
+                (-0.155, 0.038, 0.042),
+                (-0.125, 0.022, 0.024),
+            ],
+            mats["trim"],
+            vertices=8,
+            smooth=False,
+        )
+        gb.add_gem(0.024, 0.020, 0.016, mats["glow"], ty=-0.155)
+        gb.add_lofted(
+            [
+                (-0.125, 0.021, 0.026),
+                (-0.03, 0.025, 0.031),
+                (0.065, 0.022, 0.028),
+            ],
+            mats["leather"],
+            vertices=14,
+        )
+        for gy in (-0.09, -0.03, 0.03):
+            gb.add_torus(0.026, 0.0045, mats["trim"], ty=gy, rx=0.22, scale_z=1.18)
+        gb.add_tube_path(
+            [
+                (0.0, 0.115, -0.17, 0.012, 0.012),
+                (0.0, 0.088, -0.10, 0.022, 0.020),
+                (0.0, 0.078, 0.00, 0.030, 0.028),
+                (0.0, 0.088, 0.10, 0.022, 0.020),
+                (0.0, 0.115, 0.17, 0.012, 0.012),
+            ],
+            mats["trim"],
+            sides=10,
+        )
+        gb.add_gem(0.032, 0.034, 0.028, mats["glow"], ty=0.085)
+        gb.add_forged_blade(
+            [
+                (0.10, -0.052, 0.052, 0.0, 0.021),
+                (0.24, -0.060, 0.060, 0.0, 0.022),
+                (0.32, -0.048, 0.048, 0.0, 0.020),
+                (0.75, -0.052, 0.052, 0.0, 0.019),
+                (1.06, -0.044, 0.044, 0.0, 0.015),
+                (1.28, -0.004, 0.004, 0.0, 0.002),
+            ],
+            mats["primary"],
+        )
+        gb.add_beveled_box(0.044, 0.48, 0.018, mats["dark"], ty=0.46)
+        for oy, oz in ((0.22, 0.0), (0.17, -0.016), (0.17, 0.016)):
+            gb.add_gem(0.023, 0.022, 0.014, mats["glow"], ty=oy, tz=oz, sides=4)
 
-    # 3. Gear_greatsword: Iconic OSRS Godsword (Armadyl/Bandos Godsword)
+    # 3. Gear_greatsword: Handpainted Executioner Greatsword (#22839)
     gb = GearBuilder(
         "Gear_greatsword",
         showcase_pos=(xs[2], row_y - 0.15, row_z),
         showcase_rot=(-aim_melee, math.pi / 2.0, 0.0),
         group_rx=aim_melee,
     )
-    gb.add_lofted(
-        [
-            (-0.26, 0.018, 0.020),
-            (-0.21, 0.048, 0.056),
-            (-0.17, 0.028, 0.032),
-        ],
-        mats["trim"],
-        vertices=10,
-    )
-    gb.add_gem(0.034, 0.038, 0.034, mats["glow"], ty=-0.22)
-    gb.add_lofted(
-        [
-            (-0.17, 0.024, 0.030),
-            (-0.08, 0.028, 0.035),
-            (0.00, 0.027, 0.034),
-            (0.08, 0.025, 0.032),
-        ],
-        mats["leather"],
-        vertices=14,
-    )
-    for gy in (-0.13, -0.04, 0.05):
-        gb.add_torus(0.030, 0.006, mats["trim"], ty=gy, scale_z=1.18)
-    gb.add_tube_path(
-        [
-            (0.0, 0.20, -0.28, 0.014, 0.014),
-            (0.0, 0.14, -0.20, 0.028, 0.024),
-            (0.0, 0.095, -0.10, 0.038, 0.032),
-            (0.0, 0.085, 0.00, 0.045, 0.040),
-            (0.0, 0.095, 0.10, 0.038, 0.032),
-            (0.0, 0.14, 0.20, 0.028, 0.024),
-            (0.0, 0.20, 0.28, 0.014, 0.014),
-        ],
-        mats["trim"],
-        sides=12,
-    )
-    for side in (-1.0, 1.0):
-        gb.add_curved_spike(
-            0.022,
-            0.16,
-            side * 0.09,
-            mats["white"],
-            ty=0.11,
-            tz=side * 0.12,
-            rx=side * 0.45,
-        )
-    gb.add_gem(0.044, 0.048, 0.038, mats["glow"], ty=0.10)
-    gb.add_forged_blade(
-        [
-            (0.11, -0.082, 0.082, 0.0, 0.028),
-            (0.28, -0.105, 0.105, 0.0, 0.030),
-            (0.36, -0.072, 0.072, 0.0, 0.026),
-            (0.52, -0.098, 0.098, 0.0, 0.027),
-            (0.92, -0.088, 0.088, 0.0, 0.025),
-            (1.28, -0.102, 0.102, 0.0, 0.022),
-            (1.58, -0.005, 0.005, 0.0, 0.003),
-        ],
-        mats["primary"],
-    )
-    for side in (-1.0, 1.0):
-        gb.add_curved_spike(
-            0.024,
-            0.14,
-            side * 0.06,
+    src_gs = get_blend_object("blender/examples/weapons_22839/handpainted weapons 2-79.blend", "sword_f")
+    if src_gs:
+        m = Matrix.Translation(Vector((0.0, -0.05, 0.0))) @ Matrix.Scale(0.62, 4)
+        gb.add_imported_mesh_parts(src_gs, {0: mats["primary"], 1: mats["trim"]}, local_matrix=m)
+    else:
+        gb.add_lofted(
+            [
+                (-0.26, 0.018, 0.020),
+                (-0.21, 0.048, 0.056),
+                (-0.17, 0.028, 0.032),
+            ],
             mats["trim"],
-            ty=0.28,
-            tz=side * 0.075,
-            rx=side * 0.95,
-            flatten_x=0.55,
+            vertices=10,
         )
-        gb.add_curved_spike(
-            0.020,
-            0.11,
-            side * 0.05,
+        gb.add_gem(0.034, 0.038, 0.034, mats["glow"], ty=-0.22)
+        gb.add_lofted(
+            [
+                (-0.17, 0.024, 0.030),
+                (-0.08, 0.028, 0.035),
+                (0.00, 0.027, 0.034),
+                (0.08, 0.025, 0.032),
+            ],
+            mats["leather"],
+            vertices=14,
+        )
+        for gy in (-0.13, -0.04, 0.05):
+            gb.add_torus(0.030, 0.006, mats["trim"], ty=gy, scale_z=1.18)
+        gb.add_tube_path(
+            [
+                (0.0, 0.20, -0.28, 0.014, 0.014),
+                (0.0, 0.14, -0.20, 0.028, 0.024),
+                (0.0, 0.095, -0.10, 0.038, 0.032),
+                (0.0, 0.085, 0.00, 0.045, 0.040),
+                (0.0, 0.095, 0.10, 0.038, 0.032),
+                (0.0, 0.14, 0.20, 0.028, 0.024),
+                (0.0, 0.20, 0.28, 0.014, 0.014),
+            ],
             mats["trim"],
-            ty=0.48,
-            tz=side * 0.070,
-            rx=side * 0.85,
-            flatten_x=0.55,
+            sides=12,
         )
-    gb.add_beveled_box(0.056, 0.82, 0.026, mats["glow"], ty=0.66)
+        for side in (-1.0, 1.0):
+            gb.add_curved_spike(
+                0.022,
+                0.16,
+                side * 0.09,
+                mats["white"],
+                ty=0.11,
+                tz=side * 0.12,
+                rx=side * 0.45,
+            )
+        gb.add_gem(0.044, 0.048, 0.038, mats["glow"], ty=0.10)
+        gb.add_forged_blade(
+            [
+                (0.11, -0.082, 0.082, 0.0, 0.028),
+                (0.28, -0.105, 0.105, 0.0, 0.030),
+                (0.36, -0.072, 0.072, 0.0, 0.026),
+                (0.52, -0.098, 0.098, 0.0, 0.027),
+                (0.92, -0.088, 0.088, 0.0, 0.025),
+                (1.28, -0.102, 0.102, 0.0, 0.022),
+                (1.58, -0.005, 0.005, 0.0, 0.003),
+            ],
+            mats["primary"],
+        )
+        for side in (-1.0, 1.0):
+            gb.add_curved_spike(
+                0.024,
+                0.14,
+                side * 0.06,
+                mats["trim"],
+                ty=0.28,
+                tz=side * 0.075,
+                rx=side * 0.95,
+                flatten_x=0.55,
+            )
+            gb.add_curved_spike(
+                0.020,
+                0.11,
+                side * 0.05,
+                mats["trim"],
+                ty=0.48,
+                tz=side * 0.070,
+                rx=side * 0.85,
+                flatten_x=0.55,
+            )
+        gb.add_beveled_box(0.056, 0.82, 0.026, mats["glow"], ty=0.66)
 
     # 4. Gear_greataxe: Dharok's Greataxe
     aim_axe = -math.pi / 2.6
@@ -1481,24 +1627,31 @@ def build_shields(mats: dict[str, bpy.types.Material]):
     )
     gb.add_gem(0.026, 0.032, 0.026, mats["glow"], ty=0.015)
 
-    # 15. Gear_kiteshield: OSRS Heraldic Kiteshield (ry = +pi/2 faces +X toward camera!)
+    # 15. Gear_kiteshield: Handpainted Knightly Kiteshield (#22839)
     gb = GearBuilder(
         "Gear_kiteshield",
         showcase_pos=(-3.85, row_y, row_z),
         showcase_rot=(0.0, math.pi / 2.0, 0.0),
     )
-    add_sculpted_kite_base(gb, mats)
-    gb.add_beveled_box(0.035, 0.56, 0.065, mats["trim"], tx=0.060, ty=-0.01, tz=0.0)
-    gb.add_beveled_box(0.035, 0.065, 0.44, mats["trim"], tx=0.060, ty=0.06, tz=0.0)
-    gb.add_lofted(
-        [
-            (0.06 - 0.09, 0.02, 0.02, 0.065, 0.0),
-            (0.06, 0.065, 0.095, 0.065, 0.0),
-            (0.06 + 0.09, 0.02, 0.02, 0.065, 0.0),
-        ],
-        mats["trim"],
-        vertices=14,
-    )
+    src_sh = get_blend_object("blender/examples/weapons_22839/handpainted weapons 2-79.blend", "shield_b")
+    if src_sh:
+        m = Matrix.Translation(Vector((0.04, 0.02, 0.0))) @ Matrix.Rotation(math.pi / 2.0, 4, 'Y') @ Matrix.Scale(0.65, 4)
+        gb.add_imported_mesh(src_sh, mats["primary"], local_matrix=m)
+        gb.add_beveled_box(0.035, 0.52, 0.055, mats["trim"], tx=0.060, ty=-0.01, tz=0.0)
+        gb.add_beveled_box(0.035, 0.055, 0.38, mats["trim"], tx=0.060, ty=0.06, tz=0.0)
+    else:
+        add_sculpted_kite_base(gb, mats)
+        gb.add_beveled_box(0.035, 0.56, 0.065, mats["trim"], tx=0.060, ty=-0.01, tz=0.0)
+        gb.add_beveled_box(0.035, 0.065, 0.44, mats["trim"], tx=0.060, ty=0.06, tz=0.0)
+        gb.add_lofted(
+            [
+                (0.06 - 0.09, 0.02, 0.02, 0.065, 0.0),
+                (0.06, 0.065, 0.095, 0.065, 0.0),
+                (0.06 + 0.09, 0.02, 0.02, 0.065, 0.0),
+            ],
+            mats["trim"],
+            vertices=14,
+        )
 
     # 16. Gear_elysian: Elysian Spirit Shield
     gb = GearBuilder(
@@ -1665,45 +1818,54 @@ def build_headgear(mats: dict[str, bpy.types.Material]):
     row_z = -0.15
     xs = [0.75 + i * 0.49 for i in range(9)]
 
-    # 18. Gear_helm: Knightly Med/Full Helm (Barrel Visor + Greathelm Crest + Plume)
+    # 18. Gear_helm: Knightly Greathelm (#28541)
     gb = GearBuilder("Gear_helm", showcase_pos=(xs[0], row_y, row_z))
-    # Full cylindrical barrel dome with rounded crown
-    gb.add_lofted(
-        [
-            (-0.16, 0.208, 0.218, 0.0, 0.0, 0.16),
-            (-0.04, 0.216, 0.224, 0.0, -0.002, 0.18),
-            (0.08, 0.218, 0.226, 0.0, -0.002, 0.18),
-            (0.18, 0.175, 0.185, 0.0, 0.002, 0.12),
-            (0.24, 0.075, 0.085, 0.0, 0.004, 0.06),
-        ],
-        mats["primary"],
-        vertices=18,
-    )
-    # Heavy brow trim rim
-    gb.add_torus(0.220, 0.016, mats["trim"], ty=0.03, scale_z=1.04)
-    # Cross-ocular visor horizontal eye slit
-    gb.add_beveled_box(
-        0.185, 0.036, 0.034, mats["dark"], ty=-0.012, tz=-0.212, no_outline=True
-    )
-    # Central reinforcing nasal pillar
-    gb.add_beveled_box(0.038, 0.160, 0.032, mats["trim"], ty=-0.025, tz=-0.222)
-    # Perforated breathing vents (left and right)
-    for side in (-1.0, 1.0):
-        for vy, vz in ((-0.08, -0.210), (-0.11, -0.204)):
-            gb.add_beveled_box(0.016, 0.016, 0.020, mats["dark"], tx=side * 0.07, ty=vy, tz=vz, no_outline=True)
-    # Knightly crown comb ridge
-    gb.add_beveled_box(0.028, 0.085, 0.280, mats["trim"], ty=0.22, tz=0.01)
-    # Sweeping heraldic feather plume
-    gb.add_curved_spike(
-        0.052,
-        0.320,
-        0.18,
-        mats["crimson"],
-        ty=0.23,
-        tz=0.03,
-        rx=-0.48,
-        flatten_x=0.42,
-    )
+    src_helm = get_blend_object("blender/examples/knight_28541/knight.blend", "Helmet")
+    if src_helm:
+        c_world = Vector((6.0589, -0.5598, 2.1073))
+        m = Matrix.Translation(Vector((0.0, 0.05, -0.01))) @ Matrix.Scale(0.57, 4) @ Matrix.Rotation(math.pi, 4, 'Z') @ Matrix.Translation(-c_world)
+        gb.add_imported_mesh(src_helm, mats["primary"], local_matrix=m, apply_world=True)
+        gb.add_torus(0.220, 0.016, mats["trim"], ty=0.03, scale_z=1.04)
+        for py_pos, p_rad in ((0.24, 0.026), (0.28, 0.022), (0.31, 0.016)):
+            gb.add_gem(p_rad, p_rad, p_rad, mats["crimson"], ty=py_pos, tz=0.04)
+    else:
+        # Full cylindrical barrel dome with rounded crown
+        gb.add_lofted(
+            [
+                (-0.16, 0.208, 0.218, 0.0, 0.0, 0.16),
+                (-0.04, 0.216, 0.224, 0.0, -0.002, 0.18),
+                (0.08, 0.218, 0.226, 0.0, -0.002, 0.18),
+                (0.18, 0.175, 0.185, 0.0, 0.002, 0.12),
+                (0.24, 0.075, 0.085, 0.0, 0.004, 0.06),
+            ],
+            mats["primary"],
+            vertices=18,
+        )
+        # Heavy brow trim rim
+        gb.add_torus(0.220, 0.016, mats["trim"], ty=0.03, scale_z=1.04)
+        # Cross-ocular visor horizontal eye slit
+        gb.add_beveled_box(
+            0.185, 0.036, 0.034, mats["dark"], ty=-0.012, tz=-0.212, no_outline=True
+        )
+        # Central reinforcing nasal pillar
+        gb.add_beveled_box(0.038, 0.160, 0.032, mats["trim"], ty=-0.025, tz=-0.222)
+        # Perforated breathing vents (left and right)
+        for side in (-1.0, 1.0):
+            for vy, vz in ((-0.08, -0.210), (-0.11, -0.204)):
+                gb.add_beveled_box(0.016, 0.016, 0.020, mats["dark"], tx=side * 0.07, ty=vy, tz=vz, no_outline=True)
+        # Knightly crown comb ridge
+        gb.add_beveled_box(0.028, 0.085, 0.280, mats["trim"], ty=0.22, tz=0.01)
+        # Sweeping heraldic feather plume
+        gb.add_curved_spike(
+            0.052,
+            0.320,
+            0.18,
+            mats["crimson"],
+            ty=0.23,
+            tz=0.03,
+            rx=-0.48,
+            flatten_x=0.42,
+        )
 
     # 19. Gear_neitiznot-helm: Neitiznot Winged Faceguard (Nordic T-Bar + Valkyrie Wings)
     gb = GearBuilder("Gear_neitiznot-helm", showcase_pos=(xs[1], row_y, row_z))
@@ -2085,51 +2247,74 @@ def build_body_and_leg_armors(mats: dict[str, bpy.types.Material]):
 
     # -------------------------------------------------------------------------
     # Stand 1: Gear_plate-body_torso + Gear_platelegs_legL / legR
-    # Knightly Peascod Cuirass + Articulated Greaves with Knee Fans
+    # Knightly Peascod Cuirass + Articulated Greaves with Knee Fans (#28541)
     # -------------------------------------------------------------------------
     s1 = stand_xs[0]
     gb = GearBuilder("Gear_plate-body_torso", showcase_pos=(s1, stand_y, stand_z))
-    add_pauldron_pair(gb, mats, 1.05, 1.05, with_besagews=True)
-    # Peascod breastplate with distinct medial vertical keel ridge and pecs
-    gb.add_lofted(
-        [
-            (-0.34, 0.180, 0.134, 0.0, 0.0, 0.24, 0.0, 0.016),
-            (-0.12, 0.202, 0.148, 0.0, -0.005, 0.26, 0.016, 0.022),
-            (0.14, 0.236, 0.165, 0.0, -0.008, 0.30, 0.024, 0.024),
-            (0.32, 0.224, 0.150, 0.0, 0.0, 0.24, 0.010, 0.008),
-        ],
-        mats["primary"],
-        vertices=20,
-    )
-    # Raised steel gorget collar shielding the throat
-    gb.add_torus(0.198, 0.020, mats["trim"], ty=0.29, rx=0.14, scale_z=0.76)
-    # Embossed lion / heraldic cross shield chest emblem
-    gb.add_beveled_box(0.135, 0.160, 0.038, mats["trim"], ty=0.10, tz=-0.178)
-    gb.add_gem(0.042, 0.052, 0.024, mats["primary"], ty=0.10, tz=-0.195, sides=4)
-    # Riveted fauld rim at belt line
-    gb.add_torus(0.188, 0.022, mats["trim"], ty=-0.34, scale_z=0.76)
-    for bx in (-0.10, 0.10):
-        gb.add_beveled_box(0.082, 0.100, 0.028, mats["trim"], tx=bx, ty=-0.38, tz=-0.145)
+    src_torso = get_blend_object("blender/examples/knight_28541/knight.blend", "Torso_plate")
+    if src_torso:
+        c_world = Vector((6.0589, -0.4200, 1.0600))
+        m = Matrix.Translation(Vector((0.0, 0.02, 0.0))) @ Matrix.Scale(0.38, 4) @ Matrix.Rotation(math.pi, 4, 'Z') @ Matrix.Translation(-c_world)
+        gb.add_imported_mesh(src_torso, mats["primary"], local_matrix=m, apply_world=True)
+        add_pauldron_pair(gb, mats, 1.05, 1.05, with_besagews=True)
+        gb.add_beveled_box(0.135, 0.160, 0.038, mats["trim"], ty=0.10, tz=-0.178)
+        gb.add_gem(0.042, 0.052, 0.024, mats["primary"], ty=0.10, tz=-0.195, sides=4)
+        gb.add_torus(0.188, 0.022, mats["trim"], ty=-0.34, scale_z=0.76)
+    else:
+        add_pauldron_pair(gb, mats, 1.05, 1.05, with_besagews=True)
+        # Peascod breastplate with distinct medial vertical keel ridge and pecs
+        gb.add_lofted(
+            [
+                (-0.34, 0.180, 0.134, 0.0, 0.0, 0.24, 0.0, 0.016),
+                (-0.12, 0.202, 0.148, 0.0, -0.005, 0.26, 0.016, 0.022),
+                (0.14, 0.236, 0.165, 0.0, -0.008, 0.30, 0.024, 0.024),
+                (0.32, 0.224, 0.150, 0.0, 0.0, 0.24, 0.010, 0.008),
+            ],
+            mats["primary"],
+            vertices=20,
+        )
+        # Raised steel gorget collar shielding the throat
+        gb.add_torus(0.198, 0.020, mats["trim"], ty=0.29, rx=0.14, scale_z=0.76)
+        # Embossed lion / heraldic cross shield chest emblem
+        gb.add_beveled_box(0.135, 0.160, 0.038, mats["trim"], ty=0.10, tz=-0.178)
+        gb.add_gem(0.042, 0.052, 0.024, mats["primary"], ty=0.10, tz=-0.195, sides=4)
+        # Riveted fauld rim at belt line
+        gb.add_torus(0.188, 0.022, mats["trim"], ty=-0.34, scale_z=0.76)
+        for bx in (-0.10, 0.10):
+            gb.add_beveled_box(0.082, 0.100, 0.028, mats["trim"], tx=bx, ty=-0.38, tz=-0.145)
 
     for side, suffix in ((-1.0, "legL"), (1.0, "legR")):
         lgb = GearBuilder(
             f"Gear_platelegs_{suffix}",
             showcase_pos=(s1 + side * 0.11, stand_y - 0.34, stand_z),
         )
-        # Armored thigh cuisses with horizontal fluting, fitted to Kai's athletic proportions
-        lgb.add_lofted(
-            [
-                (-0.36, 0.136, 0.140, 0.0, -0.005, 0.20),
-                (-0.08, 0.146, 0.148, 0.0, -0.005, 0.20),
-            ],
-            mats["primary"],
-            vertices=14,
-        )
-        # Articulated knee poleyn with flared lateral side wing fan
-        lgb.add_beveled_box(0.140, 0.095, 0.065, mats["trim"], ty=-0.38, tz=-0.075)
-        lgb.add_curved_spike(
-            0.028, 0.10, -0.02, mats["trim"], bend_x=side * 0.04, tx=side * 0.085, ty=-0.38, tz=-0.05, rz=-side * 0.75
-        )
+        arm_side = "L" if suffix == "legL" else "R"
+        src_thigh = get_blend_object("blender/examples/knight_28541/knight.blend", f"{arm_side}_thigh_plate")
+        src_shin = get_blend_object("blender/examples/knight_28541/knight.blend", f"{arm_side}_shin_plate")
+        if src_thigh:
+            sign_x = -1.0 if suffix == "legL" else 1.0
+            c_world = Vector((6.0589 - sign_x * 0.336, -0.4200 + 0.031, -0.72))
+            m = Matrix.Translation(Vector((0.0, -0.22, -0.05))) @ Matrix.Scale(0.38, 4) @ Matrix.Rotation(math.pi, 4, 'Z') @ Matrix.Translation(-c_world)
+            lgb.add_imported_mesh_parts(src_thigh, {0: mats["primary"], 1: mats["leather"]}, local_matrix=m, apply_world=True)
+            if src_shin:
+                c_shin = Vector((6.0589 - sign_x * 0.551, -0.4200 + 0.228, -1.95))
+                m_shin = Matrix.Translation(Vector((0.0, -0.58, -0.05))) @ Matrix.Scale(0.38, 4) @ Matrix.Rotation(math.pi, 4, 'Z') @ Matrix.Translation(-c_shin)
+                lgb.add_imported_mesh(src_shin, mats["primary"], local_matrix=m_shin, apply_world=True)
+        else:
+            # Armored thigh cuisses with horizontal fluting, fitted to Kai's athletic proportions
+            lgb.add_lofted(
+                [
+                    (-0.36, 0.136, 0.140, 0.0, -0.005, 0.20),
+                    (-0.08, 0.146, 0.148, 0.0, -0.005, 0.20),
+                ],
+                mats["primary"],
+                vertices=14,
+            )
+            # Articulated knee poleyn with flared lateral side wing fan
+            lgb.add_beveled_box(0.140, 0.095, 0.065, mats["trim"], ty=-0.38, tz=-0.075)
+            lgb.add_curved_spike(
+                0.028, 0.10, -0.02, mats["trim"], bend_x=side * 0.04, tx=side * 0.085, ty=-0.38, tz=-0.05, rz=-side * 0.75
+            )
 
     # -------------------------------------------------------------------------
     # Stand 2: Gear_trim-plate_torso
@@ -2558,74 +2743,81 @@ def build_boots_gloves_capes_jewelry(mats: dict[str, bpy.types.Material]):
                 f"{base_name}_{suffix}",
                 showcase_pos=(bx + side * 0.15, boot_y, boot_z),
             )
-            gb.add_torus(0.086, 0.016, mats["trim"], ty=-0.67, tz=0.01)
-            gb.add_lofted(
-                [
-                    (-0.84, 0.078, 0.086, 0.0, 0.01, 0.22),
-                    (-0.67, 0.082, 0.084, 0.0, 0.01, 0.18),
-                ],
-                mats["primary"],
-                vertices=14,
-            )
-            gb.add_beveled_box(
-                0.096, 0.062, 0.125, mats["primary"], ty=-0.83, tz=-0.045
-            )
-
-            if base_name == "Gear_primordial-boots":
+            src_fg = get_blend_object("blender/examples/knight_28541/knight.blend", f"{suffix}_foot_guard")
+            if src_fg and base_name == "Gear_boots":
+                sign_x = -1.0 if suffix == "L" else 1.0
+                c_rel = Vector((6.0589 - sign_x * 0.708, -0.4200 + 0.252, 0.177))
+                m = Matrix.Translation(Vector((0.0, -0.68, 0.01))) @ Matrix.Scale(0.38, 4) @ Matrix.Rotation(math.pi, 4, 'Z') @ Matrix.Translation(-c_rel)
+                gb.add_imported_mesh_parts(src_fg, {0: mats["primary"], 1: mats["leather"]}, local_matrix=m, apply_world=True)
+            else:
+                gb.add_torus(0.086, 0.016, mats["trim"], ty=-0.67, tz=0.01)
+                gb.add_lofted(
+                    [
+                        (-0.84, 0.078, 0.086, 0.0, 0.01, 0.22),
+                        (-0.67, 0.082, 0.084, 0.0, 0.01, 0.18),
+                    ],
+                    mats["primary"],
+                    vertices=14,
+                )
                 gb.add_beveled_box(
-                    0.102, 0.045, 0.065, mats["trim"], ty=-0.83, tz=-0.085
+                    0.096, 0.062, 0.125, mats["primary"], ty=-0.83, tz=-0.045
                 )
-                gb.add_curved_spike(
-                    0.032,
-                    0.18,
-                    0.08,
-                    mats["trim"],
-                    bend_x=side * 0.06,
-                    tx=side * 0.082,
-                    ty=-0.72,
-                    tz=0.02,
-                    rx=-0.45,
-                    rz=-side * 0.45,
-                )
-                gb.add_gem(
-                    0.026,
-                    0.036,
-                    0.026,
-                    mats["glow"],
-                    tx=side * 0.085,
-                    ty=-0.74,
-                    tz=0.0,
-                )
-            elif base_name == "Gear_pegasian-boots":
-                for wy, wlen in ((-0.76, 0.20), (-0.71, 0.16)):
+
+                if base_name == "Gear_primordial-boots":
+                    gb.add_beveled_box(
+                        0.102, 0.045, 0.065, mats["trim"], ty=-0.83, tz=-0.085
+                    )
                     gb.add_curved_spike(
                         0.032,
-                        wlen,
-                        0.09,
-                        mats["white"],
-                        bend_x=side * 0.05,
-                        tx=side * 0.086,
-                        ty=wy,
-                        tz=0.01,
-                        rx=-0.42,
-                        rz=-side * 0.38,
-                        flatten_x=0.32,
+                        0.18,
+                        0.08,
+                        mats["trim"],
+                        bend_x=side * 0.06,
+                        tx=side * 0.082,
+                        ty=-0.72,
+                        tz=0.02,
+                        rx=-0.45,
+                        rz=-side * 0.45,
                     )
-            elif base_name == "Gear_eternal-boots":
-                gb.add_curved_spike(
-                    0.038,
-                    0.11,
-                    -0.05,
-                    mats["trim"],
-                    ty=-0.83,
-                    tz=-0.09,
-                    rx=-0.65,
-                )
-                gb.add_gem(
-                    0.038, 0.052, 0.038, mats["glow"], tx=0.0, ty=-0.71, tz=-0.065
-                )
+                    gb.add_gem(
+                        0.026,
+                        0.036,
+                        0.026,
+                        mats["glow"],
+                        tx=side * 0.085,
+                        ty=-0.74,
+                        tz=0.0,
+                    )
+                elif base_name == "Gear_pegasian-boots":
+                    for wy, wlen in ((-0.76, 0.20), (-0.71, 0.16)):
+                        gb.add_curved_spike(
+                            0.032,
+                            wlen,
+                            0.09,
+                            mats["white"],
+                            bend_x=side * 0.05,
+                            tx=side * 0.086,
+                            ty=wy,
+                            tz=0.01,
+                            rx=-0.42,
+                            rz=-side * 0.38,
+                            flatten_x=0.32,
+                        )
+                elif base_name == "Gear_eternal-boots":
+                    gb.add_curved_spike(
+                        0.038,
+                        0.11,
+                        -0.05,
+                        mats["trim"],
+                        ty=-0.83,
+                        tz=-0.09,
+                        rx=-0.65,
+                    )
+                    gb.add_gem(
+                        0.038, 0.052, 0.038, mats["glow"], tx=0.0, ty=-0.71, tz=-0.065
+                    )
 
-    # 42. Gear_gloves_L & Gear_gloves_R
+    # 42. Gear_gloves_L & Gear_gloves_R (Knight Gauntlets #28541)
     for is_left in (True, False):
         side = -1.0 if is_left else 1.0
         suffix = "L" if is_left else "R"
@@ -2633,33 +2825,51 @@ def build_boots_gloves_capes_jewelry(mats: dict[str, bpy.types.Material]):
             f"Gear_gloves_{suffix}",
             showcase_pos=(2.0 + side * 0.16, boot_y - 0.12, boot_z),
         )
-        gb.add_lofted(
-            [
-                (-0.64, 0.064, 0.066),
-                (-0.48, 0.074, 0.076),
-            ],
-            mats["primary"],
-            vertices=14,
-        )
-        for gy in (-0.50, -0.56, -0.62):
-            gb.add_torus(0.072, 0.011, mats["trim"], ty=gy)
-        gb.add_beveled_box(0.082, 0.065, 0.045, mats["trim"], ty=-0.67, tz=-0.035)
+        src_fa = get_blend_object("blender/examples/knight_28541/knight.blend", f"{suffix}_forearm_plate")
+        if src_fa:
+            sign_x = -1.0 if suffix == "L" else 1.0
+            c_rel = Vector((6.0589 - sign_x * 0.35, -0.4200 - 0.65, 3.82))
+            m = Matrix.Translation(Vector((0.0, -0.58, 0.0))) @ Matrix.Scale(0.35, 4) @ Matrix.Rotation(math.pi, 4, 'Z') @ Matrix.Translation(-c_rel)
+            gb.add_imported_mesh(src_fa, mats["primary"], local_matrix=m, apply_world=True)
+            for gy in (-0.50, -0.56, -0.62):
+                gb.add_torus(0.072, 0.011, mats["trim"], ty=gy)
+        else:
+            gb.add_lofted(
+                [
+                    (-0.64, 0.064, 0.066),
+                    (-0.48, 0.074, 0.076),
+                ],
+                mats["primary"],
+                vertices=14,
+            )
+            for gy in (-0.50, -0.56, -0.62):
+                gb.add_torus(0.072, 0.011, mats["trim"], ty=gy)
+            gb.add_beveled_box(0.082, 0.065, 0.045, mats["trim"], ty=-0.67, tz=-0.035)
 
-    # 46. Gear_amulet
+    # 46. Gear_amulet (BlendSwap #15782)
     gb = GearBuilder("Gear_amulet", showcase_pos=(3.3, boot_y - 0.95, boot_z))
-    gb.add_torus(0.105, 0.014, mats["trim"], ty=0.38, tz=-0.04, rx=0.52, scale_z=1.25)
-    gb.add_gem(0.048, 0.072, 0.036, mats["glow"], ty=0.25, tz=-0.20)
-    for side in (-1.0, 1.0):
-        gb.add_curved_spike(
-            0.022,
-            0.09,
-            -0.02,
-            mats["trim"],
-            tx=side * 0.045,
-            ty=0.26,
-            tz=-0.19,
-            rz=side * 0.55,
-        )
+    src_am = get_blend_object("blender/examples/amulet_15782/Amulet_7-15-15.blend", "Amulet ")
+    src_ch = get_blend_object("blender/examples/amulet_15782/Amulet_7-15-15.blend", "Cube.012")
+    if src_am:
+        c_world = Vector((0.813, 0.454, 0.957))
+        m = Matrix.Translation(Vector((0.0, 0.28, -0.19))) @ Matrix.Scale(1.15, 4) @ Matrix.Translation(-c_world)
+        gb.add_imported_mesh_parts(src_am, {0: mats["trim"], 1: mats["glow"], 2: mats["glow"]}, local_matrix=m, apply_world=True)
+        if src_ch:
+            gb.add_imported_mesh(src_ch, mats["trim"], local_matrix=m, apply_world=True)
+    else:
+        gb.add_torus(0.105, 0.014, mats["trim"], ty=0.38, tz=-0.04, rx=0.52, scale_z=1.25)
+        gb.add_gem(0.048, 0.072, 0.036, mats["glow"], ty=0.25, tz=-0.20)
+        for side in (-1.0, 1.0):
+            gb.add_curved_spike(
+                0.022,
+                0.09,
+                -0.02,
+                mats["trim"],
+                tx=side * 0.045,
+                ty=0.26,
+                tz=-0.19,
+                rz=side * 0.55,
+            )
 
     # 47. Gear_ring
     gb = GearBuilder("Gear_ring", showcase_pos=(4.3, boot_y - 0.10, boot_z))
@@ -2764,6 +2974,14 @@ def main():
     build_headgear(mats)
     build_body_and_leg_armors(mats)
     build_boots_gloves_capes_jewelry(mats)
+
+    # Clean up imported asset cache from the scene before export
+    for o in list(BLEND_ASSET_CACHE.values()):
+        try:
+            bpy.data.objects.remove(o, do_unlink=True)
+        except Exception:
+            pass
+    BLEND_ASSET_CACHE.clear()
 
     blend_path = os.path.join(blend_dir, "gear.blend")
     glb_path = os.path.join(models_dir, "gear.glb")

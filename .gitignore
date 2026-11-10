@@ -5,6 +5,7 @@ dist
 .vite
 .playwright-mcp/
 *.blend1
+*.zip
 scratch/
 blender/examples/kai/
 

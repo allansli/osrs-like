@@ -55,7 +55,7 @@ if (mode === 'open') {
     }
   }
 } else {
-  const scriptRel = BUILD_SCRIPTS[mode] || BUILD_SCRIPTS.hero;
+  const scriptRel = fs.existsSync(mode) ? mode : (BUILD_SCRIPTS[mode] || BUILD_SCRIPTS.hero);
   const scriptFile = path.resolve(scriptRel);
   const res = spawnSync(blenderExe, ['--background', '--python', scriptFile], {
     stdio: 'inherit'

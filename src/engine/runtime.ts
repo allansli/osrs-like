@@ -1,5 +1,6 @@
 // @ts-nocheck
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { ITEMS, TIER_COLORS, isStackableInBackpack, unitSellPrice } from '../data/items';
 import { SKILLS_META, OSRS_XP_TABLE, getLevelForXp } from '../data/skills';
 import { PRAYERS, SPELLS } from '../data/magic';
@@ -1716,6 +1717,24 @@ function buildAllCitiesAndLandmarks() {
 
   // 2. Sculpted Lumbridge Castle Keep & Cylindrical Battlement Towers
   createCastleStructure(0, -25);
+  createCastleGuard(-2.4, -16.5, 'Lumbridge Castle Guard', 0);
+  createCastleGuard(2.4, -16.5, 'Lumbridge Castle Guard', 0);
+
+  // BlendSwap #6679 Props: Barrels, Crates, Cabbage & Apple Boxes, Grain Sacks
+  spawnWorldProp('World_barrel', -3.6, -17.8, 0.4);
+  spawnWorldProp('World_barrel', 3.6, -17.8, -0.3);
+  spawnWorldProp('World_crate', -4.8, -18.4, 0.2);
+  spawnWorldProp('World_crate', 4.8, -18.4, -0.5);
+  spawnWorldProp('World_box_cabbage', -3.5, -22.0, 0.1);
+  spawnWorldProp('World_box_apples', 3.5, -22.0, -0.2);
+  spawnWorldProp('World_bag_grain', -5.0, -23.5, 0.3);
+  spawnWorldProp('World_bag_closed', 5.0, -23.5, -0.4);
+
+  spawnWorldProp('World_barrel', 12.2, -3.2, 0.2);
+  spawnWorldProp('World_crate', 12.5, -4.5, -0.3);
+
+  spawnWorldProp('World_bag_grain', -0.5, 5.5, 0.2);
+  spawnWorldProp('World_barrel', 4.2, 5.2, -0.2);
 
   // 3. Sculpted Marble Altars
   createPrayerAltar(-10, -4, 'Sacred Altar of Lumbridge');
@@ -2023,6 +2042,98 @@ function createMerchantNPC(x, z, name, tunicColor) {
     }
     rig.headGroup.add(hat);
     addCartoonOutline(hat, 0.018);
+  });
+}
+
+let cachedGuardPromise: Promise<GLTF | null> | null = null;
+function loadBlenderGuardTemplate(): Promise<GLTF | null> {
+  if (typeof window === 'undefined' || typeof document === 'undefined') {
+    return Promise.resolve(null);
+  }
+  if (!cachedGuardPromise) {
+    const loader = new GLTFLoader();
+    cachedGuardPromise = new Promise((resolve) => {
+      loader.load(
+        '/models/guard.glb',
+        (gltf) => resolve(gltf),
+        undefined,
+        (err) => {
+          console.warn('[Guard] Failed to load guard.glb:', err);
+          resolve(null);
+        }
+      );
+    });
+  }
+  return cachedGuardPromise;
+}
+
+function createCastleGuard(x: number, z: number, name: string, rotY = 0) {
+  const y = getTerrainHeight(x, z);
+  const grp = new THREE.Group();
+  grp.position.set(x, y, z);
+  grp.rotation.y = rotY;
+
+  const uData = {
+    type: 'interactive',
+    action: 'dialogue',
+    name,
+    dialogue: 'Halt! Welcome to Lumbridge Castle, adventurer. Keep your weapons sheathed within the courtyard.',
+    interactRadius: 3.5
+  };
+  grp.userData = uData;
+
+  const hitbox = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.45, 0.45, 1.85, 8),
+    new THREE.MeshBasicMaterial({ visible: false })
+  );
+  hitbox.position.y = 0.92;
+  hitbox.userData = uData;
+  grp.add(hitbox);
+  worldInteractiveObjects.push(hitbox);
+  scene.add(grp);
+  npcList.push({ pos: grp.position, name, color: '#94a3b8', yOffset: 2.5 });
+
+  loadBlenderGuardTemplate().then((gltf) => {
+    if (!gltf) return;
+    const cloned = gltf.scene.clone(true);
+    cloned.position.set(0, 0, 0);
+    cloned.traverse((obj) => {
+      const m = obj as THREE.Mesh;
+      if (m.isMesh) {
+        m.castShadow = true;
+        m.receiveShadow = false;
+        m.userData = { ...m.userData, ...uData };
+      }
+    });
+    grp.add(cloned);
+    addCartoonOutline(cloned, 0.024);
+  });
+}
+
+function spawnWorldProp(assetName: string, x: number, z: number, rotY = 0, scale = 1.0) {
+  const y = getTerrainHeight(x, z);
+  const grp = new THREE.Group();
+  grp.position.set(x, y, z);
+  grp.rotation.y = rotY;
+  if (scale !== 1.0) grp.scale.set(scale, scale, scale);
+  scene.add(grp);
+
+  loadBlenderWorldTemplate().then((gltf) => {
+    if (!gltf) return;
+    const node = gltf.scene.getObjectByName(assetName);
+    if (!node) return;
+    const cloned = node.clone(true);
+    cloned.position.set(0, 0, 0);
+    cloned.traverse((obj) => {
+      const m = obj as THREE.Mesh;
+      if (m.isMesh) {
+        m.castShadow = true;
+        m.receiveShadow = true;
+      }
+    });
+    grp.add(cloned);
+    sealAlbedoUvs(grp);
+    addCartoonOutline(grp, 0.028);
   });
 }
 
@@ -3834,6 +3945,7 @@ function onGameContextMenu(e) {
     if (ud.action === 'slayer') label = 'Talk-to Slayer Master Vannaka';
     else if (ud.action === 'bank') label = 'Bank';
     else if (ud.action === 'shop') label = 'Trade';
+    else if (ud.action === 'dialogue') label = `Talk-to ${ud.name}`;
     const anchor = picked.entityHit.object.getWorldPosition(new THREE.Vector3());
     options.push({
       label,
@@ -5387,6 +5499,11 @@ function gameLoop(now) {
           else if (act === 'forge') openSmithingModal();
           else if (act === 'worldmap') openWorldMapModal();
           else if (act === 'slayer') openQuestsModal();
+          else if (act === 'dialogue') {
+            const dlg = player.targetEntity.ref.dialogue || 'Greetings, traveler.';
+            const name = player.targetEntity.ref.name || 'Guard';
+            addChatMessage(`${name}: "${dlg}"`, 'combat');
+          }
           else if (act === 'altar') {
             STATE.prayerPts = STATE.maxPrayerPts;
             STATE.hp = STATE.maxHp;

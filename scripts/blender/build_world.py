@@ -43,7 +43,73 @@ import os
 import sys
 import bpy
 import bmesh
-from mathutils import Vector, Euler
+from mathutils import Vector, Euler, Matrix
+
+
+# =============================================================================
+# BlendSwap Asset Cache & Loader
+# =============================================================================
+BLEND_ASSET_CACHE: dict[str, bpy.types.Object] = {}
+
+def get_blend_object(blend_rel_path: str, obj_name: str) -> bpy.types.Object | None:
+    cache_key = f"{blend_rel_path}::{obj_name}"
+    if cache_key in BLEND_ASSET_CACHE:
+        return BLEND_ASSET_CACHE[cache_key]
+    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+    blend_file = os.path.join(repo_root, blend_rel_path)
+    if not os.path.exists(blend_file):
+        return None
+    try:
+        with bpy.data.libraries.load(blend_file) as (df, dt):
+            if obj_name in df.objects:
+                dt.objects = [obj_name]
+            else:
+                return None
+        if dt.objects:
+            obj = dt.objects[0]
+            bpy.context.collection.objects.link(obj)
+            BLEND_ASSET_CACHE[cache_key] = obj
+            return obj
+    except Exception as e:
+        print(f"[BlendAsset] Error loading {obj_name} from {blend_file}: {e}")
+        return None
+    return None
+
+
+def add_imported_world_parts(
+    asset_id: str,
+    parent,
+    src_obj: bpy.types.Object,
+    mat_mapping: dict[int, bpy.types.Material],
+    scale: float = 1.0,
+    tx: float = 0.0,
+    ty: float = 0.0,
+    tz: float = 0.0,
+    smooth: bool = True,
+):
+    bm_src = bmesh.new()
+    bm_src.from_mesh(src_obj.data)
+    min_z = min(v.co.z for v in bm_src.verts)
+
+    for m_idx, mat in mat_mapping.items():
+        bm_part = bm_src.copy()
+        del_faces = [f for f in bm_part.faces if f.material_index != m_idx]
+        bmesh.ops.delete(bm_part, geom=del_faces, context="FACES")
+        del_verts = [v for v in bm_part.verts if not v.link_faces]
+        bmesh.ops.delete(bm_part, geom=del_verts, context="VERTS")
+        if not bm_part.faces:
+            bm_part.free()
+            continue
+
+        bmesh.ops.recalc_face_normals(bm_part, faces=bm_part.faces)
+        for v in bm_part.verts:
+            bx = v.co.x * scale + tx
+            by = v.co.y * scale - tz
+            bz = (v.co.z - min_z) * scale + ty
+            v.co = Vector((bx, by, bz))
+
+        finalize_mesh(f"World_{asset_id}_{mat.name}", bm_part, parent, mat, smooth=smooth)
+    bm_src.free()
 
 
 # =============================================================================
@@ -2065,6 +2131,52 @@ def build_lava_fissure(mats: dict, gx: float, gz: float):
 
 
 # =============================================================================
+# BlendSwap Medieval Props (#6679)
+# =============================================================================
+def build_barrel(mats: dict, gx: float, gz: float):
+    root = create_root_empty("barrel", gx, gz)
+    src_obj = get_blend_object("blender/examples/medieval_props_6679/Props1.blend", "Barrel")
+    if src_obj:
+        add_imported_world_parts("barrel", root, src_obj, {0: mats["mat_wood"], 1: mats["mat_iron"]}, scale=1.0)
+    return root
+
+def build_crate(mats: dict, gx: float, gz: float):
+    root = create_root_empty("crate", gx, gz)
+    src_obj = get_blend_object("blender/examples/medieval_props_6679/Props1.blend", "Crate")
+    if src_obj:
+        add_imported_world_parts("crate", root, src_obj, {0: mats["mat_wood"]}, scale=0.85)
+    return root
+
+def build_box_cabbage(mats: dict, gx: float, gz: float):
+    root = create_root_empty("box_cabbage", gx, gz)
+    src_obj = get_blend_object("blender/examples/medieval_props_6679/Props1.blend", "Box.001")
+    if src_obj:
+        add_imported_world_parts("box_cabbage", root, src_obj, {0: mats["mat_wood"], 1: mats["mat_foliage"]}, scale=1.1)
+    return root
+
+def build_box_apples(mats: dict, gx: float, gz: float):
+    root = create_root_empty("box_apples", gx, gz)
+    src_obj = get_blend_object("blender/examples/medieval_props_6679/Props1.blend", "BoxWithApples")
+    if src_obj:
+        add_imported_world_parts("box_apples", root, src_obj, {0: mats["mat_cloth"], 1: mats["mat_wood"]}, scale=1.1)
+    return root
+
+def build_bag_grain(mats: dict, gx: float, gz: float):
+    root = create_root_empty("bag_grain", gx, gz)
+    src_obj = get_blend_object("blender/examples/medieval_props_6679/Props1.blend", "BagWithGrain")
+    if src_obj:
+        add_imported_world_parts("bag_grain", root, src_obj, {0: mats["mat_cloth"], 1: mats["mat_sandstone"]}, scale=1.0)
+    return root
+
+def build_bag_closed(mats: dict, gx: float, gz: float):
+    root = create_root_empty("bag_closed", gx, gz)
+    src_obj = get_blend_object("blender/examples/medieval_props_6679/Props1.blend", "BagClosed")
+    if src_obj:
+        add_imported_world_parts("bag_closed", root, src_obj, {0: mats["mat_wood"], 1: mats["mat_cloth"]}, scale=1.0)
+    return root
+
+
+# =============================================================================
 # Diorama Showcase Builder & Preview Studio Render
 # =============================================================================
 def build_all_world_assets():
@@ -2094,12 +2206,20 @@ def build_all_world_assets():
     build_woods_lantern(mats, 8.8, 6.2)
     build_mystic_mushroom(mats, 13.2, 6.2)
 
-    # Front Row (z = 11.8): Resource Nodes & Volcanic Fissure
+    # Front Row 1 (z = 11.8): Resource Nodes & Volcanic Fissure
     build_tree_stump(mats, -9.2, 11.8)
     build_ore_rock(mats, -4.6, 11.8)
     build_rock_depleted(mats, 0.0, 11.8)
     build_fishing_spot(mats, 4.6, 11.8)
     build_lava_fissure(mats, 9.2, 11.8)
+
+    # Front Row 2 (z = 16.5): Medieval Props & Market Goods (#6679)
+    build_barrel(mats, -10.0, 16.5)
+    build_crate(mats, -6.0, 16.5)
+    build_box_cabbage(mats, -2.0, 16.5)
+    build_box_apples(mats, 2.0, 16.5)
+    build_bag_grain(mats, 6.0, 16.5)
+    build_bag_closed(mats, 10.0, 16.5)
 
 
 def setup_preview_studio_and_render(render_path: str | None):
@@ -2178,6 +2298,14 @@ def main():
 
     clear_scene()
     build_all_world_assets()
+
+    # Clean up imported asset cache from the scene before export
+    for o in list(BLEND_ASSET_CACHE.values()):
+        try:
+            bpy.data.objects.remove(o, do_unlink=True)
+        except Exception:
+            pass
+    BLEND_ASSET_CACHE.clear()
 
     blend_path = os.path.join(blend_dir, "world.blend")
     glb_path = os.path.join(models_dir, "world.glb")

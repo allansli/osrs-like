@@ -18,7 +18,7 @@ import os
 import sys
 import bpy
 import bmesh
-from mathutils import Vector, Euler
+from mathutils import Vector, Euler, Matrix
 
 
 # =============================================================================
@@ -148,6 +148,60 @@ def finalize_obj(
     if parent is not None:
         obj.parent = parent
     return obj
+
+
+# =============================================================================
+# BlendSwap Asset Cache & Submesh Extraction
+# =============================================================================
+BLEND_ASSET_CACHE: dict[str, bpy.types.Object] = {}
+
+def get_blend_object(blend_rel_path: str, obj_name: str) -> bpy.types.Object | None:
+    cache_key = f"{blend_rel_path}::{obj_name}"
+    if cache_key in BLEND_ASSET_CACHE:
+        return BLEND_ASSET_CACHE[cache_key]
+    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+    blend_file = os.path.join(repo_root, blend_rel_path)
+    if not os.path.exists(blend_file):
+        return None
+    try:
+        with bpy.data.libraries.load(blend_file) as (df, dt):
+            if obj_name in df.objects:
+                dt.objects = [obj_name]
+            else:
+                return None
+        if dt.objects:
+            obj = dt.objects[0]
+            bpy.context.collection.objects.link(obj)
+            BLEND_ASSET_CACHE[cache_key] = obj
+            return obj
+    except Exception as e:
+        print(f"[BlendAsset] Error loading {obj_name} from {blend_file}: {e}")
+        return None
+    return None
+
+
+def add_imported_submesh(
+    name: str,
+    parent: bpy.types.Object,
+    mat: bpy.types.Material,
+    src_obj: bpy.types.Object,
+    transform_matrix: Matrix,
+    vert_indices: set[int] | None = None,
+    smooth: bool = True,
+    no_outline: bool = False,
+):
+    bm = bmesh.new()
+    bm.from_mesh(src_obj.data)
+    if vert_indices is not None:
+        del_faces = [f for f in bm.faces if any(v.index not in vert_indices for v in f.verts)]
+        bmesh.ops.delete(bm, geom=del_faces, context="FACES")
+        del_verts = [v for v in bm.verts if not v.link_faces]
+        bmesh.ops.delete(bm, geom=del_verts, context="VERTS")
+    if not bm.faces:
+        bm.free()
+        return None
+    bm.transform(transform_matrix)
+    return finalize_obj(name, bm, parent, mat, smooth=smooth, no_outline=no_outline)
 
 
 # =============================================================================
@@ -2231,113 +2285,11 @@ def build_moss_guardian(grid_pos: tuple[float, float, float], mats: dict):
 # =============================================================================
 def build_lesser_demon(grid_pos: tuple[float, float, float], mats: dict):
     root = create_pivot("Monster_lesser_demon", None, *grid_pos)
-
-    # V-tapered muscular crimson demon torso with sculpted pectorals, abs, and back lats
-    torso_sections = [
-        (0.72, 0.21, 0.16, 0.0, 0.0, 0.24, 0.01, 0.02),
-        (0.94, 0.19, 0.15, 0.0, 0.0, 0.22, 0.03, 0.03),
-        (1.18, 0.26, 0.19, 0.0, -0.01, 0.26, 0.05, 0.04),
-        (1.44, 0.36, 0.23, 0.0, -0.02, 0.28, 0.07, 0.05),
-        (1.66, 0.38, 0.22, 0.0, -0.01, 0.24, 0.04, 0.04),
-        (1.82, 0.20, 0.16, 0.0, 0.0, 0.18, 0.0, 0.02),
-    ]
-    add_lathe("lesser_demon_torso", root, mats["skin_lesser_demon"], torso_sections, segs=24)
-
-    # Dark iron waist-chains & demon loincloth + spiky dorsal mane
-    add_lathe(
-        "lesser_demon_waist_chain",
-        root,
-        mats["obsidian"],
-        [(0.74, 0.23, 0.18, 0.0, 0.0, 0.25), (0.83, 0.23, 0.18, 0.0, 0.0, 0.25)],
-        segs=20,
-    )
-    add_box("lesser_demon_loincloth", root, mats["obsidian"], 0.18, 0.32, 0.04, tx=0.0, ty=0.62, tz=-0.17)
-    for m_i in range(4):
-        add_cone_spike(
-            f"lesser_demon_dorsal_spike_{m_i}",
-            root,
-            mats["horn"],
-            base_r=0.035,
-            length=0.14,
-            tx=0.0,
-            ty=1.22 + m_i * 0.14,
-            tz=0.19,
-            rx=math.pi * 0.38,
-            segs=8,
-        )
-
-    # Long S-curved whip tail ending in a sharp black spade tip
-    tail_pts = [
-        (0.0, 0.78, 0.16, 0.065, 0.065),
-        (0.0, 0.62, 0.44, 0.048, 0.048),
-        (0.08, 0.58, 0.76, 0.036, 0.036),
-        (0.14, 0.78, 1.04, 0.028, 0.028),
-        (0.06, 1.06, 1.22, 0.020, 0.020),
-    ]
-    add_curved_tube("lesser_demon_tail", root, mats["skin_lesser_demon"], tail_pts, segs=12)
-    add_cone_spike(
-        "lesser_demon_tail_spade",
-        root,
-        mats["horn"],
-        base_r=0.065,
-        length=0.18,
-        tx=0.06,
-        ty=1.05,
-        tz=1.21,
-        rx=0.55,
-        flatten_x=0.35,
-        segs=8,
-    )
-
-    # HeadGroup at (0, 1.88, 0): fanged demonic skull, glowing fiery yellow eyes, sweeping ridged black ram/bull horns
     head_piv = create_pivot("lesser_demon_HeadGroup", root, 0.0, 1.88, 0.0)
-    add_lathe(
-        "lesser_demon_skull",
-        head_piv,
-        mats["skin_lesser_demon"],
-        [
-            (-0.04, 0.14, 0.15, 0.0, 0.0, 0.22),
-            (0.08, 0.18, 0.20, 0.0, -0.02, 0.24),
-            (0.20, 0.17, 0.19, 0.0, -0.01, 0.22),
-            (0.30, 0.12, 0.14, 0.0, 0.01, 0.18),
-        ],
-        segs=20,
-    )
-    for side, s_tag in ((-1.0, "L"), (1.0, "R")):
-        add_sphere(
-            f"lesser_demon_eye_{s_tag}",
-            head_piv,
-            mats["glow_yellow"],
-            0.032,
-            0.020,
-            0.020,
-            tx=side * 0.065,
-            ty=0.14,
-            tz=-0.185,
-            rz=-side * 0.24,
-            no_outline=True,
-        )
-        add_cone_spike(
-            f"lesser_demon_fang_{s_tag}",
-            head_piv,
-            mats["bone"],
-            base_r=0.018,
-            length=0.065,
-            tx=side * 0.055,
-            ty=0.04,
-            tz=-0.19,
-            rx=math.pi,
-            segs=8,
-        )
-        # Sweeping ridged black ram/bull horns (`add_curved_tube`)
-        horn_pts = [
-            (side * 0.12, 0.22, -0.02, 0.062, 0.062),
-            (side * 0.28, 0.28, 0.06, 0.050, 0.050),
-            (side * 0.38, 0.42, 0.02, 0.036, 0.036),
-            (side * 0.32, 0.56, -0.10, 0.022, 0.022),
-            (side * 0.22, 0.64, -0.20, 0.008, 0.008),
-        ]
-        add_curved_tube(f"lesser_demon_horn_{s_tag}", head_piv, mats["horn"], horn_pts, segs=12)
+    left_arm = create_pivot("lesser_demon_LeftArmPivot", root, -0.46, 1.48, 0.0)
+    right_arm = create_pivot("lesser_demon_RightArmPivot", root, 0.46, 1.48, 0.0)
+    left_leg = create_pivot("lesser_demon_LeftLegPivot", root, -0.16, 0.78, 0.0)
+    right_leg = create_pivot("lesser_demon_RightLegPivot", root, 0.16, 0.78, 0.0)
 
     # Ribbed bat-like demon wings under `lesser_demon_LWing` (-0.28, 1.50, 0.12) & `lesser_demon_RWing` (0.28, 1.50, 0.12)
     for side, w_name in ((-1.0, "lesser_demon_LWing"), (1.0, "lesser_demon_RWing")):
@@ -2353,16 +2305,6 @@ def build_lesser_demon(grid_pos: tuple[float, float, float], mats: dict):
         add_wing_web(f"{w_name}_web_1", wing_piv, mats["wing"], elbow, tip_top, tip_mid)
         add_wing_web(f"{w_name}_web_2", wing_piv, mats["wing"], elbow, tip_mid, tip_bot)
         add_wing_web(f"{w_name}_web_3", wing_piv, mats["wing"], (0.0, 0.0, 0.0), elbow, tip_in, scallop_dip=0.02)
-
-    # LeftArmPivot (-0.46, 1.48, 0) & RightArmPivot (0.46, 1.48, 0)
-    left_arm = create_pivot("lesser_demon_LeftArmPivot", root, -0.46, 1.48, 0.0)
-    right_arm = create_pivot("lesser_demon_RightArmPivot", root, 0.46, 1.48, 0.0)
-    for side, arm_piv, s_tag in ((-1.0, left_arm, "L"), (1.0, right_arm, "R")):
-        elbow = (side * 0.06, -0.30, -0.06)
-        hand = (side * 0.05, -0.58, -0.24)
-        add_limb_tube(f"lesser_demon_uarm_{s_tag}", arm_piv, mats["skin_lesser_demon"], (-side * 0.12, 0.08, 0.0), elbow, 0.145, 0.088, segs=12)
-        add_limb_tube(f"lesser_demon_farm_{s_tag}", arm_piv, mats["skin_lesser_demon"], elbow, hand, 0.092, 0.072, segs=12)
-        add_sphere(f"lesser_demon_hand_{s_tag}", arm_piv, mats["skin_lesser_demon"], 0.075, tx=hand[0], ty=hand[1], tz=hand[2])
 
     # Jagged obsidian/hellfire demon cleaver blade with glowing orange lava edge under `lesser_demon_RightArmPivot`
     add_limb_tube(
@@ -2402,27 +2344,195 @@ def build_lesser_demon(grid_pos: tuple[float, float, float], mats: dict):
         bevel=0.01,
     )
 
-    # Digitigrade demon legs ending in cloven black hooves under LeftLegPivot (-0.16, 0.78, 0) & RightLegPivot (0.16, 0.78, 0)
-    for side, piv_name in ((-1.0, "lesser_demon_LeftLegPivot"), (1.0, "lesser_demon_RightLegPivot")):
-        leg_piv = create_pivot(piv_name, root, side * 0.16, 0.78, 0.0)
-        knee = (side * 0.04, -0.28, -0.14)
-        hock = (side * 0.04, -0.50, 0.12)
-        hoof_top = (side * 0.04, -0.70, -0.04)
-        add_limb_tube(f"{piv_name}_thigh", leg_piv, mats["skin_lesser_demon"], (0.0, 0.0, 0.0), knee, 0.125, 0.092, segs=12)
-        add_limb_tube(f"{piv_name}_calf", leg_piv, mats["skin_lesser_demon"], knee, hock, 0.092, 0.068, segs=12)
-        add_limb_tube(f"{piv_name}_fetlock", leg_piv, mats["skin_lesser_demon"], hock, hoof_top, 0.068, 0.058, segs=10)
-        add_box(
-            f"{piv_name}_cloven_hoof",
-            leg_piv,
-            mats["horn"],
-            0.14,
-            0.12,
-            0.18,
-            tx=side * 0.04,
-            ty=-0.72,
-            tz=-0.06,
-            bevel=0.02,
+    d_obj = get_blend_object("blender/examples/red_devil_22787/RedDevil-Ex.blend", "Devil")
+    if d_obj:
+        t_low = get_blend_object("blender/examples/red_devil_22787/RedDevil-Ex.blend", "TeethLower")
+        t_upp = get_blend_object("blender/examples/red_devil_22787/RedDevil-Ex.blend", "TeethUpper")
+        vgroups = {vg.index: vg.name for vg in d_obj.vertex_groups}
+        group_sets = {
+            'head': {'Head', 'LowerJaw', 'Neck'},
+            'torso': {'Chest', 'Torso', 'Pelvis', 'Collar.l', 'Collar.r', 'TailBase', 'Tail.001', 'TailMid', 'TailBend2', 'TailEnd'},
+            'arm_L': {'UpperArm.Deform1.l', 'UpperArm.Deform2.l', 'LowerArm.Deform1.l', 'LowerArm.Deform2.l', 'Hand.l', 'Finger1.1.l', 'Finger1.2.l', 'Finger1.3.l', 'Finger2.1.l', 'Finger2.2.l', 'Finger2.3.l', 'Finger3.1.l', 'Finger3.2.l', 'Finger3.3.l', 'Thumb1.l', 'Thumb2.l'},
+            'arm_R': {'UpperArm.Deform1.r', 'UpperArm.Deform2.r', 'LowerArm.Deform1.r', 'LowerArm.Deform2.r', 'Hand.r', 'Finger1.1.r', 'Finger1.2.r', 'Finger1.3.r', 'Finger2.1.r', 'Finger2.2.r', 'Finger2.3.r', 'Finger3.1.r', 'Finger3.2.r', 'Finger3.3.r', 'Thumb1.r', 'Thumb2.r'},
+            'leg_L': {'UpperLeg.l', 'LowerLeg.l', 'Foot.l', 'Toe1.1.l', 'Toe1.2.l', 'Toe2.1.l', 'Toe2.2.l', 'Toe3.1.l', 'Toe3.2.l', 'ToeRot.l'},
+            'leg_R': {'UpperLeg.r', 'LowerLeg.r', 'Foot.r', 'Toe1.1.r', 'Toe1.2.r', 'Toe2.1.r', 'Toe2.2.r', 'Toe3.1.r', 'Toe3.2.r', 'ToeRot.r'},
+        }
+        part_v_indices = {p: set() for p in group_sets}
+        for v in d_obj.data.vertices:
+            best_w = 0.0
+            best_p = 'torso'
+            for g in v.groups:
+                gname = vgroups.get(g.group, '')
+                if g.weight > best_w:
+                    for pname, names in group_sets.items():
+                        if gname in names:
+                            best_w = g.weight
+                            best_p = pname
+                            break
+            part_v_indices[best_p].add(v.index)
+
+        scale = 2.15 / 31.98
+        rot_z = Matrix.Rotation(math.pi, 4, 'Z')
+        scale_m = Matrix.Scale(scale, 4)
+        min_z = -3.2938
+        trans_m = Matrix.Translation(Vector((0, 0, -min_z * scale)))
+        comp_m = trans_m @ scale_m @ rot_z
+
+        add_imported_submesh("lesser_demon_torso_blendswap", root, mats["skin_lesser_demon"], d_obj, comp_m, part_v_indices['torso'])
+        head_trans = Matrix.Translation(Vector((0, 0, -1.65))) @ comp_m
+        add_imported_submesh("lesser_demon_head_blendswap", head_piv, mats["skin_lesser_demon"], d_obj, head_trans, part_v_indices['head'])
+        if t_low:
+            add_imported_submesh("lesser_demon_teeth_low", head_piv, mats["bone"], t_low, head_trans)
+        if t_upp:
+            add_imported_submesh("lesser_demon_teeth_upp", head_piv, mats["bone"], t_upp, head_trans)
+        for side, s_tag in ((-1.0, "L"), (1.0, "R")):
+            add_sphere(f"lesser_demon_eye_{s_tag}", head_piv, mats["glow_yellow"], 0.032, 0.020, 0.020, tx=side * 0.065, ty=0.14, tz=-0.185, rz=-side * 0.24, no_outline=True)
+            horn_pts = [
+                (side * 0.12, 0.22, -0.02, 0.062, 0.062),
+                (side * 0.28, 0.28, 0.06, 0.050, 0.050),
+                (side * 0.38, 0.42, 0.02, 0.036, 0.036),
+                (side * 0.32, 0.56, -0.10, 0.022, 0.022),
+                (side * 0.22, 0.64, -0.20, 0.008, 0.008),
+            ]
+            add_curved_tube(f"lesser_demon_horn_{s_tag}", head_piv, mats["horn"], horn_pts, segs=12)
+
+        arm_L_trans = Matrix.Translation(Vector((0.24, 0.10, -1.45))) @ comp_m
+        arm_R_trans = Matrix.Translation(Vector((-0.24, 0.10, -1.45))) @ comp_m
+        add_imported_submesh("lesser_demon_arm_L_blendswap", left_arm, mats["skin_lesser_demon"], d_obj, arm_L_trans, part_v_indices['arm_L'])
+        add_imported_submesh("lesser_demon_arm_R_blendswap", right_arm, mats["skin_lesser_demon"], d_obj, arm_R_trans, part_v_indices['arm_R'])
+
+        leg_L_trans = Matrix.Translation(Vector((0.05, 0.23, -0.93))) @ comp_m
+        leg_R_trans = Matrix.Translation(Vector((-0.05, 0.23, -0.93))) @ comp_m
+        add_imported_submesh("lesser_demon_leg_L_blendswap", left_leg, mats["skin_lesser_demon"], d_obj, leg_L_trans, part_v_indices['leg_L'])
+        add_imported_submesh("lesser_demon_leg_R_blendswap", right_leg, mats["skin_lesser_demon"], d_obj, leg_R_trans, part_v_indices['leg_R'])
+    else:
+        torso_sections = [
+            (0.72, 0.21, 0.16, 0.0, 0.0, 0.24, 0.01, 0.02),
+            (0.94, 0.19, 0.15, 0.0, 0.0, 0.22, 0.03, 0.03),
+            (1.18, 0.26, 0.19, 0.0, -0.01, 0.26, 0.05, 0.04),
+            (1.44, 0.36, 0.23, 0.0, -0.02, 0.28, 0.07, 0.05),
+            (1.66, 0.38, 0.22, 0.0, -0.01, 0.24, 0.04, 0.04),
+            (1.82, 0.20, 0.16, 0.0, 0.0, 0.18, 0.0, 0.02),
+        ]
+        add_lathe("lesser_demon_torso", root, mats["skin_lesser_demon"], torso_sections, segs=24)
+        add_lathe(
+            "lesser_demon_waist_chain",
+            root,
+            mats["obsidian"],
+            [(0.74, 0.23, 0.18, 0.0, 0.0, 0.25), (0.83, 0.23, 0.18, 0.0, 0.0, 0.25)],
+            segs=20,
         )
+        add_box("lesser_demon_loincloth", root, mats["obsidian"], 0.18, 0.32, 0.04, tx=0.0, ty=0.62, tz=-0.17)
+        for m_i in range(4):
+            add_cone_spike(
+                f"lesser_demon_dorsal_spike_{m_i}",
+                root,
+                mats["horn"],
+                base_r=0.035,
+                length=0.14,
+                tx=0.0,
+                ty=1.22 + m_i * 0.14,
+                tz=0.19,
+                rx=math.pi * 0.38,
+                segs=8,
+            )
+
+        tail_pts = [
+            (0.0, 0.78, 0.16, 0.065, 0.065),
+            (0.0, 0.62, 0.44, 0.048, 0.048),
+            (0.08, 0.58, 0.76, 0.036, 0.036),
+            (0.14, 0.78, 1.04, 0.028, 0.028),
+            (0.06, 1.06, 1.22, 0.020, 0.020),
+        ]
+        add_curved_tube("lesser_demon_tail", root, mats["skin_lesser_demon"], tail_pts, segs=12)
+        add_cone_spike(
+            "lesser_demon_tail_spade",
+            root,
+            mats["horn"],
+            base_r=0.065,
+            length=0.18,
+            tx=0.06,
+            ty=1.05,
+            tz=1.21,
+            rx=0.55,
+            flatten_x=0.35,
+            segs=8,
+        )
+
+        add_lathe(
+            "lesser_demon_skull",
+            head_piv,
+            mats["skin_lesser_demon"],
+            [
+                (-0.04, 0.14, 0.15, 0.0, 0.0, 0.22),
+                (0.08, 0.18, 0.20, 0.0, -0.02, 0.24),
+                (0.20, 0.17, 0.19, 0.0, -0.01, 0.22),
+                (0.30, 0.12, 0.14, 0.0, 0.01, 0.18),
+            ],
+            segs=20,
+        )
+        for side, s_tag in ((-1.0, "L"), (1.0, "R")):
+            add_sphere(
+                f"lesser_demon_eye_{s_tag}",
+                head_piv,
+                mats["glow_yellow"],
+                0.032,
+                0.020,
+                0.020,
+                tx=side * 0.065,
+                ty=0.14,
+                tz=-0.185,
+                rz=-side * 0.24,
+                no_outline=True,
+            )
+            add_cone_spike(
+                f"lesser_demon_fang_{s_tag}",
+                head_piv,
+                mats["bone"],
+                base_r=0.018,
+                length=0.065,
+                tx=side * 0.055,
+                ty=0.04,
+                tz=-0.19,
+                rx=math.pi,
+                segs=8,
+            )
+            horn_pts = [
+                (side * 0.12, 0.22, -0.02, 0.062, 0.062),
+                (side * 0.28, 0.28, 0.06, 0.050, 0.050),
+                (side * 0.38, 0.42, 0.02, 0.036, 0.036),
+                (side * 0.32, 0.56, -0.10, 0.022, 0.022),
+                (side * 0.22, 0.64, -0.20, 0.008, 0.008),
+            ]
+            add_curved_tube(f"lesser_demon_horn_{s_tag}", head_piv, mats["horn"], horn_pts, segs=12)
+
+        for side, arm_piv, s_tag in ((-1.0, left_arm, "L"), (1.0, right_arm, "R")):
+            elbow = (side * 0.06, -0.30, -0.06)
+            hand = (side * 0.05, -0.58, -0.24)
+            add_limb_tube(f"lesser_demon_uarm_{s_tag}", arm_piv, mats["skin_lesser_demon"], (-side * 0.12, 0.08, 0.0), elbow, 0.145, 0.088, segs=12)
+            add_limb_tube(f"lesser_demon_farm_{s_tag}", arm_piv, mats["skin_lesser_demon"], elbow, hand, 0.092, 0.072, segs=12)
+            add_sphere(f"lesser_demon_hand_{s_tag}", arm_piv, mats["skin_lesser_demon"], 0.075, tx=hand[0], ty=hand[1], tz=hand[2])
+
+        for side, piv_name in ((-1.0, "lesser_demon_LeftLegPivot"), (1.0, "lesser_demon_RightLegPivot")):
+            leg_piv = left_leg if side < 0 else right_leg
+            knee = (side * 0.04, -0.28, -0.14)
+            hock = (side * 0.04, -0.50, 0.12)
+            hoof_top = (side * 0.04, -0.70, -0.04)
+            add_limb_tube(f"{piv_name}_thigh", leg_piv, mats["skin_lesser_demon"], (0.0, 0.0, 0.0), knee, 0.125, 0.092, segs=12)
+            add_limb_tube(f"{piv_name}_calf", leg_piv, mats["skin_lesser_demon"], knee, hock, 0.092, 0.068, segs=12)
+            add_limb_tube(f"{piv_name}_fetlock", leg_piv, mats["skin_lesser_demon"], hock, hoof_top, 0.068, 0.058, segs=10)
+            add_box(
+                f"{piv_name}_cloven_hoof",
+                leg_piv,
+                mats["horn"],
+                0.14,
+                0.12,
+                0.18,
+                tx=side * 0.04,
+                ty=-0.72,
+                tz=-0.06,
+                bevel=0.02,
+            )
 
     return root
 
@@ -2432,262 +2542,348 @@ def build_lesser_demon(grid_pos: tuple[float, float, float], mats: dict):
 # =============================================================================
 def build_elvarg_dragon(grid_pos: tuple[float, float, float], mats: dict):
     root = create_pivot("Monster_elvarg_dragon", None, *grid_pos)
+    head_piv = create_pivot("elvarg_dragon_HeadGroup", root, 0.0, 3.25, -2.60)
+    l_wing = create_pivot("elvarg_dragon_LWing", root, -0.90, 2.35, -0.40)
+    r_wing = create_pivot("elvarg_dragon_RWing", root, 0.90, 2.35, -0.40)
+    left_arm = create_pivot("elvarg_dragon_LeftArmPivot", root, -0.95, 1.20, -0.85)
+    right_arm = create_pivot("elvarg_dragon_RightArmPivot", root, 0.95, 1.20, -0.85)
+    left_leg = create_pivot("elvarg_dragon_LeftLegPivot", root, -0.80, 1.20, 0.90)
+    right_leg = create_pivot("elvarg_dragon_RightLegPivot", root, 0.80, 1.20, 0.90)
 
-    # Massive green dragon body along Z with muscular shoulders and haunches
-    body_sections = [
-        (-1.45, 0.52, 0.46, 0.0, 1.52, 0.18, 0.06, 0.10),
-        (-0.95, 0.88, 0.72, 0.0, 1.48, 0.22, 0.14, 0.14),
-        (-0.30, 0.96, 0.78, 0.0, 1.46, 0.22, 0.18, 0.16),
-        (0.45, 0.84, 0.70, 0.0, 1.48, 0.20, 0.12, 0.14),
-        (1.15, 0.68, 0.58, 0.0, 1.44, 0.18, 0.06, 0.12),
-        (1.65, 0.42, 0.38, 0.0, 1.36, 0.15, 0.02, 0.08),
-    ]
-    add_lathe("elvarg_body", root, mats["skin_elvarg_dragon"], body_sections, segs=26, axis="Z")
+    dr_obj = get_blend_object("blender/examples/dragon_3826/Dragon-low-rig.blend", "dragon")
+    if dr_obj:
+        dents = get_blend_object("blender/examples/dragon_3826/Dragon-low-rig.blend", "dents")
+        dents1 = get_blend_object("blender/examples/dragon_3826/Dragon-low-rig.blend", "dents.001")
+        yeux = get_blend_object("blender/examples/dragon_3826/Dragon-low-rig.blend", "yeux")
+        yeux1 = get_blend_object("blender/examples/dragon_3826/Dragon-low-rig.blend", "yeux.001")
+        vgroups = {vg.index: vg.name for vg in dr_obj.vertex_groups}
 
-    # Golden belly scutes (`elvarg_belly`) running under chest and abdomen
-    belly_sections = [
-        (-1.38, 0.36, 0.22, 0.0, 1.16, 0.25),
-        (-0.85, 0.58, 0.28, 0.0, 0.96, 0.28),
-        (-0.20, 0.62, 0.30, 0.0, 0.92, 0.28),
-        (0.50, 0.52, 0.26, 0.0, 0.98, 0.26),
-        (1.15, 0.36, 0.20, 0.0, 1.08, 0.22),
-    ]
-    add_lathe("elvarg_belly", root, mats["gold"], belly_sections, segs=20, axis="Z")
+        def classify_vg(name):
+            if any(k in name for k in ['wing', 'Wing']):
+                return 'wing_L' if '.L' in name else 'wing_R'
+            if any(k in name for k in ['upper_arm', 'forearm', 'hand', 'shoulder.']):
+                return 'leg_front_L' if '.L' in name else 'leg_front_R'
+            if any(k in name for k in ['femur', 'tibia', 'foot', 'leg.', 'finger_middle_leg', 'finger_ring_leg', 'finger_pinky_leg']):
+                return 'leg_rear_L' if '.L' in name else 'leg_rear_R'
+            if any(k in name for k in ['neck', 'head', 'corn', 'nose', 'eye']):
+                return 'head'
+            return 'body'
 
-    # S-curved armored neck rising to (0, 3.75, -3.15)
-    neck_pts = [
-        (0.0, 1.62, -1.30, 0.46, 0.48),
-        (0.0, 2.05, -1.85, 0.38, 0.42),
-        (0.0, 2.65, -2.25, 0.33, 0.36),
-        (0.0, 3.25, -2.60, 0.29, 0.32),
-        (0.0, 3.65, -2.95, 0.27, 0.30),
-        (0.0, 3.75, -3.15, 0.30, 0.32),
-    ]
-    add_curved_tube("elvarg_neck", root, mats["skin_elvarg_dragon"], neck_pts, segs=20, dorsal_ridge=0.18)
+        part_v_indices = {p: set() for p in ['wing_L', 'wing_R', 'leg_front_L', 'leg_front_R', 'leg_rear_L', 'leg_rear_R', 'head', 'body']}
+        for v in dr_obj.data.vertices:
+            best_w = 0.0
+            best_p = 'body'
+            for g in v.groups:
+                gname = vgroups.get(g.group, '')
+                if g.weight > best_w:
+                    best_w = g.weight
+                    best_p = classify_vg(gname)
+            part_v_indices[best_p].add(v.index)
 
-    # Fierce sculpted dragon head at (0, 3.75, -3.15): upper snout, horned brow ridges, roaring lower jaw, fangs, golden eyes & horns
-    snout_sections = [
-        (-4.15, 0.14, 0.12, 0.0, 3.68, 0.28, 0.0, 0.04),
-        (-3.80, 0.24, 0.18, 0.0, 3.74, 0.28, 0.0, 0.06),
-        (-3.45, 0.34, 0.26, 0.0, 3.80, 0.26, 0.0, 0.08),
-        (-3.00, 0.38, 0.32, 0.0, 3.80, 0.24, 0.0, 0.06),
-    ]
-    add_lathe("elvarg_upper_snout", root, mats["skin_elvarg_dragon"], snout_sections, segs=20, axis="Z")
+        scale = 0.34
+        rot_z = Matrix.Rotation(math.pi, 4, 'Z')
+        scale_m = Matrix.Scale(scale, 4)
+        min_z = -3.4412
+        trans_m = Matrix.Translation(Vector((0, 0, -min_z * scale)))
+        comp_m = trans_m @ scale_m @ rot_z
 
-    # Roaring open lower jaw angled downward + rows of sharp white fangs
-    add_box(
-        "elvarg_lower_jaw",
-        root,
-        mats["skin_elvarg_dragon"],
-        0.42,
-        0.16,
-        0.88,
-        tx=0.0,
-        ty=3.34,
-        tz=-3.52,
-        rx=-0.34,
-        bevel=0.04,
-    )
-    for f_i in range(4):
-        fz = -3.98 + f_i * 0.16
-        for side in (-1.0, 1.0):
+        add_imported_submesh("elvarg_dragon_body_blendswap", root, mats["skin_elvarg_dragon"], dr_obj, comp_m, part_v_indices['body'])
+        head_trans = Matrix.Translation(Vector((0, -2.60, -3.25))) @ comp_m
+        add_imported_submesh("elvarg_dragon_head_blendswap", head_piv, mats["skin_elvarg_dragon"], dr_obj, head_trans, part_v_indices['head'])
+        if dents:
+            add_imported_submesh("elvarg_dragon_dents", head_piv, mats["bone"], dents, head_trans)
+        if dents1:
+            add_imported_submesh("elvarg_dragon_dents1", head_piv, mats["bone"], dents1, head_trans)
+        if yeux:
+            add_imported_submesh("elvarg_dragon_yeux", head_piv, mats["glow_yellow"], yeux, head_trans, no_outline=True)
+        if yeux1:
+            add_imported_submesh("elvarg_dragon_yeux1", head_piv, mats["glow_yellow"], yeux1, head_trans, no_outline=True)
+
+        l_wing_trans = Matrix.Translation(Vector((0.90, -0.40, -2.35))) @ comp_m
+        r_wing_trans = Matrix.Translation(Vector((-0.90, -0.40, -2.35))) @ comp_m
+        add_imported_submesh("elvarg_dragon_wing_L_blendswap", l_wing, mats["gold"], dr_obj, l_wing_trans, part_v_indices['wing_L'])
+        add_imported_submesh("elvarg_dragon_wing_R_blendswap", r_wing, mats["gold"], dr_obj, r_wing_trans, part_v_indices['wing_R'])
+
+        arm_L_trans = Matrix.Translation(Vector((0.95, -0.85, -1.20))) @ comp_m
+        arm_R_trans = Matrix.Translation(Vector((-0.95, -0.85, -1.20))) @ comp_m
+        add_imported_submesh("elvarg_dragon_leg_front_L", left_arm, mats["skin_elvarg_dragon"], dr_obj, arm_L_trans, part_v_indices['leg_front_L'])
+        add_imported_submesh("elvarg_dragon_leg_front_R", right_arm, mats["skin_elvarg_dragon"], dr_obj, arm_R_trans, part_v_indices['leg_front_R'])
+
+        leg_L_trans = Matrix.Translation(Vector((0.80, 0.90, -1.20))) @ comp_m
+        leg_R_trans = Matrix.Translation(Vector((-0.80, 0.90, -1.20))) @ comp_m
+        add_imported_submesh("elvarg_dragon_leg_rear_L", left_leg, mats["skin_elvarg_dragon"], dr_obj, leg_L_trans, part_v_indices['leg_rear_L'])
+        add_imported_submesh("elvarg_dragon_leg_rear_R", right_leg, mats["skin_elvarg_dragon"], dr_obj, leg_R_trans, part_v_indices['leg_rear_R'])
+
+        # Spiked tail club
+        add_sphere("elvarg_tail_club", root, mats["gold"], 0.18, 0.14, 0.24, tx=0.0, ty=1.18, tz=4.78)
+        for tc_side in (-1.0, 1.0):
             add_cone_spike(
-                f"elvarg_fang_top_{'L' if side < 0 else 'R'}_{f_i}",
-                root,
-                mats["bone"],
-                base_r=0.025,
-                length=0.11,
-                tx=side * (0.14 + f_i * 0.02),
-                ty=3.62,
-                tz=fz,
-                rx=math.pi,
-                segs=8,
-            )
-            add_cone_spike(
-                f"elvarg_fang_bot_{'L' if side < 0 else 'R'}_{f_i}",
-                root,
-                mats["bone"],
-                base_r=0.022,
-                length=0.095,
-                tx=side * (0.12 + f_i * 0.02),
-                ty=3.26 + f_i * 0.05,
-                tz=fz,
-                rx=-0.25,
-                segs=8,
-            )
-
-    # Glowing golden dragon eyes + 2 sweeping curved golden crown horns + 4 cheek spikes
-    for side, s_tag in ((-1.0, "L"), (1.0, "R")):
-        add_sphere(
-            f"elvarg_eye_{s_tag}",
-            root,
-            mats["glow_yellow"],
-            0.058,
-            0.038,
-            0.045,
-            tx=side * 0.24,
-            ty=3.84,
-            tz=-3.48,
-            ry=side * 0.35,
-            no_outline=True,
-        )
-        crown_horn = [
-            (side * 0.22, 3.92, -3.12, 0.10, 0.10),
-            (side * 0.38, 4.18, -2.72, 0.075, 0.075),
-            (side * 0.52, 4.46, -2.28, 0.048, 0.048),
-            (side * 0.58, 4.68, -1.88, 0.016, 0.016),
-        ]
-        add_curved_tube(f"elvarg_crown_horn_{s_tag}", root, mats["gold"], crown_horn, segs=14)
-        for ch_i in range(2):
-            add_cone_spike(
-                f"elvarg_cheek_spike_{s_tag}_{ch_i}",
+                f"elvarg_tail_club_spike_{'L' if tc_side < 0 else 'R'}",
                 root,
                 mats["gold"],
-                base_r=0.042,
-                length=0.22,
-                tx=side * 0.32,
-                ty=3.68 - ch_i * 0.10,
-                tz=-3.18 + ch_i * 0.14,
-                rx=0.45,
-                rz=-side * 1.15,
+                base_r=0.048,
+                length=0.26,
+                tx=tc_side * 0.14,
+                ty=1.18,
+                tz=4.78,
+                rz=-tc_side * math.pi * 0.48,
                 segs=8,
             )
+    else:
+        # Massive green dragon body along Z with muscular shoulders and haunches
+        body_sections = [
+            (-1.45, 0.52, 0.46, 0.0, 1.52, 0.18, 0.06, 0.10),
+            (-0.95, 0.88, 0.72, 0.0, 1.48, 0.22, 0.14, 0.14),
+            (-0.30, 0.96, 0.78, 0.0, 1.46, 0.22, 0.18, 0.16),
+            (0.45, 0.84, 0.70, 0.0, 1.48, 0.20, 0.12, 0.14),
+            (1.15, 0.68, 0.58, 0.0, 1.44, 0.18, 0.06, 0.12),
+            (1.65, 0.42, 0.38, 0.0, 1.36, 0.15, 0.02, 0.08),
+        ]
+        add_lathe("elvarg_body", root, mats["skin_elvarg_dragon"], body_sections, segs=26, axis="Z")
 
-    # Long S-curved whip tail (z up to 4.8) ending in a spiked tail club
-    tail_pts = [
-        (0.0, 1.36, 1.55, 0.38, 0.36),
-        (0.14, 1.12, 2.25, 0.28, 0.27),
-        (0.26, 0.92, 2.95, 0.21, 0.20),
-        (0.08, 0.84, 3.65, 0.15, 0.15),
-        (-0.14, 0.96, 4.25, 0.11, 0.11),
-        (0.0, 1.18, 4.80, 0.08, 0.08),
-    ]
-    add_curved_tube("elvarg_tail", root, mats["skin_elvarg_dragon"], tail_pts, segs=18, dorsal_ridge=0.16)
-    add_sphere("elvarg_tail_club", root, mats["gold"], 0.18, 0.14, 0.24, tx=0.0, ty=1.18, tz=4.78)
-    for tc_side in (-1.0, 1.0):
-        add_cone_spike(
-            f"elvarg_tail_club_spike_{'L' if tc_side < 0 else 'R'}",
-            root,
-            mats["gold"],
-            base_r=0.048,
-            length=0.26,
-            tx=tc_side * 0.14,
-            ty=1.18,
-            tz=4.78,
-            rz=-tc_side * math.pi * 0.48,
-            segs=8,
-        )
+        # Golden belly scutes (`elvarg_belly`) running under chest and abdomen
+        belly_sections = [
+            (-1.38, 0.36, 0.22, 0.0, 1.16, 0.25),
+            (-0.85, 0.58, 0.28, 0.0, 0.96, 0.28),
+            (-0.20, 0.62, 0.30, 0.0, 0.92, 0.28),
+            (0.50, 0.52, 0.26, 0.0, 0.98, 0.26),
+            (1.15, 0.36, 0.20, 0.0, 1.08, 0.22),
+        ]
+        add_lathe("elvarg_belly", root, mats["gold"], belly_sections, segs=20, axis="Z")
 
-    # Dorsal spine ridge of 16 golden horns running from neck down the tail
-    spine_coords = [
-        (0.0, 3.55, -2.80, 0.22),
-        (0.0, 3.15, -2.50, 0.24),
-        (0.0, 2.60, -2.18, 0.26),
-        (0.0, 2.15, -1.78, 0.28),
-        (0.0, 2.12, -1.15, 0.30),
-        (0.0, 2.22, -0.65, 0.34),
-        (0.0, 2.24, -0.15, 0.34),
-        (0.0, 2.18, 0.35, 0.32),
-        (0.0, 2.06, 0.85, 0.28),
-        (0.0, 1.84, 1.35, 0.25),
-        (0.06, 1.52, 1.88, 0.22),
-        (0.18, 1.24, 2.45, 0.20),
-        (0.24, 1.04, 3.05, 0.18),
-        (0.10, 0.96, 3.60, 0.16),
-        (-0.08, 1.02, 4.10, 0.15),
-        (-0.04, 1.14, 4.48, 0.14),
-    ]
-    for sp_i, (sx, sy, sz, sh) in enumerate(spine_coords):
-        add_cone_spike(
-            f"elvarg_dorsal_horn_{sp_i}",
-            root,
-            mats["gold"],
-            base_r=sh * 0.24,
-            length=sh,
-            tx=sx,
-            ty=sy,
-            tz=sz,
-            rx=0.42,
-            curve_bend=0.04,
-            segs=8,
-        )
+        # S-curved armored neck rising to (0, 3.75, -3.15)
+        neck_pts = [
+            (0.0, 1.62, -1.30, 0.46, 0.48),
+            (0.0, 2.05, -1.85, 0.38, 0.42),
+            (0.0, 2.65, -2.25, 0.33, 0.36),
+            (0.0, 3.25, -2.60, 0.29, 0.32),
+            (0.0, 3.65, -2.95, 0.27, 0.30),
+            (0.0, 3.75, -3.15, 0.30, 0.32),
+        ]
+        add_curved_tube("elvarg_neck", root, mats["skin_elvarg_dragon"], neck_pts, segs=20, dorsal_ridge=0.18)
 
-    # Colossal ribbed dragon wings (`span ~ 4.2m` each) under `elvarg_dragon_LWing` & `elvarg_dragon_RWing`
-    for side, w_name in ((-1.0, "elvarg_dragon_LWing"), (1.0, "elvarg_dragon_RWing")):
-        wing_piv = create_pivot(w_name, root, side * 0.90, 2.35, -0.40)
-        elbow = (side * 1.45, 1.15, -0.15)
-        wrist = (side * 2.45, 1.65, 0.10)
-        tip_1 = (side * 4.20, 1.95, 0.45)
-        tip_2 = (side * 3.85, 0.65, 0.55)
-        tip_3 = (side * 2.85, -0.35, 0.65)
-        tip_4 = (side * 1.55, -0.65, 0.60)
-        body_anchor = (side * 0.10, -0.45, 0.85)
+        # Fierce sculpted dragon head at (0, 3.75, -3.15): upper snout, horned brow ridges, roaring lower jaw, fangs, golden eyes & horns
+        snout_sections = [
+            (-4.15, 0.14, 0.12, 0.0, 3.68, 0.28, 0.0, 0.04),
+            (-3.80, 0.24, 0.18, 0.0, 3.74, 0.28, 0.0, 0.06),
+            (-3.45, 0.34, 0.26, 0.0, 3.80, 0.26, 0.0, 0.08),
+            (-3.00, 0.38, 0.32, 0.0, 3.80, 0.24, 0.0, 0.06),
+        ]
+        add_lathe("elvarg_upper_snout", root, mats["skin_elvarg_dragon"], snout_sections, segs=20, axis="Z")
 
-        add_limb_tube(f"{w_name}_humerus", wing_piv, mats["skin_elvarg_dragon"], (0.0, 0.0, 0.0), elbow, 0.14, 0.11, segs=12)
-        add_limb_tube(f"{w_name}_radius", wing_piv, mats["skin_elvarg_dragon"], elbow, wrist, 0.11, 0.085, segs=12)
-        # Golden thumb claw at the wing bend
-        add_cone_spike(
-            f"{w_name}_thumb_claw",
-            wing_piv,
-            mats["gold"],
-            base_r=0.055,
-            length=0.28,
-            tx=wrist[0],
-            ty=wrist[1],
-            tz=wrist[2] - 0.06,
-            rx=-0.85,
-            rz=-side * 0.35,
-            segs=8,
-        )
-        for f_i, f_tip in enumerate((tip_1, tip_2, tip_3, tip_4)):
-            add_limb_tube(f"{w_name}_finger_{f_i}", wing_piv, mats["horn"], wrist, f_tip, 0.065, 0.022, segs=10)
-
-        add_wing_web(f"{w_name}_membrane_1", wing_piv, mats["wing_dragon"], wrist, tip_1, tip_2, thickness=0.025)
-        add_wing_web(f"{w_name}_membrane_2", wing_piv, mats["wing_dragon"], wrist, tip_2, tip_3, thickness=0.025)
-        add_wing_web(f"{w_name}_membrane_3", wing_piv, mats["wing_dragon"], wrist, tip_3, tip_4, thickness=0.025)
-        add_wing_web(f"{w_name}_membrane_4", wing_piv, mats["wing_dragon"], elbow, tip_4, body_anchor, thickness=0.025)
-
-    # 4 Dragon Leg Pivots:
-    # LeftArmPivot (-0.95, 1.20, -0.85), RightArmPivot (0.95, 1.20, -0.85),
-    # LeftLegPivot (-0.80, 1.20, 0.90), RightLegPivot (0.80, 1.20, 0.90)
-    limb_specs = [
-        (-1.0, "elvarg_dragon_LeftArmPivot", -0.95, 1.20, -0.85, -0.18),
-        (1.0, "elvarg_dragon_RightArmPivot", 0.95, 1.20, -0.85, -0.18),
-        (-1.0, "elvarg_dragon_LeftLegPivot", -0.80, 1.20, 0.90, 0.22),
-        (1.0, "elvarg_dragon_RightLegPivot", 0.80, 1.20, 0.90, 0.22),
-    ]
-    for side, piv_name, px, py, pz, knee_z in limb_specs:
-        leg_piv = create_pivot(piv_name, root, px, py, pz)
-        knee = (side * 0.14, -0.54, knee_z)
-        ankle = (side * 0.08, -1.04, -0.08)
-        add_limb_tube(f"{piv_name}_thigh", leg_piv, mats["skin_elvarg_dragon"], (0.0, 0.0, 0.0), knee, 0.28, 0.20, segs=16)
-        add_limb_tube(f"{piv_name}_shin", leg_piv, mats["skin_elvarg_dragon"], knee, ankle, 0.21, 0.15, segs=16)
+        # Roaring open lower jaw angled downward + rows of sharp white fangs
         add_box(
-            f"{piv_name}_foot",
-            leg_piv,
+            "elvarg_lower_jaw",
+            root,
             mats["skin_elvarg_dragon"],
-            0.36,
+            0.42,
             0.16,
-            0.44,
-            tx=side * 0.08,
-            ty=-1.12,
-            tz=-0.18,
+            0.88,
+            tx=0.0,
+            ty=3.34,
+            tz=-3.52,
+            rx=-0.34,
             bevel=0.04,
         )
-        for c_i, c_off in enumerate((-0.11, 0.0, 0.11)):
+        for f_i in range(4):
+            fz = -3.98 + f_i * 0.16
+            for side in (-1.0, 1.0):
+                add_cone_spike(
+                    f"elvarg_fang_top_{'L' if side < 0 else 'R'}_{f_i}",
+                    root,
+                    mats["bone"],
+                    base_r=0.025,
+                    length=0.11,
+                    tx=side * (0.14 + f_i * 0.02),
+                    ty=3.62,
+                    tz=fz,
+                    rx=math.pi,
+                    segs=8,
+                )
+                add_cone_spike(
+                    f"elvarg_fang_bot_{'L' if side < 0 else 'R'}_{f_i}",
+                    root,
+                    mats["bone"],
+                    base_r=0.022,
+                    length=0.095,
+                    tx=side * (0.12 + f_i * 0.02),
+                    ty=3.26 + f_i * 0.05,
+                    tz=fz,
+                    rx=-0.25,
+                    segs=8,
+                )
+
+        # Glowing golden dragon eyes + 2 sweeping curved golden crown horns + 4 cheek spikes
+        for side, s_tag in ((-1.0, "L"), (1.0, "R")):
+            add_sphere(
+                f"elvarg_eye_{s_tag}",
+                root,
+                mats["glow_yellow"],
+                0.058,
+                0.038,
+                0.045,
+                tx=side * 0.24,
+                ty=3.84,
+                tz=-3.48,
+                ry=side * 0.35,
+                no_outline=True,
+            )
+            crown_horn = [
+                (side * 0.22, 3.92, -3.12, 0.10, 0.10),
+                (side * 0.38, 4.18, -2.72, 0.075, 0.075),
+                (side * 0.52, 4.46, -2.28, 0.048, 0.048),
+                (side * 0.58, 4.68, -1.88, 0.016, 0.016),
+            ]
+            add_curved_tube(f"elvarg_crown_horn_{s_tag}", root, mats["gold"], crown_horn, segs=14)
+            for ch_i in range(2):
+                add_cone_spike(
+                    f"elvarg_cheek_spike_{s_tag}_{ch_i}",
+                    root,
+                    mats["gold"],
+                    base_r=0.042,
+                    length=0.22,
+                    tx=side * 0.32,
+                    ty=3.68 - ch_i * 0.10,
+                    tz=-3.18 + ch_i * 0.14,
+                    rx=0.45,
+                    rz=-side * 1.15,
+                    segs=8,
+                )
+
+        # Long S-curved whip tail (z up to 4.8) ending in a spiked tail club
+        tail_pts = [
+            (0.0, 1.36, 1.55, 0.38, 0.36),
+            (0.14, 1.12, 2.25, 0.28, 0.27),
+            (0.26, 0.92, 2.95, 0.21, 0.20),
+            (0.08, 0.84, 3.65, 0.15, 0.15),
+            (-0.14, 0.96, 4.25, 0.11, 0.11),
+            (0.0, 1.18, 4.80, 0.08, 0.08),
+        ]
+        add_curved_tube("elvarg_tail", root, mats["skin_elvarg_dragon"], tail_pts, segs=18, dorsal_ridge=0.16)
+        add_sphere("elvarg_tail_club", root, mats["gold"], 0.18, 0.14, 0.24, tx=0.0, ty=1.18, tz=4.78)
+        for tc_side in (-1.0, 1.0):
             add_cone_spike(
-                f"{piv_name}_talon_{c_i}",
-                leg_piv,
+                f"elvarg_tail_club_spike_{'L' if tc_side < 0 else 'R'}",
+                root,
                 mats["gold"],
-                base_r=0.042,
-                length=0.22,
-                tx=side * 0.08 + c_off,
-                ty=-1.14,
-                tz=-0.40,
-                rx=-math.pi * 0.48,
-                curve_bend=-0.04,
+                base_r=0.048,
+                length=0.26,
+                tx=tc_side * 0.14,
+                ty=1.18,
+                tz=4.78,
+                rz=-tc_side * math.pi * 0.48,
                 segs=8,
             )
+
+        # Dorsal spine ridge of 16 golden horns running from neck down the tail
+        spine_coords = [
+            (0.0, 3.55, -2.80, 0.22),
+            (0.0, 3.15, -2.50, 0.24),
+            (0.0, 2.60, -2.18, 0.26),
+            (0.0, 2.15, -1.78, 0.28),
+            (0.0, 2.12, -1.15, 0.30),
+            (0.0, 2.22, -0.65, 0.34),
+            (0.0, 2.24, -0.15, 0.34),
+            (0.0, 2.18, 0.35, 0.32),
+            (0.0, 2.06, 0.85, 0.28),
+            (0.0, 1.84, 1.35, 0.25),
+            (0.06, 1.52, 1.88, 0.22),
+            (0.18, 1.24, 2.45, 0.20),
+            (0.24, 1.04, 3.05, 0.18),
+            (0.10, 0.96, 3.60, 0.16),
+            (-0.08, 1.02, 4.10, 0.15),
+            (-0.04, 1.14, 4.48, 0.14),
+        ]
+        for sp_i, (sx, sy, sz, sh) in enumerate(spine_coords):
+            add_cone_spike(
+                f"elvarg_dorsal_horn_{sp_i}",
+                root,
+                mats["gold"],
+                base_r=sh * 0.24,
+                length=sh,
+                tx=sx,
+                ty=sy,
+                tz=sz,
+                rx=0.42,
+                curve_bend=0.04,
+                segs=8,
+            )
+
+        # Colossal ribbed dragon wings (`span ~ 4.2m` each) under `elvarg_dragon_LWing` & `elvarg_dragon_RWing`
+        for side, w_name in ((-1.0, "elvarg_dragon_LWing"), (1.0, "elvarg_dragon_RWing")):
+            wing_piv = l_wing if side < 0 else r_wing
+            elbow = (side * 1.45, 1.15, -0.15)
+            wrist = (side * 2.45, 1.65, 0.10)
+            tip_1 = (side * 4.20, 1.95, 0.45)
+            tip_2 = (side * 3.85, 0.65, 0.55)
+            tip_3 = (side * 2.85, -0.35, 0.65)
+            tip_4 = (side * 1.55, -0.65, 0.60)
+            body_anchor = (side * 0.10, -0.45, 0.85)
+
+            add_limb_tube(f"{w_name}_humerus", wing_piv, mats["skin_elvarg_dragon"], (0.0, 0.0, 0.0), elbow, 0.14, 0.11, segs=12)
+            add_limb_tube(f"{w_name}_radius", wing_piv, mats["skin_elvarg_dragon"], elbow, wrist, 0.11, 0.085, segs=12)
+            # Golden thumb claw at the wing bend
+            add_cone_spike(
+                f"{w_name}_thumb_claw",
+                wing_piv,
+                mats["gold"],
+                base_r=0.055,
+                length=0.28,
+                tx=wrist[0],
+                ty=wrist[1],
+                tz=wrist[2] - 0.06,
+                rx=-0.85,
+                rz=-side * 0.35,
+                segs=8,
+            )
+            for f_i, f_tip in enumerate((tip_1, tip_2, tip_3, tip_4)):
+                add_limb_tube(f"{w_name}_finger_{f_i}", wing_piv, mats["horn"], wrist, f_tip, 0.065, 0.022, segs=10)
+
+            add_wing_web(f"{w_name}_membrane_1", wing_piv, mats["wing_dragon"], wrist, tip_1, tip_2, thickness=0.025)
+            add_wing_web(f"{w_name}_membrane_2", wing_piv, mats["wing_dragon"], wrist, tip_2, tip_3, thickness=0.025)
+            add_wing_web(f"{w_name}_membrane_3", wing_piv, mats["wing_dragon"], wrist, tip_3, tip_4, thickness=0.025)
+            add_wing_web(f"{w_name}_membrane_4", wing_piv, mats["wing_dragon"], elbow, tip_4, body_anchor, thickness=0.025)
+
+        # 4 Dragon Leg Pivots:
+        limb_specs = [
+            (-1.0, "elvarg_dragon_LeftArmPivot", left_arm, -0.18),
+            (1.0, "elvarg_dragon_RightArmPivot", right_arm, -0.18),
+            (-1.0, "elvarg_dragon_LeftLegPivot", left_leg, 0.22),
+            (1.0, "elvarg_dragon_RightLegPivot", right_leg, 0.22),
+        ]
+        for side, piv_name, leg_piv, knee_z in limb_specs:
+            knee = (side * 0.14, -0.54, knee_z)
+            ankle = (side * 0.08, -1.04, -0.08)
+            add_limb_tube(f"{piv_name}_thigh", leg_piv, mats["skin_elvarg_dragon"], (0.0, 0.0, 0.0), knee, 0.28, 0.20, segs=16)
+            add_limb_tube(f"{piv_name}_shin", leg_piv, mats["skin_elvarg_dragon"], knee, ankle, 0.21, 0.15, segs=16)
+            add_box(
+                f"{piv_name}_foot",
+                leg_piv,
+                mats["skin_elvarg_dragon"],
+                0.36,
+                0.16,
+                0.44,
+                tx=side * 0.08,
+                ty=-1.12,
+                tz=-0.18,
+                bevel=0.04,
+            )
+            for c_i, c_off in enumerate((-0.11, 0.0, 0.11)):
+                add_cone_spike(
+                    f"{piv_name}_talon_{c_i}",
+                    leg_piv,
+                    mats["gold"],
+                    base_r=0.042,
+                    length=0.22,
+                    tx=side * 0.08 + c_off,
+                    ty=-1.14,
+                    tz=-0.40,
+                    rx=-math.pi * 0.48,
+                    curve_bend=-0.04,
+                    segs=8,
+                )
+
+    return root
 
     return root
 
