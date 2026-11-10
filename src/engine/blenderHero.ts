@@ -183,18 +183,22 @@ export function upgradeHumanoidRigWithGltf(
     return null;
   }
 
-  const skinColor = opts.skinHex ?? 0xd9bfa3;
+  const skinColor = opts.skinHex ?? 0xf5d8c2;
   const skinMat = albedoMaterial(skinColor, creatureAlbedoId('skin'));
-  const lipsMat = albedoMaterial(0xa07567, creatureAlbedoId('skin'));
+  const lipsMat = albedoMaterial(0xd08878, creatureAlbedoId('skin'));
   const tunicMat = albedoMaterial(opts.tunicHex ?? tunicHex, 'gear:cloth');
+  const innerTunicMat = albedoMaterial(0x282b2e, 'gear:cloth');
+  const tunicTrimMat = albedoMaterial(0xeee5d2, 'gear:cloth');
+  const waistSashMat = albedoMaterial(0x1e2022, 'gear:cloth');
+  const bracerMat = albedoMaterial(0x4e3524, 'gear:leather');
   const legsMat = albedoMaterial(opts.legsHex ?? legsHex, 'gear:cloth');
   const hairMat = albedoMaterial(hairHex, creatureAlbedoId('hair'));
-  const bootMat = albedoMaterial(opts.bootHex ?? 0x2e231b, 'gear:leather');
+  const bootMat = albedoMaterial(opts.bootHex ?? 0x342418, 'gear:leather');
   const gloveMat = albedoMaterial(skinColor, creatureAlbedoId('skin'));
-  const beltLeatherMat = albedoMaterial(0x2d2117, 'gear:leather');
+  const beltLeatherMat = albedoMaterial(0x1e2022, 'gear:leather');
   const goldMat = facetMaterial({ color: 0x8f7d4e, emissive: 0x5e4f2b, emissiveIntensity: 0.12 });
-  const eyeWhiteMat = new THREE.MeshBasicMaterial({ color: 0xdde3ea });
-  const pupilMat = new THREE.MeshBasicMaterial({ color: 0x141a20 });
+  const eyeWhiteMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+  const pupilMat = new THREE.MeshBasicMaterial({ color: 0x227cd4 });
 
   let chestMesh: THREE.Mesh | null = null;
   let beltMesh: THREE.Mesh | null = null;
@@ -224,17 +228,38 @@ export function upgradeHumanoidRigWithGltf(
       part === 'collar' ||
       part === 'belt-strap' ||
       part === 'belt-buckle' ||
+      mName.startsWith('Hair') ||
+      mName.startsWith('CrownSpike_') ||
+      mName.startsWith('BackSpike_') ||
       mName.startsWith('Sideburn_') ||
-      mName.startsWith('Thumb_')
+      mName.startsWith('Thumb_') ||
+      mName.startsWith('Finger') ||
+      mName.startsWith('CoatTrim_') ||
+      mName.startsWith('CoatTailTrim_') ||
+      mName.startsWith('BracerLace_')
     ) {
       mesh.userData.noOutline = true;
     }
 
-    if (part === 'belt-strap') {
+    if (
+      mName.startsWith('CoatTrim_') ||
+      mName.startsWith('CoatTailTrim_') ||
+      mName.startsWith('SleeveCuff_') ||
+      mName.startsWith('BracerLace_') ||
+      part === 'tunic-trim'
+    ) {
+      mesh.material = tunicTrimMat;
+    } else if (mName === 'InnerCollar' || mName === 'InnerChest' || part === 'inner-tunic') {
+      mesh.material = innerTunicMat;
+    } else if (mName === 'Belt' || part === 'waist-sash') {
+      mesh.material = waistSashMat;
+    } else if (mName.startsWith('Bracer_') || part === 'bracer') {
+      mesh.material = bracerMat;
+    } else if (part === 'belt-strap') {
       mesh.material = beltLeatherMat;
     } else if (part === 'belt-buckle') {
       mesh.material = goldMat;
-    } else if (part === 'chest' || part === 'collar' || part === 'arm' || part === 'deltoid') {
+    } else if (part === 'chest' || part === 'arm' || part === 'deltoid') {
       mesh.material = tunicMat;
     } else if (part === 'belt' || part === 'thigh' || part === 'shin') {
       mesh.material = legsMat;

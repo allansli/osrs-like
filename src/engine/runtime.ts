@@ -2000,7 +2000,7 @@ const npcAnimatorsList = [];
 // 8. SMOOTH SCULPTED 3D CHARACTER, 10-SLOT GEAR, MONSTERS & ORGANIC TREES
 // ============================================================================
 function buildPlayerCharacter() {
-  const rig = buildHumanoidRig(0x0284c7, 0xfacc15, 0xa1887f, 1.06);
+  const rig = buildHumanoidRig(0x586436, 0x3e2b1e, 0x505c30, 1.06);
   player.meshGroup = rig.group;
   player.parts = rig;
 
@@ -2026,7 +2026,11 @@ function buildPlayerCharacter() {
 
   loadBlenderHeroTemplate().then((gltf) => {
     if (!gltf) return;
-    const animator = upgradeHumanoidRigWithGltf(rig, gltf, 0x38444e, 0x4a3728, 0x2a2522, { isPlayer: true });
+    const animator = upgradeHumanoidRigWithGltf(rig, gltf, 0x586436, 0x3e2b1e, 0x505c30, {
+      isPlayer: true,
+      bootHex: 0x342418,
+      skinHex: 0xf5d8c2
+    });
     if (animator) {
       player.blenderAnimator = animator;
       rebuildPlayerEquipmentMeshes();
@@ -2090,12 +2094,12 @@ function rebuildPlayerEquipmentMeshes() {
   // 1. Body Armor Material
   const bodyId = STATE.equipment.body;
   if (bodyId && ITEMS[bodyId]) {
-    player.parts.tunicMat.color.setHex(ITEMS[bodyId].color || 0x0284c7);
+    player.parts.tunicMat.color.setHex(ITEMS[bodyId].color || 0x586436);
     player.parts.tunicMat.metalness = bodyId === 'champion_tunic' ? 0.1 : 0.65;
     player.parts.tunicMat.roughness = bodyId === 'champion_tunic' ? 0.5 : 0.28;
     applyAlbedo(player.parts.tunicMat, albedoForItem(ITEMS[bodyId]));
   } else {
-    player.parts.tunicMat.color.setHex(0x0284c7);
+    player.parts.tunicMat.color.setHex(0x586436);
     player.parts.tunicMat.metalness = 0.08;
     player.parts.tunicMat.roughness = 0.52;
     applyAlbedo(player.parts.tunicMat, 'gear:cloth');
@@ -2104,12 +2108,12 @@ function rebuildPlayerEquipmentMeshes() {
   // 2. Leg Armor Material (Platelegs / Tassets / Trousers)
   const legsId = STATE.equipment.legs;
   if (legsId && ITEMS[legsId]) {
-    player.parts.legsMat.color.setHex(ITEMS[legsId].color || 0xa1887f);
+    player.parts.legsMat.color.setHex(ITEMS[legsId].color || 0x505c30);
     player.parts.legsMat.metalness = legsId === 'hylian_trousers' ? 0.05 : 0.65;
     player.parts.legsMat.roughness = legsId === 'hylian_trousers' ? 0.65 : 0.28;
     applyAlbedo(player.parts.legsMat, albedoForItem(ITEMS[legsId]));
   } else {
-    player.parts.legsMat.color.setHex(0xa1887f);
+    player.parts.legsMat.color.setHex(0x505c30);
     player.parts.legsMat.metalness = 0.05;
     applyAlbedo(player.parts.legsMat, 'gear:cloth');
   }
@@ -2117,11 +2121,11 @@ function rebuildPlayerEquipmentMeshes() {
   // 3. Boots Material (Feet)
   const feetId = STATE.equipment.feet;
   if (feetId && ITEMS[feetId]) {
-    player.parts.bootMat.color.setHex(ITEMS[feetId].color || 0x5c3a21);
+    player.parts.bootMat.color.setHex(ITEMS[feetId].color || 0x342418);
     player.parts.bootMat.metalness = feetId === 'leather_boots' ? 0.1 : 0.65;
     applyAlbedo(player.parts.bootMat, albedoForItem(ITEMS[feetId]));
   } else {
-    player.parts.bootMat.color.setHex(0x5c3a21);
+    player.parts.bootMat.color.setHex(0x342418);
     player.parts.bootMat.metalness = 0.1;
     applyAlbedo(player.parts.bootMat, 'gear:leather');
   }
@@ -2133,7 +2137,7 @@ function rebuildPlayerEquipmentMeshes() {
     player.parts.gloveMat.metalness = handsId === 'leather_gloves' ? 0.1 : 0.6;
     applyAlbedo(player.parts.gloveMat, albedoForItem(ITEMS[handsId]));
   } else {
-    player.parts.gloveMat.color.setHex(0xffd7b5);
+    player.parts.gloveMat.color.setHex(0xf5d8c2);
     player.parts.gloveMat.metalness = 0.05;
     applyAlbedo(player.parts.gloveMat, 'creature:skin');
   }
@@ -2165,7 +2169,12 @@ function rebuildPlayerEquipmentMeshes() {
   if (player.parts.hairCap) player.parts.hairCap.visible = showHair;
   if (headG) {
     headG.traverse((ch) => {
-      if (ch.name === 'HairCap' || ch.name.startsWith('Sideburn_')) {
+      if (
+        ch.name.startsWith('Hair') ||
+        ch.name.startsWith('CrownSpike_') ||
+        ch.name.startsWith('BackSpike_') ||
+        ch.name.startsWith('Sideburn_')
+      ) {
         ch.visible = showHair;
       }
     });
@@ -2178,6 +2187,19 @@ function rebuildPlayerEquipmentMeshes() {
     mount(torso, body.torso, 'bodyArmorMesh');
     mount(lArm, body.left, 'bodyArmL');
     mount(rArm, body.right, 'bodyArmR');
+  }
+  if (torso) {
+    torso.traverse((ch) => {
+      if (
+        ch.name.startsWith('OuterCoat_') ||
+        ch.name.startsWith('CoatTrim_') ||
+        ch.name.startsWith('CoatTail_') ||
+        ch.name.startsWith('CoatTailTrim_') ||
+        ch.name === 'InnerCollar'
+      ) {
+        ch.visible = !bodyItem;
+      }
+    });
   }
 
   const legsItem = equip('legs');
@@ -2203,11 +2225,34 @@ function rebuildPlayerEquipmentMeshes() {
     mount(lLeg, buildBootVisual(feet, true), 'feetMeshL');
     mount(rLeg, buildBootVisual(feet, false), 'feetMeshR');
   }
+  if (lLeg && rLeg) {
+    [lLeg, rLeg].forEach((leg) => {
+      leg.traverse((ch) => {
+        if (
+          ch.name.startsWith('Boot_') ||
+          ch.name.startsWith('BootCuff_') ||
+          ch.name.startsWith('BootSole_') ||
+          ch.name.startsWith('BootHeel_')
+        ) {
+          ch.visible = !feet;
+        }
+      });
+    });
+  }
 
   const hands = equip('hands');
   if (hands) {
     mount(lArm, buildGloveVisual(hands), 'handsMeshL');
     mount(rArm, buildGloveVisual(hands), 'handsMeshR');
+  }
+  if (lArm && rArm) {
+    [lArm, rArm].forEach((arm) => {
+      arm.traverse((ch) => {
+        if (ch.name.startsWith('Bracer_') || ch.name.startsWith('BracerLace_')) {
+          ch.visible = !hands;
+        }
+      });
+    });
   }
 
   const capeItem = equip('cape');
@@ -5386,8 +5431,8 @@ function gameLoop(now) {
       player.parts.leftLegPivot.rotation.z = sway * 0.5;
       player.parts.rightLegPivot.rotation.z = -sway * 0.5;
 
-      if (player.parts.leftKneePivot) player.parts.leftKneePivot.rotation.x = 0.15 + Math.max(0, -swing) * 0.85;
-      if (player.parts.rightKneePivot) player.parts.rightKneePivot.rotation.x = 0.15 + Math.max(0, swing) * 0.85;
+      if (player.parts.leftKneePivot) player.parts.leftKneePivot.rotation.x = -(0.05 + Math.max(0, -swing) * 0.75);
+      if (player.parts.rightKneePivot) player.parts.rightKneePivot.rotation.x = -(0.05 + Math.max(0, swing) * 0.75);
 
       if (player.parts.torso) {
         player.parts.torso.rotation.x = 0.12 + Math.cos(phase * 2) * 0.02;
@@ -5407,6 +5452,8 @@ function gameLoop(now) {
       const breath = Math.sin(player.animTime) * 0.035;
       player.parts.leftLegPivot.rotation.x *= 0.85;
       player.parts.rightLegPivot.rotation.x *= 0.85;
+      if (player.parts.leftKneePivot) player.parts.leftKneePivot.rotation.x *= 0.85;
+      if (player.parts.rightKneePivot) player.parts.rightKneePivot.rotation.x *= 0.85;
       if (player.parts.torso) {
         player.parts.torso.rotation.x = breath * 0.5;
         player.parts.torso.rotation.y *= 0.88;
