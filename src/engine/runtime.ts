@@ -1010,6 +1010,25 @@ function loadGameState() {
     const migrated = readSave(localStorage);
     if (!migrated) return false;
     applyState(STATE, migrated.state);
+
+    // One-time automatic migration for existing saves:
+    // If the saved character was wearing the starter outfit (hood, tunic, trousers, cape) that covers
+    // the newly overhauled BlendSwap 4503 Anime RPG character model, un-equip them so the new model is instantly visible!
+    const OVERHAUL_FLAG = 'gielinor_anime_hero_v1';
+    if (!localStorage.getItem(OVERHAUL_FLAG)) {
+      try { localStorage.setItem(OVERHAUL_FLAG, '1'); } catch (e) {}
+      if (STATE.equipment.head === 'hylian_hood') STATE.equipment.head = null;
+      if (STATE.equipment.body === 'hylian_tunic') STATE.equipment.body = null;
+      if (STATE.equipment.cape === 'hylian_cape') STATE.equipment.cape = null;
+      if (STATE.equipment.legs === 'hylian_trousers') STATE.equipment.legs = null;
+      if (STATE.equipment.feet === 'leather_boots') STATE.equipment.feet = null;
+      if (STATE.equipment.hands === 'leather_gloves') STATE.equipment.hands = null;
+      if (camState) {
+        camState.manualOffset = 0.65;
+        camState.pitch = 0.18;
+        camState.distance = 5.2;
+      }
+    }
     if (migrated.pose && player && player.pos) {
       player.pos.x = migrated.pose.x;
       player.pos.z = migrated.pose.z;
@@ -1086,9 +1105,9 @@ const player = {
 
 const camState = {
   yaw: 0.48,
-  manualOffset: 0,
-  pitch: 0.24,
-  distance: 8.5,
+  manualOffset: 0.65,
+  pitch: 0.18,
+  distance: 5.4,
   currentLookAt: new THREE.Vector3(-4, 2, -3),
   shake: 0,
   isDragging: false,

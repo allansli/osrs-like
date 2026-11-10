@@ -55,6 +55,9 @@ export function migrateLegacySave(raw: unknown, source: string | null = null): M
       else if (typeof value === 'string' && ITEMS[value]) state.equipment[key] = value;
     }
   }
+  if (source && source.startsWith('runewilds')) {
+    if (state.equipment.cape === null) state.equipment.cape = 'hylian_cape';
+  }
 
   state.inventory = compactSlots(Array.isArray(data.inventory) ? data.inventory : state.inventory, false);
   state.bank = compactSlots(Array.isArray(data.bank) ? data.bank : [], true);
