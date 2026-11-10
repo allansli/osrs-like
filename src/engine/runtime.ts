@@ -2018,7 +2018,8 @@ function createMerchantNPC(x, z, name, tunicColor) {
       : { id: 'circlet', slot: 'head', iconKind: 'circlet', color: 0x38bdf8, trim: 0xfacc15 };
     const hat = buildHeadVisual(hatItem);
     if (rig.leftElbowPivot || rig.group.userData.isBlenderHero) {
-      hat.position.set(0, -0.16, 0.02);
+      hat.scale.set(0.74, 0.74, 0.74);
+      hat.position.set(0, -0.16, 0.01);
     }
     rig.headGroup.add(hat);
     addCartoonOutline(hat, 0.018);
@@ -2245,7 +2246,8 @@ function rebuildPlayerEquipmentMeshes() {
   if (headItem) {
     const helmVisual = buildHeadVisual(headItem);
     if (isBlenderHero) {
-      helmVisual.position.set(0, -0.16, 0.02);
+      helmVisual.scale.set(0.74, 0.74, 0.74);
+      helmVisual.position.set(0, -0.16, 0.01);
     }
     mount(headG, helmVisual, 'helmMesh');
   }
