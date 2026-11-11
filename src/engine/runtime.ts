@@ -40,7 +40,10 @@ import { readPaintFlags } from '../paint/contract';
 import { dressSolid, solidMaterial } from '../paint/body';
 import { dabsForMesh } from '../paint/pinned';
 import { paintFlagsForMesh } from '../paint/species';
+import { recolorCloak } from '../figure/figure.js';
 import { createOilGear } from '../paint/oilGear';
+import { helmSilhouette, restoreUnderlay, underlayRegion } from '../paint/shells';
+import { capePaint } from '../paint/wandererGear';
 import { attachOilPaint, createOilRenderer, webgl2Available } from '../paint/session';
 import { createFigure } from '../figure/figure.js';
 import { loadManMesh, loadManClips } from '../figure/man.js';
@@ -1125,27 +1128,35 @@ function fitWandererGear() {
   const wanderer = player.wanderer;
   if (!wanderer || !wanderer.man || !wanderer.man.bones || !oilSession) return;
   clearOilGear();
-  const body = wanderer.man.meshes.find((mesh) => /generic/.test(mesh.name)) || wanderer.man.meshes[0];
-  if (!body || !body.isSkinnedMesh) return;
+  const skin = wanderer.man.meshes.find((mesh) => /generic/.test(mesh.name));
+  const suit = wanderer.man.meshes.find((mesh) => /casualsuit/.test(mesh.name)) || skin;
+  const shoes = wanderer.man.meshes.find((mesh) => /shoes/.test(mesh.name)) || null;
+  if (!skin || !skin.isSkinnedMesh || !suit || !suit.isSkinnedMesh) return;
+  for (const mesh of [skin, suit, shoes]) if (mesh) restoreUnderlay(mesh);
   const equip = (slot) => {
     const id = STATE.equipment[slot];
     return id && ITEMS[id] ? ITEMS[id] : null;
   };
-  const built = createOilGear(body, {
-    head: equip('head'),
-    cape: equip('cape'),
+  const headItem = equip('head');
+  const bodyItem = equip('body');
+  const legsItem = equip('legs');
+  const handsItem = equip('hands');
+  const feetItem = equip('feet');
+  const built = createOilGear({ skin, suit, shoes }, {
+    head: headItem,
     neck: equip('neck'),
-    body: equip('body'),
-    legs: equip('legs'),
-    hands: equip('hands'),
-    feet: equip('feet'),
+    body: bodyItem,
+    legs: legsItem,
+    hands: handsItem,
+    feet: feetItem,
     weapon: equip('weapon'),
     shield: equip('shield')
   }, oilSession.shared);
-  body.parent.add(built.root);
-  built.root.position.copy(body.position);
-  built.root.quaternion.copy(body.quaternion);
-  built.root.scale.copy(body.scale);
+  skin.parent.add(built.root);
+  built.root.position.copy(skin.position);
+  built.root.quaternion.copy(skin.quaternion);
+  built.root.scale.copy(skin.scale);
+  for (const mesh of built.skinned) built.root.add(mesh);
   const heldMeshes = [];
   for (const piece of built.held) {
     const bone = wanderer.man.bones[piece.bone];
@@ -1158,18 +1169,23 @@ function fitWandererGear() {
   }
   built.root.userData.held = heldMeshes;
   oilGearRoot = built.root;
-  const headItem = STATE.equipment.head;
-  const capeItem = STATE.equipment.cape;
-  const feetItem = STATE.equipment.feet;
+  if (bodyItem) underlayRegion(suit, 'torso', 0.012);
+  if (legsItem) underlayRegion(suit, 'legs', 0.012);
+  if (handsItem) underlayRegion(skin, 'hands', 0.01);
+  if (feetItem && shoes) underlayRegion(shoes, 'feet', 0.012);
+  if (headItem) {
+    const kind = helmSilhouette(headItem);
+    if (kind === 'coif' || kind === 'hood') underlayRegion(skin, 'coif', 0.01);
+    else if (kind !== 'wizard' && kind !== 'circlet') underlayRegion(skin, 'head', 0.01);
+  }
+  const capeItem = equip('cape');
+  recolorCloak(wanderer, capePaint(capeItem && capeItem.color));
+  if (wanderer.cloakMesh) wanderer.cloakMesh.visible = true;
   const paintWear = (obj) => {
     if (obj.userData && obj.userData.defaultHat) obj.visible = !headItem;
-    const name = (obj.name || '').toLowerCase();
-    if (feetItem && /shoes/.test(name)) obj.visible = false;
-    if (!feetItem && /shoes/.test(name) && obj.isMesh) obj.visible = true;
-    if (obj.userData && obj.userData.oilCloak) obj.visible = !capeItem;
+    if (obj.userData && obj.userData.oilCloak) obj.visible = true;
   };
   wanderer.man.object.traverse(paintWear);
-  if (wanderer.cloakMesh) wanderer.cloakMesh.visible = !capeItem;
   if (wanderer.dabs) wanderer.dabs.traverse(paintWear);
 }
 
@@ -1371,7 +1387,8 @@ function oilActorList() {
     const radius = geometry?.boundingSphere?.radius || 0.4;
     const paintClass = obj.userData?.paintClass || paintClassForMesh(obj);
     seen.add(obj);
-    actors.push({ root: obj, paintClass, count: dabsForMesh(radius, paintClass) });
+    const pinned = obj.userData?.dabCount;
+    actors.push({ root: obj, paintClass, count: pinned || dabsForMesh(radius, paintClass) });
   });
   return actors;
 }
@@ -6179,11 +6196,12 @@ function gameLoop(now) {
   const camTargetX = player.pos.x - Math.sin(camState.yaw) * horizDist;
   const camTargetZ = player.pos.z - Math.cos(camState.yaw) * horizDist;
   const terrainUnderCam = getTerrainHeight(camTargetX, camTargetZ);
-  const camTargetY = Math.max(terrainUnderCam + 1.2, player.pos.y + 1.85 + vertDist);
+  const lookLift = 1.85 + (camState.lookBias || 0);
+  const camTargetY = Math.max(terrainUnderCam + 1.2, player.pos.y + lookLift + vertDist);
 
   _camTargetVec.set(camTargetX, camTargetY, camTargetZ);
   camera.position.lerp(_camTargetVec, Math.min(1, dt * 12));
-  _lookTargetVec.set(player.pos.x, player.pos.y + 1.85, player.pos.z);
+  _lookTargetVec.set(player.pos.x, player.pos.y + 1.85 + (camState.lookBias || 0), player.pos.z);
   camState.currentLookAt.lerp(_lookTargetVec, Math.min(1, dt * 14));
   camera.lookAt(camState.currentLookAt);
 

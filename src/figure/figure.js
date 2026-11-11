@@ -163,14 +163,14 @@ export async function createFigure(shared, man) {
   const dPos = new Float32Array(nd * 3), dDir = new Float32Array(nd * 3), dNrm = new Float32Array(nd * 3);
   const cloakDabGeometry = dabGeometry(nd, { aPos: [dPos, 3], aDir: [dDir, 3], aNrm: [dNrm, 3] }, true);
   const cloakDabs = dabMesh(cloakDabGeometry, dabMaterial(shared, {
-    head: /* glsl */ `in vec3 aPos; in vec3 aDir; in vec3 aNrm;`,
+    head: /* glsl */ `in vec3 aPos; in vec3 aDir; in vec3 aNrm; uniform vec3 uL; uniform vec3 uM; uniform vec3 uS;`,
     body: /* glsl */ `
       void makeDab(inout Dab d) {
         vec4 r = hash4(float(gl_InstanceID) * 1.9 + 7.0);
         vec3 Nn = normalize(aNrm);
         if (dot(Nn, cameraPosition - aPos) < 0.0) Nn = -Nn;
         float lit = sunAt(aPos + Nn * 0.1) * clamp(dot(Nn, uSunDir) * 0.85 + 0.42, 0.0, 1.0);
-        vec3 c = paint3(vec3(${CLOAK[0]}), vec3(${CLOAK[1]}), vec3(${CLOAK[2]}), lit, r.x);
+        vec3 c = paint3(uL, uM, uS, lit, r.x);
         c += vec3(0.1, 0.045, 0.0) * max(-Nn.y, 0.0) * (1.0 - lit);
         c = jitter(c, r.yzw, 0.35);
         d.pos = aPos; d.dir = aDir;
@@ -179,6 +179,11 @@ export async function createFigure(shared, man) {
         d.c1 = hazed(c, aPos); d.c2 = hazed(c * 1.3 + vec3(0.0, 0.02, 0.04), aPos);
         d.seed = float(gl_InstanceID); d.lift = 0.2;
       }`,
+    uniforms: {
+      uL: { value: new THREE.Color(...CLOAK[0]) },
+      uM: { value: new THREE.Color(...CLOAK[1]) },
+      uS: { value: new THREE.Color(...CLOAK[2]) }
+    },
     minPx: [3, 7], maxPx: [200, 500], cells: [0, 4],
   }), 5);
   cloakDabs.userData.oilCloak = true;
@@ -223,5 +228,18 @@ export async function createFigure(shared, man) {
     cloakGeometry.attributes.normal.needsUpdate = true;
   }
 
-  return { man, hat, cloak, cloakMesh, dabs, updateCloak };
+  return { man, hat, cloak, cloakMesh, cloakDabs, dabs, updateCloak };
+}
+
+/** Keep the cloth. A cape only changes the three mixes painted on it. */
+export function recolorCloak(figure, mix) {
+  const paint = (material) => {
+    if (!material || !material.uniforms || !material.uniforms.uL) return;
+    material.uniforms.uL.value.setRGB(mix[0][0], mix[0][1], mix[0][2]);
+    material.uniforms.uM.value.setRGB(mix[1][0], mix[1][1], mix[1][2]);
+    material.uniforms.uS.value.setRGB(mix[2][0], mix[2][1], mix[2][2]);
+  };
+  if (!figure) return;
+  paint(figure.cloakMesh && figure.cloakMesh.material);
+  paint(figure.cloakDabs && figure.cloakDabs.material);
 }

@@ -1,5 +1,5 @@
 import type { StrokeDir } from './contract';
-import { PALETTE_BY_ID } from './palettes';
+import { hexToPaint, PALETTE_BY_ID } from './palettes';
 
 /**
  * Equipment slots on the MakeHuman wanderer. Bone local +Y runs toward the child
@@ -164,4 +164,22 @@ export const GEAR_DAB_SIZE: [number, number] = [0.03, 0.07];
 
 export function gearJitter(paletteId: string): number {
   return PALETTE_BY_ID[paletteId]?.metal ? 0.25 : 0.5;
+}
+
+/** Three mixes for the cloth cloak. No cape keeps the demo blue. A cape retints that same cloth. */
+export function capePaint(color?: number | null): [number, number, number][] {
+  if (color == null) {
+    const palette = PALETTE_BY_ID.wanderer_cloak;
+    return [hexToPaint(palette.light), hexToPaint(palette.half), hexToPaint(palette.shade)];
+  }
+  const r = ((color >> 16) & 255) / 255;
+  const g = ((color >> 8) & 255) / 255;
+  const b = (color & 255) / 255;
+  const lift = (channel: number) => Math.min(1, channel + (1 - channel) * 0.35);
+  const sink = (channel: number) => channel * 0.45 + 0.05;
+  return [
+    [lift(r), lift(g), lift(b)],
+    [r, g, b],
+    [sink(r), sink(g), sink(b)]
+  ];
 }

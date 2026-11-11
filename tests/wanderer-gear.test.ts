@@ -3,10 +3,11 @@ import { MONSTER_TYPES } from '../src/data/world';
 import { PALETTE_BY_ID } from '../src/paint/palettes';
 import { paletteIsUsable } from '../src/paint/body';
 import { paintFlagsForMesh, speciesPaint, SPECIES_PAINT } from '../src/paint/species';
-import { SCIMITAR_CURVE } from '../src/paint/oilGear';
+import { helmSilhouette, WEAPON_AIM } from '../src/paint/oilGear';
 import {
   GEAR_DAB_SIZE,
   boneForSlot,
+  capePaint,
   fitScale,
   gearJitter,
   paletteForGear,
@@ -60,9 +61,17 @@ describe('wanderer slot bones', () => {
     expect(strokeForGear({ slot: 'weapon' })).toBe('along_bone');
     expect(strokeForGear({ slot: 'cape' })).toBe('surface_flow');
     expect(GEAR_DAB_SIZE).toEqual([0.03, 0.07]);
-    const grip = SCIMITAR_CURVE[0];
-    const tip = SCIMITAR_CURVE[SCIMITAR_CURVE.length - 1];
-    expect(tip[1]).toBeLessThan(grip[1]);
+    expect(WEAPON_AIM[2]).toBeGreaterThan(Math.abs(WEAPON_AIM[1]));
+    expect(WEAPON_AIM[1]).toBeLessThan(0);
+    expect(helmSilhouette({ id: 'rune_helm', name: 'Rune Full Helm', iconKind: 'head' })).toBe('full');
+    expect(helmSilhouette({ id: 'neitiznot_helm', name: 'Helm of Neitiznot', iconKind: 'head' })).toBe('med');
+    expect(helmSilhouette({ id: 'white_helm', name: 'White Knight Sallet', iconKind: 'head' })).toBe('med');
+    expect(helmSilhouette({ id: 'karil_coif', name: "Karil's Coif", iconKind: 'hood' })).toBe('coif');
+    expect(helmSilhouette({ id: 'wizard_hat', name: 'Blue Wizard Hat', iconKind: 'hat' })).toBe('wizard');
+    const blue = capePaint(null);
+    const red = capePaint(0xea580c);
+    expect(blue[1][2]).toBeGreaterThan(blue[1][0]);
+    expect(red[1][0]).toBeGreaterThan(red[1][2]);
     expect(gearJitter('bronze')).toBe(0.25);
     expect(gearJitter('cloth')).toBe(0.5);
     for (const id of ['bronze', 'iron', 'steel', 'mithril', 'adamant', 'rune', 'black_metal', 'dragon_metal']) {
