@@ -2,7 +2,7 @@
 
 Gielinor Hero draws with Blendi's oil-paint renderer ([patch.gg/blendi/oil-paint](https://patch.gg/blendi/oil-paint), release 1.0.1). The painter owns the picture. A mesh does not keep its texture. It gets three mixes of colour and a direction for the stroke. Colour is paint: the hex you choose is the colour on the canvas, and nothing is tone-mapped.
 
-Kai is only a form. His skin, hair, and tunic come from the palette table in `src/paint/palettes.ts`.
+The player is the oil-paint demo's wanderer (hat, cloak, and clips). Other meshes take their colour from `src/paint/palettes.ts`. A painted thing is a solid body first; dabs are the impasto on top of it.
 
 ## Custom Properties
 
@@ -52,7 +52,7 @@ npm install
 npm run dev
 ```
 
-Open the dev server. You start in Lumbridge. The ground is oil paint (meadow, the dirt path, and the river as opaque paint). Kai is pins carried by his pivots. The goblin just east of the start is pins on `goblin_hide`. The bronze scimitar in his hand is `bronze` with `along_bone`.
+Open the dev server. You start in Lumbridge. The ground is oil paint (meadow, the dirt path, and the river as opaque paint). The wanderer wears the demo's hat and blue cloak, and the bronze scimitar sits in his right hand. Goblins, chickens, trees, rocks, and the Lumbridge buildings are solid paint plus dabs.
 
 The HUD, names, hover tooltip, and the click X are drawn after the canvas, so they stay sharp.
 
@@ -68,6 +68,6 @@ The wood demo's 78 m leash is not in the game. Walking is still our collision.
 
 Oil paint is WebGL2, everything opaque, and it ignores model textures. The River Lum is an opaque `river_opaque` band (a placeholder), not transparent water. Glass, the spin-slash ring, and projectiles are not dabs.
 
-The still-world shadow is the author's sun camera, a wide picture centred near the origin, so Lumbridge is in it. It is drawn once from the terrain, so a building that is not painted does not cast a shadow of an invisible mesh. A moving shadow is one small picture around Kai. The goblin glazes the ground when it stands in that picture. The glaze inside the vendored dab shader is the author's; the palette shade stops are ours and are never black.
+The still-world shadow is the author's sun camera, a wide picture centred near the origin, so Lumbridge is in it. It is drawn once from the terrain, so a building that is not painted does not cast a shadow of an invisible mesh. A moving shadow is one small picture around the wanderer. The goblin glazes the ground when it stands in that picture. The glaze inside the vendored dab shader is the author's; the palette shade stops are ours and are never black.
 
 Buildings, trees, and the other monsters are still in the scene for clicks and combat. They are not in the oil picture yet. Ground dabs use `groundRings` with a smaller grid than the wood (`n=48`, four levels) so the slice can run here. The function is the author's; the counts are in `src/paint/ground.ts`.
