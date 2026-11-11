@@ -17,6 +17,7 @@ import {
   shouldPaintMesh,
   strokeDirection
 } from '../src/paint/contract';
+import { paletteFromColor } from '../src/paint/body';
 import { classifyGround } from '../src/paint/terrain';
 
 const fixture = JSON.parse(
@@ -122,6 +123,10 @@ describe('Blender extras become paint options', () => {
     expect(inferPaletteId('hero', 'boot', 'Boot_L')).toBe('leather');
     expect(inferPaletteId('hero', 'chest', 'TorsoCoat')).toBe('kai_tunic');
     expect(inferPaletteId('hero', 'head', 'Head')).toBe('kai_skin');
+    expect(inferPaletteId('monster', null, 'Chicken')).toBe('chicken_feather');
+    expect(inferPaletteId('prop', null, 'CastleWall')).toBe('castle_stone');
+    expect(paletteFromColor(0x4ade80)).toBe('foliage');
+    expect(paletteFromColor(0x9aa0a8)).toBe('castle_stone');
 
     const unknown = resolvePaint({
       objectUserData: { paint_palette: 'not_a_mix', stroke_dir: 'along_x' },

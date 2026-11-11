@@ -3,14 +3,14 @@ import { dabGeometry, dabMaterial, dabMesh } from '../oilpaint/dabs.js';
 import { resolvePaint, shouldPaintMesh, strokeDirection, type PaintClass } from './contract';
 import { PALETTES, hexToPaint } from './palettes';
 
-/** Pins per class, shared across that actor's meshes by surface area. */
-const CLASS_BUDGET: Record<PaintClass, number> = {
-  hero: 1000,
-  boss: 1000,
-  monster: 650,
-  gear: 200,
-  prop: 180,
-  tree: 160
+/** Pins for one actor, shared across that actor's meshes by surface area. */
+const ACTOR_BUDGET: Record<PaintClass, number> = {
+  hero: 900,
+  boss: 900,
+  monster: 420,
+  gear: 220,
+  prop: 280,
+  tree: 340
 };
 
 export interface PaintActor {
@@ -74,13 +74,14 @@ function triangleWeight(mesh: THREE.Mesh): number {
 interface MeshJob {
   mesh: THREE.Mesh;
   paintClass: PaintClass;
+  actor: number;
   weight: number;
   density: number | null;
 }
 
 function collectJobs(actors: PaintActor[]): MeshJob[] {
   const jobs: MeshJob[] = [];
-  for (const actor of actors) {
+  actors.forEach((actor, actorIndex) => {
     const skip = actor.skip ?? [];
     actor.root.traverse((obj) => {
       const mesh = obj as THREE.Mesh;
@@ -100,26 +101,27 @@ function collectJobs(actors: PaintActor[]): MeshJob[] {
       });
       const weight = triangleWeight(mesh);
       if (weight <= 0 && resolved.density == null) return;
-      jobs.push({ mesh, paintClass: actor.paintClass, weight, density: resolved.density });
+      jobs.push({ mesh, paintClass: actor.paintClass, actor: actorIndex, weight, density: resolved.density });
     });
-  }
+  });
   return jobs;
 }
 
 function allocate(jobs: MeshJob[]): number[] {
   const counts = jobs.map((job) => (job.density != null ? Math.min(4000, job.density) : 0));
-  const classes = new Set(jobs.map((job) => job.paintClass));
-  for (const paintClass of classes) {
+  const actors = new Set(jobs.map((job) => job.actor));
+  for (const actor of actors) {
     const open = jobs
       .map((job, i) => ({ job, i }))
-      .filter(({ job }) => job.paintClass === paintClass && job.density == null && job.weight > 0);
+      .filter(({ job }) => job.actor === actor && job.density == null && job.weight > 0);
     const weight = open.reduce((sum, item) => sum + item.job.weight, 0);
     if (weight <= 0) continue;
-    let left = CLASS_BUDGET[paintClass];
+    const budget = ACTOR_BUDGET[open[0].job.paintClass];
+    let left = budget;
     open.forEach((item, n) => {
       const share = n === open.length - 1
         ? left
-        : Math.max(8, Math.round((CLASS_BUDGET[paintClass] * item.job.weight) / weight));
+        : Math.max(8, Math.round((budget * item.job.weight) / weight));
       const count = Math.max(0, Math.min(share, left));
       counts[item.i] = count;
       left -= count;

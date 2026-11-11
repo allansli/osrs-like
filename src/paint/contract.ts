@@ -105,8 +105,12 @@ function blobOf(part?: string | null, name?: string | null): string {
 export function inferPaletteId(paintClass: PaintClass, part?: string | null, name?: string | null): string {
   const blob = blobOf(part, name);
   if (/hair|brow|sideburn/.test(blob)) return 'kai_hair';
+  if (/chicken|feather/.test(blob)) return 'chicken_feather';
+  if (/leaf|canopy|foliage|frond/.test(blob)) return 'foliage';
   if (/spear|sword|scimitar|blade|buckler|dagger/.test(blob)) return 'bronze';
   if (/boot|bracer|belt|leather/.test(blob)) return 'leather';
+  if (/trunk|bark|log|timber|plank|wood/.test(blob)) return paintClass === 'tree' ? 'pine_bark' : 'timber';
+  if (/rock|stone|castle|wall|cobble|tower/.test(blob)) return 'castle_stone';
   if (paintClass === 'hero' || paintClass === 'boss') {
     if (/head|face|ear|nose|mouth|neck|skin|hand|finger/.test(blob)) return 'kai_skin';
     return 'kai_tunic';

@@ -55,7 +55,11 @@ export const PALETTES: readonly Palette[] = [
   placeholder('rune', '#6AA0E0', '#3A6498', '#1E3050', true),
   placeholder('cloth', '#D9CBB8', '#A89480', '#5C4A3C'),
   placeholder('skin', '#F0C8A8', '#C48A68', '#6A4034'),
-  placeholder('river_opaque', '#7AA4A0', '#4E7574', '#2A4548')
+  placeholder('river_opaque', '#7AA4A0', '#4E7574', '#2A4548'),
+  placeholder('chicken_feather', '#F4E2A8', '#C4A15A', '#4A5640'),
+  placeholder('castle_stone', '#C9C3B4', '#8E8A82', '#3E4A52'),
+  placeholder('timber', '#C4A06A', '#8A6240', '#3A4034'),
+  placeholder('foliage', '#9BB56A', '#5E7A3E', '#2C4630')
 ];
 
 export const PALETTE_BY_ID: Record<string, Palette> = Object.fromEntries(PALETTES.map((p) => [p.id, p]));

@@ -9,6 +9,7 @@ import { pinPaint, type PaintActor, type PinnedPaint } from './pinned';
 
 export interface OilSession {
   low: boolean;
+  shared: object;
   lastFrameMs: number;
   pinCount: number;
   drawCalls: number;
@@ -59,6 +60,7 @@ export function attachOilPaint(
   const maps = fillGroundMaps(heightAt);
   applyGroundMaps(shared, maps);
   const ground: PaintedGround = createPaintedGround(shared);
+  ground.group.userData.noPaint = true;
   if (low) ground.tufts.visible = false;
 
   const keep = new Set(stillCasters);
@@ -74,8 +76,7 @@ export function attachOilPaint(
     child.visible = true;
   });
 
-  const oilScene = new THREE.Scene();
-  oilScene.add(ground.group);
+  gameScene.add(ground.group);
   const frame = createFrame(renderer, shared, { samples: low ? 1 : 4 });
   frame.uniforms.uShafts.value = low ? 0 : 1;
 
@@ -84,6 +85,7 @@ export function attachOilPaint(
   const size = new THREE.Vector2();
   const session: OilSession = {
     low,
+    shared,
     lastFrameMs: 0,
     pinCount: 0,
     drawCalls: 0,
@@ -97,7 +99,8 @@ export function attachOilPaint(
       session.pinCount = painted ? painted.count : 0;
       if (!painted) return;
       pins = painted;
-      oilScene.add(painted.mesh);
+      painted.mesh.userData.noPaint = true;
+      gameScene.add(painted.mesh);
       for (const actor of actors) {
         actor.root.traverse((obj) => {
           const mesh = obj as THREE.Mesh;
@@ -133,7 +136,7 @@ export function attachOilPaint(
       ground.follow(camera.position.x, camera.position.z);
       if (pins) pins.update();
       shade.update(gameScene, focus);
-      frame.render(oilScene, camera);
+      frame.render(gameScene, camera);
       if (overlay) {
         renderer.autoClear = false;
         renderer.clearDepth();
