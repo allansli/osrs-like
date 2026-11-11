@@ -418,10 +418,11 @@ vec3 grassTex = texture2D( map, vMapUv ).rgb;
 vec3 dirtTex = texture2D( uDirtMap, vMapUv ).rgb;
 vec3 sandTex = texture2D( uSandMap, vMapUv ).rgb;
 vec3 stoneTex = texture2D( uStoneMap, vMapUv ).rgb;
-float grassW = max(max(biomeWeight(vColor, uSage), biomeWeight(vColor, uSageLit)), max(biomeWeight(vColor, uSageShade), biomeWeight(vColor, uCanopy)));
-float dirtW = biomeWeight(vColor, uDirt);
-float sandW = biomeWeight(vColor, uSand);
-float stoneW = biomeWeight(vColor, uCrag);
+vec3 biomeColor = vColor.rgb;
+float grassW = max(max(biomeWeight(biomeColor, uSage), biomeWeight(biomeColor, uSageLit)), max(biomeWeight(biomeColor, uSageShade), biomeWeight(biomeColor, uCanopy)));
+float dirtW = biomeWeight(biomeColor, uDirt);
+float sandW = biomeWeight(biomeColor, uSand);
+float stoneW = biomeWeight(biomeColor, uCrag);
 float weightSum = grassW + dirtW + sandW + stoneW;
 if (weightSum < 0.2) {
   float warm = vColor.r - max(vColor.g, vColor.b);

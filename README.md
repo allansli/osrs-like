@@ -5,7 +5,7 @@
 # Gielinor Hero
 
 **A 3D open-world action RPG**  
-*OldSchool RuneScape mechanics and progression in a Breath of the Wild gouache world*
+*OldSchool RuneScape mechanics and progression, drawn in oil paint*
 
 [![Play on Vercel](https://img.shields.io/badge/Play_Live-gielinor--hero.vercel.app-000000?style=for-the-badge&logo=vercel)](https://gielinor-hero.vercel.app/)
 [![Live Demo](https://img.shields.io/badge/Mirror-GitHub_Pages-2ea44f?style=for-the-badge&logo=github)](https://allansli.github.io/osrs-like/)
@@ -21,7 +21,7 @@
 
 ## Overview
 
-**Gielinor Hero** is a 3D open-world RPG. The Vite + TypeScript client keeps the procedural GLSL sky and water, vector item icons, OSRS experience curve, and Web Audio effects, and adds a bank vault, shrine discovery, and faceted gouache rendering.
+**Gielinor Hero** is a 3D open-world RPG. The Vite + TypeScript client keeps the vector item icons, OSRS experience curve, and Web Audio effects, and draws the picture with Blendi's oil-paint renderer (`src/oilpaint/`, three 0.186.1). `?renderer=legacy` still opens the old cel picture. See `docs/blender-oil-paint.md`.
 
 ---
 
@@ -103,7 +103,7 @@ flowchart LR
     UI["HUD, Bank, and Shop\nsrc/ui"]
     DATA["Items, skills, recipes\nsrc/data"]
     STATE["Save, combat, collision\nsrc/state"]
-    ENGINE["Faceted world renderer\nsrc/engine"]
+    ENGINE["Oil-paint renderer\nsrc/oilpaint + src/engine"]
   end
 
   UI <--> STATE

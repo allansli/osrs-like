@@ -1,0 +1,13 @@
+{
+  "note": "Object extras win over the material. Goblin hide, strokes that follow the body, monster dab size, density 40.",
+  "object": {
+    "paint_palette": "goblin_hide",
+    "stroke_dir": "surface_flow",
+    "dab_density": 40
+  },
+  "material": {
+    "paint_palette": "kai_skin",
+    "stroke_dir": "up",
+    "jitter": 0.5
+  }
+}

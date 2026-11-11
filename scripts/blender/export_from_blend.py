@@ -6,13 +6,18 @@ Run via:
 """
 
 import os
+import sys
 import bpy
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from oil_paint_props import stamp_scene
 
 def main():
     repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
     glb_path = os.path.join(repo_root, "public", "models", "hero.glb")
     os.makedirs(os.path.dirname(glb_path), exist_ok=True)
 
+    stamp_scene()
     bpy.ops.export_scene.gltf(
         filepath=glb_path,
         export_format="GLB",

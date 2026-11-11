@@ -36,6 +36,18 @@ import { moveWithCollision, isWalkable, isDeepWater } from '../state/collision';
 import { discoverShrines } from '../state/shrines';
 import { applyGold200k, applySkillsPlus10, matchCheat } from '../state/cheats';
 import { addCartoonOutline, facetMaterial, grassMaterial, PALETTE } from './materials';
+import { readPaintFlags } from '../paint/contract';
+import { dressSolid, solidMaterial } from '../paint/body';
+import { dabsForMesh } from '../paint/pinned';
+import { paintFlagsForMesh } from '../paint/species';
+import { recolorCloak } from '../figure/figure.js';
+import { createOilGear } from '../paint/oilGear';
+import { helmSilhouette, restoreUnderlay, underlayRegion } from '../paint/shells';
+import { capePaint } from '../paint/wandererGear';
+import { attachOilPaint, createOilRenderer, webgl2Available } from '../paint/session';
+import { createFigure } from '../figure/figure.js';
+import { loadManMesh, loadManClips } from '../figure/man.js';
+import { Animator } from '../figure/animator.js';
 import {
   albedoForItem,
   albedoMaterial,
@@ -1067,6 +1079,319 @@ function resetGameSave() {
 // 7. 2026 SMOOTH 3D ENGINE, GLSL SKY & WATER SHADERS, PROCEDURAL TEXTURES
 // ============================================================================
 let scene, camera, renderer, sunLight, ambientLight, hemiLight;
+const paintFlags = readPaintFlags(typeof location !== 'undefined' ? location.search : '');
+let oilSession = null;
+let overlayScene = null;
+let oilActorsDirty = false;
+
+function markOilActorsDirty() {
+  oilActorsDirty = true;
+}
+
+const START_PAINT_RADIUS = 55;
+const _oilPoint = new THREE.Vector3();
+const _footNormal = new THREE.Vector3(0, 1, 0);
+let oilClock = 0;
+
+function inStartArea(obj) {
+  obj.getWorldPosition(_oilPoint);
+  return Math.hypot(_oilPoint.x, _oilPoint.z) < START_PAINT_RADIUS;
+}
+
+function hideKaiBody() {
+  if (!player.wanderer || !player.meshGroup) return;
+  player.meshGroup.traverse((obj) => {
+    if (obj.isMesh && !obj.userData.isCollider) {
+      obj.visible = false;
+      obj.userData.noPaint = true;
+    }
+  });
+}
+
+let oilGearRoot = null;
+
+function clearOilGear() {
+  if (!oilGearRoot) return;
+  const held = oilGearRoot.userData.held || [];
+  for (const mesh of held) {
+    mesh.removeFromParent();
+    if (mesh.geometry) mesh.geometry.dispose();
+  }
+  oilGearRoot.traverse((obj) => {
+    if (obj.geometry) obj.geometry.dispose();
+  });
+  oilGearRoot.removeFromParent();
+  oilGearRoot = null;
+}
+
+function fitWandererGear() {
+  const wanderer = player.wanderer;
+  if (!wanderer || !wanderer.man || !wanderer.man.bones || !oilSession) return;
+  clearOilGear();
+  const skin = wanderer.man.meshes.find((mesh) => /generic/.test(mesh.name));
+  const suit = wanderer.man.meshes.find((mesh) => /casualsuit/.test(mesh.name)) || skin;
+  const shoes = wanderer.man.meshes.find((mesh) => /shoes/.test(mesh.name)) || null;
+  if (!skin || !skin.isSkinnedMesh || !suit || !suit.isSkinnedMesh) return;
+  for (const mesh of [skin, suit, shoes]) if (mesh) restoreUnderlay(mesh);
+  const equip = (slot) => {
+    const id = STATE.equipment[slot];
+    return id && ITEMS[id] ? ITEMS[id] : null;
+  };
+  const headItem = equip('head');
+  const bodyItem = equip('body');
+  const legsItem = equip('legs');
+  const handsItem = equip('hands');
+  const feetItem = equip('feet');
+  const built = createOilGear({ skin, suit, shoes }, {
+    head: headItem,
+    neck: equip('neck'),
+    body: bodyItem,
+    legs: legsItem,
+    hands: handsItem,
+    feet: feetItem,
+    weapon: equip('weapon'),
+    shield: equip('shield')
+  }, oilSession.shared);
+  skin.parent.add(built.root);
+  built.root.position.copy(skin.position);
+  built.root.quaternion.copy(skin.quaternion);
+  built.root.scale.copy(skin.scale);
+  for (const mesh of built.skinned) built.root.add(mesh);
+  const heldMeshes = [];
+  for (const piece of built.held) {
+    const bone = wanderer.man.bones[piece.bone];
+    if (!bone) {
+      console.error('[oil-paint] No bone for held gear', piece.bone);
+      continue;
+    }
+    bone.add(piece.mesh);
+    heldMeshes.push(piece.mesh);
+  }
+  built.root.userData.held = heldMeshes;
+  oilGearRoot = built.root;
+  if (bodyItem) underlayRegion(suit, 'torso', 0.012);
+  if (legsItem) underlayRegion(suit, 'legs', 0.012);
+  if (handsItem) underlayRegion(skin, 'hands', 0.01);
+  if (feetItem && shoes) underlayRegion(shoes, 'feet', 0.012);
+  if (headItem) {
+    const kind = helmSilhouette(headItem);
+    if (kind === 'coif' || kind === 'hood') underlayRegion(skin, 'coif', 0.01);
+    else if (kind !== 'wizard' && kind !== 'circlet') underlayRegion(skin, 'head', 0.01);
+  }
+  const capeItem = equip('cape');
+  recolorCloak(wanderer, capePaint(capeItem && capeItem.color));
+  if (wanderer.cloakMesh) wanderer.cloakMesh.visible = true;
+  const paintWear = (obj) => {
+    if (obj.userData && obj.userData.defaultHat) obj.visible = !headItem;
+    if (obj.userData && obj.userData.oilCloak) obj.visible = true;
+  };
+  wanderer.man.object.traverse(paintWear);
+  if (wanderer.dabs) wanderer.dabs.traverse(paintWear);
+}
+
+function stampMonster(rig, typeKey) {
+  if (!rig || !rig.group) return;
+  rig.group.traverse((obj) => {
+    if (!obj.isMesh || obj.userData?.isCollider) return;
+    const flags = paintFlagsForMesh(typeKey, `${obj.name} ${obj.parent?.name ?? ''}`);
+    if (flags.noPaint) {
+      obj.userData.noPaint = true;
+      return;
+    }
+    obj.userData.noPaint = false;
+    obj.userData.paint_palette = flags.palette;
+    obj.userData.stroke_dir = flags.stroke;
+    obj.userData.dab_size = flags.size;
+    obj.userData.paintClass = flags.paintClass;
+    obj.userData.species = typeKey;
+  });
+}
+
+function wandererAir(x, y, z, out) {
+  const gust = 0.45 + 0.35 * Math.sin(oilClock * 0.7 + x * 0.04);
+  return out.set(0.9 * gust, 0.08 * Math.sin(oilClock * 1.4 + z * 0.2), 0.45 * gust);
+}
+
+function setOilStatus(text) {
+  let el = document.getElementById('oil-load');
+  if (!el && text) {
+    el = document.createElement('div');
+    el.id = 'oil-load';
+    el.style.cssText = 'position:absolute;left:50%;top:68px;transform:translateX(-50%);z-index:30;padding:6px 12px;background:rgba(12,10,8,0.88);color:#f4efe4;border:1px solid #c4a574;font:13px/1.3 system-ui,sans-serif;pointer-events:none;';
+    document.body.appendChild(el);
+  }
+  if (!el) return;
+  el.hidden = !text;
+  el.textContent = text || '';
+}
+
+function installWanderer(fig) {
+  const mark = (obj) => {
+    if (!obj) return;
+    obj.traverse((child) => {
+      child.userData.wanderer = true;
+      child.frustumCulled = false;
+      child.layers.enable(0);
+      if (child.isSkinnedMesh && child.geometry) {
+        if (!child.geometry.boundingSphere) child.geometry.computeBoundingSphere();
+        const sphere = child.geometry.boundingSphere;
+        if (sphere && sphere.radius < 0.25) {
+          sphere.center.set(0, 1, 0);
+          sphere.radius = 2.5;
+        }
+        if (child.skeleton) child.skeleton.update();
+      }
+    });
+  };
+  mark(fig.man.object);
+  mark(fig.cloakMesh);
+  mark(fig.dabs);
+  scene.add(fig.man.object);
+  if (fig.cloakMesh) scene.add(fig.cloakMesh);
+  if (fig.dabs) scene.add(fig.dabs);
+  fig.man.object.position.copy(player.pos);
+  fig.man.object.rotation.set(0, player.yaw, 0);
+  fig.man.object.updateMatrixWorld(true);
+  player.wanderer = fig;
+  hideKaiBody();
+  fitWandererGear();
+  markOilActorsDirty();
+}
+
+function showWandererPlaceholder(reason) {
+  console.error('[oil-paint] Wanderer mesh failed to load. Showing a painted placeholder.', reason);
+  const shared = oilSession.shared;
+  const group = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.28, 0.95, 6, 10), solidMaterial(shared, 'wanderer_cloak'));
+  body.position.y = 1.05;
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.16, 12, 10), solidMaterial(shared, 'kai_skin'));
+  head.position.y = 1.72;
+  const hat = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.22, 0.08, 12), solidMaterial(shared, 'kai_hair'));
+  hat.position.y = 1.9;
+  group.add(body, head, hat);
+  installWanderer({
+    man: { object: group, bones: {}, meshes: [body, head] },
+    cloakMesh: null,
+    dabs: null,
+    updateCloak() {},
+    animator: null,
+    placeholder: true
+  });
+  setOilStatus('Wanderer failed to load');
+}
+
+function syncWanderer(dt) {
+  const wanderer = player.wanderer;
+  if (!wanderer) return;
+  oilClock += dt;
+  const man = wanderer.man.object;
+  man.position.copy(player.pos);
+  let yaw = player.yaw;
+  if (player.spinAnim > 0) yaw += (1 - player.spinAnim) * Math.PI * 4;
+  man.rotation.set(0, yaw, 0);
+  man.updateMatrixWorld(true);
+  if (wanderer.animator) {
+    const speed = Math.min(6.2, (player.currentSpeed || 0) * (4.2 / 11.5));
+    const grounded = player.isGrounded !== false;
+    try {
+      wanderer.animator.update(dt, { speed, moveAngle: 0, grounded });
+      wanderer.animator.relaxHands(speed);
+      wanderer.animator.uprightTrunk(dt, speed, grounded ? 1 : 0.3);
+      wanderer.animator.armClearance(dt);
+      wanderer.animator.leanInto(dt, player.yawVelocity || 0, speed, 0);
+      wanderer.animator.placeFeet(
+        dt,
+        (x, z) => ({ y: getTerrainHeight(x, z), normal: _footNormal }),
+        player.pos.y,
+        grounded ? 1 : 0
+      );
+      if (player.attackAnim > 0 && wanderer.man.bones.upperarm_r) {
+        wanderer.man.bones.upperarm_r.rotateX(-1.45 * Math.sin(player.attackAnim * Math.PI));
+      }
+    } catch (err) {
+      if (!wanderer.animError) {
+        wanderer.animError = true;
+        console.error('[oil-paint] Wanderer animation stopped. He stays in the bind pose.', err);
+        setOilStatus('Animation failed — bind pose');
+      }
+      wanderer.animator = null;
+    }
+  }
+  man.updateMatrixWorld(true);
+  if (wanderer.updateCloak) wanderer.updateCloak(dt, wandererAir, (x, z) => getTerrainHeight(x, z));
+}
+
+function dressOilWorld() {
+  if (!oilSession) return;
+  const shared = oilSession.shared;
+  for (const monster of monstersList) {
+    if (monster.rig && monster.rig.group) dressSolid(monster.rig.group, shared, 'monster');
+  }
+  for (const node of resourceNodesList) {
+    if (!node.group) continue;
+    dressSolid(node.group, shared, node.def && node.def.kind === 'tree' ? 'tree' : 'prop');
+  }
+  if (player.parts && player.parts.wepMesh) dressSolid(player.parts.wepMesh, shared, 'gear');
+  scene.traverse((obj) => {
+    if (obj.isMesh) dressSolid(obj, shared, 'prop');
+  });
+}
+
+function paintClassForMesh(mesh) {
+  let node = mesh;
+  while (node) {
+    const kind = node.userData && node.userData.type;
+    if (kind === 'monster') return 'monster';
+    if (kind === 'resource') {
+      const key = node.userData.entity && node.userData.entity.def && node.userData.entity.def.kind;
+      return key === 'tree' ? 'tree' : 'prop';
+    }
+    if (node === player.parts?.wepMesh) return 'gear';
+    node = node.parent;
+  }
+  const blob = `${mesh.name} ${mesh.parent?.name ?? ''}`.toLowerCase();
+  if (/tree|trunk|canopy|foliage/.test(blob)) return 'tree';
+  if (/sword|scimitar|blade/.test(blob)) return 'gear';
+  return 'prop';
+}
+
+function ancestorType(obj) {
+  let node = obj;
+  while (node) {
+    if (node.userData && node.userData.type) return node.userData.type;
+    node = node.parent;
+  }
+  return '';
+}
+
+function oilActorList() {
+  const actors = [];
+  const seen = new Set();
+  scene.traverse((obj) => {
+    if (!obj.isMesh || !obj.visible || seen.has(obj)) return;
+    if (obj.userData?.isOutline || obj.userData?.noPaint || obj.userData?.isCollider) return;
+    const gear = obj.userData?.gear === true;
+    if (!gear && obj.userData?.wanderer) return;
+    if (!gear) {
+      let parent = obj.parent;
+      while (parent) {
+        if (parent.userData?.noPaint || parent.userData?.wanderer) return;
+        parent = parent.parent;
+      }
+    }
+    const kind = ancestorType(obj);
+    const monster = kind === 'monster';
+    if (!gear && !monster && !inStartArea(obj)) return;
+    const geometry = obj.geometry;
+    if (geometry && !geometry.boundingSphere) geometry.computeBoundingSphere();
+    const radius = geometry?.boundingSphere?.radius || 0.4;
+    const paintClass = obj.userData?.paintClass || paintClassForMesh(obj);
+    seen.add(obj);
+    const pinned = obj.userData?.dabCount;
+    actors.push({ root: obj, paintClass, count: pinned || dabsForMesh(radius, paintClass) });
+  });
+  return actors;
+}
 let terrainMesh, waterMesh, skyDomeMesh, grassInstanced;
 let waterUniforms, skyUniforms;
 const worldInteractiveObjects = [];
@@ -1181,18 +1506,22 @@ function applyQualityTier(tier: QualityTier): void {
   currentQuality = tier;
   const dpr = getQualityDpr(tier);
   if (renderer && typeof window !== 'undefined') {
+    if (oilSession) {
+      oilSession.setPixelRatio(paintFlags.low ? 1 : dpr);
+    } else {
     renderer.setPixelRatio(dpr);
     renderer.setSize(window.innerWidth, window.innerHeight);
     if (tier === 'performance') {
       renderer.shadowMap.enabled = false;
     } else {
       renderer.shadowMap.enabled = true;
-      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      renderer.shadowMap.type = THREE.PCFShadowMap;
       if (sunLight) {
         sunLight.castShadow = true;
         const res = tier === 'ultra' ? 2048 : (tier === 'high' ? 2048 : 1024);
         sunLight.shadow.mapSize.set(res, res);
       }
+    }
     }
   }
   const dprEl = document.getElementById('perf-dpr');
@@ -1279,25 +1608,34 @@ function init3DEngine() {
 
   camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.5, 360);
 
-  renderer = new THREE.WebGLRenderer({
-    antialias: true,
-    powerPreference: 'high-performance',
-    precision: 'highp',
-    stencil: false,
-    depth: true
-  });
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setPixelRatio(getQualityDpr(currentQuality));
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-  renderer.outputColorSpace = THREE.SRGBColorSpace;
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.05;
-  renderer.domElement.id = 'game-canvas';
-  container.appendChild(renderer.domElement);
-
-  initGpuTelemetry(renderer.getContext());
-  applyQualityTier('balanced');
+  const useOil = !paintFlags.legacy && webgl2Available();
+  if (!paintFlags.legacy && !useOil) {
+    console.warn('[oil-paint] This browser has no WebGL2, so the legacy renderer is on.');
+  }
+  if (useOil) {
+    renderer = createOilRenderer();
+    container.appendChild(renderer.domElement);
+    initGpuTelemetry(renderer.getContext());
+  } else {
+    renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      powerPreference: 'high-performance',
+      precision: 'highp',
+      stencil: false,
+      depth: true
+    });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(getQualityDpr(currentQuality));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFShadowMap;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.05;
+    renderer.domElement.id = 'game-canvas';
+    container.appendChild(renderer.domElement);
+    initGpuTelemetry(renderer.getContext());
+    applyQualityTier('balanced');
+  }
 
   hemiLight = new THREE.HemisphereLight(0xa5b8c9, 0x333d32, 0.52);
   scene.add(hemiLight);
@@ -1330,6 +1668,69 @@ function init3DEngine() {
 
   window.addEventListener('resize', onWindowResize);
   setupInputHandlers();
+
+  if (useOil) {
+    overlayScene = new THREE.Scene();
+    const lift = (obj) => {
+      if (!obj) return;
+      scene.remove(obj);
+      overlayScene.add(obj);
+      obj.traverse((child) => {
+        if (child.material) {
+          child.material.depthTest = false;
+          child.material.depthWrite = false;
+        }
+      });
+    };
+    lift(clickMarkerMesh);
+    lift(hoverTile);
+    if (terrainMesh) {
+      terrainMesh.layers.set(2);
+      terrainMesh.userData.noPaint = true;
+      raycaster.layers.enable(2);
+    }
+    if (skyDomeMesh) {
+      skyDomeMesh.visible = false;
+      skyDomeMesh.userData.noPaint = true;
+    }
+    if (waterMesh) {
+      waterMesh.visible = false;
+      waterMesh.userData.noPaint = true;
+    }
+    if (grassInstanced) {
+      grassInstanced.visible = false;
+      grassInstanced.userData.noPaint = true;
+    }
+    oilSession = attachOilPaint(renderer, scene, getTerrainHeight, paintFlags.low, terrainMesh ? [terrainMesh] : []);
+    oilSession.setPixelRatio(paintFlags.low ? 1 : getQualityDpr(currentQuality));
+    markOilActorsDirty();
+    setOilStatus('Loading the wanderer…');
+    loadManMesh().then((man) => createFigure(oilSession.shared, man)).then((fig) => {
+      installWanderer(fig);
+      setOilStatus('Loading clips…');
+      return loadManClips(fig.man, '/figure/', 'starter-man-clips.glb', (k) => {
+        setOilStatus(`Loading clips… ${Math.round(k * 100)}%`);
+      }).then(() => {
+        try {
+          player.wanderer.animator = new Animator(fig.man);
+          setOilStatus('');
+        } catch (err) {
+          console.error('[oil-paint] Wanderer clips loaded but the animator failed. He stays in the bind pose.', err);
+          setOilStatus('Clips failed — bind pose');
+        }
+      }).catch((err) => {
+        console.error('[oil-paint] Wanderer clips failed to load. He stays in the bind pose.', err);
+        setOilStatus('Clips failed — bind pose');
+      });
+    }).catch((err) => {
+      showWandererPlaceholder(err);
+    });
+    const modeEl = document.getElementById('perf-renderer');
+    if (modeEl) modeEl.textContent = paintFlags.low ? 'oil · low' : 'oil';
+  } else {
+    const modeEl = document.getElementById('perf-renderer');
+    if (modeEl) modeEl.textContent = 'legacy';
+  }
 }
 
 // Custom GLSL Atmospheric Sky Dome with Volumetric Clouds & Sun Disc
@@ -1531,6 +1932,7 @@ function buildRiverBridge(bx, bz) {
   loadBlenderWorldTemplate().then((gltf) => {
     if (!gltf) return;
     upgradeWorldPropWithGltf(grp, 'World_river_bridge', gltf, { outlineThickness: 0.035 });
+    markOilActorsDirty();
   });
 }
 
@@ -1554,6 +1956,7 @@ function buildBiomeLandmarks() {
       loadBlenderWorldTemplate().then((gltf) => {
         if (!gltf) return;
         upgradeWorldPropWithGltf(grp, worldAssetName, gltf, { overrides, outlineThickness: 0.035 });
+        markOilActorsDirty();
       });
     }
   }
@@ -1712,6 +2115,7 @@ function buildAllCitiesAndLandmarks() {
         interactiveObjectsList: worldInteractiveObjects,
         outlineThickness: 0.035
       });
+      markOilActorsDirty();
     });
   });
 
@@ -1812,6 +2216,7 @@ function createCastleStructure(cx, cz) {
   loadBlenderWorldTemplate().then((gltf) => {
     if (!gltf) return;
     upgradeWorldPropWithGltf(grp, 'World_castle', gltf, { outlineThickness: 0.03 });
+    markOilActorsDirty();
   });
 }
 
@@ -1853,6 +2258,7 @@ function createPrayerAltar(x, z, name) {
       interactiveObjectsList: worldInteractiveObjects,
       outlineThickness: 0.035
     });
+    markOilActorsDirty();
   });
 }
 
@@ -1909,6 +2315,7 @@ function createForgeStation(x, z, name) {
       interactiveObjectsList: worldInteractiveObjects,
       outlineThickness: 0.035
     });
+    markOilActorsDirty();
   });
 }
 
@@ -1965,6 +2372,7 @@ function createBankBooth(x, z) {
       interactiveObjectsList: worldInteractiveObjects,
       outlineThickness: 0.035
     });
+    markOilActorsDirty();
   });
 }
 
@@ -2107,6 +2515,7 @@ function createCastleGuard(x: number, z: number, name: string, rotY = 0) {
     });
     grp.add(cloned);
     addCartoonOutline(cloned, 0.024);
+    markOilActorsDirty();
   });
 }
 
@@ -2134,6 +2543,7 @@ function spawnWorldProp(assetName: string, x: number, z: number, rotY = 0, scale
     grp.add(cloned);
     sealAlbedoUvs(grp);
     addCartoonOutline(grp, 0.028);
+    markOilActorsDirty();
   });
 }
 
@@ -2179,6 +2589,7 @@ function buildPlayerCharacter() {
       player.blenderAnimator = animator;
       rebuildPlayerEquipmentMeshes();
     }
+    markOilActorsDirty();
   });
   loadBlenderGearTemplate().then((gearGltf) => {
     if (!gearGltf) return;
@@ -2513,6 +2924,11 @@ function rebuildPlayerEquipmentMeshes() {
     addCartoonOutline(player.meshGroup, LEAN_RIG.outline);
     sealAlbedoUvs(player.meshGroup);
   }
+  if (oilSession) {
+    hideKaiBody();
+    fitWandererGear();
+  }
+  markOilActorsDirty();
 }
 
 // Bespoke OSRS × Zelda monster silhouettes. Each species owns its anatomy.
@@ -2566,6 +2982,7 @@ function paint(color, extra = {}, family = null) {
 
 function addQuiver(parent, x, y, z, leatherHex, fletchHex) {
   const quiver = new THREE.Group();
+  quiver.name = 'quiver';
   quiver.position.set(x, y, z);
   quiver.rotation.x = -0.55;
   monsterPart(quiver, new THREE.CylinderGeometry(0.09, 0.12, 0.46, 10), paint(leatherHex, {}, 'leather'));
@@ -2586,6 +3003,7 @@ function addQuiver(parent, x, y, z, leatherHex, fletchHex) {
 
 function addStrungBow(pivot, length, color, bend) {
   const bow = new THREE.Group();
+  bow.name = 'bow';
   bow.position.set(0.04, -0.42, -0.18);
   const half = length * 0.5;
   const curve = new THREE.CatmullRomCurve3([
@@ -2732,6 +3150,7 @@ function buildGoblinMesh(def, role) {
       spike.rotation.z = tilt;
     });
     const spear = new THREE.Group();
+    spear.name = 'spear';
     spear.position.set(0.02, -0.5, -0.12);
     spear.rotation.x = -1.05;
     monsterPart(spear, new THREE.CylinderGeometry(0.028, 0.034, 1.05, 8), wood, 0, 0.28, 0);
@@ -2740,6 +3159,7 @@ function buildGoblinMesh(def, role) {
     monsterPart(spear, new THREE.ConeGeometry(0.05, 0.18, 4), bronze, 0.07, 0.78, 0).rotation.z = -0.6;
     rightArmPivot.add(spear);
     const buckler = monsterPart(leftArmPivot, new THREE.CylinderGeometry(0.2, 0.2, 0.06, 14), wood, -0.06, -0.5, -0.16);
+    buckler.name = 'buckler';
     buckler.rotation.x = Math.PI / 2.2;
     monsterPart(buckler, new THREE.SphereGeometry(0.06, 10, 8), bronze, 0, 0.05, 0);
   }
@@ -3415,13 +3835,19 @@ function spawnMonster(typeKey, x, z) {
 
   const uData = { type: 'monster', entity: mObj, interactRadius: def.style === 'melee' ? 2.8 : 3.4 };
   rig.group.userData = uData;
-  rig.hitbox.userData = uData;
+  rig.hitbox.userData = { ...uData, isCollider: true, noPaint: true };
+  rig.hitbox.visible = false;
   worldInteractiveObjects.push(rig.hitbox);
   scene.add(rig.group);
   monstersList.push(mObj);
+  stampMonster(rig, typeKey);
   loadBlenderMonstersTemplate().then((gltf) => {
     if (!gltf) return;
     upgradeMonsterRigWithGltf(mObj, gltf);
+    stampMonster(mObj.rig, typeKey);
+    markOilActorsDirty();
+    const paintedGoblin = monstersList.find((m) => m.typeKey === 'goblin');
+    if (mObj === paintedGoblin) markOilActorsDirty();
   });
 }
 
@@ -3547,6 +3973,7 @@ function spawnResourceNode(nodeKey, x, z) {
   loadBlenderWorldTemplate().then((gltf) => {
     if (!gltf) return;
     upgradeResourceNodeWithGltf(rObj, gltf);
+    markOilActorsDirty();
   });
 }
 
@@ -5540,11 +5967,15 @@ function gameLoop(now) {
   }
 
   // Smooth Acceleration & Deceleration Momentum
-  const targetSpeed = hasMoveIntent ? moveSpeed : 0;
-  const accelRate = hasMoveIntent ? 16 : 12;
-  player.currentSpeed = (player.currentSpeed ?? 0) + (targetSpeed - (player.currentSpeed ?? 0)) * Math.min(1, dt * accelRate);
-  if (!hasMoveIntent && Math.abs(player.currentSpeed) < 0.05) {
-    player.currentSpeed = 0;
+  if (typeof player.poseHold === 'number') {
+    player.currentSpeed = player.poseHold;
+  } else {
+    const targetSpeed = hasMoveIntent ? moveSpeed : 0;
+    const accelRate = hasMoveIntent ? 16 : 12;
+    player.currentSpeed = (player.currentSpeed ?? 0) + (targetSpeed - (player.currentSpeed ?? 0)) * Math.min(1, dt * accelRate);
+    if (!hasMoveIntent && Math.abs(player.currentSpeed) < 0.05) {
+      player.currentSpeed = 0;
+    }
   }
 
   if (player.currentSpeed > 0.02 && (moveDirX !== 0 || moveDirZ !== 0)) {
@@ -5650,7 +6081,7 @@ function gameLoop(now) {
     updateCapePhysics(player.isMoving, player.animTime);
 
     if (player.attackAnim > 0) {
-      player.attackAnim = Math.max(0, player.attackAnim - dt * 3.6);
+      if (player.poseHold !== 'attack') player.attackAnim = Math.max(0, player.attackAnim - dt * 3.6);
     }
   } else {
     if (player.isMoving) {
@@ -5706,7 +6137,7 @@ function gameLoop(now) {
     }
 
     if (player.attackAnim > 0) {
-      player.attackAnim = Math.max(0, player.attackAnim - dt * 3.6);
+      if (player.poseHold !== 'attack') player.attackAnim = Math.max(0, player.attackAnim - dt * 3.6);
       const slashAngle = Math.sin(player.attackAnim * Math.PI) * 1.65;
       const k = player.activeWeaponKind;
       if (k === 'greataxe') {
@@ -5765,11 +6196,12 @@ function gameLoop(now) {
   const camTargetX = player.pos.x - Math.sin(camState.yaw) * horizDist;
   const camTargetZ = player.pos.z - Math.cos(camState.yaw) * horizDist;
   const terrainUnderCam = getTerrainHeight(camTargetX, camTargetZ);
-  const camTargetY = Math.max(terrainUnderCam + 1.2, player.pos.y + 1.85 + vertDist);
+  const lookLift = 1.85 + (camState.lookBias || 0);
+  const camTargetY = Math.max(terrainUnderCam + 1.2, player.pos.y + lookLift + vertDist);
 
   _camTargetVec.set(camTargetX, camTargetY, camTargetZ);
   camera.position.lerp(_camTargetVec, Math.min(1, dt * 12));
-  _lookTargetVec.set(player.pos.x, player.pos.y + 1.85, player.pos.z);
+  _lookTargetVec.set(player.pos.x, player.pos.y + 1.85 + (camState.lookBias || 0), player.pos.z);
   camState.currentLookAt.lerp(_lookTargetVec, Math.min(1, dt * 14));
   camera.lookAt(camState.currentLookAt);
 
@@ -5960,7 +6392,14 @@ function gameLoop(now) {
   if (grassInstanced && grassInstanced.material && grassInstanced.material.uniforms) {
     grassInstanced.material.uniforms.uTime.value = elapsedSec;
   }
-  renderer.render(scene, camera);
+  if (oilSession) syncWanderer(dt);
+  if (oilSession && oilActorsDirty) {
+    oilActorsDirty = false;
+    dressOilWorld();
+    oilSession.bindActors(oilActorList());
+  }
+  if (oilSession) oilSession.render(scene, camera, player.pos, overlayScene, dt);
+  else renderer.render(scene, camera);
 
   frameCounter++;
   if (now - lastFpsTime >= 500) {
@@ -5974,7 +6413,16 @@ function gameLoop(now) {
     if (fpsEl) fpsEl.textContent = `${telemetryInfo.fps} FPS (${telemetryInfo.frameTimeMs}ms)`;
     const callsEl = document.getElementById('perf-calls');
     if (callsEl && renderer) {
-      callsEl.textContent = `${renderer.info.render.calls} calls • ${Math.round(renderer.info.render.triangles / 1000)}k tris`;
+      const paintMs = oilSession ? ` • paint ${oilSession.lastFrameMs.toFixed(1)}ms` : '';
+      const calls = oilSession ? oilSession.drawCalls : renderer.info.render.calls;
+      const tris = oilSession ? oilSession.triangles : renderer.info.render.triangles;
+      callsEl.textContent = `${calls} calls • ${Math.round(tris / 1000)}k tris${paintMs}`;
+    }
+    if (oilSession && frameCounter === 0) {
+      oilSession._reports = (oilSession._reports || 0) + 1;
+      if (oilSession._reports === 4) {
+        console.info(`[oil-paint] ${telemetryInfo.frameTimeMs} ms/frame (painter ${oilSession.lastFrameMs.toFixed(1)} ms) on ${telemetryInfo.gpuName}; quality=${paintFlags.low ? 'low' : 'high'}`);
+      }
     }
   }
 }
@@ -6006,8 +6454,12 @@ function applyLoadedStateToHud() {
 function onWindowResize() {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setPixelRatio(getQualityDpr(currentQuality));
+  if (oilSession) {
+    oilSession.setPixelRatio(paintFlags.low ? 1 : getQualityDpr(currentQuality));
+  } else {
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(getQualityDpr(currentQuality));
+  }
 }
 
 
@@ -6248,6 +6700,29 @@ window.addEventListener('DOMContentLoaded', () => {
   }
   const startReg = WORLD_REGIONS.find(r => r.id === STATE.currentRegion) || WORLD_REGIONS[0];
   triggerRegionBanner(startReg);
-  (window as unknown as { __DEBUG?: unknown }).__DEBUG = { STATE, player, camState, rebuildPlayerEquipmentMeshes, ITEMS };
+  (window as unknown as { __DEBUG?: unknown }).__DEBUG = {
+    STATE,
+    player,
+    camState,
+    rebuildPlayerEquipmentMeshes,
+    ITEMS,
+    oilSession,
+    monsters: monstersList,
+    camera,
+    setGear(next) {
+      const slots = ['head', 'cape', 'neck', 'weapon', 'body', 'shield', 'legs', 'hands', 'feet', 'ring'];
+      for (const slot of slots) STATE.equipment[slot] = null;
+      Object.assign(STATE.equipment, next || {});
+      rebuildPlayerEquipmentMeshes();
+    },
+    pose(mode) {
+      if (mode === 'walk') player.poseHold = 4.2;
+      else if (mode === 'run') player.poseHold = 11.5;
+      else if (mode === 'attack') {
+        player.poseHold = 'attack';
+        player.attackAnim = 0.55;
+      } else player.poseHold = null;
+    }
+  };
   requestAnimationFrame(gameLoop);
 });
