@@ -17,7 +17,8 @@ import {
   shouldPaintMesh,
   strokeDirection
 } from '../src/paint/contract';
-import { paletteFromColor } from '../src/paint/body';
+import { needsSolidPaint, paletteFromColor, paletteIsUsable } from '../src/paint/body';
+import { dabsForMesh } from '../src/paint/pinned';
 import { classifyGround } from '../src/paint/terrain';
 
 const fixture = JSON.parse(
@@ -37,7 +38,8 @@ describe('oil-paint palette contract', () => {
       kai_tunic: ['#6F8FB0', '#45607E', '#26354A'],
       goblin_hide: ['#9DB05A', '#647A36', '#33421F'],
       bronze: ['#E0A862', '#A8703A', '#5A3A22'],
-      leather: ['#A87B4F', '#6E4A2E', '#3A2618']
+      leather: ['#A87B4F', '#6E4A2E', '#3A2618'],
+      wanderer_cloak: ['#3D80BD', '#1C4585', '#121C4D']
     });
     for (const [id, mixes] of Object.entries(LOCKED_PALETTES)) {
       const palette = PALETTE_BY_ID[id];
@@ -127,6 +129,16 @@ describe('Blender extras become paint options', () => {
     expect(inferPaletteId('prop', null, 'CastleWall')).toBe('castle_stone');
     expect(paletteFromColor(0x4ade80)).toBe('foliage');
     expect(paletteFromColor(0x9aa0a8)).toBe('castle_stone');
+    expect(paletteIsUsable('wanderer_cloak')).toBe(true);
+    expect(paletteIsUsable('not_a_palette')).toBe(false);
+    for (const palette of ['meadow_grass', 'castle_stone', 'wanderer_cloak', 'foliage']) {
+      expect(paletteIsUsable(palette)).toBe(true);
+    }
+    expect(needsSolidPaint({ oilSolid: true }, { userData: {} })).toBe(true);
+    expect(needsSolidPaint({ oilSolid: true }, { userData: { oilSolid: true } })).toBe(false);
+    expect(needsSolidPaint({ isOutline: true }, null)).toBe(false);
+    expect(dabsForMesh(0.4, 'prop')).toBeGreaterThanOrEqual(32);
+    expect(dabsForMesh(3, 'prop')).toBeGreaterThan(32);
 
     const unknown = resolvePaint({
       objectUserData: { paint_palette: 'not_a_mix', stroke_dir: 'along_x' },

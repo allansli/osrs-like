@@ -9,26 +9,44 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
-export async function loadMan({ base = './assets/', man = 'starter-man.glb', clips = 'starter-man-clips.glb', onProgress } = {}) {
-  const loader = new GLTFLoader();
-  // onProgress(0..1): how much of the two files has arrived
-  const got = [0, 0], size = [6.3e6, 19.9e6];
-  const tell = (i) => (e) => { got[i] = e.loaded; if (e.total) size[i] = e.total; onProgress?.(Math.min(1, (got[0] + got[1]) / (size[0] + size[1]))); };
-  const [m, c] = await Promise.all([loader.loadAsync(base + man, tell(0)), loader.loadAsync(base + clips, tell(1))]);
-  const object = m.scene;
+function manFromGltf(gltf) {
+  const object = gltf.scene;
   const meshes = [];
   object.traverse((o) => {
     if (o.isSkinnedMesh) {
       o.castShadow = true; o.receiveShadow = true; o.frustumCulled = false;
+      if (o.geometry && !o.geometry.boundingSphere) o.geometry.computeBoundingSphere();
       meshes.push(o);
     }
+    o.frustumCulled = false;
   });
   const bones = {};
   object.traverse((o) => { if (o.isBone) bones[o.name] = o; });
-  const hands = await (await fetch(new URL('./hands-anymove.json', import.meta.url))).json();
-  const out = { object, meshes, bones, clips: {}, motion: {}, raw: {}, hands };
-  for (const clip of c.animations) {
-    out.raw[clip.name] = clip;
+  if (!meshes.length) throw new Error('starter-man.glb has no skinned meshes');
+  return { object, meshes, bones, clips: {}, motion: {}, raw: {}, hands: null };
+}
+
+/** The body only. Clips are a separate 19 MB file and must not block the first picture of him. */
+export function loadManMesh(base = '/figure/', file = 'starter-man.glb') {
+  const loader = new GLTFLoader();
+  return loader.loadAsync(base + file).then(manFromGltf);
+}
+
+/** Fills clips/motion/raw/hands on an already built man. Failures are thrown to the caller. */
+export async function loadManClips(man, base = '/figure/', file = 'starter-man-clips.glb', onProgress) {
+  const loader = new GLTFLoader();
+  const gltf = await loader.loadAsync(base + file, (e) => {
+    if (onProgress) onProgress(e.total ? e.loaded / e.total : 0);
+  });
+  let hands = {};
+  try {
+    hands = await (await fetch(new URL('./hands-anymove.json', import.meta.url))).json();
+  } catch (err) {
+    console.error('[oil-paint] Could not read the wanderer hand poses.', err);
+  }
+  man.hands = hands;
+  for (const clip of gltf.animations) {
+    man.raw[clip.name] = clip;
     const root = clip.tracks.find((t) => t.name === 'root.position');
     const rootRot = clip.tracks.find((t) => t.name === 'root.quaternion');
     const motion = { speed: 0, velocity: new THREE.Vector3(), yaw: 0, duration: clip.duration };
@@ -45,11 +63,19 @@ export async function loadMan({ base = './assets/', man = 'starter-man.glb', cli
       // q1 * q0^-1 is the turn in root's parent space (the Armature, Y up)
       motion.yaw = 2 * Math.atan2(d.y, d.w);
     }
-    out.motion[clip.name] = motion;
+    man.motion[clip.name] = motion;
     // in place: drop root's tracks, so travel and turning come from the game
-    out.clips[clip.name] = new THREE.AnimationClip(clip.name, clip.duration, clip.tracks.filter((t) => !t.name.startsWith('root.')));
+    man.clips[clip.name] = new THREE.AnimationClip(clip.name, clip.duration, clip.tracks.filter((t) => !t.name.startsWith('root.')));
   }
-  return out;
+  return man;
+}
+
+export async function loadMan({ base = '/figure/', man = 'starter-man.glb', clips = 'starter-man-clips.glb', onProgress, onMesh } = {}) {
+  const body = await loadManMesh(base, man);
+  onMesh?.(body);
+  onProgress?.(0.15);
+  await loadManClips(body, base, clips, (k) => onProgress?.(0.15 + 0.85 * k));
+  return body;
 }
 
 /** Samples a raw clip's root track at time t: ground position (character space) and yaw. */

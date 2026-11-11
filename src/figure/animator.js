@@ -420,8 +420,8 @@ export class Animator {
       for (const name of Object.keys(this.bones)) {
         if (!/^(index|middle|ring|pinky|thumb)_0[123]_[lr]$/.test(name)) continue;
         const a = flat.tracks.find((t) => t.name === `${name}.quaternion`), b = fist.tracks.find((t) => t.name === `${name}.quaternion`);
-        if (!a || !b) continue;
-        const o = this.man.hands[name];
+        const o = this.man.hands && this.man.hands[name];
+        if (!a || !b || !o) continue;
         this.fingerPoses.push({ bone: this.bones[name], flat: new THREE.Quaternion().fromArray(a.values, 0), fist: new THREE.Quaternion().fromArray(b.values, 0), oflat: new THREE.Quaternion().fromArray(o.flat), ofist: new THREE.Quaternion().fromArray(o.fist), thumb: name.startsWith('thumb') });
       }
     }

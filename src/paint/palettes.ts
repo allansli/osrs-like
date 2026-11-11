@@ -22,7 +22,9 @@ export const LOCKED_PALETTES: Record<string, MixHex> = {
   kai_tunic: ['#6F8FB0', '#45607E', '#26354A'],
   goblin_hide: ['#9DB05A', '#647A36', '#33421F'],
   bronze: ['#E0A862', '#A8703A', '#5A3A22'],
-  leather: ['#A87B4F', '#6E4A2E', '#3A2618']
+  leather: ['#A87B4F', '#6E4A2E', '#3A2618'],
+  // The oil-paint demo's cloak. Saturated blue on purpose; the shade is blue, not black.
+  wanderer_cloak: ['#3D80BD', '#1C4585', '#121C4D']
 };
 
 function locked(id: keyof typeof LOCKED_PALETTES, metal = false): Palette {
@@ -44,6 +46,8 @@ export const PALETTES: readonly Palette[] = [
   locked('goblin_hide'),
   locked('bronze', true),
   locked('leather'),
+  // The demo's cloak, not a fallback: a saturated blue, shade still blue and never black.
+  locked('wanderer_cloak'),
   placeholder('alkharid_sand', '#E8D5A3', '#C4A46A', '#7A6238'),
   placeholder('varrock_stone', '#C5C8CE', '#8E949E', '#4A5563'),
   placeholder('volcanic', '#6E625C', '#4A3E3A', '#2C3834'),

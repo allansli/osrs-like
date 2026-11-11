@@ -4,9 +4,10 @@
 import * as THREE from 'three';
 import { COMMON } from '../oilpaint/common.js';
 import { dabMaterial, dabGeometry, dabMesh } from '../oilpaint/dabs.js';
-import { loadMan } from './man.js';
+import { loadManMesh } from './man.js';
 import { Cloak } from './cloak.js';
 import { pinDabs } from '../oilpaint/pins.js';
+import { PALETTE_BY_ID, hexToPaint } from '../paint/palettes.ts';
 
 const PAINT_FRAG = /* glsl */ `
 ${COMMON}
@@ -69,7 +70,8 @@ function paint(shared, [L, M, S], { skinned = false, lower = null, split = -10, 
 }
 
 // the palette he is painted with: light, half-tone, shade
-const CLOAK = [[0.24, 0.5, 0.74], [0.11, 0.27, 0.52], [0.07, 0.11, 0.3]];
+const cloakMix = PALETTE_BY_ID.wanderer_cloak;
+const CLOAK = [hexToPaint(cloakMix.light), hexToPaint(cloakMix.half), hexToPaint(cloakMix.shade)];
 const HAT = [[1.0, 0.88, 0.52], [0.8, 0.62, 0.32], [0.45, 0.34, 0.27]];
 const SHIRT = [[0.97, 0.88, 0.68], [0.64, 0.54, 0.45], [0.29, 0.25, 0.32]];
 const TROUSERS = [[0.6, 0.42, 0.27], [0.36, 0.25, 0.2], [0.18, 0.13, 0.18]];
@@ -77,8 +79,8 @@ const SKIN = [[1.0, 0.78, 0.58], [0.76, 0.51, 0.39], [0.4, 0.26, 0.28]];
 const BOOTS = [[0.48, 0.3, 0.18], [0.25, 0.16, 0.13], [0.12, 0.08, 0.12]];
 const HAIR = [[0.42, 0.28, 0.18], [0.2, 0.14, 0.12], [0.09, 0.07, 0.09]];
 
-export async function createFigure(shared, onProgress) {
-  const man = await loadMan({ base: '/figure/', onProgress });
+export async function createFigure(shared, man) {
+  if (!man) man = await loadManMesh();
   for (const mesh of man.meshes) {
     const name = mesh.name + ' ' + (mesh.material?.name ?? '');
     if (/eyebrow|eyelash/.test(name)) { mesh.visible = false; continue; }

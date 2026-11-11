@@ -16,8 +16,18 @@ const ACTOR_BUDGET: Record<PaintClass, number> = {
 export interface PaintActor {
   root: THREE.Object3D;
   paintClass: PaintClass;
+  /** When set, this actor's meshes use this pin count instead of the shared budget. */
+  count?: number;
   /** Meshes under these roots are left to another actor (the sword on Kai's hand). */
   skip?: THREE.Object3D[];
+}
+
+/** How many strokes one still mesh needs so a box does not read as flat colour. */
+export function dabsForMesh(radius: number, paintClass: PaintClass): number {
+  const floor = paintClass === 'tree' ? 48 : paintClass === 'monster' ? 36 : 32;
+  const cap = paintClass === 'tree' ? 140 : paintClass === 'gear' ? 160 : 96;
+  const r = Number.isFinite(radius) && radius > 0 ? radius : 0.4;
+  return Math.round(Math.min(cap, Math.max(floor, r * 36)));
 }
 
 interface Pin {
@@ -100,8 +110,9 @@ function collectJobs(actors: PaintActor[]): MeshJob[] {
         name: mesh.name
       });
       const weight = triangleWeight(mesh);
-      if (weight <= 0 && resolved.density == null) return;
-      jobs.push({ mesh, paintClass: actor.paintClass, actor: actorIndex, weight, density: resolved.density });
+      if (weight <= 0 && resolved.density == null && actor.count == null) return;
+      const density = actor.count ?? resolved.density;
+      jobs.push({ mesh, paintClass: actor.paintClass, actor: actorIndex, weight, density });
     });
   });
   return jobs;

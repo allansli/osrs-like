@@ -87,6 +87,7 @@ export function solidMaterial(shared: object, paletteId: string, skinned = false
     fragmentShader: BODY_FRAG
   });
   mat.userData.oilSolid = true;
+  mat.userData.oilPalette = paletteId;
   cache.set(key, mat);
   return mat;
 }
@@ -105,6 +106,29 @@ export function paletteFromColor(hex: number): string {
   if (b > r && b > g) return 'kai_tunic';
   if (r > g && g >= b) return 'leather';
   return 'timber';
+}
+
+/** A palette we can actually draw. Missing ids and near-black mixes are not. */
+export function paletteIsUsable(id: string): boolean {
+  const palette = PALETTE_BY_ID[id];
+  if (!palette) return false;
+  return [palette.light, palette.half, palette.shade].every((hex) => {
+    const [r, g, b] = hexToPaint(hex);
+    return Math.max(r, g, b) >= 0.04;
+  });
+}
+
+/**
+ * `userData.oilSolid` is not enough. Blender upgrades copy that flag onto a new
+ * mesh and leave the original dark Lambert material in place.
+ */
+export function needsSolidPaint(
+  userData: Record<string, unknown> | null | undefined,
+  material: { userData?: Record<string, unknown> } | null | undefined
+): boolean {
+  const ud = userData ?? {};
+  if (ud.isOutline || ud.noPaint || ud.isCollider || ud.wanderer) return false;
+  return material?.userData?.oilSolid !== true;
 }
 
 export function paletteForMesh(name: string, paintClass: PaintClass, colorHex: number | null): string {
@@ -147,12 +171,13 @@ export function dressSolid(root: THREE.Object3D, shared: object, paintClass: Pai
       return;
     }
     if (blocked(mesh) || mesh.userData?.isCollider) return;
-    if (mesh.userData?.oilSolid) return;
     const material = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material;
+    if (!needsSolidPaint(mesh.userData as Record<string, unknown>, material)) return;
     if (material?.transparent && material.opacity < 0.99) return;
-    if (!mesh.geometry.attributes.normal) mesh.geometry.computeVertexNormals();
+    if (!mesh.geometry.attributes?.normal) mesh.geometry.computeVertexNormals();
     const name = `${mesh.name} ${mesh.parent?.name ?? ''}`;
-    const id = paletteForMesh(name, paintClass, meshColor(mesh));
+    let id = paletteForMesh(name, paintClass, meshColor(mesh));
+    if (!paletteIsUsable(id)) id = 'castle_stone';
     const skinned = (mesh as THREE.SkinnedMesh).isSkinnedMesh === true;
     mesh.material = solidMaterial(shared, id, skinned);
     mesh.userData.oilSolid = true;
