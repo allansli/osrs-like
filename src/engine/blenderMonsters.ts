@@ -5,7 +5,7 @@ import { albedoMaterial, offsetAlbedoPhase, sealAlbedoUvs, speciesAlbedo } from 
 
 let cachedMonstersPromise: Promise<GLTF | null> | null = null;
 
-export function loadBlenderMonstersTemplate(url = '/models/monsters.glb'): Promise<GLTF | null> {
+export function loadBlenderMonstersTemplate(url = '/models/monsters.glb?v=face_align_v2'): Promise<GLTF | null> {
   if (typeof window === 'undefined' || typeof document === 'undefined') {
     return Promise.resolve(null);
   }

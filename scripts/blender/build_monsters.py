@@ -191,10 +191,21 @@ def load_imported_character(blend_rel_path: str, mesh_names: list[str], target_h
         return None
     try:
         with bpy.data.libraries.load(blend_file) as (df, dt):
-            dt.objects = [o for o in mesh_names if o in df.objects]
+            # Also pull in the armature: eyes/teeth are bone-parented to it, so their
+            # world matrices are only correct when the armature is evaluated.
+            wanted = [o for o in mesh_names if o in df.objects]
+            if "Armature" in df.objects and "Armature" not in wanted:
+                wanted.append("Armature")
+            dt.objects = wanted
         for o in dt.objects:
-            bpy.context.collection.objects.link(o)
-        
+            if o.name not in bpy.context.collection.objects:
+                bpy.context.collection.objects.link(o)
+
+        # Force rest pose so bone-parented parts line up with the (armature-free) rest-pose body.
+        for o in dt.objects:
+            if o.type == 'ARMATURE':
+                o.data.pose_position = 'REST'
+
         for o in dt.objects:
             if o.type == 'MESH':
                 for m in list(o.modifiers):
@@ -2429,9 +2440,9 @@ def build_lesser_demon(grid_pos: tuple[float, float, float], mats: dict):
         if "TeethLower" in imported_parts:
             finalize_obj("lesser_demon_teeth_lower", imported_parts["TeethLower"], root, mat=mats["bone"], smooth=True)
         if "Eye.L" in imported_parts:
-            finalize_obj("lesser_demon_eye_l", imported_parts["Eye.L"], root, mat=[mats["glow_yellow"], mats["obsidian"]], smooth=True, no_outline=True)
+            finalize_obj("lesser_demon_eye_l", imported_parts["Eye.L"], root, mat=mats["glow_yellow"], smooth=True, no_outline=True)
         if "Eye.R" in imported_parts:
-            finalize_obj("lesser_demon_eye_r", imported_parts["Eye.R"], root, mat=[mats["glow_yellow"], mats["obsidian"]], smooth=True, no_outline=True)
+            finalize_obj("lesser_demon_eye_r", imported_parts["Eye.R"], root, mat=mats["glow_yellow"], smooth=True, no_outline=True)
     else:
         torso_sections = [
             (0.72, 0.21, 0.16, 0.0, 0.0, 0.24, 0.01, 0.02),
