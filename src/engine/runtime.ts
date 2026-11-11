@@ -2416,8 +2416,8 @@ function rebuildPlayerEquipmentMeshes() {
   if (ring) {
     const ringMesh = buildRingVisual(ring);
     if (player.parts.rightElbowPivot) {
-      ringMesh.position.set(0.19, 0.30, 0.10);
-      ringMesh.scale.set(0.7, 0.7, 0.7);
+      ringMesh.position.set(0.19, -0.32, 0.08);
+      ringMesh.scale.set(1.0, 1.0, 1.0);
       mount(player.parts.rightElbowPivot, ringMesh, 'ringMesh');
     } else {
       ringMesh.position.set(0, 0, 0);
@@ -6185,9 +6185,14 @@ function wireBridge() {
   window.replayOnboarding = replayOnboarding;
   (window as any).__DEV_ACCESS__ = {
     player,
-    camera,
+    get camera() { return camera; },
     camState,
-    scene,
+    get scene() { return scene; },
+    STATE,
+    ITEMS,
+    rebuildPlayerEquipmentMeshes,
+    loadBlenderGearTemplate,
+    monstersList,
     getAnimator: () => player.blenderAnimator,
   };
 }

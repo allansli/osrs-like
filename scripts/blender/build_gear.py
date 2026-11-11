@@ -349,6 +349,8 @@ class GearBuilder:
         ry: float = 0.0,
         rz: float = 0.0,
         cap_ends: bool = True,
+        cap_bottom: bool = True,
+        cap_top: bool = True,
         smooth: bool = True,
         no_outline: bool = False,
     ):
@@ -397,12 +399,16 @@ class GearBuilder:
             bz = b_sec[4] if len(b_sec) > 4 else 0.0
             tx_c = t_sec[3] if len(t_sec) > 3 else 0.0
             tz_c = t_sec[4] if len(t_sec) > 4 else 0.0
-            bot_c = bm.verts.new(self._xform(bx, b_sec[0], bz, tx, ty, tz, rx, ry, rz))
-            top_c = bm.verts.new(self._xform(tx_c, t_sec[0], tz_c, tx, ty, tz, rx, ry, rz))
-            for i in range(vertices):
-                i_n = (i + 1) % vertices
-                bm.faces.new((ring_loops[0][i_n], ring_loops[0][i], bot_c))
-                bm.faces.new((ring_loops[-1][i], ring_loops[-1][i_n], top_c))
+            if cap_bottom:
+                bot_c = bm.verts.new(self._xform(bx, b_sec[0], bz, tx, ty, tz, rx, ry, rz))
+                for i in range(vertices):
+                    i_n = (i + 1) % vertices
+                    bm.faces.new((ring_loops[0][i_n], ring_loops[0][i], bot_c))
+            if cap_top:
+                top_c = bm.verts.new(self._xform(tx_c, t_sec[0], tz_c, tx, ty, tz, rx, ry, rz))
+                for i in range(vertices):
+                    i_n = (i + 1) % vertices
+                    bm.faces.new((ring_loops[-1][i], ring_loops[-1][i_n], top_c))
 
         return self.commit_bm(bm, mat, smooth=smooth, no_outline=no_outline)
 
@@ -438,6 +444,35 @@ class GearBuilder:
             pz = v.co.z * dz
             v.co = Vector(self._xform(px, py, pz, tx, ty, tz, rx, ry, rz))
         return self.commit_bm(bm, mat, smooth=smooth, no_outline=no_outline)
+
+    def add_cylinder(
+        self,
+        radius: float,
+        height: float,
+        mat: bpy.types.Material,
+        tx: float = 0.0,
+        ty: float = 0.0,
+        tz: float = 0.0,
+        rx: float = 0.0,
+        ry: float = 0.0,
+        rz: float = 0.0,
+        vertices: int = 16,
+    ):
+        sections = [
+            (-height * 0.5, radius, radius),
+            (height * 0.5, radius, radius),
+        ]
+        return self.add_lofted(
+            sections,
+            mat,
+            vertices=vertices,
+            tx=tx,
+            ty=ty,
+            tz=tz,
+            rx=rx,
+            ry=ry,
+            rz=rz,
+        )
 
     def add_torus(
         self,
@@ -1818,190 +1853,268 @@ def build_headgear(mats: dict[str, bpy.types.Material]):
     row_z = -0.15
     xs = [0.75 + i * 0.49 for i in range(9)]
 
-    # 18. Gear_helm: Knightly Greathelm
+    # 18. Gear_helm: Medieval Knight Bascinet / Great Helm
     gb = GearBuilder("Gear_helm", showcase_pos=(xs[0], row_y, row_z))
-    # Full cylindrical barrel dome with rounded crown
+    # Vaulted steel skull dome (apex at y=0.20, hollow bottom)
     gb.add_lofted(
         [
-            (-0.16, 0.208, 0.218, 0.0, 0.0, 0.16),
-            (-0.04, 0.216, 0.224, 0.0, -0.002, 0.18),
-            (0.08, 0.218, 0.226, 0.0, -0.002, 0.18),
-            (0.18, 0.175, 0.185, 0.0, 0.002, 0.12),
-            (0.24, 0.075, 0.085, 0.0, 0.004, 0.06),
+            (0.08, 0.155, 0.165, 0.0, -0.060),
+            (0.13, 0.150, 0.160, 0.0, -0.060),
+            (0.17, 0.120, 0.135, 0.0, -0.050),
+            (0.20, 0.050, 0.065, 0.0, -0.040),
         ],
         mats["primary"],
-        vertices=18,
+        vertices=20,
+        cap_bottom=False,
+        cap_top=True,
     )
-    # Heavy brow trim rim
-    gb.add_torus(0.220, 0.016, mats["trim"], ty=0.03, scale_z=1.04)
-    # Cross-ocular visor horizontal eye slit
-    gb.add_beveled_box(
-        0.185, 0.036, 0.034, mats["dark"], ty=-0.012, tz=-0.212, no_outline=True
+    # Central comb ridge along helmet spine
+    gb.add_beveled_box(0.016, 0.035, 0.25, mats["trim"], ty=0.175, tz=-0.04, bevel=0.004)
+    # Steel neck aventail / gorget plates (wrapping neck down to collar)
+    gb.add_arc_shell(
+        [
+            (-0.13, 0.175, 0.185, 0.0, -0.050),
+            (-0.04, 0.162, 0.172, 0.0, -0.060),
+            (0.08,  0.158, 0.168, 0.0, -0.060),
+        ],
+        arc_start=-math.pi * 0.18,
+        arc_end=math.pi * 1.18,
+        thickness=0.020,
+        mat=mats["primary"],
+        steps=18,
     )
-    # Central reinforcing nasal pillar
-    gb.add_beveled_box(0.038, 0.160, 0.032, mats["trim"], ty=-0.025, tz=-0.222)
-    # Perforated breathing vents (left and right)
+    # Knight Visor Prow (pointed snout faceplate projecting prominently in front of face)
+    gb.add_lofted(
+        [
+            (-0.08, 0.115, 0.040, 0.0, -0.230),  # Chin
+            (0.01,  0.140, 0.050, 0.0, -0.255),  # Snout apex
+            (0.08,  0.125, 0.032, 0.0, -0.235),  # Upper brow
+        ],
+        mats["primary"],
+        vertices=16,
+        cap_bottom=True,
+        cap_top=True,
+    )
+    # Brass cross reinforcement: horizontal brow band & vertical nasal rib
+    gb.add_beveled_box(0.220, 0.016, 0.018, mats["trim"], ty=0.055, tz=-0.252, bevel=0.003)
+    gb.add_beveled_box(0.018, 0.130, 0.020, mats["trim"], ty=0.005, tz=-0.258, bevel=0.003)
+    # Dark horizontal eye viewing slits on left and right of cross
     for side in (-1.0, 1.0):
-        for vy, vz in ((-0.08, -0.210), (-0.11, -0.204)):
-            gb.add_beveled_box(0.016, 0.016, 0.020, mats["dark"], tx=side * 0.07, ty=vy, tz=vz, no_outline=True)
-    # Knightly crown comb ridge
-    gb.add_beveled_box(0.028, 0.085, 0.280, mats["trim"], ty=0.22, tz=0.01)
-    # Sweeping heraldic feather plume
-    gb.add_curved_spike(
-        0.052,
-        0.320,
-        0.18,
+        gb.add_beveled_box(0.065, 0.008, 0.015, mats["dark"], tx=side * 0.052, ty=0.045, tz=-0.254, bevel=0.002)
+        # Visor pivot medallions at temples
+        gb.add_cylinder(0.024, 0.015, mats["trim"], tx=side * 0.165, ty=0.055, tz=-0.060, rz=math.pi / 2.0)
+        gb.add_gem(0.014, 0.014, 0.012, mats["glow"], tx=side * 0.172, ty=0.055, tz=-0.060, sides=6)
+        # Breathing holes: 3 brass studs on each cheek
+        gb.add_gem(0.010, 0.010, 0.008, mats["trim"], tx=side * 0.065, ty=-0.025, tz=-0.250, sides=6)
+        gb.add_gem(0.008, 0.008, 0.008, mats["trim"], tx=side * 0.090, ty=-0.038, tz=-0.242, sides=6)
+        gb.add_gem(0.008, 0.008, 0.008, mats["trim"], tx=side * 0.055, ty=-0.050, tz=-0.245, sides=6)
+    # Flowing crimson heraldic crest / plume arching BACKWARDS over the helmet crown
+    gb.add_cylinder(0.022, 0.016, mats["trim"], ty=0.205, tz=-0.030)
+    gb.add_tube_path(
+        [
+            (0.0, 0.205, -0.030, 0.022, 0.022),
+            (0.0, 0.255,  0.030, 0.032, 0.026),
+            (0.0, 0.220,  0.110, 0.028, 0.022),
+            (0.0, 0.135,  0.170, 0.020, 0.015),
+            (0.0, 0.040,  0.190, 0.008, 0.006),
+        ],
         mats["crimson"],
-        ty=0.23,
-        tz=0.03,
-        rx=-0.48,
-        flatten_x=0.42,
+        sides=12,
     )
 
-    # 19. Gear_neitiznot-helm: Neitiznot Winged Faceguard (Nordic T-Bar + Valkyrie Wings)
+    # 19. Gear_neitiznot-helm: Fremennik Valkyrie Crown
     gb = GearBuilder("Gear_neitiznot-helm", showcase_pos=(xs[1], row_y, row_z))
-    # Nordic skullcap dome
+    # Norse steel skull dome
     gb.add_lofted(
         [
-            (-0.02, 0.214, 0.222, 0.0, 0.002, 0.12),
-            (0.06, 0.222, 0.228, 0.0, 0.002, 0.14),
-            (0.14, 0.198, 0.208, 0.0, 0.004, 0.10),
-            (0.22, 0.135, 0.145, 0.0, 0.006, 0.05),
-            (0.26, 0.045, 0.055, 0.0, 0.006, 0.0),
+            (0.07, 0.155, 0.165, 0.0, -0.060),
+            (0.12, 0.150, 0.160, 0.0, -0.060),
+            (0.17, 0.120, 0.135, 0.0, -0.050),
+            (0.195, 0.050, 0.065, 0.0, -0.040),
         ],
         mats["primary"],
-        vertices=18,
+        vertices=20,
+        cap_bottom=False,
+        cap_top=True,
     )
-    # Riveted bronze brow band
-    gb.add_torus(0.220, 0.018, mats["trim"], ty=0.015, scale_z=1.04)
-    # T-shaped faceguard nasal plate and jaw guards
-    gb.add_beveled_box(0.042, 0.20, 0.034, mats["trim"], ty=-0.03, tz=-0.224)
-    gb.add_beveled_box(0.210, 0.032, 0.032, mats["trim"], ty=0.025, tz=-0.218)
-    gb.add_beveled_box(0.180, 0.038, 0.032, mats["dark"], ty=-0.015, tz=-0.208, no_outline=True)
+    # Embossed runic gold brow band
+    gb.add_torus(0.162, 0.014, mats["trim"], ty=0.065, tz=-0.060, scale_z=1.04)
+    # Pointed Norse gold nasal bar guarding the nose
+    gb.add_beveled_box(0.018, 0.090, 0.018, mats["trim"], ty=0.010, tz=-0.235, bevel=0.003)
+    # Gold midline comb ridge
+    gb.add_beveled_box(0.016, 0.028, 0.25, mats["trim"], ty=0.175, tz=-0.04, bevel=0.004)
+    # Golden runic forehead talisman
+    gb.add_gem(0.032, 0.032, 0.018, mats["glow"], ty=0.075, tz=-0.232, sides=8)
+    # Steel cheek guards
+    gb.add_arc_shell(
+        [
+            (-0.06, 0.155, 0.165, 0.0, -0.060),
+            (0.06,  0.158, 0.168, 0.0, -0.060),
+        ],
+        arc_start=-math.pi * 0.24,
+        arc_end=math.pi * 1.24,
+        thickness=0.018,
+        mat=mats["primary"],
+        steps=16,
+    )
+    # Magnificent Valkyrie Temple Wings (sweeping BACKWARDS over the shoulders, rx = -1.25)
     for side in (-1.0, 1.0):
-        # Swept cheek flukes
-        gb.add_beveled_box(0.035, 0.14, 0.030, mats["trim"], tx=side * 0.105, ty=-0.07, tz=-0.202)
-        # Triple layered Valkyrie swept wing feathers
-        for feather_i, (fy, fz, flen, fbend) in enumerate(
-            ((0.02, -0.02, 0.32, 0.06), (0.07, 0.02, 0.26, 0.05), (0.12, 0.05, 0.20, 0.04))
-        ):
+        # Sculpted wing boss medallion at temple
+        gb.add_cylinder(0.028, 0.014, mats["trim"], tx=side * 0.165, ty=0.075, tz=-0.060, rz=math.pi / 2.0)
+        gb.add_gem(0.018, 0.018, 0.018, mats["glow"], tx=side * 0.172, ty=0.075, tz=-0.060, sides=6)
+        # 3 layered feather wing blades swept back at ~70 degrees
+        wing_feathers = [
+            (0.18, 0.045, -0.01, -0.03, -1.35, -side * 0.22),  # Lower feather
+            (0.24, 0.055,  0.01, -0.04, -1.22, -side * 0.18),  # Main center feather
+            (0.20, 0.048,  0.03, -0.05, -1.10, -side * 0.14),  # Upper feather
+        ]
+        for flen, fwidth, fy, fz, frx, frz in wing_feathers:
             gb.add_curved_spike(
-                0.038 - feather_i * 0.005,
+                fwidth * 0.5,
                 flen,
-                0.12,
+                0.04,
                 mats["white"],
-                bend_x=side * fbend,
-                tx=side * 0.210,
-                ty=fy,
-                tz=fz,
-                rx=-0.42,
-                rz=-side * 0.32,
-                flatten_x=0.30,
+                bend_x=side * 0.03,
+                tx=side * 0.165,
+                ty=0.075 + fy,
+                tz=-0.060 + fz,
+                rx=frx,
+                rz=frz,
+                flatten_x=0.18,
+            )
+            # Gold feather quill rib along center of each feather
+            gb.add_curved_spike(
+                0.008,
+                flen * 0.95,
+                0.03,
+                mats["trim"],
+                bend_x=side * 0.03,
+                tx=side * 0.170,
+                ty=0.075 + fy,
+                tz=-0.060 + fz,
+                rx=frx,
+                rz=frz,
+                flatten_x=0.20,
             )
 
-    # 20. Gear_horned-helm: Dharok / Torva Dreadnought Ram-Horn Helm
+    # 20. Gear_horned-helm: Warlord Horned Spangenhelm
     gb = GearBuilder("Gear_horned-helm", showcase_pos=(xs[2], row_y, row_z))
-    # Angular dreadnought steel helm dome
+    # Segmented heavy skull dome
     gb.add_lofted(
         [
-            (-0.08, 0.215, 0.222, 0.0, 0.004, 0.25),
-            (0.04, 0.224, 0.230, 0.0, 0.002, 0.28),
-            (0.14, 0.202, 0.212, 0.0, 0.004, 0.22),
-            (0.21, 0.145, 0.155, 0.0, 0.006, 0.14),
-            (0.25, 0.055, 0.065, 0.0, 0.008, 0.08),
+            (0.07, 0.158, 0.168, 0.0, -0.060),
+            (0.12, 0.152, 0.162, 0.0, -0.060),
+            (0.17, 0.120, 0.135, 0.0, -0.050),
+            (0.195, 0.050, 0.065, 0.0, -0.040),
         ],
         mats["primary"],
-        vertices=14,
+        vertices=16,
+        cap_bottom=False,
+        cap_top=True,
     )
-    # Narrow menacing eye slit
-    gb.add_beveled_box(
-        0.185, 0.032, 0.035, mats["dark"], ty=-0.015, tz=-0.215, no_outline=True
-    )
-    # Lower jagged jaw guard and chin reinforcement
-    gb.add_beveled_box(0.225, 0.062, 0.060, mats["trim"], ty=-0.09, tz=-0.205)
-    # Massive dreadnought curled ram horns with spiked ridges
-    for side in (-1.0, 1.0):
-        # Base horn mount boss
-        gb.add_gem(0.045, 0.045, 0.030, mats["dark"], tx=side * 0.17, ty=0.10, tz=-0.02, sides=6)
-        # Main curling ram horn (curving back, then curling down)
-        gb.add_curved_spike(
-            0.052,
-            0.32,
-            -0.16,
-            mats["trim"],
-            bend_x=side * 0.16,
-            tx=side * 0.170,
-            ty=0.11,
-            tz=-0.01,
-            rz=-side * 0.78,
-        )
-        # Forward cheek tusk
-        gb.add_curved_spike(
-            0.026,
-            0.12,
-            -0.05,
-            mats["trim"],
-            tx=side * 0.09,
-            ty=-0.09,
-            tz=-0.215,
-            rx=-0.92,
-        )
-
-    # 21. Gear_armadyl-helm: Armadyl Falcon/Eagle Avian Helm
-    gb = GearBuilder("Gear_armadyl-helm", showcase_pos=(xs[3], row_y, row_z))
-    # Aerodynamic avian dome
-    gb.add_lofted(
+    # Heavy cross-riveted iron bands
+    gb.add_beveled_box(0.024, 0.016, 0.33, mats["trim"], ty=0.13, tz=-0.05, bevel=0.003)
+    gb.add_beveled_box(0.32, 0.016, 0.024, mats["trim"], ty=0.13, tz=-0.05, bevel=0.003)
+    gb.add_torus(0.165, 0.015, mats["trim"], ty=0.065, tz=-0.060, scale_z=1.04)
+    # Heavy brow nasal guard & warlord dark gem
+    gb.add_beveled_box(0.024, 0.085, 0.018, mats["primary"], ty=0.010, tz=-0.235, bevel=0.003)
+    gb.add_gem(0.032, 0.032, 0.020, mats["dark"], ty=0.075, tz=-0.232, sides=6)
+    # Cheek plates
+    gb.add_arc_shell(
         [
-            (-0.06, 0.208, 0.216, 0.0, 0.008, 0.12),
-            (0.04, 0.218, 0.224, 0.0, 0.004, 0.14),
-            (0.12, 0.198, 0.206, 0.0, 0.002, 0.10),
-            (0.18, 0.148, 0.158, 0.0, -0.002, 0.06),
-            (0.22, 0.062, 0.072, 0.0, -0.004, 0.0),
+            (-0.06, 0.155, 0.165, 0.0, -0.060),
+            (0.06,  0.158, 0.168, 0.0, -0.060),
         ],
-        mats["primary"],
-        vertices=18,
+        arc_start=-math.pi * 0.24,
+        arc_end=math.pi * 1.24,
+        thickness=0.020,
+        mat=mats["primary"],
+        steps=16,
     )
-    # Hooked eagle beak nasal guard arching downward over nose
-    gb.add_curved_spike(
-        0.065,
-        0.24,
-        0.09,
-        mats["trim"],
-        ty=-0.02,
-        tz=-0.185,
-        rx=-math.pi / 2.05,
-        sides=6,
-        flatten_x=0.72,
-        smooth=False,
-    )
-    # Slanted glowing sapphire eagle eyes
+    # Massive curved dreadnought ram horns arching outward, forward, and up
     for side in (-1.0, 1.0):
-        gb.add_gem(
-            0.032, 0.015, 0.018, mats["glow"], tx=side * 0.072, ty=0.015, tz=-0.216, rz=-side * 0.25
-        )
-        # Aerodynamic swept temple wings
+        gb.add_cylinder(0.035, 0.018, mats["trim"], tx=side * 0.160, ty=0.095, tz=-0.040, rx=0.20, rz=-side * 0.45)
         gb.add_curved_spike(
-            0.042,
-            0.28,
-            0.14,
+            0.036,
+            0.280,
+            -0.12,
             mats["trim"],
             bend_x=side * 0.10,
-            tx=side * 0.195,
-            ty=0.06,
-            tz=-0.01,
-            rx=-0.48,
-            rz=-side * 0.38,
-            flatten_x=0.32,
+            tx=side * 0.165,
+            ty=0.095,
+            tz=-0.040,
+            rx=0.30,
+            rz=-side * 0.55,
+            flatten_x=0.75,
         )
-    # Tri-feather crown crest
-    for cy, c_len, c_rz in ((0.21, 0.18, 0.0), (0.23, 0.14, 0.18), (0.23, 0.14, -0.18)):
+
+    # 21. Gear_armadyl-helm: Armadyl Aviianse Crest
+    gb = GearBuilder("Gear_armadyl-helm", showcase_pos=(xs[3], row_y, row_z))
+    # Aerodynamic celestial skullcap
+    gb.add_lofted(
+        [
+            (0.07, 0.155, 0.165, 0.0, -0.060),
+            (0.12, 0.150, 0.160, 0.0, -0.060),
+            (0.17, 0.120, 0.135, 0.0, -0.050),
+            (0.195, 0.050, 0.065, 0.0, -0.040),
+        ],
+        mats["primary"],
+        vertices=20,
+        cap_bottom=False,
+        cap_top=True,
+    )
+    # Sculpted eagle-beak brow visor dipping over the nose
+    gb.add_curved_spike(
+        0.035,
+        0.110,
+        -0.05,
+        mats["trim"],
+        tx=0.0,
+        ty=0.075,
+        tz=-0.205,
+        rx=1.45,
+        flatten_x=0.55,
+    )
+    # Divine Armadyl sky jewel on forehead crest
+    gb.add_gem(0.035, 0.035, 0.020, mats["glow"], ty=0.085, tz=-0.232, sides=8)
+    gb.add_torus(0.162, 0.012, mats["trim"], ty=0.065, tz=-0.060, scale_z=1.04)
+    # Sweeping temple winglets (swept BACKWARDS, rx = -1.20)
+    for side in (-1.0, 1.0):
         gb.add_curved_spike(
-            0.024, c_len, 0.06, mats["trim"], ty=cy, tz=0.02, rx=-0.35, rz=c_rz, flatten_x=0.35
+            0.025,
+            0.200,
+            0.06,
+            mats["trim"],
+            bend_x=side * 0.04,
+            tx=side * 0.160,
+            ty=0.080,
+            tz=-0.060,
+            rx=-1.20,
+            rz=-side * 0.28,
+            flatten_x=0.25,
+        )
+    # Dorsal Aviianse feather comb (crest of 4 white plumage feathers flowing BACKWARDS, rx = -1.30)
+    dorsal_feathers = [
+        (0.14, 0.180, -0.060),
+        (0.18, 0.170,  0.000),
+        (0.16, 0.150,  0.060),
+        (0.12, 0.120,  0.110),
+    ]
+    for c_len, c_y, c_z in dorsal_feathers:
+        gb.add_curved_spike(
+            0.020,
+            c_len,
+            0.05,
+            mats["white"],
+            tx=0.0,
+            ty=c_y,
+            tz=c_z,
+            rx=-1.30,
+            flatten_x=0.22,
         )
 
     # 22. Gear_wizard-hat: Pointed Wizard Hat (Broad Undulating Brim + Bent Cone Peak)
     gb = GearBuilder("Gear_wizard-hat", showcase_pos=(xs[4], row_y, row_z))
-    # Flared broad sloping circular brim
     gb.add_lofted(
         [
             (0.040, 0.295, 0.275, 0.0, 0.00),
@@ -2011,14 +2124,10 @@ def build_headgear(mats: dict[str, bpy.types.Material]):
         mats["primary"],
         vertices=24,
     )
-    # Golden brim wire trim
     gb.add_torus(0.285, 0.011, mats["trim"], ty=0.050, scale_z=0.92)
-    # Buckled leather hatband
     gb.add_torus(0.134, 0.020, mats["leather"], ty=0.096, tz=-0.01)
     gb.add_beveled_box(0.055, 0.048, 0.024, mats["trim"], ty=0.098, tz=-0.145)
-    # Glowing crescent moon / star talisman on the band
     gb.add_gem(0.035, 0.035, 0.022, mats["glow"], ty=0.100, tz=-0.155, sides=5)
-    # Crooked bending conical crown (characterful MMORPG curve)
     gb.add_curved_spike(
         0.135, 0.46, 0.18, mats["primary"], bend_x=0.04, ty=0.08, tz=-0.01, rx=0.12, rz=-0.08, sides=18
     )
@@ -2041,125 +2150,223 @@ def build_headgear(mats: dict[str, bpy.types.Material]):
     gb.add_torus(0.170, 0.015, mats["trim"], ty=0.26, tz=0.04, rx=math.pi / 4.0, ry=0.3)
     gb.add_gem(0.045, 0.045, 0.045, mats["glow"], ty=0.50, tz=0.20, sides=8)
 
-    # 23. Gear_robin-hat: Robin Hood Ranger Cap (Turned-Up Side Brim + Long Pheasant Feather)
+    # 23. Gear_robin-hat: Robin Hood Ranger Bycocket
     gb = GearBuilder("Gear_robin-hat", showcase_pos=(xs[5], row_y, row_z))
-    # Asymmetric ranger felt cap
+    # Contoured felt hunting cap crown
     gb.add_lofted(
         [
-            (0.035, 0.215, 0.235, 0.0, 0.01, 0.18),
-            (0.105, 0.200, 0.245, -0.018, -0.015, 0.22),
-            (0.175, 0.118, 0.185, -0.035, -0.035, 0.16),
-            (0.215, 0.035, 0.070, -0.045, -0.055, 0.10),
-        ],
-        mats["primary"],
-        vertices=18,
-    )
-    # Upturned side brim band
-    gb.add_torus(0.210, 0.016, mats["trim"], ty=0.052, rz=-0.22, scale_z=1.08)
-    # Gold brooch clasp pinning the feather
-    gb.add_gem(0.032, 0.032, 0.022, mats["glow"], tx=0.145, ty=0.085, tz=-0.02, sides=6)
-    # Long swept pheasant feather
-    gb.add_curved_spike(
-        0.032,
-        0.34,
-        0.15,
-        mats["crimson"],
-        bend_x=0.09,
-        tx=0.15,
-        ty=0.09,
-        tz=-0.02,
-        rx=-0.38,
-        rz=-0.48,
-        flatten_x=0.32,
-    )
-
-    # 24. Gear_hood: Ahrim / Cultist Hood (Deep Shadowed Void + Piercing Spirit Eyes)
-    gb = GearBuilder("Gear_hood", showcase_pos=(xs[6], row_y, row_z))
-    # Flared cowl hood draping down to shoulders
-    gb.add_lofted(
-        [
-            (-0.16, 0.235, 0.240, 0.0, 0.02, 0.18),
-            (-0.02, 0.245, 0.250, 0.0, 0.01, 0.18),
-            (0.12, 0.225, 0.240, 0.0, 0.02, 0.16),
-            (0.22, 0.150, 0.185, 0.0, 0.05, 0.12),
-            (0.29, 0.048, 0.080, 0.0, 0.10, 0.10),
+            (0.06, 0.155, 0.165, 0.0, -0.060),
+            (0.10, 0.145, 0.155, 0.0, -0.045),
+            (0.15, 0.115, 0.130, 0.0, -0.025),
+            (0.18, 0.045, 0.065, 0.0,  0.005),
         ],
         mats["primary"],
         vertices=20,
+        cap_bottom=False,
+        cap_top=True,
     )
-    # Deep shadow face void cavity
-    gb.add_beveled_box(
-        0.185, 0.175, 0.050, mats["dark"], ty=-0.01, tz=-0.200, no_outline=True
-    )
-    # Two eerie glowing spirit eye embers inside the cowl
-    for side in (-1.0, 1.0):
-        gb.add_gem(
-            0.018, 0.012, 0.012, mats["glow"], tx=side * 0.055, ty=0.015, tz=-0.185, no_outline=True
-        )
-    # Embroidered runic cowl hem framing face
-    gb.add_torus(0.224, 0.016, mats["trim"], ty=-0.06, tz=-0.01, rx=0.22)
-    gb.add_torus(
-        0.142, 0.015, mats["trim"], arc=math.pi, ty=0.02, tz=-0.190, rx=math.pi / 2.2
-    )
-
-    # 25. Gear_sheikah-mask: Stealth Ninja Cowl + Lower Face Wrap + Forehead Plate
-    gb = GearBuilder("Gear_sheikah-mask", showcase_pos=(xs[7], row_y, row_z))
-    # Tight ninja shinobi cowl
+    # Front angled hunter visor peak tapering forward over brow
     gb.add_lofted(
         [
-            (-0.12, 0.218, 0.224, 0.0, 0.01, 0.12),
-            (0.02, 0.228, 0.234, 0.0, 0.01, 0.12),
-            (0.14, 0.208, 0.218, 0.0, 0.02, 0.12),
-            (0.22, 0.118, 0.138, 0.0, 0.04, 0.10),
+            (0.060, 0.120, 0.035, 0.0, -0.210),
+            (0.065, 0.080, 0.030, 0.0, -0.235),
+            (0.070, 0.025, 0.018, 0.0, -0.255),
         ],
         mats["primary"],
-        vertices=18,
+        vertices=12,
+        cap_bottom=True,
+        cap_top=True,
     )
-    # Lower face cloth mask covering mouth and jaw
-    gb.add_beveled_box(
-        0.218, 0.115, 0.068, mats["dark"], ty=-0.065, tz=-0.190, no_outline=True
+    # Back & sides brim turned sharply UP along the crown
+    gb.add_arc_shell(
+        [
+            (0.060, 0.158, 0.168, 0.0, -0.050),
+            (0.105, 0.165, 0.175, 0.0, -0.045),
+        ],
+        arc_start=math.pi * 0.12,
+        arc_end=math.pi * 0.88,
+        thickness=0.012,
+        mat=mats["primary"],
+        steps=16,
     )
-    # Steel hitai-ate forehead protector plate
-    gb.add_beveled_box(0.165, 0.044, 0.026, mats["trim"], ty=0.078, tz=-0.218)
-    # Centered Sheikah eye talisman on the forehead plate
-    gb.add_gem(0.028, 0.028, 0.018, mats["glow"], ty=0.078, tz=-0.230)
-    # Glowing ninja eyes in narrow visor slit
-    for side in (-1.0, 1.0):
-        gb.add_gem(
-            0.030,
-            0.012,
-            0.014,
-            mats["glow"],
-            tx=side * 0.065,
-            ty=0.020,
-            tz=-0.216,
-            no_outline=True,
+    # Leather hatband & gold buckle
+    gb.add_torus(0.158, 0.012, mats["leather"], ty=0.075, tz=-0.050, scale_z=1.04)
+    gb.add_beveled_box(0.028, 0.026, 0.014, mats["trim"], tx=-0.155, ty=0.080, tz=-0.050, ry=-0.35)
+    # Long, sweeping pheasant feather tucked into buckle, sweeping BACK along temple
+    gb.add_tube_path(
+        [
+            (-0.155, 0.080, -0.050, 0.006, 0.006),
+            (-0.165, 0.110,  0.030, 0.014, 0.004),
+            (-0.150, 0.140,  0.110, 0.018, 0.003),
+            (-0.130, 0.160,  0.180, 0.012, 0.002),
+            (-0.100, 0.170,  0.240, 0.004, 0.001),
+        ],
+        mats["crimson"],
+        sides=8,
+    )
+    gb.add_tube_path(
+        [
+            (-0.155, 0.080, -0.050, 0.002, 0.002),
+            (-0.165, 0.110,  0.030, 0.003, 0.002),
+            (-0.150, 0.140,  0.110, 0.003, 0.002),
+            (-0.130, 0.160,  0.180, 0.002, 0.001),
+        ],
+        mats["trim"],
+        sides=6,
+    )
+
+    # 24. Gear_hood: Delicate Draped Fabric Cowl / Assassin Hood
+    # Seamless, rich fantasy traveler cowl with forward overhanging brow peak, gold trim, brooch, and liripipe
+    gb = GearBuilder("Gear_hood", showcase_pos=(xs[6], row_y, row_z))
+    # Outer hood canopy (covers cranium, forehead down to brow, and back of head)
+    gb.add_lofted(
+        [
+            (0.07, 0.175, 0.195, 0.0, -0.050),  # Brow & temples (front reaches z=-0.245)
+            (0.12, 0.175, 0.190, 0.0, -0.040),  # Cranium
+            (0.17, 0.150, 0.165, 0.0, -0.020),  # Upper vault
+            (0.215, 0.085, 0.105, 0.0,  0.010), # Soft rounded cloth apex
+        ],
+        mats["primary"],
+        vertices=20,
+        cap_bottom=False,
+        cap_top=True,
+    )
+    # Cowl mantle wrapping back, sides, and shoulders (framing face opening, leaving front open)
+    gb.add_arc_shell(
+        [
+            (-0.14, 0.195, 0.205, 0.0, -0.035),  # Flaring softly on collar/shoulders
+            (-0.04, 0.180, 0.190, 0.0, -0.045),  # Base of neck
+            (0.04,  0.175, 0.185, 0.0, -0.050),  # Jaw line
+            (0.08,  0.175, 0.185, 0.0, -0.050),  # Cheek / temple transition
+        ],
+        arc_start=-math.pi * 0.16,
+        arc_end=math.pi * 1.16,
+        thickness=0.018,
+        mat=mats["primary"],
+        steps=18,
+    )
+    # Forward cowl overhang (fabric peak projecting forward over forehead like an assassin cowl)
+    gb.add_lofted(
+        [
+            (0.070, 0.150, 0.038, 0.0, -0.225),
+            (0.085, 0.110, 0.032, 0.0, -0.250),
+            (0.095, 0.035, 0.020, 0.0, -0.268),  # Overhanging brow visor peak
+        ],
+        mats["primary"],
+        vertices=14,
+        cap_bottom=True,
+        cap_top=True,
+    )
+    # Delicate embroidered gold wire trim framing face opening with assassin brow peak
+    gb.add_tube_path(
+        [
+            (-0.150, 0.010, -0.150, 0.006, 0.006),
+            (-0.130, 0.065, -0.210, 0.007, 0.007),
+            ( 0.000, 0.090, -0.272, 0.008, 0.008),  # Delicate assassin peak dipping at brow
+            ( 0.130, 0.065, -0.210, 0.007, 0.007),
+            ( 0.150, 0.010, -0.150, 0.006, 0.006),
+        ],
+        mats["trim"],
+        sides=10,
+    )
+    # Golden neck brooch pinning the cowl mantle at throat
+    gb.add_gem(0.024, 0.024, 0.014, mats["glow"], ty=-0.050, tz=-0.190, sides=8)
+    gb.add_torus(0.020, 0.004, mats["trim"], ty=-0.050, tz=-0.190)
+    # Soft fabric liripipe tail trailing gently behind down the nape
+    gb.add_tube_path(
+        [
+            (0.000, 0.210,  0.010, 0.045, 0.040),  # Crown apex
+            (0.000, 0.160,  0.090, 0.035, 0.030),  # Nape curve
+            (0.010, 0.090,  0.160, 0.025, 0.022),  # Upper back
+            (0.015, 0.000,  0.200, 0.015, 0.015),  # Tapered tail end
+        ],
+        mats["primary"],
+        sides=10,
+    )
+    gb.add_torus(0.018, 0.004, mats["trim"], tx=0.015, ty=0.000, tz=0.200)
+
+    # 25. Gear_sheikah-mask: Shinobi Cowl & Forehead Guard
+    gb = GearBuilder("Gear_sheikah-mask", showcase_pos=(xs[7], row_y, row_z))
+    # Snug ninja cowl wrapping scalp and neck
+    gb.add_arc_shell(
+        [
+            (-0.12, 0.165, 0.175, 0.0, -0.050),
+            (-0.04, 0.160, 0.170, 0.0, -0.060),
+            (0.04,  0.158, 0.168, 0.0, -0.060),
+            (0.12,  0.155, 0.165, 0.0, -0.060),
+        ],
+        arc_start=-math.pi * 0.22,
+        arc_end=math.pi * 1.22,
+        thickness=0.016,
+        mat=mats["dark"],
+        steps=16,
+    )
+    # Top cranium dome
+    gb.add_lofted(
+        [
+            (0.12, 0.155, 0.165, 0.0, -0.060),
+            (0.16, 0.120, 0.135, 0.0, -0.050),
+            (0.185, 0.055, 0.065, 0.0, -0.040),
+        ],
+        mats["dark"],
+        vertices=16,
+        cap_bottom=False,
+        cap_top=True,
+    )
+    # Lower face cloth mask covering jaw and mouth (y = -0.08 to -0.005, leaving eyes unclipped!)
+    gb.add_lofted(
+        [
+            (-0.08, 0.115, 0.035, 0.0, -0.215),  # Chin
+            (-0.03, 0.125, 0.040, 0.0, -0.230),  # Mouth
+            (-0.005, 0.110, 0.028, 0.0, -0.225), # Under nose (stops cleanly below eyes!)
+        ],
+        mats["dark"],
+        vertices=14,
+        cap_bottom=True,
+        cap_top=True,
+    )
+    # Hitai-Ate (steel forehead protector plate at y=0.070 to 0.100, above eyes)
+    gb.add_beveled_box(0.145, 0.028, 0.014, mats["trim"], ty=0.082, tz=-0.230, bevel=0.003)
+    # Glowing crimson Sheikah eye talisman on the hitai-ate
+    gb.add_gem(0.020, 0.020, 0.014, mats["glow"], ty=0.082, tz=-0.238, sides=6)
+    for l_x in (-0.016, 0.0, 0.016):
+        gb.add_cylinder(0.003, 0.008, mats["glow"], tx=l_x, ty=0.093, tz=-0.238)
+    gb.add_cylinder(0.004, 0.008, mats["glow"], tx=0.0, ty=0.071, tz=-0.238)
+    # Trailing headband ribbon ties at back
+    for r_side in (-1.0, 1.0):
+        gb.add_tube_path(
+            [
+                (r_side * 0.04, 0.080,  0.100, 0.008, 0.004),
+                (r_side * 0.06, 0.040,  0.160, 0.007, 0.003),
+                (r_side * 0.08, -0.010, 0.210, 0.005, 0.002),
+            ],
+            mats["dark"],
+            sides=6,
         )
 
     # 26. Gear_circlet: Royal Gemmed Circlet (5 Filigree Spires + Forehead Diamond)
     gb = GearBuilder("Gear_circlet", showcase_pos=(xs[8], row_y, row_z))
-    # Delicate woven golden brow ring
-    gb.add_torus(0.204, 0.016, mats["trim"], ty=0.055, scale_z=0.96)
-    # 5 crowned spires (center spire tallest, cascading to sides)
-    for ang_deg, h_spire in ((-44, 0.080), (-22, 0.110), (0, 0.145), (22, 0.110), (44, 0.080)):
+    # Delicate woven golden brow ring fitted snugly to forehead
+    gb.add_torus(0.165, 0.012, mats["trim"], ty=0.085, tz=-0.060, scale_z=1.04)
+    # 5 crowned spires
+    for ang_deg, h_spire in ((-35, 0.045), (-18, 0.065), (0, 0.085), (18, 0.065), (35, 0.045)):
         rad = math.radians(ang_deg)
-        sx = math.sin(rad) * 0.204
-        sz = -math.cos(rad) * 0.198
+        sx = math.sin(rad) * 0.165
+        sz = -0.060 - math.cos(rad) * 0.168
         gb.add_curved_spike(
-            0.020,
+            0.012,
             h_spire,
             0.0,
             mats["trim"],
             tx=sx,
-            ty=0.055,
+            ty=0.085,
             tz=sz,
             sides=6,
             smooth=False,
         )
-        # Small teardrop jewel on spire tip
-        gb.add_gem(0.016, 0.020, 0.016, mats["glow"], tx=sx, ty=0.055 + h_spire * 0.85, tz=sz)
+        gb.add_gem(0.012, 0.014, 0.012, mats["glow"], tx=sx, ty=0.085 + h_spire * 0.85, tz=sz)
     # Radiant center teardrop diamond on forehead
-    gb.add_gem(0.055, 0.072, 0.038, mats["glow"], ty=0.100, tz=-0.216, sides=4)
+    gb.add_gem(0.035, 0.045, 0.024, mats["glow"], ty=0.105, tz=-0.228, sides=4)
 
 
 # =============================================================================
@@ -2798,26 +3005,28 @@ def build_boots_gloves_capes_jewelry(mats: dict[str, bpy.types.Material]):
             gb.add_torus(0.072, 0.011, mats["trim"], ty=gy)
         gb.add_beveled_box(0.082, 0.065, 0.045, mats["trim"], ty=-0.67, tz=-0.035)
 
-    # 46. Gear_amulet
+    # 46. Gear_amulet (Refined gold filigree necklace with glowing gem pendant)
     gb = GearBuilder("Gear_amulet", showcase_pos=(3.3, boot_y - 0.95, boot_z))
-    gb.add_torus(0.105, 0.014, mats["trim"], ty=0.38, tz=-0.04, rx=0.52, scale_z=1.25)
-    gb.add_gem(0.048, 0.072, 0.036, mats["glow"], ty=0.25, tz=-0.20)
+    gb.add_torus(0.105, 0.012, mats["trim"], ty=0.36, tz=-0.04, rx=0.52, scale_z=1.25)
+    gb.add_cylinder(0.042, 0.014, mats["trim"], ty=0.24, tz=-0.18, rx=0.18)
+    gb.add_gem(0.034, 0.042, 0.020, mats["glow"], ty=0.24, tz=-0.19, sides=8)
     for side in (-1.0, 1.0):
         gb.add_curved_spike(
-            0.022,
-            0.09,
-            -0.02,
+            0.016,
+            0.075,
+            -0.018,
             mats["trim"],
-            tx=side * 0.045,
-            ty=0.26,
-            tz=-0.19,
-            rz=side * 0.55,
+            tx=side * 0.038,
+            ty=0.25,
+            tz=-0.185,
+            rz=side * 0.60,
         )
 
-    # 47. Gear_ring
+    # 47. Gear_ring (Refined human signet ring centered at origin)
     gb = GearBuilder("Gear_ring", showcase_pos=(4.3, boot_y - 0.10, boot_z))
-    gb.add_torus(0.042, 0.010, mats["trim"], ty=-0.63, tz=-0.02, ry=math.pi / 2.0)
-    gb.add_gem(0.028, 0.032, 0.028, mats["glow"], ty=-0.60, tz=-0.055)
+    gb.add_torus(0.022, 0.005, mats["trim"], ry=math.pi / 2.0)
+    gb.add_cylinder(0.014, 0.006, mats["trim"], ty=0.018)
+    gb.add_gem(0.012, 0.014, 0.012, mats["glow"], ty=0.022, sides=8)
 
 
 # =============================================================================
