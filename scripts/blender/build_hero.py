@@ -7,7 +7,11 @@ and `blender/hero.blend` with full textures, PBR materials, and 10 NLA animation
 import bpy
 import bmesh
 import os
+import sys
 import math
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from oil_paint_props import stamp_scene
 from mathutils import Vector, Euler, Matrix
 
 def t2b_pos(tx: float, ty: float, tz: float):
@@ -651,6 +655,7 @@ def main():
     # 11. Save blend and export GLB
     bpy.ops.wm.save_as_mainfile(filepath=blend_path)
 
+    stamp_scene()
     bpy.ops.export_scene.gltf(
         filepath=glb_path,
         export_format="GLB",

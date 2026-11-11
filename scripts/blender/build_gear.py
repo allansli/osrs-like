@@ -27,6 +27,9 @@ import os
 import sys
 import bpy
 import bmesh
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from oil_paint_props import stamp_scene
 from mathutils import Vector, Euler, Matrix
 
 
@@ -3138,6 +3141,7 @@ def main():
     blend_path = os.path.join(blend_dir, "gear.blend")
     glb_path = os.path.join(models_dir, "gear.glb")
 
+    stamp_scene()
     bpy.ops.export_scene.gltf(
         filepath=glb_path,
         export_format="GLB",

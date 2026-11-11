@@ -18,6 +18,9 @@ import os
 import sys
 import bpy
 import bmesh
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from oil_paint_props import stamp_scene
 from mathutils import Vector, Euler, Matrix
 
 
@@ -2952,6 +2955,7 @@ def main():
     glb_path = os.path.join(models_dir, "monsters.glb")
 
     # Export clean glTF binary before adding studio camera/lights/floor
+    stamp_scene()
     bpy.ops.export_scene.gltf(
         filepath=glb_path,
         export_format="GLB",

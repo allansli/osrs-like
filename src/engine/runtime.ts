@@ -36,6 +36,8 @@ import { moveWithCollision, isWalkable, isDeepWater } from '../state/collision';
 import { discoverShrines } from '../state/shrines';
 import { applyGold200k, applySkillsPlus10, matchCheat } from '../state/cheats';
 import { addCartoonOutline, facetMaterial, grassMaterial, PALETTE } from './materials';
+import { readPaintFlags } from '../paint/contract';
+import { attachOilPaint, createOilRenderer, webgl2Available } from '../paint/session';
 import {
   albedoForItem,
   albedoMaterial,
@@ -1067,6 +1069,14 @@ function resetGameSave() {
 // 7. 2026 SMOOTH 3D ENGINE, GLSL SKY & WATER SHADERS, PROCEDURAL TEXTURES
 // ============================================================================
 let scene, camera, renderer, sunLight, ambientLight, hemiLight;
+const paintFlags = readPaintFlags(typeof location !== 'undefined' ? location.search : '');
+let oilSession = null;
+let overlayScene = null;
+let oilActorsDirty = false;
+
+function markOilActorsDirty() {
+  oilActorsDirty = true;
+}
 let terrainMesh, waterMesh, skyDomeMesh, grassInstanced;
 let waterUniforms, skyUniforms;
 const worldInteractiveObjects = [];
@@ -1181,18 +1191,22 @@ function applyQualityTier(tier: QualityTier): void {
   currentQuality = tier;
   const dpr = getQualityDpr(tier);
   if (renderer && typeof window !== 'undefined') {
+    if (oilSession) {
+      oilSession.setPixelRatio(paintFlags.low ? 1 : dpr);
+    } else {
     renderer.setPixelRatio(dpr);
     renderer.setSize(window.innerWidth, window.innerHeight);
     if (tier === 'performance') {
       renderer.shadowMap.enabled = false;
     } else {
       renderer.shadowMap.enabled = true;
-      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      renderer.shadowMap.type = THREE.PCFShadowMap;
       if (sunLight) {
         sunLight.castShadow = true;
         const res = tier === 'ultra' ? 2048 : (tier === 'high' ? 2048 : 1024);
         sunLight.shadow.mapSize.set(res, res);
       }
+    }
     }
   }
   const dprEl = document.getElementById('perf-dpr');
@@ -1279,25 +1293,34 @@ function init3DEngine() {
 
   camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.5, 360);
 
-  renderer = new THREE.WebGLRenderer({
-    antialias: true,
-    powerPreference: 'high-performance',
-    precision: 'highp',
-    stencil: false,
-    depth: true
-  });
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setPixelRatio(getQualityDpr(currentQuality));
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-  renderer.outputColorSpace = THREE.SRGBColorSpace;
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.05;
-  renderer.domElement.id = 'game-canvas';
-  container.appendChild(renderer.domElement);
-
-  initGpuTelemetry(renderer.getContext());
-  applyQualityTier('balanced');
+  const useOil = !paintFlags.legacy && webgl2Available();
+  if (!paintFlags.legacy && !useOil) {
+    console.warn('[oil-paint] This browser has no WebGL2, so the legacy renderer is on.');
+  }
+  if (useOil) {
+    renderer = createOilRenderer();
+    container.appendChild(renderer.domElement);
+    initGpuTelemetry(renderer.getContext());
+  } else {
+    renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      powerPreference: 'high-performance',
+      precision: 'highp',
+      stencil: false,
+      depth: true
+    });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(getQualityDpr(currentQuality));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFShadowMap;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.05;
+    renderer.domElement.id = 'game-canvas';
+    container.appendChild(renderer.domElement);
+    initGpuTelemetry(renderer.getContext());
+    applyQualityTier('balanced');
+  }
 
   hemiLight = new THREE.HemisphereLight(0xa5b8c9, 0x333d32, 0.52);
   scene.add(hemiLight);
@@ -1330,6 +1353,31 @@ function init3DEngine() {
 
   window.addEventListener('resize', onWindowResize);
   setupInputHandlers();
+
+  if (useOil) {
+    overlayScene = new THREE.Scene();
+    const lift = (obj) => {
+      if (!obj) return;
+      scene.remove(obj);
+      overlayScene.add(obj);
+      obj.traverse((child) => {
+        if (child.material) {
+          child.material.depthTest = false;
+          child.material.depthWrite = false;
+        }
+      });
+    };
+    lift(clickMarkerMesh);
+    lift(hoverTile);
+    oilSession = attachOilPaint(renderer, scene, getTerrainHeight, paintFlags.low, terrainMesh ? [terrainMesh] : []);
+    oilSession.setPixelRatio(paintFlags.low ? 1 : getQualityDpr(currentQuality));
+    markOilActorsDirty();
+    const modeEl = document.getElementById('perf-renderer');
+    if (modeEl) modeEl.textContent = paintFlags.low ? 'oil · low' : 'oil';
+  } else {
+    const modeEl = document.getElementById('perf-renderer');
+    if (modeEl) modeEl.textContent = 'legacy';
+  }
 }
 
 // Custom GLSL Atmospheric Sky Dome with Volumetric Clouds & Sun Disc
@@ -2179,6 +2227,7 @@ function buildPlayerCharacter() {
       player.blenderAnimator = animator;
       rebuildPlayerEquipmentMeshes();
     }
+    markOilActorsDirty();
   });
   loadBlenderGearTemplate().then((gearGltf) => {
     if (!gearGltf) return;
@@ -2513,6 +2562,7 @@ function rebuildPlayerEquipmentMeshes() {
     addCartoonOutline(player.meshGroup, LEAN_RIG.outline);
     sealAlbedoUvs(player.meshGroup);
   }
+  markOilActorsDirty();
 }
 
 // Bespoke OSRS × Zelda monster silhouettes. Each species owns its anatomy.
@@ -3422,6 +3472,8 @@ function spawnMonster(typeKey, x, z) {
   loadBlenderMonstersTemplate().then((gltf) => {
     if (!gltf) return;
     upgradeMonsterRigWithGltf(mObj, gltf);
+    const paintedGoblin = monstersList.find((m) => m.typeKey === 'goblin');
+    if (mObj === paintedGoblin) markOilActorsDirty();
   });
 }
 
@@ -5960,7 +6012,18 @@ function gameLoop(now) {
   if (grassInstanced && grassInstanced.material && grassInstanced.material.uniforms) {
     grassInstanced.material.uniforms.uTime.value = elapsedSec;
   }
-  renderer.render(scene, camera);
+  if (oilSession && oilActorsDirty) {
+    oilActorsDirty = false;
+    const actors = [];
+    const sword = player.parts && player.parts.wepMesh;
+    if (player.meshGroup) actors.push({ root: player.meshGroup, paintClass: 'hero', skip: sword ? [sword] : [] });
+    const gob = monstersList.find((m) => m.typeKey === 'goblin' && m.rig && m.rig.group);
+    if (gob) actors.push({ root: gob.rig.group, paintClass: 'monster' });
+    if (sword) actors.push({ root: sword, paintClass: 'gear' });
+    oilSession.bindActors(actors);
+  }
+  if (oilSession) oilSession.render(scene, camera, player.pos, overlayScene, dt);
+  else renderer.render(scene, camera);
 
   frameCounter++;
   if (now - lastFpsTime >= 500) {
@@ -5974,7 +6037,16 @@ function gameLoop(now) {
     if (fpsEl) fpsEl.textContent = `${telemetryInfo.fps} FPS (${telemetryInfo.frameTimeMs}ms)`;
     const callsEl = document.getElementById('perf-calls');
     if (callsEl && renderer) {
-      callsEl.textContent = `${renderer.info.render.calls} calls • ${Math.round(renderer.info.render.triangles / 1000)}k tris`;
+      const paintMs = oilSession ? ` • paint ${oilSession.lastFrameMs.toFixed(1)}ms` : '';
+      const calls = oilSession ? oilSession.drawCalls : renderer.info.render.calls;
+      const tris = oilSession ? oilSession.triangles : renderer.info.render.triangles;
+      callsEl.textContent = `${calls} calls • ${Math.round(tris / 1000)}k tris${paintMs}`;
+    }
+    if (oilSession && frameCounter === 0) {
+      oilSession._reports = (oilSession._reports || 0) + 1;
+      if (oilSession._reports === 4) {
+        console.info(`[oil-paint] ${telemetryInfo.frameTimeMs} ms/frame (painter ${oilSession.lastFrameMs.toFixed(1)} ms) on ${telemetryInfo.gpuName}; quality=${paintFlags.low ? 'low' : 'high'}`);
+      }
     }
   }
 }
@@ -6006,8 +6078,12 @@ function applyLoadedStateToHud() {
 function onWindowResize() {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setPixelRatio(getQualityDpr(currentQuality));
+  if (oilSession) {
+    oilSession.setPixelRatio(paintFlags.low ? 1 : getQualityDpr(currentQuality));
+  } else {
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(getQualityDpr(currentQuality));
+  }
 }
 
 
@@ -6248,6 +6324,6 @@ window.addEventListener('DOMContentLoaded', () => {
   }
   const startReg = WORLD_REGIONS.find(r => r.id === STATE.currentRegion) || WORLD_REGIONS[0];
   triggerRegionBanner(startReg);
-  (window as unknown as { __DEBUG?: unknown }).__DEBUG = { STATE, player, camState, rebuildPlayerEquipmentMeshes, ITEMS };
+  (window as unknown as { __DEBUG?: unknown }).__DEBUG = { STATE, player, camState, rebuildPlayerEquipmentMeshes, ITEMS, oilSession };
   requestAnimationFrame(gameLoop);
 });
