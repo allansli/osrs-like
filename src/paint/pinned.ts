@@ -271,8 +271,8 @@ export function pinPaint(shared: object, actors: PaintActor[]): PinnedPaint | nu
           d.glaze = 1.0;
         }
       }`,
-    minPx: [2.5, 4],
-    maxPx: [200, 400],
+    minPx: [16, 30],
+    maxPx: [90, 160],
     cells: [0, 6]
   } as never), 5);
 

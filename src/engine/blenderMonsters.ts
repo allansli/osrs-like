@@ -69,6 +69,20 @@ function extractEmissiveHex(mat: THREE.Material | undefined): number | null {
   return null;
 }
 
+/** World size of the sculpt, in metres. The file is already near life size except the dragon. */
+const SCULPT_MAX: Record<string, number> = {
+  chicken: 0.85,
+  goblin: 1.65,
+  goblin_archer: 1.65,
+  scorpion: 2.2,
+  dark_wizard: 1.95,
+  dark_ranger: 1.95,
+  hill_giant: 3.6,
+  moss_guardian: 3.8,
+  lesser_demon: 3.8,
+  elvarg_dragon: 9
+};
+
 function findPivot(root: THREE.Object3D, prefix: string, suffix: string): THREE.Object3D | null {
   let found: THREE.Object3D | null = null;
   const targetA = `${prefix}_${suffix}`.toLowerCase();
@@ -158,10 +172,21 @@ export function upgradeMonsterRigWithGltf(mObj: MonsterEntityLike, gltf: GLTF): 
   rig.group.clear();
   keepChildren.forEach((ch) => rig.group.add(ch));
 
+  const holder = new THREE.Group();
+  holder.name = 'sculpt';
   const children = [...cloned.children];
-  for (const ch of children) {
-    rig.group.add(ch);
+  for (const ch of children) holder.add(ch);
+  holder.updateMatrixWorld(true);
+  const bounds = new THREE.Box3().setFromObject(holder);
+  const size = bounds.getSize(new THREE.Vector3());
+  const maxDim = Math.max(size.x, size.y, size.z);
+  const target = SCULPT_MAX[typeKey] ?? 1.9;
+  const groupScale = rig.group.scale.x || 1;
+  if (maxDim > 1e-3 && Number.isFinite(maxDim)) {
+    const fitted = target / (maxDim * groupScale);
+    holder.scale.setScalar(Math.min(3, Math.max(0.3, fitted)));
   }
+  rig.group.add(holder);
 
   rig.headGroup = findPivot(rig.group, typeKey, 'HeadGroup');
   rig.leftArmPivot = findPivot(rig.group, typeKey, 'LeftArmPivot');

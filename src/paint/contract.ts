@@ -128,7 +128,7 @@ export function inferStroke(paintClass: PaintClass, part?: string | null, name?:
   if (/wall|hedge|fence|merlon|tower|pillar|keep|battlement/.test(blob)) return 'up';
   if (/leaf|canopy|foliage|crown|frond|tier/.test(blob)) return 'surface_flow';
   if (paintClass === 'tree') return 'up';
-  if (paintClass === 'prop') return 'flat';
+  if (paintClass === 'prop') return 'up';
   if (paintClass === 'monster' || paintClass === 'boss') return 'surface_flow';
   return 'along_bone';
 }

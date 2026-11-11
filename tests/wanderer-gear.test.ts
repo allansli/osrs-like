@@ -3,6 +3,7 @@ import { MONSTER_TYPES } from '../src/data/world';
 import { PALETTE_BY_ID } from '../src/paint/palettes';
 import { paletteIsUsable } from '../src/paint/body';
 import { paintFlagsForMesh, speciesPaint, SPECIES_PAINT } from '../src/paint/species';
+import { SCIMITAR_CURVE } from '../src/paint/oilGear';
 import {
   GEAR_DAB_SIZE,
   boneForSlot,
@@ -59,6 +60,9 @@ describe('wanderer slot bones', () => {
     expect(strokeForGear({ slot: 'weapon' })).toBe('along_bone');
     expect(strokeForGear({ slot: 'cape' })).toBe('surface_flow');
     expect(GEAR_DAB_SIZE).toEqual([0.03, 0.07]);
+    const grip = SCIMITAR_CURVE[0];
+    const tip = SCIMITAR_CURVE[SCIMITAR_CURVE.length - 1];
+    expect(tip[1]).toBeLessThan(grip[1]);
     expect(gearJitter('bronze')).toBe(0.25);
     expect(gearJitter('cloth')).toBe(0.5);
     for (const id of ['bronze', 'iron', 'steel', 'mithril', 'adamant', 'rune', 'black_metal', 'dragon_metal']) {

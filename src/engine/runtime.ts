@@ -40,15 +40,7 @@ import { readPaintFlags } from '../paint/contract';
 import { dressSolid, solidMaterial } from '../paint/body';
 import { dabsForMesh } from '../paint/pinned';
 import { paintFlagsForMesh } from '../paint/species';
-import {
-  GEAR_DAB_SIZE,
-  boneForSlot,
-  fitScale,
-  gearJitter,
-  paletteForGear,
-  poseForSlot,
-  strokeForGear
-} from '../paint/wandererGear';
+import { createOilGear } from '../paint/oilGear';
 import { attachOilPaint, createOilRenderer, webgl2Available } from '../paint/session';
 import { createFigure } from '../figure/figure.js';
 import { loadManMesh, loadManClips } from '../figure/man.js';
@@ -1113,109 +1105,59 @@ function hideKaiBody() {
   });
 }
 
-function stampGearTree(node, item) {
-  if (!node) return;
-  const palette = paletteForGear(item || { tier: 'bronze', slot: 'weapon' });
-  const stroke = strokeForGear(item || { slot: 'weapon' });
-  node.traverse((obj) => {
-    if (!obj.isMesh) return;
-    obj.visible = true;
-    obj.frustumCulled = false;
-    obj.userData.gear = true;
-    obj.userData.noPaint = false;
-    obj.userData.paint_palette = palette;
-    obj.userData.stroke_dir = stroke;
-    obj.userData.dab_size = GEAR_DAB_SIZE;
-    obj.userData.jitter = gearJitter(palette);
-    obj.userData.paintClass = 'gear';
+let oilGearRoot = null;
+
+function clearOilGear() {
+  if (!oilGearRoot) return;
+  const held = oilGearRoot.userData.held || [];
+  for (const mesh of held) {
+    mesh.removeFromParent();
+    if (mesh.geometry) mesh.geometry.dispose();
+  }
+  oilGearRoot.traverse((obj) => {
+    if (obj.geometry) obj.geometry.dispose();
   });
-}
-
-function seatOnWanderer(key, slot, side) {
-  const bones = player.wanderer && player.wanderer.man && player.wanderer.man.bones;
-  const node = player.parts && player.parts[key];
-  if (!bones || !node || node.userData.seated) return;
-  const bone = bones[boneForSlot(slot, side)];
-  if (!bone) {
-    console.error('[oil-paint] No wanderer bone for', slot, side, boneForSlot(slot, side));
-    return;
-  }
-  if (node.parent) node.parent.remove(node);
-  node.position.set(0, 0, 0);
-  node.rotation.set(0, 0, 0);
-  node.scale.set(1, 1, 1);
-  node.updateMatrixWorld(true);
-  const pose = poseForSlot(slot, node.userData.silhouette || '');
-  let mounted = node;
-  if (pose.recenter) {
-    const box = new THREE.Box3().setFromObject(node);
-    const size = box.getSize(new THREE.Vector3());
-    const center = box.getCenter(new THREE.Vector3());
-    node.position.set(-center.x, -center.y, -center.z);
-    if (slot === 'body' || slot === 'legs' || slot === 'legsSide') node.scale.setScalar(0.82);
-    const wrap = new THREE.Group();
-    wrap.name = `gear-${slot}-${side || 'c'}`;
-    wrap.userData.gear = true;
-    wrap.userData.gearSlot = slot;
-    wrap.add(node);
-    wrap.scale.setScalar(fitScale(Math.max(size.x, size.y, size.z), slot) * pose.scale);
-    mounted = wrap;
-    player.parts[key] = wrap;
-  }
-  mounted.position.set(pose.position[0], pose.position[1], pose.position[2]);
-  mounted.rotation.set(pose.rotation[0], pose.rotation[1], pose.rotation[2]);
-  if (!pose.recenter) mounted.scale.setScalar(pose.scale);
-  mounted.userData.seated = true;
-  mounted.userData.gearSlot = slot;
-  node.userData.seated = true;
-  bone.add(mounted);
-  const itemId = node.userData.gearId;
-  const item = itemId && ITEMS[itemId] ? ITEMS[itemId] : { tier: 'bronze', slot: slot === 'bodyArm' ? 'body' : slot === 'legsSide' ? 'legs' : slot };
-  addFittedShell(mounted, slot, paletteForGear(item));
-  stampGearTree(mounted, item);
-}
-
-function addFittedShell(wrap, slot, paletteId) {
-  let geo = null;
-  if (slot === 'body') geo = new THREE.CylinderGeometry(0.22, 0.19, 0.5, 12);
-  else if (slot === 'legsSide') geo = new THREE.CylinderGeometry(0.1, 0.08, 0.46, 8);
-  else if (slot === 'feet') geo = new THREE.BoxGeometry(0.13, 0.22, 0.1);
-  else if (slot === 'hands') geo = new THREE.BoxGeometry(0.1, 0.14, 0.08);
-  if (!geo) return;
-  const mesh = new THREE.Mesh(geo);
-  mesh.name = `fitted-${slot}`;
-  mesh.frustumCulled = false;
-  const s = wrap.scale.x || 1;
-  mesh.scale.setScalar(s > 0.001 ? 1 / s : 1);
-  if (slot === 'head') mesh.position.y = 0.02;
-  wrap.add(mesh);
-  mesh.userData.gear = true;
-  mesh.userData.paint_palette = paletteId;
-  mesh.userData.stroke_dir = 'along_bone';
-  mesh.userData.dab_size = GEAR_DAB_SIZE;
-  mesh.userData.jitter = gearJitter(paletteId);
-  mesh.userData.paintClass = 'gear';
+  oilGearRoot.removeFromParent();
+  oilGearRoot = null;
 }
 
 function fitWandererGear() {
   const wanderer = player.wanderer;
-  if (!wanderer || !wanderer.man || !wanderer.man.bones || !player.parts) return;
-  seatOnWanderer('helmMesh', 'head', 'r');
-  seatOnWanderer('capeMesh', 'cape', 'r');
-  seatOnWanderer('amuletMesh', 'neck', 'r');
-  seatOnWanderer('bodyArmorMesh', 'body', 'r');
-  seatOnWanderer('bodyArmL', 'bodyArm', 'l');
-  seatOnWanderer('bodyArmR', 'bodyArm', 'r');
-  seatOnWanderer('legsArmorMesh', 'legs', 'r');
-  seatOnWanderer('legsArmorL', 'legsSide', 'l');
-  seatOnWanderer('legsArmorR', 'legsSide', 'r');
-  seatOnWanderer('handsMeshL', 'hands', 'l');
-  seatOnWanderer('handsMeshR', 'hands', 'r');
-  seatOnWanderer('feetMeshL', 'feet', 'l');
-  seatOnWanderer('feetMeshR', 'feet', 'r');
-  seatOnWanderer('wepMesh', 'weapon', 'r');
-  seatOnWanderer('shieldMesh', 'shield', 'l');
-  seatOnWanderer('ringMesh', 'ring', 'r');
+  if (!wanderer || !wanderer.man || !wanderer.man.bones || !oilSession) return;
+  clearOilGear();
+  const body = wanderer.man.meshes.find((mesh) => /generic/.test(mesh.name)) || wanderer.man.meshes[0];
+  if (!body || !body.isSkinnedMesh) return;
+  const equip = (slot) => {
+    const id = STATE.equipment[slot];
+    return id && ITEMS[id] ? ITEMS[id] : null;
+  };
+  const built = createOilGear(body, {
+    head: equip('head'),
+    cape: equip('cape'),
+    neck: equip('neck'),
+    body: equip('body'),
+    legs: equip('legs'),
+    hands: equip('hands'),
+    feet: equip('feet'),
+    weapon: equip('weapon'),
+    shield: equip('shield')
+  }, oilSession.shared);
+  body.parent.add(built.root);
+  built.root.position.copy(body.position);
+  built.root.quaternion.copy(body.quaternion);
+  built.root.scale.copy(body.scale);
+  const heldMeshes = [];
+  for (const piece of built.held) {
+    const bone = wanderer.man.bones[piece.bone];
+    if (!bone) {
+      console.error('[oil-paint] No bone for held gear', piece.bone);
+      continue;
+    }
+    bone.add(piece.mesh);
+    heldMeshes.push(piece.mesh);
+  }
+  built.root.userData.held = heldMeshes;
+  oilGearRoot = built.root;
   const headItem = STATE.equipment.head;
   const capeItem = STATE.equipment.cape;
   const feetItem = STATE.equipment.feet;
@@ -1427,7 +1369,6 @@ function oilActorList() {
     const geometry = obj.geometry;
     if (geometry && !geometry.boundingSphere) geometry.computeBoundingSphere();
     const radius = geometry?.boundingSphere?.radius || 0.4;
-    if (!monster && !gear && radius > 40) return;
     const paintClass = obj.userData?.paintClass || paintClassForMesh(obj);
     seen.add(obj);
     actors.push({ root: obj, paintClass, count: dabsForMesh(radius, paintClass) });
@@ -3877,7 +3818,8 @@ function spawnMonster(typeKey, x, z) {
 
   const uData = { type: 'monster', entity: mObj, interactRadius: def.style === 'melee' ? 2.8 : 3.4 };
   rig.group.userData = uData;
-  rig.hitbox.userData = uData;
+  rig.hitbox.userData = { ...uData, isCollider: true, noPaint: true };
+  rig.hitbox.visible = false;
   worldInteractiveObjects.push(rig.hitbox);
   scene.add(rig.group);
   monstersList.push(mObj);
@@ -6748,6 +6690,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ITEMS,
     oilSession,
     monsters: monstersList,
+    camera,
     setGear(next) {
       const slots = ['head', 'cape', 'neck', 'weapon', 'body', 'shield', 'legs', 'hands', 'feet', 'ring'];
       for (const slot of slots) STATE.equipment[slot] = null;
