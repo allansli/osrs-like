@@ -39,6 +39,16 @@ import { addCartoonOutline, facetMaterial, grassMaterial, PALETTE } from './mate
 import { readPaintFlags } from '../paint/contract';
 import { dressSolid, solidMaterial } from '../paint/body';
 import { dabsForMesh } from '../paint/pinned';
+import { paintFlagsForMesh } from '../paint/species';
+import {
+  GEAR_DAB_SIZE,
+  boneForSlot,
+  fitScale,
+  gearJitter,
+  paletteForGear,
+  poseForSlot,
+  strokeForGear
+} from '../paint/wandererGear';
 import { attachOilPaint, createOilRenderer, webgl2Available } from '../paint/session';
 import { createFigure } from '../figure/figure.js';
 import { loadManMesh, loadManClips } from '../figure/man.js';
@@ -1103,22 +1113,139 @@ function hideKaiBody() {
   });
 }
 
-function mountWandererWeapon() {
-  const wanderer = player.wanderer;
-  const sword = player.parts && player.parts.wepMesh;
-  const hand = wanderer && wanderer.man.bones.hand_r;
-  if (!hand || !sword) return;
-  hand.attach(sword);
-  sword.position.set(0.0, 0.1, 0.04);
-  sword.rotation.set(-1.15, 0.15, 1.35);
-  sword.scale.setScalar(0.72);
-  sword.traverse((obj) => {
+function stampGearTree(node, item) {
+  if (!node) return;
+  const palette = paletteForGear(item || { tier: 'bronze', slot: 'weapon' });
+  const stroke = strokeForGear(item || { slot: 'weapon' });
+  node.traverse((obj) => {
     if (!obj.isMesh) return;
     obj.visible = true;
+    obj.frustumCulled = false;
+    obj.userData.gear = true;
     obj.userData.noPaint = false;
-    obj.userData.oilSolid = false;
-    obj.userData.paint_palette = 'bronze';
-    obj.userData.stroke_dir = 'along_bone';
+    obj.userData.paint_palette = palette;
+    obj.userData.stroke_dir = stroke;
+    obj.userData.dab_size = GEAR_DAB_SIZE;
+    obj.userData.jitter = gearJitter(palette);
+    obj.userData.paintClass = 'gear';
+  });
+}
+
+function seatOnWanderer(key, slot, side) {
+  const bones = player.wanderer && player.wanderer.man && player.wanderer.man.bones;
+  const node = player.parts && player.parts[key];
+  if (!bones || !node || node.userData.seated) return;
+  const bone = bones[boneForSlot(slot, side)];
+  if (!bone) {
+    console.error('[oil-paint] No wanderer bone for', slot, side, boneForSlot(slot, side));
+    return;
+  }
+  if (node.parent) node.parent.remove(node);
+  node.position.set(0, 0, 0);
+  node.rotation.set(0, 0, 0);
+  node.scale.set(1, 1, 1);
+  node.updateMatrixWorld(true);
+  const pose = poseForSlot(slot, node.userData.silhouette || '');
+  let mounted = node;
+  if (pose.recenter) {
+    const box = new THREE.Box3().setFromObject(node);
+    const size = box.getSize(new THREE.Vector3());
+    const center = box.getCenter(new THREE.Vector3());
+    node.position.set(-center.x, -center.y, -center.z);
+    if (slot === 'body' || slot === 'legs' || slot === 'legsSide') node.scale.setScalar(0.82);
+    const wrap = new THREE.Group();
+    wrap.name = `gear-${slot}-${side || 'c'}`;
+    wrap.userData.gear = true;
+    wrap.userData.gearSlot = slot;
+    wrap.add(node);
+    wrap.scale.setScalar(fitScale(Math.max(size.x, size.y, size.z), slot) * pose.scale);
+    mounted = wrap;
+    player.parts[key] = wrap;
+  }
+  mounted.position.set(pose.position[0], pose.position[1], pose.position[2]);
+  mounted.rotation.set(pose.rotation[0], pose.rotation[1], pose.rotation[2]);
+  if (!pose.recenter) mounted.scale.setScalar(pose.scale);
+  mounted.userData.seated = true;
+  mounted.userData.gearSlot = slot;
+  node.userData.seated = true;
+  bone.add(mounted);
+  const itemId = node.userData.gearId;
+  const item = itemId && ITEMS[itemId] ? ITEMS[itemId] : { tier: 'bronze', slot: slot === 'bodyArm' ? 'body' : slot === 'legsSide' ? 'legs' : slot };
+  addFittedShell(mounted, slot, paletteForGear(item));
+  stampGearTree(mounted, item);
+}
+
+function addFittedShell(wrap, slot, paletteId) {
+  let geo = null;
+  if (slot === 'body') geo = new THREE.CylinderGeometry(0.22, 0.19, 0.5, 12);
+  else if (slot === 'legsSide') geo = new THREE.CylinderGeometry(0.1, 0.08, 0.46, 8);
+  else if (slot === 'feet') geo = new THREE.BoxGeometry(0.13, 0.22, 0.1);
+  else if (slot === 'hands') geo = new THREE.BoxGeometry(0.1, 0.14, 0.08);
+  if (!geo) return;
+  const mesh = new THREE.Mesh(geo);
+  mesh.name = `fitted-${slot}`;
+  mesh.frustumCulled = false;
+  const s = wrap.scale.x || 1;
+  mesh.scale.setScalar(s > 0.001 ? 1 / s : 1);
+  if (slot === 'head') mesh.position.y = 0.02;
+  wrap.add(mesh);
+  mesh.userData.gear = true;
+  mesh.userData.paint_palette = paletteId;
+  mesh.userData.stroke_dir = 'along_bone';
+  mesh.userData.dab_size = GEAR_DAB_SIZE;
+  mesh.userData.jitter = gearJitter(paletteId);
+  mesh.userData.paintClass = 'gear';
+}
+
+function fitWandererGear() {
+  const wanderer = player.wanderer;
+  if (!wanderer || !wanderer.man || !wanderer.man.bones || !player.parts) return;
+  seatOnWanderer('helmMesh', 'head', 'r');
+  seatOnWanderer('capeMesh', 'cape', 'r');
+  seatOnWanderer('amuletMesh', 'neck', 'r');
+  seatOnWanderer('bodyArmorMesh', 'body', 'r');
+  seatOnWanderer('bodyArmL', 'bodyArm', 'l');
+  seatOnWanderer('bodyArmR', 'bodyArm', 'r');
+  seatOnWanderer('legsArmorMesh', 'legs', 'r');
+  seatOnWanderer('legsArmorL', 'legsSide', 'l');
+  seatOnWanderer('legsArmorR', 'legsSide', 'r');
+  seatOnWanderer('handsMeshL', 'hands', 'l');
+  seatOnWanderer('handsMeshR', 'hands', 'r');
+  seatOnWanderer('feetMeshL', 'feet', 'l');
+  seatOnWanderer('feetMeshR', 'feet', 'r');
+  seatOnWanderer('wepMesh', 'weapon', 'r');
+  seatOnWanderer('shieldMesh', 'shield', 'l');
+  seatOnWanderer('ringMesh', 'ring', 'r');
+  const headItem = STATE.equipment.head;
+  const capeItem = STATE.equipment.cape;
+  const feetItem = STATE.equipment.feet;
+  const paintWear = (obj) => {
+    if (obj.userData && obj.userData.defaultHat) obj.visible = !headItem;
+    const name = (obj.name || '').toLowerCase();
+    if (feetItem && /shoes/.test(name)) obj.visible = false;
+    if (!feetItem && /shoes/.test(name) && obj.isMesh) obj.visible = true;
+    if (obj.userData && obj.userData.oilCloak) obj.visible = !capeItem;
+  };
+  wanderer.man.object.traverse(paintWear);
+  if (wanderer.cloakMesh) wanderer.cloakMesh.visible = !capeItem;
+  if (wanderer.dabs) wanderer.dabs.traverse(paintWear);
+}
+
+function stampMonster(rig, typeKey) {
+  if (!rig || !rig.group) return;
+  rig.group.traverse((obj) => {
+    if (!obj.isMesh || obj.userData?.isCollider) return;
+    const flags = paintFlagsForMesh(typeKey, `${obj.name} ${obj.parent?.name ?? ''}`);
+    if (flags.noPaint) {
+      obj.userData.noPaint = true;
+      return;
+    }
+    obj.userData.noPaint = false;
+    obj.userData.paint_palette = flags.palette;
+    obj.userData.stroke_dir = flags.stroke;
+    obj.userData.dab_size = flags.size;
+    obj.userData.paintClass = flags.paintClass;
+    obj.userData.species = typeKey;
   });
 }
 
@@ -1169,7 +1296,7 @@ function installWanderer(fig) {
   fig.man.object.updateMatrixWorld(true);
   player.wanderer = fig;
   hideKaiBody();
-  mountWandererWeapon();
+  fitWandererGear();
   markOilActorsDirty();
 }
 
@@ -1270,23 +1397,38 @@ function paintClassForMesh(mesh) {
   return 'prop';
 }
 
+function ancestorType(obj) {
+  let node = obj;
+  while (node) {
+    if (node.userData && node.userData.type) return node.userData.type;
+    node = node.parent;
+  }
+  return '';
+}
+
 function oilActorList() {
   const actors = [];
   const seen = new Set();
   scene.traverse((obj) => {
     if (!obj.isMesh || !obj.visible || seen.has(obj)) return;
-    if (obj.userData?.isOutline || obj.userData?.noPaint || obj.userData?.wanderer || obj.userData?.isCollider) return;
-    let parent = obj.parent;
-    while (parent) {
-      if (parent.userData?.noPaint || parent.userData?.wanderer) return;
-      parent = parent.parent;
+    if (obj.userData?.isOutline || obj.userData?.noPaint || obj.userData?.isCollider) return;
+    const gear = obj.userData?.gear === true;
+    if (!gear && obj.userData?.wanderer) return;
+    if (!gear) {
+      let parent = obj.parent;
+      while (parent) {
+        if (parent.userData?.noPaint || parent.userData?.wanderer) return;
+        parent = parent.parent;
+      }
     }
-    if (!inStartArea(obj)) return;
+    const kind = ancestorType(obj);
+    const monster = kind === 'monster';
+    if (!gear && !monster && !inStartArea(obj)) return;
     const geometry = obj.geometry;
     if (geometry && !geometry.boundingSphere) geometry.computeBoundingSphere();
     const radius = geometry?.boundingSphere?.radius || 0.4;
-    if (radius > 40) return;
-    const paintClass = paintClassForMesh(obj);
+    if (!monster && !gear && radius > 40) return;
+    const paintClass = obj.userData?.paintClass || paintClassForMesh(obj);
     seen.add(obj);
     actors.push({ root: obj, paintClass, count: dabsForMesh(radius, paintClass) });
   });
@@ -2415,6 +2557,7 @@ function createCastleGuard(x: number, z: number, name: string, rotY = 0) {
     });
     grp.add(cloned);
     addCartoonOutline(cloned, 0.024);
+    markOilActorsDirty();
   });
 }
 
@@ -2442,6 +2585,7 @@ function spawnWorldProp(assetName: string, x: number, z: number, rotY = 0, scale
     grp.add(cloned);
     sealAlbedoUvs(grp);
     addCartoonOutline(grp, 0.028);
+    markOilActorsDirty();
   });
 }
 
@@ -2824,7 +2968,7 @@ function rebuildPlayerEquipmentMeshes() {
   }
   if (oilSession) {
     hideKaiBody();
-    mountWandererWeapon();
+    fitWandererGear();
   }
   markOilActorsDirty();
 }
@@ -2880,6 +3024,7 @@ function paint(color, extra = {}, family = null) {
 
 function addQuiver(parent, x, y, z, leatherHex, fletchHex) {
   const quiver = new THREE.Group();
+  quiver.name = 'quiver';
   quiver.position.set(x, y, z);
   quiver.rotation.x = -0.55;
   monsterPart(quiver, new THREE.CylinderGeometry(0.09, 0.12, 0.46, 10), paint(leatherHex, {}, 'leather'));
@@ -2900,6 +3045,7 @@ function addQuiver(parent, x, y, z, leatherHex, fletchHex) {
 
 function addStrungBow(pivot, length, color, bend) {
   const bow = new THREE.Group();
+  bow.name = 'bow';
   bow.position.set(0.04, -0.42, -0.18);
   const half = length * 0.5;
   const curve = new THREE.CatmullRomCurve3([
@@ -3046,6 +3192,7 @@ function buildGoblinMesh(def, role) {
       spike.rotation.z = tilt;
     });
     const spear = new THREE.Group();
+    spear.name = 'spear';
     spear.position.set(0.02, -0.5, -0.12);
     spear.rotation.x = -1.05;
     monsterPart(spear, new THREE.CylinderGeometry(0.028, 0.034, 1.05, 8), wood, 0, 0.28, 0);
@@ -3054,6 +3201,7 @@ function buildGoblinMesh(def, role) {
     monsterPart(spear, new THREE.ConeGeometry(0.05, 0.18, 4), bronze, 0.07, 0.78, 0).rotation.z = -0.6;
     rightArmPivot.add(spear);
     const buckler = monsterPart(leftArmPivot, new THREE.CylinderGeometry(0.2, 0.2, 0.06, 14), wood, -0.06, -0.5, -0.16);
+    buckler.name = 'buckler';
     buckler.rotation.x = Math.PI / 2.2;
     monsterPart(buckler, new THREE.SphereGeometry(0.06, 10, 8), bronze, 0, 0.05, 0);
   }
@@ -3733,9 +3881,11 @@ function spawnMonster(typeKey, x, z) {
   worldInteractiveObjects.push(rig.hitbox);
   scene.add(rig.group);
   monstersList.push(mObj);
+  stampMonster(rig, typeKey);
   loadBlenderMonstersTemplate().then((gltf) => {
     if (!gltf) return;
     upgradeMonsterRigWithGltf(mObj, gltf);
+    stampMonster(mObj.rig, typeKey);
     markOilActorsDirty();
     const paintedGoblin = monstersList.find((m) => m.typeKey === 'goblin');
     if (mObj === paintedGoblin) markOilActorsDirty();
@@ -5858,11 +6008,15 @@ function gameLoop(now) {
   }
 
   // Smooth Acceleration & Deceleration Momentum
-  const targetSpeed = hasMoveIntent ? moveSpeed : 0;
-  const accelRate = hasMoveIntent ? 16 : 12;
-  player.currentSpeed = (player.currentSpeed ?? 0) + (targetSpeed - (player.currentSpeed ?? 0)) * Math.min(1, dt * accelRate);
-  if (!hasMoveIntent && Math.abs(player.currentSpeed) < 0.05) {
-    player.currentSpeed = 0;
+  if (typeof player.poseHold === 'number') {
+    player.currentSpeed = player.poseHold;
+  } else {
+    const targetSpeed = hasMoveIntent ? moveSpeed : 0;
+    const accelRate = hasMoveIntent ? 16 : 12;
+    player.currentSpeed = (player.currentSpeed ?? 0) + (targetSpeed - (player.currentSpeed ?? 0)) * Math.min(1, dt * accelRate);
+    if (!hasMoveIntent && Math.abs(player.currentSpeed) < 0.05) {
+      player.currentSpeed = 0;
+    }
   }
 
   if (player.currentSpeed > 0.02 && (moveDirX !== 0 || moveDirZ !== 0)) {
@@ -5968,7 +6122,7 @@ function gameLoop(now) {
     updateCapePhysics(player.isMoving, player.animTime);
 
     if (player.attackAnim > 0) {
-      player.attackAnim = Math.max(0, player.attackAnim - dt * 3.6);
+      if (player.poseHold !== 'attack') player.attackAnim = Math.max(0, player.attackAnim - dt * 3.6);
     }
   } else {
     if (player.isMoving) {
@@ -6024,7 +6178,7 @@ function gameLoop(now) {
     }
 
     if (player.attackAnim > 0) {
-      player.attackAnim = Math.max(0, player.attackAnim - dt * 3.6);
+      if (player.poseHold !== 'attack') player.attackAnim = Math.max(0, player.attackAnim - dt * 3.6);
       const slashAngle = Math.sin(player.attackAnim * Math.PI) * 1.65;
       const k = player.activeWeaponKind;
       if (k === 'greataxe') {
@@ -6586,6 +6740,28 @@ window.addEventListener('DOMContentLoaded', () => {
   }
   const startReg = WORLD_REGIONS.find(r => r.id === STATE.currentRegion) || WORLD_REGIONS[0];
   triggerRegionBanner(startReg);
-  (window as unknown as { __DEBUG?: unknown }).__DEBUG = { STATE, player, camState, rebuildPlayerEquipmentMeshes, ITEMS, oilSession };
+  (window as unknown as { __DEBUG?: unknown }).__DEBUG = {
+    STATE,
+    player,
+    camState,
+    rebuildPlayerEquipmentMeshes,
+    ITEMS,
+    oilSession,
+    monsters: monstersList,
+    setGear(next) {
+      const slots = ['head', 'cape', 'neck', 'weapon', 'body', 'shield', 'legs', 'hands', 'feet', 'ring'];
+      for (const slot of slots) STATE.equipment[slot] = null;
+      Object.assign(STATE.equipment, next || {});
+      rebuildPlayerEquipmentMeshes();
+    },
+    pose(mode) {
+      if (mode === 'walk') player.poseHold = 4.2;
+      else if (mode === 'run') player.poseHold = 11.5;
+      else if (mode === 'attack') {
+        player.poseHold = 'attack';
+        player.attackAnim = 0.55;
+      } else player.poseHold = null;
+    }
+  };
   requestAnimationFrame(gameLoop);
 });

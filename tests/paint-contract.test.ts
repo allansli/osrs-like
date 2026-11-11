@@ -12,6 +12,7 @@ import {
 import {
   DAB_SIZE_BY_CLASS,
   inferPaletteId,
+  inferStroke,
   readPaintFlags,
   resolvePaint,
   shouldPaintMesh,
@@ -129,6 +130,12 @@ describe('Blender extras become paint options', () => {
     expect(inferPaletteId('prop', null, 'CastleWall')).toBe('castle_stone');
     expect(paletteFromColor(0x4ade80)).toBe('foliage');
     expect(paletteFromColor(0x9aa0a8)).toBe('castle_stone');
+    expect(paletteFromColor(0x111111)).toBe('castle_stone');
+    expect(paletteIsUsable(paletteFromColor(0x111111))).toBe(true);
+    expect(inferStroke('prop', null, 'Castle_WallBack')).toBe('up');
+    expect(inferStroke('prop', null, 'hedge')).toBe('up');
+    expect(inferStroke('tree', null, 'NormalTree_TierBot')).toBe('surface_flow');
+    expect(needsSolidPaint({ wanderer: true, gear: true, paint_palette: 'bronze' }, { userData: { oilSolid: true, oilPalette: 'iron' } })).toBe(true);
     expect(paletteIsUsable('wanderer_cloak')).toBe(true);
     expect(paletteIsUsable('not_a_palette')).toBe(false);
     for (const palette of ['meadow_grass', 'castle_stone', 'wanderer_cloak', 'foliage']) {

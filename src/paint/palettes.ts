@@ -63,7 +63,22 @@ export const PALETTES: readonly Palette[] = [
   placeholder('chicken_feather', '#F4E2A8', '#C4A15A', '#4A5640'),
   placeholder('castle_stone', '#C9C3B4', '#8E8A82', '#3E4A52'),
   placeholder('timber', '#C4A06A', '#8A6240', '#3A4034'),
-  placeholder('foliage', '#9BB56A', '#5E7A3E', '#2C4630')
+  placeholder('foliage', '#9BB56A', '#5E7A3E', '#2C4630'),
+  placeholder('black_metal', '#6A7580', '#3E4A56', '#243038', true),
+  placeholder('white_metal', '#F4F1E6', '#C9C3B2', '#6E7A70', true),
+  placeholder('gilded', '#E2C278', '#A8843C', '#4A5830', true),
+  placeholder('dragon_metal', '#C45A3A', '#8A3428', '#3A2C28', true),
+  placeholder('barrows', '#7A8A62', '#4A5A3C', '#2A3830', true),
+  placeholder('bandos', '#C4A06A', '#7A5A38', '#3A4030', true),
+  placeholder('justiciar', '#D5D8DE', '#8A9AAB', '#3A4A58', true),
+  placeholder('hylian', '#3A8A55', '#245A38', '#1E3428'),
+  placeholder('dhide', '#6A9A48', '#3E6A30', '#243828'),
+  placeholder('scorpion_chitin', '#D4924A', '#8A5A28', '#3A4030'),
+  placeholder('wizard_robe', '#7A6AAB', '#4A3A72', '#2A3048'),
+  placeholder('ranger_leather', '#4A6A48', '#2E4630', '#243028'),
+  placeholder('moss', '#8A9A62', '#4A6238', '#2A3830'),
+  placeholder('demon_hide', '#D25A48', '#8A342C', '#3A2828'),
+  placeholder('dragon_scale', '#3E9A55', '#246838', '#1A3428')
 ];
 
 export const PALETTE_BY_ID: Record<string, Palette> = Object.fromEntries(PALETTES.map((p) => [p.id, p]));

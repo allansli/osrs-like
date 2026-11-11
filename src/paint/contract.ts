@@ -125,9 +125,11 @@ export function inferPaletteId(paintClass: PaintClass, part?: string | null, nam
 export function inferStroke(paintClass: PaintClass, part?: string | null, name?: string | null): StrokeDir {
   const blob = blobOf(part, name);
   if (/ground|floor|path|cobble|flagstone|tile/.test(blob)) return 'flat';
+  if (/wall|hedge|fence|merlon|tower|pillar|keep|battlement/.test(blob)) return 'up';
+  if (/leaf|canopy|foliage|crown|frond|tier/.test(blob)) return 'surface_flow';
   if (paintClass === 'tree') return 'up';
   if (paintClass === 'prop') return 'flat';
-  if (paintClass === 'monster') return 'surface_flow';
+  if (paintClass === 'monster' || paintClass === 'boss') return 'surface_flow';
   return 'along_bone';
 }
 

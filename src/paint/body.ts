@@ -127,7 +127,10 @@ export function needsSolidPaint(
   material: { userData?: Record<string, unknown> } | null | undefined
 ): boolean {
   const ud = userData ?? {};
-  if (ud.isOutline || ud.noPaint || ud.isCollider || ud.wanderer) return false;
+  if (ud.isOutline || ud.noPaint || ud.isCollider) return false;
+  if (ud.wanderer && !ud.gear) return false;
+  const want = typeof ud.paint_palette === 'string' ? ud.paint_palette : null;
+  if (want && material?.userData?.oilPalette !== want) return true;
   return material?.userData?.oilSolid !== true;
 }
 
@@ -144,6 +147,7 @@ export function paletteForMesh(name: string, paintClass: PaintClass, colorHex: n
 }
 
 function blocked(obj: THREE.Object3D): boolean {
+  if (obj.userData?.gear) return false;
   let p: THREE.Object3D | null = obj;
   while (p) {
     if (p.userData?.noPaint || p.userData?.wanderer || p.userData?.isOutline) return true;
@@ -175,15 +179,16 @@ export function dressSolid(root: THREE.Object3D, shared: object, paintClass: Pai
     if (!needsSolidPaint(mesh.userData as Record<string, unknown>, material)) return;
     if (material?.transparent && material.opacity < 0.99) return;
     if (!mesh.geometry.attributes?.normal) mesh.geometry.computeVertexNormals();
+    const stamped = typeof mesh.userData?.paint_palette === 'string' ? mesh.userData.paint_palette : null;
     const name = `${mesh.name} ${mesh.parent?.name ?? ''}`;
-    let id = paletteForMesh(name, paintClass, meshColor(mesh));
+    let id = stamped && paletteIsUsable(stamped) ? stamped : paletteForMesh(name, paintClass, meshColor(mesh));
     if (!paletteIsUsable(id)) id = 'castle_stone';
     const skinned = (mesh as THREE.SkinnedMesh).isSkinnedMesh === true;
     mesh.material = solidMaterial(shared, id, skinned);
     mesh.userData.oilSolid = true;
     mesh.castShadow = true;
     mesh.receiveShadow = true;
-    mesh.frustumCulled = true;
+    mesh.frustumCulled = mesh.userData?.gear || skinned ? false : true;
     dressed += 1;
   });
   return dressed;

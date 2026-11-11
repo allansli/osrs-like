@@ -98,6 +98,7 @@ export async function createFigure(shared, man) {
   man.object.updateMatrixWorld(true);
   const profile = [[0, 0.15], [0.05, 0.143], [0.095, 0.11], [0.118, 0.05], [0.125, 0.0], [0.21, -0.035], [0.3, -0.075], [0.37, -0.105]].map(([r, y]) => new THREE.Vector2(r, y));
   const hat = new THREE.Mesh(new THREE.LatheGeometry(profile, 22), paint(shared, HAT, { grain: 3 }));
+  hat.userData.defaultHat = true;
   hat.position.set(0, 1.805, -0.012);
   hat.rotation.x = -0.1;
   hat.layers.enable(1);
@@ -132,6 +133,7 @@ export async function createFigure(shared, man) {
       uniforms: { uHat: { value: hat.matrixWorld } },
       minPx: [3, 6], maxPx: [200, 400], cells: [0, 4],
     }), 5);
+    mesh.userData.defaultHat = true;
     dabs.add(mesh);
   }
 
@@ -152,6 +154,7 @@ export async function createFigure(shared, man) {
   cloakGeometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
   cloakGeometry.setIndex(index);
   const cloakMesh = new THREE.Mesh(cloakGeometry, paint(shared, CLOAK, { grain: 1.4 }));
+  cloakMesh.userData.oilCloak = true;
   cloakMesh.frustumCulled = false;
   cloakMesh.layers.enable(1);
 
@@ -178,6 +181,7 @@ export async function createFigure(shared, man) {
       }`,
     minPx: [3, 7], maxPx: [200, 500], cells: [0, 4],
   }), 5);
+  cloakDabs.userData.oilCloak = true;
   dabs.add(cloakDabs);
 
   // --- paint on the body itself: pins on his clothes, skin, boots and hair ---

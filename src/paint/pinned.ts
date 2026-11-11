@@ -24,10 +24,10 @@ export interface PaintActor {
 
 /** How many strokes one still mesh needs so a box does not read as flat colour. */
 export function dabsForMesh(radius: number, paintClass: PaintClass): number {
-  const floor = paintClass === 'tree' ? 48 : paintClass === 'monster' ? 36 : 32;
-  const cap = paintClass === 'tree' ? 140 : paintClass === 'gear' ? 160 : 96;
+  const floor = paintClass === 'tree' ? 64 : paintClass === 'boss' ? 48 : paintClass === 'monster' ? 40 : paintClass === 'gear' ? 28 : 36;
+  const cap = paintClass === 'tree' ? 220 : paintClass === 'boss' ? 160 : paintClass === 'monster' ? 110 : paintClass === 'gear' ? 80 : 180;
   const r = Number.isFinite(radius) && radius > 0 ? radius : 0.4;
-  return Math.round(Math.min(cap, Math.max(floor, r * 36)));
+  return Math.round(Math.min(cap, Math.max(floor, r * 42)));
 }
 
 interface Pin {
