@@ -42,7 +42,7 @@ Run every command from the repository root (or the worktree root), in a shell st
 ### 0.4 Branches, worktrees, clusters
 
 - The Stage 1 spine (cluster **X**) runs on `feat/world-foundation` itself, one task after another. Every spine task edits `src/engine/runtime.ts`, so none of them can run in parallel.
-- Fix clusters each run in their own worktree, `../osrs-like-wt/<cluster>`, on branch `wf/<cluster>`, cut from the spine head after task F02. They may be developed in parallel. They are merged **only after checkpoint CP-1** (design 5.2: every move, reshape and typing lands before any fix), and in the order given in 1.4.
+- Fix clusters each run in their own worktree, `../osrs-like-wt/<cluster>`, on branch `wf/<cluster>`, cut from the spine head after task F02. These `wf/` (and Stage 2 `wp/`) branches are local worktree branches only: they are never pushed; only `feat/world-foundation` and `feat/world-place` go to the remote. They may be developed in parallel. They are merged **only after checkpoint CP-1** (design 5.2: every move, reshape and typing lands before any fix), and in the order given in 1.4.
 - Run at most 3 or 4 agents at a time on this machine, with one BUILD at a time.
 
 ### 0.5 Owner and human steps (where they block)
@@ -1154,7 +1154,7 @@ Adversarial review of 2026-11-13 against the design and the source at `1284a6e`.
 | `activeSpell` rule in S2 | Only combat spells are ever stored (`runtime.ts` 539-541), so a legitimate save is never rejected. |
 | L4 deleting the wrap lines | `lerpAngle` does not normalise `rotation.y`, so the raw difference never jumps by 2π. Deleting the lines is correct. |
 | Model tiers elsewhere | Haiku runs agy, sonnet is the fallback for specified [AGY] work, and opus does D2, W2, W3, A5, A7 and every verify. D2 stays opus: it is licence text. |
-| Blender | No task runs Blender. T1 uses a stub. M4 only deletes files. Findings 3 and 39 stay deferred. |
+| Blender | No task runs Blender. T1 uses a stub. M4 is cancelled (the knight is CC0 and stays). Findings 3 and 39 stay deferred. |
 | X24 leaves the player-down rule untested | It changes meaning in Stage 2 (to `return`). CP-1 covers it by eye, as the plan says. |
 | T6 vitest 4 bump | A frozen test that breaks is stop-and-report. Local Node is 22.22, which vitest 4 and vite 6 accept. |
 | Design-requirement coverage | Every G1.x and G2.x goal, and every Stage 1 ledger finding, maps to a task (section 4). The only design gap found, signposts, is fixed in item 26. |
