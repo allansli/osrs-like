@@ -1,6 +1,6 @@
 import { ammoForWeapon, ITEMS, type ItemDef } from '../data/items';
 import { SPELLS } from '../data/magic';
-import { MONSTER_TYPES } from '../data/world';
+import { MONSTER_TYPES, WORLD_REGIONS } from '../data/world';
 import { resolveDragonfire } from './adventure';
 import { countItem } from './inventory';
 import type { GameState } from './types';
@@ -126,6 +126,10 @@ export function canCastTeleport(state: GameState, spellId: string): { ok: boolea
   }
   if (!hasRunes(state, spell.runes)) {
     return { ok: false, reason: `You need ${runeList(spell.runes)} to cast ${spell.name}.` };
+  }
+  if (spell.regionId && !state.shrines[spell.regionId]) {
+    const region = WORLD_REGIONS.find((r) => r.id === spell.regionId)!;
+    return { ok: false, reason: `You must discover the ${region.name} shrine before teleporting there.` };
   }
   return { ok: true, reason: '', regionId: spell.regionId, xp: spell.xp, runes: spell.runes };
 }
