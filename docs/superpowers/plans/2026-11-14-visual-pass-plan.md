@@ -2,7 +2,7 @@
 
 Date: 2026-11-14. Branch: `feat/visual-pass`. Design: `docs/superpowers/specs/2026-11-14-visual-pass-design.md` (called "the design" below; section numbers refer to it). Foundation design and plan: `docs/superpowers/specs/2026-11-13-world-foundation-design.md`, `docs/superpowers/plans/2026-11-13-world-foundation-plan.md`. Audit: `docs/audit/2026-11-13-findings.json`. Source line numbers are at commit `a8cad85`, which has no Stage 2, 3 or 4 code; task **R0** re-anchors them.
 
-The design is still a proposal. Nothing in this plan starts before owner step **OV-1** (section 0.5), and nothing starts before Stages 2, 3 and 4 are merged into `main`.
+The design is approved in part. On 2026-11-14 the owner decided CALL-V3 (the running clock), V9 (woods trees block walking, design 6.11), V18 (Low, Medium, High, Ultra), V19 (smooth texels) and V20 (budgets adjusted once, then frozen), and agreed QV4 and QV5. Nothing in this plan starts before owner step **OV-1** (section 0.5), and nothing starts before Stages 2, 3 and 4 are merged into `main`.
 
 ---
 
@@ -21,7 +21,7 @@ Tiers used in this plan, with the reason for every opus that is not a verify:
 |---|---|
 | haiku | Every agy run; V2's command runs and captures; every capture run at a checkpoint (following V1c's procedure) |
 | sonnet | Every [AGY] fallback; the test tasks written from a clear table (V1a, LT1, AR1, WT1, GR1, WX1, UI2, UI8a, FX1); V1c (writing and proving the capture procedure) |
-| opus | Every verify; **R0** (judging whether the design's premises still hold); **LT3** and **LT4** (rewriting the light model inside three's chunk text, and the tests that pin it); **AR2** (fog chunk replacement across five shaders); **GR3** (the boundary test for generated decoration); **GR6** (a vertex shader that reads the ground field); **LT7**, **GR7** (tuning a look against pictures); **UI1** (licence text); **G-5** |
+| opus | Every verify; **R0** (judging whether the design's premises still hold); **LT3** and **LT4** (rewriting the light model inside three's chunk text, and the tests that pin it); **AR2** (fog chunk replacement across five shaders); **GR3** (the boundary test for generated decoration); **TR1** (the boundary test for trees that change walkability, a game rule); **GR6** (a vertex shader that reads the ground field); **LT7**, **GR7** (tuning a look against pictures); **UI1** (licence text); **G-5** |
 | fable | none |
 
 ### 0.2 Commands
@@ -50,7 +50,7 @@ Run every command from the worktree root, in a shell started with an allowlisted
 6. **No model, texture or dependency change.** `git diff main -- public/models public/textures` is empty at every task, and `package.json` `dependencies` is unchanged. Imports from `three/examples/jsm/` are allowed. The only new binary assets are the font files of UI1.
 7. **Shader text is built from constants.** GLSL strings are composed only from string constants and from the closed set of `#define`s in `GFX_TIERS`. No value from the save, the DOM or the URL is concatenated into a shader.
 8. **Counts come from the tier table.** Every instance, particle and light count and every map size is read from `GFX_TIERS` in `src/data/look.ts`. A literal count in engine code is a defect.
-9. **Determinism.** `src/state/scatter.ts`, `weather.ts` and `src/engine/floraKit.ts` never call `Math.random`; they use a seeded generator passed in.
+9. **Determinism.** `src/state/scatter.ts`, `weather.ts`, `src/engine/floraKit.ts` and `scripts/place-woods-trees.ts` never call `Math.random`; they use a seeded generator passed in. `src/data/woodsTrees.ts` holds only literals.
 10. **Module rules of the foundation design hold**: no file under `src/` over 1000 lines; every module imports in `node` without throwing and runs nothing at import time; `src/data` and `src/state` do not import `three` and do not mention `document` or `window`.
 11. **No new `innerHTML` sink.** New interface code builds DOM with elements and `textContent`.
 12. **Machine budget.** At most 3 agents at a time, one BUILD at a time, one SERVE at a time, across every worktree on the machine.
@@ -63,7 +63,7 @@ Run every command from the worktree root, in a shell started with an allowlisted
 
 | Lane | Files |
 |---|---|
-| Spine | `src/data/look.ts`, `src/state/dayCycle.ts`, `shadowFit.ts`, `weather.ts`, `scatter.ts`, `waterGrid.ts` (all new); `src/engine/lighting.ts`, `atmosphere.ts`, `sky.ts`, `water.ts`, `batching.ts`, `floraKit.ts`, `flora.ts`, `particles.ts`, `post.ts`, `photo.ts` (all new); `src/engine/materials.ts`, `textures.ts`, `renderer.ts`, `loop.ts`, `context.ts`, `worldMesh.ts`, `worldBuild.ts`, `blenderWorld.ts`, `spawns.ts`, `vfx.ts`; `src/engine/runtime.ts` (V1b only, one line) |
+| Spine | `src/data/look.ts`, `src/state/dayCycle.ts`, `shadowFit.ts`, `weather.ts`, `scatter.ts`, `waterGrid.ts` (all new); `src/engine/lighting.ts`, `atmosphere.ts`, `sky.ts`, `water.ts`, `batching.ts`, `floraKit.ts`, `flora.ts`, `particles.ts`, `post.ts`, `photo.ts` (all new); `src/engine/materials.ts`, `textures.ts`, `renderer.ts`, `loop.ts`, `context.ts`, `worldMesh.ts`, `worldBuild.ts`, `blenderWorld.ts`, `spawns.ts`, `vfx.ts`; `src/engine/runtime.ts` (V1b only, one line); `src/data/woodsTrees.ts`, `scripts/place-woods-trees.ts` (new) and the Stage 2 file `src/state/collision.ts` (TR2 only) |
 | UI | `index.html`, `src/ui/styles.css`, `src/ui/fonts/` (new), `src/ui/hud.ts`, `stations.ts`, `playerActions.ts`, `src/ui/scrollSnapshot.ts` (new), `src/engine/overlay.ts`, `src/engine/input.ts`, `CREDITS.md`; UI8b only: `src/engine/runtime.ts`, `vercel.json` |
 
 `runtime.ts` is the one shared file: V1b lands before the UI lane is cut, and UI8b is the lane's last task.
@@ -75,19 +75,20 @@ Run every command from the worktree root, in a shell started with an allowlisted
 
 | Step | What the owner decides or does | Blocks |
 |---|---|---|
-| OV-1 | Approve the design: CALL-V1 (essence), V2 (cut world, round figures), V5 (tier table), V6 (budgets, provisional), V14 (two test replacements), V16 (ledger), V17 (composer on the upper tiers only), V18 (tier names), V20 (budgets adjusted once after measuring). | Everything |
-| OV-2 | `look.bench` frame times on the owner's GPU at poses P1, P3, P5 and P8 on each tier, and which GPU and display they are (QV5). Part of V2. Then, per CALL-V20, the owner keeps the budgets of design section 10 or lets the lead adjust them and the tier numbers once; the result is written into design section 10 and frozen. | LT1 |
-| OV-3 | **CALL-V3 / QV1**: running clock or three fixed presets. **CALL-V4**: the night floor. | LT2 |
-| OV-4 | **CALL-V9 / QV3**: decoration never blocks. **CALL-V8**: no new model. | GR3 |
+| OV-1 | Approve the design: CALL-V1 (essence, now with the one game-rule exception of CALL-V9), V2 (cut world, round figures), V5 (tier table), V6 (budgets, provisional), V14 (two test replacements), V16 (ledger), V17 (composer on the upper tiers only). Already decided on 2026-11-14: V18 (Low, Medium, High, Ultra), V19 (smooth), V20 (adjusted once, then frozen). | Everything |
+| OV-2 | `look.bench` frame times on the owner's computer at poses P1, P3, P5 and P8 on each tier. At this first timing the owner names the reference machine, GPU and display (QV5, agreed 2026-11-14). Part of V2. Then, per CALL-V20 (decided 2026-11-14), the lead adjusts the budgets of design section 10 and the tier numbers once to what was measured; the result is written into design section 10 and frozen. | LT1 |
+| OV-3 | **CALL-V4**: the night floor. (CALL-V3 / QV1 decided 2026-11-14: the running clock.) | LT2 |
+| OV-4 | **CALL-V8**: no new model. (CALL-V9 / QV3 decided 2026-11-14: woods trees block walking, design 6.11.) | GR3 |
+| OV-4b | **CALL-V21 / QV9**: may a trunk stop a chasing monster (cover), or should monster chase use the walk grid? If the walk grid: the stage stops before TR2 and a Stage 2 monster-movement task is planned first, because `monsterAi.ts` is Stage 2 code. | TR2 |
 | OV-5 | **CALL-V10**: the weather set. | WX1 |
 | OV-6 | **CALL-V11, V12**: the type system and the interface identity. | UI1 |
 | OV-7 | Pick the two font families from UI1's report (QV4). | UI3 |
 | OV-8 | **CALL-V13 / QV2**: inline handlers and the full policy now, or Stage 7. | UI8a |
 | OV-9 | **CALL-V15**: effects restyled in shape and colour only. | FX1 |
-| CP-LT (also CALL-V19, texel crispness), CP-AR, CP-GR, CP-WT, CP-WX, CP-UI, CP-FX | [OWNER] looks at the slice's before and after pictures and answers accept, change or hold. | the slice's merge is final only after it; the next slice may start |
+| CP-LT, CP-AR, CP-GR, CP-WT, CP-WX, CP-UI, CP-FX | [OWNER] looks at the slice's before and after pictures and answers accept, change or hold. | the slice's merge is final only after it; the next slice may start |
 | OV-10 | Accept Stage 5 (after G-5 and G-6). | the pull request |
 
-If an owner answer takes the alternative: **V3 presets only**: `DAY_CLOCK.dayMinutes` is set to 0 in LT2 (the clock does not advance); nothing else changes. **V9 trees that block**: the stage stops at GR3 and the design is amended, because walkability is Stage 2 data. **V8 a Blender kit**: task GR8 is added after CP-GR (a `scripts/blender/build_flora.py`, a `flora.glb` of at most 90 kB on the wire, loaded with `loadGltfOnce`, replacing the crag and backdrop-tree pieces of `floraKit.ts`; the five existing GLBs stay untouched). **V13 no**: UI8 is skipped and the main session writes the second deferral of finding 5's script policy to Stage 7 into the foundation design's section 9. **V15 no**: lane FX is skipped.
+CALL-V9 took the alternative (trees that block) on 2026-11-14. The design was amended in its section 6.11, and tasks TR1 and TR2 below carry it out. If another owner answer takes the alternative: **V8 a Blender kit**: task GR8 is added after CP-GR (a `scripts/blender/build_flora.py`, a `flora.glb` of at most 90 kB on the wire, loaded with `loadGltfOnce`, replacing the crag and backdrop-tree pieces of `floraKit.ts`; the five existing GLBs stay untouched). **V13 no**: UI8 is skipped and the main session writes the second deferral of finding 5's script policy to Stage 7 into the foundation design's section 9. **V15 no**: lane FX is skipped. **V21 walk-grid chase**: see OV-4b.
 
 ---
 
@@ -106,7 +107,15 @@ If an owner answer takes the alternative: **V3 presets only**: `DAY_CLOCK.dayMin
   6. Scan `index.html` and `src/` again for `on<event>=` attributes and `<script` tags; UI8 assumes 38 `onclick` attributes and one external module script.
   7. Check the Stage 2 data this plan reads by name: `PATHS`, `RIDGES`, `BASINS`, `POIS` and `CAMPS` in `src/data/worldMap.ts` are non-empty (on `feat/world-place` at the time of the critique, the first four were still empty arrays); every POI the design names (Three Kettle Camp, Wardstone Cairn, Cinderstep Pass, Reedglass Tarn, Tamarisk Pool, Lampwright's Hollow, Slagfall Terrace, Millrace Road) exists with a `padRadius`; `isWalkable`, `regionAt`, `riverCenterX` and the walk grid exist; record the walkable bound (118 at `a8cad85`, `collision.ts` 47).
   8. Re-read the live camera limits in `input.ts` (pitch 0.12 to 1.15, distance 3.6 to 26 at `a8cad85`) and `spawnWorldProp`'s material handling; V1a, LT1 and LT5b depend on them.
-- **Accept**: the "Anchors" section exists and covers every cited symbol. A written "premises hold" or a list of what changed. If fact 1 or 5 no longer holds, or a check of step 7 fails, the stage stops and the design is amended before any task starts.
+  9. Re-check the walking premises of design 6.11 on `main`:
+     - `isWalkable` in `collision.ts` is still the one predicate behind `buildWalkGrid`, the ground click, minimap and "Walk here" checks, `moveWithCollision` and `sanitizePose`;
+     - the hover tile still raycasts the terrain only, and the click ray still tests only `G.worldInteractiveObjects`;
+     - `G.walkGrid` is built once from it;
+     - the walk grid is still 1-unit cells over ±118 with no corner cutting;
+     - `stepMonster` still walks straight through `moveWithCollision` and does not path-find;
+     - `sanitizePose` still searches rings from 0.5 units.
+     Record the stop distances of Stage 2's task B3 per target kind (2.9, 13.5, 3.1, 3.5 at the time of the design) and which kind each uses. Record that no station other than the woods shrine lies in the `woods` region, and that `node_modules/.bin/esbuild` exists (TR2 runs its script with it; `npx` must not download anything). Record the list of frozen Stage 2 tests that read `isWalkable`: reachability, relief, world data, pathfinding, save relocation, world budget.
+- **Accept**: the "Anchors" section exists and covers every cited symbol. A written "premises hold" or a list of what changed. If fact 1 or 5 no longer holds, or a check of step 7 or 9 fails, the stage stops and the design is amended before any task starts. If monsters now path-find, CALL-V21 is moot, and R0 says so.
 - **Must not change**: anything under `src/`, `tests/` or `public/`.
 
 ### V1a Pose and tier-count tests [CLAUDE]
@@ -140,8 +149,8 @@ If an owner answer takes the alternative: **V3 presets only**: `DAY_CLOCK.dayMin
 - **Tier**: haiku (runs and records).
 - **Depends**: V1c.
 - **Files**: `docs/superpowers/baseline/2026-11-14-stage5-baseline.md` (new), `docs/superpowers/baseline/stage5/before/*`.
-- **Change**: record BUILD's JS and CSS sizes. Run CAP over P1 to P10 at presets 0, 1 and 2 (golden, noon, night) and P11 at its four sizes; these are the "before" pictures. Record per pose and per tier: calls and triangles with shadows on, and calls on the performance tier (shadows off); the difference is the shadow pass. The owner (OV-2) runs `__DEBUG.look.bench(300)` on their GPU and display at P1, P3, P5 and P8 on each tier, records the milliseconds, and names the GPU and the display; then answers CALL-V20.
-- **Accept**: the baseline file holds every number above and the owner's. From here on, "the V2 chunk", "the V2 capture" and "the V2 bench" in design section 10 mean these numbers. If the owner chose to adjust the budgets, the main session writes the adjusted numbers into design section 10 (one `docs` commit) before LT1.
+- **Change**: record BUILD's JS and CSS sizes. Run CAP over P1 to P10 at presets 0, 1 and 2 (golden, noon, night) and P11 at its four sizes; these are the "before" pictures. Record per pose and per tier: calls and triangles with shadows on, and calls on the performance tier (shadows off); the difference is the shadow pass. The owner (OV-2) runs `__DEBUG.look.bench(300)` on their GPU and display at P1, P3, P5 and P8 on each tier, records the milliseconds, and names that computer, its GPU and its display as the reference machine (QV5). Per CALL-V20 (decided 2026-11-14), the lead then adjusts the budgets and tier numbers once to the measurement.
+- **Accept**: the baseline file holds every number above and the owner's. From here on, "the V2 chunk", "the V2 capture" and "the V2 bench" in design section 10 mean these numbers. The main session writes the adjusted budgets into design section 10 (one `docs` commit) before LT1; from then on they are frozen.
 - **Must not change**: `src/`, `tests/`.
 
 ---
@@ -166,7 +175,7 @@ What the owner gets: shadows on screen for the first time, a sun that moves, fiv
 - **Tier**: sonnet.
 - **Depends**: LT1.
 - **Files**: `src/data/look.ts`, `src/state/dayCycle.ts`, `src/state/shadowFit.ts` (all new).
-- **Change**: implement the exports LT1 names, with the values of design 5.3 and 10. `dayFrameAt` interpolates colours in OKLab between neighbouring keys and wraps from the last key to the first. The sun moves on a circle tilted so that near phase 0.58 its direction is within 5 degrees of (0.52, 0.78, 0.34); below the horizon the moon (opposite side, elevation 50 at phase 0) is the key and `keyIsMoon` is true; the key intensity fades through zero where they hand over. `look.ts` also exports the empty tables later lanes fill, so their tests compile: `REGION_LOOK = []`, `WEATHER = []`, `FLORA_RULES = []`, `KIT_PIECES = []`, `EMITTERS = []`. If OV-3 chose presets only, `DAY_CLOCK.dayMinutes` is 0 and `stepPhase` returns the phase unchanged.
+- **Change**: implement the exports LT1 names, with the values of design 5.3 and 10. `dayFrameAt` interpolates colours in OKLab between neighbouring keys and wraps from the last key to the first. The sun moves on a circle tilted so that near phase 0.58 its direction is within 5 degrees of (0.52, 0.78, 0.34); below the horizon the moon (opposite side, elevation 50 at phase 0) is the key and `keyIsMoon` is true; the key intensity fades through zero where they hand over. `look.ts` also exports the empty tables later lanes fill, so their tests compile: `REGION_LOOK = []`, `WEATHER = []`, `FLORA_RULES = []`, `KIT_PIECES = []`, `EMITTERS = []`. The clock runs (CALL-V3, decided 2026-11-14).
 - **Accept**: the four LT1 test files pass; `ONE(tests/architecture.test.ts)` passes with layering; SG.
 - **Must not change**: any existing file.
 
@@ -228,13 +237,13 @@ What the owner gets: shadows on screen for the first time, a sun that moves, fiv
 ### LT7 Look development: light [CLAUDE]
 - **Tier**: opus (a look tuned against pictures and numbers).
 - **Depends**: LT6.
-- **Files**: `src/data/look.ts` (values of `DAY_KEYS`, shadow `bias` and `normalBias`, the texel filter constant only), `src/engine/materials.ts` (the band constants and `facetBlend` only), `src/engine/textures.ts` (the magnification filter constant only).
-- **Change**: run CAP over P1 (noon, golden, night), P3 (golden), P5 (noon, night) and P12. Tune until, in the P1 noon picture, a lit meadow pixel is 55 to 65% value and a shadowed one 30 to 38%; at P1 night the lit ground is at least 22%; no shadow acne on the terrain; no band flicker on the flat ground of the start town; shadow edges do not swim during a minute of running clock at P12. For CALL-V19, capture P1 noon and P5 noon twice, with smooth and with crisp (nearest) texel magnification, into `light/texels/`. Each tune commit changes constants only and leaves the LT1 and LT3 tests green.
+- **Files**: `src/data/look.ts` (values of `DAY_KEYS`, shadow `bias` and `normalBias` only), `src/engine/materials.ts` (the band constants and `facetBlend` only).
+- **Change**: run CAP over P1 (noon, golden, night), P3 (golden), P5 (noon, night) and P12. Tune until, in the P1 noon picture, a lit meadow pixel is 55 to 65% value and a shadowed one 30 to 38%; at P1 night the lit ground is at least 22%; no shadow acne on the terrain; no band flicker on the flat ground of the start town; shadow edges do not swim during a minute of running clock at P12. Texel magnification stays smooth (CALL-V19, decided 2026-11-14). Each tune commit changes constants only and leaves the LT1 and LT3 tests green.
 - **Accept**: SG; the pictures and the measured pixel values are in `docs/superpowers/baseline/stage5/light/`.
-- **Must not change**: hues' direction (design 5.3), any logic.
+- **Must not change**: hues' direction (design 5.3), any logic, the texture filters.
 
 ### CP-LT Light checkpoint [OWNER]
-The owner compares `before/` and `light/` at P1, P3 and P5 and watches P12 live. Should see: shadows under every object, long at golden hour; the ridge's shadow at P3; a blue, readable night; planes on rock, trees and ground; round figures. Answers accept, change (back to LT7) or hold, and picks smooth or crisp texels (CALL-V19); the main session sets the constant in one `tune` commit.
+The owner compares `before/` and `light/` at P1, P3 and P5 and watches P12 live. Should see: shadows under every object, long at golden hour; the ridge's shadow at P3; a blue, readable night; planes on rock, trees and ground; round figures. Answers accept, change (back to LT7) or hold.
 
 ---
 
@@ -278,7 +287,7 @@ What the owner gets: depth in three planes, fog that pools and leans to the sun,
 - **Tier**: sonnet.
 - **Depends**: AR4a.
 - **Files**: `src/engine/post.ts`, `src/engine/renderer.ts`, `src/engine/loop.ts`, `src/engine/materials.ts` (registry and plain-mode branch only), `src/engine/atmosphere.ts` (plain-mode branch only), `src/engine/photo.ts`.
-- **Change**: `post.ts`: `nextTier` as AR1 tests it; `enterPlainMode(scene)`, `isPlainMode`. `materials.ts`: every material `facetMaterial` patches is pushed, with its mesh-independent parameters, to a module-level list; `enterPlainMode` walks the scene and replaces every registered material on its mesh with a stock `MeshLambertMaterial` with the same colour, map, emissive, side and `vertexColors`, then turns off the composer, carpet, particles, clouds and water effects; in plain mode `facetMaterial` returns the stock material directly and `attachAtmosphere` does nothing. `renderer.ts`: `init3DEngine` sets `renderer.debug.onShaderError` to a handler that logs the program's info log with `console.error` (three no longer logs once a handler is set) and then calls `enterPlainMode`, and reads `new URLSearchParams(location.search).has('plain')` as a boolean. `loop.ts`: `renderFrame` feeds frame times and `document.hidden` to `nextTier` and applies a step down with one chat line. `cycleGraphicsQuality` marks the player's choice, which stops the governor for the session; `photo.ts`'s `tier` does the same. If OV-1 renamed the tiers (CALL-V18), `syncGraphicsButtons` and the chat line show Low, Medium, High, Ultra; the `QualityTier` ids are unchanged.
+- **Change**: `post.ts`: `nextTier` as AR1 tests it; `enterPlainMode(scene)`, `isPlainMode`. `materials.ts`: every material `facetMaterial` patches is pushed, with its mesh-independent parameters, to a module-level list; `enterPlainMode` walks the scene and replaces every registered material on its mesh with a stock `MeshLambertMaterial` with the same colour, map, emissive, side and `vertexColors`, then turns off the composer, carpet, particles, clouds and water effects; in plain mode `facetMaterial` returns the stock material directly and `attachAtmosphere` does nothing. `renderer.ts`: `init3DEngine` sets `renderer.debug.onShaderError` to a handler that logs the program's info log with `console.error` (three no longer logs once a handler is set) and then calls `enterPlainMode`, and reads `new URLSearchParams(location.search).has('plain')` as a boolean. `loop.ts`: `renderFrame` feeds frame times and `document.hidden` to `nextTier` and applies a step down with one chat line. `cycleGraphicsQuality` marks the player's choice, which stops the governor for the session; `photo.ts`'s `tier` does the same. `syncGraphicsButtons` and the chat line show Low, Medium, High, Ultra for `performance`, `balanced`, `high`, `ultra` (CALL-V18, decided 2026-11-14); the `QualityTier` ids are unchanged.
 - **Accept**: `ONE(tests/air.test.ts)`, `ONE(tests/plain-mode.test.ts)` and `ONE(tests/gfx-tiers.test.ts)` pass; SG.
 - **Must not change**: the `QualityTier` ids; the perf HUD's ids; the graphics button's id.
 
@@ -289,7 +298,9 @@ CAP over P10 (both sets of eight yaws), P3 (golden), P4 (night), P1 (golden, noo
 
 ## 4. Slice 3, lane GR: ground, vegetation, places
 
-What the owner gets: a filled world. Meadow, verge, reeds, ferns, scrub, rocks, logs, a forest frame, crags on the ridge, and props textured as intended. Cost (estimate): merging about -40 to -55% of draw calls and -1 to -3 ms of CPU; carpet and scatter +18 draws and about +1 to 2 ms; triangles up to the new budget; about +21 kB of JS.
+What the owner gets: a filled world. Meadow, verge, reeds, ferns, scrub, rocks, logs, a forest frame, crags on the ridge, a walk-through forest in the woods whose trees block walking (design 6.11), and props textured as intended. Cost (estimate): merging about -40 to -55% of draw calls and -1 to -3 ms of CPU; carpet, scatter and woods trees +20 draws and about +1 to 2 ms; triangles up to the new budget; about +24 kB of JS.
+
+This slice edits one Stage 2 file, `src/state/collision.ts`, in TR2 only. Every frozen Stage 2 test (reachability, relief, world data, pathfinding, save relocation, world budget) must pass untouched after TR2 and at every later task.
 
 ### GR1 Batching, UV and texture-cache tests [CLAUDE]
 - **Tier**: sonnet.
@@ -313,11 +324,61 @@ What the owner gets: a filled world. Meadow, verge, reeds, ferns, scrub, rocks, 
 - **Accept**: the three GR1 files pass; `ONE(tests/textures.test.ts)` and `ONE(tests/dispose.test.ts)` pass untouched; SG. The opus verify confirms every `getObjectByName('World_...')` and every material-name test in `applyWorldMaterials` still runs before the merge.
 - **Must not change**: any GLB; node and material names; the live and depleted swap of `upgradeResourceNodeWithGltf`; what `upgradeWorldPropWithGltf` pushes to the interactive list (it now pushes the merged meshes); `addCartoonOutline` (three frozen tests read its shell right after the call).
 
+### TR1 Woods-tree walk tests [CLAUDE]
+- **Tier**: opus. These tests are the boundary check for a game-rule change (walkability, design 6.11 and threat V8). The tests decide what "still playable" means; that is judgment, not transcription.
+- **Depends**: GR2, R0 step 9.
+- **Files**: `tests/woods-trees.test.ts` (new).
+- **Change**: the woods-tree part of the G5.6 row of design 8.1, written against these names:
+  - `src/data/woodsTrees.ts`: `WOODS_TREES: readonly (readonly [number, number])[]` (cell indices `[i, j]`, centre at `-118 + i + 0.5`, `-118 + j + 0.5`); `WOODS_TREE_CLEAR = { spacingCells: 3, groundCells: 3, pathExtra: 3, target: 4.5, poiExtra: 3, campExtra: 2 }`; `WOODS_TREE_COUNT = { min: 100, max: 220 }`.
+  - `src/state/collision.ts`: `isWalkableGround(x, z)` (today's `isWalkable` unchanged), `isWoodsTreeCell(x, z)`, and `isWalkable(x, z)` equal to ground and not a tree cell.
+
+  The test holds the station list and the 20 old spawn points as literals, as the Stage 2 tests do. It reads the Stage 1 save fixture's position from the fixture file. Every table-driven case first asserts its table's row count. Cases:
+  - **The table**: `the table is sorted integer cells with no duplicates and 100 to 220 rows`; `woodsTrees.ts contains only literals` (a text scan finds no `(` after the array opens).
+  - **Placement**:
+    - `every tree is in woods on walkable ground`;
+    - `every two trees are at cell distance max(|di|, |dj|) >= 3`;
+    - `every tree is at cell distance >= 3 from every cell whose centre has isWalkableGround false`;
+    - `no tree is within halfWidth + 3 of any path centre line`;
+    - `no tree is within 4.5 of a node, fishing spot, station or shrine`;
+    - `no tree is within padRadius + 3 of a POI`;
+    - `no tree is inside any camp radius + 2`;
+    - `no tree is inside a safe zone or the Cinderstep Pass corridor`;
+    - `no tree is on the cell of the start point, the save fixture's position or any of the 20 old spawn points`;
+    - `no tree cell contains a path point sampled each unit`.
+  - **Walkability**:
+    - `isWalkable is false at the centre and four inset corners (±0.45) of every tree cell`;
+    - `isWalkable equals isWalkableGround at every point of a 0.25 grid over the woods outside tree cells`.
+  - **Reach**:
+    - `the cells reachable from the start with trees equal the cells reachable with isWalkableGround, minus the tree cells` (the same four-neighbour fill as `tests/reachability.test.ts`);
+    - `every shrine, station, POI centre, camp member home, resource node and fishing spot has a reachable walkable cell within its stop distance`, with the stop distances R0 recorded;
+    - `findPath(buildWalkGrid(), start, entityGoal(...)) returns a route for each of them`.
+  - **Saves**: `sanitizePose moves a pose at every tree cell centre to a walkable point within 1.1`.
+  - **Walk-grid budget**:
+    - `buildWalkGrid() has 55,696 cells and blocks exactly WOODS_TREES.length more than buildWalkGrid(isWalkableGround)`;
+    - `buildWalkGrid() takes at most 1.5 times the ground-only build (median of 5 in the same run)`.
+- **Accept**: red until TR2, within rule 0.3.4. The opus verify checks that each clearance in the test matches design 6.11 exactly.
+- **Must not change**: `src/`; every existing test.
+
+### TR2 Woods trees in the walk rules [AGY]
+- **Tier**: sonnet.
+- **Depends**: TR1, OV-4b.
+- **Files**: `src/data/woodsTrees.ts` (new), `scripts/place-woods-trees.ts` (new), `src/state/collision.ts` (Stage 2).
+- **Change**: two commits.
+  1. `feat(ground): woods trees block their walk cell`. In `collision.ts`, rename the body of `isWalkable` to an exported `isWalkableGround` with no other change. Add `isWoodsTreeCell(x, z)`, which on its first call builds a 236 × 236 `Uint8Array` from `WOODS_TREES` and then returns the bit at `floor(x + 118)`, `floor(z + 118)` (false outside ±118). Make `isWalkable(x, z)` return `isWalkableGround(x, z) && !isWoodsTreeCell(x, z)`. Nothing runs at import time. `woodsTrees.ts` exports the constants TR1 names and an empty `WOODS_TREES` for now.
+  2. `feat(ground): place the woods trees`. `scripts/place-woods-trees.ts`. It is bundled and run with the `esbuild` that vite already installs (no new dependency): `npx esbuild scripts/place-woods-trees.ts --bundle --platform=node --format=esm --outfile=<scratchpad>/place.mjs && node <scratchpad>/place.mjs`. The script:
+     - candidates are every cell centre of the woods region, in a seeded order (the seed is a constant in the file's header; no `Math.random`);
+     - it keeps a candidate when every rule of design 6.11 holds, checked against `isWalkableGround` and the Stage 2 tables;
+     - it stops at 150 trees, or at the end of the candidates;
+     - it writes `WOODS_TREES` into `src/data/woodsTrees.ts` as sorted integer literals.
+     The script is not imported by `src/`.
+- **Accept**: `ONE(tests/woods-trees.test.ts)` passes. `ONE` passes untouched for `tests/reachability.test.ts`, `tests/relief.test.ts`, `tests/world-data.test.ts`, `tests/pathfind.test.ts`, the save-relocation test and the world-budget test. SG. `git diff main -- src/state/collision.ts` shows only the rename, the new function and the new `isWalkable` line. The opus verify confirms that `pathfind.ts`, `monsterAi.ts`, `save.ts`, `input.ts` and `loop.ts` are unchanged.
+- **Must not change**: `isWalkableGround`'s behaviour (today's `isWalkable`, point for point); the signatures of `isWalkable` and `moveWithCollision`; `pathfind.ts`; `monsterAi.ts`; `save.ts`; `worldMap.ts`; `placements.ts`; harvestable trees and every other prop (they stay non-blocking).
+
 ### GR3 Scatter tests [CLAUDE]
 - **Tier**: opus. These tests are the boundary check for generated decoration (design V8), and choosing the clear radii and the unwalkable-only rule is judgment.
-- **Depends**: GR2, OV-4.
+- **Depends**: TR2, OV-4.
 - **Files**: `tests/scatter.test.ts` (new), `tests/look-data.test.ts` (extended).
-- **Change**: the G5.6 and G5.8 rows of design 8.1 against `buildScatter(seed: number, tier: GfxTierId): ScatterResult` where `ScatterResult = Record<KitPieceId, { x: number, z: number, rot: number, scale: number }[]>`, and against `KIT_PIECES` (each with `layer: 'understorey' | 'canopy'`, `maxHeight`) and `FLORA_RULES` (one row per region id plus rows keyed by POI id). Tests assert row counts first, then: determinism; no instance inside any path's half-width, any POI's `padRadius`, 2.5 units of any node placement, station, shrine or camp member home, the corridor of Cinderstep Pass, or a safe zone's inner 6 units; every `canopy` instance is at a point where `isWalkable(x, z)` is false and not in water (the walk grid stops at 118, so `isWalkable` is the source); every `understorey` piece has `maxHeight` at most 1.2; reeds within 3 units of a water cell; ferns only where `regionAt` is `woods`; no two understorey or canopy instances closer than the larger piece's footprint radius (`KIT_PIECES[id].radius`); each region and each POI has at least one cluster; each of 16 sectors of the 118 to 130 border ring has canopy instances; total instances per tier equal `GFX_TIERS.scatterDensity` times the full count within 5%.
+- **Change**: the G5.6 and G5.8 rows of design 8.1 against `buildScatter(seed: number, tier: GfxTierId): ScatterResult` where `ScatterResult = Record<KitPieceId, { x: number, z: number, rot: number, scale: number }[]>`, and against `KIT_PIECES` (each with `layer: 'understorey' | 'canopy'`, `maxHeight`) and `FLORA_RULES` (one row per region id plus rows keyed by POI id). Tests assert row counts first, then: determinism; no instance inside any path's half-width, any POI's `padRadius`, 2.5 units of any node placement, station, shrine or camp member home, the corridor of Cinderstep Pass, or a safe zone's inner 6 units; every `canopy` instance is at a point where `isWalkableGround(x, z)` is false and not in water (the walk grid stops at 118, so the predicate is the source; `isWalkableGround`, not `isWalkable`, so that a woods-tree cell does not count as room for canopy); no instance lies within 1 unit of a `WOODS_TREES` cell centre; every `understorey` piece has `maxHeight` at most 1.2; reeds within 3 units of a water cell; ferns only where `regionAt` is `woods`; no two understorey or canopy instances closer than the larger piece's footprint radius (`KIT_PIECES[id].radius`); each region and each POI has at least one cluster; each of 16 sectors of the 118 to 130 border ring has canopy instances; total instances per tier equal `GFX_TIERS.scatterDensity` times the full count within 5%.
 - **Accept**: red until GR4.
 - **Must not change**: `src/`.
 
@@ -333,8 +394,8 @@ What the owner gets: a filled world. Meadow, verge, reeds, ferns, scrub, rocks, 
 - **Tier**: sonnet.
 - **Depends**: GR4.
 - **Files**: `src/engine/floraKit.ts`, `src/engine/flora.ts` (new), `src/engine/renderer.ts`.
-- **Change**: `floraKit.ts` gains a builder per `KIT_PIECES` id: jittered icosahedra and dodecahedra for boulders, bushes and crowns; stacked jittered cones for `backdrop_tree_b`; hexagonal cylinders for logs and trunks; thin triangles for reeds and ferns; each with vertex colours from its tint family and within its triangle limit (boulder 20, bush 40, backdrop tree 80, crag 60). `flora.ts` `buildFlora(tier)` calls `buildScatter` with a fixed seed and makes one `InstancedMesh` per piece with a `cut` facet material (`vertexColors`, `footHeight` 0.6), the instance's Y from `getTerrainHeight`, `castShadow` from the piece. Nothing is added to `G.worldInteractiveObjects`. `init3DEngine` calls it after the world is built.
-- **Accept**: SG; `grep -n "worldInteractiveObjects" src/engine/flora.ts` prints nothing; `grep -n "Math.random" src/engine/flora.ts src/engine/floraKit.ts` prints nothing.
+- **Change**: `floraKit.ts` gains a builder per `KIT_PIECES` id: jittered icosahedra and dodecahedra for boulders, bushes and crowns; stacked jittered cones for `backdrop_tree_b`; hexagonal cylinders for logs and trunks; thin triangles for reeds and ferns; each with vertex colours from its tint family and within its triangle limit (boulder 20, bush 40, backdrop tree 80, crag 60). It also gains `woods_tree_a` and `woods_tree_b` (design 6.11): a hexagonal trunk of radius 0.30 to 0.42 and height 7 to 11, and a crown that starts at least 3.2 units up. The crown is darker, less saturated, taller and narrower than any harvestable tree, and each piece has at most 80 triangles. `flora.ts` `buildFlora(tier)` calls `buildScatter` with a fixed seed and makes one `InstancedMesh` per piece with a `cut` facet material (`vertexColors`, `footHeight` 0.6), the instance's Y from `getTerrainHeight`, `castShadow` from the piece. It also makes the two woods-tree `InstancedMesh`es from `WOODS_TREES` (one instance per row at its cell centre, the variant and a small rotation and scale chosen from the cell indices). They are built on every tier and never thinned, because they are walkability, not decoration. Nothing is added to `G.worldInteractiveObjects`. `init3DEngine` calls it after the world is built.
+- **Accept**: SG; `grep -n "worldInteractiveObjects" src/engine/flora.ts` prints nothing; `grep -n "Math.random" src/engine/flora.ts src/engine/floraKit.ts` prints nothing; the opus verify confirms the woods-tree instance count equals `WOODS_TREES.length` and does not read the tier.
 - **Must not change**: resource nodes, stations, landmarks.
 
 ### GR6 The ground field and the carpet [CLAUDE]
@@ -348,13 +409,13 @@ What the owner gets: a filled world. Meadow, verge, reeds, ferns, scrub, rocks, 
 ### GR7 Place-making pass [CLAUDE]
 - **Tier**: opus (a look tuned against pictures).
 - **Depends**: GR6.
-- **Files**: `src/data/look.ts` (`FLORA_RULES`, `KIT_PIECES` tints and densities only).
-- **Change**: CAP over P1, P3, P6, P7, P8, P9 and P10. For each POI and region, tune the rules until the frame, focus and floor of design 5.6 are visible in its pose and the regions differ at a glance. Then record calls and triangles at P1, P3, P5 and P8 on every tier.
-- **Accept**: `ONE(tests/scatter.test.ts)` stays green; SG; at P1 on balanced, colour-pass calls are at most 60% of the V2 capture and at most 1000, calls with the shadow pass at most 60% of V2's, triangles at most 550k. If a limit is missed, thin `scatterDensity` or `carpetTufts` in `GFX_TIERS` (and the tier test with it, in a declared tune commit), never the limits.
-- **Must not change**: any rule the scatter test holds.
+- **Files**: `src/data/look.ts` (`FLORA_RULES`, `KIT_PIECES` tints and densities only); `scripts/place-woods-trees.ts` (its target count only) and `src/data/woodsTrees.ts` (regenerated by the script only).
+- **Change**: CAP over P1, P3, P6, P7, P8, P9 and P10. For each POI and region, tune the rules until the frame, focus and floor of design 5.6 are visible in its pose and the regions differ at a glance. At P8, judge the woods trees at pitch 0.12 and 1.15. If the wood is too thin or too thick, or the crowns hide the hero, change only the script's target count, within the 100 to 220 range of `WOODS_TREE_COUNT`. Rerun the script and commit the new table in its own `tune(ground): woods tree count <n>` commit. Then record calls and triangles at P1, P3, P5 and P8 on every tier.
+- **Accept**: `ONE(tests/scatter.test.ts)` and `ONE(tests/woods-trees.test.ts)` stay green, and so do the frozen Stage 2 tests; SG; at P1 on balanced, colour-pass calls are at most 60% of the V2 capture and at most 1000, calls with the shadow pass at most 60% of V2's, triangles at most 550k. If a limit is missed, thin `scatterDensity` or `carpetTufts` in `GFX_TIERS` (and the tier test with it, in a declared tune commit), never the limits.
+- **Must not change**: any rule the scatter test or the woods-tree test holds; the clearance constants in `woodsTrees.ts`; `collision.ts`.
 
 ### CP-GR Ground checkpoint [OWNER]
-The owner compares `before/` and `ground/` at P1, P3, P6, P7, P8 and P10, and looks closely at props for finding 23's texture change. Should see: a meadow with a verge along the road; reeds only at water; a dense woods floor inside a tall frame; crags along the ridge; no straight map edge at any yaw; nothing in front of a node, a station or the pass. The owner also runs `look.bench` on their GPU at P1 and P8. Here the owner answers CALL-V8 again if the crags or backdrop trees do not convince.
+The owner compares `before/` and `ground/` at P1, P3, P6, P7, P8 and P10, and looks closely at props for finding 23's texture change. Should see: a meadow with a verge along the road; reeds only at water; a dense woods floor inside a tall frame; crags along the ridge; no straight map edge at any yaw; nothing in front of a node, a station or the pass. In the woods, the owner should see a forest of tall trunks with open lanes along Lanternway and around Lampwright's Hollow, Reedglass Tarn and the guardians' clearing, and decorative trees that do not look choppable. The owner also walks the woods live: clicked routes bend around trunks, keyboard movement slides along them, and a moss guardian's chase behaves as CALL-V21 decided. The owner also runs `look.bench` on their GPU at P1 and P8. Here the owner answers CALL-V8 again if the crags or backdrop trees do not convince. **Once CP-GR accepts, `WOODS_TREES` is frozen.** Any later change is a game-rule change and goes back to the owner.
 
 ---
 
@@ -541,8 +602,13 @@ The owner fights with melee, ranged and magic, gains a level and gets a rare dro
   5. `npm audit --audit-level=high` exits 0.
   6. Every goal G5.1 to G5.14 maps to a passing test (section 10.2).
   7. Findings 23, 24, 29, 30, 31 and 32 each have a commit naming them; finding 5's script policy is either closed by UI8 or has its written second deferral.
-  8. `grep -rn "Math.random" src/state/scatter.ts src/state/weather.ts src/engine/flora.ts src/engine/floraKit.ts src/engine/particles.ts` prints nothing. No literal instance, particle or light count outside `look.ts`.
+  8. `grep -rn "Math.random" src/state/scatter.ts src/state/weather.ts src/engine/flora.ts src/engine/floraKit.ts src/engine/particles.ts scripts/place-woods-trees.ts` prints nothing. No literal instance, particle or light count outside `look.ts`.
   9. No commit on the branch carries an attribution trailer.
+  10. Walkability:
+      - `git diff main -- src/state` shows changes to Stage 2 files only in `collision.ts`, as TR2 describes;
+      - the frozen Stage 2 tests pass untouched;
+      - `src/data/woodsTrees.ts` is unchanged since the commit CP-GR accepted;
+      - no file reads `GFX_TIERS` to decide woods-tree placement or count.
 - **Accept**: a written pass.
 - **Must not change**: anything.
 
@@ -553,6 +619,7 @@ The owner fights with melee, ranged and magic, gains a level and gets a rare dro
 - The smoke list of the foundation design 5.7, once, on the balanced tier.
 - A full day watched once at P1 with the clock sped up through `__DEBUG.look.phase`: no jump in light or sky at any phase.
 - `?plain`: the game is playable. Reduced motion set in the operating system: no weather storm, no shake, no interface animation.
+- The woods, on the performance and the ultra tier: the same trunks block in both. Click-to-move reaches the woods shrine, Lampwright's Hollow, Reedglass Tarn's fishing spot and a yew from the start. A save made while standing beside a trunk reloads to the same place.
 - If UI8 ran: UI8c.
 
 ### OV-10 Accept Stage 5 [OWNER]
@@ -585,7 +652,7 @@ The owner accepts after G-5 and G-6. The main session pushes the branch, opens t
 | G5.3 | LT1 (`day-cycle`), LT2; G-6 full day |
 | G5.4 | AR1 (`air`, `look-data`, bloom threshold), AR2; CP-AR |
 | G5.5 | WT1, WT2; CP-WT |
-| G5.6 | GR3, GR4, GR6 (`ground-field`); CP-GR |
+| G5.6 | TR1, TR2 (`woods-trees`, plus the frozen Stage 2 tests), GR3, GR4, GR6 (`ground-field`); CP-GR; G-6 woods walk |
 | G5.7 | WX1, WX2, FX1; CP-WX, CP-FX |
 | G5.8 | GR3 (border sectors), LT1 (`look-data` far plane and apron), AR3; CP-AR with P10 |
 | G5.9 | AR1 (`gfx-tiers` pixel budget), UI2 (sizes, minimap); CP-UI |
@@ -601,7 +668,7 @@ The owner accepts after G-5 and G-6. The main session pushes the branch, opens t
 |---|---|---|---|---|---|
 | 1 | Light, shadow, sky | CP-LT | about +0.3 ms | +1 | JS about +14 kB |
 | 2 | Air, horizon, clouds, output | CP-AR | about +0.3 ms; upper tiers +1.5 to 2.5 ms | +3 to +5 | JS about +19 kB |
-| 3 | Ground, vegetation, places | CP-GR | about 0 net (merging pays for the carpet) | about -40 to -55%, then +18 | JS about +21 kB |
+| 3 | Ground, vegetation, places, blocking woods trees | CP-GR | about 0 net (merging pays for the carpet); woods trees about +0.1 ms on every tier | about -40 to -55%, then +20 | JS about +24 kB |
 | 4 | Water | CP-WT | about -0.2 to +0.3 ms | 0 | JS about +4 kB |
 | 5 | Weather, motes, local light | CP-WX | about +0.3 to 0.6 ms | +2 | JS about +8 kB |
 | 6 | Interface (parallel) | CP-UI | negative (blurs removed) | 0 | fonts up to 120 kB, CSS up to +16 kB, JS about +8 kB |

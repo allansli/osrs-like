@@ -2,9 +2,9 @@
 
 Date: 2026-11-14. Branch: `feat/visual-pass`. All line numbers refer to commit `a8cad85` (main, before Stages 2, 3 and 4). Symbols are named next to every line number, because the lines will move before this stage starts.
 
-Status: proposal. The owner has not reviewed any of it. Every decision marked **CALL-V** is the lead's proposal and needs the owner's check (collected in section 13). Nothing here has been agreed.
+Status: proposal, approved in part. On 2026-11-14 the owner answered CALL-V3, V9, V18, V19 and V20 and agreed how QV4 and QV5 will be answered; section 13 marks each one decided, with the answer. Every other **CALL-V** is still the lead's proposal and needs the owner's check. The owner chose trees that block walking in the woods against the lead's recommendation; section 6.11 is the design for it.
 
-Inputs read for this document: `docs/superpowers/specs/2026-11-13-world-foundation-design.md` (called "the foundation design" below; its sections 6, 8 and 9 in particular) and its plan; `docs/audit/2026-11-13-findings.json`; `docs/superpowers/baseline/` (the two screenshots, the Stage 1 baseline, the CP-1 and G-2 records); `src/engine/renderer.ts`, `worldMesh.ts`, `worldBuild.ts`, `blenderWorld.ts`, `textures.ts`, `materials.ts`, `vfx.ts`, `overlay.ts`, `spawns.ts`, the render part of `loop.ts`; `src/ui/hud.ts`, `stations.ts`, `styles.css`; `index.html`; `vercel.json`; `CREDITS.md`; the tests that pin rendering or markup (`tests/textures.test.ts`, `globals.test.ts`, `vercel-headers.test.ts`, `source-limits.test.ts`, `architecture.test.ts`, `credits.test.ts`); the JSON chunk of `public/models/world.glb`; three 0.169 sources under `node_modules/three`; the Stage 2 data file on `feat/world-place` (`src/data/worldMap.ts`); and the shelved Stage 7 compression design on `feat/reach`.
+Inputs read for this document: `docs/superpowers/specs/2026-11-13-world-foundation-design.md` (called "the foundation design" below; its sections 6, 8 and 9 in particular) and its plan; `docs/audit/2026-11-13-findings.json`; `docs/superpowers/baseline/` (the two screenshots, the Stage 1 baseline, the CP-1 and G-2 records); `src/engine/renderer.ts`, `worldMesh.ts`, `worldBuild.ts`, `blenderWorld.ts`, `textures.ts`, `materials.ts`, `vfx.ts`, `overlay.ts`, `spawns.ts`, the render part of `loop.ts`; `src/ui/hud.ts`, `stations.ts`, `styles.css`; `index.html`; `vercel.json`; `CREDITS.md`; the tests that pin rendering or markup (`tests/textures.test.ts`, `globals.test.ts`, `vercel-headers.test.ts`, `source-limits.test.ts`, `architecture.test.ts`, `credits.test.ts`); the JSON chunk of `public/models/world.glb`; three 0.169 sources under `node_modules/three`; the Stage 2 data file on `feat/world-place` (`src/data/worldMap.ts`); for 6.11 (added 2026-11-14), the Stage 2 walking code and tests on `wp/W` and `feat/world-place` (`src/state/collision.ts`, `terrain.ts`, `pathfind.ts`, `monsterAi.ts`, `save.ts`, `src/data/worldMap.ts`, `placements.ts`, `tests/reachability.test.ts`, `relief.test.ts`, `world-data.test.ts`, `pathfind.test.ts`); and the shelved Stage 7 compression design on `feat/reach`.
 
 Nothing was run: no test, no build, no dev server, no browser. Every frame cost in this document is an estimate. Section 15 lists what could not be verified.
 
@@ -32,7 +32,7 @@ So the stage is not "add effects". It is: give the world a real light, let the s
 
 The foundation design's CALL-1 list, unchanged: skills on the current XP curve, click-to-act, 28 slots, bank, shops, forge, saves keep loading. For the look: **flat planes, painted albedo tiles, a limited palette, hard edges.** No photoreal material, no normal or roughness map, no soft particle sprite, no depth-of-field, no motion blur.
 
-No game rule changes in this stage. Nothing here changes a height, a walkable cell, a monster, a drop, a formula or the save format.
+One game rule changes in this stage, by the owner's decision of 2026-11-14 (CALL-V9): the trees the stage adds in the woods block walking (6.11). This changes walkable cells in the woods, so routes and monster chases there bend around trunks. Nothing else here changes a height, a walkable cell, a monster, a drop, a formula or the save format.
 
 ---
 
@@ -51,6 +51,7 @@ No game rule changes in this stage. Nothing here changes a height, a walkable ce
 | K9 | No file under `src/` over 1000 lines; every module imports in `node` without throwing; `src/state` and `src/data` do not import `three`. | New engine modules are small and have no import-time side effect. Pure look data and pure math live in `src/data` and `src/state`, where they can be tested. |
 | K10 | Out of scope: combat feel and sound (Stage 4), quests and new systems (Stage 6), touch controls (Stage 7). | Effects are restyled, never retimed (6.9). The interface keeps its layout and its mouse and keyboard model. |
 | K11 | The saved `timeOfDay` is an integer 0, 1 or 2 (`save.ts` 47-50). | The day clock is engine state. The save keeps writing 0, 1 or 2 (section 9). |
+| K12 | Walkability is Stage 2 game state: `isWalkable` (`collision.ts`) feeds the walk grid (built once), click-to-move, keyboard and monster movement, save relocation, and the frozen Stage 2 tests. | The woods trees enter walkability as a committed table of whole walk cells, identical on every load and every tier (6.11). Every frozen Stage 2 test stays green untouched. |
 
 ---
 
@@ -63,7 +64,7 @@ Goals, each with its proof in 8.1:
 - **G5.3** A continuous day: dawn, day, golden hour, dusk and night are different pictures of the same place. The save format does not change.
 - **G5.4** Atmospheric depth: near, middle and far read as three planes at every pose; fog has height and leans toward the sun.
 - **G5.5** Water that has a shore, a depth and a sky in it, in facets.
-- **G5.6** Dense and varied vegetation placed by rules, so the five regions and the seven points of interest read as places. No path, pad, pass or station is obstructed.
+- **G5.6** Dense and varied vegetation placed by rules, so the five regions and the seven points of interest read as places. No path, pad, pass or station is obstructed. In the woods, trees block walking (6.11), and every place the player could reach before stays reachable.
 - **G5.7** Weather and ambient particles in the faceted idiom, bounded per tier.
 - **G5.8** The world looks composed from any camera angle the game allows: no visible map edge, no void, a closed horizon.
 - **G5.9** Crisp at high resolution and high pixel ratio: edges, shadows, text, icons and the minimap.
@@ -73,7 +74,7 @@ Goals, each with its proof in 8.1:
 - **G5.13** A shader that fails to compile does not leave a black screen.
 - **G5.14** Every audit finding this stage touches (23, 24, 29, 30, 31, 32) is fixed or deferred again in writing (section 11).
 
-Non-goals: new relief or a second ridge (the foundation design's option of a scenic ridge east of the river, and Kestrel Bluffs, left there "as a Stage 5 option", are both declined: they would change the terrain golden); collision on decoration (CALL-V9); new creatures, items or places; renaming borrowed content; changes to animation or to the timing of any effect; sound; a settings store for the graphics tier; texture streaming; a level-of-detail system for models; model compression (Stage 7, shelved by the owner).
+Non-goals: new relief or a second ridge (the foundation design's option of a scenic ridge east of the river, and Kestrel Bluffs, left there "as a Stage 5 option", are both declined: they would change the terrain golden); collision on any decoration other than the woods trees of 6.11 (bushes, rocks, logs, reeds and the canopy on unwalkable ground never block); new creatures, items or places; renaming borrowed content; changes to animation or to the timing of any effect; sound; a settings store for the graphics tier; texture streaming; a level-of-detail system for models; model compression (Stage 7, shelved by the owner).
 
 Anti-goals:
 
@@ -219,20 +220,21 @@ Between regions the ground families blend over 14 units, as the terrain shader's
 
 ### 5.6 Vegetation and props: how a place reads as a place
 
-Four layers, each with one job:
+Five layers, each with one job:
 
 1. **Carpet** (grass tufts, flowers, dry tussocks, ember grass): tells the region and the wind. It follows the hero and fades out at its edge (6.7).
 2. **Understorey** (bushes, ferns, reeds, small rocks, logs, mushrooms; at most 1.2 units high): tells the ground under it. Reeds only within 3 units of water. Ferns only in `woods`. Never on a path.
-3. **Canopy and crag** (backdrop trees, crags, snags; tall): closes views and frames them. It stands **only on ground the hero cannot walk on** (CALL-V9): the 12-unit border ring between the walkable bound (118) and the terrain edge (130), the core of Harrowback Ridge, and the far bank strips the walk grid already blocks. Tall things never appear where the hero could walk through them.
-4. **Horizon** (a ring of far hills beyond the terrain): closes the picture at every yaw.
+3. **Canopy and crag** (backdrop trees, crags, snags; tall): closes views and frames them. It stands **only on ground the hero cannot walk on** (`isWalkableGround` false): the 12-unit border ring between the walkable bound (118) and the terrain edge (130), the core of Harrowback Ridge, and the far bank strips the walk grid already blocks. It never blocks anything, because nothing could walk there.
+4. **Woods trees** (tall trunks with crowns, `woods` region only; CALL-V9, decided 2026-11-14): make the woods a forest the hero walks through. Each stands on one walk cell and **blocks it** (6.11). They are a fixed, committed table, not part of the scatter, and the same on every tier. Outside the woods, tall things still never appear where the hero could walk.
+5. **Horizon** (a ring of far hills beyond the terrain): closes the picture at every yaw.
 
 Distribution rules:
 
 - **Clumps, not noise.** Instances come in clusters of 3 to 9 around seeded cluster centres with a size falloff, largest in the middle. Even spacing is forbidden.
 - **Paths are edged.** A path keeps a bare strip of its half-width, then a verge of denser, taller carpet for 2 units. A path reads as a path because of what grows beside it.
 - **Every point of interest gets a frame, a focus and a floor.** Frame: two or three tall things behind it (canopy layer, on unwalkable ground where the map allows, otherwise understorey at its tallest). Focus: its existing pieces, kept clear by an empty radius equal to `padRadius`. Floor: a ground change (trampled dirt at Three Kettle Camp, ash at Slagfall Terrace, moss at Lampwright's Hollow, wet stones at the two ponds).
-- **Gameplay objects stay readable.** Nothing is placed within 2.5 units of a resource node, a station, a shrine or a camp member's home, and nothing in Cinderstep Pass's corridor. A harvestable tree must never be confused with a backdrop tree: backdrop trees stand only where the hero cannot go and use a darker, less saturated crown.
-- **Density by tier changes count, never rules.** A lower tier thins every cluster by the same fraction.
+- **Gameplay objects stay readable.** Nothing is placed within 2.5 units of a resource node, a station, a shrine or a camp member's home, and nothing in Cinderstep Pass's corridor (woods trees keep the larger clearances of 6.11). A harvestable tree must never be confused with a decorative one: backdrop trees stand only where the hero cannot go, and woods trees stand at least 4.5 units from every harvestable tree; both use a darker, less saturated crown and a taller, narrower silhouette than any harvestable tree, and neither offers a click action.
+- **Density by tier changes count, never rules.** A lower tier thins every cluster by the same fraction. Woods trees are not thinned on any tier: they are walkability (6.11).
 
 ### 5.7 Water, sky, weather
 
@@ -262,6 +264,9 @@ Module map (new files; each imports in `node`, has no import-time side effect, a
 | Module | Holds | Layer |
 |---|---|---|
 | `src/data/look.ts` | The time-of-day keys, region palettes and air tints, weather offsets, flora rules per region, the tier table | data (pure) |
+| `src/data/woodsTrees.ts` | `WOODS_TREES`: the committed table of woods-tree walk cells (integer pairs), and its clearance constants (6.11) | data (pure) |
+| `src/state/collision.ts` (Stage 2, changed) | `isWalkableGround` (today's `isWalkable`, renamed and exported); `isWalkable` = ground and not a woods-tree cell (6.11) | state (pure) |
+| `scripts/place-woods-trees.ts` | The one-off seeded placement that writes `woodsTrees.ts`; never imported by the game | tooling |
 | `src/state/dayCycle.ts` | `dayFrameAt(phase)` (OKLab interpolation of the keys), sun and moon direction, phase from and to the saved preset, the clock step | state (pure) |
 | `src/state/shadowFit.ts` | `fitShadow(camera position, camera forward, light direction, range, map size)`: frustum centre and texel-snapped light position; `stepShadowDir`: the stepped shadow direction (6.2) | state (pure) |
 | `src/state/weather.ts` | `weatherAt(dayIndex, phase, regionWeights)`: deterministic schedule | state (pure) |
@@ -300,7 +305,7 @@ The grass and water shaders stop carrying their own light direction; they read t
 
 - **Fitted**: the shadow frustum is a square of side `2 * range`, centred `0.35 * range` ahead of the camera along its forward direction projected on the ground, instead of on the hero. Range per tier: 40, 54, 70 (section 10).
 - **Snapped**: the light position is rounded to the map's texel size in light space (`fitShadow`), so a walking hero does not make every edge crawl. Today the light follows the hero unsnapped every frame.
-- **Stepped sun**: snapping does not help when the light direction itself turns, which rotates the map's texel grid and makes every edge swim. As games with a day cycle do, the shadow light's direction moves only when the true sun is more than 0.5 degrees away from it (about every 2 s at the proposed clock); the shading key follows the true sun.
+- **Stepped sun**: snapping does not help when the light direction itself turns, which rotates the map's texel grid and makes every edge swim. As games with a day cycle do, the shadow light's direction moves only when the true sun is more than 0.5 degrees away from it (about every 2 s at the running clock of CALL-V3); the shading key follows the true sun.
 - **Biased**: `bias` plus `normalBias` (the terrain now casts on itself at low sun), both tuned at the light checkpoint.
 - **Faded**: the shadow term fades to 1 between 80% and 100% of the range. Implementation: a wrapper function declared after `shadowmap_pars_fragment` and a `#define getShadow` that points three's call at it. If that proves fragile, the fallback is no fade and the larger range.
 - **Type**: `PCFShadowMap` instead of `PCFSoftShadowMap`, for the hard edge of 5.1; it is also cheaper.
@@ -350,9 +355,11 @@ Riding on this change:
 
 **The carpet.** A fixed number of tuft instances lies on a jittered grid that wraps around the hero. The vertex shader derives each tuft's world cell from its instance index and the hero's position, reads height and density from the ground field, scales the tuft to zero where density is zero or at the carpet's edge, and bends it with the shared wind. No per-frame CPU work, no popping. The carpet's material is `facetMaterial` (round, two bands, `vertexColors` for the root-to-tip tint) with one extra vertex patch on `begin_vertex` for placement and wind, not a separate `ShaderMaterial`: that way it receives the shadow map, the banded light and `applyAir` through the same code as the ground. A custom shader would leave tufts bright inside a tree's shadow, the most common grass-shadow defect. Its instances are placed in the shader, so their instance matrices are identity and `InstancedMesh`'s bounding sphere would sit at the origin: `frustumCulled = false`. Three or four variant geometries (meadow tuft, flower, dry tussock, ember grass) are three or four draws. Tufts per tier: 0, 6,000, 14,000, 24,000 at about 8 triangles each.
 
-**The scatter.** `buildScatter(seed, tier)` is pure and deterministic (a seeded generator, not `Math.random`). It reads the flora rules in `look.ts` and the Stage 2 tables (`PATHS`, `RIDGES`, `BASINS`, `POIS`, `CAMPS`, safe zones, the walk grid, node placements) and returns instance lists per kit piece, applying every rule of 5.6. Inside each cluster, members are spaced by Poisson-disk sampling (Bridson's method, minimum distance from the larger piece's radius), as placement tools do, so no two pieces interpenetrate and spacing never looks gridded. `flora.ts` turns each list into one `InstancedMesh` (one draw per kit piece, about 14 pieces). About 700 understorey and 500 canopy and crag instances at full density (starting numbers, tuned at the checkpoint).
+**The scatter.** `buildScatter(seed, tier)` is pure and deterministic (a seeded generator, not `Math.random`). It reads the flora rules in `look.ts` and the Stage 2 tables (`PATHS`, `RIDGES`, `BASINS`, `POIS`, `CAMPS`, safe zones, the walk grid, node placements) and returns instance lists per kit piece, applying every rule of 5.6. Inside each cluster, members are spaced by Poisson-disk sampling (Bridson's method, minimum distance from the larger piece's radius), as placement tools do, so no two pieces interpenetrate and spacing never looks gridded. `flora.ts` turns each list into one `InstancedMesh` (one draw per kit piece, about 14 pieces). About 700 understorey and 500 canopy and crag instances at full density (starting numbers, tuned at the checkpoint). The scatter reads walkability through `isWalkableGround` and `isWalkable`, so no understorey piece lands on a woods-tree cell; it never produces woods trees.
 
-**The kit.** `floraKit.ts` builds each piece once from seeded, jittered primitives with vertex colours: 3 boulders, 2 bushes, fern, reed clump, log, snag, sapling, 2 backdrop trees, 2 crags, mushroom cluster, 3 cloud clusters. No model file.
+**Woods trees.** `flora.ts` also draws one instance per row of `WOODS_TREES` (6.11), on every tier, as two `InstancedMesh` variants (two draws plus their shadow draws). They cast shadows wherever the tier has them and are never added to `G.worldInteractiveObjects`.
+
+**The kit.** `floraKit.ts` builds each piece once from seeded, jittered primitives with vertex colours: 3 boulders, 2 bushes, fern, reed clump, log, snag, sapling, 2 backdrop trees, 2 woods trees, 2 crags, mushroom cluster, 3 cloud clusters. No model file.
 
 Models: **none is essential.** Optional, and only if the owner asks after seeing the ground slice (CALL-V8): a Blender-authored set of four crag pieces and two backdrop trees in a new `flora.glb` (about 60 to 90 kB on the wire, estimate), loaded through `loadGltfOnce`, leaving the five existing GLBs untouched.
 
@@ -378,6 +385,83 @@ Models: **none is essential.** Optional, and only if the owner asks after seeing
 - **Governor.** After a tier is applied, if the median frame time over 4 s is above 24 ms, the game steps down one tier, once per step, and says so in the chat. It never steps up by itself. A window in which the page was hidden is ignored (animation frames stop or slow there). Once the player picks a tier with the button, the governor is off for the rest of the session: a 30 Hz panel or a laptop on battery must not undo the player's choice every 4 seconds.
 - **Measuring.** The perf HUD's frame time is the interval between animation frames (`loop.ts` 676-679), which vsync rounds to the display's period: two tiers that both finish under 16.7 ms read the same. Frame-time budgets (section 10) are therefore measured with `__DEBUG.look.bench(frames)`, which renders the current view back to back and waits once with `gl.finish()`, giving milliseconds per frame free of vsync. It is a debug hook only.
 - **Shader failure.** `renderer.debug.onShaderError` (called from `WebGLProgram.js` 936) switches to **plain mode**: composer off, carpet, particles, clouds and water effects off, one chat line. Three stops logging the shader error itself once the handler is set (`WebGLProgram.js` 936-938), so the handler logs it first. Programs already compiled keep their cache key, so a flag read by `facetMaterial` would only reach new materials: every patched material registers in one list, and `enterPlainMode` swaps each for a stock `MeshLambertMaterial` with the same colour, map, emissive and side. The world stays visible and playable. A URL flag forces plain mode for testing.
+
+### 6.11 Woods trees that block walking (CALL-V9, decided 2026-11-14)
+
+The owner decided that trees in the woods block walking. The lead had recommended the opposite, so this is a deliberate game-rule change, the only one in the stage. This section is its design. It is built against Stage 2 as found on `wp/W` and `feat/world-place` at the time of writing. R0 re-checks every premise below and stops the stage if one fails.
+
+**How walking works today (Stage 2).** `isWalkable(x, z)` (`collision.ts`) is the single predicate: walk bound ±118, deep river, castle walls, Harrowback Ridge core, basin water. Every mover goes through it:
+- the walk grid `buildWalkGrid` (`pathfind.ts`) samples it once at the centre of each 1-unit cell (236 × 236 = 55,696 cells) and is built once in `init3DEngine`;
+- A* runs on 8 neighbours with no corner cutting, then smooths the route by testing segments against the continuous predicate every 0.25 units;
+- click-to-move, the minimap click and "Walk here" reject an unwalkable point with "You cannot walk there.". The click ray tests `G.worldInteractiveObjects` (the terrain, nodes, stations, monsters), so a mesh outside that list never takes a click;
+- the hover does **not** read walkability: `updateHoverTile` raycasts the terrain mesh only and highlights the 1-unit cell under the cursor, walkable or not, as it does over water today;
+- the hero's step and every monster's step go through `moveWithCollision`, which tries the full move, then x only, then z only;
+- monsters do **not** path-find: `stepMonster` walks straight at the player, or at its wander point;
+- `sanitizePose` (`save.ts`) moves a saved position that is unwalkable to the nearest walkable point, on rings of 0.5 to 12 units.
+
+**What blocks.**
+- **The woods trees this stage adds**: tall trunks with crowns, in the `woods` region only (`regionAt(x, z)?.id === 'woods'`, as the fern rule uses). The target is about 150 trees. The tests allow 100 to 220, and GR7 tunes the number within that range.
+- **Harvestable trees stay as they are and do not block.** They are Stage 2 placements with approach rules (stop distances, `entityGoal`), and frozen Stage 2 tests require their surroundings to be reachable. Blocking them would change how woodcutting is approached, which is a skilling rule and outside this decision. They are told apart from woods trees by look and spacing (5.6).
+- **Nothing else changes.** POI pieces, crates, barrels, stations, rocks, bushes, logs, reeds and the canopy on unwalkable ground stay non-blocking. A frozen Stage 2 test requires every POI piece to stand on walkable ground.
+
+**Collision shape: one whole walk cell.** A tree's centre is always a cell centre (`-118 + i + 0.5`), and the tree blocks exactly that 1 × 1 cell: a point is blocked when `floor(x + 118)` and `floor(z + 118)` name a tree cell.
+- The drawn trunk has a radius of 0.30 to 0.42, so it sits inside its cell. The hero stops at the cell edge, 0.5 from the trunk's centre, about where its body meets the bark.
+- The shape is a cell, not a circle, so that the walk grid and the continuous predicate agree exactly. A cell is blocked on the grid if and only if every point in it is blocked. A circle of radius under 0.5 can miss every cell centre. A* would then route through a trunk that the hero's step then refuses, and the hero would stall.
+- One more reason: games in this tradition block whole tiles for trees, so a tree costs exactly one tile of walking.
+
+**How trees enter walkability.**
+- `collision.ts` renames today's predicate to `isWalkableGround` and exports it.
+- `isWalkable(x, z)` becomes `isWalkableGround(x, z) && !isWoodsTreeCell(x, z)`.
+- `isWoodsTreeCell` reads a 236 × 236 bitmap. It is built from `WOODS_TREES` on the first call, so nothing runs at import time (rule K9).
+- The extra cost per call is one array read, with no change to any signature.
+- The walk grid, the A* smoothing, every click check, the hero's and the monsters' `moveWithCollision`, and `sanitizePose` all see the trees with no edit to their files. The hover tile is unchanged. Over a tree it highlights the tree's own cell, because the hover tile and the walk cell are the same 1-unit grid, and that cell is exactly what the tree blocks.
+- `pathfind.ts`, `monsterAi.ts`, `save.ts`, `input.ts` and `loop.ts` are not touched. The grid keeps its 55,696 cells, and its build does one more array read per cell.
+
+**Placement rules.** These keep the world playable. Every rule is a test (8.1).
+Cell distance below means the Chebyshev distance `max(|di|, |dj|)` between cell indices.
+- **Spacing.** Any two tree cells are at cell distance ≥ 3. That leaves at least two free cells between any two trunks, in a line or diagonally, so a 2-unit lane always remains.
+- **Away from existing obstacles.** Every tree cell is at cell distance ≥ 3 from every cell whose centre has `isWalkableGround` false: river, ponds, ridge core, castle, walk bound.
+- **Why that is enough.** With no corner cutting, a 1-cell obstacle with no other obstacle within 2 cells cannot close any passage or enclose any cell. The set of cells reachable from the start is therefore exactly the old set minus the tree cells. The reachability test proves this rather than assuming it.
+- **Clearances.** The distance is measured from the tree cell's centre:
+  - paths: at least the path's `halfWidth` + 3 from its centre line (the bare strip, the 2-unit verge and half a cell);
+  - resource nodes (fishing spots included), stations and shrines: at least 4.5 (the largest stop distance, 3.5, plus a cell's half-diagonal), so every side of every target stays open;
+  - POIs: at least `padRadius` + 3 from the centre;
+  - camps: none inside any camp's radius + 2. Each camp is a clearing, which covers its centre, every member's home, wander circle and respawn point;
+  - safe zones: none inside any of them;
+  - Cinderstep Pass: none inside its corridor;
+  - saves: none on the cell of the start point, the Stage 1 save fixture's position or any of the 20 old spawn points the Stage 2 relocation test lists.
+- **Woods only.** Every tree stands where `regionAt` is `woods` and `isWalkableGround` is true.
+- **What this leaves treeless.** The woods region is a circle of radius 45 around (-75, -30). The moss guardians' camp has centre about (-75.5, -30.5) and radius 22, so the camp-plus-2 rule clears a central glade of radius 24, about 28% of the region's area. The woods shrine, the end of Lanternway and the woods safe zone stand inside that glade. Of the yew and magic trees placed on `wp/W`, four are inside the glade and three are in the ring, where each keeps its 4.5-unit clearance. The blocking forest is therefore the ring between radius 24 and 45, minus Lanternway's lanes, Lampwright's Hollow, Reedglass Tarn and the region's overlap with `lumbridge`. That ring is about 4,500 square units, comfortably above what about 150 trees at cell distance 3 need. The glade is the price of CALL-V21 option A. A smaller clearance (each member's home plus its wander radius plus 2) would put trees inside the camp and let fights there snag.
+
+**Determinism.** Walkability is game state that tests and saves depend on, so the trees are a committed table, not generated at run time.
+- `src/data/woodsTrees.ts` holds `WOODS_TREES: readonly (readonly [number, number])[]`: integer cell indices `[i, j]`, sorted, no duplicates. Integers give the same cells in every browser, with no floating-point borderline.
+- The table is written once by `scripts/place-woods-trees.ts`. That script is a seeded Poisson-disk placement under the rules above. It is bundled and run with the `esbuild` that vite already installs (`npx esbuild scripts/place-woods-trees.ts --bundle --platform=node --format=esm --outfile=<scratch>/place.mjs && node <scratch>/place.mjs`), so no dependency is added. Its seed is in the script's header, and the game never imports it.
+- Rerunning the script is a declared `tune` commit, allowed only until the ground checkpoint (CP-GR). After CP-GR accepts, the table is frozen; any later change is a game-rule change and needs the owner.
+- If Stage 2 data later moves a path or a camp across a tree, the placement tests fail loudly. They never pass silently.
+
+**A saved position inside a trunk.** The existing rule handles it with no new code. `sanitizePose` finds an unwalkable saved point and moves it to the nearest walkable point on its first ring (0.5 units). A tree cell's four neighbours are always free, so the move is at most about 1 unit. A test checks every tree cell. The save format and its keys do not change (section 9).
+
+**What the player will notice.**
+- The woods are a ring of dense forest around an open central glade (the guardians' camp and the shrine).
+- Clicked routes in the woods bend around trunks.
+- Keyboard movement stops against a trunk head-on and slides along it at an angle.
+- Clicking exactly on a trunk's cell answers "You cannot walk there.", as water does. A click on a trunk's crown or bark hits the ground behind it, because woods trees are not click targets.
+- **Monsters snag.** They walk straight at the player, so a trunk directly between a monster and the hero, on a nearly axis-aligned line, stops the monster: it slides only along the free axis, and that slide is tiny when the line is nearly straight. The player can then use a tree as cover. This is the "safespot" of old-school games.
+- Camps are clearings, so fights that start in a camp never meet a trunk. Snags happen only when a chase leaves the camp toward trees.
+- Moss guardians, the woods camp, are the monsters affected. This is owner decision CALL-V21.
+
+**Every tier.** Walkability cannot depend on the graphics level, so every woods tree is drawn on every tier, performance included. Tier density thins the understorey, the canopy on unwalkable ground and the carpet, never these trees (section 10).
+
+**Cost.**
+- Walking: one array read per `isWalkable` call, and a 56 kB bitmap built once.
+- Drawing: about 150 instances of at most 80 triangles each (about 12k triangles) in two draws, plus two shadow draws on tiers with shadows.
+- Bytes: the table is about 2 kB of JS.
+- Edits to Stage 2: `collision.ts` only. Its frozen tests (reachability, relief, world data, pathfinding, save relocation, world budget) stay green untouched.
+
+**Goals this weakens, said plainly.**
+- The essence's "no game rule changes" (section 1, CALL-V1) no longer holds. It now carries this one exception.
+- "A harvestable tree must never be confused with a decorative one" (5.6) is weaker: woods trees now stand where the hero walks, near harvestable trees. It rests on look and spacing alone: a 4.5-unit gap, a darker and narrower crown, and no click action.
+- No goal is made impossible.
 
 ---
 
@@ -463,7 +547,7 @@ Headless, in vitest (`node`):
 | G5.3 | `tests/day-cycle.test.ts`: `dayFrameAt` returns each key exactly at its phase; it is continuous across phase 1 to 0 and between keys (no channel jumps more than 0.02 per 0.001 of phase); sun elevation never exceeds 62 degrees; near phase 0.58 the sun is within 5 degrees of (0.52, 0.78, 0.34); `presetToPhase` and `phaseToPreset` round-trip 0, 1 and 2; every phase maps to 0, 1 or 2. The existing save tests stay green, and `serializeState`'s keys are unchanged. |
 | G5.4 | `tests/look-data.test.ts`: fog density by height is monotonic; every key, region and weather row is complete; under every key the computed lit-ground value (key times band plus fill, on the meadow albedo) is at least 22%; `BLOOM.threshold` is at least 1.15 times the brightest lit value over all keys, and every emitter colour at least 1.2 times the threshold. Shader text contains `applyAir` in the facet, sky, water, carpet and particle shaders. |
 | G5.5 | `tests/water-grid.test.ts`: every water cell has terrain below the water plane within one cell; depth at the river centre and at each basin centre is positive; flow is a unit vector on the river and zero in ponds; the cell count is under 6,000. |
-| G5.6 | `tests/scatter.test.ts`: same seed, same output; no instance within a path's half-width, a POI pad, 2.5 units of a node, station, shrine or camp home, or in the pass corridor; every canopy and crag instance is at a point where `isWalkable` is false (it is false beyond 118, which the walk grid does not cover) and not in water; reeds are within 3 units of water; ferns are only in `woods`; no two understorey or canopy instances are closer than the larger piece's radius; every region and every POI has instances; counts per tier are inside the tier table. |
+| G5.6 | `tests/scatter.test.ts`: same seed, same output; no instance within a path's half-width, a POI pad, 2.5 units of a node, station, shrine or camp home, or in the pass corridor; every canopy and crag instance is at a point where `isWalkableGround` is false (it is false beyond 118, which the walk grid does not cover) and not in water; no understorey instance lies within 1 unit of a woods-tree cell's centre; reeds are within 3 units of water; ferns are only in `woods`; no two understorey or canopy instances are closer than the larger piece's radius; every region and every POI has instances; counts per tier are inside the tier table. New `tests/woods-trees.test.ts` (6.11), written before the trees exist:<br>• **The table:** `WOODS_TREES` holds integer cells, sorted, with no duplicates; it has 100 to 220 rows.<br>• **Placement:** every tree is in `woods` on walkable ground; every two trees are at cell distance `max(|di|, |dj|)` ≥ 3; every tree is at cell distance ≥ 3 from every cell where `isWalkableGround` is false; no tree breaks any clearance of 6.11 (paths, nodes, fishing spots, stations, shrines, POIs, camps plus 2, safe zones, the pass corridor, the start point, the save fixture and the 20 old spawn points); no tree cell is on a path sampled each unit.<br>• **Walkability and reach:** `isWalkable` is false at every point of every tree cell (centre and four inset corners) and equals `isWalkableGround` everywhere else on a 0.25 sampling of the woods. The cells reachable from the start with the trees equal the cells reachable without them, minus the tree cells. Every shrine, station, POI centre, camp member's home, resource node and fishing spot has a reachable walkable cell within its stop distance, and `findPath` from the start returns a route to it.<br>• **Saves and the walk grid:** `sanitizePose` moves a position at every tree cell's centre to a walkable point within 1.1 units. `buildWalkGrid()` still has 55,696 cells and blocks exactly `WOODS_TREES.length` more cells than `buildWalkGrid(isWalkableGround)`; its build time, as a median of 5, is at most 1.5 times the ground-only build in the same run.<br>• **Determinism:** a text scan of `woodsTrees.ts` finds only literals and no function call, so the table is the same on every load. |
 | G5.7 | `tests/weather.test.ts`: same day index, phase and region give the same state; every state is allowed in its region; particle counts come from the tier table. `tests/vfx-shape.test.ts`: no `SphereGeometry` remains in `vfx.ts`, and no lifetime or tick constant differs from a recorded list. |
 | G5.8 | In `scatter.test.ts`: the border ring between 118 and 130 has canopy or crag instances in each of 16 sectors. In `look-data.test.ts`: the largest distance from any camera position (walk bound 118 on both axes, camera distance 26) to the apron's outer edge is below `CAMERA_FAR`; the dome radius is below `CAMERA_FAR`; the apron's inner edge equals the terrain's half-size. |
 | G5.9 | `tests/gfx-tiers.test.ts`: the pixel budget never returns more than the tier's megapixels, nor more than the tier's ratio cap. `tests/ui-tokens.test.ts`: no font size below 11 px in the CSS; the minimap canvas is sized from the device pixel ratio. |
@@ -488,13 +572,13 @@ Needs a person looking at the running game: 8.2.
 | P5 | The last shrine, the view of `shot-04-peak.jpg` | noon, night | Ash in the air, a grey-violet distance, obsidian that shows planes; at night the shrine crystals light the ground (high tier). |
 | P6 | Reedglass Tarn | dawn, rain | Reeds only at the water; the sky's colour in the far water; in rain, slivers slanting with the wind and a darker, flatter light. |
 | P7 | Tamarisk Pool | noon, golden with haze | Hard short shadows on pale sand, violet shade, the one pink accent; in haze the dunes become three flat layers. |
-| P8 | Lampwright's Hollow | noon, night | Noon: a dense, blue-green wood with a light floor of ferns. Night: lanterns pool amber light, mushrooms glow, fireflies. |
+| P8 | Lampwright's Hollow | noon, night | Noon: a dense, blue-green wood with a light floor of ferns, tall trunks standing in the walkable wood, and clear lanes along Lanternway and around the hollow. Night: lanterns pool amber light, mushrooms glow, fireflies. |
 | P9 | The east plaza | noon, overcast | Cut stone with weeds in the joints; overcast flattens the key but shadows stay. |
 | P10 | Three Kettle Camp, eight yaws 45 degrees apart, lowest pitch (0.12), maximum distance (26); plus the same eight yaws from the walkable corner nearest the camp | noon | In all eight frames: a foreground, a middle and a far plane; a closed horizon; no map edge, no void, no straight line where the world ends. |
 | P11 | The HUD with the inventory open; bank, shop, world map, quests and settings windows; level-up banner; a hit splat | 1280 by 720, 1920 by 1080 and 3840 by 2160 at ratio 1; 1920 by 1080 at ratio 2 | The new type and panels; nothing smaller than the 11 px step; the same layout at 4K as at 1080p; a sharp minimap; a visible focus ring when tabbing. |
 | P12 | P1 while walking 30 units | noon | Shadow edges do not crawl; the carpet does not pop; the tier governor stays quiet. |
 
-Also by a person: the perf HUD at P1, P3, P5 and P8 on every tier against section 10, on the owner's GPU; keyboard-only use of a bank visit (finding 31, 32); scrolling the bank grid, withdrawing, and seeing the scroll stay (24); forcing plain mode by its URL flag; the browser console on a preview deployment showing no CSP violation (if CALL-V13 is taken).
+Also by a person: the perf HUD at P1, P3, P5 and P8 on every tier against section 10, on the owner's GPU; keyboard-only use of a bank visit (finding 31, 32); scrolling the bank grid, withdrawing, and seeing the scroll stay (24); forcing plain mode by its URL flag; in the woods, click-to-move routes around trunks, keyboard movement slides along them, and a moss guardian that chases the hero out of its camp behaves as CALL-V21 decides when a trunk stands between them (6.11); the browser console on a preview deployment showing no CSP violation (if CALL-V13 is taken).
 
 ### 8.3 Declared test replacements
 
@@ -518,11 +602,11 @@ Every other existing test stays as it is, including the 256-pixel tile tests: ti
 |---|---|
 | Key, `version` | unchanged |
 | Fields written | unchanged. `timeOfDay` is still 0, 1 or 2: the preset nearest to the clock's phase (0 golden hour, 1 noon, 2 night; dawn maps to 0) |
-| Reading | unchanged. On load the clock starts at the saved preset's phase (0.70, 0.50, 0.00) |
+| Reading | unchanged. On load the clock starts at the saved preset's phase (0.70, 0.50, 0.00). A saved position on a woods-tree cell is moved by the existing `sanitizePose` rule to the nearest walkable point, at most about 1 unit away (6.11) |
 | New persistent keys | none. The graphics tier is not saved, as today |
 | Rollback | A save written after Stage 5 loads in the build before it and shows that build's three presets |
 
-The Settings button keeps its three labels and jumps the clock to the next preset. Between presses the clock runs: a full day is 24 minutes, with the phase moving twice as fast while the sun is down, so about 18 minutes of day and 6 of night (CALL-V3). Weather, wind and the scatter seed are not saved.
+The Settings button keeps its three labels and jumps the clock to the next preset. Between presses the clock runs: a full day is 24 minutes, with the phase moving twice as fast while the sun is down, so about 18 minutes of day and 6 of night (CALL-V3, decided 2026-11-14: the running clock). Weather, wind and the scatter seed are not saved.
 
 ---
 
@@ -532,9 +616,9 @@ No frame time on a real GPU has ever been recorded for this game: the baseline i
 
 ### Tier table (CALL-V5)
 
-Every visual feature of this design has a row; a feature not in this table does not exist. The button shows these four tiers (their labels are owner decision CALL-V18; the internal ids stay).
+Every visual feature of this design has a row; a feature not in this table does not exist. The button shows these four tiers as **Low, Medium, High, Ultra** (CALL-V18, decided 2026-11-14). The internal ids stay `performance`, `balanced`, `high` and `ultra`, and the columns below use the ids.
 
-| Feature | performance | balanced (default) | high | ultra |
+| Feature | performance (Low) | balanced (Medium, default) | high (High) | ultra (Ultra) |
 |---|---|---|---|---|
 | Pixel ratio cap; megapixel cap | 1.0; 3.7 | 1.25; 6.0 | 1.5; 8.3 | 2.0; 16.6 |
 | Canvas antialiasing (fixed at context creation) | on | on | on | on |
@@ -553,6 +637,7 @@ Every visual feature of this design has a row; a feature not in this table does 
 | Anisotropy | 1 | 4 | 8 | 16 |
 | Carpet tufts | 0 | 6,000 | 14,000 | 24,000 |
 | Scatter density | 50% | 75% | 100% | 100% |
+| Woods trees that block walking (6.11) | all | all | all | all |
 | Clouds | no | yes | yes | yes |
 | Motes; weather particles | 0; 0 | 150; 600 | 400; 1,500 | 800; 3,000 |
 | Point lights | 0 | 0 | 2 | 4 |
@@ -561,13 +646,13 @@ Every visual feature of this design has a row; a feature not in this table does 
 | Effects in the idiom (6.9) | yes | yes | yes, glowing | yes, glowing |
 | Governor | steps down from any tier until the player picks one by hand (6.10) | | | |
 
-Why performance is truly cheap: no shadow pass at all (today's game draws one even where it is never seen), no carpet, no particles, no clouds, no composer, half the scatter, simple water, plain distance fog, and merged props (6.6) that cut the colour pass's calls well below today's. Its per-pixel work is one Lambert evaluation with a band step and one fog term: about what today's facet shader already pays. The only cost it cannot drop is the canvas's antialiasing, which WebGL fixes when the context is created; turning it off would need a reload and a stored setting, which this stage does not add.
+Why performance is truly cheap: no shadow pass at all (today's game draws one even where it is never seen), no carpet, no particles, no clouds, no composer, half the scatter, simple water, plain distance fog, and merged props (6.6) that cut the colour pass's calls well below today's. The one thing it cannot thin is the woods trees (about 12k triangles in two draws), because they are walkability, not decoration (6.11). Its per-pixel work is one Lambert evaluation with a band step and one fog term: about what today's facet shader already pays. The only cost it cannot drop is the canvas's antialiasing, which WebGL fixes when the context is created; turning it off would need a reload and a stored setting, which this stage does not add.
 
 Software rendering starts on performance. The governor (6.10) steps down on slow frames.
 
 ### Budgets, replacing the foundation design's section 8 for this stage (CALL-V6)
 
-These budgets are provisional until plan step OV-2: there the baseline is benched on the owner's GPU, and the owner either keeps the numbers below or lets the lead adjust them and the tier numbers once to what was measured (CALL-V20). After OV-2 they are frozen.
+These budgets are provisional until plan step OV-2. There the baseline is benched on the owner's computer, which the owner names at that first timing as the reference machine (QV5). The lead then adjusts the numbers below and the tier numbers once, to what was measured, and freezes them (CALL-V20, decided 2026-11-14).
 
 | Measure | After Stage 2 (its budget) | After Stage 5, balanced tier | Reason |
 |---|---|---|---|
@@ -575,7 +660,7 @@ These budgets are provisional until plan step OV-2: there the baseline is benche
 | Draw calls, start pose, with shadow pass | not counted | at most 60% of the V2 capture | Same merging, and the range drops from 54 to 40 on this tier. |
 | Triangles, start pose | at most 300k | at most 550k (high 750k, ultra 950k) | Instanced vegetation is triangles without calls. The old limit was set when every triangle cost a share of a call. |
 | Frame time on the owner's GPU, same pose, measured with `look.bench` (6.10), not the vsync-bound HUD | not lower than baseline by more than 5% | balanced: within 10% of the V2 bench; high: at most 16.6 ms if V2's balanced bench was at most 12 ms; ultra: at most 33 ms | The balanced tier is the same-cost tier; the upper tiers are where the new work is spent. |
-| JS chunk | 951 kB cap | at most the V2 chunk plus 80 kB (about 25 kB gzipped, estimate) | Composer and bloom about 14, lighting, air and sky 14, water 4, flora, kit and scatter 16, particles and weather 8, look data and day cycle 6, batching 5, interface code 8, slack 5. All estimates; BUILD reports the real number per slice. |
+| JS chunk | 951 kB cap | at most the V2 chunk plus 80 kB (about 25 kB gzipped, estimate) | Composer and bloom about 14, lighting, air and sky 14, water 4, flora, kit and scatter 16, particles and weather 8, look data and day cycle 6, batching 5, interface code 8, woods-tree table and walk check 3, slack 2. All estimates; BUILD reports the real number per slice. |
 | CSS | 29.3 kB | at most 45 kB | Component language and the reduced-motion and focus rules. |
 | Fonts | 0 | at most 120 kB, cached immutable under `/assets` | Two families, subset. |
 | Models on the wire | 3.76 MB | 3.76 MB | None added (CALL-V8). |
@@ -590,7 +675,7 @@ These budgets are provisional until plan step OV-2: there the baseline is benche
 | 1 Light and sky | about +0.3 ms (the shadow pass is paid today; the banded light replaces a cheaper constant; terrain joins the shadow pass) | +1 (terrain in the shadow pass) | JS about +14 kB |
 | 2 Air and output | direct path about +0.3 ms; composer tiers about +1.5 to 2.5 ms | +3 to +5 (ring, clouds), plus about 12 full-screen draws on composer tiers | JS about +19 kB |
 | 3 Water | about -0.2 to +0.3 ms (fewer pixels, richer shader) | 0 | JS about +4 kB |
-| 4 Ground | merging about -1 to -3 ms of CPU submission; carpet and scatter about +1 to 2 ms | about -40 to -55% from merging, then +18 (4 carpet, 14 kit) and their shadow draws | JS about +21 kB |
+| 4 Ground | merging about -1 to -3 ms of CPU submission; carpet and scatter about +1 to 2 ms; woods trees about +0.1 ms on every tier (one array read per walk check, about 12k triangles) | about -40 to -55% from merging, then +20 (4 carpet, 14 kit, 2 woods trees) and their shadow draws | JS about +24 kB (table about 2 kB, walk check under 1 kB) |
 | 5 Weather and local light | about +0.3 to 0.6 ms; point lights only on high and ultra | +2 | JS about +8 kB |
 | 6 Interface | negative: six backdrop blurs removed | 0 | fonts up to 120 kB, CSS up to +16 kB, JS about +8 kB |
 | 7 Effects in idiom | slightly negative (fewer triangles per effect) | 0 | about 0 |
@@ -642,7 +727,7 @@ Trust boundaries: the developer machine and CI (fonts enter the repository there
 | V5 | A font is not licensed for redistribution, or the licence forbids the subset; a font file is tampered with between download and commit; a font is fetched from a third-party host at run time and leaks the player's address. |
 | V6 | The stricter policy (CALL-V13) blocks something the game needs (the favicon data URL, textures, a model fetch), and the deployed game breaks while local runs pass. |
 | V7 | The interface restyle introduces a new `innerHTML` sink fed by a save-derived string. |
-| V8 | Decoration hides or blocks something the player must reach or click: a node, a station, the pass. |
+| V8 | Decoration hides or blocks something the player must reach or click: a node, a station, the pass. Woods trees, which block on purpose, seal off an area, narrow a passage to nothing, strand a saved position, or differ between two loads or two tiers. |
 | V9 | Light or weather makes the game unplayable for some players: a night too dark to read, flashing, motion that cannot be turned off. |
 | V10 | The look changes without anyone deciding it: a merge or a UV fix shifts textures, a three patch release changes a chunk the facet shader edits. |
 | V11 | The frozen tests are weakened under cover of the declared replacements. |
@@ -660,7 +745,7 @@ Trust boundaries: the developer machine and CI (fonts enter the repository there
 | V5 | Mitigate: fonts come from the publisher's repository at a pinned commit; licence read by the task and shipped beside the files; SHA-256 recorded in `CREDITS.md`; self-hosted under `/assets`; a test forbids any absolute URL in the CSS. |
 | V6 | Mitigate: the policy is listed in full in 7.5 and checked by a test for its required parts; a person opens a preview deployment and reads the console before the merge. It is the last interface task, so it can be reverted alone. |
 | V7 | Mitigate: new interface code builds DOM with `textContent` and elements; the finding-24 fix adds no sink. The verify step of each interface task greps for new `innerHTML` assignments. |
-| V8 | Mitigate: `scatter.test.ts` is the boundary check for generated decoration (clear radii, the pass corridor, canopy only on unwalkable cells). Decoration is never added to `G.worldInteractiveObjects`, so it cannot take a click. |
+| V8 | Mitigate: `scatter.test.ts` is the boundary check for generated decoration (clear radii, the pass corridor, canopy only on ground-unwalkable cells). Decoration is never added to `G.worldInteractiveObjects`, so it cannot take a click. For the woods trees, `woods-trees.test.ts` is the boundary check (6.11). It proves that the reachable set equals the old one minus the tree cells, that every target keeps a reachable cell within its stop distance, that each clearance holds and that `sanitizePose` frees every tree cell. The table is a committed literal, so it cannot differ between loads, and it is read by walkability only, never by the tier. The frozen Stage 2 tests stay green untouched. |
 | V9 | Mitigate: the 22% night floor is a test on the look data; there is no lightning or strobe; `prefers-reduced-motion` is honoured in CSS and in the engine; the Settings button still jumps to noon. |
 | V10 | Mitigate: before and after pictures at fixed poses for every slice, shown to the owner; `facet-light.test.ts` fails if three's chunk text no longer contains what the facet shader replaces, so an upgrade of three cannot change the look silently. |
 | V11 | Mitigate: 8.3 names each replaced assertion by test title and line; the gate reads `git diff main -- tests` and accepts edits only there. |
@@ -677,26 +762,27 @@ By the proofs in 8.1 and the pictures in 8.2. In particular: for shaders, the te
 
 | # | Proposal | Lead's recommendation | Where |
 |---|---|---|---|
-| CALL-V1 | The essence of the look: flat planes, painted tiles, limited palette, hard edges; no game rule and no save change in this stage. | Accept. | 1 |
+| CALL-V1 | The essence of the look: flat planes, painted tiles, limited palette, hard edges; no save change in this stage, and no game-rule change except the blocking woods trees the owner chose (CALL-V9, 6.11). | Accept. | 1 |
 | CALL-V2 | "Cut world, round figures": terrain, props, vegetation and water are shaded per plane; the hero, guards, monsters and gear stay smooth with two bands. | Accept. The alternative, everything cut, makes faces and dense monster meshes noisy. | 5.1 |
-| CALL-V3 | A running day clock: 24 minutes per day, about 18 of day and 6 of night; the Settings button jumps between the three existing presets; the save still stores 0, 1 or 2. | Accept. The alternative is three richer fixed presets with no clock: less alive, same cost. | 5.3, 9 |
+| CALL-V3 | A running day clock: 24 minutes per day, about 18 of day and 6 of night; the Settings button jumps between the three existing presets; the save still stores 0, 1 or 2. | Accept. The alternative is three richer fixed presets with no clock: less alive, same cost. **Decided 2026-11-14: the running clock** (24 minutes, about 18 of day and 6 of night). | 5.3, 9 |
 | CALL-V4 | Night is blue and readable (a floor of 22% on lit ground). No rule depends on time or weather. | Accept. | 5.3 |
 | CALL-V5 | The tier table, one row per visual feature, including shadow size and range per tier (this replaces CALL-3's "2048 on every tier"), the megapixel caps and the automatic step-down on slow frames, which stops once the player picks a tier by hand. | Accept. | 10, 6.10 |
 | CALL-V6 | New budgets: draw calls go down to 60% of the measured number, triangles may rise to 550k on the default tier, JS may grow by 80 kB, fonts by 120 kB, CSS to 45 kB. Frame times are benched without vsync. All provisional until OV-2 (CALL-V20). | Accept. The old triangle limit protected draw calls, and merging now does that directly. | 10 |
 | CALL-V7 | Texture tiles stay 256 pixels. "Old school 8k" is delivered by edges, shadows, facets, anisotropic filtering and resolution, not by larger tiles. | Accept. Tiles at 512 would add roughly 1 MB of PNG for a look the painted tiles do not need. | 6.6, 8.3 |
 | CALL-V8 | No new model: all new vegetation, rocks, crags and clouds are built in TypeScript. A Blender-made `flora.glb` (about 60 to 90 kB) only if the owner asks for it after seeing the ground slice. | Accept "none now". | 4.5, 6.7 |
-| CALL-V9 | Decoration never blocks movement, and tall decoration stands only on ground the hero cannot walk on. Inside the woods the forest is ferns, saplings, logs and the existing harvestable trees, framed by tall trees outside the walkable area. | Accept. Tree trunks that block would change walkability, the path grid and how monsters chase: a rule change, out of scope. | 5.6 |
+| CALL-V9 | Decoration never blocks movement, and tall decoration stands only on ground the hero cannot walk on. Inside the woods the forest is ferns, saplings, logs and the existing harvestable trees, framed by tall trees outside the walkable area. | Accept. Tree trunks that block would change walkability, the path grid and how monsters chase: a rule change, out of scope. **Decided 2026-11-14, against the recommendation: woods trees block walking.** About 150 trees in the woods each block one walk cell, so routes and monster chases there bend around trunks. Every place stays reachable, and harvestable trees and all other decoration still do not block (6.11). | 5.6, 6.11 |
 | CALL-V10 | Weather: clear, overcast, mist, rain, sand haze and ash fall, by region, on a deterministic schedule, cosmetic only, no lightning. | Accept. | 5.7, 6.8 |
-| CALL-V11 | The type system: a cut display face and a humanist text face, self-hosted, at most 120 kB; candidates Grenze and Alegreya Sans, to be confirmed against their licence files by the first interface task; nothing smaller than 11 px; the interface scales with the window up to 2 times. | Accept the system; the families are confirmed or replaced by that task and shown to the owner. | 7.1 |
+| CALL-V11 | The type system: a cut display face and a humanist text face, self-hosted, at most 120 kB; candidates Grenze and Alegreya Sans, to be confirmed against their licence files by the first interface task; nothing smaller than 11 px; the interface scales with the window up to 2 times. | Accept the system; the families are confirmed or replaced by that task and shown to the owner. **Agreed 2026-11-14 (QV4):** the owner picks the two families when shown samples (plan UI1 report, OV-7). The type system itself is still open. | 7.1 |
 | CALL-V12 | The interface's identity: slate panels with chamfered corners, a brass line, bone text, an octagonal minimap, faceted vitals bars, no blur and no gradient; tokens renamed from `--osrs-*` and `--botw-*` to `--ui-*`. | Accept. | 5.9, 7.2, 7.3 |
 | CALL-V13 | Remove the 38 inline handlers and send a full Content-Security-Policy with `script-src 'self'` in this stage, with two more declared test replacements. | Accept: the markup is being edited anyway and the foundation design promised it here. Declining defers it to Stage 7. | 7.5, 8.3 |
 | CALL-V14 | The two declared replacements in `tests/textures.test.ts` (three assertions and one assertion), which exist because the light model changes on purpose. | Accept. Without them the stage cannot start. | 8.3 |
 | CALL-V15 | Effects are restyled in shape and colour only; no timing, size or count changes; Stage 4's version of any effect wins on timing. | Accept. | 5.8, 6.9 |
 | CALL-V16 | Findings 23, 24, 30, 31, 32 are fixed here; finding 29 is pulled forward from Stage 7; finding 27 stays with Stage 7; the scenic second ridge is declined. | Accept. | 11, 3 |
 | CALL-V17 | Bloom and the composer only on the high and ultra tiers; no ambient-occlusion, reflection or depth-of-field pass on any tier. | Accept. | 4.3, 6.10 |
-| CALL-V18 | Tier names. Today the button cycles Performance, Balanced, High, Ultra. You asked for levels such as low, medium and high. Rename the four labels to Low, Medium, High, Ultra (internal ids and behaviour unchanged; the tier is not saved, so nothing breaks). | Rename. It is the wording you used, and players read it at a glance. | 10 |
-| CALL-V19 | Texture crispness. The 256-pixel tiles are magnified smoothly today, which blurs up close at high resolution. Option: crisp texels up close (nearest magnification), still smooth at a distance (mipmaps). | Show both at the light checkpoint and pick there. Crisp texels are the "old school, but sharp" look many retro-modern games use, and the switch is one constant. | 5.1, CALL-V7 |
-| CALL-V20 | Budgets after measuring. Once the baseline is benched on your computer (plan OV-2), keep the budgets of section 10 as written, or let the lead adjust them and the tier numbers once to what your GPU can do, then freeze them. | Let them be adjusted once, then frozen. They were written before any real measurement existed. | 10 |
+| CALL-V18 | Tier names. Today the button cycles Performance, Balanced, High, Ultra. You asked for levels such as low, medium and high. Rename the four labels to Low, Medium, High, Ultra (internal ids and behaviour unchanged; the tier is not saved, so nothing breaks). | Rename. It is the wording you used, and players read it at a glance. **Decided 2026-11-14: rename** to Low, Medium, High, Ultra. | 10 |
+| CALL-V19 | Texture crispness. The 256-pixel tiles are magnified smoothly today, which blurs up close at high resolution. Option: crisp texels up close (nearest magnification), still smooth at a distance (mipmaps). | Show both at the light checkpoint and pick there. Crisp texels are the "old school, but sharp" look many retro-modern games use, and the switch is one constant. **Decided 2026-11-14: smooth.** Magnification stays linear, as today. No comparison is captured and no texel-filter constant is added. | 5.1, CALL-V7 |
+| CALL-V20 | Budgets after measuring. Once the baseline is benched on your computer (plan OV-2), keep the budgets of section 10 as written, or let the lead adjust them and the tier numbers once to what your GPU can do, then freeze them. | Let them be adjusted once, then frozen. They were written before any real measurement existed. **Decided 2026-11-14: yes**, adjusted once after the first timing on the owner's computer, then frozen. | 10 |
+| CALL-V21 | Monsters and trunks (new, created by the CALL-V9 decision). Monsters walk straight at the player and do not path-find, so a trunk can stop a chasing monster and the player can use it as cover. Option A: accept this. Camps are trunk-free clearings, so it happens only when a chase leaves a camp. The price is a treeless central glade of radius 24 in the woods, about 28% of the region (6.11). Option B: give monster chase the walk grid (`findPath`, re-pathed as the hero's follow does), a Stage 2 rule change to `monsterAi.ts` and the engine's monster step. | A. Cover behind obstacles is part of the old-school tradition. It affects only the moss guardians in the woods, and only outside their clearing. B changes combat behaviour everywhere, which is Stage 4's ground. | 6.11 |
 
 ---
 
@@ -716,6 +802,10 @@ By the proofs in 8.1 and the pictures in 8.2. In particular: for shaders, the te
 | X10 | `clip-path` chamfers clip focus rings or child shadows. | Medium | Focus is hard to see. | The focus ring is drawn by the inner layer, with an offset inside the panel; checked at P11 by tabbing. |
 | X11 | Stage 4 rewrote `vfx.ts` and the swap table no longer matches. | Medium | The effects slice needs rework. | That slice is last, independent, and its task starts by re-reading `vfx.ts`. |
 | X12 | The world looks "too new" and loses the old-school feel. | The owner's judgment | The stage misses its bar. | Each slice is shown on its own before the next starts; every slice can be held back without blocking the others, except that slice 1 comes first. |
+| X13 | Woods trees change play: routes in the woods get longer, keyboard movement stops against trunks, and monsters snag on them (CALL-V21). | Certain (it is the decision) | The woods play slightly differently from today. | The clearances and the 2-cell lanes of 6.11; camps are clearings; P8 and G-6 have a person walk and fight in the woods; GR7 may lower the tree count within the tested range before CP-GR. |
+| X14 | Stage 2 data moves after the table is written (a path, camp or node shifts), and a tree now breaks a clearance or sits on a saved position. | Medium until Stage 2 is merged, low after | A placement test fails. | R0 re-checks Stage 2; `woods-trees.test.ts` fails loudly; the table is regenerated by its script in a declared commit before CP-GR. After CP-GR any change goes to the owner. |
+| X15 | A smoothed route grazes a trunk cell's corner between two 0.25-unit samples. | Low | The hero slides along the trunk for a frame. | The shape is a whole cell, and a non-axis move into a corner always has one free axis in `moveWithCollision`, so the hero slides and never stalls. Same behaviour as today's castle walls. |
+| X16 | Crowns hide the hero at the lowest camera pitch. | Medium | The hero is lost under the canopy. | Crowns start at least 3.2 units up; at CP-GR the owner judges P8 at pitch 0.12; GR7 may thin trees near paths within the tested range. |
 
 ---
 
@@ -723,14 +813,15 @@ By the proofs in 8.1 and the pictures in 8.2. In particular: for shaders, the te
 
 Questions whose answer changes what is built:
 
-- **QV1.** CALL-V3: a running clock, or three fixed presets?
+- **QV1.** CALL-V3: a running clock, or three fixed presets? **Decided 2026-11-14: the running clock.**
 - **QV2.** CALL-V13: remove the inline handlers and send the full policy now, or with Stage 7?
-- **QV3.** CALL-V9: is a forest made of undergrowth plus a tall frame outside the walkable area enough for the woods, or do you want trees that block, accepting a change to walkability?
-- **QV4.** CALL-V11: the two font candidates, once the first interface task shows them in the HUD.
-- **QV5.** Which GPU and display is the reference for "balanced must stay within 10%"? Without it, section 10's frame-time rows cannot be checked.
-- **QV6.** CALL-V18: rename the tiers to Low, Medium, High, Ultra?
-- **QV7.** CALL-V19: smooth or crisp texels up close?
-- **QV8.** CALL-V20: keep the budgets as written, or adjust them once after the baseline is measured on your computer?
+- **QV3.** CALL-V9: is a forest made of undergrowth plus a tall frame outside the walkable area enough for the woods, or do you want trees that block, accepting a change to walkability? **Decided 2026-11-14: trees that block** (6.11).
+- **QV4.** CALL-V11: the two font candidates, once the first interface task shows them in the HUD. **Agreed 2026-11-14:** the owner picks them when shown samples (plan OV-7).
+- **QV5.** Which GPU and display is the reference for "balanced must stay within 10%"? Without it, section 10's frame-time rows cannot be checked. **Agreed 2026-11-14:** the owner names the reference machine at the first timing (plan OV-2).
+- **QV6.** CALL-V18: rename the tiers to Low, Medium, High, Ultra? **Decided 2026-11-14: yes.**
+- **QV7.** CALL-V19: smooth or crisp texels up close? **Decided 2026-11-14: smooth.**
+- **QV8.** CALL-V20: keep the budgets as written, or adjust them once after the baseline is measured on your computer? **Decided 2026-11-14: adjust once after the first timing, then freeze.**
+- **QV9.** CALL-V21 (new): may a trunk stop a chasing monster (cover, as in old-school games), or should monster chase use the walk grid?
 
 Not verified for this document:
 
@@ -743,4 +834,5 @@ Not verified for this document:
 - That the facet shader's chunk replacement compiles, and that the `getShadow` wrapper compiles.
 - Anything in Stages 2, 3 and 4 beyond the Stage 2 design and the first Stage 2 data commit on `feat/world-place`: final coordinates, the final shape of `worldMesh.ts`, what Stage 4 does to `vfx.ts`.
 - How the proposed colours look. The hex values are directions, not results.
+- The walking rules 6.11 builds on. They were read on the Stage 2 branches `wp/W` and `feat/world-place` (`collision.ts`, `pathfind.ts`, `monsterAi.ts`, `save.ts`, `worldMap.ts`, and the Stage 2 tests), before Stage 2's click-to-move task B3 was merged. Not verified: that `G.walkGrid` is still built once from `isWalkable`, that monsters still do not path-find, and the final stop distances. R0 checks all three.
 - Corrected after review (`2026-11-14-visual-pass-critique.md`): the camera limits (live pitch 0.12 to 1.15, distance 3.6 to 26, not `sanitizeCam`'s 0.42 and 9.5), the shadows already visible on `spawnWorldProp`'s 13 PBR props, the horizon ring (now an apron, `far` 460), fog colour space, bloom threshold, program cache keys, carpet shadows and frame-time measurement.
