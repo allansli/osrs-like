@@ -721,18 +721,9 @@ export function spawnLevelUpFireworks(colorHex: THREE.ColorRepresentation = 0xfd
     );
     const ang = (i / 16) * Math.PI * 2;
     p.position.copy(player.pos).add(new THREE.Vector3(Math.cos(ang) * 0.8, 1.0, Math.sin(ang) * 0.8));
-    G.scene.add(p);
     const vel = new THREE.Vector3(Math.cos(ang) * 2.5, 3.5 + Math.random() * 2, Math.sin(ang) * 2.5);
-    const startT = performance.now();
-    const tick = (): void => {
-      const dt = (performance.now() - startT) / 1000;
-      if (dt > 0.9) {
-        G.scene.remove(p);
-        return;
-      }
-      p.position.addScaledVector(vel, 0.016);
-      requestAnimationFrame(tick);
-    };
-    requestAnimationFrame(tick);
+    spawnVfx(p, 0.9, (v, dt) => {
+      v.mesh.position.addScaledVector(vel, dt);
+    });
   }
 }
