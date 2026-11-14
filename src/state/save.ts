@@ -8,6 +8,7 @@ import { normalizeStyle } from './combat';
 import { normalizeQuests } from './quests';
 import { initialShrines } from './shrines';
 import { QUEST_DEFS, SLAYER_BANDS } from './adventure';
+import { isWalkable } from './collision';
 import type { GameState, SavedCam, SavedPose } from './types';
 
 export const SAVE_KEY = 'gielinor_hero_save_v1';
@@ -110,12 +111,12 @@ export function migrateLegacySave(raw: unknown, source: string | null = null): M
 
   let pose: SavedPose | null = null;
   if (data.playerPos && typeof data.playerPos.x === 'number' && typeof data.playerPos.z === 'number') {
-    pose = {
+    pose = sanitizePose({
       x: data.playerPos.x,
       y: num(data.playerPos.y, 0),
       z: data.playerPos.z,
       yaw: num(data.playerPos.yaw, 0)
-    };
+    });
   }
 
   let cam: SavedCam | null = null;
@@ -188,12 +189,26 @@ export function writeSave(storage: StorageLike, state: GameState, pose: SavedPos
 }
 
 export function sanitizePose(p: SavedPose): SavedPose {
-  return {
-    x: p.x,
-    y: p.y,
-    z: p.z,
-    yaw: p.yaw
-  };
+  if (!Number.isFinite(p.x) || !Number.isFinite(p.z)) {
+    return { x: 0, y: num(p.y, 0), z: 4, yaw: p.yaw };
+  }
+  const cx = Math.max(-118, Math.min(118, p.x));
+  const cz = Math.max(-118, Math.min(118, p.z));
+  if (isWalkable(cx, cz)) {
+    return { x: cx, y: num(p.y, 0), z: cz, yaw: p.yaw };
+  }
+  for (let step = 1; step <= 24; step++) {
+    const r = step * 0.5;
+    for (let i = 0; i < 24; i++) {
+      const angle = (i * 2 * Math.PI) / 24;
+      const nx = cx + r * Math.cos(angle);
+      const nz = cz + r * Math.sin(angle);
+      if (isWalkable(nx, nz)) {
+        return { x: nx, y: num(p.y, 0), z: nz, yaw: p.yaw };
+      }
+    }
+  }
+  return { x: 0, y: num(p.y, 0), z: 4, yaw: p.yaw };
 }
 
 export function sanitizeCam(c: SavedCam): SavedCam {
