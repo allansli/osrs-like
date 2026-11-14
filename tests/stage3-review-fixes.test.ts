@@ -1,8 +1,10 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { ITEMS, shopPrice } from '../src/data/items';
 import { getLevelForXp, OSRS_XP_TABLE } from '../src/data/skills';
 import { claimQuest, registerKill } from '../src/state/adventure';
-import { createDefaultState } from '../src/state/gameState';
+import { createDefaultState, createNewGameState } from '../src/state/gameState';
+import { migrateLegacySave, SAVE_KEY } from '../src/state/save';
 import { buyItem, buyPrice, buyRunePack, isGatheredGood, sellInventoryMatch, sellItem } from '../src/state/inventory';
 import { levelUnlockLines, unlocksAt } from '../src/state/unlocks';
 
@@ -123,5 +125,22 @@ describe('review 6: the fishing depletion rule is a value, not source text', () 
     expect(FISH_DEPLETION_CHANCE).toBe(1);
     expect(FISH_DEPLETION).toBe(FISH_DEPLETION_CHANCE);
     for (const draw of [0, 0.35, 0.5, 0.999999]) expect(fishDepletes(draw)).toBe(true);
+  });
+});
+
+describe('review 7: the boot notices follow the save', () => {
+  const geared = () => migrateLegacySave(JSON.parse(readFileSync(new URL('./fixtures/s3/save-v4-geared.json', import.meta.url), 'utf8')), SAVE_KEY).state;
+
+  it('a save at 10x is told once, a save at 1x is not, a new game is not', async () => {
+    const { bootNotices } = await import('../src/state/bootNotices');
+    const tenX = geared();
+    expect(tenX.xpMultiplier).toBe(10);
+    expect(bootNotices(true, tenX)).toEqual(['restored', 'xp10']);
+    const oneX = geared();
+    oneX.xpMultiplier = 1;
+    expect(bootNotices(true, oneX)).toEqual(['restored']);
+    const fresh = createNewGameState();
+    expect(fresh.xpMultiplier).toBe(1);
+    expect(bootNotices(false, fresh)).toEqual(['controls', 'first-task']);
   });
 });
