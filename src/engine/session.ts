@@ -29,9 +29,8 @@ export function saveGameState(): void {
     const ss = String(t.getSeconds()).padStart(2, '0');
     saveBtn.textContent = 'Saved (' + hh + ':' + mm + ':' + ss + ')';
   } catch (e) {
-    try {
-      el('save-status-btn').textContent = 'Save failed';
-    } catch (e) {}
+    console.error('autosave failed', e);
+    el('save-status-btn').textContent = 'Save failed';
   }
 }
 
