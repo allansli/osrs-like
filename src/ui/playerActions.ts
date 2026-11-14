@@ -41,12 +41,12 @@ import {
 import { SFX } from '../engine/audio';
 import { spawnLevelUpFireworks, spawnHitSplatOnPlayer } from '../engine/vfx';
 import { rebuildPlayerEquipmentMeshes } from '../engine/playerMesh';
+import { saveGameState } from '../engine/session';
 import {
   openChooseMenu,
   teleportToRegion,
   hideContextMenu,
-  syncGraphicsButtons,
-  saveGameState
+  syncGraphicsButtons
 } from '../engine/runtime';
 
 type SkillMeta = { name: string; desc: string };

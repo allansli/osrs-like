@@ -22,7 +22,7 @@ import {
 } from './stations';
 import { cycleTimeOfDay } from '../engine/worldMesh';
 import { player, type MonsterEntity, type ResourceNodeEntity } from '../engine/context';
-import { saveGameState } from '../engine/runtime';
+import { saveGameState } from '../engine/session';
 import {
   handleInventoryClick,
   showSellChooseMenu,
