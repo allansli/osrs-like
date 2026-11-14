@@ -1,5 +1,5 @@
-// @ts-nocheck
 import { STATE } from '../state/gameState';
+import type { QtyMode } from '../state/types';
 import { getLevelForXp, SKILLS_META, OSRS_XP_TABLE } from '../data/skills';
 import { ITEMS, unitSellPrice } from '../data/items';
 import {
@@ -28,6 +28,7 @@ import {
   syncSettingsButtons
 } from './stations';
 import {
+  el,
   addChatMessage,
   getCombatLevel,
   spawnXpDrop,
@@ -48,7 +49,10 @@ import {
   saveGameState
 } from '../engine/runtime';
 
-export function grantXp(skillKey, baseAmount) {
+type SkillMeta = { name: string; desc: string };
+const metaMap = SKILLS_META as Record<string, SkillMeta>;
+
+export function grantXp(skillKey: string, baseAmount: number): void {
   const s = STATE.skills[skillKey];
   if (!s) return;
   const gained = Math.max(1, Math.round(baseAmount * STATE.xpMultiplier));
@@ -68,7 +72,7 @@ export function grantXp(skillKey, baseAmount) {
       STATE.maxPrayerPts = s.lvl;
       STATE.prayerPts = STATE.maxPrayerPts;
     }
-    const meta = SKILLS_META[skillKey];
+    const meta = metaMap[skillKey] || { name: skillKey, desc: '' };
     addChatMessage(`Level Up! Your <b>${meta.name}</b> level is now <b>${s.lvl}</b>!`, 'lvlup');
     showLevelUpBanner(meta.name, s.lvl);
     spawnLevelUpFireworks();
@@ -76,14 +80,14 @@ export function grantXp(skillKey, baseAmount) {
   updateAllUI();
 }
 
-export function addItemToInventory(itemId, count = 1) {
+export function addItemToInventory(itemId: string, count: number = 1): boolean {
   const result = addItem(STATE, itemId, count);
   if (!result.ok) addChatMessage('Your backpack is full.', 'combat');
   updateAllUI();
   return result.added > 0;
 }
 
-export function sellInventoryItem(index, qtyMode) {
+export function sellInventoryItem(index: number, qtyMode?: QtyMode): void {
   const slot = STATE.inventory[index];
   if (!slot) return;
   const item = ITEMS[slot.id];
@@ -96,11 +100,11 @@ export function sellInventoryItem(index, qtyMode) {
   SFX.coin();
   noteSale(STATE);
   const name = item ? item.name : slot.id;
-  addChatMessage('Sold <b>' + result.moved + ' × ' + name + '</b> for <b style="color:#ffe642">' + result.gp.toLocaleString() + ' GP</b> (65%).', 'loot');
+  addChatMessage('Sold <b>' + result.moved + ' × ' + name + '</b> for <b style="color:#ffe642">' + (result.gp ?? 0).toLocaleString() + ' GP</b> (65%).', 'loot');
   updateAllUI();
 }
 
-export function sellPayoutLabel(itemId, mode) {
+export function sellPayoutLabel(itemId: string, mode: QtyMode): { n: number; gp: number } {
   const item = ITEMS[itemId];
   const have = countItem(STATE, itemId);
   const n = mode === 'all' ? have : Math.min(mode, have);
@@ -108,10 +112,10 @@ export function sellPayoutLabel(itemId, mode) {
   return { n, gp };
 }
 
-export function showSellChooseMenu(e, index) {
+export function showSellChooseMenu(e: MouseEvent, index: number): void {
   const slot = STATE.inventory[index];
   if (!slot || !ITEMS[slot.id]) return;
-  const modes = [1, 5, 10, 50, 'all'];
+  const modes: QtyMode[] = [1, 5, 10, 50, 'all'];
   const options = modes.map((mode) => {
     const payout = sellPayoutLabel(slot.id, mode);
     const label = mode === 'all'
@@ -123,16 +127,16 @@ export function showSellChooseMenu(e, index) {
       run: () => sellInventoryItem(index, mode)
     };
   });
-  options.push({ label: 'Cancel', run: () => {} });
+  options.push({ label: 'Cancel', tone: '', run: () => {} });
   openChooseMenu(e.clientX, e.clientY, options);
 }
 
-export function handleInventoryClick(index) {
+export function handleInventoryClick(index: number): void {
   const slot = STATE.inventory[index];
   if (!slot) return;
   const item = ITEMS[slot.id];
   if (!item) return;
-  const shopOpen = document.getElementById('shop-modal') && document.getElementById('shop-modal').classList.contains('open');
+  const shopOpen = el('shop-modal').classList.contains('open');
   if (shopOpen) {
     sellInventoryItem(index);
     return;
@@ -179,20 +183,21 @@ export function handleInventoryClick(index) {
     if (item.req) {
       for (const [reqSkill, reqLvl] of Object.entries(item.req)) {
         if (STATE.skills[reqSkill].lvl < reqLvl) {
-          addChatMessage('You need <b>Level ' + reqLvl + ' ' + SKILLS_META[reqSkill].name + '</b> to equip ' + item.name + '.', 'combat');
+          const reqMeta = metaMap[reqSkill] || { name: reqSkill, desc: '' };
+          addChatMessage('You need <b>Level ' + reqLvl + ' ' + reqMeta.name + '</b> to equip ' + item.name + '.', 'combat');
           return;
         }
       }
     }
-    const prevEquipped = STATE.equipment[item.slot];
+    const prevEquipped = item.slot ? STATE.equipment[item.slot] : null;
     removeItem(STATE, item.id, 1);
     if (prevEquipped && ITEMS[prevEquipped]) addItem(STATE, prevEquipped, 1);
-    STATE.equipment[item.slot] = item.id;
+    if (item.slot) STATE.equipment[item.slot] = item.id;
     if (item.slot === 'body' && (item.id.includes('plate') || item.id.includes('chain'))) notePlate(STATE);
     SFX.coin();
     addChatMessage('Equipped <b>' + item.name + '</b> (' + item.slot + ').', 'skill');
     if (item.slot === 'weapon') {
-      const styles = allowedStyles(ITEMS[item.id]);
+      const styles = allowedStyles(ITEMS[item.id] || null);
       if (!styles.includes(STATE.combatStyle)) STATE.combatStyle = styles[0];
     }
     rebuildPlayerEquipmentMeshes();
@@ -202,7 +207,7 @@ export function handleInventoryClick(index) {
   addChatMessage('<b>' + item.name + '</b> — Value: ' + item.price + ' GP. Use it at the Bank, Anvil, or General Store.');
 }
 
-export function unequipSlot(slotName) {
+export function unequipSlot(slotName: string): void {
   const itemId = STATE.equipment[slotName];
   if (!itemId) return;
   if (!canAddItem(STATE, itemId, 1)) {
@@ -216,7 +221,7 @@ export function unequipSlot(slotName) {
   updateAllUI();
 }
 
-export function setCombatStyle(style) {
+export function setCombatStyle(style: string): void {
   const weapon = equippedWeapon(STATE);
   const normalized = style === 'ranged' ? 'rapid' : style;
   const allowed = allowedStyles(weapon);
@@ -235,7 +240,7 @@ export function setCombatStyle(style) {
   updateAllUI();
 }
 
-export function toggleSpecialAttack() {
+export function toggleSpecialAttack(): void {
   const spec = weaponSpecial(STATE.equipment.weapon);
   if (STATE.specEnergy < spec.cost && !STATE.specArmed) {
     addChatMessage(`You need at least ${spec.cost}% Special Attack energy for <b>${spec.name}</b>!`, 'combat');
@@ -245,7 +250,7 @@ export function toggleSpecialAttack() {
   updateAllUI();
 }
 
-export function togglePrayer(prayerId) {
+export function togglePrayer(prayerId: string): void {
   const p = PRAYERS.find(x => x.id === prayerId);
   if (!p) return;
   if (STATE.activePrayers.has(prayerId)) {
@@ -269,7 +274,7 @@ export function togglePrayer(prayerId) {
   updateAllUI();
 }
 
-export function handleSpellClick(spellId) {
+export function handleSpellClick(spellId: string): void {
   const sp = SPELLS.find(x => x.id === spellId);
   if (!sp) return;
   if (STATE.skills.magic.lvl < sp.req) {
@@ -301,49 +306,47 @@ export function handleSpellClick(spellId) {
   updateAllUI();
 }
 
-export function toggleXpMultiplier() {
+export function toggleXpMultiplier(): void {
   STATE.xpMultiplier = STATE.xpMultiplier === 10 ? 1 : 10;
-  const btn = document.getElementById('xp-rate-btn');
-  if (btn) {
-    btn.textContent = STATE.xpMultiplier === 10 ? '10x League XP' : '1x Classic XP';
-    btn.classList.toggle('active', STATE.xpMultiplier === 10);
-  }
+  const btn = el('xp-rate-btn');
+  btn.textContent = STATE.xpMultiplier === 10 ? '10x League XP' : '1x Classic XP';
+  btn.classList.toggle('active', STATE.xpMultiplier === 10);
   addChatMessage(`XP Multiplier set to <b>${STATE.xpMultiplier}x</b>.`, 'skill');
   updateAllUI();
 }
 
-export function closeModals() {
+export function closeModals(): void {
   document.querySelectorAll('.modal-backdrop').forEach(m => m.classList.remove('open'));
   hideHoverTooltip();
   hideItemTooltip();
   hideContextMenu();
 }
 
-export function hideHoverTooltip() {
-  const tooltip = document.getElementById('hover-tooltip');
-  if (tooltip) tooltip.style.display = 'none';
+export function hideHoverTooltip(): void {
+  const tooltip = el('hover-tooltip');
+  tooltip.style.display = 'none';
   document.body.style.cursor = 'default';
 }
 
-export function openModal(id) {
+export function openModal(id: string): HTMLElement {
   closeModals();
-  const modal = document.getElementById(id);
-  if (modal) modal.classList.add('open');
+  const modal = el(id);
+  modal.classList.add('open');
   hideHoverTooltip();
   return modal;
 }
 
-export function openShopModal(filter = 'all') {
+export function openShopModal(filter: string = 'all'): void {
   STATE.shopFilter = filter;
   openModal('shop-modal');
   renderShopModal();
 }
 
-export function renderShopModal() {
+export function renderShopModal(): void {
   renderShopModalUi();
 }
 
-export function buyShopItem(itemId) {
+export function buyShopItem(itemId: string): void {
   const result = buyItem(STATE, itemId, STATE.transferQty || 1);
   if (!result.ok) addChatMessage(result.reason || 'Cannot buy that.', 'combat');
   else {
@@ -354,7 +357,7 @@ export function buyShopItem(itemId) {
   updateAllUI();
 }
 
-export function buyShopPair(topId, bottomId) {
+export function buyShopPair(topId: string, bottomId: string): void {
   const first = buyItem(STATE, topId, 1);
   if (!first.ok) {
     addChatMessage(first.reason || 'Cannot buy that pair.', 'combat');
@@ -374,7 +377,7 @@ export function buyShopPair(topId, bottomId) {
   updateAllUI();
 }
 
-export function sellAllLoot() {
+export function sellAllLoot(): void {
   const result = sellInventoryMatch(STATE, isGatheredGood, 'No raw resources in your backpack to bulk-sell.');
   if (!result.ok) {
     addChatMessage(result.reason || 'No raw resources in your backpack to bulk-sell.');
@@ -385,7 +388,7 @@ export function sellAllLoot() {
   updateAllUI();
 }
 
-export function sellAllUnequippedGear() {
+export function sellAllUnequippedGear(): void {
   const result = sellInventoryMatch(STATE, isUnequippedGear, 'No unequipped gear in your backpack to sell.');
   if (!result.ok) {
     addChatMessage(result.reason || 'No unequipped gear in your backpack to sell.');
@@ -396,20 +399,20 @@ export function sellAllUnequippedGear() {
   updateAllUI();
 }
 
-export function openSmithingModal() {
+export function openSmithingModal(): void {
   openModal('smithing-modal');
   renderSmithingModal();
 }
 
-export function renderSmithingModal() {
+export function renderSmithingModal(): void {
   renderForge();
 }
 
-export function craftRecipe(recipeId) {
+export function craftRecipe(recipeId: string): void {
   const result = tryCraft(STATE, recipeId);
   if (!result.ok) {
     addChatMessage(result.reason || 'You cannot craft that yet.', 'combat');
-    if (document.getElementById('smithing-modal').classList.contains('open')) renderSmithingModal();
+    if (el('smithing-modal').classList.contains('open')) renderSmithingModal();
     return;
   }
   SFX.mine();
@@ -418,15 +421,15 @@ export function craftRecipe(recipeId) {
   if (result.skill) grantXp(result.skill, result.xp || 0);
 }
 
-export function openXpTableModal(skillKey = 'attack') {
+export function openXpTableModal(skillKey: string = 'attack'): void {
   openModal('xptable-modal');
   const sk = STATE.skills[skillKey] || STATE.skills.attack;
-  const meta = SKILLS_META[skillKey] || SKILLS_META.attack;
+  const meta = metaMap[skillKey] || SKILLS_META.attack;
   const nextLvl = Math.min(99, sk.lvl + 1);
   const nextXp = OSRS_XP_TABLE[nextLvl];
   const remXp = Math.max(0, nextXp - sk.xp);
 
-  document.getElementById('xptable-skill-summary').innerHTML = `
+  el('xptable-skill-summary').innerHTML = `
     <div style="display:flex; justify-content:space-between; align-items:center;">
       <span style="display:flex; align-items:center; gap:8px;">
         <span style="width:20px;height:20px;display:inline-flex;">${getSkillSvg(skillKey)}</span>
@@ -437,7 +440,7 @@ export function openXpTableModal(skillKey = 'attack') {
     <div style="margin-top:4px; color:#b8aa91;">${meta.desc}</div>
   `;
 
-  const grid = document.getElementById('xptable-grid');
+  const grid = el('xptable-grid');
   grid.innerHTML = '';
   for (let lvl = 1; lvl <= 99; lvl++) {
     const cell = document.createElement('div');
@@ -447,17 +450,17 @@ export function openXpTableModal(skillKey = 'attack') {
   }
 }
 
-export function openWorldMapModal() {
+export function openWorldMapModal(): void {
   openModal('worldmap-modal');
   renderWorldMap(null);
 }
 
-export function locateQuestRegion(regionId) {
+export function locateQuestRegion(regionId: string): void {
   openModal('worldmap-modal');
   renderWorldMap(regionId);
 }
 
-export function claimQuestReward(questId) {
+export function claimQuestReward(questId: string): void {
   const result = claimQuest(STATE, questId);
   if (!result.ok) {
     addChatMessage(result.reason || 'You cannot claim that yet.', 'combat');
@@ -471,7 +474,7 @@ export function claimQuestReward(questId) {
   updateAllUI();
 }
 
-export function requestSlayerTask() {
+export function requestSlayerTask(): void {
   const current = STATE.quests.slayer;
   if (current && current.remaining > 0) {
     addChatMessage(`Your Slayer task is <b>${current.remaining} ${current.name}</b>.`, 'skill');
@@ -487,24 +490,24 @@ export function requestSlayerTask() {
   updateAllUI();
 }
 
-export function openBankModal() {
+export function openBankModal(): void {
   STATE.quests.openedBank = true;
   openModal('bank-modal');
   renderBankModal();
 }
 
-export function openQuestsModal() {
+export function openQuestsModal(): void {
   openModal('quest-modal');
   renderQuests();
 }
 
-export function openSettingsModal() {
+export function openSettingsModal(): void {
   syncSettingsButtons();
   syncGraphicsButtons();
   openModal('settings-modal');
 }
 
-export function toggleAudio() {
+export function toggleAudio(): void {
   STATE.audioEnabled = !STATE.audioEnabled;
   syncSettingsButtons();
   addChatMessage(STATE.audioEnabled ? 'Audio on.' : 'Audio muted.', 'skill');
