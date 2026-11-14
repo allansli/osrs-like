@@ -371,10 +371,10 @@ export function updateTargetHud(): void {
   } else if (player.targetEntity && player.targetEntity.type === 'resource' && !player.targetEntity.ref.depleted) {
     const r: ResourceNodeEntity = player.targetEntity.ref;
     hud.classList.add('visible');
-    el('target-name').textContent = r.def.name;
+    el('target-name').textContent = r.def.name!;
     el('target-lvl-tag').textContent = `Req Lv ${r.def.req}`;
     el('target-hp-fill').style.width = '100%';
-    el('target-hp-text').textContent = (SKILLS_META as Record<string, { name: string }>)[r.def.skill].name;
+    el('target-hp-text').textContent = (SKILLS_META as Record<string, { name: string }>)[r.def.skill!].name;
   } else {
     hud.classList.remove('visible');
   }

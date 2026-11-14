@@ -131,12 +131,12 @@ export interface MonsterEntity extends MonsterEntityLike {
 
 export interface ResourceNodeEntity extends ResourceNodeLike {
   def: ResourceNodeLike['def'] & {
-    name: string;
-    skill: string;
-    req: number;
-    xp: number;
-    item: string;
-    respawn: number;
+    name?: string;
+    skill?: string;
+    req?: number;
+    xp?: number;
+    item?: string;
+    respawn?: number;
   };
   respawnTimer: number;
 }
