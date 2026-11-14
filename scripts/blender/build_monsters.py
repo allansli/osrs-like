@@ -166,22 +166,18 @@ def get_blend_object(blend_rel_path: str, obj_name: str) -> bpy.types.Object | N
     repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
     blend_file = os.path.join(repo_root, blend_rel_path)
     if not os.path.exists(blend_file):
-        return None
+        raise FileNotFoundError(f"[BlendAsset] {blend_file} not found (needed for object {obj_name!r})")
     try:
         with bpy.data.libraries.load(blend_file) as (df, dt):
-            if obj_name in df.objects:
-                dt.objects = [obj_name]
-            else:
-                return None
-        if dt.objects:
-            obj = dt.objects[0]
-            bpy.context.collection.objects.link(obj)
-            BLEND_ASSET_CACHE[cache_key] = obj
-            return obj
-    except Exception as e:
-        print(f"[BlendAsset] Error loading {obj_name} from {blend_file}: {e}")
-        return None
-    return None
+            if obj_name not in df.objects:
+                raise KeyError(f"[BlendAsset] object {obj_name!r} not found in {blend_file}")
+            dt.objects = [obj_name]
+    except (OSError, RuntimeError) as e:
+        raise RuntimeError(f"[BlendAsset] failed to load object {obj_name!r} from {blend_file}: {e}") from e
+    obj = dt.objects[0]
+    bpy.context.collection.objects.link(obj)
+    BLEND_ASSET_CACHE[cache_key] = obj
+    return obj
 
 
 def load_imported_character(blend_rel_path: str, mesh_names: list[str], target_height: float, rot_z_180: bool = True):
