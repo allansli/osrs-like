@@ -4,7 +4,7 @@ import { spawnLevelUpFireworks } from './vfx';
 import { STATE, applyState, createNewGameState } from '../state/gameState';
 import { STARTER_ARRIVAL } from '../state/quests';
 import { readSave, writeSave, SAVE_KEY, LEGACY_SAVE_KEYS, sanitizeCam } from '../state/save';
-import { matchCheat, applySkillsPlus10, applyGold200k } from '../state/cheats';
+import { matchCheat, matchToolsCode, applySkillsPlus10, applyGold200k } from '../state/cheats';
 import { AGGRO_GRACE_MS } from '../state/monsterAi';
 import { el, addChatMessage, showBanner, updateAllUI } from '../ui/hud';
 import { closeModals } from '../ui/playerActions';
@@ -120,6 +120,12 @@ export function noteCheatKey(e: KeyboardEvent): void {
   if (tag === 'INPUT' || tag === 'TEXTAREA') return;
   if (!e.key || e.key.length !== 1) return;
   cheatBuffer = (cheatBuffer + e.key.toLowerCase()).slice(-16);
+  if (matchToolsCode(cheatBuffer)) {
+    cheatBuffer = '';
+    el('hidden-tools').hidden = false;
+    addChatMessage('Hidden tools are shown in Settings until you reload.', 'skill');
+    return;
+  }
   const kind = matchCheat(cheatBuffer);
   if (!kind) return;
   cheatBuffer = '';
@@ -152,7 +158,7 @@ export function applyTypedCheat(): void {
   input.value = '';
   if (kind === 'skills') cheatSkillsPlus10();
   else if (kind === 'gold') cheatGold200k();
-  else addChatMessage('Unknown cheat code. Try <b>skills10</b> or <b>gold200k</b>.', 'combat');
+  else addChatMessage('Unknown code.', 'combat');
 }
 
 export const INTRO_KEY = 'gielinor_hero_intro_v1';

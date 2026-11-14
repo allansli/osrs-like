@@ -9,6 +9,13 @@ export function normalizeCheatText(raw: string): string {
   return String(raw || '').trim().toLowerCase().replace(/^::/, '');
 }
 
+// Typed during play: shows the 10x button and the cheat panel in Settings until reload. Not shown anywhere in the game.
+export const TOOLS_CODE = 'backroom';
+
+export function matchToolsCode(raw: string): boolean {
+  return normalizeCheatText(raw).endsWith(TOOLS_CODE);
+}
+
 /** Longest codes first so a short alias cannot swallow a longer one. */
 export function matchCheat(raw: string): 'skills' | 'gold' | null {
   const code = normalizeCheatText(raw);
