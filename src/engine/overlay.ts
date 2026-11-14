@@ -15,8 +15,7 @@ import { getTerrainHeight } from '../state/terrain';
 import { riverCenterX } from '../state/collision';
 import { monsterThreatColor } from '../state/adventure';
 import { getPrayerSvg } from '../ui/icons';
-import { el } from '../ui/hud';
-import { getCombatLevel } from './runtime';
+import { el, getCombatLevel } from '../ui/hud';
 
 // ============================================================================
 // 11. ROTATING MINIMAP & FLOATING LABELS
