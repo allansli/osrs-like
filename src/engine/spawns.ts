@@ -175,6 +175,13 @@ export function spawnResourceNode(nodeKey: string, x: number, z: number): void {
     grp.add(visualMesh);
 
     depletedMesh = new THREE.Group();
+    const depletedRing = new THREE.Mesh(
+      new THREE.TorusGeometry(1.15, 0.03, 5, 8),
+      new THREE.MeshBasicMaterial({ color: 0x7a96a3, transparent: true, opacity: 0.35 })
+    );
+    depletedRing.rotation.x = Math.PI / 2;
+    depletedRing.position.y = 0.05;
+    depletedMesh.add(depletedRing);
     depletedMesh.visible = false;
     grp.add(depletedMesh);
   }

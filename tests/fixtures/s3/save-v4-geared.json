@@ -1,0 +1,162 @@
+{
+ "version": 4,
+ "game": "Gielinor Hero",
+ "savedAt": 1794617058391,
+ "gp": 500000,
+ "xpMultiplier": 10,
+ "combatStyle": "magic",
+ "activeSpell": "fire_bolt",
+ "specArmed": false,
+ "specEnergy": 81.6000000000003,
+ "hp": 50,
+ "maxHp": 50,
+ "prayerPts": 39.74000000000006,
+ "maxPrayerPts": 41,
+ "activePrayers": [
+  "prot_melee"
+ ],
+ "currentRegion": "lumbridge",
+ "timeOfDay": 0,
+ "audioEnabled": true,
+ "transferQty": 1,
+ "skills": {
+  "attack": {
+   "xp": 37224,
+   "lvl": 40
+  },
+  "strength": {
+   "xp": 37224,
+   "lvl": 40
+  },
+  "defence": {
+   "xp": 37224,
+   "lvl": 40
+  },
+  "hitpoints": {
+   "xp": 101583,
+   "lvl": 50
+  },
+  "ranged": {
+   "xp": 41171,
+   "lvl": 41
+  },
+  "magic": {
+   "xp": 41171,
+   "lvl": 41
+  },
+  "prayer": {
+   "xp": 41171,
+   "lvl": 41
+  },
+  "woodcutting": {
+   "xp": 41171,
+   "lvl": 41
+  },
+  "mining": {
+   "xp": 41171,
+   "lvl": 41
+  },
+  "smithing": {
+   "xp": 41171,
+   "lvl": 41
+  },
+  "fishing": {
+   "xp": 41171,
+   "lvl": 41
+  },
+  "cooking": {
+   "xp": 41171,
+   "lvl": 41
+  }
+ },
+ "equipment": {
+  "head": "rune_helm",
+  "cape": null,
+  "neck": null,
+  "weapon": "rune_scimitar",
+  "body": "rune_plate",
+  "shield": null,
+  "legs": "rune_legs",
+  "hands": null,
+  "feet": null,
+  "ring": null
+ },
+ "inventory": [
+  {
+   "id": "dragon_chain",
+   "qty": 1
+  },
+  {
+   "id": "dragon_legs",
+   "qty": 1
+  },
+  {
+   "id": "shark",
+   "qty": 40
+  }
+ ],
+ "bank": [
+  {
+   "id": "dragon_scimitar",
+   "qty": 2
+  },
+  {
+   "id": "runite_bar",
+   "qty": 300
+  }
+ ],
+ "shrines": {
+  "lumbridge": true,
+  "varrock": false,
+  "desert": false,
+  "woods": false,
+  "wilderness": false
+ },
+ "quests": {
+  "burnedLog": true,
+  "openedBank": true,
+  "killedGoblin": true,
+  "killedArcane": false,
+  "minedMetal": false,
+  "killedScorpion": false,
+  "smeltedBar": false,
+  "choppedAncient": false,
+  "killedMoss": false,
+  "killedElvarg": false,
+  "cookedMeal": false,
+  "buriedBones": false,
+  "boughtWares": false,
+  "soldWares": false,
+  "worePlate": false,
+  "offeredPrayer": true,
+  "caughtFish": false,
+  "choppedMaple": false,
+  "minedRunite": false,
+  "killedDemon": false,
+  "claimed": [
+   "lumbridge"
+  ],
+  "slayer": {
+   "monster": "moss_guardian",
+   "name": "Moss Guardian",
+   "remaining": 4,
+   "total": 4
+  },
+  "slayerTasksCompleted": 0,
+  "slayerStreak": 0,
+  "dragonfireWard": false,
+  "title": ""
+ },
+ "playerPos": {
+  "x": 8,
+  "y": 0,
+  "z": 10,
+  "yaw": 0.48
+ },
+ "cam": {
+  "yaw": 1.13,
+  "manualOffset": 0.65,
+  "pitch": 0.18,
+  "distance": 5.4
+ }
+}

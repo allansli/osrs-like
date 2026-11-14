@@ -69,6 +69,14 @@ export function isStackableInBank(item: ItemDef | null | undefined): boolean {
 
 export const SELL_RATIO = 0.65;
 
+export const GEAR_MARKUP = 10;
+
+export function shopPrice(item: ItemDef | null | undefined): number {
+  if (!item) return 0;
+  if (item.type === 'equip') return (item.price || 0) * GEAR_MARKUP;
+  return item.price || 0;
+}
+
 export function unitSellPrice(item: ItemDef | null | undefined): number {
   if (!item) return 1;
   return Math.max(1, Math.floor((item.price || 10) * SELL_RATIO));

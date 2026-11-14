@@ -1,0 +1,49 @@
+import { readFileSync, writeFileSync } from 'node:fs';
+import { describe, expect, it } from 'vitest';
+import { ITEMS } from '../src/data/items';
+import { FORGE_RECIPES } from '../src/data/recipes';
+import { PRAYERS, SPELLS } from '../src/data/magic';
+import { MONSTER_TYPES, RESOURCE_NODES_DEF } from '../src/data/world';
+import { QUEST_DEFS } from '../src/state/adventure';
+
+const FIXTURE = new URL('./fixtures/s3/content-ids.golden.json', import.meta.url);
+
+// Owner's decision of 2026-11-14: the Hazel Staff (task I2) is the one new item.
+const DECLARED_NEW_ITEMS = ['hazel_staff'];
+
+type Names = Record<string, string>;
+const names = (entries: [string, string][]): Names =>
+  Object.fromEntries(entries.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)));
+const keyed = (t: Record<string, unknown>): Names =>
+  names(Object.entries(t).map(([k, v]) => [k, String((v as { name: string }).name)]));
+const listed = (t: { id: string; name: string }[]): Names => names(t.map((e) => [e.id, e.name]));
+
+const live: Record<string, Names> = {
+  ITEMS: keyed(ITEMS),
+  MONSTER_TYPES: keyed(MONSTER_TYPES),
+  RESOURCE_NODES_DEF: keyed(RESOURCE_NODES_DEF),
+  FORGE_RECIPES: listed(FORGE_RECIPES),
+  QUEST_DEFS: listed(QUEST_DEFS),
+  PRAYERS: listed(PRAYERS),
+  SPELLS: listed(SPELLS)
+};
+
+if (process.env.UPDATE_GOLDEN === '1') writeFileSync(FIXTURE, JSON.stringify(live, null, 1) + '\n');
+const want = JSON.parse(readFileSync(FIXTURE, 'utf8')) as Record<string, Names>;
+
+function comparable(table: string): Names {
+  const got = { ...live[table] };
+  if (table === 'ITEMS') for (const id of DECLARED_NEW_ITEMS) delete got[id];
+  return got;
+}
+
+describe('content freeze', () => {
+  for (const table of Object.keys(live)) {
+    it(`${table}: no id was added or removed`, () => {
+      expect(Object.keys(comparable(table)).sort()).toEqual(Object.keys(want[table]).sort());
+    });
+    it(`${table}: no name changed`, () => {
+      expect(comparable(table)).toEqual(want[table]);
+    });
+  }
+});
