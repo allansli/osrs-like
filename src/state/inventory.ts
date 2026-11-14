@@ -1,7 +1,7 @@
 import { ITEMS, isStackableInBackpack, isStackableInBank, shopPrice, unitSellPrice } from '../data/items';
 import { MAX_GP, MAX_STACK, creditGp } from './economy';
 import { BACKPACK_SIZE, BANK_CAPACITY } from './gameState';
-import { notePurchase } from './quests';
+import { notePurchase, noteSale } from './quests';
 import type { GameState, ItemStack, QtyMode } from './types';
 
 export function resolveQty(mode: QtyMode, available: number): number {
@@ -209,6 +209,7 @@ export function sellItem(state: GameState, itemId: string, mode: QtyMode): Trans
   // removeFrom walks every slot, so unstackable copies of the same item sell together.
   const removed = removeFrom(state.inventory, itemId, n);
   creditGp(state, gp);
+  noteSale(state);
   return { ok: true, moved: removed, gp, unit };
 }
 

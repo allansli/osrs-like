@@ -14,7 +14,7 @@ import {
   isUnequippedGear
 } from '../state/inventory';
 import { tryCraft, isLogId } from '../data/recipes';
-import { noteBury, notePlate, notePrayerOffered, noteSale } from '../state/quests';
+import { noteBury, notePlate, notePrayerOffered } from '../state/quests';
 import { equippedWeapon, allowedStyles, canCastTeleport } from '../state/combat';
 import { weaponSpecial, claimQuest, assignSlayerTask } from '../state/adventure';
 import { unlocksAt, unlockLine } from '../state/unlocks';
@@ -101,7 +101,6 @@ export function sellInventoryItem(index: number, qtyMode?: QtyMode): void {
     return;
   }
   SFX.coin();
-  noteSale(STATE);
   const name = item ? item.name : slot.id;
   addChatMessage('Sold <b>' + result.moved + ' × ' + name + '</b> for <b style="color:#ffe642">' + result.gp!.toLocaleString() + ' GP</b> (65%).', 'loot');
   updateAllUI();
