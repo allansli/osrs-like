@@ -3,6 +3,7 @@ import { PRAYERS, SPELLS } from '../data/magic';
 import { getLevelForXp, SKILL_KEYS } from '../data/skills';
 import { WORLD_REGIONS } from '../data/world';
 import { createDefaultState } from './gameState';
+import { MAX_GP } from './economy';
 import { compactSlots } from './inventory';
 import { normalizeStyle } from './combat';
 import { normalizeQuests } from './quests';
@@ -31,7 +32,7 @@ export function migrateLegacySave(raw: unknown, source: string | null = null): M
   const data = (raw && typeof raw === 'object' ? raw : {}) as Record<string, any>;
   const state = createDefaultState();
 
-  if (typeof data.gp === 'number' && Number.isFinite(data.gp)) state.gp = Math.max(0, Math.min(2147483647, Math.floor(data.gp)));
+  if (typeof data.gp === 'number' && Number.isFinite(data.gp)) state.gp = Math.max(0, Math.min(MAX_GP, Math.floor(data.gp)));
   if (typeof data.xpMultiplier === 'number') state.xpMultiplier = data.xpMultiplier === 1 ? 1 : 10;
   if (typeof data.combatStyle === 'string') state.combatStyle = normalizeStyle(data.combatStyle);
   if (typeof data.activeSpell === 'string' && SPELLS.some((s) => s.id === data.activeSpell && s.type === 'combat')) {

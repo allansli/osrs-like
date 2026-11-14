@@ -22,7 +22,7 @@ import {
 import { addChatMessage, showBanner, updateTargetHud, updateAllUI, requestUiRefresh, el } from '../ui/hud';
 import { STATE } from '../state/gameState';
 import { prepareAttack, playerAttackProfile, playerHitChance, rollMonsterHit } from '../state/combat';
-import { gatherChance, rollDrops } from '../state/economy';
+import { creditGp, gatherChance, rollDrops } from '../state/economy';
 import { addItem, removeItem, canAddItem } from '../state/inventory';
 import { SPELLS } from '../data/magic';
 import { AGGRO_GRACE_MS, isDown, onPlayerHit } from '../state/monsterAi';
@@ -267,7 +267,7 @@ export function handleMonsterDeath(monster: MonsterEntity): void {
   const drops = rollDrops(monster.typeKey, Math.random);
   for (const drop of drops) {
     if (drop.kind === 'gp') {
-      STATE.gp += drop.amount;
+      creditGp(STATE, drop.amount);
       SFX.coin();
       addChatMessage(`Looted <b style="color:#ffe642">${drop.amount} GP</b> from ${monster.def.name}.`, 'loot');
     } else if (drop.kind === 'item' && ITEMS[drop.id]) {

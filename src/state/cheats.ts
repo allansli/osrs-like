@@ -1,4 +1,5 @@
 import { OSRS_XP_TABLE } from '../data/skills';
+import { creditGp } from './economy';
 import type { GameState } from './types';
 
 /** Typed on the keyboard, or into the Settings box with an optional :: prefix. */
@@ -49,5 +50,5 @@ export function applySkillsPlus10(state: GameState): void {
 }
 
 export function applyGold200k(state: GameState): void {
-  state.gp += 200000;
+  creditGp(state, 200000);
 }

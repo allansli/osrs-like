@@ -1,4 +1,16 @@
 import { MONSTER_TYPES } from '../data/world';
+import type { GameState } from './types';
+
+export const MAX_GP = 2147483647;
+export const MAX_STACK = 2147483647;
+
+export function creditGp(state: GameState, amount: number): number {
+  if (!Number.isFinite(amount)) return 0;
+  const oldGp = state.gp;
+  const newGp = Math.min(MAX_GP, Math.max(0, state.gp + Math.floor(amount)));
+  state.gp = newGp;
+  return newGp - oldGp;
+}
 
 export type DropResult =
   | { kind: 'gp'; amount: number }

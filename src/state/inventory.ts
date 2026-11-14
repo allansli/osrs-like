@@ -1,4 +1,5 @@
 import { ITEMS, isStackableInBackpack, isStackableInBank, shopPrice, unitSellPrice } from '../data/items';
+import { MAX_GP, MAX_STACK, creditGp } from './economy';
 import { BACKPACK_SIZE, BANK_CAPACITY } from './gameState';
 import type { GameState, ItemStack, QtyMode } from './types';
 
@@ -72,7 +73,7 @@ export function compactSlots(raw: ItemStack[] | undefined, bank: boolean): ItemS
     if (!slot || typeof slot.id !== 'string' || !Object.hasOwn(ITEMS, slot.id)) continue;
     const rawQty = Number(slot.qty);
     if (rawQty === Infinity || rawQty === -Infinity) continue;
-    const qty = Math.max(1, Math.min(2147483647, Math.floor(rawQty || 1)));
+    const qty = Math.max(1, Math.min(MAX_STACK, Math.floor(rawQty || 1)));
     const item = ITEMS[slot.id];
     const stackable = bank ? isStackableInBank(item) : isStackableInBackpack(item);
     place(out, slot.id, qty, stackable, capacity);
@@ -198,10 +199,13 @@ export function sellItem(state: GameState, itemId: string, mode: QtyMode): Trans
   const n = resolveQty(mode, have);
   if (n <= 0) return { ok: false, moved: 0, reason: 'Nothing to sell.' };
   const unit = unitSellPrice(item);
+  const gp = unit * n;
+  if (state.gp + gp > MAX_GP) {
+    return { ok: false, moved: 0, reason: 'Your coin pouch is full.' };
+  }
   // removeFrom walks every slot, so unstackable copies of the same item sell together.
   const removed = removeFrom(state.inventory, itemId, n);
-  const gp = unit * removed;
-  state.gp += gp;
+  creditGp(state, gp);
   return { ok: true, moved: removed, gp, unit };
 }
 

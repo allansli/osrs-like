@@ -1,4 +1,5 @@
 import { getLevelForXp } from '../data/skills';
+import { creditGp } from './economy';
 import { addItem, canAddItem } from './inventory';
 import { noteGather as markGather, noteSmelt as markSmelt } from './quests';
 import type { GameState, SlayerTask } from './types';
@@ -621,7 +622,7 @@ export function claimQuest(state: GameState, questId: string): ClaimResult {
   if (!complete) return { ok: false, reason: 'Finish every objective before claiming the reward.' };
   if (!canHoldRewards(state, def.items)) return { ok: false, reason: 'Your backpack is full.' };
 
-  state.gp += def.gp;
+  creditGp(state, def.gp);
   for (const [skill, amount] of Object.entries(def.xp)) grantExactXp(state, skill, amount);
   for (const item of def.items) addItem(state, item.id, item.qty);
   if (def.ward) state.quests.dragonfireWard = true;
@@ -682,7 +683,7 @@ export function registerKill(state: GameState, typeKey: string): KillResult {
     result.slayerCompleted = true;
     result.bountyGp = band?.bountyGp ?? 0;
     result.bountyXp = band?.bountyXp ?? 0;
-    state.gp += result.bountyGp;
+    creditGp(state, result.bountyGp);
     grantExactXp(state, 'attack', result.bountyXp);
     quests.slayerTasksCompleted += 1;
     quests.slayerStreak += 1;
