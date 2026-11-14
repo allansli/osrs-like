@@ -24,3 +24,6 @@ equip, typing in the bank search. Monster positions differ between runs (unseede
 
 Found in both versions (not a regression): after a reload in another region the footer still reads
 "Lumbridge Haven" until the hero crosses a region border.
+
+Owner check (2026-11-14): the owner played both versions side by side (pre-refactor commit and the full Stage 1 branch)
+and answered "sim, jogo ainda igual".
