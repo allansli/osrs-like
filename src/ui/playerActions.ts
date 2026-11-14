@@ -42,9 +42,9 @@ import { SFX } from '../engine/audio';
 import { spawnLevelUpFireworks, spawnHitSplatOnPlayer } from '../engine/vfx';
 import { rebuildPlayerEquipmentMeshes } from '../engine/playerMesh';
 import { saveGameState } from '../engine/session';
+import { teleportToRegion } from '../engine/actions';
 import {
   openChooseMenu,
-  teleportToRegion,
   hideContextMenu,
   syncGraphicsButtons
 } from '../engine/runtime';
