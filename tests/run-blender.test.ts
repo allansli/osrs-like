@@ -124,4 +124,11 @@ describe('scripts/run-blender.mjs', () => {
     const res = run(['hero'], { STUB_SIGNAL: '1' });
     expect(res.status).not.toBe(0);
   });
+
+  it('a BLENDER_PATH that points at nothing fails instead of using another Blender', () => {
+    const res = run(['hero'], {}, path.join(dir, 'no-such-blender'));
+    expect(res.status).toBe(1);
+    expect(res.stderr).toContain('BLENDER_PATH');
+    expect(argvLines()).toEqual([]);
+  });
 });

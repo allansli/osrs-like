@@ -3,7 +3,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 function findBlenderExecutable() {
-  if (process.env.BLENDER_PATH && fs.existsSync(process.env.BLENDER_PATH)) {
+  if (process.env.BLENDER_PATH) {
+    if (!fs.existsSync(process.env.BLENDER_PATH)) {
+      console.error(`BLENDER_PATH is set to "${process.env.BLENDER_PATH}" but no file exists there.`);
+      process.exit(1);
+    }
     return process.env.BLENDER_PATH;
   }
   const localAppData = process.env.LOCALAPPDATA || '';
