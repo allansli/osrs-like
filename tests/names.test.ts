@@ -16,7 +16,8 @@ const DENY = [
   'bandos', 'armadyl', 'saradomin', 'zamorak', 'guthix', 'barrows', 'dharok', 'torag', 'torva',
   'justiciar', 'inquisitor', 'ancestral', 'abyssal', 'elysian', 'fierce deity',
   'sheikah', 'masori', 'karil', 'ahrim', 'proselyte', 'zulrah', 'kodai', 'neitiznot', 'tzkal',
-  'godsword', 'pegasian', 'ultor', 'tumeken', 'elidinis', "ava's", 'seers'
+  'godsword', 'pegasian', 'ultor', 'tumeken', 'elidinis', "ava's", 'seers',
+  'nex', 'bloodbark', 'odium'
 ];
 
 const denied = (name: string) => DENY.filter((t) => name.toLowerCase().includes(t));
