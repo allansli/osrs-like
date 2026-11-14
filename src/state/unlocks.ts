@@ -1,6 +1,6 @@
 import { ITEMS, shopPrice } from '../data/items';
 import { FORGE_RECIPES } from '../data/recipes';
-import { RESOURCE_NODES_DEF } from '../data/catalog';
+import { RESOURCE_NODES_DEF } from '../data/world';
 import { PRAYERS, SPELLS } from '../data/magic';
 
 export interface Unlock {
@@ -24,7 +24,8 @@ export function unlocksAt(skill: string, level: number): Unlock[] {
     }
   }
 
-  for (const [id, node] of Object.entries(RESOURCE_NODES_DEF)) {
+  for (const [id, raw] of Object.entries(RESOURCE_NODES_DEF)) {
+    const node = raw as { name: string; skill: string; req: number };
     if (node.skill === skill && node.req === level) {
       unlocks.push({ kind: 'node', name: node.name, id });
     }

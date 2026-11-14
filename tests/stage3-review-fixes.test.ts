@@ -3,7 +3,7 @@ import { getLevelForXp, OSRS_XP_TABLE } from '../src/data/skills';
 import { claimQuest, registerKill } from '../src/state/adventure';
 import { createDefaultState } from '../src/state/gameState';
 import { buyItem, buyRunePack, isGatheredGood, sellInventoryMatch, sellItem } from '../src/state/inventory';
-import { levelUnlockLines } from '../src/state/unlocks';
+import { levelUnlockLines, unlocksAt } from '../src/state/unlocks';
 
 /** The same pure functions the shop window's Buy, batch and rune-pack buttons call (src/ui/stations.ts). */
 describe('review 3: every shop buy sets boughtWares', () => {
@@ -94,5 +94,12 @@ describe('review 0: quest and Slayer levels print the unlock line', () => {
     const before = state.skills.attack.lvl;
     expect(registerKill(state, 'goblin').slayerCompleted).toBe(true);
     expect(levelUnlockLines('attack', 'Attack', before, state.skills.attack.lvl).some((l) => l.includes('Iron Scimitar'))).toBe(true);
+  });
+});
+
+describe('review 1: the unlock line reads the live node table', () => {
+  it('Woodcutting 30 unlocks the Maple Tree', () => {
+    expect(unlocksAt('woodcutting', 30).map((u) => u.name)).toContain('Maple Tree');
+    expect(levelUnlockLines('woodcutting', 'Woodcutting', 29, 30)[0]).toContain('<b>Maple Tree</b>');
   });
 });

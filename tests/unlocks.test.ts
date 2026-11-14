@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { RESOURCE_NODES_DEF } from '../src/data/catalog';
+import { RESOURCE_NODES_DEF } from '../src/data/world';
 import { ITEMS } from '../src/data/items';
 import { PRAYERS, SPELLS } from '../src/data/magic';
 import { FORGE_RECIPES } from '../src/data/recipes';
