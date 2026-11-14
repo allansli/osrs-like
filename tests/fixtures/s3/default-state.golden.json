@@ -1,0 +1,213 @@
+{
+ "version": 4,
+ "game": "Gielinor Hero",
+ "gp": 500,
+ "xpMultiplier": 10,
+ "combatStyle": "accurate",
+ "activeSpell": "wind_strike",
+ "specArmed": false,
+ "specEnergy": 100,
+ "hp": 10,
+ "maxHp": 10,
+ "prayerPts": 1,
+ "maxPrayerPts": 1,
+ "activePrayers": [],
+ "currentRegion": "lumbridge",
+ "timeOfDay": 0,
+ "audioEnabled": true,
+ "transferQty": 1,
+ "skills": {
+  "attack": {
+   "xp": 0,
+   "lvl": 1
+  },
+  "strength": {
+   "xp": 0,
+   "lvl": 1
+  },
+  "defence": {
+   "xp": 0,
+   "lvl": 1
+  },
+  "hitpoints": {
+   "xp": 1154,
+   "lvl": 10
+  },
+  "ranged": {
+   "xp": 0,
+   "lvl": 1
+  },
+  "magic": {
+   "xp": 0,
+   "lvl": 1
+  },
+  "prayer": {
+   "xp": 0,
+   "lvl": 1
+  },
+  "woodcutting": {
+   "xp": 0,
+   "lvl": 1
+  },
+  "mining": {
+   "xp": 0,
+   "lvl": 1
+  },
+  "smithing": {
+   "xp": 0,
+   "lvl": 1
+  },
+  "fishing": {
+   "xp": 0,
+   "lvl": 1
+  },
+  "cooking": {
+   "xp": 0,
+   "lvl": 1
+  }
+ },
+ "equipment": {
+  "head": null,
+  "cape": null,
+  "neck": null,
+  "weapon": "bronze_scimitar",
+  "body": null,
+  "shield": null,
+  "legs": null,
+  "hands": null,
+  "feet": null,
+  "ring": null
+ },
+ "inventory": [
+  {
+   "id": "hylian_hood",
+   "qty": 1
+  },
+  {
+   "id": "hylian_tunic",
+   "qty": 1
+  },
+  {
+   "id": "hylian_trousers",
+   "qty": 1
+  },
+  {
+   "id": "hylian_cape",
+   "qty": 1
+  },
+  {
+   "id": "wooden_shield",
+   "qty": 1
+  },
+  {
+   "id": "leather_gloves",
+   "qty": 1
+  },
+  {
+   "id": "leather_boots",
+   "qty": 1
+  },
+  {
+   "id": "bronze_plate",
+   "qty": 1
+  },
+  {
+   "id": "bronze_legs",
+   "qty": 1
+  },
+  {
+   "id": "wizard_top",
+   "qty": 1
+  },
+  {
+   "id": "wizard_bottom",
+   "qty": 1
+  },
+  {
+   "id": "bronze_helm",
+   "qty": 1
+  },
+  {
+   "id": "shortbow",
+   "qty": 1
+  },
+  {
+   "id": "fire_staff",
+   "qty": 1
+  },
+  {
+   "id": "cooked_chicken",
+   "qty": 3
+  },
+  {
+   "id": "shrimp",
+   "qty": 5
+  },
+  {
+   "id": "prayer_potion",
+   "qty": 2
+  },
+  {
+   "id": "bones",
+   "qty": 3
+  },
+  {
+   "id": "bronze_arrow",
+   "qty": 50
+  },
+  {
+   "id": "feather",
+   "qty": 40
+  },
+  {
+   "id": "air_rune",
+   "qty": 80
+  },
+  {
+   "id": "mind_rune",
+   "qty": 80
+  },
+  {
+   "id": "law_rune",
+   "qty": 15
+  }
+ ],
+ "bank": [],
+ "shrines": {
+  "lumbridge": true,
+  "varrock": false,
+  "desert": false,
+  "woods": false,
+  "wilderness": false
+ },
+ "quests": {
+  "burnedLog": false,
+  "openedBank": false,
+  "killedGoblin": false,
+  "killedArcane": false,
+  "minedMetal": false,
+  "killedScorpion": false,
+  "smeltedBar": false,
+  "choppedAncient": false,
+  "killedMoss": false,
+  "killedElvarg": false,
+  "cookedMeal": false,
+  "buriedBones": false,
+  "boughtWares": false,
+  "soldWares": false,
+  "worePlate": false,
+  "offeredPrayer": false,
+  "caughtFish": false,
+  "choppedMaple": false,
+  "minedRunite": false,
+  "killedDemon": false,
+  "claimed": [],
+  "slayer": null,
+  "slayerTasksCompleted": 0,
+  "slayerStreak": 0,
+  "dragonfireWard": false,
+  "title": ""
+ },
+ "playerPos": null,
+ "cam": null
+}
