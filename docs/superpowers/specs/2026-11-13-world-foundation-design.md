@@ -591,7 +591,7 @@ One row per confirmed finding in `docs/audit/2026-11-13-findings.json`, in file 
 |---|---|---|---|---|---|
 | 1 | Save-derived slayer task name is interpolated into innerHTML (stored DOM injection) | `src/ui/stations.ts` | low | Fixed in Stage 1 | Slayer task kept only for a known monster; name taken from the catalog. |
 | 2 | Save item/equipment ids are checked with ITEMS[id] on a plain object, so inherited keys pass | `src/state/inventory.ts` | low | Fixed in Stage 1 | `Object.hasOwn(ITEMS, id)` in `compactSlots` and the equipment loader. |
-| 3 | Blender build scripts default render output to a hard-coded Gemini agent scratch path | `scripts/blender/build_gear.py` | low | Deferred to Stage 7 | Python build script; the change cannot be run or checked without Blender. |
+| 3 | Blender build scripts default render output to a hard-coded Gemini agent scratch path | `scripts/blender/build_gear.py` | low | Fixed after Stage 1 (branch `fix/blender-scripts`) | Blender was installed later. The render path now comes only from `--render <file>`; the same hard-coded path was also removed from `build_world.py` and `build_monsters.py`. |
 | 4 | Third-party .blend files are opened without --disable-autoexec | `scripts/run-blender.mjs` | low | Fixed in Stage 1 | `--disable-autoexec` on every Blender spawn; asserted with a stub binary. |
 | 5 | vercel.json sets no security headers | `vercel.json` | low | Fixed in Stage 1 | Headers block in `vercel.json` (CALL-5). A script-src policy waits for Stage 5. |
 | 6 | The shop sells raw ores and fish for less than the items they craft into sell for, so GP can be printed without limit | `src/state/inventory.ts` | medium | Fixed in Stage 1 | `buyItem` refuses gathered goods; shop hides those buy buttons (CALL-2). |
@@ -627,13 +627,13 @@ One row per confirmed finding in `docs/audit/2026-11-13-findings.json`, in file 
 | 36 | run-blender.mjs exits 0 when Blender is missing or killed, or when the Python build raises; an unknown mode silently rebuilds the hero | `scripts/run-blender.mjs` | medium | Fixed in Stage 1 | Non-zero exit on spawn error, signal, script error and unknown mode. |
 | 37 | Dev tooling pinned at vulnerable versions (vite 5.4.10, vitest/@vitest/mocker 2.1.4, esbuild 0.21.5, tinypool 1.1.1) | `package.json` | medium | Fixed in Stage 1 | vite and vitest bumped to patched versions (CALL-4). |
 | 38 | @ts-nocheck disables type checking for runtime.ts and icons.ts, about half of the non-test TypeScript | `src/engine/runtime.ts` | medium | Fixed in Stage 1 | No `@ts-nocheck` left under `src/`, `icons.ts` included; enforced by a test. |
-| 39 | get_blend_object swallows load failures, so world props become empty roots without any error | `scripts/blender/build_world.py` | low | Deferred to Stage 7 | Python build script; changes build behaviour and cannot be verified without Blender. |
+| 39 | get_blend_object swallows load failures, so world props become empty roots without any error | `scripts/blender/build_world.py` | low | Fixed after Stage 1 (branch `fix/blender-scripts`) | Blender was installed later. A missing file or object now raises and stops the build; the six props the build loads were checked to exist. The same swallow in `build_gear.py` and `build_monsters.py` is not part of this finding and stays. |
 | 40 | README counts and the monster table are out of date | `README.md` | low | Fixed in Stage 1 | Counts and monster table corrected; the table is updated again in Stage 2 for new places. |
 | 41 | Hashed /assets served with max-age=0; one 926 KB JS chunk is revalidated on every visit | `vercel.json` | low | Fixed in Stage 1 | Immutable caching for `/assets/*` only. |
 | 42 | blender/examples weighs about 77 MB; a tracked zip contradicts the *.zip ignore rule; the amulet .blend is unused | `.gitignore` | low | Fixed in Stage 1 | Unused amulet folder deleted, ignore rule fixed. Git LFS and history rewrite not done in these stages (proposal, CALL-12). |
 | 43 | No CI runs the tests or the build | `package.json` | low | Fixed in Stage 1 | GitHub Actions workflow: `npm ci`, `npm test`, `npm run build`. |
 
-Totals: 31 fixed in Stage 1, 1 fixed in Stage 2, 11 deferred (Stage 3: 1, Stage 4: 1, Stage 5: 5, Stage 7: 4).
+Totals: 31 fixed in Stage 1, 2 fixed after it (3 and 39), 1 fixed in Stage 2, 9 deferred (Stage 3: 1, Stage 4: 1, Stage 5: 5, Stage 7: 2).
 
 Every finding located in `src/engine/runtime.ts` (11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 26, 38) is touched by Stage 1 because the whole file is split. Twelve of them are fixed there; 14 and 18 carry the written deferrals above.
 
