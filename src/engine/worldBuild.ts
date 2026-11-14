@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { loadGltfOnce } from './gltf';
 import { G } from './context';
+import { disposeObject3D } from './dispose';
 import { WORLD_REGIONS, type RegionDef } from '../data/world';
 import { ITEMS, type ItemDef } from '../data/items';
 import { getTerrainHeight } from '../state/terrain';
@@ -454,8 +455,10 @@ export function createSlayerMaster(x: number, z: number): void {
   let vannakaWep: THREE.Group | null = null;
   let vannakaCape: THREE.Group | null = null;
   const attachVannakaGear = (): void => {
-    if (vannakaWep && vannakaWep.parent) vannakaWep.parent.remove(vannakaWep);
-    if (vannakaCape && vannakaCape.parent) vannakaCape.parent.remove(vannakaCape);
+    // Same rules as the player's gear (L3): geometry and materials are per-call; textures
+    // and the shared outline material are cached and the helper keeps them.
+    if (vannakaWep) disposeObject3D(vannakaWep);
+    if (vannakaCape) disposeObject3D(vannakaCape);
     const wepVis = buildWeaponVisual(ITEMS.godsword || ITEMS.rune_2h || ({ id: 'godsword', iconKind: 'greatsword', slot: 'weapon', color: 0xfacc15, trim: 0xfde047 } as unknown as ItemDef));
     if (rig.rightElbowPivot) {
       wepVis.group.position.set(0.19, -0.32, 0.08);
