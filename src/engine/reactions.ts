@@ -48,28 +48,31 @@ let reactionTimeMs = 0;
 const _whiteColor = new THREE.Color(0xffffff);
 const _tempColor = new THREE.Color();
 
-function collectMaterials(root: THREE.Object3D): THREE.Material[] {
+const flashMaterials = new WeakMap<Entity, THREE.Material[]>();
+
+// Collects the body's materials once (design 6.5): spawn code calls it for each monster, and the hero calls it
+// after every rebuildPlayerEquipmentMeshes, since gear meshes are replaced when equipment changes.
+export function collectFlashMaterials(entity: Entity): void {
   const materials: THREE.Material[] = [];
-  root.traverse((child: THREE.Object3D) => {
+  meshRoot(entity).traverse((child: THREE.Object3D) => {
     const mesh = child as THREE.Mesh;
     // Outline shells share one colourless ShaderMaterial: never flash them.
-    if (mesh.isMesh && mesh.material && !mesh.userData.isOutline) {
+    if (mesh.isMesh && !mesh.userData.isOutline) {
       const list = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
       for (const m of list) if ('color' in m) materials.push(m);
     }
   });
-  return materials;
+  flashMaterials.set(entity, materials);
 }
 
 export function flash(entity: Entity): void {
+  const materials = flashMaterials.get(entity);
+  if (!materials) throw new Error('flash: collectFlashMaterials was never called for this entity');
   const lastTime = entityLastFlashTime.get(entity);
   if (lastTime !== undefined && reactionTimeMs - lastTime < FLASH.minGapMs) {
     return;
   }
   entityLastFlashTime.set(entity, reactionTimeMs);
-
-  // Collected on every flash: the hero's gear meshes are rebuilt when equipment changes.
-  const materials = collectMaterials(meshRoot(entity));
 
   const originalColors: number[] = [];
   for (const mat of materials) {
@@ -91,6 +94,9 @@ interface HeroFlinchState {
   durationMs: number;
   lastX: number;
   lastZ: number;
+  // The torso rotation left after last frame's lean, to tell whether the pose has rewritten the axis since.
+  leftX: number;
+  leftZ: number;
 }
 
 let activeHeroFlinch: HeroFlinchState | null = null;
@@ -98,13 +104,17 @@ let activeHeroFlinch: HeroFlinchState | null = null;
 export function flinchHero(dirX: number, dirZ: number): void {
   const len = Math.hypot(dirX, dirZ);
   if (len === 0) return;
+  // A flinch that restarts one still running keeps its last lean, so the next update removes it.
+  const prev = activeHeroFlinch;
   activeHeroFlinch = {
     dirX: dirX / len,
     dirZ: dirZ / len,
     elapsedMs: 0,
     durationMs: FLINCH.heroMs,
-    lastX: 0,
-    lastZ: 0,
+    lastX: prev ? prev.lastX : 0,
+    lastZ: prev ? prev.lastZ : 0,
+    leftX: prev ? prev.leftX : NaN,
+    leftZ: prev ? prev.leftZ : NaN,
   };
 }
 
@@ -265,20 +275,30 @@ export function updateReactions(dt: number): void {
   }
 
   if (activeHeroFlinch) {
-    // Additive lean on top of the pose: remove last frame's offset, add this frame's (like the camera kick).
+    // Additive lean on top of the pose. An axis still holding the value left last frame was not rewritten by the
+    // pose (the procedural rig never writes rotation.z), so last frame's lean is removed from it first; an axis
+    // the pose rewrote this frame (the procedural rig's rotation.x, a mixer track) has already lost it.
     const f = activeHeroFlinch;
     const torso = player.parts.torso as THREE.Group;
-    torso.rotation.x -= f.lastX;
-    torso.rotation.z -= f.lastZ;
+    if (torso.rotation.x === f.leftX) torso.rotation.x -= f.lastX;
+    if (torso.rotation.z === f.leftZ) torso.rotation.z -= f.lastZ;
     f.elapsedMs += dtMs;
     if (f.elapsedMs >= f.durationMs) {
       activeHeroFlinch = null;
     } else {
+      // The torso sits under meshGroup (rotation.y = yaw + PI): turn the world blow direction into its frame.
+      const yaw = player.meshGroup!.rotation.y;
+      const c = Math.cos(yaw);
+      const s = Math.sin(yaw);
+      const localX = f.dirX * c - f.dirZ * s;
+      const localZ = f.dirX * s + f.dirZ * c;
       const lean = Math.sin((f.elapsedMs / f.durationMs) * Math.PI) * FLINCH.heroLeanRad;
-      f.lastX = f.dirZ * lean;
-      f.lastZ = -f.dirX * lean;
+      f.lastX = localZ * lean;
+      f.lastZ = -localX * lean;
       torso.rotation.x += f.lastX;
       torso.rotation.z += f.lastZ;
+      f.leftX = torso.rotation.x;
+      f.leftZ = torso.rotation.z;
     }
   }
 
