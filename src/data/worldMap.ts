@@ -69,10 +69,86 @@ export type SafeZoneDef = {
   radius: number;
 };
 
-export const PATHS: PathDef[] = [];
-export const RIDGES: RidgeDef[] = [];
-export const BASINS: BasinDef[] = [];
-export const POIS: PoiDef[] = [];
+// Design 6.3. Each path starts where its signpost stands (a town exit or a fork) and ends near its shrine.
+export const PATHS: PathDef[] = [
+  { id: 'millrace_road', name: 'Millrace Road', halfWidth: 2, points: [[12, 2], [18, 0], [38, 0], [50, -6], [64, -16], [72, -22]] },
+  { id: 'saltwind_track', name: 'Saltwind Track', halfWidth: 1.8, points: [[40, 0], [50, 10], [62, 30], [68, 48], [68, 55]] },
+  { id: 'lanternway', name: 'Lanternway', halfWidth: 1.8, points: [[-14, -4], [-28, -10], [-44, -16], [-58, -26], [-68, -33]] },
+  { id: 'cinder_stair', name: 'Cinder Stair', halfWidth: 1.8, points: [[-6, 12], [-12, 32], [-14, 55], [-46, 55], [-56, 58], [-64, 61]] }
+];
+
+// Harrowback Ridge closes the volcanic corner; both ends run past the walkable bound. Its one gap is Cinderstep Pass,
+// 5 wide and 22 long (twice the core half-width).
+export const RIDGES: RidgeDef[] = [
+  {
+    id: 'harrowback_ridge',
+    name: 'Harrowback Ridge',
+    points: [[-124, 22], [-38, 30], [-32, 38], [-32, 124]],
+    height: 12,
+    halfWidth: 18,
+    coreHalfWidth: 11,
+    gaps: [{ at: [-32, 55], halfWidth: 2.5 }]
+  }
+];
+
+export const BASINS: BasinDef[] = [
+  { id: 'reedglass_tarn', name: 'Reedglass Tarn', x: -40, z: -30, radius: 6, depth: 1.2 },
+  { id: 'tamarisk_pool', name: 'Tamarisk Pool', x: 96, z: 90, radius: 6, depth: 1.2 }
+];
+
+export const POIS: PoiDef[] = [
+  {
+    id: 'three_kettle_camp', name: 'Three Kettle Camp', x: 13, z: 8, padRadius: 5,
+    pieces: [
+      { builder: 'tent', dx: -2.5, dz: 2.5, rot: 0.4 },
+      { builder: 'tent', dx: 2.5, dz: 3, rot: -0.5 },
+      { builder: 'fireRing', dx: 0, dz: 0 },
+      { node: 'World_crate', dx: 3.2, dz: -1.8, rot: 0.3 },
+      { node: 'World_barrel', dx: -3.2, dz: -1.6 },
+      { node: 'World_bag_grain', dx: 1, dz: -3.4, rot: 1.1 }
+    ]
+  },
+  {
+    id: 'wardstone_cairn', name: 'Wardstone Cairn', x: -8, z: 50, padRadius: 2,
+    pieces: [
+      { builder: 'cairn', dx: 0, dz: 0 },
+      { node: 'World_plaza_pillar', dx: 1.2, dz: 1, scale: 0.6 },
+      { node: 'World_woods_lantern', dx: -1.2, dz: 1.2 }
+    ],
+    sign: 'Beyond this cairn the pass is held. Go through prepared, or not at all.'
+  },
+  {
+    id: 'cinderstep_pass', name: 'Cinderstep Pass', x: -19, z: 55, padRadius: 3,
+    pieces: [
+      { node: 'World_obsidian_spire', dx: 0, dz: 2.9 },
+      { node: 'World_obsidian_spire', dx: 0, dz: -2.9, rot: 1.6 }
+    ]
+  },
+  {
+    id: 'slagfall_terrace', name: 'Slagfall Terrace', x: -84, z: 98, padRadius: 6,
+    pieces: [
+      { node: 'World_obsidian_spire', dx: -3.5, dz: 2.5 },
+      { node: 'World_lava_fissure', dx: 2, dz: -1.5, rot: 0.7 },
+      { node: 'World_obsidian_spire', dx: 3.8, dz: 3, scale: 0.8 }
+    ]
+  },
+  {
+    id: 'lampwrights_hollow', name: "Lampwright's Hollow", x: -50, z: -13, padRadius: 2.5,
+    pieces: [
+      { node: 'World_woods_lantern', dx: -1.5, dz: 0.5 },
+      { node: 'World_mystic_mushroom', dx: 1.2, dz: 1.2 },
+      { node: 'World_crate', dx: 0.8, dz: -1.4, rot: 0.5 }
+    ]
+  },
+  { id: 'reedglass_tarn', name: 'Reedglass Tarn', x: -29, z: -30, padRadius: 0, pieces: [] },
+  {
+    id: 'tamarisk_pool', name: 'Tamarisk Pool', x: 85, z: 90, padRadius: 2.5,
+    pieces: [
+      { node: 'World_palm_tree', dx: 0, dz: 1.5 },
+      { node: 'World_sandstone_arch', dx: 1, dz: -1.2, rot: 1.57 }
+    ]
+  }
+];
 
 function makeCamp(id: string, members: CampMember[]): CampDef {
   const count = members.length;

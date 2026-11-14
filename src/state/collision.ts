@@ -1,3 +1,5 @@
+import { BASINS, RIDGES, type RidgeDef } from '../data/worldMap';
+
 /** River Lum centerline used by both the renderer and the collision tests. */
 export function riverCenterX(z: number): number {
   return 28 + Math.sin(z * 0.05) * 8;
@@ -43,10 +45,52 @@ export function hitsCastleWall(x: number, z: number): boolean {
   return false;
 }
 
+/** Distance from (x, z) to a polyline, and the nearest point on it. */
+export function nearestOnPolyline(points: [number, number][], x: number, z: number): { d: number; qx: number; qz: number } {
+  let best = { d: Infinity, qx: 0, qz: 0 };
+  for (let i = 1; i < points.length; i++) {
+    const [ax, az] = points[i - 1];
+    const [bx, bz] = points[i];
+    const lx = bx - ax;
+    const lz = bz - az;
+    const len2 = lx * lx + lz * lz;
+    const t = len2 === 0 ? 0 : Math.max(0, Math.min(1, ((x - ax) * lx + (z - az) * lz) / len2));
+    const qx = ax + lx * t;
+    const qz = az + lz * t;
+    const d = Math.hypot(x - qx, z - qz);
+    if (d < best.d) best = { d, qx, qz };
+  }
+  return best;
+}
+
+/** Distance from the nearest crest point (qx, qz) to the closest gap centre, minus that gap's halfWidth (<= 0 inside a gap). */
+export function gapDistance(ridge: RidgeDef, qx: number, qz: number): number {
+  let best = Infinity;
+  for (const g of ridge.gaps) best = Math.min(best, Math.hypot(qx - g.at[0], qz - g.at[1]) - g.halfWidth);
+  return best;
+}
+
+/** Basin water is a disc of 0.6 x radius; terrain.ts puts the height below the water plane exactly there. */
+export const BASIN_WET_FRACTION = 0.6;
+
+export function inBasinWater(x: number, z: number): boolean {
+  return BASINS.some((b) => Math.hypot(x - b.x, z - b.z) < b.radius * BASIN_WET_FRACTION);
+}
+
+export function inRidgeCore(x: number, z: number): boolean {
+  for (const r of RIDGES) {
+    const n = nearestOnPolyline(r.points, x, z);
+    if (n.d <= r.coreHalfWidth && gapDistance(r, n.qx, n.qz) > 0) return true;
+  }
+  return false;
+}
+
 export function isWalkable(x: number, z: number): boolean {
   if (x < -118 || x > 118 || z < -118 || z > 118) return false;
   if (isDeepWater(x, z)) return false;
   if (hitsCastleWall(x, z)) return false;
+  if (inRidgeCore(x, z)) return false;
+  if (inBasinWater(x, z)) return false;
   return true;
 }
 
