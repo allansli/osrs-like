@@ -2,7 +2,9 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { ITEMS, shopPrice } from '../src/data/items';
 import { getLevelForXp, OSRS_XP_TABLE } from '../src/data/skills';
-import { claimQuest, registerKill } from '../src/state/adventure';
+import { adventureTracker, assignSlayerTask, claimQuest, QUEST_DEFS, registerKill, starterView, STARTER_QUESTS } from '../src/state/adventure';
+import { STARTER_ARRIVAL } from '../src/state/quests';
+import type { GameState } from '../src/state/types';
 import { createDefaultState, createNewGameState } from '../src/state/gameState';
 import { migrateLegacySave, SAVE_KEY } from '../src/state/save';
 import { buyItem, buyPrice, buyRunePack, isGatheredGood, sellInventoryMatch, sellItem } from '../src/state/inventory';
@@ -142,5 +144,38 @@ describe('review 7: the boot notices follow the save', () => {
     const fresh = createNewGameState();
     expect(fresh.xpMultiplier).toBe(1);
     expect(bootNotices(false, fresh)).toEqual(['controls', 'first-task']);
+  });
+});
+
+describe('review 8: an old save never sees the starter chain', () => {
+  /** Every step of every starter quest met, so a refusal can only come from the gate. */
+  const meetAll = (s: GameState) => {
+    assignSlayerTask(s, 3);
+    s.quests.killedGoblin = true;
+    s.skills.mining.xp = 28;
+    s.skills.woodcutting.xp = 28;
+    Object.assign(s.quests, { caughtFish: true, cookedMeal: true, smeltedBar: true, openedBank: true, soldWares: true, boughtWares: true });
+    s.equipment.body = 'bronze_plate';
+  };
+  const read = (name: string) => JSON.parse(readFileSync(new URL(`./fixtures/${name}`, import.meta.url), 'utf8'));
+  const states = (): GameState[] => [
+    createDefaultState(),
+    migrateLegacySave(read('save-v4.json'), SAVE_KEY).state,
+    migrateLegacySave(read('s3/save-v4-geared.json'), SAVE_KEY).state
+  ];
+
+  it('the gate alone refuses every starter id, and the tracker names a QUEST_DEFS quest', () => {
+    for (const state of states()) {
+      expect(state.quests.claimed).not.toContain(STARTER_ARRIVAL);
+      expect(starterView(state)).toEqual([]);
+      expect(QUEST_DEFS.map((q) => q.name)).toContain(adventureTracker(state).title);
+      meetAll(state);
+      expect(QUEST_DEFS.map((q) => q.name)).toContain(adventureTracker(state).title);
+      for (const id of STARTER_QUESTS.map((q) => q.id)) {
+        const before = JSON.stringify(state);
+        expect(claimQuest(state, id).ok, id).toBe(false);
+        expect(JSON.stringify(state)).toBe(before);
+      }
+    }
   });
 });
