@@ -2,14 +2,21 @@
 
 Date: 2026-11-14. Branch: `feat/start-pacing`. Design: `docs/superpowers/specs/2026-11-14-start-pacing-design.md` (called "the design" below; section numbers refer to it). Earlier documents this plan builds on: `docs/superpowers/specs/2026-11-13-world-foundation-design.md` ("the Stage 1-2 design") and `docs/superpowers/plans/2026-11-13-world-foundation-plan.md` ("the Stage 1-2 plan"). Source line numbers are at commit `a8cad85`.
 
-The design is still a proposal. Nothing in this plan starts before owner step **O-13** and before Stage 2 is merged to `main` (section 0.5).
+The owner answered the open questions on 2026-11-14 (design section 15.1). Two small decisions remain (Q3.10, Q3.11, design 15.2) and the CALLs the owner did not speak to (design section 12). Nothing in this plan starts before owner step **O-13** and before Stage 2 is merged to `main` (section 0.5).
 
-Critiqued on 2026-11-14 (`docs/superpowers/specs/2026-11-14-start-pacing-critique.md`). Applied here:
+Critiqued on 2026-11-14 (`docs/superpowers/specs/2026-11-14-start-pacing-critique.md`). Applied earlier:
 - M1 measures the "after" rows before any data task (a dry run with a stop rule) and adds a negative control.
 - N2 fixes the reset defect (design F16).
 - C1 and C2 drop the stack cap in play (design 7.1 item 6).
 - U2 aligns the examine line with the shop price.
-- New alternatives are listed for owner questions Q3.5 to Q3.9.
+
+Changed by the owner's decisions of 2026-11-14:
+- **No test asserts a time.** M1 asserts task counts and their order (design 5.3). T1 and G-6 no longer name a minute.
+- **The hero starts with nothing.** New tasks K1 and K2 build the six starter quests and the tracker order; N1 and N2 build the empty new game.
+- **The booster and the cheats are hidden.** New tasks N3 and N4.
+- **An entry-level staff.** New tasks I1 and I2. No Blender task: the staff reuses the existing model.
+- **Fishing empties on every catch, with cues.** D4 stays; new tasks F0 (tests) and F1 add the cues.
+- **One declared test replacement:** `tests/phase3-content.test.ts` line 41 (K1).
 
 ---
 
@@ -42,28 +49,30 @@ Run every command from the worktree root, in a shell started with an allowlisted
 
 1. **Allowlist.** A task touches only the files listed for it. The opus verify rejects a diff with any other file in it.
 2. **Line numbers go stale.** Stage 2 lands first and moves lines in `actions.ts`, `combat.ts`, `monsterAi.ts`, `session.ts` and `loop.ts`. Every task names the symbols it changes, so find them by name. The `a8cad85` line numbers are only a hint.
-3. **Existing tests are frozen.** No edit to any file that exists under `tests/` or `src/__tests__/` when P0 records the baseline. That includes the 103 original tests, every Stage 1 test and every Stage 2 test. A new test goes in a new file under `tests/`. Stage 3 declares **no** planned test replacement: design 9.3 explains, test by test, why none is needed. The one possible exception is conditional on the owner: if Q3.6 is answered yes, the tracker case of `tests/phase3-content.test.ts` is replaced as section 0.5 states, and nowhere else. If an existing test goes red, the change is wrong, not the test; stop and report to the main session.
-4. **Test-first pairs.** A [CLAUDE] test task may leave the suite red until the [AGY] task that implements it lands on the same branch. Because `tsconfig.json` includes `tests/` and `npm run build` runs `tsc --noEmit`, a test file that imports a module or export the paired task has not written yet also makes TYPES and BUILD red. Allowed in that window: SUITE failures only in the new test files, and TYPES/BUILD errors only in the new test files and only because a module, export or field that the paired task adds does not exist yet. The opus verify of the test task lists them; any other error is a defect. The paired task's accept restores full SG. A branch reaches the main session only when it is green, with one declared exception: the pacing and invariant tests of M1 stay red from M1 until T1 (section 3.3). In that span "SG" means TYPES and BUILD pass and SUITE is red only in those two files.
+3. **Existing tests are frozen.** No edit to any file that exists under `tests/` or `src/__tests__/` when P0 records the baseline. That includes the 103 original tests, every Stage 1 test and every Stage 2 test. A new test goes in a new file under `tests/`. Stage 3 declares **one** planned replacement, authorised by the owner on 2026-11-14: in `tests/phase3-content.test.ts`, case `tracks the earliest open step, then a claim prompt, then the next quest`, the assertion on line 41, `expect(adventureTracker(state).title).toBe('Varrock Arcane Trial');`, becomes `expect(adventureTracker(state).title).toBe("Cook's Errand");`. Task K1 makes that edit and no other. Design 9.3 explains, test by test, why no other is needed. If any other existing test goes red, the change is wrong, not the test; stop and report to the main session.
+4. **Test-first pairs.** A [CLAUDE] test task may leave the suite red until the [AGY] task that implements it lands on the same branch. Because `tsconfig.json` includes `tests/` and `npm run build` runs `tsc --noEmit`, a test file that imports a module or export the paired task has not written yet also makes TYPES and BUILD red. Allowed in that window: SUITE failures only in the new test files, and TYPES/BUILD errors only in the new test files and only because a module, export or field that the paired task adds does not exist yet. The opus verify of the test task lists them; any other error is a defect. One existing test file may also be red in such a window: `tests/phase3-content.test.ts`, between K1 and K2, in the one assertion K1 is authorised to replace (rule 3). The paired task's accept restores full SG. A branch reaches the main session only when it is green, with one declared exception: the pacing and invariant tests of M1 stay red from M1 until T1 (section 3.3). In that span "SG" means TYPES and BUILD pass and SUITE is red only in those two files.
 5. **Commit kinds, never mixed.** *Move*: arithmetic leaves `actions.ts` for a pure module, unchanged (lane E). *Test*. *Data*: numbers in a table. *Rule*: new behaviour. *Docs*. A Move commit changes no number and no order of random draws; the opus verify checks it with `git diff --color-moved=dimmed-zebra -w HEAD~1` as review evidence.
-6. **No new content** (design C3, G3.9): no new item, monster, node, recipe id, quest, prayer, spell or name. `tests/content-freeze.test.ts` (P1) enforces it.
+6. **No new content beyond the owner's additions** (design C3, G3.9). The additions are: the item `hazel_staff` (I2) and the table `STARTER_QUESTS` with its seven entries (K2). No other new item, monster, node, recipe id, quest, prayer, spell, character or name. `tests/content-freeze.test.ts` (P1) and `tests/starter-quests.test.ts` (K1) enforce it. Every new name is given verbatim in the design; a task that seems to need another name stops and reports.
 7. **No new runtime dependency.** No change to `package.json` or `package-lock.json`.
-8. **No formula edits.** The XP table, XP per action, the hit and damage formulas, the gather success formula, item `price` and `req`, coin drops and quest rewards do not change (design 3, anti-goals). Two rule changes are named exceptions and belong to one task each: fishing spots deplete on every catch (D4), and five Slayer bounties change (D3). A task that seems to need any other stops and reports.
+8. **No formula edits.** The XP table, XP per action, the hit and damage formulas, the gather success formula, the `price` and `req` of existing items, coin drops and the rewards of the ten existing quests do not change (design 3, anti-goals). Two rule changes are named exceptions and belong to one task each: fishing spots deplete on every catch (D4), and five Slayer bounties change (D3). A task that seems to need any other stops and reports.
 9. Every commit message names its kind and task, and the audit finding where there is one: `move(E2): playerAttackProfile to state/combat`, `data(D3): gear drop rates`, `data(#9, D6): smithing takes bars`.
+10. **No test asserts a time** (owner, 2026-11-14). No `expect` in any Stage 3 test reads minutes, seconds or hours of play. The pacing model returns its average times in a separate object, `averageSeconds`, which a test may print and may not assert on. The fishing bound of M1 compares two hourly rates computed by the same formula; it is a ratio and names no clock value. G-5 step 11 checks this rule by grep.
+11. **No new saved field.** `QuestFlags`, `GameState`, `serializeState` and `normalizeQuests` gain nothing. The starter quests read flags and values that exist today.
 
 ### 0.4 Branches, worktrees, lanes
 
 - Stage 3 works on `feat/start-pacing`. Today that branch holds only the two documents. Task P0 rebases it onto `main` after the Stage 2 merge.
 - The spine (P, E, D, M, C, R, T) runs on `feat/start-pacing` itself, one task after another: these tasks share `src/engine/actions.ts`, `src/data/catalog.ts` and `src/state/inventory.ts`.
-- Two lanes share no file with the spine or with each other and may run in parallel worktrees, `../osrs-like-wp/sp-N` on branch `sp/N` and `../osrs-like-wp/sp-U` on `sp/U`, `sp/N` cut from the spine head after P1, `sp/U` after D2 (U2's examine line needs `shopPrice`). They are local branches only and are never pushed.
+- Two lanes share no file with the spine while they run, and none with each other. They may run in parallel worktrees, `../osrs-like-wp/sp-N` on branch `sp/N` and `../osrs-like-wp/sp-U` on `sp/U`. `sp/N` is cut from the spine head after K2 (N2 imports `STARTER_ARRIVAL`, which K2 adds). `sp/U` is cut after D2 (U2 needs `shopPrice`). They are local branches only and are never pushed. Lane N edits `src/state/cheats.ts`, which the spine also edits in C2; lane N is merged long before C2 starts, so the two never run at once.
 - Run at most 3 agents at a time on this machine, with one BUILD at a time.
 
 | Lane | Tasks | Files |
 |---|---|---|
-| Spine | P0, P1, E1-E3, D1-D2, M1, D3-D6, C1-C2, R1, T1 | `src/state/combat.ts`, `src/state/economy.ts` (new), `src/state/monsterAi.ts`, `src/state/inventory.ts`, `src/state/adventure.ts`, `src/state/cheats.ts`, `src/state/save.ts`, `src/engine/actions.ts`, `src/engine/loop.ts`, `src/data/items.ts`, `src/data/catalog.ts`, `src/data/world.ts`, `src/data/recipes.ts`, `src/ui/stations.ts`, `README.md`, new tests |
-| N (new game) | N1, N2 | `src/state/gameState.ts`, `src/engine/session.ts`, `src/engine/runtime.ts`, `index.html`, `tests/new-game.test.ts` |
+| Spine | P0, P1, E1-E3, D1-D2, I1-I2, K1-K2, M1, D3, F0, D4, F1, D5-D6, C1-C2, R1, T1 | `src/state/combat.ts`, `src/state/economy.ts` (new), `src/state/monsterAi.ts`, `src/state/inventory.ts`, `src/state/adventure.ts`, `src/state/quests.ts`, `src/state/cheats.ts` (C2 only), `src/state/save.ts`, `src/engine/actions.ts`, `src/engine/loop.ts`, `src/engine/audio.ts`, `src/engine/spawns.ts`, `src/data/items.ts`, `src/data/catalog.ts`, `src/data/world.ts`, `src/data/recipes.ts`, `src/ui/stations.ts`, `README.md`, new tests, and the one declared line of `tests/phase3-content.test.ts` |
+| N (new game, hidden tools) | N1, N2, N3, N4 | `src/state/gameState.ts`, `src/state/cheats.ts`, `src/engine/session.ts`, `src/engine/runtime.ts`, `index.html`, `tests/new-game.test.ts`, `tests/hidden-tools.test.ts` |
 | U (unlocks) | U1, U2 | `src/state/unlocks.ts` (new), `src/ui/playerActions.ts`, `tests/unlocks.test.ts` |
 
-Order on `feat/start-pacing`: P0, P1, E1-E3, D1-D2, then merge `sp/N`, then M1, D3-D6, then merge `sp/U`, then C1-C2 (and Q1-Q2 if the owner answers Q3.6 yes), R1, T1. Lane N is merged before M1 because the pacing test starts from `createNewGameState()`; with it and D2 in place, M1's files type-check from the start.
+Order on `feat/start-pacing`: P0, P1, E1-E3, D1-D2, I1-I2, K1-K2, then lane N runs and is merged, then M1, D3, F0, D4, F1, D5-D6, then merge `sp/U`, then C1-C2, R1, T1. Lane N is merged before M1 because the pacing test starts from `createNewGameState()`. The staff and the starter quests come before M1 because the model plays the chain. With them and D2 in place, M1's files type-check from the start.
 
 Files that Stage 2 also edits (design 7.6): `src/engine/actions.ts`, `src/state/combat.ts`, `src/state/monsterAi.ts`, `src/engine/session.ts`, `src/engine/loop.ts`, `README.md`. That is why nothing starts before the Stage 2 merge.
 
@@ -72,27 +81,24 @@ Files that Stage 2 also edits (design 7.6): `src/engine/actions.ts`, `src/state/
 | Step | What the owner decides or does | Blocks |
 |---|---|---|
 | O-12 | Stage 2 accepted and merged to `main` (Stage 1-2 plan). | Everything |
-| O-13 | Approve Stage 3: CALL-3.1 to CALL-3.16 and questions Q3.1 to Q3.9 of the design. | Everything |
-| O-13b | Only if M1's dry run fails a bound: choose new bounds (Q3.5) or a different markup. | D3 and everything after |
+| O-13 | Approve Stage 3: the CALLs still marked "Proposal" in design section 12, the two new questions Q3.10 and Q3.11, and the list of new names (design C4). The questions of design 15.1 are already decided. | Everything |
+| O-13b | Only if M1's dry run fails an assertion of design 5.3: choose a different markup or a different threshold (Q3.10). | D3 and everything after |
 | G-6 | [HUMAN] play and look (design 9.2). | O-14 |
 | O-14 | Accept Stage 3. | The pull request |
 
-If an owner answer takes an alternative, only the named task changes:
+Decided on 2026-11-14, and built into the tasks as written (design 15.1): task milestones without minutes (M1, T1, G-6); fishing empties on every catch (F0, D4, F1); the tenfold shop price and the bounties cut to a third, with the forge recipe in the unlock line (D2, D3, U1, U2); the tracker order and its one test replacement (K1, K2); the starter quests (K1, K2, N1, N2); the hidden booster and cheats (N3, N4); the Hazel Staff (I1, I2); no stack cap in play (C1, C2).
+
+If the owner answers one of the remaining points with the alternative, only the named task changes:
 
 | Answer | Change |
 |---|---|
-| Q3.1 or CALL-3.14 refused: the five Slayer bounties stay as today | D3 drops its `adventure.ts` edit. In M1 the Slayer-route wait assertion becomes "at least 3 minutes from iron to mithril" (design CALL-3.14). |
-| CALL-3.5 at another markup | D1 and D2 use that value (at 8: `rune_plate` 41600, `bronze_scimitar` 360). T1 still checks the windows and waits. |
-| Q3.3: start with nothing | N1 and N2: `weapon: null`, and the first-run chat line and the onboarding item name no weapon. |
-| Q3.2: move the 10x button | Not in this plan: it is a HUD layout change; record it for Stage 5. |
-| CALL-3.4 refused (keep 10x for new games) | Stop. The design's curve cannot hold; return to the design. |
-| CALL-3.7 refused (fishing stays as it is) | Stop D4 and return to the design: the alternative is a price change, which rule 8 forbids without a design amendment. |
-| CALL-3.12 refused (no unlock messages) | Drop lane U. Lane N keeps the onboarding text. U2's examine-line change moves to D2 (add `src/ui/playerActions.ts` to D2's allowlist for that one line). |
-| Q3.5 (b): assert only the wait | M1: the window table becomes a printed table, not an assertion. The wait bounds become 5 to 45 minutes from iron to adamant on A1, and at least 3 minutes from iron to mithril on A3. The negative control stays. T1's "Must not change" applies to the new bounds. |
-| Q3.7 (b): keep the 35% depletion chance | D4 becomes a Data commit on `src/data/catalog.ts` only: fishing respawns 17000, 8500, 20000 and 23000; `actions.ts` leaves the allowlist. Its acceptance drops the `grep "0.35"` check and keeps the fishing bound. Plan rule 0.3.8 no longer names fishing as a rule exception. T1's fishing knob range becomes 5000 to 30000. |
-| Q3.6 yes: tracker shows discovered regions first | New pair on the spine after C2 (`adventure.ts` is a spine file): Q1 [CLAUDE, sonnet] writes `tests/tracker-order.test.ts` (fresh state, Lumbridge Foundations claimed: title is the Cook quest, then Varrock once the Varrock shrine is discovered). Q2 [AGY, sonnet] edits `adventureTracker` in `src/state/adventure.ts`: open quests whose `region` shrine is discovered come first, in `QUEST_DEFS` order. Declared test replacement: the `tracks the earliest open step...` case of `tests/phase3-content.test.ts` (line 41 expects Varrock) is replaced by Q1's case. It is the only edit to an existing test in this stage, and the opus verify checks that nothing else in that file changed. |
-| Q3.8 yes: no cheat line in a new game | N2: in `boot()`, print the cheat-code line only when `hadSave` is true. |
-| Q3.9 refused (magic must be open at the start) | Return to the design: it needs a cheap staff or a markup exemption, neither of which is specified. |
+| Q3.10: no number in the task assertions | M1: assertion 3 becomes "at least one further kill" on both routes, and assertion 4 (tiers behind) is removed. The control still fails assertion 3. T1's "Must not change" follows. |
+| Q3.10: other numbers | M1 uses them. The dry run decides whether they hold. |
+| Q3.11: a 10x save is told nothing | N4 drops the one chat line in `boot()`. N3 drops its case for it. |
+| CALL-3.20 overruled: existing saves see the starter chain too | Return to the design. It needs a rule for rewards a geared character already owns and it makes the first assertions of the `phase3-content` tracker case false, which is a second test replacement. |
+| CALL-3.5 at another markup | D1 and D2 use that value (at 8: `rune_plate` 41600, `bronze_scimitar` 360, `hazel_staff` 480). T1 still checks the assertions. |
+| CALL-3.6, 3.8 or 3.14 refused | Return to the design: the milestones of design section 5 were measured with all three. |
+| The owner wants other names for the quests or the staff | K2 and I2 use them; K1, I1 and P1 pin them. No other task changes. |
 
 ---
 
@@ -101,7 +107,7 @@ If an owner answer takes an alternative, only the named task changes:
 ## 3.0 Prerequisites
 
 ### O-13 Approve Stage 3 [OWNER]
-The owner approves or amends the CALLs of design section 12. An amendment changes only what the table in 0.5 names.
+The owner approves or amends what is still open: the CALLs marked "Proposal" in design section 12, Q3.10, Q3.11, and the new names. An amendment changes only what the table in 0.5 names.
 
 ### P0 Rebase on the merged Stage 2 and record the baseline [CLAUDE]
 - **Tier**: sonnet (a rebase of a docs-only branch and a recorded command run; mechanical).
@@ -123,7 +129,7 @@ The owner approves or amends the CALLs of design section 12. An amendment change
     - `a version-4 save without xpMultiplier loads at 10`: the same file without the field.
     - `a bare legacy save gets today's default kit`: `{ "gp": 77 }` read through `readSave` with an in-memory `StorageLike` under `runewilds_save_v3`; assert `gp` 77, `equipment.weapon` `bronze_scimitar`, and the inventory ids and quantities equal those of `createDefaultState()`.
     - `serializeState writes version 4 and the same keys as the default golden`.
-  - `content-freeze.test.ts`: `content-ids.golden.json` holds, captured now, the sorted ids and the `name` of every entry of `ITEMS`, `MONSTER_TYPES`, `RESOURCE_NODES_DEF`, `FORGE_RECIPES` (from `src/data/recipes.ts`), `QUEST_DEFS`, `PRAYERS` and `SPELLS`. Tests: `no id was added or removed` and `no name changed`, one per table. Same `UPDATE_GOLDEN=1` pattern.
+  - `content-freeze.test.ts`: `content-ids.golden.json` holds, captured now, the sorted ids and the `name` of every entry of `ITEMS`, `MONSTER_TYPES`, `RESOURCE_NODES_DEF`, `FORGE_RECIPES` (from `src/data/recipes.ts`), `QUEST_DEFS`, `PRAYERS` and `SPELLS`. Tests: `no id was added or removed` and `no name changed`, one per table. Same `UPDATE_GOLDEN=1` pattern. One declared addition, written as a constant in the test with a comment naming the owner's decision of 2026-11-14: `DECLARED_NEW_ITEMS = ['hazel_staff']`. The `ITEMS` case compares the live ids **minus the declared ones** with the golden, so it passes before and after I2; no other table has a declared addition. (`STARTER_QUESTS` does not exist yet; K1 pins it.)
 - **Accept**: `ONE(tests/save-compat-s3.test.ts)` and `ONE(tests/content-freeze.test.ts)` pass, then SG.
 - **Must not change**: `src/`. After this task the two goldens are never regenerated; a later task that needs `UPDATE_GOLDEN=1` on them is wrong.
 
@@ -173,18 +179,21 @@ E tasks change no behaviour. They exist so that the pacing model can call the ga
 
 ---
 
-## 3.2 Lane N: the new game (parallel worktree `sp/N`)
+## 3.2 Lane N: the new game and the hidden tools (parallel worktree `sp/N`, cut after K2)
 
 ### N1 New-game tests [CLAUDE]
 - **Tier**: sonnet (written from design 7.1 item 1 and G3.1).
-- **Depends**: P1.
+- **Depends**: K2.
 - **Files**: `tests/new-game.test.ts` (new).
 - **Change**: tests against `createNewGameState()` from `src/state/gameState.ts`:
-  - `a new game holds a bronze scimitar, three shrimp and 25 GP`: `equipment.weapon` is `bronze_scimitar`, the other nine slots are `null`, `inventory` deep-equals `[{ id: 'shrimp', qty: 3 }]`, `bank` is empty, `gp` is 25.
+  - `a new game holds nothing`: all ten `equipment` slots are `null`, `inventory` is `[]`, `bank` is `[]`, `gp` is 0.
   - `a new game runs at 1x`: `xpMultiplier` is 1.
-  - `everything else is the default`: with `gp`, `xpMultiplier`, `equipment` and `inventory` copied over from the default state, the serialised new-game state equals the serialised default state.
+  - `a new game has claimed arrival and nothing else`: `quests.claimed` deep-equals `[STARTER_ARRIVAL]`; every boolean flag of `quests` is `false`; `quests.slayer` is `null`.
+  - `the first starter quest is open`: `starterView(state)` has one entry, `sq_ledger`, unclaimed; `adventureTracker(state).title` is `A Name in the Ledger`.
+  - `everything else is the default`: with `gp`, `xpMultiplier`, `equipment`, `inventory` and `quests.claimed` copied over from the default state, the serialised new-game state equals the serialised default state.
   - `it returns a fresh object each call` (mutating one does not change the next).
-  - `a new game survives writeSave then readSave` with an in-memory `StorageLike`: same kit, `gp` 25, `xpMultiplier` 1.
+  - `a new game survives writeSave then readSave` with an in-memory `StorageLike`: empty kit, `gp` 0, `xpMultiplier` 1, `claimed` `['arrival']`.
+  - `a bare-handed hero can fight`: `canUseStyle('accurate', null, state)` is ok.
   - `the default state is still its golden` (imports the P1 golden; a second guard in the file that the implementer will have open).
 - **Accept**: red until N2.
 - **Must not change**: `src/`.
@@ -194,14 +203,40 @@ E tasks change no behaviour. They exist so that the pacing model can call the ga
 - **Depends**: N1.
 - **Files**: `src/state/gameState.ts`, `src/engine/session.ts`, `src/engine/runtime.ts`, `index.html`.
 - **Change**: Rule commit.
-  - `gameState.ts`: add `export function createNewGameState(): GameState`. It calls `createDefaultState()`, then sets `gp = 25`, `xpMultiplier = 1`, every `equipment` slot to `null` except `weapon = 'bronze_scimitar'`, and `inventory = [{ id: 'shrimp', qty: 3 }]`.
+  - `gameState.ts`: add `export function createNewGameState(): GameState`. It calls `createDefaultState()`, then sets `gp = 0`, `xpMultiplier = 1`, every `equipment` slot to `null`, `inventory = []` and `quests.claimed = [STARTER_ARRIVAL]` (imported from `./quests`).
   - `session.ts`: add `export function startNewGame(): void { applyState(STATE, createNewGameState()); }`.
   - `session.ts`, reset guard (design F16): add `let resetting = false;` at module level. In `resetGameSave`, after the `confirm` succeeds, set `resetting = true` before removing the keys. At the top of `saveGameState`, `if (resetting) return;`. Nothing else in either function changes.
-  - `runtime.ts`, in `boot()`: directly after `const hadSave = loadGameState();`, add `if (!hadSave) startNewGame();`. In the `else` branch of the `hadSave` chat block, after the existing movement line, add: `addChatMessage('You carry a <b>Bronze Scimitar</b>, three <b>Cooked Shrimp</b> and <b>25 GP</b>. Mine copper, smelt it and forge bronze armour at the <b>Anvil</b>, or earn coin from the goblins of Three Kettle Camp.', 'skill');`
-  - `index.html`, the `onboard-list`: add two items after the existing four: `<li>You start with a <b>bronze scimitar</b>, three meals and a few coins. Everything else is earned.</li>` and `<li>First steps: mine <b>copper</b>, smelt and forge it at the <b>anvil</b>, and hunt the goblins of <b>Three Kettle Camp</b>.</li>`
-  - "Three Kettle Camp" is a Stage 2 name. Use the `name` of the goblins' point of interest exactly as it stands in `POIS` in `src/data/worldMap.ts` after the Stage 2 merge (recorded by P0); if Stage 2 renamed it, use the new name in both texts.
-- **Accept**: `ONE(tests/new-game.test.ts)` passes. `ONE(tests/save-compat-s3.test.ts)` passes with both goldens untouched. `ONE(tests/globals.test.ts)` passes. SG. `git diff` of `gameState.ts` shows only added lines after `createDefaultState`.
+  - `runtime.ts`, in `boot()`: directly after `const hadSave = loadGameState();`, add `if (!hadSave) startNewGame();`. In the `else` branch of the `hadSave` chat block, after the existing movement line, add: `addChatMessage('You arrive with nothing. The tracker under your health shows your first task: speak with the <b>task master</b> in the courtyard.', 'skill');`
+  - `index.html`, the `onboard-list`: add two items after the existing four: `<li>You start with <b>nothing</b>. Everything you wear is earned.</li>` and `<li>First steps: follow the <b>tracker</b>. Six short tasks in the haven pay your first kit.</li>`
+- **Accept**: `ONE(tests/new-game.test.ts)` passes. `ONE(tests/save-compat-s3.test.ts)` passes with both goldens untouched. `ONE(tests/globals.test.ts)` passes. SG. `git diff` of `gameState.ts` shows only added lines after `createDefaultState` and one import.
 - **Must not change**: `createDefaultState`, `STATE`'s initialiser, `loadGameState`, the order of calls in `boot()` other than the one inserted line, any `onclick` in `index.html`. The reset guard has no headless test, because `session.ts` needs the DOM (design C7). The opus verify reads the diff, and G-6 checks it in the browser.
+
+### N3 Hidden-tools tests [CLAUDE]
+- **Tier**: sonnet (written from design 7.1 item 10 and G3.11).
+- **Depends**: N2.
+- **Files**: `tests/hidden-tools.test.ts` (new).
+- **Change**: the page and the boot code are read as text, as `tests/globals.test.ts` does.
+  - `the reveal word is matched on its own function`: `matchToolsCode('backroom')`, `('::backroom')` and `('wasdbackroom')` are `true`; `('backroo')`, `('hello')` and `('')` are `false`.
+  - `the cheat matcher is untouched`: `matchCheat('backroom')` is `null`; `matchCheat('skills10')` is `'skills'`; `matchCheat('gold200k')` is `'gold'`.
+  - `the tools block is hidden in the page`: `index.html` contains exactly one element with `id="hidden-tools"`, and its opening tag carries the `hidden` attribute.
+  - `the 10x button and the cheat panel are inside the block`: in the text between that opening tag and the end of the Settings modal are `id="xp-rate-btn"`, `id="cheat-code-input"`, `cheatSkillsPlus10()` and `cheatGold200k()`.
+  - `nothing outside the block names them`: the text of `index.html` before that opening tag contains none of `xp-rate-btn`, `cheat`, `skills10`, `gold200k`, `10x`, `League XP`.
+  - `the boot code does not advertise`: `src/engine/runtime.ts` contains neither `skills10` nor `gold200k`; `src/engine/session.ts` does not contain the text `Try <b>skills10` (the reply to a wrong code is `Unknown code.`).
+  - `a save at 10x is told once` (drop this case if Q3.11 is answered "nothing"): `src/engine/runtime.ts` contains the text `This character earns experience at`.
+- **Accept**: red until N4.
+- **Must not change**: `src/`, `index.html`.
+
+### N4 Hide the booster and the cheats [AGY]
+- **Tier**: sonnet (fully specified).
+- **Depends**: N3.
+- **Files**: `index.html`, `src/state/cheats.ts`, `src/engine/session.ts`, `src/engine/runtime.ts`.
+- **Change**: Rule commit.
+  - `index.html`, Settings modal: take the `xp-rate-btn` button out of `settings-grid`. After `settings-grid`, add `<div id="hidden-tools" hidden>` holding that button followed by the existing `cheat-panel`, unchanged inside. Every id and every `onclick` stays. Nothing is deleted from the page: `el()` throws on a missing id and four functions fetch these elements.
+  - `cheats.ts`: add `export const TOOLS_CODE = 'backroom';` with the comment `// Typed during play: shows the 10x button and the cheat panel in Settings until reload. Not shown anywhere in the game.` and `export function matchToolsCode(raw: string): boolean { return normalizeCheatText(raw).endsWith(TOOLS_CODE); }`. `matchCheat`, `SKILL_CHEAT_CODES` and `GOLD_CHEAT_CODES` are not edited. Keep the comment as written: `tests/architecture.test.ts` forbids the words `document` and `window` anywhere in a state file.
+  - `session.ts`: in `noteCheatKey`, after the buffer is updated and before `matchCheat`: `if (matchToolsCode(cheatBuffer)) { cheatBuffer = ''; el('hidden-tools').hidden = false; addChatMessage('Hidden tools are shown in Settings until you reload.', 'skill'); return; }`. In `applyTypedCheat`, the last branch prints `'Unknown code.'`.
+  - `runtime.ts`, `boot()`: delete the `addChatMessage('Cheat codes: …')` line. Inside the `if (hadSave)` branch add `if (STATE.xpMultiplier !== 1) addChatMessage('This character earns experience at <b>10x</b>.', 'skill');` (Q3.11). The `cheat-code-input` listener stays.
+- **Accept**: `ONE(tests/hidden-tools.test.ts)`, `ONE(tests/cheats.test.ts)` and `ONE(tests/globals.test.ts)` pass. SG.
+- **Must not change**: `toggleXpMultiplier`, `applyLoadedStateToHud`, `syncSettingsButtons`, `cheatSkillsPlus10`, `cheatGold200k`, the direct typed codes, `WINDOW_GLOBALS`, any saved field, `localStorage` keys. The reveal has no headless test (design C7); the opus verify reads the diff and G-6 checks it in the browser.
 
 ---
 
@@ -227,34 +262,125 @@ E tasks change no behaviour. They exist so that the pacing model can call the ga
 - **Accept**: `ONE(tests/shop-price.test.ts)` passes. `ONE(src/__tests__/bulk-buy.test.ts)`, `ONE(src/__tests__/bulk-sell.test.ts)` and `ONE(tests/shop-gathered.test.ts)` pass unchanged. SG.
 - **Must not change**: any `price`, `SELL_RATIO`, `unitSellPrice`, the chat line in `playerActions.ts` that says "Value".
 
-### M1 Pacing model and invariant tests [CLAUDE]
-- **Tier**: opus. The model is the proof of the stage (design G3.2, G3.8); choosing what it assumes and what the invariants assert is judgment, and everything later is trusted against it.
-- **Depends**: D2, and `sp/N` merged.
-- **Files** (new): `tests/support/pacingModel.ts`, `tests/pacing.test.ts`, `tests/economy-invariants.test.ts`.
+---
+
+## 3.3a The owner's additions: the entry staff and the starter chain (spine, serial)
+
+Both come before M1, because the pacing model plays the chain and the chain pays the staff.
+
+### I1 Entry-staff tests [CLAUDE]
+- **Tier**: sonnet (written from design 7.1 item 11 and G3.12).
+- **Depends**: D2 (`shopPrice`), E2 (`playerAttackProfile`).
+- **Files**: `tests/entry-staff.test.ts` (new).
 - **Change**:
-  - `pacingModel.ts` implements design 4.2 against the live code. It must not contain a hit, drop or gather formula of its own: it calls `playerAttackProfile`, `playerHitChance`, `monsterHitChance`, `gatherChance`, `getEquipmentBonuses`, `combatLevel`, `monsterThreatColor`, `unitSellPrice`, `getLevelForXp`, and reads `MONSTER_TYPES`, `CAMPS`, `NODE_PLACEMENTS`, `RESOURCE_NODES_DEF`, `FORGE_RECIPES`, `SLAYER_BANDS`, `QUEST_DEFS`, `ITEMS`, `ATTACK_INTERVAL`, `DYING_SECS`, `DEAD_SECS`, `HP_REGEN_PER_SEC` and `TICK_SEC`.
-    - `simulate(opts): { kitAt: Record<Tier, number>; levelAt: Record<Tier, number>; killsByType: Record<string, number>; income: { coins: number; gear: number; slayer: number; quests: number } }` with `opts = { start: () => GameState; xpMultiplier: number; priceOf: (item) => number; dropChanceOf: (typeKey: string, entry: MonsterDef['drops'][number]) => number; bountyOf: (band: SlayerBand) => number; useShop: boolean; useDrops: boolean; useSlayer: boolean; useQuests: boolean }`. `dropChanceOf` defaults to `(t, e) => e.chance`, and `bountyOf` to `(b) => b.bountyGp`. Both exist so that the dry run and the negative control below can use other values without editing data. It works on a real `GameState` (skills, equipment, `gp`), on the controlled style, with the purchase rule, Slayer rule, quest rule, kit table, timings and "can win" rule written in design 4.2. None of these is the implementer's choice: if 4.2 is ambiguous on a point, stop and ask. Do not pick a reading. Monster count per type and attackers come from `CAMPS`: attackers are the members of that type's largest aggressive camp when `monsterThreatColor(level, combatLevel(state))` is not `green`, otherwise 1. Expected drops come from the tables: each entry's chance times its value; a kit piece is obtained when its expected count reaches 1. Slayer bounties come from `SLAYER_BANDS` (bounty over count, plus 10 s per task). A guard stops a run at 400 simulated hours.
-    - `siteSize(nodeKey)`: the largest group of `NODE_PLACEMENTS` of that type in which each node is within 15 units of another (design 4.2). `gatherSeconds(nodeKey, level)` uses it as the node count. `gatherGpPerHour(nodeKey, level)` (cooked value for fish), `smithRouteSeconds(tier)` (design 4.5 and 7.1 item 5: mine the best ore for the levels still missing, smelt and forge everything, stop when the tier's three recipes and its ore are unlocked, then mine the kit's bars), and `saleRatio(recipe)` (sale value of the output quantity over the sale value of the direct inputs).
-  - `pacing.test.ts`, with the windows of design section 5 as one constant table:
-    - `shop-only route at 1x wears every tier inside its window` (A1: `start: createNewGameState`, `priceOf: shopPrice`, no drops, no Slayer, quests on)
-    - `shop, drops and Slayer route at 1x wears every tier inside its window` (A3)
-    - `no tier is worn before its level gate`
-    - `without Slayer the kit comes 10 to 30 minutes after the level, from iron to adamant` (A1)
-    - `with Slayer the kit comes at least 3 minutes after the level at iron and steel and at least 10 at black and mithril` (A3). These two are what tells the new economy from today's: with today's prices, drops and bounties the wait is 2 minutes everywhere and the window tests alone would pass (design 5).
-    - `negative control: today's economy fails the wait bound` (critique H-1). It runs `start: createNewGameState`, 1x, `priceOf: (it) => it.price`, drops on, and today's drop chances and bounties, with and without Slayer. Because D3 edits both tables, the 23 equipment drop chances and the five bounties of `a8cad85` are written as constants in the test and passed through `dropChanceOf` and `bountyOf`. The test and asserts that the wait assertion of each route is false. If the control passes, the wait test cannot tell the two economies apart.
-    - `the smithing route wears bronze, iron, mithril and rune inside their windows` (level gate of A1 plus `smithRouteSeconds`)
-    - `at 10x, from iron to rune, the kit is worn no earlier than 1.5 times the level gate`
-    - `prints the table`: logs kit and level times for A1 and A3 at 1x and 10x, kills by type and income by source. It also prints, for each tier from iron to rune, the best gathering and crafting GP an hour available at that tier's level next to the fighter's coin income (design F15). It asserts nothing; it is what a person reads when a window fails.
+  - `the Hazel Staff is the row the design gives`: `ITEMS.hazel_staff` deep-equals `{ id: 'hazel_staff', name: 'Hazel Staff', type: 'equip', slot: 'weapon', iconKind: 'staff', style: 'magic', tier: 'bronze', mag: 4, atk: 2, str: 1, req: { magic: 1 }, price: 60, color: 0x7c8a4a, trim: 0x8d6b3a }`.
+  - `it is a magic weapon`: `itemCombatClass` is `'magic'`; `allowedStyles` is `['magic']`.
+  - `it uses the existing staff model`: `gearSilhouette(ITEMS.hazel_staff)` is `'staff'`, the same value as for `fire_staff` (import from `src/engine/playerGear`, as `src/__tests__/combat-class.test.ts` does).
+  - `it casts Wind Strike when the runes are there`: on the default state with `equipment.weapon = 'hazel_staff'` and `activeSpell = 'wind_strike'`, `canUseStyle('magic', ITEMS.hazel_staff, state)` is ok; with `inventory = []` it is refused and the reason names Air Rune and Mind Rune.
+  - `Wind Strike with it hits for 6 at Magic 1`: `playerAttackProfile` on that state with the magic style returns max hit 6 and accuracy 21.5.
+  - `it costs 600 GP in the shop and sells for 39`.
+  - `no recipe makes it`: no entry of `FORGE_RECIPES` has `output: 'hazel_staff'`.
+- **Accept**: red until I2 (the item does not exist).
+- **Must not change**: `src/`.
+
+### I2 The Hazel Staff [AGY]
+- **Tier**: sonnet (one data row).
+- **Depends**: I1.
+- **Files**: `src/data/catalog.ts`.
+- **Change**: Data commit, message `data(I2): Hazel Staff, entry-level staff`. In `ITEMS`, directly before the `fire_staff` row, add the row of I1's first test, formatted like its neighbours. Nothing else: the shop lists every item, the icon comes from `iconKind`, and the model in the hand is the existing `Gear_staff` node recoloured from `color` and `trim` (design 7.1 item 11). **No Blender work and no change to `public/models`.**
+- **Accept**: `ONE(tests/entry-staff.test.ts)` passes. `ONE(tests/content-freeze.test.ts)` passes (the id is its one declared addition). `ONE(src/__tests__/combat-class.test.ts)`, `ONE(tests/textures.test.ts)` and `ONE(tests/shop-price.test.ts)` pass unchanged. SG.
+- **Must not change**: any other row, `playerGear.ts`, `blenderGear.ts`, `icons.ts`, any file under `public/` or `blender/`.
+
+### K1 Starter-chain and tracker tests [CLAUDE]
+- **Tier**: sonnet (written from design 7.1 items 9 and 12, section 8 and G3.10).
+- **Depends**: I2.
+- **Files**: `tests/starter-quests.test.ts` (new), `tests/tracker-order.test.ts` (new), and **the one declared edit** to `tests/phase3-content.test.ts` (rule 0.3.3).
+- **Change**: a local helper `newGame()` builds the new-game state by hand (the default state with `gp = 0`, `inventory = []`, every equipment slot `null`, `quests.claimed = [STARTER_ARRIVAL]`), because `createNewGameState` arrives later in lane N.
+  - `starter-quests.test.ts`, against `STARTER_QUESTS`, `starterView` and `claimQuest` from `src/state/adventure.ts`:
+    - `the starter table is exactly these seven entries`: ids `arrival`, `sq_ledger`, `sq_quarrel`, `sq_gather`, `sq_forge`, `sq_keeping`, `sq_coin` in that order; names `Arrival`, `A Name in the Ledger`, `First Quarrel`, `Stone, Timber, Tide`, `Fire and Hammer`, `Left in Keeping`, `Fair Coin`; every `region` is `lumbridge`; every `xp` is `{}`; `gp` is 25 for `sq_quarrel` and 0 for the rest; `items` as K2's table.
+    - `QUEST_DEFS still has its ten ids and questView its ten cards`.
+    - `each step reads what the game already records`: one case per step of design 7.1 item 9. On `newGame()` the step is unmet; after the one change the design names (for example `quests.caughtFish = true`, `skills.mining.xp = 28`, `equipment.body = 'bronze_plate'`, `assignSlayerTask(state, 3)`) it is met.
+    - `the chain opens one quest at a time`: on `newGame()`, `starterView` returns one card, `sq_ledger`. With the step of `sq_quarrel` met but `sq_ledger` unclaimed, `claimQuest(state, 'sq_quarrel')` is refused with `That quest is not open yet.` and changes nothing. After each claim the next card appears and the claimed ones stay, marked claimed.
+    - `each quest pays its reward once`: for each of the six, with its steps met and its predecessors claimed: the claim succeeds, the backpack and `gp` grow by exactly the reward of K2's table, a second claim is refused, and no skill experience changes.
+    - `arrival can never be claimed`: refused on `newGame()` and on the default state.
+    - `a state that never claimed arrival has no starter quest`: for the default state, for `tests/fixtures/save-v4.json` through `migrateLegacySave`, and for `tests/fixtures/s3/save-v4-geared.json`: `starterView` is `[]`; `claimQuest` on each of the seven ids is refused; the serialised state is unchanged afterwards.
+    - `the reward that needs room is refused when the backpack is full and nothing is claimed` (28 filled slots, `sq_keeping`).
+    - `coin is paid before it is needed`: the quest that pays coin (`sq_quarrel`) comes before the quest with the purchase step (`sq_coin`), and 25 GP is at least the price of the cheapest item the store sells.
+    - `a half-finished chain survives a save`: `claimed = ['arrival', 'sq_ledger', 'sq_quarrel']` through `writeSave` then `readSave` with an in-memory `StorageLike` keeps all three; `claimed = ['arrival', 'no_such_quest']` keeps only `arrival`.
+    - `no new saved field`: the keys of `defaultQuests()` equal the keys of the `quests` object in `tests/fixtures/s3/default-state.golden.json`.
+  - `tracker-order.test.ts`, against `adventureTracker`:
+    - `a new game starts on the chain`: title `A Name in the Ledger`, detail `Speak with the task master and accept a task`; with the step met, detail `Claim the reward in the Adventure Log`.
+    - `the chain comes before every other quest`: with `openedBank`, `burnedLog` and `killedGoblin` set on `newGame()` (Lumbridge Foundations complete), the title is still the open starter quest.
+    - `after the chain, the start town's quests come next`: all six claimed: `Lumbridge Foundations`; that claimed: `Cook's Errand`; that claimed: `Varrock Arcane Trial` (no other place discovered, table order).
+    - `a discovered place comes before an undiscovered one`: as above, with `shrines.desert = true` and the two start-town quests claimed: `Sunscorched Oasis`, not Varrock.
+    - `a state without arrival starts at Lumbridge Foundations` (the default state).
+    - `everything claimed`: title `Adventure log`.
+  - **Declared replacement** (owner, 2026-11-14): in `tests/phase3-content.test.ts`, line 41, `'Varrock Arcane Trial'` becomes `"Cook's Errand"`. One line. `git diff -- tests/phase3-content.test.ts` shows one line removed and one added.
+- **Accept**: red until K2 (missing exports, and the one edited assertion). The opus verify confirms the diff of `tests/phase3-content.test.ts` is that single line.
+- **Must not change**: `src/`, any other existing test.
+
+### K2 Starter quests and tracker order [AGY]
+- **Tier**: sonnet (fully specified; every name and text is given here or in design 7.1 item 9).
+- **Depends**: K1.
+- **Files**: `src/state/quests.ts`, `src/state/adventure.ts`, `src/state/save.ts`, `src/ui/stations.ts`.
+- **Change**: Rule commit.
+  - `quests.ts`: add `export const STARTER_ARRIVAL = 'arrival';`. Nothing else: no flag, no change to `defaultQuests`, `copyQuests` or `normalizeQuests`.
+  - `adventure.ts`: add `export const STARTER_QUESTS: QuestDef[]` after `QUEST_DEFS`, seven entries in this order, each with `region: 'lumbridge'`, `xp: {}`, the `lore` of design 7.1 item 9, and:
+
+    | id | name | steps (label: predicate) | gp | items | rewardText |
+    |---|---|---|---|---|---|
+    | `arrival` | Arrival | none | 0 | none | `Nothing.` (lore: `You arrived with nothing.`) |
+    | `sq_ledger` | A Name in the Ledger | `Speak with the task master and accept a task`: `s.quests.slayer !== null \|\| s.quests.slayerTasksCompleted > 0` | 0 | `bronze_scimitar` 1 | `A Bronze Scimitar.` |
+    | `sq_quarrel` | First Quarrel | `Defeat a goblin`: `s.quests.killedGoblin` | 25 | `shrimp` 3 | `3 Cooked Shrimp and 25 GP.` |
+    | `sq_gather` | Stone, Timber, Tide | `Mine copper ore`: `s.skills.mining.xp > 0`; `Chop a tree`: `s.skills.woodcutting.xp > 0`; `Net a raw fish`: `s.quests.caughtFish` | 0 | `bronze_helm` 1 | `A Bronze Full Helm.` |
+    | `sq_forge` | Fire and Hammer | `Cook a fish`: `s.quests.cookedMeal`; `Smelt a bronze bar`: `s.quests.smeltedBar`; `Forge a platebody and wear it`: `s.quests.worePlate \|\| plateWorn(s)` | 0 | `wooden_shield` 1 | `A Wooden Kiteshield.` |
+    | `sq_keeping` | Left in Keeping | `Open the bank`: `s.quests.openedBank` | 0 | `hazel_staff` 1, `air_rune` 30, `mind_rune` 30 | `A Hazel Staff, 30 Air Runes and 30 Mind Runes.` |
+    | `sq_coin` | Fair Coin | `Sell an item to a merchant`: `s.quests.soldWares`; `Buy an item from a shop`: `s.quests.boughtWares` | 0 | `leather_boots` 1 | `Traveler Boots. Next: iron gear needs Attack and Defence 5. Buy it at the store, or mine iron and forge it.` |
+
+  - `adventure.ts`: add `function starterOpen(state): QuestDef | null`: the first entry of `STARTER_QUESTS` after index 0 that is not in `claimed` and whose predecessor in the table is; `null` when `arrival` is not claimed or all are claimed. Add `export function starterView(state): QuestView[]`: `[]` when `arrival` is not claimed; otherwise the cards (built exactly as `questView` builds them) of every claimed starter quest after index 0, followed by the open one if there is one.
+  - `adventure.ts`, `claimQuest`: look the id up in `QUEST_DEFS`, then in `STARTER_QUESTS`. For a starter quest: if it is not `starterOpen(state)`, return `{ ok: false, reason: 'That quest is not open yet.' }` unless it is already claimed, in which case the existing "already claimed" reason applies. `arrival` is never open, so it is always refused. Everything after the lookup is the existing code, unchanged.
+  - `adventure.ts`, `adventureTracker`, in this order: (1) if `starterOpen(state)` exists, its line (claim prompt when complete, else its first unmet step), built from its card; (2) the first unclaimed card of `questView` whose `region` is discovered (`state.shrines[quest.region]`); (3) the first unclaimed card of `questView`; (4) the existing "every quest is claimed" line. Lines for (2) and (3) are built as today.
+  - `save.ts`, in `migrateLegacySave`: the set `validQuestIds` is built from the ids of `QUEST_DEFS` and of `STARTER_QUESTS`. One line and one import.
+  - `stations.ts`, `renderQuests`: build the cards from `[...starterView(STATE), ...questView(STATE)]`. Nothing else in the function changes.
+- **Accept**: `ONE(tests/starter-quests.test.ts)`, `ONE(tests/tracker-order.test.ts)` and `ONE(tests/phase3-content.test.ts)` pass. `ONE(tests/phase2.test.ts)`, `ONE(tests/save-hardening.test.ts)`, `ONE(tests/save-compat-s3.test.ts)` (both goldens untouched) and `ONE(tests/architecture.test.ts)` pass unchanged. SG.
+- **Must not change**: `QUEST_DEFS`, `questView`, `QuestDef`, `QuestFlags`, `normalizeQuests`, `serializeState`, the reward of any existing quest, `registerKill`, `assignSlayerTask`, the Adventure Log's markup for a card. Use the quest texts exactly as given: `tests/architecture.test.ts` fails any file under `src/state` or `src/data` that contains the word `document` or `window`, in a string or a comment as much as in code.
+
+---
+
+## 3.3b The pacing model, before any data changes (spine)
+
+### M1 Pacing model and invariant tests [CLAUDE]
+- **Tier**: opus. The model is the proof of the stage (design G3.2, G3.8). Implementing it faithfully and judging the dry run is trusted without re-checking.
+- **Depends**: D2, I2, K2, and `sp/N` merged.
+- **Files** (new): `tests/support/pacingModel.ts`, `tests/support/starterChain.ts`, `tests/pacing.test.ts`, `tests/economy-invariants.test.ts`.
+- **Change**:
+  - `starterChain.ts` exports `STARTER_ACTIONS`, the 29 actions of design 5.1 in order, as data (`{ kind: 'task' | 'kill' | 'gather' | 'craft' | 'forge' | 'wear' | 'bank' | 'sell' | 'buy' | 'claim', id: string }`), and `playStarterChain(state): Ledger`, which performs each one with the game's own functions and returns the counts. The mapping, which is what the engine does for each click: `task` is `assignSlayerTask(state, combatLevel(state))`; `kill` is `registerKill(state, id)`; `gather` is `addItem(state, item, 1)`, `noteGather(state, item)` and the node's `xp` times `state.xpMultiplier` added to its skill with the level recomputed by `getLevelForXp`; `craft` is `performCraft(state, id)` and must return ok; `forge` is a `craft` that first makes up whatever the live recipe's `input` asks for and the hero lacks (an ore is gathered; a bar is gathered as ore and smelted), so that the chain can be played both before and after D6 changes the smithing recipes; `wear` moves the item from the backpack to its slot and, for a plate body, sets `quests.worePlate` (as `playerActions.ts` does); `bank` sets `quests.openedBank`; `sell` is `sellItem` then `noteSale`; `buy` is `buyItem` then `notePurchase`; `claim` is `claimQuest(state, id)` and must return ok. The list: task; claim `sq_ledger`; wear `bronze_scimitar`; kill `goblin`; claim `sq_quarrel`; gather `copper_ore`, `logs`, `raw_shrimp`; claim `sq_gather`; craft `cook_shrimp`; gather `copper_ore` four times; craft `smelt_bronze` five times; forge `smith_bronze_legs`, `smith_bronze_plate`; wear `bronze_legs`, `bronze_plate`; claim `sq_forge`; bank; claim `sq_keeping`; sell `logs`; buy `arrow_shaft`; claim `sq_coin`. That is 29 entries. Once smithing takes bars (D6) the five smelts are exactly the bars the two forgings need, and the ledger counts 29 actions. Before D6 the forgings still take ore, the helper gathers five more, and the count is 34.
+  - `pacingModel.ts` implements design 4.2 against the live code. It must not contain a hit, drop or gather formula of its own: it calls `playerAttackProfile`, `playerHitChance`, `monsterHitChance`, `gatherChance`, `getEquipmentBonuses`, `combatLevel`, `monsterThreatColor`, `unitSellPrice`, `getLevelForXp`, and reads `MONSTER_TYPES`, `CAMPS`, `NODE_PLACEMENTS`, `RESOURCE_NODES_DEF`, `FORGE_RECIPES`, `SLAYER_BANDS`, `QUEST_DEFS`, `STARTER_QUESTS`, `ITEMS`, `ATTACK_INTERVAL`, `DYING_SECS`, `DEAD_SECS`, `HP_REGEN_PER_SEC` and `TICK_SEC`. It uses no random number and no clock: it is a pure function of its options and the tables.
+    - Types: `Ledger = { actions: number; killsTotal: number; kills: Record<string, number>; questsClaimed: number; gathered: Record<string, number>; crafted: Record<string, number>; goldEarned: { coins: number; gear: number; slayer: number; quests: number }; goldSpent: number }`. Every ledger is cumulative from the new game.
+    - `simulate(opts): { gate: Record<Tier, Ledger>; kit: Record<Tier, Ledger>; averageSeconds: { gate: Record<Tier, number>; kit: Record<Tier, number> } }` with `opts = { start: () => GameState; playChain: boolean; xpMultiplier: number; priceOf: (item) => number; dropChanceOf: (typeKey: string, entry: MonsterDef['drops'][number]) => number; bountyOf: (band: SlayerBand) => number; useShop: boolean; useDrops: boolean; useSlayer: boolean; useQuests: boolean }`. `dropChanceOf` defaults to `(t, e) => e.chance`, and `bountyOf` to `(b) => b.bountyGp`. Both exist so that the dry run and the control below can use other values without editing data. `gate[tier]` is the ledger at the kill on which Attack and Defence both reach the tier; `kit[tier]` is the ledger once weapon, body and legs of the tier are worn. **Counts and times are kept apart on purpose** (rule 0.3.10): nothing in `gate` or `kit` is a time.
+    - It works on a real `GameState` (skills, equipment, `gp`), on the controlled style, with the purchase rule, Slayer rule, start rule, quest rule, kit table, timings and "can win" rule written in design 4.2. None of these is the implementer's choice: if 4.2 is ambiguous on a point, stop and ask. Do not pick a reading. With `playChain` the run begins with `playStarterChain` (90 s per quest of average time) and the one goblin task it hands out is completed and paid on every route; a further task is taken only with `useSlayer`. Monster count per type and attackers come from `CAMPS`: attackers are the members of that type's largest aggressive camp when `monsterThreatColor(level, combatLevel(state))` is not `green`, otherwise 1. Expected drops come from the tables: each entry's chance times its value; a kit piece is obtained when its expected count reaches 1. Slayer bounties come from `SLAYER_BANDS` through `bountyOf`. A guard stops a run at 400 simulated hours.
+    - `furtherKills(run, tier)` is `kit[tier].killsTotal - gate[tier].killsTotal`. `tiersBehind(run, tier)` is the number of later tiers whose `gate.killsTotal` is below `kit[tier].killsTotal`.
+    - `siteSize(nodeKey)`: the largest group of `NODE_PLACEMENTS` of that type in which each node is within 15 units of another (design 4.2). `gatherSeconds(nodeKey, level)` uses it as the node count. `gatherGpPerHour(nodeKey, level)` (cooked value for fish), `forgeTasks(tier): Ledger` (design 4.5 and 7.1 item 5: mine the best ore for the levels still missing, smelt and forge everything, stop when the tier's three recipes and its ore are unlocked, then mine and smelt the kit's bars and forge it; the ledger counts ore, bars and forgings and has `goldSpent` 0 by construction only if no step needed the shop), and `saleRatio(recipe)` (sale value of the output quantity over the sale value of the direct inputs).
+  - `pacing.test.ts`. Route A1 is `{ start: createNewGameState, playChain: true, xpMultiplier: 1, priceOf: shopPrice, useShop: true, useDrops: false, useSlayer: false, useQuests: true }`; A3 is the same with drops and Slayer on. The two thresholds are constants at the top of the file with the design reference: `MIN_FURTHER_KILLS = 25`, `MAX_TIERS_BEHIND = 3` (design 5.3, Q3.10). The tests: 1 to 7 are assertions 1 to 7 of design 5.3, test 8 is the purity check of G3.8, and test 9 is assertion 8 (the printed table):
+    1. `the starter chain earns the bronze kit: six quests, one kill, 29 actions, no coin spent on equipment`: `playStarterChain(createNewGameState())` completes without a refused step; `actions` is 29; the hero wears `bronze_scimitar`, `bronze_plate` and `bronze_legs`; `questsClaimed` is 6, `killsTotal` is 1; the only purchase is the one the last quest asks for; the backpack holds `bronze_helm`, `wooden_shield`, `hazel_staff`, 30 `air_rune`, 30 `mind_rune` and `leather_boots`; `kit.bronze` of route A1 equals this ledger.
+    2. `every tier is a step, in order` (A1 and A3, at 1x only): for each tier `gate.killsTotal <= kit.killsTotal`; from iron to dragon `kit.killsTotal` is strictly increasing.
+    3. `shop only: the kit takes at least 25 further kills after the level, iron to adamant` (A1), and `with bounties and drops it still comes after the level, iron to mithril` (A3, at least 1).
+    4. `a shop-only fighter is never more than three tiers behind` (A1, iron to rune).
+    5. `negative control: today's economy hands over the kit with the level` (critique H-1). It runs `start: createNewGameState`, the chain, 1x, `priceOf: (it) => it.price`, drops on, and today's drop chances and bounties, with and without Slayer. Because D3 edits both tables, the 23 equipment drop chances and the five bounties of `a8cad85` are written as constants in the test and passed through `dropChanceOf` and `bountyOf`. It asserts that for **every** tier from iron to adamant `furtherKills` is below `MIN_FURTHER_KILLS`, on both runs. If this test fails, test 3 cannot tell the two economies apart.
+    6. `the booster speeds levels, not gear` (A1 at `xpMultiplier: 10`, steel to rune: at least 25 further kills; iron is printed only, design 6.1).
+    7. `the forge makes bronze, iron, mithril and rune kits without coin`: for each, `forgeTasks(tier).goldSpent` is 0, the ledger ends with the tier's three pieces crafted, and `actions` is strictly greater than the previous tier's.
+    8. `the model is a pure function`: two calls of `simulate` with the same options return deep-equal results.
+    9. `prints the milestone table`: for A1 and A3 at 1x and A1 at 10x, per tier: kills at the level and at the kit by monster, further kills, tiers behind, quests claimed, gold earned by source and spent, the share of the kit's price earned at the level, and the average time from `averageSeconds`. For each tier from iron to rune it also prints the forge task list and the best gathering and crafting GP an hour next to the fighter's coin income (design F15). It asserts nothing. This is the only place in the file that reads `averageSeconds`.
   - `economy-invariants.test.ts` (design G3.3):
     - `no recipe's output sells for more than 2.5 times its inputs`, with one listed exception, `fletch_shortbow`, and the reason in a comment (pinned by `tests/phase1.test.ts`).
     - `shopPrice is never below unitSellPrice` over every item, and `shopPrice equals price for runes, ammunition, food and potions`.
     - `equipment costs GEAR_MARKUP times its list price`.
-    - `no fishing spot earns more than 1.5 times the best rock or tree of a comparable level`: cooked-fish GP per hour against the best mining or woodcutting node whose requirement is at most 10 levels higher, at the spot's requirement and 21 levels above it.
+    - `no fishing spot earns more than 1.5 times the best rock or tree of a comparable level`: cooked-fish GP per hour against the best mining or woodcutting node whose requirement is at most 10 levels higher, at the spot's requirement and 21 levels above it. A ratio of two rates from the same formula (rule 0.3.10).
     - `every non-boss equipment drop chance is at most 0.02`, and `the boss's is at most 0.05`.
     - `bronze armour needs no gold`: a copper rock stands in the start region outside every aggressive camp; on a new-game state given five copper ore, `performCraft` succeeds for `smelt_bronze` five times, then `smith_bronze_legs`, then `smith_bronze_plate` (the five smelts give the 83 XP that Smithing 2 needs at 1x).
-  - **One-time reproduction, before any data changes.** The verify of this task runs `simulate` once with today's start (`createDefaultState`, `priceOf: item.price`, quests off, drops on) at 10x and 1x, with and without Slayer, and writes the four rows into the P0 baseline file next to design table 4.3's rows T1, T2, T3 and T4. Stage 2's real camps are in force, so compare with T3 and T4. A kit time more than 20% away from the design's row is reported to the main session before lane D starts: it means the design's numbers, produced by a script nobody else has run, do not hold.
-  - **Dry run of the "after" rows, before any data changes** (critique C-1). The same verify runs A1 and A3 at 1x with the design's parameters injected rather than written: `start: createNewGameState`, `priceOf: shopPrice` (in place since D2), `dropChanceOf` returning `0.05 ×` the chance for every non-boss equipment entry and `0.05` for the dragon's four, and `bountyOf` returning the five reduced bounties of D3. It writes both rows and their waits into the baseline file, next to design table 4.3 and the windows of section 5, and evaluates every window and wait assertion of `pacing.test.ts` against them. **Stop rule:** if any assertion fails, do not start D3. Repeat the dry run with `priceOf` at markups 8, 9, 11 and 12, write those rows too, and return to the main session for owner step O-13b. A second, independent implementation already misses one window and three waits at 10, and every markup from 8 to 12 fails at least one bound (critique 1.1). Finding that out here costs one task. Finding it at T1 costs fifteen.
-- **Accept**: TYPES and BUILD pass. The reproduction rows and the dry-run rows are in the baseline file, and the dry run passes every assertion; otherwise the stop rule above applies. The negative control passes from the start. `ONE(tests/pacing.test.ts)` and `ONE(tests/economy-invariants.test.ts)` are red, and the verify lists which assertions fail with the tables as they are after D2; by design sections 4 and 5 that should be the two wait tests (gear still drops one kill in five and bounties are full), possibly some window tests, the 2.5 rule (gilded, bows, rune smithing), the fishing bound (trout, lobster, shark), the drop-chance bound and `bronze armour needs no gold` (recipes still take ore). The three `shopPrice` assertions pass.
+  - **One-time reproduction, before any data changes.** The verify of this task runs `simulate` once with today's start (`createDefaultState`, no chain, `priceOf: item.price`, quests off, drops on) at 10x and 1x, with and without Slayer, and writes the four rows, in kills and in average time, into the P0 baseline file next to design table 4.3's rows T1 to T4. Stage 2's real camps are in force, so compare with T3 and T4. An average kit time more than 20% away from the design's row is reported to the main session before lane D starts. It is a report and not a failure: it means the design's "today" numbers, produced by a script nobody else has run, do not hold.
+  - **Dry run of the "after" rows, before any data changes** (critique C-1). The same verify runs A1 and A3 at 1x and A1 at 10x with the design's parameters injected rather than written: `start: createNewGameState`, `priceOf: shopPrice` (in place since D2), `dropChanceOf` returning `0.05 ×` the chance for every non-boss equipment entry and `0.05` for the dragon's four, and `bountyOf` returning the five reduced bounties of D3. It writes the rows into the baseline file next to design tables 4.3 and 5.2, and evaluates tests 2 to 6 against them. **Stop rule:** if any of them fails, do not start D3. Repeat the dry run with `priceOf` at markups 8, 9, 11 and 12, write those rows too, and return to the main session for owner step O-13b. The design's scratch model passes all five across the tuning range, and design 6.1 lists the closest value to each bound, so a failure here means the two models disagree, which is exactly what this step is for. Finding that out here costs one task. Finding it at T1 costs twenty.
+- **Accept**: TYPES and BUILD pass. The reproduction rows and the dry-run rows are in the baseline file, and the dry run passes tests 2 to 6; otherwise the stop rule above applies. Tests 5 and 8 pass from the start, and so do the A1 halves of tests 2, 3, 4 and 6, because route A1 uses only the shop price, which D2 has already set. `ONE(tests/pacing.test.ts)` and `ONE(tests/economy-invariants.test.ts)` are red, and the verify lists which assertions fail with the tables as they are after D2. By design sections 4 and 5 that should be: the action count of test 1 and `bronze armour needs no gold` (recipes still take ore), possibly test 7, the A3 half of test 3 (gear still drops one kill in five and bounties are full), the 2.5 rule (gilded, bows, rune smithing), the fishing bound (trout, lobster, shark) and the drop-chance bound. The three `shopPrice` assertions pass.
 - **Declared exception to rule 0.3.4**: these two test files stay red from this task until T1. Every task in between (D3 to D6, C1, C2, R1) states its accept in terms of the specific assertions it turns green.
 - **Must not change**: `src/`, any existing test.
 
@@ -282,20 +408,45 @@ E tasks change no behaviour. They exist so that the pacing model can call the ga
   | `dark_ranger` (`world.ts`) | `willow_bow` | 0.008 |
   | `dark_ranger` (`world.ts`) | `green_dhide_body` | 0.004 |
 
-- **Accept**: in `tests/economy-invariants.test.ts` the two drop-chance assertions pass. `ONE(tests/economy-rolls.test.ts)` still passes (its goblin cases use rolls of 0 and 0.999, which do not depend on the chance values). `ONE(tests/content-freeze.test.ts)` passes. `ONE(tests/phase2.test.ts)` passes unchanged. The opus verify reads the diff and finds 23 changed drop chances, 5 changed bounties and nothing else.
+- **Accept**: in `tests/economy-invariants.test.ts` the two drop-chance assertions pass. In `tests/pacing.test.ts`, the A3 half of test 3 passes. `ONE(tests/economy-rolls.test.ts)` still passes (its goblin cases use rolls of 0 and 0.999, which do not depend on the chance values). `ONE(tests/content-freeze.test.ts)` passes. `ONE(tests/phase2.test.ts)` passes unchanged. The opus verify reads the diff and finds 23 changed drop chances, 5 changed bounties and nothing else.
 - **Must not change**: coin ranges, bones, food, arrows, monster stats, the goblin bounty, Slayer counts and experience.
+
+### F0 Fishing tests [CLAUDE]
+- **Tier**: sonnet (written from design 7.1 item 4).
+- **Depends**: D3.
+- **Files**: `tests/fishing-cues.test.ts` (new).
+- **Change**: the engine files need the DOM, so they are read as text, as `tests/source-limits.test.ts` reads sources.
+  - `fishing spots return after 6, 3, 7 and 8 seconds`: `RESOURCE_NODES_DEF.fish_shrimp.respawn` is 6000, `fish_trout` 3000, `fish_lobster` 7000, `fish_shark` 8000.
+  - `a catch always empties the spot`: `src/engine/actions.ts` does not contain `0.35`.
+  - `an emptied spot and a returning spot each have a sound`: `src/engine/audio.ts` contains `spotEmpty:` and `spotReturn:`; `src/engine/actions.ts` contains `SFX.spotEmpty()`; `src/engine/loop.ts` contains `SFX.spotReturn()`.
+  - `an empty spot leaves a mark`: in `src/engine/spawns.ts`, the text between `depletedMesh = new THREE.Group();` and the next `const hitbox` contains `depletedMesh.add(`.
+  - `no second chat line per fish`: `src/engine/actions.ts` contains the text `Gathered <b>` exactly once.
+- **Accept**: red until D4 (the first two cases) and F1 (the rest).
+- **Must not change**: `src/`.
 
 ### D4 Fishing spots deplete on every catch [AGY]
 - **Tier**: sonnet (one condition and four numbers).
-- **Depends**: D3.
+- **Depends**: F0.
 - **Files**: `src/engine/actions.ts`, `src/data/catalog.ts`.
-- **Change**: Rule commit. In `performResourceGather`, the block guarded by `if (def.kind !== 'fish' || Math.random() < 0.35)` runs after every successful gather: remove the condition, keep the body. In `RESOURCE_NODES_DEF`, set `respawn` to 6000 for `fish_shrimp`, 3000 for `fish_trout`, 7000 for `fish_lobster` and 8000 for `fish_shark`.
-- **Accept**: in `tests/economy-invariants.test.ts`, `no fishing spot earns more than 1.5 times the best rock or tree of a comparable level` passes. Stage 2's `ONE(tests/world-data.test.ts)` and `ONE(tests/placements.test.ts)` pass unchanged. `grep -n "0.35" src/engine/actions.ts` prints nothing.
-- **Must not change**: `gatherChance`, any other node's respawn, XP, the depleted-mesh handling.
+- **Change**: Rule commit (owner 2026-11-14, Q3.7 option a). In `performResourceGather`, the block guarded by `if (def.kind !== 'fish' || Math.random() < 0.35)` runs after every successful gather: remove the condition, keep the body. In `RESOURCE_NODES_DEF`, set `respawn` to 6000 for `fish_shrimp`, 3000 for `fish_trout`, 7000 for `fish_lobster` and 8000 for `fish_shark`.
+- **Accept**: in `tests/economy-invariants.test.ts`, `no fishing spot earns more than 1.5 times the best rock or tree of a comparable level` passes. Stage 2's `ONE(tests/world-data.test.ts)` and `ONE(tests/placements.test.ts)` pass unchanged. In `tests/fishing-cues.test.ts`, the first two cases pass.
+- **Must not change**: `gatherChance`, any other node's respawn, XP. The look and sound of an empty spot are F1's.
+
+### F1 Fishing cues: the empty and the returning spot [AGY]
+- **Tier**: sonnet (three small engine edits, fully specified).
+- **Depends**: D4.
+- **Files**: `src/engine/audio.ts`, `src/engine/actions.ts`, `src/engine/loop.ts`, `src/engine/spawns.ts`.
+- **Change**: Rule commit (design 7.1 item 4). F0 checks that the cues are wired, by reading the sources. How they look and sound needs a browser (design C7): the opus verify reads the diff against this text and G-6 judges the result.
+  - `audio.ts`: add to the `SoundEffects` interface and to `SFX` two tones in the style of the existing ones: `spotEmpty: () => { tone(420, 'sine', 0.16, 0.08, 210); }` (falling) and `spotReturn: () => { tone(300, 'sine', 0.14, 0.07, 520); }` (rising).
+  - `actions.ts`, `performResourceGather`, inside the depletion block: `if (def.kind === 'fish') SFX.spotEmpty();`.
+  - `spawns.ts`, the fishing branch of `spawnResourceNode`: the `depletedMesh` group, empty today, gets one flat ring: a `TorusGeometry(1.15, 0.03, 5, 8)` with a `MeshBasicMaterial` of colour `0x7a96a3`, `transparent: true`, `opacity: 0.35`, rotated flat like `ring1`, at `y = 0.05`. It is not added to `G.swayingFoliage`, so it stays still. `upgradeResourceNode` in `blenderWorld.ts` replaces only the live visual of a fishing spot, so this ring survives the model upgrade.
+  - `loop.ts`, `updateWorldTimers`, where a node's timer ends: `if (r.def.kind === 'fish' && Math.hypot(r.pos.x - player.pos.x, r.pos.z - player.pos.z) <= 14) SFX.spotReturn();`.
+- **Accept**: `ONE(tests/fishing-cues.test.ts)` passes. SG apart from the two M1 files. `ONE(tests/architecture.test.ts)` passes. The diff touches only the four files and adds no import cycle.
+- **Must not change**: `SFX.fish`, tree and rock depletion, respawn times, the hitbox, `blenderWorld.ts`, any chat line (one line per fish is already printed; a second would be noise).
 
 ### D5 Recipe tests [CLAUDE]
 - **Tier**: sonnet (written from design 7.1 item 5 and G3.4).
-- **Depends**: D4.
+- **Depends**: F1.
 - **Files** (new): `tests/recipes-bars.test.ts`.
 - **Change**:
   - `recipes-bars.test.ts`: `every smith recipe takes bars, or a rune piece and gold bars` (inputs of each `smith_*` id, exactly as the table in design 7.1 item 5); `ore alone cannot forge` (`tryCraft` on a state with 3 `copper_ore` and Smithing 2 fails and names the bar); `bars forge and give today's XP` (bronze platebody 50, rune platebody 520 through `performCraft` at multiplier 1); `gilded platebody consumes the rune platebody and three gold bars at Smithing 48 and is refused at 47`; `smelt requirements are 1, 5, 20, 35, 40`; `bows take 1, 3, 4, 5 and 6 logs` for oak, willow, maple, yew, magic; `a smelt requirement never exceeds its metal's lowest forging requirement`.
@@ -326,7 +477,7 @@ E tasks change no behaviour. They exist so that the pacing model can call the ga
     | `smith_rune_plate` | `{ runite_bar: 5 }` | 45 |
 
   - `recipes.ts`: `smelt_iron` req 5, `smelt_mithril` req 20, `smelt_runite` req 40 (`smelt_bronze` 1 and `smelt_gold` 35 stay). `LOG_CRAFT` rows gain an optional `bowLogs`: 3 for `willow_logs`, 4 for `maple_logs`, 5 for `yew_logs`, 6 for `magic_logs`; the bow recipe's input becomes `{ [log.id]: log.bowLogs ?? 1 }`. The burn recipes and `fletch_shortbow` keep one log.
-- **Accept**: `ONE(tests/recipes-bars.test.ts)` passes. In `tests/economy-invariants.test.ts`, the 2.5 rule and `bronze armour needs no gold` pass. `ONE(tests/phase1.test.ts)`, `ONE(tests/phase2.test.ts)`, `ONE(tests/phase3-content.test.ts)`, `ONE(tests/rule-fixes.test.ts)` and `ONE(tests/content-freeze.test.ts)` pass unchanged.
+- **Accept**: `ONE(tests/recipes-bars.test.ts)` passes. In `tests/economy-invariants.test.ts`, the 2.5 rule and `bronze armour needs no gold` pass. In `tests/pacing.test.ts`, test 1 (the chain in 29 actions) and test 7 (the forge routes) pass. `ONE(tests/phase1.test.ts)`, `ONE(tests/phase2.test.ts)`, `ONE(tests/phase3-content.test.ts)`, `ONE(tests/rule-fixes.test.ts)` and `ONE(tests/content-freeze.test.ts)` pass unchanged.
 - **Must not change**: recipe ids, names, XP, outputs, cooking recipes, `fletch_shafts`, `craft_wood_shield`, `fletch_bronze_arrows`, `tryCraft`.
 
 ---
@@ -338,9 +489,10 @@ E tasks change no behaviour. They exist so that the pacing model can call the ga
 - **Depends**: D2 (the lane is cut after it).
 - **Files**: `tests/unlocks.test.ts` (new).
 - **Change**: tests against `src/state/unlocks.ts`:
-  - `unlocksAt(skill: string, level: number): { kind: 'gear' | 'recipe' | 'node' | 'prayer' | 'spell'; name: string }[]`: gear is every equip item whose `req[skill] === level`; recipes are `FORGE_RECIPES` with that `skill` and `req`; nodes are `RESOURCE_NODES_DEF` with that `skill` and `req`; prayers only for `prayer`; spells only for `magic`. Order: gear, recipes, nodes, prayers, spells, each in table order.
+  - `unlocksAt(skill: string, level: number): { kind: 'gear' | 'recipe' | 'node' | 'prayer' | 'spell'; name: string; id: string }[]`: gear is every equip item whose `req[skill] === level`; recipes are `FORGE_RECIPES` with that `skill` and `req`; nodes are `RESOURCE_NODES_DEF` with that `skill` and `req`; prayers only for `prayer`; spells only for `magic`. Order: gear, recipes, nodes, prayers, spells, each in table order.
   - Cases: `('attack', 5)` contains `Iron Scimitar`; `('mining', 10)` contains `Iron Ore Vein`; `('smithing', 9)` contains `Forge Iron Platebody`; `('prayer', 30)` contains `Protect from Melee`; `('magic', 12)` contains `Fire Bolt`; `('attack', 6)` is empty; `('nonsense', 5)` is empty.
-  - `unlockLine(skillName: string, level: number, unlocks): string | null`: `null` for an empty list; for three or fewer, `Level 5 Attack unlocks: <b>Iron Scimitar</b>.` with names joined by `, `; for more, the first three then ` and N more.`
+  - `forgeHint(itemId: string): string | null` (the owner's condition on the markup, 2026-11-14): for an item that is the `output` of a recipe of kind `smith` or `fletch`, the text `forge: <qty> <input name>[, …] at Smithing <req>`, with the input names from `ITEMS`; `null` otherwise. Cases: `forgeHint('iron_scimitar')` starts with `forge: 2 ` and ends with ` at Smithing 5` (the input is iron ore before D6 and iron bars after; the test does not name it); `forgeHint('steel_longsword')` is `null`; `forgeHint('shortbow')` ends with ` at Smithing 5`; `forgeHint('no_such_item')` is `null`.
+  - `unlockLine(skillName: string, level: number, unlocks): string | null`: `null` for an empty list; for three or fewer, `Level 5 Attack unlocks: <b>Iron Scimitar</b> (shop 1,400 GP, or forge: … at Smithing 5).` with entries joined by `, `; for more, the first three then ` and N more.` A gear entry is followed by `(shop <shopPrice> GP, or <forgeHint>)` when it has a hint and by `(shop <shopPrice> GP)` when it has none; other kinds carry no bracket. Cases: the Attack 5 line contains `shop 1,400 GP` and `forge:`; the Attack 10 line names the Steel Longsword with `(shop 2,900 GP)` and no `forge`.
   - `every name comes from a data table`: each returned name is the `name` of an entry in `ITEMS`, `FORGE_RECIPES`, `RESOURCE_NODES_DEF`, `PRAYERS` or `SPELLS`.
 - **Accept**: red until U2.
 - **Must not change**: `src/`.
@@ -349,7 +501,7 @@ E tasks change no behaviour. They exist so that the pacing model can call the ga
 - **Tier**: sonnet (fully specified).
 - **Depends**: U1.
 - **Files**: `src/state/unlocks.ts` (new), `src/ui/playerActions.ts`.
-- **Change**: Rule commit. `unlocks.ts` exports `unlocksAt` and `unlockLine` as U1 states and imports only from `src/data`. In `grantXp`, inside the `if (s.lvl > oldLvl)` block after the existing level-up chat line: for each level from `oldLvl + 1` to `s.lvl`, `const line = unlockLine(meta.name, level, unlocksAt(skillKey, level)); if (line) addChatMessage(line, 'skill');`. The examine line (`addChatMessage('<b>' + item.name + '</b> — Value: ' + item.price + ...)`, `playerActions.ts` 205) becomes `<b>${item.name}</b> — Shop ${shopPrice(item).toLocaleString('en-US')} GP · sells for ${unitSellPrice(item).toLocaleString('en-US')} GP. Use it at the Bank, Anvil, or General Store.` (design 7.1 item 7, critique L-1). No test reads that line. It imports `shopPrice` (D2) and `unitSellPrice` from `src/data/items.ts`.
+- **Change**: Rule commit. `unlocks.ts` exports `unlocksAt`, `forgeHint` and `unlockLine` as U1 states and imports only from `src/data` (`shopPrice` from `items.ts`, the recipes from `recipes.ts`). In `grantXp`, inside the `if (s.lvl > oldLvl)` block after the existing level-up chat line: for each level from `oldLvl + 1` to `s.lvl`, `const line = unlockLine(meta.name, level, unlocksAt(skillKey, level)); if (line) addChatMessage(line, 'skill');`. The examine line (`addChatMessage('<b>' + item.name + '</b> — Value: ' + item.price + ...)`, `playerActions.ts` 205) becomes `<b>${item.name}</b> — Shop ${shopPrice(item).toLocaleString('en-US')} GP · sells for ${unitSellPrice(item).toLocaleString('en-US')} GP. Use it at the Bank, Anvil, or General Store.` (design 7.1 item 7, critique L-1). No test reads that line. It imports `shopPrice` (D2) and `unitSellPrice` from `src/data/items.ts`.
 - **Accept**: `ONE(tests/unlocks.test.ts)` and `ONE(tests/architecture.test.ts)` pass. SG.
 - **Must not change**: XP arithmetic, the level-up banner, sounds, `requestUiRefresh`.
 
@@ -386,8 +538,8 @@ E tasks change no behaviour. They exist so that the pacing model can call the ga
 - **Tier**: sonnet (doc sync to code).
 - **Depends**: C2.
 - **Files**: `README.md`.
-- **Change**: Docs commit. Correct the feature list and tables for: the new start (a bronze scimitar, three cooked shrimp, 25 GP, 1x experience; the 10x option is in Settings); shop equipment at ten times list price while selling stays at 65% of list, and a sentence that gear and gold already owned are kept; rare gear drops; fishing spots that deplete; smelting bars before forging; bows that take several logs. Do not add a name the game does not already use.
-- **Accept**: SG (`tests/credits.test.ts` still passes). The opus verify checks each sentence against the merged code.
+- **Change**: Docs commit. Correct the feature list and tables for: the new start (nothing in hand; six start-town quests pay the first kit; 1x experience); shop equipment at ten times list price while selling stays at 65% of list, and a sentence that gear and gold already owned are kept; rare gear drops; fishing spots that empty on each catch; smelting bars before forging; bows that take several logs; the Hazel Staff; the item count in the badge and the heading if it is a count of `ITEMS` (one more). **Remove** the mention of the 10x rate switch from the feature list (line 43 today) and do not mention the cheat codes or the reveal word anywhere: the owner wants both hidden. Do not add a name the game does not already use, other than the six quest names and the staff.
+- **Accept**: SG (`tests/credits.test.ts` still passes). `grep -n -i "10x\|league xp\|cheat\|skills10\|gold200k\|backroom" README.md` prints nothing. The opus verify checks each sentence against the merged code.
 - **Must not change**: the credits section, licence text, links.
 
 ---
@@ -397,44 +549,51 @@ E tasks change no behaviour. They exist so that the pacing model can call the ga
 ### T1 Run the model on the real world and tune [CLAUDE]
 - **Tier**: opus (tuning data against a test, and judging whether the result is still the design).
 - **Depends**: R1.
-- **Files**: `src/data/items.ts` (only the value of `GEAR_MARKUP`), `src/data/catalog.ts` and `src/data/world.ts` (only the drop chances of D3), `docs/superpowers/specs/2026-11-14-start-pacing-design.md` (tables 4.3, 5 and 6.1 and section 14 only), `docs/superpowers/baseline/2026-11-14-stage3-baseline.md`.
+- **Files**: `src/data/items.ts` (only the value of `GEAR_MARKUP`), `src/data/catalog.ts` and `src/data/world.ts` (only the drop chances of D3 and the four fishing respawns of D4), `docs/superpowers/specs/2026-11-14-start-pacing-design.md` (tables 4.3, 5.1, 5.2, 5.5 and 6.1 and section 14 only), `docs/superpowers/baseline/2026-11-14-stage3-baseline.md`.
 - **Change**: run `ONE(tests/pacing.test.ts)` and `ONE(tests/economy-invariants.test.ts)`.
-  - If both pass: copy the printed table into the baseline file. Replace the numbers in design tables 4.3 (rows A1, A3, S and the 10x row), 5 and the "10" row of 6.1 with the committed model's numbers, and change the sentence under "How the numbers were produced" and section 14 to say that these rows now come from the committed test.
-  - If a window or a wait assertion fails: tune, in this order and no further. (1) `GEAR_MARKUP`, an integer from 8 to 12. (2) The non-boss gear drop chances of D3, all scaled by one common factor between 0.5 and 2 (so 0.004 to 0.024). Choose the smallest change from the design's values that passes every assertion on both routes. Record every value tried and its table in the baseline file. Then update the design tables as above, and state the changed constant in design 7.1 and CALL-3.5 or CALL-3.6.
-  - If the fishing bound fails (Stage 2 moved fishing spots, so site sizes may differ): tune only the four fishing `respawn` values of D4, each between 2000 and 10000 (5000 and 30000 if Q3.7 (b) was chosen), so that the bound holds and no spot earns less than a third of the best rock or tree of equal or lower requirement. `src/data/catalog.ts` is on the allowlist for that too.
-  - There is no knob for the smithing route, for the 2.5 rule, or for `bronze armour needs no gold`. If one of them fails, or no value in the ranges above passes, or a test can only pass by moving a window or a wait bound: stop. Write what was tried in the baseline file and return to the main session. The windows and the waits are the owner's CALL-3.2 and are not tuned here.
+  - If both pass: copy the printed table into the baseline file. Replace the counts and the average times in design tables 4.3 (the "after" rows), 5.1, 5.2 and 5.5 and the "10" row of the kills table in 6.1 with the committed model's numbers, including the forge task lists and the chain's action count, and change the paragraph under "How the numbers were produced" and section 14 to say that these rows now come from the committed test.
+  - If test 2, 3, 4 or 6 of `pacing.test.ts` fails: tune, in this order and no further. (1) `GEAR_MARKUP`, an integer from 8 to 12. (2) The non-boss gear drop chances of D3, all scaled by one common factor between 0.5 and 2 (so 0.004 to 0.024). Choose the smallest change from the design's values that passes every assertion on both routes. Record every value tried and its table in the baseline file. Then update the design tables as above, and state the changed constant in design 7.1 and CALL-3.5 or CALL-3.6.
+  - If the fishing bound fails (Stage 2 moved fishing spots, so site sizes may differ): tune only the four fishing `respawn` values of D4, each between 2000 and 10000, so that the bound holds and no spot earns less than a third of the best rock or tree of equal or lower requirement. Then correct the rhythm table of design 7.1 item 4.
+  - There is no knob for the starter chain (test 1), the forge route (test 7), the control (test 5), the 2.5 rule, or `bronze armour needs no gold`. If one of them fails, or no value in the ranges above passes, or a test can only pass by moving `MIN_FURTHER_KILLS` or `MAX_TIERS_BEHIND`: stop. Write what was tried in the baseline file and return to the main session. The two thresholds are the owner's (Q3.10) and are not tuned here.
+  - No tuning step may look at a time. The average times are copied into the design after the counts pass; they decide nothing (rule 0.3.10).
 - **Accept**: SG, with no red test anywhere. The baseline file holds the final table.
-- **Must not change**: the window table and the wait bounds in `tests/pacing.test.ts`, the bounds in `tests/economy-invariants.test.ts`, any formula, any other data.
+- **Must not change**: `MIN_FURTHER_KILLS`, `MAX_TIERS_BEHIND` and every assertion in `tests/pacing.test.ts`, the bounds in `tests/economy-invariants.test.ts`, any formula, any other data.
 
 ### G-5 Stage 3 verification [CLAUDE]
 - **Tier**: opus (verification).
 - **Depends**: T1.
 - **Files**: none (read-only; a written report in the session).
 - **Check**:
-  1. SUITE: all pass. `git diff main --stat -- tests src/__tests__` lists only added files; no file that existed at P0 is modified, except the one declared replacement in `tests/phase3-content.test.ts` if Q3.6 was answered yes.
+  1. SUITE: all pass. `git diff main --stat -- tests src/__tests__` lists only added files and one modified file, `tests/phase3-content.test.ts`, whose diff is the single declared line (rule 0.3.3).
   2. TYPES: clean.
   3. BUILD: the JS chunk is within 10 kB of the P0 value.
   4. `npm audit --audit-level=high` exits 0. `git diff main -- package.json package-lock.json` is empty.
-  5. Every goal G3.1 to G3.9 maps to a passing test (section 4.2 below).
+  5. Every goal G3.1 to G3.12 maps to a passing test (section 4.2 below).
   6. Audit finding 9 and the Stage 1 review finding on caps are closed (D6, C2).
-  7. `git diff main -- src/state/gameState.ts` shows `createDefaultState` untouched; `git diff main -- src/state/save.ts` shows only the `MAX_GP` and `MAX_STACK` imports and their use; `serializeState` and `migrateLegacySave` are otherwise unchanged.
-  8. `git diff main -- src/data/catalog.ts` changes no `price`, `req` (outside the two gilded recipes), monster stat, coin range, XP value or name. `src/data/skills.ts` is unchanged. `git diff main -- src/state/adventure.ts` changes five `bountyGp` values, the two `creditGp` calls and nothing else.
-  9. `git diff main --stat` lists only files on some task's allowlist.
+  7. `git diff main -- src/state/gameState.ts` shows `createDefaultState` untouched; `git diff main -- src/state/save.ts` shows only the `MAX_GP` and `MAX_STACK` imports and their use and the one line that widens `validQuestIds`; `serializeState` is unchanged; `git diff main -- src/state/quests.ts` shows one added constant; `git diff main -- src/state/types.ts` is empty (no new saved field).
+  8. `git diff main -- src/data/catalog.ts` changes no `price`, `req` (outside the two gilded recipes), monster stat, coin range, XP value or name of an existing row, and adds exactly one item row, `hazel_staff`. `src/data/skills.ts` is unchanged. `git diff main -- src/state/adventure.ts` shows `QUEST_DEFS` and `questView` untouched, five changed `bountyGp` values, the two `creditGp` calls, `STARTER_QUESTS`, `starterOpen`, `starterView`, and the edits to `claimQuest` and `adventureTracker` that K2 names.
+  9. `git diff main --stat` lists only files on some task's allowlist. Nothing under `public/` or `blender/` changed.
   10. No commit on the branch carries an attribution trailer.
+  11. No test asserts a time (rule 0.3.10): `grep -n "averageSeconds" tests/pacing.test.ts` matches only inside the test `prints the milestone table`, and `grep -n -i "minutes\|seconds\|hours" tests/pacing.test.ts tests/economy-invariants.test.ts tests/starter-quests.test.ts` shows no line that also contains `expect(`.
+  12. Nothing in the normal interface names the booster or the cheats: `grep -n "skills10\|gold200k" src/engine/runtime.ts` prints nothing, and in `index.html` every match of `cheat\|xp-rate-btn\|League XP` lies after the opening tag of `hidden-tools`.
+  13. Every new name is one the design lists (design C4): the six quest names, `Arrival`, `Hazel Staff`. `tests/content-freeze.test.ts` and `tests/starter-quests.test.ts` pass.
 - **Accept**: a written pass.
 - **Must not change**: anything; the task is read-only.
 
 ### G-6 Stage 3 human checks [HUMAN]
-Design 9.2:
+Design 9.2. Nothing below expects a time. Where a time is asked for, it is written down as information.
 - Reset from Settings on a profile with a save: after the reload the hero is a new character (design F16; before the fix the old one came back).
-- A new game: one scimitar worn, three shrimp, 25 GP, the experience button reads 1x, the onboarding card and first chat lines describe the start.
-- Thirty minutes of play without cheats, noting the minute at which bronze armour, the iron kit and the steel kit are worn. Expected: bronze inside 16 minutes, iron inside 50. Record the times in the baseline file; they are the only measurement of the "about twice the model" assumption.
-- The shop: the card, the buy button and the tooltip show the marked-up price; buying charges it; selling pays what it paid before; runes and arrows cost what they cost before.
-- Fishing: the spot empties after a catch (every catch, or about one in three under Q3.7 (b)) and returns after the set time, and that reads acceptably. Count the clicks for ten shrimp.
+- A new game: nothing worn, an empty backpack, 0 GP; Settings shows no experience button and no cheat panel; the chat names no cheat; the tracker shows "A Name in the Ledger"; the onboarding card and first chat lines describe the start.
+- Play the starter chain to the end without cheats. Record: every point where the next step was unclear; what the hero wears and carries at the end (expected: bronze scimitar, platebody and platelegs worn; helm, shield, boots, Hazel Staff, 30 Air and 30 Mind runes, food, coin); the number of clicks it took, roughly. For information, the time.
+- Continue to the iron kit. Record the kills by monster, whether the kit was bought or forged, and whether the unlock line at Attack 5 was noticed. For information, the time. Put both records in the baseline file beside the model's table: they are the only measurement of a real player.
+- Type `backroom` during play: Settings shows the experience button and the cheat panel; the button changes the rate; after a reload both are hidden again. Without revealing anything, type `gold200k` and `skills10`: both still work.
+- Load a save that runs at 10x: one chat line says so, the rate is unchanged, Settings shows no button.
+- The shop: the card, the buy button and the tooltip show the marked-up price; buying charges it; selling pays what it paid before; runes and arrows cost what they cost before; the Hazel Staff is listed under Magic at 600 GP.
+- Fishing: at the three shrimp spots, each empties on the catch with a falling tone and leaves a still ring, returns after about six seconds with a rising tone, and the three can be worked in rotation without waiting. At a trout spot the wait reads as a wait. Count the clicks for ten shrimp (expected: about ten on the spots). Say whether one click per fish reads well.
+- The Hazel Staff: equipped, it shows as a staff, tinted unlike the Staff of Fire; Wind Strike casts and uses the runes; with none left the game says which are missing.
 - The forge: smelt copper, forge bronze platelegs and platebody, equip them; forging from ore alone is refused with the bar named.
-- Reaching Attack 5 prints the unlock line.
-- The owner's own save from before the stage loads with position, gear, bank, gold, multiplier and quests as they were.
-- `gold200k` and `skills10` still work.
+- Reaching Attack 5 prints the unlock line with the iron scimitar's shop price and its forge recipe.
+- The owner's own save from before the stage loads with position, gear, bank, gold, multiplier and quests as they were, and shows no starter quest.
 - The smoke list of the Stage 1-2 design 5.7, once.
 
 ### O-14 Accept Stage 3 [OWNER]
@@ -448,22 +607,25 @@ The owner reviews G-5 and G-6 and accepts. The main session opens the pull reque
 
 | Finding (design 4.6, 10) | Task |
 |---|---|
-| F1 start kit | N1, N2 |
-| F2 10x by default | N1, N2 |
+| F1 start kit | N1, N2 (nothing in hand); K1, K2 (the kit is earned) |
+| F2 10x by default | N1, N2 (1x); N3, N4 (the option hidden) |
 | F3 gear drops | D3, M1 |
 | F4 shop prices never bind | D1, D2, M1, T1 |
 | F5 crafting prints money | D5, D6, M1 |
-| F6 fishing | D4, M1 |
+| F6 fishing | F0, D4, F1, M1 |
 | F7, audit finding 9: bars are dead ends | D5, D6 |
 | F8, Stage 1 review: caps only on load | C1, C2 |
 | F9 free sustain | deferred to Stage 4 (design 7.2) |
-| F10 Slayer income | D3 (five bounties), M1 (the wait test) |
+| F10 Slayer income | D3 (five bounties), M1 (test 3) |
 | F11 low-requirement strong items | D2 (price); requirements left alone (design 7.4) |
 | F12 giants plateau | deferred to Stage 6 (design 7.5); printed by M1 |
 | F13 the dragon's drops / its respawn | D3 / deferred to Stage 4 |
 | F14 tiers without recipes | deferred to Stage 6 |
 | F15 money from gathering and crafting | M1 (printed, not asserted) |
 | F16 reset writes the old character back | N2 (reset guard), G-6 |
+| F17 the tracker points at an aggressive camp | K1, K2 |
+| F18 cheats and booster advertised | N3, N4, R1 |
+| F19 magic closed at the start | I1, I2, K2 (the fifth quest pays the staff) |
 | Audit finding 6, second half | D6, M1 (the 2.5 rule) |
 
 ## 4.2 Goals to proofs
@@ -471,31 +633,42 @@ The owner reviews G-5 and G-6 and accepts. The main session opens the pull reque
 | Goal | Proof task(s) |
 |---|---|
 | G3.1 | N1; P1 (default golden) |
-| G3.2 | M1 `pacing`, T1 |
+| G3.2 | M1 `pacing` (tests 1 to 9), T1; G-5 step 11 (no time asserted) |
 | G3.3 | M1 `economy-invariants`; D1 `shop-price` |
 | G3.4 | D5 `recipes-bars` |
 | G3.5 | C1 |
 | G3.6 | U1; G-6 |
-| G3.7 | P1 `save-compat-s3`; G-5 step 7; G-6 (the owner's save) |
-| G3.8 | E1; M1 (the model imports the game's functions; G-5 reads `pacingModel.ts` and confirms it contains no formula of its own) |
-| G3.9 | P1 `content-freeze`; G-5 step 8 |
+| G3.7 | P1 `save-compat-s3`; K1 (existing saves have no starter quest); G-5 step 7; G-6 (the owner's save) |
+| G3.8 | E1; M1 (the model imports the game's functions and is pure, test 8; G-5 reads `pacingModel.ts` and confirms it contains no formula of its own) |
+| G3.9 | P1 `content-freeze`; K1 (the starter table); G-5 steps 8 and 13 |
+| G3.10 | K1 `starter-quests`, `tracker-order`; M1 test 1 (the chain played with the game's functions); G-6 |
+| G3.11 | N3 `hidden-tools`; G-5 step 12; G-6 |
+| G3.12 | I1 `entry-staff`; G-6 |
 
-## 4.3 CALLs to tasks
+## 4.3 Decisions and CALLs to tasks
 
-| CALL | Task |
+| Decision or CALL (design 12, 15) | Task |
 |---|---|
-| 3.1, 3.13, 3.15, 3.16 | no task; held by rule 0.3.8 and G-5 steps 7 to 9 |
-| 3.14 | D3, M1 |
-| 3.2 | M1 (the window table), T1 |
-| 3.3, 3.4 | N1, N2 |
-| 3.5 | D1, D2, T1 |
+| 3.1, 3.13, 3.15, 3.16 | no task; held by rules 0.3.6, 0.3.8 and G-5 steps 7 to 9 |
+| 3.2, Q3.5: milestones as tasks, no minutes | M1, T1, rule 0.3.10, G-5 step 11 |
+| 3.3, Q3.3: nothing in hand, quests pay the kit | N1, N2, K1, K2 |
+| 3.4, Q3.2: 1x, booster hidden | N1, N2, N3, N4 |
+| 3.5, Q3.1: tenfold shop price, with the forge recipe shown | D1, D2, U1, U2, T1 |
 | 3.6 | D3 |
-| 3.7 | D4 |
+| 3.7, Q3.7: fishing empties on every catch | F0, D4, F1 |
 | 3.8 | D5, D6 |
 | 3.9 | no task (nothing is built) |
 | 3.10 | no task (written deferral) |
-| 3.11 | C1, C2 |
+| 3.11: gold cap, no stack cap in play | C1, C2 |
 | 3.12 | U1, U2, N2 (onboarding text) |
+| 3.14 | D3, M1 |
+| 3.17, Q3.6: tracker order, one test replacement | K1, K2 |
+| 3.18, Q3.9: the Hazel Staff | I1, I2, K2 |
+| 3.19, Q3.8: cheats hidden | N3, N4, R1 |
+| 3.20: existing saves see no starter chain | K1, K2 |
+| Q3.4: hours to dragon, as information | M1 test 9 (printed) |
+| Q3.10: the two thresholds | M1 (constants), T1 (must not change) |
+| Q3.11: the 10x notice | N3, N4 |
 
 ---
 
@@ -519,5 +692,8 @@ Nothing was run to write it: no test, no type check, no build. In particular:
 
 - That every existing test stays green under these changes is argued by reading (design 9.3). G-5 step 1 is where it is first proven.
 - The task texts name symbols as they are at `a8cad85` plus what Stage 2's branches show today (`rollMonsterHit` in `combat.ts`, `CAMPS` in `worldMap.ts`). Stage 2 is not finished; P0 records what is really there, and a task whose named symbol does not exist stops and reports.
-- Whether agy accepts each [AGY] task as written. None contains security-sensitive content; all are data or small pure functions.
-- Whether the windows hold on the merged Stage 2 world. M1's dry run checks it before any data changes, and T1 re-checks it with a bounded knob and a stop rule. An independent model says the windows as drafted do not hold at any markup from 8 to 12 (critique 1.1), so expect O-13b unless the owner answers Q3.5 (b).
+- Whether agy accepts each [AGY] task as written. None contains security-sensitive content; all are data, small pure functions or small engine edits.
+- Whether the task assertions hold on the merged Stage 2 world and in the committed model. The design's scratch model passes them at every markup from 8 to 12 and the control fails them, but that model is one script and its Slayer rule has been run by nobody else. M1's dry run checks it before any data changes, and T1 re-checks it with a bounded knob and a stop rule.
+- The starter chain's helper in M1 gathers by adding the item and the experience directly, because the real gather lives in the engine and needs the DOM. That it matches what a click does was read from `performResourceGather`, not run.
+- F1 and N4 are checked headless only by reading their source text (F0, N3). That the cues sound and look right, and that the typed word reveals the block, rests on the opus verify reading the diff and on G-6.
+- That `hidden` on the new block hides it: no stylesheet rule gives `#hidden-tools` a `display`, by a search of `src/ui/styles.css`. If the page shows it anyway, N4 needs one CSS rule and `styles.css` on its allowlist.
