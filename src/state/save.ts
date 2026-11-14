@@ -7,7 +7,7 @@ import { compactSlots } from './inventory';
 import { normalizeStyle } from './combat';
 import { normalizeQuests } from './quests';
 import { initialShrines } from './shrines';
-import { QUEST_DEFS, SLAYER_BANDS } from './adventure';
+import { QUEST_DEFS, SLAYER_BANDS, STARTER_QUESTS } from './adventure';
 import { isWalkable } from './collision';
 import type { GameState, SavedCam, SavedPose } from './types';
 
@@ -85,7 +85,7 @@ export function migrateLegacySave(raw: unknown, source: string | null = null): M
   state.shrines.lumbridge = true;
 
   state.quests = normalizeQuests(data.quests);
-  const validQuestIds = new Set(QUEST_DEFS.map((q) => q.id));
+  const validQuestIds = new Set([...QUEST_DEFS.map((q) => q.id), ...STARTER_QUESTS.map((q) => q.id)]);
   state.quests.claimed = Array.from(new Set(state.quests.claimed.filter((id) => validQuestIds.has(id))));
   if (state.quests.slayer) {
     const band = SLAYER_BANDS.find((b) => b.monster === state.quests.slayer?.monster);

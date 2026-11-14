@@ -216,6 +216,140 @@ function plateWorn(state: GameState): boolean {
   return id.includes('plate') || id.includes('chain');
 }
 
+export const STARTER_QUESTS: QuestDef[] = [
+  {
+    id: 'arrival',
+    name: 'Arrival',
+    region: 'lumbridge',
+    lore: 'You arrived with nothing.',
+    rewardText: 'Nothing.',
+    steps: [],
+    gp: 0,
+    xp: {},
+    items: []
+  },
+  {
+    id: 'sq_ledger',
+    name: 'A Name in the Ledger',
+    region: 'lumbridge',
+    lore: "Nobody here knows you yet. Put your name in the task master's ledger and take the work on offer.",
+    rewardText: 'A Bronze Scimitar.',
+    steps: [
+      {
+        label: 'Speak with the task master and accept a task',
+        met: (s) => s.quests.slayer !== null || s.quests.slayerTasksCompleted > 0
+      }
+    ],
+    gp: 0,
+    xp: {},
+    items: [{ id: 'bronze_scimitar', qty: 1 }]
+  },
+  {
+    id: 'sq_quarrel',
+    name: 'First Quarrel',
+    region: 'lumbridge',
+    lore: 'The camp across the green has been raiding the hen yard. Settle one quarrel.',
+    rewardText: '3 Cooked Shrimp and 25 GP.',
+    steps: [
+      {
+        label: 'Defeat a goblin',
+        met: (s) => s.quests.killedGoblin
+      }
+    ],
+    gp: 25,
+    xp: {},
+    items: [{ id: 'shrimp', qty: 3 }]
+  },
+  {
+    id: 'sq_gather',
+    name: 'Stone, Timber, Tide',
+    region: 'lumbridge',
+    lore: 'Everything in the haven is dug, cut or caught by somebody. Try all three.',
+    rewardText: 'A Bronze Full Helm.',
+    steps: [
+      {
+        label: 'Mine copper ore',
+        met: (s) => s.skills.mining.xp > 0
+      },
+      {
+        label: 'Chop a tree',
+        met: (s) => s.skills.woodcutting.xp > 0
+      },
+      {
+        label: 'Net a raw fish',
+        met: (s) => s.quests.caughtFish
+      }
+    ],
+    gp: 0,
+    xp: {},
+    items: [{ id: 'bronze_helm', qty: 1 }]
+  },
+  {
+    id: 'sq_forge',
+    name: 'Fire and Hammer',
+    region: 'lumbridge',
+    lore: 'Cook what you caught. Then smelt five bronze bars at the anvil: two make platelegs, three make a platebody.',
+    rewardText: 'A Wooden Kiteshield.',
+    steps: [
+      {
+        label: 'Cook a fish',
+        met: (s) => s.quests.cookedMeal
+      },
+      {
+        label: 'Smelt a bronze bar',
+        met: (s) => s.quests.smeltedBar
+      },
+      {
+        label: 'Forge a platebody and wear it',
+        met: (s) => s.quests.worePlate || plateWorn(s)
+      }
+    ],
+    gp: 0,
+    xp: {},
+    items: [{ id: 'wooden_shield', qty: 1 }]
+  },
+  {
+    id: 'sq_keeping',
+    name: 'Left in Keeping',
+    region: 'lumbridge',
+    lore: 'The bank keeps what you cannot carry. A traveller before you left something in keeping.',
+    rewardText: 'A Hazel Staff, 30 Air Runes and 30 Mind Runes.',
+    steps: [
+      {
+        label: 'Open the bank',
+        met: (s) => s.quests.openedBank
+      }
+    ],
+    gp: 0,
+    xp: {},
+    items: [
+      { id: 'hazel_staff', qty: 1 },
+      { id: 'air_rune', qty: 30 },
+      { id: 'mind_rune', qty: 30 }
+    ]
+  },
+  {
+    id: 'sq_coin',
+    name: 'Fair Coin',
+    region: 'lumbridge',
+    lore: 'Sell what you do not need and buy what you do. That is how the next kit is paid for.',
+    rewardText: 'Traveler Boots. Next: iron gear needs Attack and Defence 5. Buy it at the store, or mine iron and forge it.',
+    steps: [
+      {
+        label: 'Sell an item to a merchant',
+        met: (s) => s.quests.soldWares
+      },
+      {
+        label: 'Buy an item from a shop',
+        met: (s) => s.quests.boughtWares
+      }
+    ],
+    gp: 0,
+    xp: {},
+    items: [{ id: 'leather_boots', qty: 1 }]
+  }
+];
+
 export interface WeaponSpec {
   name: string;
   cost: number;
@@ -391,6 +525,51 @@ export interface QuestView {
   claimed: boolean;
 }
 
+function buildQuestCard(def: QuestDef, state: GameState): QuestView {
+  const steps = def.steps.map((step) => ({ label: step.label, met: step.met(state) }));
+  const done = steps.filter((step) => step.met).length;
+  return {
+    id: def.id,
+    name: def.name,
+    region: def.region,
+    lore: def.lore,
+    rewardText: def.rewardText,
+    steps,
+    done,
+    total: steps.length,
+    complete: done === steps.length,
+    claimed: state.quests.claimed.includes(def.id)
+  };
+}
+
+function starterOpen(state: GameState): QuestDef | null {
+  if (!state.quests.claimed.includes(STARTER_QUESTS[0].id)) return null;
+  for (let i = 1; i < STARTER_QUESTS.length; i++) {
+    const cur = STARTER_QUESTS[i];
+    const prev = STARTER_QUESTS[i - 1];
+    if (!state.quests.claimed.includes(cur.id) && state.quests.claimed.includes(prev.id)) {
+      return cur;
+    }
+  }
+  return null;
+}
+
+export function starterView(state: GameState): QuestView[] {
+  if (!state.quests.claimed.includes(STARTER_QUESTS[0].id)) return [];
+  const cards: QuestView[] = [];
+  for (let i = 1; i < STARTER_QUESTS.length; i++) {
+    const def = STARTER_QUESTS[i];
+    if (state.quests.claimed.includes(def.id)) {
+      cards.push(buildQuestCard(def, state));
+    }
+  }
+  const open = starterOpen(state);
+  if (open) {
+    cards.push(buildQuestCard(open, state));
+  }
+  return cards;
+}
+
 export function questView(state: GameState): QuestView[] {
   return QUEST_DEFS.map((def) => {
     const steps = def.steps.map((step) => ({ label: step.label, met: step.met(state) }));
@@ -428,9 +607,16 @@ function canHoldRewards(state: GameState, items: QuestRewardItem[]): boolean {
 }
 
 export function claimQuest(state: GameState, questId: string): ClaimResult {
-  const def = QUEST_DEFS.find((quest) => quest.id === questId);
+  const isStarter = STARTER_QUESTS.some((quest) => quest.id === questId);
+  const def = QUEST_DEFS.find((quest) => quest.id === questId) || STARTER_QUESTS.find((quest) => quest.id === questId);
   if (!def) return { ok: false, reason: 'Unknown quest.' };
   if (state.quests.claimed.includes(def.id)) return { ok: false, reason: 'You already claimed that reward.' };
+  if (isStarter) {
+    const open = starterOpen(state);
+    if (!open || open.id !== def.id) {
+      return { ok: false, reason: 'That quest is not open yet.' };
+    }
+  }
   const complete = def.steps.every((step) => step.met(state));
   if (!complete) return { ok: false, reason: 'Finish every objective before claiming the reward.' };
   if (!canHoldRewards(state, def.items)) return { ok: false, reason: 'Your backpack is full.' };
@@ -525,26 +711,38 @@ export interface TrackerLine {
   total: number;
 }
 
-/** The earliest open quest, or a claim prompt when its steps are finished. */
-export function adventureTracker(state: GameState): TrackerLine {
-  const views = questView(state);
-  for (const quest of views) {
-    if (quest.claimed) continue;
-    if (quest.complete) {
-      return {
-        title: quest.name,
-        detail: 'Claim the reward in the Adventure Log',
-        done: quest.done,
-        total: quest.total
-      };
-    }
-    const step = quest.steps.find((entry) => !entry.met);
+function trackerLineFromQuest(quest: QuestView): TrackerLine {
+  if (quest.complete) {
     return {
       title: quest.name,
-      detail: step ? step.label : 'Continue the quest',
+      detail: 'Claim the reward in the Adventure Log',
       done: quest.done,
       total: quest.total
     };
+  }
+  const step = quest.steps.find((entry) => !entry.met);
+  return {
+    title: quest.name,
+    detail: step ? step.label : 'Continue the quest',
+    done: quest.done,
+    total: quest.total
+  };
+}
+
+/** The earliest open quest, or a claim prompt when its steps are finished. */
+export function adventureTracker(state: GameState): TrackerLine {
+  const open = starterOpen(state);
+  if (open) {
+    return trackerLineFromQuest(buildQuestCard(open, state));
+  }
+  const views = questView(state);
+  const discovered = views.find((quest) => !quest.claimed && !!state.shrines[quest.region]);
+  if (discovered) {
+    return trackerLineFromQuest(discovered);
+  }
+  const unclaimed = views.find((quest) => !quest.claimed);
+  if (unclaimed) {
+    return trackerLineFromQuest(unclaimed);
   }
   return { title: 'Adventure log', detail: 'Every quest is claimed', done: views.length, total: views.length };
 }

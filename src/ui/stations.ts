@@ -4,7 +4,7 @@ import { FORGE_RECIPES, recipeById } from '../data/recipes';
 import { WORLD_REGIONS, type RegionDef } from '../data/world';
 import { buyItem, buyRunePack, canAddItem, countItem, deposit, isGatheredGood, isUnequippedGear, quoteInventorySale, runePackCost, sellItem, withdraw } from '../state/inventory';
 import { BACKPACK_SIZE, STATE } from '../state/gameState';
-import { questView } from '../state/adventure';
+import { questView, starterView } from '../state/adventure';
 import { isShrineDiscovered } from '../state/shrines';
 import { canCastTeleport } from '../state/combat';
 import { SPELLS } from '../data/magic';
@@ -521,7 +521,7 @@ export function renderQuests(): void {
       </div>
     </div>
   `;
-  const cards = questView(STATE).map((quest) => {
+  const cards = [...starterView(STATE), ...questView(STATE)].map((quest) => {
     const steps = quest.steps.map((step) => `<li class="${step.met ? 'met' : ''}">${step.met ? '✓' : '○'} ${step.label}</li>`).join('');
     const claimLabel = quest.claimed ? 'Reward claimed' : 'Claim Reward';
     const disabled = quest.claimed || !quest.complete ? ' disabled' : '';
