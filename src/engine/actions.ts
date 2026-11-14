@@ -44,6 +44,7 @@ import {
 export function teleportToRegion(regionId?: string): void {
   const reg = WORLD_REGIONS.find((r: RegionDef) => r.id === regionId);
   if (!reg) return;
+  G.aggroGraceUntil = (typeof performance !== 'undefined' ? performance.now() : 0) + 3000;
   player.targetEntity = null;
   player.targetPos = null;
   player.pos.set(reg.x, getTerrainHeight(reg.x, reg.z + 4), reg.z + 4);
@@ -176,7 +177,12 @@ export function performPlayerAttack(monster: MonsterEntity): void {
 
   const applyDamage = (): void => {
     const hit = onPlayerHit(monster.logic, dmg);
-    if (!hit.applied) return;
+    if (!hit.applied) {
+      SFX.miss();
+      spawnHitSplatWorld(monster.pos, 0, 'miss');
+      addChatMessage(`The ${monster.def.name} has lost interest.`, 'combat');
+      return;
+    }
     if (dmg > 0) {
       SFX.hit();
       monster.flinch = 1.0;
@@ -359,6 +365,7 @@ export function handlePlayerDeath(): void {
 }
 
 export function finishRespawn(): void {
+  G.aggroGraceUntil = (typeof performance !== 'undefined' ? performance.now() : 0) + 3000;
   applyRespawn(STATE);
   player.downed = false;
   player.downedTimer = 0;

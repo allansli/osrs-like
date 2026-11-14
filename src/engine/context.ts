@@ -210,6 +210,7 @@ export interface EngineContext {
   miniTick: number;
   lastLabelX: number;
   lastLabelZ: number;
+  aggroGraceUntil: number;
 }
 
 export const G: EngineContext = {
@@ -248,5 +249,6 @@ export const G: EngineContext = {
   labelTick: 0,
   miniTick: 1,
   lastLabelX: 999,
-  lastLabelZ: 999
+  lastLabelZ: 999,
+  aggroGraceUntil: 0
 };

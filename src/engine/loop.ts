@@ -45,10 +45,13 @@ import { moveWithCollision } from '../state/collision';
 import { isDown, stepMonster } from '../state/monsterAi';
 import { getTerrainHeight } from '../state/terrain';
 import { discoverShrines } from '../state/shrines';
+import { CAMPS, isInSafeZone } from '../data/worldMap';
 import {
   addChatMessage,
   el,
+  getCombatLevel,
   updateAllUI,
+  updateTargetHud,
   updateVitalsBars,
   consumeUiRefreshRequest
 } from '../ui/hud';
@@ -506,13 +509,39 @@ export function updateCamera(f: FrameState): void {
 
 export function updateMonsters(f: FrameState): void {
   // Monsters Update: rules in stepMonster, mesh, pose and events here.
+  const playerCombat = getCombatLevel();
+  const playerSafe = isInSafeZone(player.pos.x, player.pos.z) || f.now < G.aggroGraceUntil;
+  const camps = CAMPS;
+
   G.monstersList.forEach((m: MonsterEntity) => {
     const L = m.logic;
     const prevState = L.state;
     const prevTimer = L.timer;
     const fromX = m.pos.x;
     const fromZ = m.pos.z;
-    const events = stepMonster(L, { playerX: player.pos.x, playerZ: player.pos.z, playerDown: !!player.downed, dt: f.dt, rand: Math.random });
+    const events = stepMonster(L, {
+      playerX: player.pos.x,
+      playerZ: player.pos.z,
+      playerDown: !!player.downed,
+      dt: f.dt,
+      rand: Math.random,
+      playerCombat,
+      playerSafe,
+      camps
+    });
+
+    if (events.some(e => e.kind === 'aggro')) {
+      addChatMessage(`<b>${m.def.name}</b> attacks!`, 'combat');
+    }
+
+    if (events.some(e => e.kind === 'reset')) {
+      const hpBar = m.labelEl.querySelector<HTMLElement>('.entity-hp-bar');
+      const hpFill = m.labelEl.querySelector<HTMLElement>('.entity-hp-fill');
+      if (hpBar) hpBar.style.display = 'none';
+      if (hpFill) hpFill.style.width = '100%';
+      m.labelEl.style.display = 'none';
+      updateTargetHud();
+    }
 
     if (prevState === 'dying') {
       const progress = Math.max(0, 1 - (prevTimer - f.dt) / 0.85);
@@ -555,7 +584,16 @@ export function updateMonsters(f: FrameState): void {
         poseMonsterLimbs(m, false, f.now, f.dt);
         if (events.some(e => e.kind === 'attack')) performMonsterRetaliation(m);
       }
-    } else if (prevState === 'idle') {
+    } else if (L.state === 'return') {
+      const dx = L.homeX - fromX;
+      const dz = L.homeZ - fromZ;
+      const targetHomeYaw = Math.atan2(dx, dz) + Math.PI;
+      m.rig.group.rotation.y = lerpAngle(m.rig.group.rotation.y, targetHomeYaw, Math.min(1, f.dt * 9));
+      m.pos.x = L.x;
+      m.pos.z = L.z;
+      m.pos.y = getTerrainHeight(m.pos.x, m.pos.z);
+      poseMonsterLimbs(m, true, f.now, f.dt);
+    } else if (L.state === 'idle') {
       const dx = L.wanderX - fromX;
       const dz = L.wanderZ - fromZ;
       const dist = Math.hypot(dx, dz);
@@ -567,6 +605,9 @@ export function updateMonsters(f: FrameState): void {
         m.pos.y = getTerrainHeight(m.pos.x, m.pos.z);
         poseMonsterLimbs(m, true, f.now, f.dt);
       } else {
+        m.pos.x = L.x;
+        m.pos.z = L.z;
+        m.pos.y = getTerrainHeight(m.pos.x, m.pos.z);
         poseMonsterLimbs(m, false, f.now, f.dt);
       }
     }

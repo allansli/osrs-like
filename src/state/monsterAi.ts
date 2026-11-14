@@ -1,9 +1,12 @@
-// Monster rules (design 5.4, Stage 1 shape): a pure step function and the hit entry point.
+// Monster rules (design 5.4, Stage 1 shape; Stage 2 territory and aggression):
+// a pure step function and the hit entry point.
 // The engine owns meshes, sounds and the HUD; it applies the events returned here.
 import { MONSTER_TYPES } from '../data/world';
+import type { CampDef } from '../data/worldMap';
+import { monsterThreatColor } from './adventure';
 import { moveWithCollision } from './collision';
 
-export type MonsterState = 'idle' | 'chase' | 'attack' | 'dying' | 'dead';
+export type MonsterState = 'idle' | 'chase' | 'attack' | 'return' | 'dying' | 'dead';
 
 export type MonsterLogic = {
   typeKey: string;
@@ -25,9 +28,12 @@ export type MonsterLogic = {
   timer: number;
   breathCount: number;
   campId?: string;
+  stallTimer: number;
+  stallX: number;
+  stallZ: number;
 };
 
-export type MonsterEvent = { kind: 'attack' | 'died' | 'respawned' };
+export type MonsterEvent = { kind: 'attack' | 'died' | 'respawned' | 'aggro' | 'reset' };
 
 export type StepWorld = {
   playerX: number;
@@ -35,6 +41,9 @@ export type StepWorld = {
   playerDown: boolean;
   dt: number;
   rand: () => number;
+  playerCombat?: number;
+  playerSafe?: boolean;
+  camps?: CampDef[];
 };
 
 const DROP_DIST = 26;
@@ -74,7 +83,10 @@ export function createMonsterLogic(
     wanderZ: homeZ,
     timer: 0,
     breathCount: 0,
-    campId: opts?.campId
+    campId: opts?.campId,
+    stallTimer: 1.5,
+    stallX: homeX,
+    stallZ: homeZ
   };
 }
 
@@ -109,6 +121,7 @@ export function stepMonster(m: MonsterLogic, world: StepWorld): MonsterEvent[] {
       m.state = 'idle';
       m.hp = m.maxHp;
       m.breathCount = 0;
+      m.attackCooldown = 0;
       m.x = m.homeX;
       m.z = m.homeZ;
       return [{ kind: 'respawned' }];
@@ -116,21 +129,68 @@ export function stepMonster(m: MonsterLogic, world: StepWorld): MonsterEvent[] {
     return [];
   }
 
-  if (m.state === 'chase' || m.state === 'attack') {
-    const dx = world.playerX - m.x;
-    const dz = world.playerZ - m.z;
+  if (m.state === 'return') {
+    const dx = m.homeX - m.x;
+    const dz = m.homeZ - m.z;
     const dist = Math.hypot(dx, dz);
-    if (dist > DROP_DIST || world.playerDown) {
+    if (dist <= 1.0) {
       m.state = 'idle';
+      m.hp = m.maxHp;
+      m.breathCount = 0;
+      m.attackCooldown = 0;
+      return [{ kind: 'reset' }];
+    }
+    const moveDist = Math.min(dist, CHASE_SPEED * dt);
+    const stepped = moveWithCollision(m.x, m.z, (dx / dist) * moveDist, (dz / dist) * moveDist);
+    m.x = stepped.x;
+    m.z = stepped.z;
+    return [];
+  }
+
+  if (m.state === 'chase' || m.state === 'attack') {
+    const camp = world.camps?.find((c) => c.id === m.campId);
+    const distToPlayer = Math.hypot(world.playerX - m.x, world.playerZ - m.z);
+    const distMonsterToCamp = camp ? Math.hypot(m.x - camp.x, m.z - camp.z) : 0;
+
+    const leashTriggered = camp ? distMonsterToCamp > camp.radius + 4 : false;
+    const playerTooFar = distToPlayer > DROP_DIST;
+    const playerDown = world.playerDown;
+    const safeInAggroCamp = !!(world.playerSafe && camp?.aggressive);
+
+    let stallTriggered = false;
+    if (m.state === 'chase') {
+      m.stallTimer -= dt;
+      if (m.stallTimer <= 0) {
+        const distMoved = Math.hypot(m.x - m.stallX, m.z - m.stallZ);
+        m.stallTimer = 1.5;
+        m.stallX = m.x;
+        m.stallZ = m.z;
+        if (distMoved < 0.2) {
+          stallTriggered = true;
+        }
+      }
+    }
+
+    if (leashTriggered || playerTooFar || playerDown || safeInAggroCamp || stallTriggered) {
+      m.state = 'return';
       return [];
     }
-    if (dist > attackRange(m)) {
-      m.state = 'chase';
-      const stepped = moveWithCollision(m.x, m.z, (dx / dist) * CHASE_SPEED * dt, (dz / dist) * CHASE_SPEED * dt);
+
+    if (distToPlayer > attackRange(m)) {
+      if (m.state !== 'chase') {
+        m.state = 'chase';
+        m.stallTimer = 1.5;
+        m.stallX = m.x;
+        m.stallZ = m.z;
+      }
+      const dx = world.playerX - m.x;
+      const dz = world.playerZ - m.z;
+      const stepped = moveWithCollision(m.x, m.z, (dx / distToPlayer) * CHASE_SPEED * dt, (dz / distToPlayer) * CHASE_SPEED * dt);
       m.x = stepped.x;
       m.z = stepped.z;
       return [];
     }
+
     m.state = 'attack';
     m.attackCooldown -= dt;
     if (m.attackCooldown <= 0) {
@@ -138,6 +198,38 @@ export function stepMonster(m: MonsterLogic, world: StepWorld): MonsterEvent[] {
       return [{ kind: 'attack' }];
     }
     return [];
+  }
+
+  // idle: check T2 (camp aggro)
+  const camp = world.camps?.find((c) => c.id === m.campId);
+  if (
+    camp &&
+    camp.aggressive &&
+    !world.playerDown &&
+    !world.playerSafe &&
+    world.playerCombat != null &&
+    monsterThreatColor(m.level, world.playerCombat) !== 'green'
+  ) {
+    const distToPlayer = Math.hypot(world.playerX - m.x, world.playerZ - m.z);
+    const aggroRadius = camp.aggroRadius ?? (m.style === 'magic' || m.style === 'ranged' ? 12 : 9);
+    const distPlayerToCamp = Math.hypot(world.playerX - camp.x, world.playerZ - camp.z);
+
+    if (distToPlayer <= aggroRadius && distPlayerToCamp <= camp.radius) {
+      m.state = 'chase';
+      m.stallTimer = 1.5;
+      m.stallX = m.x;
+      m.stallZ = m.z;
+      const events: MonsterEvent[] = [{ kind: 'aggro' }];
+      if (distToPlayer <= attackRange(m)) {
+        m.state = 'attack';
+        m.attackCooldown -= dt;
+        if (m.attackCooldown <= 0) {
+          m.attackCooldown = ATTACK_INTERVAL;
+          events.push({ kind: 'attack' });
+        }
+      }
+      return events;
+    }
   }
 
   // idle: wander
@@ -162,8 +254,13 @@ export function stepMonster(m: MonsterLogic, world: StepWorld): MonsterEvent[] {
 
 /** The player's attack resolves against the monster (dmg 0 is a miss). */
 export function onPlayerHit(m: MonsterLogic, dmg: number): { applied: boolean; events: MonsterEvent[] } {
-  if (isDown(m)) return { applied: false, events: [] };
-  if (m.state === 'idle') m.state = 'chase';
+  if (isDown(m) || m.state === 'return') return { applied: false, events: [] };
+  if (m.state === 'idle') {
+    m.state = 'chase';
+    m.stallTimer = 1.5;
+    m.stallX = m.x;
+    m.stallZ = m.z;
+  }
   if (dmg <= 0) return { applied: true, events: [] };
   m.hp = Math.max(0, m.hp - dmg);
   if (m.hp > 0) return { applied: true, events: [] };
