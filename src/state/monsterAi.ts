@@ -103,6 +103,17 @@ export function attackRange(m: MonsterLogic): number {
   return (m.style === 'magic' || m.style === 'ranged') ? FAR_RANGE : MELEE_RANGE;
 }
 
+/** Every 1.5 s: true when the monster moved less than 0.2 since the last check. */
+function stalled(m: MonsterLogic, dt: number): boolean {
+  m.stallTimer -= dt;
+  if (m.stallTimer > 0) return false;
+  const distMoved = Math.hypot(m.x - m.stallX, m.z - m.stallZ);
+  m.stallTimer = 1.5;
+  m.stallX = m.x;
+  m.stallZ = m.z;
+  return distMoved < 0.2;
+}
+
 export function stepMonster(m: MonsterLogic, world: StepWorld): MonsterEvent[] {
   const { dt, rand } = world;
 
@@ -132,7 +143,13 @@ export function stepMonster(m: MonsterLogic, world: StepWorld): MonsterEvent[] {
     const dx = m.homeX - m.x;
     const dz = m.homeZ - m.z;
     const dist = Math.hypot(dx, dz);
-    if (dist <= 1.0) {
+    // Blocked on the way home (river, wall): the same stall test as chase puts it home.
+    const stuck = dist > 1.0 && stalled(m, dt);
+    if (dist <= 1.0 || stuck) {
+      if (stuck) {
+        m.x = m.homeX;
+        m.z = m.homeZ;
+      }
       m.state = 'idle';
       m.hp = m.maxHp;
       m.breathCount = 0;
@@ -155,22 +172,13 @@ export function stepMonster(m: MonsterLogic, world: StepWorld): MonsterEvent[] {
     const playerDown = world.playerDown;
     const safeInAggroCamp = !!(world.playerSafe && camp?.aggressive);
 
-    let stallTriggered = false;
-    if (m.state === 'chase') {
-      m.stallTimer -= dt;
-      if (m.stallTimer <= 0) {
-        const distMoved = Math.hypot(m.x - m.stallX, m.z - m.stallZ);
-        m.stallTimer = 1.5;
-        m.stallX = m.x;
-        m.stallZ = m.z;
-        if (distMoved < 0.2) {
-          stallTriggered = true;
-        }
-      }
-    }
+    const stallTriggered = m.state === 'chase' && stalled(m, dt);
 
     if (leashTriggered || playerTooFar || playerDown || safeInAggroCamp || stallTriggered) {
       m.state = 'return';
+      m.stallTimer = 1.5;
+      m.stallX = m.x;
+      m.stallZ = m.z;
       return [];
     }
 
