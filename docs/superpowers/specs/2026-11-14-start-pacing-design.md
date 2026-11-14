@@ -4,6 +4,8 @@ Date: 2026-11-14. Branch: `feat/start-pacing`, cut from `main`. All line numbers
 
 Status: proposal. The owner has not reviewed any of it. Every decision marked **CALL** is the lead's proposal and needs the owner's check (collected in section 12). Nothing here has been agreed.
 
+Critiqued on 2026-11-14 (`docs/superpowers/specs/2026-11-14-start-pacing-critique.md`, verdict READY-WITH-FIXES). The fixes the critique was confident in are applied in place. The rest are owner questions Q3.5 to Q3.9 (section 15). An independent re-implementation of the model reproduced the "today" rows of 4.3 within 2 minutes, but not the A1 row (see the note under 4.3).
+
 Inputs read for this document: `docs/superpowers/specs/2026-11-13-world-foundation-design.md` (called "the Stage 1-2 design" below; its sections 6, 9 and 9.1 in full), `docs/superpowers/plans/2026-11-13-world-foundation-plan.md`, `docs/audit/2026-11-13-findings.json` (findings 6 and 9), `src/data/*.ts`, `src/state/*.ts`, `src/engine/actions.ts`, `src/engine/session.ts`, the parts of `src/engine/loop.ts`, `src/engine/runtime.ts`, `src/ui/stations.ts` and `src/ui/playerActions.ts` that touch the economy, the tests that pin economy values, and the Stage 2 branches `feat/world-place`, `wp/A`, `wp/B`, `wp/W` as they stand today.
 
 This document covers one stage:
@@ -62,7 +64,7 @@ Goals:
 - **G3.2** Every equipment tier is earned: in the pacing model, at 1x, each tier's kit is first worn inside its window (section 5), by the shop route, by the drop-and-Slayer route and by the smithing route.
 - **G3.3** Money cannot be printed by crafting: no recipe's output sells for more than 2.5 times what its inputs sell for (one named exception that a frozen test pins), and fishing earns no more than 1.5 times what mining or woodcutting earns at a comparable level.
 - **G3.4** Smithing uses bars (audit finding 9).
-- **G3.5** Gold and stack counts are capped during play, not only on load (Stage 1 review finding).
+- **G3.5** Gold is capped during play, not only on load (Stage 1 review finding). Stack counts keep their load cap; play cannot reach it (7.1 item 6).
 - **G3.6** The player is told what each level unlocks.
 - **G3.7** A version-4 save loads to exactly the state it loads to today. A player with gear keeps it. The save format does not change.
 - **G3.8** The model that produced the numbers is a committed test that calls the game's own formulas.
@@ -95,8 +97,8 @@ List prices of the three-piece kits (weapon + body + legs, `catalog.ts`): bronze
 - A monster is back 8.35 s after it dies (`monsterAi.ts` 46-47). Time per kill = the larger of (kill time + 1.5 s to reach the next one) and ((8.35 + kill time) / monsters of that type), plus rest. Rest is the time to regenerate, at 0.25 HP/s (`loop.ts` 110), whatever damage the fight cost beyond regeneration and the food the monster drops.
 - The fighter always attacks the type that gives the most monster-HP per second among the types it can win against. "Can win" means: expected damage taken in one kill is at most 60% of max HP, and the attackers' combined max hit is below max HP.
 - **Stage 2 rules** (Stage 1-2 design 6.4): a camp attacks a player whose combat level is at or below the monster's level. Then every member attacks at once: 3 scorpions, 3 wizards, 2 rangers, 4 giants, 2 guardians, 2 demons. These camp sizes are the design's table; the final camps are not written yet (Stage 2 task W5).
-- Gear: only weapon, body and legs are bought, for the highest tier the fighter can wear, weapon first, as soon as it is affordable. Each purchase costs 40 s. A dropped kit piece counts as obtained when its expected count reaches 1 (after 1/chance kills). Every other gear drop is sold at 65% (`items.ts` 70-75). Bones and food are not sold.
-- Slayer, when used: the bounty is spread over the task's kills, plus 10 s per task for the walk to the master (`worldBuild.ts` 232). Quests: in the "after" rows the two start-town quests pay at the first goblin kill and cost 90 s each; "today" rows ignore quests because today's start needs no money.
+- Gear: only weapon, body and legs are bought. **Purchase rule (pinned after the critique, CALL-3.2):** after every kill, for the weapon, then the body, then the legs, take the highest tier above the one worn that the fighter can wear (the weapon by Attack, body and legs by Defence) and that it either owns or can afford at the shop price, and equip it. Never wait for a higher tier while a better affordable one exists. Each purchase costs 40 s. Kit table: bronze, iron, mithril, adamant, rune and dragon scimitars, the steel longsword and the black scimitar; the plate body and legs of each tier, and the dragon platebody (`dragon_chain`). A dropped kit piece counts as obtained when its expected count reaches 1 (after 1/chance kills). Every other gear drop is sold at 65% (`items.ts` 70-75). Bones and food are not sold. The rule matters. Read as "buy only the highest tier you can wear", the same text gives a fighter that skips iron to black and wears mithril at 37 minutes (critique 1.1).
+- Slayer, when used: the fighter takes the task `pickSlayerBand(combatLevel)` gives whenever it has none, and counts the bounty (spread over the task's kills, plus 10 s per task for the walk to the master, `worldBuild.ts` 232) only on kills of the task's monster. It keeps choosing targets by the rule below: a task it cannot win against pays nothing until the fighter can. The per-kill Slayer XP and the bounty XP go to Attack unmultiplied (`adventure.ts` 366-376). Quests: in the "after" rows the two start-town quests pay 1,300 GP, 250 Attack and 250 Hitpoints XP at the first goblin kill and cost 90 s each; "today" rows ignore quests because today's start needs no money. *The A3 rows of 4.3 were produced before this rule was written down; plan M1 re-measures them.*
 - Not modelled: ranged and magic (4.7), amulets, rings and capes (4.6), prayers, special attacks, deaths, banking, the walk between regions (30 s per change of monster type is added).
 - Gathering: time per item = the larger of (0.6 s / success chance + 1 s to step to the next node) and ((respawn + 0.6 s / success chance) / nodes at the site). A **site** is the largest group of nodes of one type in which each stands within 15 units of another. On `main` (`placements.ts`): copper 2, iron 3, mithril 2, gold 3, runite 2; normal trees 3, oaks 2, willows 2, maples 3, yews 2, magic trees 2; shrimp spots 3, trout 1, lobster 2, shark 2. Success chance is min(0.92, 0.50 + 0.02 x (level - requirement)) (`actions.ts` 425). Fishing spots deplete on 35% of catches (432). Crafting is instant (`playerActions.ts` 408-419).
 - "Model-optimal" means a player who never stops, never dies and always knows the best target. A real player is slower. This document assumes about twice as slow and marks that as an assumption, not a measurement.
@@ -118,6 +120,8 @@ Kit worn, model-optimal. "m" is minutes, "h" hours.
 | A3 | **After**, shop + drops + Slayer | 1x | 5 m | 13 m | 23 m | 43 m | 54 m | 63 m | 1.8 h | 7.9 h |
 | S | **After**, smithing route (level gate of A1 + skilling time of 7.1 item 5; runite also needs a way through Stage 2's pass) | 1x | 2 m | 11 m | - | - | 36 m | - | 2.1 h | - |
 | A3 | After, player turns the 10x option on | 10x | 5 m | 13 m | 20 m | 29 m | 29 m | 34 m | 71 m | 86 m |
+
+**Independent check (critique 1.1).** A second implementation of 4.2, written from the code without this script, gives the same "today" rows within 2 minutes. For A1 it gives 5 / 18 / **37** / 49 / 58 / 83 m / 2.3 h / 5.4 h, under the purchase rule now written in 4.2. That is 6 to 19% later from steel on. Steel then misses its window, and the waits after the level at black, mithril and adamant (32, 34, 38 minutes) exceed the 30-minute bound of section 5. No markup from 8 to 12 passes every bound in that implementation. **Row A1 is therefore not reproduced.** The bounds of section 5 are less robust than the spread between two honest implementations, and plan M1 now measures the "after" rows before any data changes (Q3.5).
 
 Level gates in the "after" rows at 1x, for comparison: iron 8 to 9 m, steel 12 to 16 m, black 22 to 27 m, mithril 28 to 37 m, adamant 48 to 62 m, rune 83 m to 1.8 h, dragon 5.4 to 7.9 h. (A3 is slower to level than A1 because the walk to the Slayer master costs fighting time.)
 
@@ -165,7 +169,7 @@ Per hour at the requirement level, rising to the right as the level passes it by
 | Yew | 35 | 2 | 742-787 | 130-138k | 91-97k |
 | Magic tree | 50 | 2 | 643-676 | 199-210k | 201-211k |
 | Shrimp spot | 1 | 3 | 2,323-3,592 | 70-108k | 16-25k (cooked) |
-| Trout spot | 12 | 1 | 2,323-3,592 | 158-244k | 67-104k (cooked) |
+| Trout spot | 12 | 1 | 1,895-2,662 | 129-181k | 55-77k (cooked) (corrected by the critique; the first draft copied the shrimp row) |
 | Lobster spot | 28 | 2 | 2,323-3,592 | 314-485k | 195-302k (cooked) |
 | Shark spot | 45 | 2 | 2,323-3,592 | 569-880k | 423-654k (cooked) |
 
@@ -207,6 +211,8 @@ Crafting for sale, sale value of the output against the sale value of the inputs
 | F12 | Hill giants are the best target from combat level 29 until about level 60: 4,262 of 4,614 kills in row A3. The next monsters are level 45 (two attack at once) and 68 (behind the gate). | `catalog.ts` 460-473 | Stall, not fixed here (7.5) |
 | F13 | The dragon is back 8.35 s after it dies and drops four pieces at 35% each. | `monsterAi.ts` 46-47, `catalog.ts` 478 | Free; drop rate changed, respawn left to Stage 4 |
 | F14 | Steel, black, adamant and dragon gear can only be bought or dropped. | `catalog.ts` 416-428 | Accepted (7.5) |
+| F15 | The model measures a player who only fights. Money from gathering and crafting is out of it. After the design, maple bows earn about 181k GP an hour at level 25 (7.1 item 5), against roughly 66k an hour of scorpion coins at combat 28 and 110k to 167k from hill giants at combat 34 to 57 (critique M-1). A player who gathers and crafts affords each kit 2 to 3 times sooner than routes A1 and A3. That is earning and is accepted. The wait after the level is a property of the fighting routes only. | 4.5, 7.1 item 5 | Accepted, printed by the pacing test (plan M1) |
+| F16 | "Reset" does not start a new game. `resetGameSave` removes the save and reloads, but `beforeunload` (`runtime.ts` 159) runs `saveGameState`, which writes the old character back (`session.ts` 10-35, 94-101). An existing player cannot reach the new start except from a private window. | `session.ts`, `runtime.ts` | Defect, fixed in 7.1 item 1 (found by the critique) |
 
 ### 4.7 Ranged and magic
 
@@ -240,6 +246,10 @@ The windows alone do not prove the design: today's prices and drops with only th
 | For contrast: the new start with today's prices, drops and bounties | 1 | 2 | 2 | 2 | 1 |
 
 Asserted: on A1 the wait is between 10 and 30 minutes from iron to adamant; on A3 it is at least 3 minutes at iron and steel and at least 10 at black and mithril. These bounds, like the windows, were chosen after seeing the model's output (section 14).
+
+**Negative control (added after the critique).** The pacing test also runs the contrast row above: new start, 1x, today's prices, drops and bounties. It asserts that this row *fails* the wait assertion. Without that assertion, nothing shows that the test can tell the two economies apart. The absolute windows cannot do it reliably: the contrast row sits inside them with Slayer and misses them without it (critique 1.1).
+
+**Robustness (critique C-1, H-1).** The slack between the A1 row and its bounds is 2 to 6 minutes (iron 21 in 8-25, steel 31 in 15-35, adamant wait 28 in 10-30). That is less than the 3 to 8 minute spread between two implementations of 4.2. The numbers in this section stay as drafted, because they are the owner's (CALL-3.2). Q3.5 asks whether to assert wide wait bounds and only print the clock windows.
 
 For a real player, assume about double: bronze in the first ten minutes, iron inside half an hour, mithril around an hour and a half, rune in an afternoon, dragon in roughly ten to fifteen hours (CALL-3.2).
 
@@ -331,6 +341,26 @@ Recommendation: **B** (CALL-3.4). Existing saves keep the rate they saved.
 - **B:** commit the model with its own copy of the formulas. Cheaper, and proves nothing about the game.
 - **C:** keep the model out of the repository and trust this document. The next data edit silently invalidates it.
 
+### 6.5 How established games solve the same problems
+
+Added after the critique, at the owner's request: each pacing and economy choice set against the strategy other RPGs and MMOs use for the same problem. Strategies are borrowed. No name, character, place or item is taken from another game, and nothing new is added.
+
+| Problem | Well-known strategy (where it is used) | What this design does | Judgement |
+|---|---|---|---|
+| Starting kit | **Core-verb starter kit**: one weapon, a little food, a few coins; the rest comes from the first quests (most MMOs' starting zones, action RPGs' class starter weapon). Some games instead hand out one item per combat style so the player can try each. | One bronze scimitar, three shrimp, 25 GP (7.1 item 1). | Fits the owner's "begin with almost nothing". It gives up style sampling: magic is closed until 3,200 GP (Q3.9). |
+| Experience rate | **Base rate with an opt-in boost**: base 1x, with boosts as events or account options (bonus-experience weekends; multiplier servers). | New games at 1x, the 10x button stays (6.3). | Fits, and it is the lever that does most of the work (4.3). The boost should read as an option, not a default (Q3.2). |
+| Gear price and resale | **Vendor spread**: shops sell at or above value and buy back at a fraction, typically 25 to 60% (most MMO vendors and general stores). **Price by item level**, so price follows power. | One markup of 10 on equipment, resale unchanged at 65% of list: a 15-to-1 spread (6.1 C). | The markup is a vendor price, a known gold sink. The spread is about four times wider than usual and players will see it on every tooltip ("Shop 52,000 · sell 3,380"). Accepted because it leaves drop resale and every frozen sale test untouched. A **buy-back window** (sell back at the paid price for a few minutes) would soften mistakes, but it needs saved state, so it is not proposed. |
+| Drop rates | **Rare drop with a sure alternative**: about one in a hundred, with a vendor or a craft as the guaranteed route. **Bad-luck protection** (a pity timer) where the drop is the only route. | Gear drops near 1%, the shop and the forge are the sure routes (7.1 item 3). | Fits. No pity timer is needed, because a drop is never the only route. |
+| Resource depletion | **Per-node depletion with respawn** (ore rocks, harvest nodes). Chance-based depletion for multi-yield nodes (trees in several games). **Moving fishing spots** that relocate on a timer instead of emptying. | Today trees and rocks give one item per click. The design makes fishing the same (7.1 item 4). | Hits its hourly-rate goal, but it turns the one low-click activity into one click per fish (critique H-4). Chance-based depletion with a longer respawn reaches the same rate with a third of the clicks (Q3.7). |
+| Gold faucets and sinks | **Balance faucets against recurring sinks**: repair costs, death fees, travel fees, consumables, trade taxes. | Faucets: coins, bounties, quests, sales. Sinks: the shop's equipment price and, slightly, runes and arrows. | Only a one-time sink. Once the kit is owned, gold piles up. Accepted for Stage 3. The recurring sink belongs with the cost of dying in Stage 4 (7.2). |
+| Crafting margins | **Crafting is mainly for experience**, margins are small or negative early, and profit comes at high level or from scarce inputs. | A cap: output sells for at most 2.5 times its direct inputs (7.1 item 5). | An invented rule, and a lenient one, but it closes the 15-fold gilded loop and checks every recipe, including future ones. The ratio does not bound absolute income, so the pacing test prints gathering and crafting GP an hour next to combat income (F15). |
+| Bounties | **Task bonus on top of normal rewards**, often paid in task points or experience rather than coin (slayer-style task masters, daily bounty boards). | Coin bounties kept, five cut to a third: about +70% on the task's coins (7.1 item 8). | Fits. Paying in points would need a points shop, which is new content (Stage 6). |
+| What a level unlocks | **"You can now..." messages on level-up**, and a skill guide listing unlocks per level. | One chat line per level with unlocks, at most three names (7.1 item 7). | Fits; this is the standard strategy. A skill-guide panel would be new UI (Stage 5). |
+| Onboarding, first ten minutes | **Guided opening chain**: a short linear sequence of tasks that teaches each core system and hands out the starter kit as rewards (tutorial islands, starting-zone quest chains with breadcrumbs). | The two start-town quests (1,300 GP), the onboarding card and the first chat lines (7.1 item 1). | The pieces exist, but the tracker points the wrong way: after the first quest it sends the player to Varrock's wizard camp, which attacks a new character in a pack, and hides the start-town Cook quest (critique H-2, Q3.6). Advertising the 200k gold cheat in the first chat lines works against the opening (Q3.8). |
+| Gear crafted or bought | **Craft, buy or loot**: three routes to the same tier, with crafting the cheap one for those who train it. Player-crafted-only economies exist in multiplayer games, where trade fills the gaps. | Smithing for bronze, iron, mithril, rune; shop for all; rare drops (7.1 item 5, 5). | Fits a single-player game. Crafting-only would leave steel, black, adamant and dragon unreachable (F14). |
+| Tiered vendors | **Stock by town or by progress**: each region's shop sells its tier, which makes travel a goal. | Not done: one shop, all items (CALL-3.9). | A good fit for Stage 2's world of places, and it would make "go to the next shrine" a goal. It does not cut income, so it adds to the markup rather than replacing it. Left out for Stage 3 (CALL-3.9); it can be added later without undoing anything here. |
+| Diminishing returns | **Grey monsters** give little or no experience once far below the player. | Not used. | Correctly left out: with no monster between level 28 and 45 (F12), it would make the hill-giant plateau worse. |
+
 ---
 
 ## 7. Design
@@ -340,6 +370,8 @@ Eight changes. Each names the finding it answers.
 ### 7.1 The changes
 
 **1. New game state (F1, F2; CALL-3.3, CALL-3.4).** `createNewGameState()` in `src/state/gameState.ts` returns `createDefaultState()` with: `gp` 25, `xpMultiplier` 1, every equipment slot `null` except `weapon: 'bronze_scimitar'`, and `inventory` `[{ id: 'shrimp', qty: 3 }]`. `createDefaultState()` itself does not change by a byte: it is the base that `migrateLegacySave` overlays a save onto (`save.ts` 32, 35, 65-71, 76) and that most existing tests start from. `session.ts` gains `startNewGame()`, which applies the new-game state to `STATE`; `boot()` calls it only when `loadGameState()` returned `false` (`runtime.ts` 168).
+
+Reset fix (F16, added after the critique): `session.ts` gains a module flag that `resetGameSave` sets before it removes the save keys, and `saveGameState` returns without writing while the flag is set. The `beforeunload` and `visibilitychange` saves during the reload then cannot write the old character back, and the reload reaches `startNewGame()`. This is the only path from an existing profile to the new start.
 
 **2. Shop price for equipment (F4, F11; CALL-3.5).** In `src/data/items.ts`: `GEAR_MARKUP = 10` and `shopPrice(item)`, which returns `item.price * GEAR_MARKUP` for `type: 'equip'` and `item.price` for everything else. `buyItem` (`inventory.ts` 177) and the shop window (`stations.ts` 51, 63, 311, 333, 614) use it. `price`, `SELL_RATIO`, `unitSellPrice` and the rune pack are untouched. Three-piece kits then cost 1,950 (bronze), 5,350, 11,100, 15,900, 21,100, 50,000, 129,000 and 380,000 GP (dragon).
 
@@ -360,6 +392,8 @@ Eight changes. Each names the finding it answers.
 A piece that dropped on one kill in five now drops on about one in a hundred. At the model's kill rates that is one piece of each kind about every 8 to 10 minutes of killing that monster: a lucky break, with the shop as the sure route. The drop roll moves to `rollDrops(typeKey, rand)` in a new pure module `src/state/economy.ts`, with the same order of random draws (`actions.ts` 272-288), so it can be tested and the model can read it.
 
 **4. Fishing spots deplete like every other node (F6; CALL-3.7).** The fishing exception at `actions.ts` 432 goes: a catch depletes the spot, as a cut tree or a mined rock does. Respawn times (`catalog.ts` 495-498) become shrimp 6 s, trout 3 s (a trout site has one spot), lobster 7 s, shark 8 s (today 2, 2, 2.5, 3). The success rule moves, unchanged, to `gatherChance(level, req)` in `economy.ts`.
+
+Feel (critique H-4): a depleted node clears the player's target (`actions.ts` 432-438), so this makes fishing one click per fish, as trees and rocks already are. An alternative reaches the same fish per hour with no rule change: keep the 35% depletion chance and set the respawns to shrimp 17 s, trout 8.5 s, lobster 20 s and shark 23 s. That gives 1,510, 862, 878 and 778 fish an hour at the requirement level, by the formula of 4.2 with the depletion chance applied, and about a third of the clicks. It is four numbers in `RESOURCE_NODES_DEF` and no `actions.ts` edit. The owner chooses (Q3.7).
 
 | Spot | Fish/h today | After | XP/h after | GP/h cooked, after | Nearest other gathering |
 |---|---|---|---|---|---|
@@ -382,27 +416,29 @@ A piece that dropped on one kill in five now drops on about one in a hundred. At
 | Willow / maple / yew / magic bow | 1 log each | 3 / 4 / 5 / 6 logs |
 | Oak shortbow | 1 oak log | unchanged (pinned by `tests/phase1.test.ts` 217-221) |
 
-The rule behind the numbers, enforced by a test over every recipe: **the output sells for at most 2.5 times what the direct inputs sell for.** After the change the worst cases are bronze arrows at exactly 2.5, cooked shrimp 2.33, cooked trout 2.23, yew and magic bows 2.22; smithing is 1.0 to 1.33 over its bars and at most 2.1 over the ore; gilded is 1.39 and 1.44. The one exception is the oak shortbow at 3.05, worth at most 57,000 GP an hour at level 10; it is named in the test with the reason. Crafting for sale then earns, per hour: willow bows 85k, maple bows 181k, yew bows 203k, magic bows 446k, rune platebodies 399k (today 256k, 726k, 1.0 million, 2.7 million and 665k).
+The rule behind the numbers, enforced by a test over every recipe: **the output sells for at most 2.5 times what the direct inputs sell for.** After the change the worst cases are bronze arrows at exactly 2.5 (75 against 30; any one-coin change to an arrow, shaft or feather price fails the test, which is intended), cooked shrimp 2.33, cooked trout 2.23, yew and magic bows 2.22; smithing is 1.0 to 1.33 over its bars and at most 2.1 over the ore; gilded is 1.39 and 1.44. The one exception is the oak shortbow at 3.05, worth at most 57,000 GP an hour at level 10; it is named in the test with the reason. Crafting for sale then earns, per hour: willow bows 85k, maple bows 181k, yew bows 203k, magic bows 446k, rune platebodies 399k (today 256k, 726k, 1.0 million, 2.7 million and 665k).
 
 Effect on the smithing route (skilling minutes at 1x, today then after): bronze 0.8 then 0.7, iron 3.1 then 2.5, mithril 8.8 then 7.4, rune 66 then 41. The extra bars cost seconds; the smelting step adds experience, and the runite bar's requirement falls from 50 to 40, which is where rune gains its 25 minutes. The route's pace is otherwise set by the Mining and Smithing levels, which do not change.
 
-**6. Gold and stack caps during play (F8, Stage 1 review; CALL-3.11).** `economy.ts` exports `MAX_GP` and `MAX_STACK` (both 2,147,483,647, the values `save.ts` 34 and `inventory.ts` 75 use on load, which then import them) and `creditGp(state, amount)`, which adds and clamps to 0..`MAX_GP`.
+**6. Gold cap during play; the stack cap closed by argument (F8, Stage 1 review; CALL-3.11).** `economy.ts` exports `MAX_GP` and `MAX_STACK` (both 2,147,483,647, the values `save.ts` 34 and `inventory.ts` 75 use on load, which then import them) and `creditGp(state, amount)`, which adds and clamps to 0..`MAX_GP`.
 
 | Where | Today | After |
 |---|---|---|
 | Coin drop, quest reward, Slayer bounty, the gold cheat (`actions.ts` 277, `adventure.ts` 438, 499, `cheats.ts` 45) | `gp +=` | `creditGp`: the purse stops at the cap, the excess is lost. A kill or a claim cannot be refused. |
 | Selling (`inventory.ts` 204) | `gp +=` | Refused with "Your coin pouch is full." when the sale would pass the cap. Nothing is removed. |
-| Adding to a stack (`inventory.ts` 37): gather, loot, buy, craft, withdraw, deposit | `qty +=` | `canPlace` is false when the stack has no room for the whole amount; `place` adds at most the room. Buying limits the quantity to the room. |
+| Adding to a stack (`inventory.ts` 37) | `qty +=` | Unchanged (critique M-3). |
+
+The stack half needs no play-time rule. A stack the shop sells cannot reach 2,147,483,647 in any real play: the cheapest, arrow shafts at 2 GP, would cost 4.3 billion GP of lifetime spending, over 8,000 hours at the best income in 4.5 (about 500k GP an hour). A stack that is gathered, looted or crafted grows by at most 15 per action, so reaching the cap takes over 140 million actions. The gold cheat could fund it after about 21,000 uses; cheats are not a boundary (11.1). A hostile save is still clamped on load (Stage 1). Refusing stack additions would edit six frozen paths (`canPlace`, `place`, `buyItem`, `buyRunePack`, `withdraw`, `deposit`) to guard a state no play can reach.
 
 Not reachable in normal play, as the review said. It closes the gap between what a save may hold and what play may produce.
 
-**7. The game says what a level unlocks (CALL-3.12).** A new pure module `src/state/unlocks.ts`: `unlocksAt(skill, level)` reads the tables and returns what first becomes usable at exactly that level: equipment whose `req[skill]` equals it, recipes, resource nodes, prayers and spells. `grantXp` (`playerActions.ts` 53-78) prints one chat line per level gained that has unlocks, naming up to three and counting the rest. The onboarding card (`index.html` 50-58) and the two first-run chat lines (`runtime.ts` 175-180) are rewritten to say what the hero has and where the copper, the anvil and the goblins are. The README's feature list is corrected.
+**7. The game says what a level unlocks (CALL-3.12).** A new pure module `src/state/unlocks.ts`: `unlocksAt(skill, level)` reads the tables and returns what first becomes usable at exactly that level: equipment whose `req[skill]` equals it, recipes, resource nodes, prayers and spells. `grantXp` (`playerActions.ts` 53-78) prints one chat line per level gained that has unlocks, naming up to three and counting the rest. The onboarding card (`index.html` 50-58) and the two first-run chat lines (`runtime.ts` 175-180) are rewritten to say what the hero has and where the copper, the anvil and the goblins are. The README's feature list is corrected. The examine line (`playerActions.ts` 205, "Value: 5200 GP") becomes "Shop 52,000 GP · sells for 3,380 GP" through `shopPrice` and `unitSellPrice`, so it agrees with the shop (critique L-1). Two onboarding changes wait on the owner: what the quest tracker shows after the first quest (Q3.6), and whether a new game's first chat lines advertise the cheat codes (Q3.8).
 
 **8. Five Slayer bounties (F10; CALL-3.14).** In `SLAYER_BANDS` (`adventure.ts` 25-30) the bounty of every band above the first is divided by 3 and rounded: scorpion 900 to 300, dark wizard 1,200 to 400, hill giant 1,800 to 600, moss guardian 3,200 to 1,100, lesser demon 5,500 to 1,800. The goblin band stays at 400 (a frozen test pins it, and it is the new character's first real money). Counts, bounty experience and per-kill experience are unchanged. Slayer then adds about 70% to the coins of the same kills instead of 200%.
 
 ### 7.2 Not changed, with reasons: staying alive (F9; CALL-3.10)
 
-Regeneration, the altar's free heal and death without loss stay. They decide how every fight ends, which is Stage 4's subject ("combat with weight"), and Stage 2's gate simulation is tuned against them (Stage 1-2 design 6.6). The windows of section 5 hold with them as they are; the model includes regeneration. What is lost meanwhile: food stays optional. **Dependency on Stage 4:** decide regeneration, the altar and the cost of dying together, and give food a job.
+Regeneration, the altar's free heal and death without loss stay. They decide how every fight ends, which is Stage 4's subject ("combat with weight"), and Stage 2's gate simulation is tuned against them (Stage 1-2 design 6.6). The windows of section 5 hold with them as they are; the model includes regeneration. What is lost meanwhile: food stays optional, and gold has no recurring sink. Once a player owns the kit they want, gold only accumulates (6.5, critique M-2). **Dependency on Stage 4:** decide regeneration, the altar and the cost of dying together, give food a job, and make the cost of dying the recurring gold sink.
 
 ### 7.3 Not changed: coins and quest rewards
 
@@ -427,12 +463,12 @@ A monster band between level 28 and 45, recipes for the tiers that have none, an
 | `src/state/unlocks.ts` (new) | `unlocksAt`. |
 | `src/state/combat.ts` | `playerAttackProfile(state)` (max hit and accuracy before a special attack), `playerHitChance(accuracy, monsterDef)`, `monsterHitChance(typeKey, state)`; Stage 2's `rollMonsterHit` calls the last one. All three are today's arithmetic, moved. |
 | `src/state/gameState.ts` | `createNewGameState`. |
-| `src/state/inventory.ts`, `adventure.ts`, `cheats.ts`, `save.ts` | Caps; `buyItem` uses `shopPrice`; five bounties in `SLAYER_BANDS`. |
+| `src/state/inventory.ts`, `adventure.ts`, `cheats.ts`, `save.ts` | Gold cap (`creditGp`, the sale refusal); the load clamps read `MAX_GP` and `MAX_STACK`; `buyItem` uses `shopPrice`; five bounties in `SLAYER_BANDS`. |
 | `src/state/monsterAi.ts` | The three timing constants are exported for the model. |
 | `src/engine/actions.ts` | Calls the moved functions; no formula of its own left for hit chance, drops or gather chance. |
 | `src/engine/loop.ts` | Uses `HP_REGEN_PER_SEC` (one line). |
-| `src/engine/session.ts`, `runtime.ts` | `startNewGame`, first-run chat lines. |
-| `src/ui/stations.ts`, `playerActions.ts` | Shop prices shown and charged through `shopPrice`; unlock chat line. |
+| `src/engine/session.ts`, `runtime.ts` | `startNewGame`, the reset guard (F16), first-run chat lines. |
+| `src/ui/stations.ts`, `playerActions.ts` | Shop prices shown and charged through `shopPrice`; unlock chat line; examine line. |
 | `index.html`, `README.md` | Onboarding text, feature list. |
 
 Files that Stage 2 also edits: `src/engine/actions.ts`, `src/state/combat.ts`, `src/state/monsterAi.ts`, `src/engine/session.ts`, `src/engine/loop.ts`, `README.md`. Stage 3 touches no world data (`worldMap.ts`, `placements.ts`, `terrain.ts`, `collision.ts`, `pathfind.ts`) and no Stage 2 test.
@@ -458,7 +494,10 @@ What happens to a version-4 save, field by field:
 | `xpMultiplier` 10 or 1 | Kept as saved (`save.ts` 35). A save without the field keeps today's default of 10, because the default state is unchanged. |
 | Gear owned or worn | Kept. Its resale value is unchanged (`unitSellPrice` is not edited). |
 | Gold owned | Kept. It buys a tenth of the equipment it bought before. |
-| Bars, ore and logs in the bank | Kept. Bars become useful. Ore must now be smelted before forging. |
+| Bars, ore and logs in the bank | Kept. Bars become useful. Ore must now be smelted before forging. Logs make a third to a sixth as many bows above oak (3 to 6 logs each). |
+| Smithing level 35 to 47 | Gilded armour moves to Smithing 46 and 48 and consumes a rune piece, so a player who could forge it from gold ore at 35 or 38 cannot until 46 or 48. This is the one capability Stage 3 takes back (critique M-4). |
+| A Slayer task in progress | Its kill count is kept. If it is one of the five reduced bands, it pays the new bounty when it completes. |
+| `xpMultiplier` 10 with today's progress | Levels keep coming ten times faster, but gear now costs ten times as much and rarely drops. For this player gear comes about twice as fast as at 1x, not ten times (4.3, last row). |
 | A legacy save (`runewilds_save_v2`, `_v3`) with no inventory or equipment field | Gets today's 23-stack kit, as today. Unchanged on purpose: a returning player is not downgraded. |
 | A corrupt main save | As today: backed up, then a new game. The new game is now the new start. |
 
@@ -484,10 +523,10 @@ Tests with fixtures (plan tasks P1, N1):
 | Goal | Proof |
 |---|---|
 | G3.1 | `createNewGameState()`: weapon `bronze_scimitar`, nine other slots `null`, inventory exactly 3 `shrimp`, `gp` 25, `xpMultiplier` 1, hitpoints 10, only the start shrine known, no quest flag set. `createDefaultState()` equals its golden. |
-| G3.2 | `tests/pacing.test.ts` runs the model of `tests/support/pacingModel.ts` against the live tables and the functions of 7.6. For routes A1 and A3 at 1x every tier's kit-worn time is inside its window of section 5, and is never earlier than the level gate. The wait after the level is asserted as section 5 states it: on A1 between 10 and 30 minutes from iron to adamant; on A3 at least 3 minutes at iron and steel and at least 10 at black and mithril. (Without this the test would pass with today's prices and drops.) The smithing route's bronze, iron, mithril and rune times are inside theirs. At 10x, from iron to rune, the kit is worn no earlier than 1.5 times the level gate (the fast mode speeds the levels, not the gear). The test prints the full table of 4.3 so a failure shows the numbers. |
+| G3.2 | `tests/pacing.test.ts` runs the model of `tests/support/pacingModel.ts` against the live tables and the functions of 7.6. For routes A1 and A3 at 1x every tier's kit-worn time is inside its window of section 5, and is never earlier than the level gate. The wait after the level is asserted as section 5 states it: on A1 between 10 and 30 minutes from iron to adamant; on A3 at least 3 minutes at iron and steel and at least 10 at black and mithril. (Without this the test would pass with today's prices and drops.) Negative control: the same wait assertion run on the new start with today's prices, drops and bounties must fail. The bounds are subject to Q3.5. The smithing route's bronze, iron, mithril and rune times are inside theirs. At 10x, from iron to rune, the kit is worn no earlier than 1.5 times the level gate (the fast mode speeds the levels, not the gear). The test prints the full table of 4.3 so a failure shows the numbers. |
 | G3.3 | `tests/economy-invariants.test.ts`: for every recipe, sale value of the output is at most 2.5 times the sale value of the direct inputs, with `fletch_shortbow` the only listed exception. For every item, `shopPrice` is at least `unitSellPrice` (no buy-and-sell profit) and equals `price` for runes, ammunition, food and potions. For every fishing spot, modelled GP per hour of cooked fish, at its requirement level and 21 levels above it, is at most 1.5 times the best rock or tree whose requirement is at most 10 levels higher (today trout, lobster and shark reach 2.0 to 2.6 times; after, 0.6). Every non-boss equipment drop chance is at most 0.02. From the new-game state with no gold, bronze platelegs and a platebody can be made from copper rocks that stand in the start region and outside every aggressive camp (no soft lock). |
 | G3.4 | Every `smith_*` recipe's inputs are bars or, for gilded, a rune piece and gold bars; a state holding only ore cannot forge; a state with the bars can, and gets the same experience as today. Each smelt requirement is at most the lowest forging requirement of its metal. |
-| G3.5 | `creditGp` clamps at `MAX_GP` and at 0 and ignores non-finite amounts. `sellItem` at the cap is refused and removes nothing. A stack at `MAX_STACK` refuses `addItem`, `buyItem`, `deposit` and `withdraw` of one more, and nothing is lost. `registerKill` and `claimQuest` at the cap leave `gp` at `MAX_GP`. `save.ts` and `inventory.ts` contain no literal `2147483647`. |
+| G3.5 | `creditGp` clamps at `MAX_GP` and at 0 and ignores non-finite amounts. `sellItem` at the cap is refused and removes nothing. `registerKill`, `claimQuest` and the gold cheat at the cap leave `gp` at `MAX_GP`. `save.ts` and `inventory.ts` contain no literal `2147483647`. The stack cap in play is closed by the argument of 7.1 item 6 and has no test. |
 | G3.6 | `unlocksAt('attack', 5)` contains the iron scimitar; `('mining', 10)` the iron rock; `('smithing', 9)` the iron platebody recipe; `('prayer', 30)` Protect from Melee; `('magic', 12)` Fire Bolt; a level with nothing returns an empty list; no entry is returned at two different levels of one skill. |
 | G3.7 | The fixtures of section 8. |
 | G3.8 | Before any data change: `playerAttackProfile`, `playerHitChance`, `monsterHitChance`, `rollDrops` and `gatherChance` return, for a table of cases, the values computed from today's expressions; `rollDrops` consumes random numbers in today's order (checked with a recorded sequence). Stage 2's `tests/monster-hit.test.ts` passes unchanged. A source scan finds no hit-chance, drop-roll or gather-chance arithmetic left in `src/engine/actions.ts`. |
@@ -495,6 +534,7 @@ Tests with fixtures (plan tasks P1, N1):
 
 ### 9.2 Needs a human looking at the running game
 
+- Reset from Settings on a profile that has a save: after the reload the hero is a new character, not the old one (F16).
 - New game (reset, or a private window): the hero holds one scimitar and three shrimp; the purse shows 25; the experience button reads 1x; the onboarding card and the first chat lines match 7.1 item 7.
 - Play the first 30 minutes without cheats and write down the minute at which bronze armour, the iron kit and the steel kit are worn. Expected: bronze inside 16 minutes, iron inside 50 (double the windows). This is the only check of the "twice as slow" assumption.
 - The shop shows the marked-up price on the card, on the buy button and in the tooltip; buying charges that amount; the sell price is unchanged; runes and arrows cost what they cost before.
@@ -515,7 +555,8 @@ Existing tests that the changes could touch, and why each stays green: `bulk-buy
 | Item | Source | Decision | How |
 |---|---|---|---|
 | Audit finding 9: smelted bars cannot be used for anything, and smelting gold or runite loses money | `docs/audit/2026-11-13-findings.json`, Stage 1-2 design section 9 | **Fixed in Stage 3** | 7.1 item 5. Every forging recipe takes bars. Gold bars feed gilded armour. A runite bar sells for 507 against 403 for the ore, and five of them make a platebody that sells for 3,380. |
-| The gp and stack cap is applied only on load | Stage 1-2 design section 9.1 | **Fixed in Stage 3** | 7.1 item 6. |
+| The gp and stack cap is applied only on load | Stage 1-2 design section 9.1 | **Fixed in Stage 3** (gold); **closed by argument** (stacks) | 7.1 item 6. Gold is capped at every gain. A stack cannot reach the cap in play once gold is capped, and the load clamp stays. |
+| "Reset" writes the old character back during the reload (F16) | Found by the Stage 3 critique | **Fixed in Stage 3** | 7.1 item 1, reset guard. |
 | Audit finding 6 (shop arbitrage), second half: "reprice crafted outputs" | Stage 1-2 design 5.6, CALL-2 | **Closed in Stage 3** | The shop block from Stage 1 stays; the 2.5 rule of G3.3 bounds what crafting can earn from gathered inputs, which the block did not cover. |
 
 Deferred again, in writing:
@@ -562,6 +603,8 @@ Trust boundary: the `localStorage` read, unchanged. Cheating is not a boundary: 
 | R10 | The level-up unlock line prints a wall of text (Attack 1, Defence 1 and level 70 to 75 each match many items), or prints save-derived text as HTML. |
 | R11 | A hostile save sets `gp` or a stack to the cap to probe the new arithmetic. |
 | R12 | A name or item taken from another game is added while "fixing" a content gap. |
+| R13 | A player resets to try the new start and gets the old character back (F16). |
+| R14 | The pacing test fails only at the end of the stage, because the "after" rows were never measured before the data changed (critique C-1). |
 
 ### 11.3 What are we going to do about it?
 
@@ -569,16 +612,18 @@ Trust boundary: the `localStorage` read, unchanged. Cheating is not a boundary: 
 |---|---|
 | R1 | Mitigate: one call site, guarded by the load result; `createDefaultState()` pinned by a golden; five save fixtures (section 8). |
 | R2 | Accept, with reason, and disclose (CALL-3.5): owned gear, gold and resale values are untouched; only future shop purchases of equipment change. The README says so. No compensation is paid, because it would be new free gold. |
-| R3 | Mitigate at the two places gold and stacks grow: `creditGp` and `place` (7.1 item 6). Internal code trusts them and does not re-check. |
+| R3 | Mitigate gold at the one place it grows: `creditGp` (7.1 item 6). Internal code trusts it and does not re-check. Stacks: accepted, because play cannot reach the cap (7.1 item 6), and a save is clamped on load. |
 | R4 | Mitigate: the recipe-ratio test and the `shopPrice >= unitSellPrice` test run over every recipe and item, so a later addition is checked too. |
 | R5 | Mitigate: bare hands can fight (`combat.ts`, `weaponClass` returns `unarmed`); bronze armour needs no gold; the no-soft-lock test of G3.3. Accept the remainder: a player can sell everything and must then earn 450 GP for a scimitar, which chickens pay in a few minutes. |
 | R6 | Mitigate: the moves are separate commits with value tables and a recorded random sequence written first (G3.8); data changes come after. |
 | R7 | Mitigate: the model calls the game's functions and reads its tables (6.4 A). Accept the remainder, stated in 4.2: it is an expected-value model of one play style, and the human check in 9.2 is the only measurement of a real player. |
 | R8 | Mitigate: the plan's first task rebases on the merged Stage 2 and the tuning task re-runs the model. The knobs, if a window or a wait bound fails, are `GEAR_MARKUP` between 8 and 12, then the gear drop chances by one common factor; for the fishing bound only, the four fishing respawn times between 2 and 10 s. No formula is touched and no bound is moved. The smithing route and the 2.5 rule have no knob: if they fail, or no value in those ranges works, the stage stops and returns to the owner. |
-| R9 | Mitigate: sales and stack additions are refused with a plain message and change nothing; only gold that arrives without a player action (loot, reward, bounty) is clamped. |
+| R9 | Mitigate: a sale at the cap is refused with a plain message and changes nothing; only gold that arrives without a player action (loot, reward, bounty) is clamped. Stack additions are not refused. |
 | R10 | Mitigate: at most three names and a count per line; level 1 prints nothing (nothing is "gained" at level 1). Every name comes from the compiled tables, never from the save. |
 | R11 | Already mitigated on load by Stage 1; the play-time caps mean the next gain cannot pass it. A test starts from a state at the cap. |
 | R12 | Mitigate: Stage 3 adds no content, and the content-freeze test fails if an id or a name appears. |
+| R13 | Mitigate: the reset guard (7.1 item 1) and a human check (9.2). |
+| R14 | Mitigate: plan M1 runs the A1 and A3 rows with the design's parameters injected, before any data task, and stops if a bound fails. The purchase and Slayer rules are written in 4.2, so two implementations agree on what to compute. |
 
 ### 11.4 Did we do a good enough job?
 
@@ -591,16 +636,16 @@ By the proofs of section 9. In particular: for saves, the two goldens and three 
 | # | Proposal | Recommendation | Where |
 |---|---|---|---|
 | CALL-3.1 | The essence list is the Stage 1-2 one. Stage 3 edits no formula, price, requirement, coin drop, quest reward or XP value. | Accept. | 1 |
-| CALL-3.2 | The curve: the windows of section 5 at 1x (bronze by 8 minutes, iron by 25, mithril by 60, rune by 2.5 hours, dragon by 9 hours, model-optimal; about double for a real player), and the wait after each level (10 to 30 minutes without Slayer; 3 to 18 with it, up to mithril). | Accept. The levels themselves allow nothing much slower without changing the XP curve or combat speed. The windows were drawn around the model's output, not set beforehand. | 5 |
+| CALL-3.2 | The curve: the windows of section 5 at 1x (bronze by 8 minutes, iron by 25, mithril by 60, rune by 2.5 hours, dragon by 9 hours, model-optimal; about double for a real player), and the wait after each level (10 to 30 minutes without Slayer; 3 to 18 with it, up to mithril). | Accept the curve. The levels themselves allow nothing much slower without changing the XP curve or combat speed. The windows were drawn around the model's output, not set beforehand, and an independent implementation misses one window and three wait bounds (critique C-1). What the test asserts is Q3.5. | 5 |
 | CALL-3.3 | A new game starts with a bronze scimitar in hand, 3 cooked shrimp and 25 GP. | Accept. Alternatives: nothing at all (the first ten minutes become punching chickens for 450 GP), or today's melee kit (bronze stays free). | 6.2, 7.1 |
 | CALL-3.4 | New games start at 1x experience. The 10x button stays in Settings. Existing saves keep their rate. | Accept. This one decision does most of the work: it moves rune from 17 to about 70 minutes on its own. Without it nothing else in this document holds. | 6.3 |
-| CALL-3.5 | The shop sells equipment at 10 times list price. It still buys at 65% of list, so resale is 6.5% of the shop price. Runes, ammunition, food and potions are not marked up. Existing players keep their gear and gold; their gold buys a tenth of the equipment it bought before. What it buys: the gear stops arriving with the level. It does not lengthen the game (rune and dragon are level-bound either way). | Accept at 10, knowing the trade: a tenfold price rise for a wait of 13 to 28 minutes per tier without Slayer and 4 to 18 with it. At 8 the waits are about a third shorter; at 12 two windows are missed. | 6.1, 7.1 |
+| CALL-3.5 | The shop sells equipment at 10 times list price. It still buys at 65% of list, so resale is 6.5% of the shop price. Runes, ammunition, food and potions are not marked up. Existing players keep their gear and gold; their gold buys a tenth of the equipment it bought before. What it buys: the gear stops arriving with the level. It does not change when dragon gear arrives, which is level-bound either way. It does delay the middle tiers for a player who only fights: in the critique's model, the shop-only route wears mithril 31 minutes and rune about an hour later than the same route at list price (critique H-6). | Accept at 10, knowing the trade: a tenfold price rise for a wait of 13 to 28 minutes per tier without Slayer and 4 to 18 with it. At 8 the waits are about a third shorter; at 12 two windows are missed. | 6.1, 7.1 |
 | CALL-3.6 | Gear drops become rare: about one kill in a hundred per piece instead of one in five; the dragon one in twenty per piece instead of one in three. | Accept. Drops stay a lucky break; selling them stops being 71% of income. | 7.1 |
-| CALL-3.7 | Fishing spots empty after each catch and return in 3 to 8 seconds, like trees and rocks. | Accept. The alternative is to cut the price of eight fish items by about two thirds, which also makes bought food cheaper. | 7.1 |
-| CALL-3.8 | Smithing takes bars (audit finding 9). Mithril and rune pieces take one to two more bars; gilded armour is made from the rune piece plus gold bars at Smithing 46 and 48; bows above oak take 3 to 6 logs. Rule: nothing sells for more than 2.5 times its inputs. | Accept. | 7.1 |
+| CALL-3.7 | Fishing spots empty after each catch and return in 3 to 8 seconds, like trees and rocks. | Accept the rate. How the spot runs out is Q3.7: emptying on every catch means one click per fish; keeping the 35% chance with 17 / 8.5 / 20 / 23 s respawns gives the same rate with a third of the clicks and changes data only. The other alternative is to cut the price of eight fish items by about two thirds, which also makes bought food cheaper. | 7.1 |
+| CALL-3.8 | Smithing takes bars (audit finding 9). Mithril and rune pieces take one to two more bars; gilded armour is made from the rune piece plus gold bars at Smithing 46 and 48; bows above oak take 3 to 6 logs. Rule: nothing sells for more than 2.5 times its inputs. Existing players at Smithing 35 to 47 lose gilded armour from gold ore until 46 or 48, and banked logs make fewer bows (section 8). | Accept. | 7.1 |
 | CALL-3.9 | The shop keeps selling every item everywhere. No stock by place, level or shrine. | Accept: the price now does that job. Stock by shrine can be added later without undoing anything here. | 6.1 |
 | CALL-3.10 | Regeneration, the altar's free heal and death without loss are not changed in Stage 3. | Accept, as a written deferral to Stage 4. | 7.2 |
-| CALL-3.11 | Gold and stacks are capped in play at 2,147,483,647: loot and rewards stop at the cap; a sale or a stack addition that would pass it is refused. | Accept. | 7.1 |
+| CALL-3.11 | Gold is capped in play at 2,147,483,647: loot and rewards stop at the cap; a sale that would pass it is refused. Stacks keep their cap on load only, because play cannot reach it once gold is capped. | Accept. | 7.1 |
 | CALL-3.12 | The chat says what a level unlocks; the onboarding card and first messages describe the new start. | Accept. | 7.1 |
 | CALL-3.13 | Requirements of the strongest low-requirement items (Fury, Berserker Ring, Fire Cape, Staff of Fire) are left alone; price gates them. | Accept. Adding requirements would change items players already wear. | 7.4 |
 | CALL-3.14 | Five Slayer bounties are divided by 3 (scorpion 300, dark wizard 400, hill giant 600, moss guardian 1,100, lesser demon 1,800); the goblin bounty, coin drops and quest rewards are unchanged. | Accept. With today's bounties a Slayer user waits 4 to 6 minutes for any kit whatever the shop charges; with this, 16 to 18 at black and mithril. If refused, the stage still holds for players who ignore Slayer, and the wait bound for the Slayer route drops to 3 minutes. | 7.1, 7.3 |
@@ -619,7 +664,8 @@ By the proofs of section 9. In particular: for saves, the two goldens and three 
 | Existing players dislike the price change. | Medium | Complaint, not breakage. | Disclosed in CALL-3.5 and the README; owned gear and gold untouched. |
 | The 2.5 rule blocks a recipe Stage 6 wants. | Low | A test fails on purpose. | The rule is one number in one test; the exception list names its reasons. |
 | Moving formulas out of `actions.ts` conflicts with late Stage 2 edits. | Medium | Rebase work. | Stage 3 starts only after the Stage 2 merge; the moves are the first code tasks. |
-| Fishing feels worse (the spot disappears after every catch). | Low | Feel, judged by eye. | Human check; the fallback is the price cut of CALL-3.7. |
+| Fishing feels worse (the spot disappears after every catch, one click per fish). | Medium | Feel, judged by eye. | Q3.7 (b) avoids it; otherwise the human check, with Q3.7 (b) as the fallback. |
+| The pacing bounds fail on the real model (critique C-1). | High | The stage stops at M1's dry run. | The owner answers Q3.5 before the data tasks. |
 
 ---
 
@@ -634,6 +680,7 @@ By the proofs of section 9. In particular: for saves, the two goldens and three 
 - Ranged and magic through the tiers (4.7), and the effect of amulets, rings, capes, prayers and special attacks on the melee times.
 - The start-town quests' time cost (90 s each in the model) and the Slayer walk (10 s per task).
 - That the depleted look of a fishing spot reads well when it happens on every catch.
+- The critique's independent model (a scratch script, not committed) reproduced the "today" rows and the gathering table, but not row A1. It did not implement Slayer, so rows A3 and T1/T3 are checked by nobody. The reset defect (F16) was found by reading; that the browser fires `beforeunload` on `location.reload()` is standard behaviour, not observed here.
 
 ---
 
@@ -645,3 +692,11 @@ Only questions whose answer changes what is built.
 - **Q3.2.** CALL-3.4: should the 10x button stay where it is in Settings, or move next to the cheat codes so it reads as a fast mode?
 - **Q3.3.** CALL-3.3: bronze scimitar in hand (proposed), or truly nothing?
 - **Q3.4.** CALL-3.2: is a model-optimal 5 to 8 hours to dragon gear (10 to 15 for a real player) the length you want for the present content? Making it longer needs a slower level curve or slower combat, which this stage may not touch.
+
+Added by the critique (`2026-11-14-start-pacing-critique.md`, section 4). The ones with a real trade-off come first.
+
+- **Q3.5.** CALL-3.2, what the pacing test asserts. The minute windows of section 5 fit one script's output with 2 to 6 minutes of slack, and a second implementation misses one window and three wait bounds. Options: (a) keep the windows and waits as drafted and let plan M1's dry run decide whether they hold; (b) assert only the wait between reaching a level and wearing its gear, on wide bounds (5 to 45 minutes from iron to adamant on the shop-only route; at least 3 minutes at iron to mithril with Slayer), print the minute windows without asserting them, and keep the negative control. **Recommendation: (b).** It still fails today's economy, and it does not break whenever the model's arithmetic moves by a few percent.
+- **Q3.7.** CALL-3.7, how a fishing spot runs out. (a) As designed: it empties after every fish, so one click per fish. (b) It keeps today's 35% chance and stays empty longer (shrimp 17 s, trout 8.5 s, lobster 20 s, shark 23 s): the same fish per hour, a third of the clicks, four numbers changed and no rule change. **Recommendation: (b).**
+- **Q3.6.** After the first quest, the quest tracker points at the Varrock quest, whose kill step is a wizard camp that will attack a new character in a pack. The start-town Cook quest is not shown until five quests later. Fixing it means replacing one frozen test (`tests/phase3-content.test.ts` 41). **Recommendation:** allow that one replacement, and have the tracker show open quests in already-discovered regions first.
+- **Q3.8.** The first chat lines of every game advertise `gold200k` (200,000 GP) and `skills10`. **Recommendation:** do not print that line in a new game; the codes stay in Settings, and returning players still see it.
+- **Q3.9.** Magic needs a staff, and the only one a new character can wear costs 3,200 GP after the markup and has no recipe, so a new character cannot cast for roughly the first half hour. Ranged opens with a fletched oak shortbow at Smithing 5 and Woodcutting 10. **Recommendation:** accept it and say so in the README; the essence list does not include the three styles.
