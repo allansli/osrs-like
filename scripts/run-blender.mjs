@@ -33,12 +33,12 @@ const BUILD_SCRIPTS = {
 if (mode === 'open') {
   const blendFile = path.resolve(`blender/${argTarget}.blend`);
   console.log(`[Blender] Launching Blender GUI with ${blendFile}...`);
-  const child = spawn(blenderExe, [blendFile], { detached: true, stdio: 'ignore' });
+  const child = spawn(blenderExe, ['--disable-autoexec', blendFile], { detached: true, stdio: 'ignore' });
   child.unref();
 } else if (mode === 'export') {
   const blendFile = path.resolve(`blender/${argTarget}.blend`);
   const exportScript = path.resolve('scripts/blender/export_from_blend.py');
-  const res = spawnSync(blenderExe, ['--background', blendFile, '--python', exportScript], {
+  const res = spawnSync(blenderExe, ['--background', '--disable-autoexec', blendFile, '--python', exportScript], {
     stdio: 'inherit'
   });
   process.exit(res.status ?? 0);
@@ -47,7 +47,7 @@ if (mode === 'open') {
     const scriptFile = path.resolve(scriptRel);
     if (!fs.existsSync(scriptFile)) continue;
     console.log(`[Blender] Building ${key} (${scriptRel})...`);
-    const res = spawnSync(blenderExe, ['--background', '--python', scriptFile], {
+    const res = spawnSync(blenderExe, ['--background', '--disable-autoexec', '--python', scriptFile], {
       stdio: 'inherit'
     });
     if ((res.status ?? 0) !== 0) {
@@ -57,7 +57,7 @@ if (mode === 'open') {
 } else {
   const scriptRel = fs.existsSync(mode) ? mode : (BUILD_SCRIPTS[mode] || BUILD_SCRIPTS.hero);
   const scriptFile = path.resolve(scriptRel);
-  const res = spawnSync(blenderExe, ['--background', '--python', scriptFile], {
+  const res = spawnSync(blenderExe, ['--background', '--disable-autoexec', '--python', scriptFile], {
     stdio: 'inherit'
   });
   process.exit(res.status ?? 0);
