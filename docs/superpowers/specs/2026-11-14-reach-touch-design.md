@@ -1,5 +1,14 @@
 # Reach, touch controls: design
 
+> **Approved by the owner on 2026-11-14** ("vá com tudo recomendado"), design and plan, after the independent critique. The owner took the main session's recommendation on every decision. Where this note and section text differ, this note wins:
+> - CALL-7.15 (warnings on a thumb): **option (c)**. During a live warning on the hero only, a finger acts the moment it touches the ground instead of on lift. Wind-up times are not lengthened and mouse play is unchanged. This must be built into the recogniser before task T1. The reaction log stays, and "15% for everyone" remains the fallback only if the device measurement still fails.
+> - CALL-7.5: the backpack is 7 by 4 on every phone.
+> - CALL-7.9 ("Move this save"): yes.
+> - CALL-7.11 (seven taps to reveal the hidden tools): **no**. The Stage 3 decision stands; measuring uses the `?measure` flag.
+> - CALL-7.2 (no joystick), CALL-7.8 (page zoom off), CALL-7.10 (ask before selling gear on touch), CALL-7.12 (buzz), CALL-7.13 a (full-screen button) and b (home-screen shortcut, first to cut if the stage runs long), CALL-7.14 (pause card), CALL-7.16 (phones start on Low), CALL-7.6 (smallest screen about 360 by 512, confirmed on the device), CALL-7.1, 7.3, 7.4, 7.7, 7.18, 7.19: yes as recommended.
+> - CALL-7.17 (reference phone and tablet, and whether an iPhone is available): not answered yet; it blocks step H-0, not the approval.
+> Code starts after Stages 3, 4 and 5 have landed; task R0 re-checks the premises first.
+
 Date: 2026-11-14. Branch: `feat/reach`, at `15b3667` (main with Stages 1 and 2 merged). All line numbers refer to that commit, and every one is given with a symbol name, because Stages 3, 4 and 5 land before this stage and will move the lines.
 
 Status: proposal. The owner has not reviewed any of it. Every decision marked **CALL-7.n** is the lead's proposal and needs the owner's check (section 14). Nothing here has been agreed. An independent critique (`2026-11-14-reach-touch-critique.md`) has been applied; its finding ids (C1, H1 to H12, M1 to M15, L1 to L14) are cited where the text changed.
