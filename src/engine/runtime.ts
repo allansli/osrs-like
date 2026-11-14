@@ -1,5 +1,6 @@
 // @ts-nocheck
 import * as THREE from 'three';
+import { TICK_SEC, player, camState, _tmpScratchVec, _camTargetVec, _lookTargetVec, telemetryInfo, G } from './context';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { ITEMS, TIER_COLORS, isStackableInBackpack, unitSellPrice } from '../data/items';
 import { SKILLS_META, OSRS_XP_TABLE, getLevelForXp } from '../data/skills';
@@ -84,7 +85,6 @@ import {
   itemCompareHtml
 } from '../ui/stations';
 
-const TICK_SEC = 0.6;
 
 
 // ============================================================================
@@ -1057,54 +1057,6 @@ function resetGameSave() {
 // ============================================================================
 // 7. 2026 SMOOTH 3D ENGINE, GLSL SKY & WATER SHADERS, PROCEDURAL TEXTURES
 // ============================================================================
-let scene, camera, renderer, sunLight, ambientLight, hemiLight;
-let terrainMesh, waterMesh, skyDomeMesh, grassInstanced;
-let waterUniforms, skyUniforms;
-const worldInteractiveObjects = [];
-const monstersList = [];
-const resourceNodesList = [];
-const npcList = [];
-const projectilesList = [];
-const vfxList = [];
-const swayingFoliage = [];
-
-const player = {
-  pos: new THREE.Vector3(-4, 0, -3),
-  vel: new THREE.Vector3(0, 0, 0),
-  yaw: 0.48,
-  targetPos: null,
-  targetEntity: null,
-  isMoving: false,
-  isGrounded: true,
-  jumpVel: 0,
-  animTime: 0,
-  attackAnim: 0,
-  spinAnim: 0,
-  actionCooldown: 0,
-  downed: false,
-  downedTimer: 0,
-  meshGroup: null,
-  currentSpeed: 0,
-  yawVelocity: 0,
-  bankRoll: 0,
-  capeAngleX: -0.12,
-  capeAngleY: 0,
-  capeAngleZ: 0,
-  activeWeaponKind: 'scimitar',
-  parts: {}
-};
-
-const camState = {
-  yaw: 0.48,
-  manualOffset: 0.65,
-  pitch: 0.18,
-  distance: 5.4,
-  currentLookAt: new THREE.Vector3(-4, 2, -3),
-  shake: 0,
-  isDragging: false,
-  lastMouseX: 0,
-  lastMouseY: 0
-};
 
 
 function getBiomeColor(x, z, h) {
@@ -1120,9 +1072,6 @@ function getBiomeColor(x, z, h) {
   return grass[band];
 }
 
-const _tmpScratchVec = new THREE.Vector3();
-const _camTargetVec = new THREE.Vector3();
-const _lookTargetVec = new THREE.Vector3();
 
 type QualityTier = 'performance' | 'balanced' | 'high' | 'ultra';
 let currentQuality: QualityTier = 'balanced';
@@ -1141,18 +1090,18 @@ function getQualityDpr(tier: QualityTier): number {
 function applyQualityTier(tier: QualityTier): void {
   currentQuality = tier;
   const dpr = getQualityDpr(tier);
-  if (renderer && typeof window !== 'undefined') {
-    renderer.setPixelRatio(dpr);
-    renderer.setSize(window.innerWidth, window.innerHeight);
+  if (G.renderer && typeof window !== 'undefined') {
+    G.renderer.setPixelRatio(dpr);
+    G.renderer.setSize(window.innerWidth, window.innerHeight);
     if (tier === 'performance') {
-      renderer.shadowMap.enabled = false;
+      G.renderer.shadowMap.enabled = false;
     } else {
-      renderer.shadowMap.enabled = true;
-      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-      if (sunLight) {
-        sunLight.castShadow = true;
+      G.renderer.shadowMap.enabled = true;
+      G.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      if (G.sunLight) {
+        G.sunLight.castShadow = true;
         const res = tier === 'ultra' ? 2048 : (tier === 'high' ? 2048 : 1024);
-        sunLight.shadow.mapSize.set(res, res);
+        G.sunLight.shadow.mapSize.set(res, res);
       }
     }
   }
@@ -1170,8 +1119,8 @@ function cycleGraphicsQuality(): void {
 
 function toggleOutlines(): void {
   outlinesEnabled = !outlinesEnabled;
-  if (scene) {
-    scene.traverse((obj) => {
+  if (G.scene) {
+    G.scene.traverse((obj) => {
       if (obj.userData?.isOutline) {
         obj.visible = outlinesEnabled;
       }
@@ -1188,15 +1137,6 @@ function syncGraphicsButtons(): void {
   if (oBtn) oBtn.textContent = outlinesEnabled ? 'Outlines: On' : 'Outlines: Off';
 }
 
-const telemetryInfo = {
-  gpuName: 'Detecting GPU...',
-  vendor: '',
-  isHardwareAccelerated: true,
-  fps: 60,
-  frameTimeMs: 16.6
-};
-let frameCounter = 0;
-let lastFpsTime = performance.now();
 
 function initGpuTelemetry(gl: WebGLRenderingContext | WebGL2RenderingContext): void {
   try {
@@ -1235,59 +1175,59 @@ function initGpuTelemetry(gl: WebGLRenderingContext | WebGL2RenderingContext): v
 
 function init3DEngine() {
   const container = document.getElementById('game-canvas-container');
-  scene = new THREE.Scene();
-  scene.fog = new THREE.FogExp2(0x9ab0c2, 0.0028);
+  G.scene = new THREE.Scene();
+  G.scene.fog = new THREE.FogExp2(0x9ab0c2, 0.0028);
 
-  camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.5, 360);
+  G.camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.5, 360);
 
-  renderer = new THREE.WebGLRenderer({
+  G.renderer = new THREE.WebGLRenderer({
     antialias: true,
     powerPreference: 'high-performance',
     precision: 'highp',
     stencil: false,
     depth: true
   });
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setPixelRatio(getQualityDpr(currentQuality));
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-  renderer.outputColorSpace = THREE.SRGBColorSpace;
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.05;
-  renderer.domElement.id = 'game-canvas';
-  container.appendChild(renderer.domElement);
+  G.renderer.setSize(window.innerWidth, window.innerHeight);
+  G.renderer.setPixelRatio(getQualityDpr(currentQuality));
+  G.renderer.shadowMap.enabled = true;
+  G.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  G.renderer.outputColorSpace = THREE.SRGBColorSpace;
+  G.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  G.renderer.toneMappingExposure = 1.05;
+  G.renderer.domElement.id = 'game-canvas';
+  container.appendChild(G.renderer.domElement);
 
-  initGpuTelemetry(renderer.getContext());
+  initGpuTelemetry(G.renderer.getContext());
   applyQualityTier('balanced');
 
-  hemiLight = new THREE.HemisphereLight(0xa5b8c9, 0x333d32, 0.52);
-  scene.add(hemiLight);
+  G.hemiLight = new THREE.HemisphereLight(0xa5b8c9, 0x333d32, 0.52);
+  G.scene.add(G.hemiLight);
 
-  ambientLight = new THREE.AmbientLight(0x617282, 0.28);
-  scene.add(ambientLight);
+  G.ambientLight = new THREE.AmbientLight(0x617282, 0.28);
+  G.scene.add(G.ambientLight);
 
-  sunLight = new THREE.DirectionalLight(0xf8f5ed, 1.15);
-  sunLight.position.set(45, 68, 35);
-  sunLight.castShadow = true;
-  sunLight.shadow.mapSize.width = 2048;
-  sunLight.shadow.mapSize.height = 2048;
-  sunLight.shadow.camera.near = 5;
-  sunLight.shadow.camera.far = 170;
+  G.sunLight = new THREE.DirectionalLight(0xf8f5ed, 1.15);
+  G.sunLight.position.set(45, 68, 35);
+  G.sunLight.castShadow = true;
+  G.sunLight.shadow.mapSize.width = 2048;
+  G.sunLight.shadow.mapSize.height = 2048;
+  G.sunLight.shadow.camera.near = 5;
+  G.sunLight.shadow.camera.far = 170;
   const d = 54;
-  sunLight.shadow.camera.left = -d;
-  sunLight.shadow.camera.right = d;
-  sunLight.shadow.camera.top = d;
-  sunLight.shadow.camera.bottom = -d;
-  sunLight.shadow.bias = -0.0004;
-  scene.add(sunLight);
-  scene.add(sunLight.target);
+  G.sunLight.shadow.camera.left = -d;
+  G.sunLight.shadow.camera.right = d;
+  G.sunLight.shadow.camera.top = d;
+  G.sunLight.shadow.camera.bottom = -d;
+  G.sunLight.shadow.bias = -0.0004;
+  G.scene.add(G.sunLight);
+  G.scene.add(G.sunLight.target);
 
   buildSkyDomeShader();
   buildTerrainAndWater();
   buildAllCitiesAndLandmarks();
   buildPlayerCharacter();
   spawnAllResourcesAndMonsters();
-  sealAlbedoUvs(scene);
+  sealAlbedoUvs(G.scene);
 
   window.addEventListener('resize', onWindowResize);
   setupInputHandlers();
@@ -1295,7 +1235,7 @@ function init3DEngine() {
 
 // Custom GLSL Atmospheric Sky Dome with Volumetric Clouds & Sun Disc
 function buildSkyDomeShader() {
-  skyUniforms = {
+  G.skyUniforms = {
     uTime: { value: 0 },
     uTopColor: { value: new THREE.Color(PALETTE.skyZenith) },
     uMidColor: { value: new THREE.Color(PALETTE.skyMid) },
@@ -1304,7 +1244,7 @@ function buildSkyDomeShader() {
 
   const skyGeo = new THREE.SphereGeometry(290, 24, 16);
   const skyMat = new THREE.ShaderMaterial({
-    uniforms: skyUniforms,
+    uniforms: G.skyUniforms,
     side: THREE.BackSide,
     depthWrite: false,
     vertexShader: `
@@ -1328,33 +1268,33 @@ function buildSkyDomeShader() {
     `
   });
 
-  skyDomeMesh = new THREE.Mesh(skyGeo, skyMat);
-  scene.add(skyDomeMesh);
+  G.skyDomeMesh = new THREE.Mesh(skyGeo, skyMat);
+  G.scene.add(G.skyDomeMesh);
 }
 
 function cycleTimeOfDay() {
   STATE.timeOfDay = (STATE.timeOfDay + 1) % 3;
   const btn = document.getElementById('time-of-day-btn');
   if (STATE.timeOfDay === 0) {
-    skyUniforms.uTopColor.value.setHex(0x253545);
-    skyUniforms.uMidColor.value.setHex(0x5a6875);
-    skyUniforms.uHorizonColor.value.setHex(0x8a8a92);
-    scene.fog.color.setHex(0x8a8a92);
-    scene.fog.density = 0.0030;
+    G.skyUniforms.uTopColor.value.setHex(0x253545);
+    G.skyUniforms.uMidColor.value.setHex(0x5a6875);
+    G.skyUniforms.uHorizonColor.value.setHex(0x8a8a92);
+    G.scene.fog.color.setHex(0x8a8a92);
+    G.scene.fog.density = 0.0030;
     if (btn) btn.textContent = 'Golden Hour';
   } else if (STATE.timeOfDay === 1) {
-    skyUniforms.uTopColor.value.setHex(0x2e4359);
-    skyUniforms.uMidColor.value.setHex(0x5f788e);
-    skyUniforms.uHorizonColor.value.setHex(0x9ab0c2);
-    scene.fog.color.setHex(0x9ab0c2);
-    scene.fog.density = 0.0028;
+    G.skyUniforms.uTopColor.value.setHex(0x2e4359);
+    G.skyUniforms.uMidColor.value.setHex(0x5f788e);
+    G.skyUniforms.uHorizonColor.value.setHex(0x9ab0c2);
+    G.scene.fog.color.setHex(0x9ab0c2);
+    G.scene.fog.density = 0.0028;
     if (btn) btn.textContent = 'High Noon';
   } else {
-    skyUniforms.uTopColor.value.setHex(0x090e14);
-    skyUniforms.uMidColor.value.setHex(0x141d27);
-    skyUniforms.uHorizonColor.value.setHex(0x1e2936);
-    scene.fog.color.setHex(0x1e2936);
-    scene.fog.density = 0.0042;
+    G.skyUniforms.uTopColor.value.setHex(0x090e14);
+    G.skyUniforms.uMidColor.value.setHex(0x141d27);
+    G.skyUniforms.uHorizonColor.value.setHex(0x1e2936);
+    G.scene.fog.color.setHex(0x1e2936);
+    G.scene.fog.density = 0.0042;
     if (btn) btn.textContent = 'Starry Night';
   }
 }
@@ -1380,14 +1320,14 @@ function buildTerrainAndWater() {
   assignGroundUvs(geo);
 
   const mat = terrainMaterial();
-  terrainMesh = new THREE.Mesh(geo, mat);
-  terrainMesh.receiveShadow = true;
-  terrainMesh.userData = { type: 'ground' };
-  scene.add(terrainMesh);
-  worldInteractiveObjects.push(terrainMesh);
+  G.terrainMesh = new THREE.Mesh(geo, mat);
+  G.terrainMesh.receiveShadow = true;
+  G.terrainMesh.userData = { type: 'ground' };
+  G.scene.add(G.terrainMesh);
+  G.worldInteractiveObjects.push(G.terrainMesh);
 
   // Custom GLSL Animated Water Shader with Specular Sun Glint & Ripples
-  waterUniforms = {
+  G.waterUniforms = {
     uTime: { value: 0 },
     uDeepColor: { value: new THREE.Color(PALETTE.water) },
     uShallowColor: { value: new THREE.Color(PALETTE.foam) }
@@ -1396,7 +1336,7 @@ function buildTerrainAndWater() {
   const waterGeo = new THREE.PlaneGeometry(size, size, 24, 24);
   waterGeo.rotateX(-Math.PI / 2);
   const waterMat = new THREE.ShaderMaterial({
-    uniforms: waterUniforms,
+    uniforms: G.waterUniforms,
     transparent: true,
     vertexShader: `
       uniform float uTime;
@@ -1426,9 +1366,9 @@ function buildTerrainAndWater() {
       }
     `
   });
-  waterMesh = new THREE.Mesh(waterGeo, waterMat);
-  waterMesh.position.y = -0.34;
-  scene.add(waterMesh);
+  G.waterMesh = new THREE.Mesh(waterGeo, waterMat);
+  G.waterMesh.position.y = -0.34;
+  G.scene.add(G.waterMesh);
 
   // Arched Wooden & Stone Footbridge over the River at (28, 0)
   buildRiverBridge(28, 0);
@@ -1441,7 +1381,7 @@ function buildTerrainAndWater() {
   const bladeGeo = new THREE.ShapeGeometry(bladeShape, 1);
   const bladeMat = grassMaterial();
   const grassCount = 900;
-  grassInstanced = new THREE.InstancedMesh(bladeGeo, bladeMat, grassCount);
+  G.grassInstanced = new THREE.InstancedMesh(bladeGeo, bladeMat, grassCount);
   const dummy = new THREE.Object3D();
   let idx = 0;
   for (let i = 0; i < grassCount * 3 && idx < grassCount; i++) {
@@ -1454,10 +1394,10 @@ function buildTerrainAndWater() {
     const s = 0.7 + Math.random() * 0.85;
     dummy.scale.set(s, s * (0.85 + Math.random() * 0.4), s);
     dummy.updateMatrix();
-    grassInstanced.setMatrixAt(idx++, dummy.matrix);
+    G.grassInstanced.setMatrixAt(idx++, dummy.matrix);
   }
-  grassInstanced.instanceMatrix.needsUpdate = true;
-  scene.add(grassInstanced);
+  G.grassInstanced.instanceMatrix.needsUpdate = true;
+  G.scene.add(G.grassInstanced);
 }
 
 function buildRiverBridge(bx, bz) {
@@ -1487,7 +1427,7 @@ function buildRiverBridge(bx, bz) {
     grp.add(rail);
   });
   sealAlbedoUvs(grp);
-  scene.add(grp);
+  G.scene.add(grp);
   addCartoonOutline(grp, 0.038);
   loadBlenderWorldTemplate().then((gltf) => {
     if (!gltf) return;
@@ -1510,7 +1450,7 @@ function buildBiomeLandmarks() {
     grp.position.set(x, getTerrainHeight(x, z), z);
     sealAlbedoUvs(grp);
     addCartoonOutline(grp, 0.038);
-    scene.add(grp);
+    G.scene.add(grp);
     if (worldAssetName) {
       loadBlenderWorldTemplate().then((gltf) => {
         if (!gltf) return;
@@ -1664,13 +1604,13 @@ function buildAllCitiesAndLandmarks() {
     shrineGroup.userData = uData;
     pillar.userData = uData;
     rune.userData = uData;
-    worldInteractiveObjects.push(pillar, rune);
+    G.worldInteractiveObjects.push(pillar, rune);
     addCartoonOutline(shrineGroup, 0.038);
-    scene.add(shrineGroup);
+    G.scene.add(shrineGroup);
     loadBlenderWorldTemplate().then((gltf) => {
       if (!gltf) return;
       upgradeWorldPropWithGltf(shrineGroup, 'World_shrine', gltf, {
-        interactiveObjectsList: worldInteractiveObjects,
+        interactiveObjectsList: G.worldInteractiveObjects,
         outlineThickness: 0.035
       });
     });
@@ -1769,7 +1709,7 @@ function createCastleStructure(cx, cz) {
   box(3.2, 0.45, 1.5, timberMat, 0, 4.6, 8);
   sealAlbedoUvs(grp);
   addCartoonOutline(grp, 0.03);
-  scene.add(grp);
+  G.scene.add(grp);
   loadBlenderWorldTemplate().then((gltf) => {
     if (!gltf) return;
     upgradeWorldPropWithGltf(grp, 'World_castle', gltf, { outlineThickness: 0.03 });
@@ -1804,14 +1744,14 @@ function createPrayerAltar(x, z, name) {
   grp.userData = uData;
   base.userData = uData;
   crystal.userData = uData;
-  worldInteractiveObjects.push(base, crystal);
+  G.worldInteractiveObjects.push(base, crystal);
   addCartoonOutline(grp, 0.038);
-  scene.add(grp);
-  npcList.push({ pos: grp.position, name, color: '#38bdf8', yOffset: 3.4 });
+  G.scene.add(grp);
+  G.npcList.push({ pos: grp.position, name, color: '#38bdf8', yOffset: 3.4 });
   loadBlenderWorldTemplate().then((gltf) => {
     if (!gltf) return;
     upgradeWorldPropWithGltf(grp, 'World_altar', gltf, {
-      interactiveObjectsList: worldInteractiveObjects,
+      interactiveObjectsList: G.worldInteractiveObjects,
       outlineThickness: 0.035
     });
   });
@@ -1860,14 +1800,14 @@ function createForgeStation(x, z, name) {
   grp.userData = uData;
   anvilTop.userData = uData;
   furnace.userData = uData;
-  worldInteractiveObjects.push(anvilTop, furnace);
+  G.worldInteractiveObjects.push(anvilTop, furnace);
   addCartoonOutline(grp, 0.038);
-  scene.add(grp);
-  npcList.push({ pos: grp.position, name, color: '#ff981f', yOffset: 3.5 });
+  G.scene.add(grp);
+  G.npcList.push({ pos: grp.position, name, color: '#ff981f', yOffset: 3.5 });
   loadBlenderWorldTemplate().then((gltf) => {
     if (!gltf) return;
     upgradeWorldPropWithGltf(grp, 'World_forge', gltf, {
-      interactiveObjectsList: worldInteractiveObjects,
+      interactiveObjectsList: G.worldInteractiveObjects,
       outlineThickness: 0.035
     });
   });
@@ -1909,21 +1849,21 @@ function createBankBooth(x, z) {
   grp.userData = uData;
   rig.hitbox.userData = uData;
   counter.userData = uData;
-  worldInteractiveObjects.push(rig.hitbox, counter);
+  G.worldInteractiveObjects.push(rig.hitbox, counter);
   addCartoonOutline(counter, 0.038);
   addCartoonOutline(lintel, 0.038);
-  scene.add(grp);
-  npcList.push({ pos: grp.position, name: 'Lumbridge Bank', color: '#fde047', yOffset: 2.6 });
+  G.scene.add(grp);
+  G.npcList.push({ pos: grp.position, name: 'Lumbridge Bank', color: '#fde047', yOffset: 2.6 });
   loadBlenderHeroTemplate().then((gltf) => {
     if (!gltf) return;
     const anim = upgradeHumanoidRigWithGltf(rig, gltf, 0x1e3a8a, 0xfacc15, 0x334155, { isPlayer: false });
-    if (anim) npcAnimatorsList.push(anim);
+    if (anim) G.npcAnimatorsList.push(anim);
   });
   loadBlenderWorldTemplate().then((gltf) => {
     if (!gltf) return;
     upgradeWorldPropWithGltf(grp, 'World_bank_booth', gltf, {
       keepChildren: (ch) => ch === sign || ch === rig.group,
-      interactiveObjectsList: worldInteractiveObjects,
+      interactiveObjectsList: G.worldInteractiveObjects,
       outlineThickness: 0.035
     });
   });
@@ -1964,13 +1904,13 @@ function createSlayerMaster(x, z) {
   const uData = { type: 'interactive', action: 'slayer', name: 'Slayer Master Vannaka', interactRadius: 4.0 };
   rig.group.userData = uData;
   rig.hitbox.userData = uData;
-  worldInteractiveObjects.push(rig.hitbox);
-  scene.add(rig.group);
-  npcList.push({ pos: rig.group.position, name: 'Slayer Master Vannaka', color: '#c084fc', yOffset: 2.9 });
+  G.worldInteractiveObjects.push(rig.hitbox);
+  G.scene.add(rig.group);
+  G.npcList.push({ pos: rig.group.position, name: 'Slayer Master Vannaka', color: '#c084fc', yOffset: 2.9 });
   Promise.all([loadBlenderHeroTemplate(), loadBlenderGearTemplate()]).then(([heroGltf]) => {
     if (heroGltf) {
       const anim = upgradeHumanoidRigWithGltf(rig, heroGltf, 0x4c1d95, 0x1c1917, 0x111827, { isPlayer: false });
-      if (anim) npcAnimatorsList.push(anim);
+      if (anim) G.npcAnimatorsList.push(anim);
     }
     attachVannakaGear();
   });
@@ -1983,13 +1923,13 @@ function createMerchantNPC(x, z, name, tunicColor) {
   const uData = { type: 'interactive', action: 'shop', name, interactRadius: 4.0 };
   rig.group.userData = uData;
   rig.hitbox.userData = uData;
-  worldInteractiveObjects.push(rig.hitbox);
-  scene.add(rig.group);
-  npcList.push({ pos: rig.group.position, name, color: '#ffe642', yOffset: 2.85 });
+  G.worldInteractiveObjects.push(rig.hitbox);
+  G.scene.add(rig.group);
+  G.npcList.push({ pos: rig.group.position, name, color: '#ffe642', yOffset: 2.85 });
   Promise.all([loadBlenderHeroTemplate(), loadBlenderGearTemplate()]).then(([heroGltf]) => {
     if (heroGltf) {
       const anim = upgradeHumanoidRigWithGltf(rig, heroGltf, tunicColor, 0xfacc15, 0x334155, { isPlayer: false });
-      if (anim) npcAnimatorsList.push(anim);
+      if (anim) G.npcAnimatorsList.push(anim);
     }
     const hatItem = name.includes('Varrock')
       ? { id: 'wizard_hat', slot: 'head', iconKind: 'hat', color: tunicColor, trim: 0xfacc15 }
@@ -2050,9 +1990,9 @@ function createCastleGuard(x: number, z: number, name: string, rotY = 0) {
   hitbox.position.y = 0.92;
   hitbox.userData = uData;
   grp.add(hitbox);
-  worldInteractiveObjects.push(hitbox);
-  scene.add(grp);
-  npcList.push({ pos: grp.position, name, color: '#94a3b8', yOffset: 2.5 });
+  G.worldInteractiveObjects.push(hitbox);
+  G.scene.add(grp);
+  G.npcList.push({ pos: grp.position, name, color: '#94a3b8', yOffset: 2.5 });
 
   loadBlenderGuardTemplate().then((gltf) => {
     if (!gltf) return;
@@ -2077,7 +2017,7 @@ function spawnWorldProp(assetName: string, x: number, z: number, rotY = 0, scale
   grp.position.set(x, y, z);
   grp.rotation.y = rotY;
   if (scale !== 1.0) grp.scale.set(scale, scale, scale);
-  scene.add(grp);
+  G.scene.add(grp);
 
   loadBlenderWorldTemplate().then((gltf) => {
     if (!gltf) return;
@@ -2099,7 +2039,6 @@ function spawnWorldProp(assetName: string, x: number, z: number, rotY = 0, scale
 }
 
 
-const npcAnimatorsList = [];
 
 // ============================================================================
 // 8. SMOOTH SCULPTED 3D CHARACTER, 10-SLOT GEAR, MONSTERS & ORGANIC TREES
@@ -2125,7 +2064,7 @@ function buildPlayerCharacter() {
   player.pos.y = getTerrainHeight(player.pos.x, player.pos.z);
   player.meshGroup.position.copy(player.pos);
   player.meshGroup.rotation.y = player.yaw + Math.PI;
-  scene.add(player.meshGroup);
+  G.scene.add(player.meshGroup);
 
   rebuildPlayerEquipmentMeshes();
 
@@ -3377,9 +3316,9 @@ function spawnMonster(typeKey, x, z) {
   const uData = { type: 'monster', entity: mObj, interactRadius: def.style === 'melee' ? 2.8 : 3.4 };
   rig.group.userData = uData;
   rig.hitbox.userData = uData;
-  worldInteractiveObjects.push(rig.hitbox);
-  scene.add(rig.group);
-  monstersList.push(mObj);
+  G.worldInteractiveObjects.push(rig.hitbox);
+  G.scene.add(rig.group);
+  G.monstersList.push(mObj);
   loadBlenderMonstersTemplate().then((gltf) => {
     if (!gltf) return;
     upgradeMonsterRigWithGltf(mObj, gltf);
@@ -3470,7 +3409,7 @@ function spawnResourceNode(nodeKey, x, z) {
     ring1.rotation.x = Math.PI / 2;
     ring1.position.y = 0.06;
     visualMesh.add(ring1);
-    swayingFoliage.push({ mesh: ring1, speed: 1.8, rotY: true });
+    G.swayingFoliage.push({ mesh: ring1, speed: 1.8, rotY: true });
     grp.add(visualMesh);
 
     depletedMesh = new THREE.Group();
@@ -3502,9 +3441,9 @@ function spawnResourceNode(nodeKey, x, z) {
   const uData = { type: 'resource', entity: rObj, interactRadius: 3.4 };
   grp.userData = uData;
   hitbox.userData = uData;
-  worldInteractiveObjects.push(hitbox);
-  scene.add(grp);
-  resourceNodesList.push(rObj);
+  G.worldInteractiveObjects.push(hitbox);
+  G.scene.add(grp);
+  G.resourceNodesList.push(rObj);
   loadBlenderWorldTemplate().then((gltf) => {
     if (!gltf) return;
     upgradeResourceNodeWithGltf(rObj, gltf);
@@ -3553,34 +3492,27 @@ function spawnAllResourcesAndMonsters() {
 // ============================================================================
 // 9. INPUT, CAMERA BEHIND CHARACTER, COMBAT, SKILLING, MINIMAP & MAIN LOOP
 // ============================================================================
-const keysPressed = {};
-const raycaster = new THREE.Raycaster();
-const mouseVec = new THREE.Vector2();
-let hoveredWorld = null;
-let clickMarkerMesh = null;
-let hoverTile = null;
-const rightPress = { x: 0, y: 0, dist: 0 };
 
 function setupInputHandlers() {
-  clickMarkerMesh = new THREE.Group();
-  clickMarkerMesh.userData.life = 0;
+  G.clickMarkerMesh = new THREE.Group();
+  G.clickMarkerMesh.userData.life = 0;
   const crossMat = () => new THREE.MeshBasicMaterial({ color: 0xfde047, transparent: true, opacity: 0, depthWrite: false });
   const armA = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.07, 0.07), crossMat());
   armA.rotation.y = Math.PI / 4;
   const armB = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.07, 0.07), crossMat());
   armB.rotation.y = -Math.PI / 4;
-  clickMarkerMesh.add(armA, armB);
-  scene.add(clickMarkerMesh);
-  hoverTile = new THREE.Mesh(
+  G.clickMarkerMesh.add(armA, armB);
+  G.scene.add(G.clickMarkerMesh);
+  G.hoverTile = new THREE.Mesh(
     new THREE.PlaneGeometry(1, 1),
     new THREE.MeshBasicMaterial({ color: 0xfde047, transparent: true, opacity: 0.28, depthWrite: false, side: THREE.DoubleSide })
   );
-  hoverTile.rotation.x = -Math.PI / 2;
-  hoverTile.visible = false;
-  scene.add(hoverTile);
+  G.hoverTile.rotation.x = -Math.PI / 2;
+  G.hoverTile.visible = false;
+  G.scene.add(G.hoverTile);
 
   window.addEventListener('keydown', e => {
-    keysPressed[e.code] = true;
+    G.keysPressed[e.code] = true;
     noteCheatKey(e);
     if (e.code === 'Space' && player.isGrounded && !player.downed) {
       player.jumpVel = 7.8;
@@ -3604,7 +3536,7 @@ function setupInputHandlers() {
   });
 
   window.addEventListener('keyup', e => {
-    keysPressed[e.code] = false;
+    G.keysPressed[e.code] = false;
   });
 
   document.addEventListener('mousedown', (e) => {
@@ -3614,7 +3546,7 @@ function setupInputHandlers() {
     hideContextMenu();
   });
 
-  const canvas = renderer.domElement;
+  const canvas = G.renderer.domElement;
   canvas.addEventListener('contextmenu', e => e.preventDefault());
   const canvasHost = document.getElementById('game-canvas-container');
   if (canvasHost) canvasHost.addEventListener('contextmenu', onGameContextMenu);
@@ -3624,9 +3556,9 @@ function setupInputHandlers() {
       camState.isDragging = true;
       camState.lastMouseX = e.clientX;
       camState.lastMouseY = e.clientY;
-      rightPress.x = e.clientX;
-      rightPress.y = e.clientY;
-      rightPress.dist = 0;
+      G.rightPress.x = e.clientX;
+      G.rightPress.y = e.clientY;
+      G.rightPress.dist = 0;
       return;
     }
     if (e.button === 0) {
@@ -3641,7 +3573,7 @@ function setupInputHandlers() {
       const dy = e.clientY - camState.lastMouseY;
       camState.lastMouseX = e.clientX;
       camState.lastMouseY = e.clientY;
-      rightPress.dist += Math.hypot(dx, dy);
+      G.rightPress.dist += Math.hypot(dx, dy);
       camState.manualOffset -= dx * 0.007;
       camState.pitch = Math.max(0.12, Math.min(1.15, camState.pitch + dy * 0.005));
     } else {
@@ -3684,11 +3616,11 @@ function resetCameraBehindPlayer() {
 }
 
 function showClickMarker(x, z, hexColor) {
-  if (!clickMarkerMesh) return;
-  clickMarkerMesh.position.set(x, getTerrainHeight(x, z) + 0.16, z);
-  clickMarkerMesh.userData.life = 1;
-  clickMarkerMesh.scale.set(1, 1, 1);
-  clickMarkerMesh.traverse(obj => {
+  if (!G.clickMarkerMesh) return;
+  G.clickMarkerMesh.position.set(x, getTerrainHeight(x, z) + 0.16, z);
+  G.clickMarkerMesh.userData.life = 1;
+  G.clickMarkerMesh.scale.set(1, 1, 1);
+  G.clickMarkerMesh.traverse(obj => {
     if (obj.material && obj.material.color) {
       obj.material.color.setHex(hexColor);
       obj.material.opacity = 1;
@@ -3700,17 +3632,17 @@ function handleWorldHover(e) {
   const onCanvas = !!(e.target && e.target.id === 'game-canvas');
   const modalOpen = !!document.querySelector('.modal-backdrop.open');
   if (!onCanvas || modalOpen) {
-    hoveredWorld = null;
+    G.hoveredWorld = null;
     hideHoverTooltip();
-    if (hoverTile) hoverTile.visible = false;
+    if (G.hoverTile) G.hoverTile.visible = false;
     return;
   }
   updateHoverTile(e);
   const tooltip = document.getElementById('hover-tooltip');
-  mouseVec.x = (e.clientX / window.innerWidth) * 2 - 1;
-  mouseVec.y = -(e.clientY / window.innerHeight) * 2 + 1;
-  raycaster.setFromCamera(mouseVec, camera);
-  const hits = raycaster.intersectObjects(worldInteractiveObjects, false);
+  G.mouseVec.x = (e.clientX / window.innerWidth) * 2 - 1;
+  G.mouseVec.y = -(e.clientY / window.innerHeight) * 2 + 1;
+  G.raycaster.setFromCamera(G.mouseVec, G.camera);
+  const hits = G.raycaster.intersectObjects(G.worldInteractiveObjects, false);
   if (hits.length > 0) {
     const ud = hits[0].object.userData;
     if (ud && ud.type !== 'ground') {
@@ -3725,7 +3657,7 @@ function handleWorldHover(e) {
         label = `Interact with <b style="color:#fde047">${ud.name}</b>`;
       }
       if (label) {
-        hoveredWorld = ud;
+        G.hoveredWorld = ud;
         tooltip.style.display = 'block';
         tooltip.style.left = (e.clientX + 14) + 'px';
         tooltip.style.top = (e.clientY + 14) + 'px';
@@ -3735,7 +3667,7 @@ function handleWorldHover(e) {
       }
     }
   }
-  hoveredWorld = null;
+  G.hoveredWorld = null;
   tooltip.style.display = 'none';
   document.body.style.cursor = 'default';
 }
@@ -3748,18 +3680,18 @@ function hideContextMenu() {
 }
 
 function pointerToWorld(clientX, clientY) {
-  mouseVec.x = (clientX / window.innerWidth) * 2 - 1;
-  mouseVec.y = -(clientY / window.innerHeight) * 2 + 1;
-  raycaster.setFromCamera(mouseVec, camera);
-  const hits = raycaster.intersectObjects(worldInteractiveObjects, false);
+  G.mouseVec.x = (clientX / window.innerWidth) * 2 - 1;
+  G.mouseVec.y = -(clientY / window.innerHeight) * 2 + 1;
+  G.raycaster.setFromCamera(G.mouseVec, G.camera);
+  const hits = G.raycaster.intersectObjects(G.worldInteractiveObjects, false);
   const entityHit = hits.find((hit) => hit.object.userData && hit.object.userData.type && hit.object.userData.type !== 'ground');
-  const groundHits = terrainMesh ? raycaster.intersectObject(terrainMesh, false) : [];
+  const groundHits = G.terrainMesh ? G.raycaster.intersectObject(G.terrainMesh, false) : [];
   return { entityHit, ground: groundHits[0] || null };
 }
 
 function onGameContextMenu(e) {
   e.preventDefault();
-  if (rightPress.dist > 6) return;
+  if (G.rightPress.dist > 6) return;
   if (document.querySelector('.modal-backdrop.open')) return;
   const picked = pointerToWorld(e.clientX, e.clientY);
   const options = [];
@@ -3859,11 +3791,11 @@ function openChooseMenu(clientX, clientY, options) {
 }
 
 function handleWorldClick(e) {
-  mouseVec.x = (e.clientX / window.innerWidth) * 2 - 1;
-  mouseVec.y = -(e.clientY / window.innerHeight) * 2 + 1;
-  raycaster.setFromCamera(mouseVec, camera);
+  G.mouseVec.x = (e.clientX / window.innerWidth) * 2 - 1;
+  G.mouseVec.y = -(e.clientY / window.innerHeight) * 2 + 1;
+  G.raycaster.setFromCamera(G.mouseVec, G.camera);
 
-  const hits = raycaster.intersectObjects(worldInteractiveObjects, false);
+  const hits = G.raycaster.intersectObjects(G.worldInteractiveObjects, false);
   if (hits.length === 0) return;
 
   let chosen = hits.find(h => h.object.userData && h.object.userData.type !== 'ground') || hits[0];
@@ -3995,16 +3927,16 @@ function glowMaterial(color, opacity = 0.92) {
 }
 
 function spawnVfx(mesh, life, onTick) {
-  scene.add(mesh);
-  vfxList.push({ mesh, life, age: 0, onTick });
+  G.scene.add(mesh);
+  G.vfxList.push({ mesh, life, age: 0, onTick });
 }
 
 function launchProjectile(mesh, fromPos, toPos, onImpact, opts = {}) {
   const start = fromPos.clone().add(new THREE.Vector3(0, opts.y0 ?? 1.4, 0));
   const end = toPos.clone().add(new THREE.Vector3(0, opts.y1 ?? 1.2, 0));
   mesh.position.copy(start);
-  scene.add(mesh);
-  projectilesList.push({
+  G.scene.add(mesh);
+  G.projectilesList.push({
     mesh,
     start,
     end,
@@ -4571,13 +4503,13 @@ function spawnLevelUpFireworks(colorHex = 0xfde047) {
     );
     const ang = (i / 16) * Math.PI * 2;
     p.position.copy(player.pos).add(new THREE.Vector3(Math.cos(ang) * 0.8, 1.0, Math.sin(ang) * 0.8));
-    scene.add(p);
+    G.scene.add(p);
     const vel = new THREE.Vector3(Math.cos(ang) * 2.5, 3.5 + Math.random() * 2, Math.sin(ang) * 2.5);
     const startT = performance.now();
     const tick = () => {
       const dt = (performance.now() - startT) / 1000;
       if (dt > 0.9) {
-        scene.remove(p);
+        G.scene.remove(p);
         return;
       }
       p.position.addScaledVector(vel, 0.016);
@@ -4879,7 +4811,7 @@ function handlePlayerDeath() {
   player.targetPos = null;
   STATE.hp = 0;
   STATE.activePrayers.clear();
-  monstersList.forEach(m => { m.inCombatWithPlayer = false; });
+  G.monstersList.forEach(m => { m.inCombatWithPlayer = false; });
   const notice = deathNotice();
   const overlay = document.getElementById('death-overlay');
   if (overlay) {
@@ -5003,7 +4935,7 @@ function renderMinimap() {
   ctx.stroke();
 
   // Resource Nodes (Muted Slate / Iron)
-  resourceNodesList.forEach(r => {
+  G.resourceNodesList.forEach(r => {
     if (r.depleted) return;
     const px = (r.pos.x - player.pos.x) * scale;
     const pz = (r.pos.z - player.pos.z) * scale;
@@ -5012,7 +4944,7 @@ function renderMinimap() {
   });
 
   // NPCs, Altars & Forges (Nordic Muted Brass)
-  npcList.forEach(n => {
+  G.npcList.forEach(n => {
     const px = (n.pos.x - player.pos.x) * scale;
     const pz = (n.pos.z - player.pos.z) * scale;
     ctx.beginPath();
@@ -5022,7 +4954,7 @@ function renderMinimap() {
   });
 
   // Live Monsters (Nordic Blood Crimson)
-  monstersList.forEach(m => {
+  G.monstersList.forEach(m => {
     if (m.dead) return;
     const px = (m.pos.x - player.pos.x) * scale;
     const pz = (m.pos.z - player.pos.z) * scale;
@@ -5045,7 +4977,7 @@ function renderMinimap() {
 }
 
 function worldToScreenPos(x, y, z) {
-  _tmpScratchVec.set(x, y, z).project(camera);
+  _tmpScratchVec.set(x, y, z).project(G.camera);
   return {
     x: (_tmpScratchVec.x * 0.5 + 0.5) * window.innerWidth,
     y: (-(_tmpScratchVec.y * 0.5) + 0.5) * window.innerHeight,
@@ -5130,9 +5062,9 @@ function updateFloatingWorldLabels() {
   }
 
   // Monster names appear only while hovered or while they are the combat target.
-  monstersList.forEach(m => {
+  G.monstersList.forEach(m => {
     const aimed = player.targetEntity && player.targetEntity.type === 'monster' && player.targetEntity.ref === m;
-    const hovered = hoveredWorld && hoveredWorld.type === 'monster' && hoveredWorld.entity === m;
+    const hovered = G.hoveredWorld && G.hoveredWorld.type === 'monster' && G.hoveredWorld.entity === m;
     if (m.dead || (!aimed && !hovered && !m.inCombatWithPlayer)) {
       m.labelEl.style.display = 'none';
       return;
@@ -5169,7 +5101,7 @@ function updateFloatingWorldLabels() {
   });
 
   // NPCs, Altars & Forges Floating Labels
-  npcList.forEach(n => {
+  G.npcList.forEach(n => {
     if (!n.el) {
       n.el = document.createElement('div');
       n.el.className = 'entity-label';
@@ -5177,7 +5109,7 @@ function updateFloatingWorldLabels() {
       n.el.innerHTML = `<div class="label-text">${n.name}</div>`;
       document.getElementById('world-labels').appendChild(n.el);
     }
-    const hovered = hoveredWorld && hoveredWorld.type === 'interactive' && hoveredWorld.name === n.name;
+    const hovered = G.hoveredWorld && G.hoveredWorld.type === 'interactive' && G.hoveredWorld.name === n.name;
     const aimed = player.targetEntity && player.targetEntity.type === 'interactive' && player.targetEntity.ref && player.targetEntity.ref.name === n.name;
     if (!hovered && !aimed) {
       n.el.style.display = 'none';
@@ -5202,7 +5134,6 @@ function updateFloatingWorldLabels() {
 // ============================================================================
 // 12. MAIN ANIMATION, SHADERS & PHYSICS LOOP
 // ============================================================================
-let lastFrameTime = performance.now();
 
 function lerpAngle(a, b, t) {
   let diff = b - a;
@@ -5213,8 +5144,8 @@ function lerpAngle(a, b, t) {
 
 function gameLoop(now) {
   requestAnimationFrame(gameLoop);
-  const dt = Math.min(0.08, (now - lastFrameTime) / 1000);
-  lastFrameTime = now;
+  const dt = Math.min(0.08, (now - G.lastFrameTime) / 1000);
+  G.lastFrameTime = now;
   const elapsedSec = now * 0.001;
 
   if (player.downed) {
@@ -5223,11 +5154,11 @@ function gameLoop(now) {
     if (count) count.textContent = String(Math.max(0, Math.ceil(player.downedTimer)));
     if (player.downedTimer <= 0) finishRespawn();
   } else if (getEquipmentBonuses().matchedSet) {
-    setBonusTimer += dt;
+    G.setBonusTimer += dt;
     const bon = getEquipmentBonuses();
     const threshold = bon.isFullKit ? 1.25 : 1.7;
-    if (setBonusTimer > threshold) {
-      setBonusTimer = 0;
+    if (G.setBonusTimer > threshold) {
+      G.setBonusTimer = 0;
       if (bon.isFullKit) {
         spawnExpandingRing(player.pos, 0x94a3b8, 0.55, 2.2, 0.45, 0.65);
         spawnExpandingRing(player.pos, 0xc5a059, 0.35, 1.5, 0.35, 0.45);
@@ -5237,9 +5168,9 @@ function gameLoop(now) {
     }
   }
 
-  if (waterUniforms) waterUniforms.uTime.value = elapsedSec;
-  if (skyUniforms) skyUniforms.uTime.value = elapsedSec;
-  if (skyDomeMesh) skyDomeMesh.position.copy(player.pos);
+  if (G.waterUniforms) G.waterUniforms.uTime.value = elapsedSec;
+  if (G.skyUniforms) G.skyUniforms.uTime.value = elapsedSec;
+  if (G.skyDomeMesh) G.skyDomeMesh.position.copy(player.pos);
 
   if (STATE.specEnergy < 100) {
     STATE.specEnergy = Math.min(100, STATE.specEnergy + dt * 2.5);
@@ -5262,24 +5193,24 @@ function gameLoop(now) {
   const turnSpeed = 2.6;
   let manualMoving = false;
 
-  if (keysPressed['KeyQ']) camState.manualOffset += turnSpeed * dt;
-  if (keysPressed['KeyE']) camState.manualOffset -= turnSpeed * dt;
+  if (G.keysPressed['KeyQ']) camState.manualOffset += turnSpeed * dt;
+  if (G.keysPressed['KeyE']) camState.manualOffset -= turnSpeed * dt;
 
   if (player.downed) {
     player.targetPos = null;
     player.targetEntity = null;
   }
 
-  if (!player.downed && (keysPressed['KeyA'] || keysPressed['ArrowLeft'])) {
+  if (!player.downed && (G.keysPressed['KeyA'] || G.keysPressed['ArrowLeft'])) {
     player.yaw += turnSpeed * dt;
   }
-  if (!player.downed && (keysPressed['KeyD'] || keysPressed['ArrowRight'])) {
+  if (!player.downed && (G.keysPressed['KeyD'] || G.keysPressed['ArrowRight'])) {
     player.yaw -= turnSpeed * dt;
   }
 
   let forwardInput = 0;
-  if (!player.downed && (keysPressed['KeyW'] || keysPressed['ArrowUp'])) forwardInput += 1;
-  if (!player.downed && (keysPressed['KeyS'] || keysPressed['ArrowDown'])) forwardInput -= 0.75;
+  if (!player.downed && (G.keysPressed['KeyW'] || G.keysPressed['ArrowUp'])) forwardInput += 1;
+  if (!player.downed && (G.keysPressed['KeyS'] || G.keysPressed['ArrowDown'])) forwardInput -= 0.75;
 
   let hasMoveIntent = false;
   let moveDirX = 0;
@@ -5570,8 +5501,8 @@ function gameLoop(now) {
       }
     }
   }
-  for (let i = 0; i < npcAnimatorsList.length; i++) {
-    npcAnimatorsList[i].update(dt);
+  for (let i = 0; i < G.npcAnimatorsList.length; i++) {
+    G.npcAnimatorsList[i].update(dt);
   }
   if (player.parts.whipRig) {
     const stretch = player.attackAnim > 0 ? Math.sin(player.attackAnim * Math.PI) : 0;
@@ -5590,11 +5521,11 @@ function gameLoop(now) {
     player.parts.spinRing.material.opacity = 0;
   }
 
-  if (clickMarkerMesh && clickMarkerMesh.userData.life > 0) {
-    clickMarkerMesh.userData.life = Math.max(0, clickMarkerMesh.userData.life - dt * 1.4);
-    const life = clickMarkerMesh.userData.life;
-    clickMarkerMesh.scale.setScalar(1 + (1 - life) * 0.35);
-    clickMarkerMesh.traverse(obj => {
+  if (G.clickMarkerMesh && G.clickMarkerMesh.userData.life > 0) {
+    G.clickMarkerMesh.userData.life = Math.max(0, G.clickMarkerMesh.userData.life - dt * 1.4);
+    const life = G.clickMarkerMesh.userData.life;
+    G.clickMarkerMesh.scale.setScalar(1 + (1 - life) * 0.35);
+    G.clickMarkerMesh.traverse(obj => {
       if (obj.material && obj.material.transparent) obj.material.opacity = life;
     });
   }
@@ -5611,24 +5542,24 @@ function gameLoop(now) {
   const camTargetY = Math.max(terrainUnderCam + 1.2, player.pos.y + 1.85 + vertDist);
 
   _camTargetVec.set(camTargetX, camTargetY, camTargetZ);
-  camera.position.lerp(_camTargetVec, Math.min(1, dt * 12));
+  G.camera.position.lerp(_camTargetVec, Math.min(1, dt * 12));
   _lookTargetVec.set(player.pos.x, player.pos.y + 1.85, player.pos.z);
   camState.currentLookAt.lerp(_lookTargetVec, Math.min(1, dt * 14));
-  camera.lookAt(camState.currentLookAt);
+  G.camera.lookAt(camState.currentLookAt);
 
   // Micro-Camera Shake Impulse
   if (camState.shake > 0.001) {
     camState.shake *= Math.pow(0.012, dt);
-    camera.position.x += (Math.random() - 0.5) * camState.shake;
-    camera.position.y += (Math.random() - 0.5) * camState.shake;
+    G.camera.position.x += (Math.random() - 0.5) * camState.shake;
+    G.camera.position.y += (Math.random() - 0.5) * camState.shake;
   }
 
-  sunLight.position.set(player.pos.x + 38, player.pos.y + 58, player.pos.z + 28);
-  sunLight.target.position.copy(player.pos);
-  sunLight.target.updateMatrixWorld();
+  G.sunLight.position.set(player.pos.x + 38, player.pos.y + 58, player.pos.z + 28);
+  G.sunLight.target.position.copy(player.pos);
+  G.sunLight.target.updateMatrixWorld();
 
   // Monsters Update
-  monstersList.forEach(m => {
+  G.monstersList.forEach(m => {
     if (m.isDying) {
       m.dyingTimer -= dt;
       const progress = Math.max(0, 1 - m.dyingTimer / 0.85);
@@ -5720,7 +5651,7 @@ function gameLoop(now) {
     }
   });
 
-  resourceNodesList.forEach(r => {
+  G.resourceNodesList.forEach(r => {
     if (r.depleted) {
       r.respawnTimer -= dt;
       if (r.respawnTimer <= 0) {
@@ -5731,13 +5662,13 @@ function gameLoop(now) {
     }
   });
 
-  for (let i = projectilesList.length - 1; i >= 0; i--) {
-    const p = projectilesList[i];
+  for (let i = G.projectilesList.length - 1; i >= 0; i--) {
+    const p = G.projectilesList[i];
     p.progress += p.speed * dt;
     if (p.progress >= 1.0) {
-      scene.remove(p.mesh);
+      G.scene.remove(p.mesh);
       if (p.onImpact) p.onImpact();
-      projectilesList.splice(i, 1);
+      G.projectilesList.splice(i, 1);
     } else {
       const arc = p.arc == null ? 1.4 : p.arc;
       p.mesh.position.lerpVectors(p.start, p.end, p.progress);
@@ -5755,32 +5686,32 @@ function gameLoop(now) {
     }
   }
 
-  for (let i = vfxList.length - 1; i >= 0; i--) {
-    const v = vfxList[i];
+  for (let i = G.vfxList.length - 1; i >= 0; i--) {
+    const v = G.vfxList[i];
     v.age += dt;
     if (v.onTick) v.onTick(v, dt);
     if (v.age >= v.life) {
-      scene.remove(v.mesh);
-      vfxList.splice(i, 1);
+      G.scene.remove(v.mesh);
+      G.vfxList.splice(i, 1);
     }
   }
 
-  swayingFoliage.forEach(item => {
+  G.swayingFoliage.forEach(item => {
     if (item.rotY) item.mesh.rotation.z += dt * item.speed;
   });
 
-  if (now - lastAutoSaveTime > 2000) {
-    lastAutoSaveTime = now;
+  if (now - G.lastAutoSaveTime > 2000) {
+    G.lastAutoSaveTime = now;
     saveGameState();
   }
 
   checkRegionChange();
-  labelTick += dt;
-  miniTick += dt;
-  if (labelTick >= 0.1 || Math.hypot(player.pos.x - lastLabelX, player.pos.z - lastLabelZ) > 0.4) {
-    labelTick = 0;
-    lastLabelX = player.pos.x;
-    lastLabelZ = player.pos.z;
+  G.labelTick += dt;
+  G.miniTick += dt;
+  if (G.labelTick >= 0.1 || Math.hypot(player.pos.x - G.lastLabelX, player.pos.z - G.lastLabelZ) > 0.4) {
+    G.labelTick = 0;
+    G.lastLabelX = player.pos.x;
+    G.lastLabelZ = player.pos.z;
     updateFloatingWorldLabels();
     const found = discoverShrines(player.pos.x, player.pos.z, STATE.shrines);
     if (found.unlocked.length) {
@@ -5794,40 +5725,34 @@ function gameLoop(now) {
   const compass = document.getElementById('compass-badge');
   if (compass) compass.style.transform = `rotate(${(camState.yaw - Math.PI)}rad)`;
 
-  if (miniTick >= 0.08 || Math.hypot(player.pos.x - lastLabelX, player.pos.z - lastLabelZ) > 0.4) {
-    miniTick = 0;
+  if (G.miniTick >= 0.08 || Math.hypot(player.pos.x - G.lastLabelX, player.pos.z - G.lastLabelZ) > 0.4) {
+    G.miniTick = 0;
     renderMinimap();
   }
   const tickArc = document.getElementById('tick-arc');
   if (tickArc) tickArc.style.strokeDashoffset = String(88 * Math.max(0, Math.min(1, player.actionCooldown / TICK_SEC)));
-  if (grassInstanced && grassInstanced.material && grassInstanced.material.uniforms) {
-    grassInstanced.material.uniforms.uTime.value = elapsedSec;
+  if (G.grassInstanced && G.grassInstanced.material && G.grassInstanced.material.uniforms) {
+    G.grassInstanced.material.uniforms.uTime.value = elapsedSec;
   }
-  renderer.render(scene, camera);
+  G.renderer.render(G.scene, G.camera);
 
-  frameCounter++;
-  if (now - lastFpsTime >= 500) {
-    const elapsed = now - lastFpsTime;
-    telemetryInfo.fps = Math.round((frameCounter * 1000) / elapsed);
-    telemetryInfo.frameTimeMs = Number((elapsed / frameCounter).toFixed(1));
-    frameCounter = 0;
-    lastFpsTime = now;
+  G.frameCounter++;
+  if (now - G.lastFpsTime >= 500) {
+    const elapsed = now - G.lastFpsTime;
+    telemetryInfo.fps = Math.round((G.frameCounter * 1000) / elapsed);
+    telemetryInfo.frameTimeMs = Number((elapsed / G.frameCounter).toFixed(1));
+    G.frameCounter = 0;
+    G.lastFpsTime = now;
 
     const fpsEl = document.getElementById('perf-fps');
     if (fpsEl) fpsEl.textContent = `${telemetryInfo.fps} FPS (${telemetryInfo.frameTimeMs}ms)`;
     const callsEl = document.getElementById('perf-calls');
-    if (callsEl && renderer) {
-      callsEl.textContent = `${renderer.info.render.calls} calls • ${Math.round(renderer.info.render.triangles / 1000)}k tris`;
+    if (callsEl && G.renderer) {
+      callsEl.textContent = `${G.renderer.info.render.calls} calls • ${Math.round(G.renderer.info.render.triangles / 1000)}k tris`;
     }
   }
 }
 
-let setBonusTimer = 0;
-let lastAutoSaveTime = 0;
-let labelTick = 0;
-let miniTick = 1;
-let lastLabelX = 999;
-let lastLabelZ = 999;
 
 function applyLoadedStateToHud() {
   ['accurate', 'aggressive', 'defensive', 'controlled', 'rapid', 'ranged', 'magic'].forEach(s => {
@@ -5845,10 +5770,10 @@ function applyLoadedStateToHud() {
 }
 
 function onWindowResize() {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setPixelRatio(getQualityDpr(currentQuality));
+  G.camera.aspect = window.innerWidth / window.innerHeight;
+  G.camera.updateProjectionMatrix();
+  G.renderer.setSize(window.innerWidth, window.innerHeight);
+  G.renderer.setPixelRatio(getQualityDpr(currentQuality));
 }
 
 
@@ -5909,20 +5834,20 @@ function hideItemTooltip() {
 }
 
 function updateHoverTile(e) {
-  if (!hoverTile || !terrainMesh || !camera) return;
-  mouseVec.x = (e.clientX / window.innerWidth) * 2 - 1;
-  mouseVec.y = -(e.clientY / window.innerHeight) * 2 + 1;
-  raycaster.setFromCamera(mouseVec, camera);
-  const hits = raycaster.intersectObject(terrainMesh, false);
+  if (!G.hoverTile || !G.terrainMesh || !G.camera) return;
+  G.mouseVec.x = (e.clientX / window.innerWidth) * 2 - 1;
+  G.mouseVec.y = -(e.clientY / window.innerHeight) * 2 + 1;
+  G.raycaster.setFromCamera(G.mouseVec, G.camera);
+  const hits = G.raycaster.intersectObject(G.terrainMesh, false);
   if (!hits.length) {
-    hoverTile.visible = false;
+    G.hoverTile.visible = false;
     return;
   }
   const p = hits[0].point;
   const gx = Math.floor(p.x) + 0.5;
   const gz = Math.floor(p.z) + 0.5;
-  hoverTile.visible = true;
-  hoverTile.position.set(gx, getTerrainHeight(gx, gz) + 0.08, gz);
+  G.hoverTile.visible = true;
+  G.hoverTile.position.set(gx, getTerrainHeight(gx, gz) + 0.08, gz);
 }
 
 let cheatBuffer = '';
@@ -6026,14 +5951,14 @@ function wireBridge() {
   window.replayOnboarding = replayOnboarding;
   (window as any).__DEV_ACCESS__ = {
     player,
-    get camera() { return camera; },
+    get camera() { return G.camera; },
     camState,
-    get scene() { return scene; },
+    get scene() { return G.scene; },
     STATE,
     ITEMS,
     rebuildPlayerEquipmentMeshes,
     loadBlenderGearTemplate,
-    monstersList,
+    monstersList: G.monstersList,
     getAnimator: () => player.blenderAnimator,
   };
 }
