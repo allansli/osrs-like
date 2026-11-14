@@ -21,7 +21,7 @@ import {
 } from './vfx';
 import { addChatMessage, showBanner, updateTargetHud, updateAllUI, requestUiRefresh, el } from '../ui/hud';
 import { STATE } from '../state/gameState';
-import { prepareAttack, getEquipmentBonuses, mitigateDamage } from '../state/combat';
+import { prepareAttack, getEquipmentBonuses, rollMonsterHit } from '../state/combat';
 import { addItem, removeItem, canAddItem } from '../state/inventory';
 import { SPELLS } from '../data/magic';
 import { isDown, onPlayerHit } from '../state/monsterAi';
@@ -38,7 +38,6 @@ import {
   noteGather,
   registerKill,
   RESPAWN_SECONDS,
-  resolveDragonfire,
   weaponSpecial
 } from '../state/adventure';
 
@@ -293,30 +292,14 @@ export function handleMonsterDeath(monster: MonsterEntity): void {
 
 export function performMonsterRetaliation(monster: MonsterEntity): void {
   if (isDown(monster.logic) || player.downed || STATE.hp <= 0) return;
-  monster.attackAnim = 1;
-  const bon = getEquipmentBonuses(STATE);
-  const defLvl = STATE.skills.defence.lvl + (STATE.combatStyle === 'defensive' ? 3 : 0);
-  const prayDefMult = STATE.activePrayers.has('piety') ? 1.25 : (STATE.activePrayers.has('thick_skin') ? 1.15 : 1.0);
-  const playerDefScore = (defLvl * 1.2 + bon.def) * prayDefMult + 10;
-  const monAtkScore = monster.def.atk * 1.25 + 8;
-
-  const hitChance = Math.min(0.82, Math.max(0.12, monAtkScore / (monAtkScore + playerDefScore)));
   monster.logic.breathCount = (monster.logic.breathCount || 0) + 1;
-  const dragonfire = monster.typeKey === 'elvarg_dragon' && monster.logic.breathCount % 3 === 0;
-
-  let dmg = 0;
-  let absorbedBreath = false;
-  if (Math.random() < hitChance) {
-    if (dragonfire) {
-      const raw = Math.max(1, Math.floor(Math.random() * 43));
-      const resolved = resolveDragonfire(raw, STATE);
-      dmg = resolved.damage;
-      absorbedBreath = resolved.absorbed && raw > 0;
-    } else {
-      dmg = Math.max(1, Math.floor(Math.random() * (monster.def.maxHit + 1)));
-      dmg = mitigateDamage(dmg, monster.def.style, STATE.activePrayers);
-    }
-  }
+  const { dmg, dragonfire, absorbed: absorbedBreath } = rollMonsterHit(
+    monster.typeKey,
+    monster.logic.breathCount,
+    STATE,
+    Math.random
+  );
+  monster.attackAnim = 1;
 
   const applyHit = (): void => {
     if (absorbedBreath) {
