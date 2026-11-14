@@ -1,9 +1,9 @@
-// @ts-nocheck
 import * as THREE from 'three';
+import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { G, player } from './context';
 import { getTerrainHeight } from '../state/terrain';
 import { STATE } from '../state/gameState';
-import { ITEMS } from '../data/items';
+import { ITEMS, type ItemDef } from '../data/items';
 import { buildHumanoidRig, LEAN_RIG } from './humanoid';
 import { loadBlenderHeroTemplate, upgradeHumanoidRigWithGltf } from './blenderHero';
 import { loadBlenderGearTemplate } from './blenderGear';
@@ -18,13 +18,14 @@ import {
   buildRingVisual,
   buildShieldVisual,
   buildWeaponVisual,
-  headShowsHair
+  headShowsHair,
+  type WhipRig
 } from './playerGear';
 import { addCartoonOutline, facetMaterial } from './materials';
 import { albedoForItem, applyAlbedo, sealAlbedoUvs } from './textures';
 import { getEquipmentBonuses } from './runtime';
 
-export function buildPlayerCharacter() {
+export function buildPlayerCharacter(): void {
   const rig = buildHumanoidRig(0x586436, 0x3e2b1e, 0x505c30, 1.06);
   player.meshGroup = rig.group;
   player.parts = rig;
@@ -49,7 +50,7 @@ export function buildPlayerCharacter() {
 
   rebuildPlayerEquipmentMeshes();
 
-  loadBlenderHeroTemplate().then((gltf) => {
+  loadBlenderHeroTemplate().then((gltf: GLTF | null) => {
     if (!gltf) return;
     const animator = upgradeHumanoidRigWithGltf(rig, gltf, 0x586436, 0x3e2b1e, 0x505c30, {
       isPlayer: true,
@@ -61,13 +62,13 @@ export function buildPlayerCharacter() {
       rebuildPlayerEquipmentMeshes();
     }
   });
-  loadBlenderGearTemplate().then((gearGltf) => {
+  loadBlenderGearTemplate().then((gearGltf: GLTF | null) => {
     if (!gearGltf) return;
     rebuildPlayerEquipmentMeshes();
   });
 }
 
-export function syncWhipGeometry(rig, stretch) {
+export function syncWhipGeometry(rig: WhipRig | null | undefined, stretch: number): void {
   if (!rig) return;
   const pts = rig.rest.map((p, i) => {
     const reach = i / Math.max(1, rig.rest.length - 1);
@@ -88,7 +89,7 @@ export function syncWhipGeometry(rig, stretch) {
   });
 }
 
-export function rebuildPlayerEquipmentMeshes() {
+export function rebuildPlayerEquipmentMeshes(): void {
   if (!player.parts || !player.parts.rightArmPivot) return;
   const rArm = player.parts.rightArmPivot;
   const lArm = player.parts.leftArmPivot;
@@ -110,7 +111,7 @@ export function rebuildPlayerEquipmentMeshes() {
   });
   player.parts.whipRig = null;
 
-  const mount = (parent, node, key) => {
+  const mount = (parent: THREE.Object3D | null | undefined, node: THREE.Object3D | null | undefined, key: string): void => {
     if (!parent || !node) return;
     parent.add(node);
     player.parts[key] = node;
@@ -179,7 +180,7 @@ export function rebuildPlayerEquipmentMeshes() {
     }
   }
 
-  const equip = (slot) => {
+  const equip = (slot: string): ItemDef | null => {
     const id = STATE.equipment[slot];
     return id && ITEMS[id] ? ITEMS[id] : null;
   };
@@ -224,7 +225,7 @@ export function rebuildPlayerEquipmentMeshes() {
   const showHair = headShowsHair(headItem);
   if (player.parts.hairCap) player.parts.hairCap.visible = showHair;
   if (headG) {
-    headG.traverse((ch) => {
+    headG.traverse((ch: THREE.Object3D) => {
       if (
         ch.name.startsWith('Hair') ||
         ch.name.startsWith('CrownSpike_') ||
@@ -252,7 +253,7 @@ export function rebuildPlayerEquipmentMeshes() {
     mount(rArm, body.right, 'bodyArmR');
   }
   if (torso) {
-    torso.traverse((ch) => {
+    torso.traverse((ch: THREE.Object3D) => {
       if (
         ch.name === 'TorsoCoat' ||
         ch.name.startsWith('OuterCoat_') ||
@@ -275,7 +276,7 @@ export function rebuildPlayerEquipmentMeshes() {
     if (isBlenderHero) {
       [legs.left, legs.right].forEach((side) => {
         if (!side) return;
-        side.traverse((ch) => {
+        side.traverse((ch: THREE.Object3D) => {
           if (ch.name.includes('_04_')) {
             ch.visible = false;
           }
@@ -322,7 +323,7 @@ export function rebuildPlayerEquipmentMeshes() {
   }
   if (!isBlenderHero && lLeg && rLeg) {
     [lLeg, rLeg].forEach((leg) => {
-      leg.traverse((ch) => {
+      leg.traverse((ch: THREE.Object3D) => {
         if (
           ch.name.startsWith('Boot_') ||
           ch.name.startsWith('BootCuff_') ||
@@ -351,7 +352,7 @@ export function rebuildPlayerEquipmentMeshes() {
   }
   if (!isBlenderHero && lArm && rArm) {
     [lArm, rArm].forEach((arm) => {
-      arm.traverse((ch) => {
+      arm.traverse((ch: THREE.Object3D) => {
         if (ch.name.startsWith('Bracer_') || ch.name.startsWith('BracerLace_')) {
           ch.visible = !hands;
         }
