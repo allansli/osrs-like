@@ -3,6 +3,7 @@ import { creditGp } from './economy';
 import { addItem, canAddItem } from './inventory';
 import { noteGather as markGather, noteSmelt as markSmelt } from './quests';
 import type { GameState, SlayerTask } from './types';
+import type { DeathOutcome } from './sustain';
 
 export const RARE_TIERS = ['rune', 'gilded', 'dragon', 'barrows', 'bandos', 'raids', 'botw'] as const;
 
@@ -362,10 +363,30 @@ export interface WeaponSpec {
 
 export const RESPAWN_SECONDS = 3.2;
 
-export function deathNotice(): { title: string; body: string } {
+export function deathNotice(outcome?: DeathOutcome): { title: string; body: string } {
+  const title = 'Oh dear, you are dead.';
+  if (!outcome || outcome.kind === 'none') {
+    return {
+      title,
+      body: 'You keep your gear and coins. You will wake in Lumbridge Haven.'
+    };
+  }
+  if (outcome.kind === 'vow') {
+    return {
+      title,
+      body: 'You keep your gear and coins. Your Lantern Vow held: no experience was lost, and the vow is spent. You will wake in Lumbridge Haven.'
+    };
+  }
+  if (outcome.kind === 'waived') {
+    return {
+      title,
+      body: 'You keep your gear and coins. Your loss was small enough to be waived: no experience was lost. You will wake in Lumbridge Haven.'
+    };
+  }
+  const totalLost = Object.values(outcome.amounts).reduce((a, n) => a + n, 0);
   return {
-    title: 'Oh dear, you are dead.',
-    body: 'You keep your gear and coins. You will wake in Lumbridge Haven.'
+    title,
+    body: `You keep your gear and coins. You lost ${totalLost} experience across your fighting skills; no level was lost. A Lantern Vow, taken at an altar, would have kept it. You will wake in Lumbridge Haven.`
   };
 }
 
