@@ -1,5 +1,11 @@
 # Stage 7, part 1, model compression: design
 
+> **Status (2026-11-14): shelved by the owner, not approved.** The live site already serves the models with Brotli:
+> players download 3.76 MB, not the 11.9 MB on disk (measured per file on the deployment). The proposal saves about
+> 1.2 MB per load for a new build step and a decoder. The owner chose not to do it now; Stage 7 keeps only the touch
+> controls. Revisit if Stages 5 and 6 add many models. Audit finding 27 stays deferred. This document has not been
+> through an independent critique; run one before asking for approval.
+
 Date: 2026-11-14. Branch: `feat/reach`, cut from `main` at `d69c300` plus the study commit `45bb05f`. All line numbers refer to `45bb05f`.
 
 Status: proposal. The owner has not reviewed it. Section 8 lists what the owner must decide. Nothing is agreed yet.
