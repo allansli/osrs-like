@@ -2922,13 +2922,14 @@ def main():
     os.makedirs(blend_dir, exist_ok=True)
     os.makedirs(models_dir, exist_ok=True)
 
-    render_path = r"C:\Users\User\.gemini\antigravity-cli\brain\28c9539a-1323-4489-8927-620e19a4a583\scratch\monsters_render.png"
+    render_path = None
     if "--" in sys.argv:
         extra = sys.argv[sys.argv.index("--") + 1 :]
         if "--render" in extra:
             idx = extra.index("--render")
-            if idx + 1 < len(extra):
-                render_path = extra[idx + 1]
+            if idx + 1 >= len(extra):
+                raise SystemExit("--render requires an output path: blender ... -- --render <file.png>")
+            render_path = extra[idx + 1]
 
     clear_scene()
     mats = build_materials()
