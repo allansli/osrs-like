@@ -143,14 +143,6 @@ export function requestUiRefresh(): void {
   uiRefreshDirty = true;
 }
 
-export function isUiRefreshRequested(): boolean {
-  return uiRefreshDirty;
-}
-
-export function clearUiRefreshRequest(): void {
-  uiRefreshDirty = false;
-}
-
 export function consumeUiRefreshRequest(): boolean {
   if (uiRefreshDirty) {
     uiRefreshDirty = false;

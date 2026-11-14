@@ -50,8 +50,7 @@ import {
   el,
   updateAllUI,
   updateVitalsBars,
-  isUiRefreshRequested,
-  clearUiRefreshRequest
+  consumeUiRefreshRequest
 } from '../ui/hud';
 import {
   openShopModal,
@@ -641,10 +640,7 @@ export function updateOverlay(f: FrameState): void {
     vitalsTick = 0;
     updateVitalsBars();
   }
-  if (isUiRefreshRequested()) {
-    updateAllUI();
-    clearUiRefreshRequest();
-  }
+  if (consumeUiRefreshRequest()) updateAllUI();
   G.labelTick += f.dt;
   G.miniTick += f.dt;
   if (G.labelTick >= 0.1 || Math.hypot(player.pos.x - G.lastLabelX, player.pos.z - G.lastLabelZ) > 0.4) {
