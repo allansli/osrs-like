@@ -12,7 +12,6 @@ import {
   G,
   MonsterEntity,
   ResourceNodeEntity,
-  type PlayerTargetEntity,
   ProjectileEntry,
   VfxEntry,
   SwayingFoliageEntry
@@ -192,7 +191,8 @@ export function updatePlayerIntent(f: FrameState): void {
         if (!camState.isDragging) camState.manualOffset *= Math.pow(0.25, f.dt);
       } else {
         if (tType === 'interactive') {
-          const act = (player.targetEntity!.ref as THREE.Object3D['userData']).action;
+          const ref = player.targetEntity!.ref as THREE.Object3D['userData'];
+          const act = ref.action;
           player.targetEntity = null;
           if (act === 'shop') openShopModal('all');
           else if (act === 'bank') openBankModal();
@@ -200,8 +200,8 @@ export function updatePlayerIntent(f: FrameState): void {
           else if (act === 'worldmap') openWorldMapModal();
           else if (act === 'slayer') openQuestsModal();
           else if (act === 'dialogue') {
-            const dlg = ((player.targetEntity as PlayerTargetEntity | null)!.ref as THREE.Object3D['userData']).dialogue || 'Greetings, traveler.';
-            const name = ((player.targetEntity as PlayerTargetEntity | null)!.ref as THREE.Object3D['userData']).name || 'Guard';
+            const dlg = ref.dialogue || 'Greetings, traveler.';
+            const name = ref.name || 'Guard';
             addChatMessage(`${name}: "${dlg}"`, 'combat');
           }
           else if (act === 'altar') {
