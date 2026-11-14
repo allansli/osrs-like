@@ -1,0 +1,14 @@
+Title:   Rigged Knight in Armor (Blend Swap blend 28541)
+Author:  Xali
+Source:  https://www.blendswap.com/blend/28541
+Licence: Creative Commons Zero (CC0)
+
+File:    knight.blend
+Used by: scripts/blender/export_guard.py, which exports public/models/guard.glb
+         (the guard model shipped with the game).
+
+Note: the author says the base mesh came from a CGTrader model. The terms of
+that CGTrader model are not stated on the Blend Swap page.
+
+No Blend Swap licence file is kept in this repository for this blend. This
+file records the asset's source, author and licence.
