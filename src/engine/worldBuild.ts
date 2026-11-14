@@ -4,7 +4,10 @@ import { loadGltfOnce } from './gltf';
 import { G } from './context';
 import { disposeObject3D } from './dispose';
 import { WORLD_REGIONS, type RegionDef } from '../data/world';
+import { PATHS, POIS } from '../data/worldMap';
 import { ITEMS, type ItemDef } from '../data/items';
+import { riverCenterX } from '../state/collision';
+import { shrineWorldPos } from '../state/shrines';
 import { getTerrainHeight } from '../state/terrain';
 import { albedoMaterial, biomeAlbedoId, sealAlbedoUvs } from './textures';
 import { addCartoonOutline, facetMaterial } from './materials';
@@ -231,6 +234,7 @@ export function buildAllCitiesAndLandmarks(): void {
   createBankBooth(2.2, 4.2);
   createSlayerMaster(5.5, 8.5);
   buildBiomeLandmarks();
+  buildPointsOfInterest();
 }
 
 export function createCastleStructure(cx: number, cz: number): void {
@@ -602,4 +606,233 @@ export function spawnWorldProp(assetName: string, x: number, z: number, rotY = 0
     sealAlbedoUvs(grp);
     addCartoonOutline(grp, 0.028);
   });
+}
+
+export function buildTent(x = 0, z = 0, rotY = 0, scale = 1.0): THREE.Group {
+  const y = getTerrainHeight(x, z);
+  const grp = new THREE.Group();
+  grp.position.set(x, y, z);
+  grp.rotation.y = rotY;
+  if (scale !== 1.0) grp.scale.set(scale, scale, scale);
+
+  const cloth = albedoMaterial(0x92400e, 'cloth');
+  const wood = albedoMaterial(0x78350f, 'wood');
+  const interior = facetMaterial({ color: 0x1c1917 });
+
+  const canvas = new THREE.Mesh(new THREE.ConeGeometry(1.6, 2.0, 4), cloth);
+  canvas.position.y = 1.0;
+  canvas.rotation.y = Math.PI / 4;
+  canvas.castShadow = true;
+  canvas.receiveShadow = true;
+
+  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.08, 2.2, 8), wood);
+  pole.position.y = 1.1;
+  pole.castShadow = true;
+
+  const entrance = new THREE.Mesh(new THREE.ConeGeometry(0.7, 1.1, 3), interior);
+  entrance.position.set(0, 0.55, 1.05);
+  entrance.rotation.y = Math.PI;
+
+  grp.add(canvas, pole, entrance);
+  sealAlbedoUvs(grp);
+  addCartoonOutline(grp, 0.035);
+  G.scene.add(grp);
+  return grp;
+}
+
+export function buildFireRing(x = 0, z = 0, rotY = 0, scale = 1.0): THREE.Group {
+  const y = getTerrainHeight(x, z);
+  const grp = new THREE.Group();
+  grp.position.set(x, y, z);
+  grp.rotation.y = rotY;
+  if (scale !== 1.0) grp.scale.set(scale, scale, scale);
+
+  const stone = albedoMaterial(0x525c66, 'stone');
+  const ashMat = facetMaterial({ color: 0x27272a });
+  const woodMat = albedoMaterial(0x78350f, 'wood');
+  const fireMat = facetMaterial({ color: 0xf97316, emissive: 0xea580c, emissiveIntensity: 0.95 });
+
+  const ash = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.75, 0.08, 10), ashMat);
+  ash.position.y = 0.04;
+  ash.receiveShadow = true;
+  grp.add(ash);
+
+  const stoneGeom = new THREE.DodecahedronGeometry(0.18, 0);
+  for (let i = 0; i < 8; i++) {
+    const ang = (i / 8) * Math.PI * 2;
+    const sMesh = new THREE.Mesh(stoneGeom, stone);
+    sMesh.position.set(Math.cos(ang) * 0.72, 0.12, Math.sin(ang) * 0.72);
+    sMesh.scale.set(1.0 + (i % 3) * 0.15, 0.8 + (i % 2) * 0.2, 1.0);
+    sMesh.castShadow = true;
+    grp.add(sMesh);
+  }
+
+  const log1 = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.85, 6), woodMat);
+  log1.rotation.z = Math.PI / 2;
+  log1.rotation.y = 0.4;
+  log1.position.y = 0.14;
+  log1.castShadow = true;
+  const log2 = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.85, 6), woodMat);
+  log2.rotation.z = Math.PI / 2;
+  log2.rotation.y = -0.9;
+  log2.position.y = 0.18;
+  log2.castShadow = true;
+  grp.add(log1, log2);
+
+  const flame = new THREE.Mesh(new THREE.ConeGeometry(0.32, 0.55, 6), fireMat);
+  flame.position.y = 0.38;
+  grp.add(flame);
+
+  sealAlbedoUvs(grp);
+  addCartoonOutline(grp, 0.035);
+  G.scene.add(grp);
+  return grp;
+}
+
+export function buildCairn(x = 0, z = 0, rotY = 0, scale = 1.0): THREE.Group {
+  const y = getTerrainHeight(x, z);
+  const grp = new THREE.Group();
+  grp.position.set(x, y, z);
+  grp.rotation.y = rotY;
+  if (scale !== 1.0) grp.scale.set(scale, scale, scale);
+
+  const stone = albedoMaterial(0x525c66, 'stone');
+  const wardStone = facetMaterial({
+    color: 0x5d8096,
+    emissive: 0x2d4857,
+    emissiveIntensity: 0.45,
+    flatShading: true
+  });
+
+  const base = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.45, 1.2), stone);
+  base.position.y = 0.22;
+  base.castShadow = true;
+  base.receiveShadow = true;
+
+  const mid = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.4, 0.9), stone);
+  mid.position.y = 0.62;
+  mid.rotation.y = 0.45;
+  mid.castShadow = true;
+  mid.receiveShadow = true;
+
+  const upper = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.35, 0.6), stone);
+  upper.position.y = 0.98;
+  upper.rotation.y = -0.3;
+  upper.castShadow = true;
+
+  const top = new THREE.Mesh(new THREE.OctahedronGeometry(0.32, 0), wardStone);
+  top.position.y = 1.4;
+  top.castShadow = true;
+
+  grp.add(base, mid, upper, top);
+  sealAlbedoUvs(grp);
+  addCartoonOutline(grp, 0.035);
+  G.scene.add(grp);
+  return grp;
+}
+
+export function buildSignpost(x = 0, z = 0, rotY = 0, scale = 1.0): THREE.Group {
+  const y = getTerrainHeight(x, z);
+  const grp = new THREE.Group();
+  grp.position.set(x, y, z);
+  grp.rotation.y = rotY;
+  if (scale !== 1.0) grp.scale.set(scale, scale, scale);
+
+  const woodPost = albedoMaterial(0x6b4423, 'wood');
+  const woodBoard = albedoMaterial(0x854d0e, 'wood');
+
+  const post = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.11, 2.0, 8), woodPost);
+  post.position.y = 1.0;
+  post.castShadow = true;
+
+  const board = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.3, 0.08), woodBoard);
+  board.position.set(0.3, 1.65, 0);
+  board.castShadow = true;
+
+  const cap = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.08, 0.24), woodPost);
+  cap.position.y = 2.04;
+  cap.castShadow = true;
+
+  grp.add(post, board, cap);
+  sealAlbedoUvs(grp);
+  addCartoonOutline(grp, 0.035);
+  G.scene.add(grp);
+  return grp;
+}
+
+export function buildPointsOfInterest(): void {
+  for (const poi of POIS) {
+    for (const piece of poi.pieces) {
+      const px = poi.x + piece.dx;
+      const pz = poi.z + piece.dz;
+      const rot = piece.rot ?? 0;
+      const scale = piece.scale ?? 1.0;
+      if (piece.node) {
+        spawnWorldProp(piece.node, px, pz, rot, scale);
+      } else if (piece.builder === 'tent') {
+        buildTent(px, pz, rot, scale);
+      } else if (piece.builder === 'fireRing') {
+        buildFireRing(px, pz, rot, scale);
+      } else if (piece.builder === 'cairn') {
+        const cairnGrp = buildCairn(px, pz, rot, scale);
+        if (poi.id === 'wardstone_cairn' && poi.sign) {
+          const uData = {
+            type: 'interactive',
+            action: 'dialogue',
+            name: poi.name,
+            dialogue: poi.sign,
+            interactRadius: 3.5
+          };
+          cairnGrp.userData = uData;
+          const hitbox = new THREE.Mesh(
+            new THREE.CylinderGeometry(1.0, 1.0, 1.8, 8),
+            new THREE.MeshBasicMaterial({ visible: false })
+          );
+          hitbox.position.y = 0.9;
+          hitbox.userData = uData;
+          cairnGrp.add(hitbox);
+          G.worldInteractiveObjects.push(hitbox);
+        }
+      } else if (piece.builder === 'signpost') {
+        buildSignpost(px, pz, rot, scale);
+      }
+    }
+  }
+
+  for (const path of PATHS) {
+    const p0 = path.points[0];
+    const p1 = path.points[1];
+    const dx = p1[0] - p0[0];
+    const dz = p1[1] - p0[1];
+    const len = Math.hypot(dx, dz);
+    const nx = -dz / len;
+    const nz = dx / len;
+    const offset = path.halfWidth + 1;
+    const c1 = { x: p0[0] + nx * offset, z: p0[1] + nz * offset };
+    const c2 = { x: p0[0] - nx * offset, z: p0[1] - nz * offset };
+    const d1 = Math.abs(c1.x - riverCenterX(c1.z));
+    const d2 = Math.abs(c2.x - riverCenterX(c2.z));
+    const pos = d1 >= d2 ? c1 : c2;
+
+    const grp = buildSignpost(pos.x, pos.z);
+
+    const [lastX, lastZ] = path.points[path.points.length - 1];
+    let nearestRegion: RegionDef = WORLD_REGIONS[0];
+    let bestDist = Infinity;
+    for (const reg of WORLD_REGIONS) {
+      const s = shrineWorldPos(reg);
+      const d = Math.hypot(lastX - s.x, lastZ - s.z);
+      if (d < bestDist) {
+        bestDist = d;
+        nearestRegion = reg;
+      }
+    }
+
+    G.npcList.push({
+      pos: grp.position,
+      name: `${path.name} (${nearestRegion.name})`,
+      color: '#fde047',
+      yOffset: 2.2
+    });
+  }
 }
