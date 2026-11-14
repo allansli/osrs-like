@@ -1,0 +1,10 @@
+import sys; sys.path.insert(0, sys.argv[1])
+from lib import Doc
+d = Doc('/path/to/osrs-like-wp/MP/docs/superpowers/specs/2026-11-14-models-pass-design.md')
+d.sub("**Without N-3 the total returns to about today's 3.76 MB after Stage 6 and passes it with the gear stage. With N-3 it stays near 3.2 MB.**", "**Without N-3 the total is back at about 3.7 MB after Stage 6, just under today's 3.76 MB, and passes it with the gear stage (about 3.9 MB). With N-3 it stays near 3.2 MB after both.**")
+d.sub("Parse time follows raw bytes: 11.9 MB today, about 9.8 MB after as exported (about 8.3 MB with N-3).", "Parse time follows raw bytes: 11.9 MB today; an estimate of about 8.3 MB after, as exported (about 7.2 MB with N-3), since the knight's 1.7 MB goes and smooth skinned bodies carry far fewer vertices per triangle than today's boxes.")
+d.sub("Section 4.6 decides the rest figure by figure: six rebuilt, five kept and re-rigged.", "Section 4.6 decides the rest figure by figure: the dragon and Ashmantle are new, five monsters are rebuilt (both goblins, the wizard, the ranger, the demon), four are kept and re-rigged (chicken, scorpion, giant, guardian), and the hero is kept.")
+d.sub("but Stage 6 and the gear stage would bring the total back to today's 3.76 MB or over.", "but Stage 6 and the gear stage would bring the total back to today's 3.76 MB and past it.")
+d.t = d.t.rstrip('\n') + '\n'; d.save()
+p = Doc('/path/to/osrs-like-wp/MP/docs/superpowers/plans/2026-11-14-models-pass-plan.md')
+p.t = p.t.rstrip('\n') + '\n'; p.save(); print('ok')

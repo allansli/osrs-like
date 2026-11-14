@@ -1,0 +1,104 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>skin probe</title>
+<canvas id="c" width="256" height="256"></canvas>
+<script>var exports = {};</script>
+<script src="three.cjs"></script>
+<script>
+const THREE = exports;
+const out = { errors: [] };
+try {
+  const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('c'), antialias: false, preserveDrawingBuffer: true });
+  renderer.debug.onShaderError = (gl, prog, vs, fs) => { out.errors.push('shader: ' + gl.getShaderInfoLog(vs) + ' | ' + gl.getShaderInfoLog(fs)); };
+  renderer.setClearColor(0x000000, 1);
+  out.gl = renderer.getContext().getParameter(renderer.getContext().VERSION);
+
+  // copy of facetMaterial's patch (src/engine/materials.ts at 5caa597); `where` is the chunk the cel normal is written after
+  function facet(where) {
+    const mat = new THREE.MeshLambertMaterial({ color: 0x808080, side: THREE.DoubleSide });
+    mat.onBeforeCompile = (shader) => {
+      shader.vertexShader = shader.vertexShader.replace('#include <' + where + '>', '#include <' + where + '>\n vCelNormal = normalize(mat3(modelMatrix) * objectNormal);');
+      shader.vertexShader = 'varying vec3 vCelNormal;\n' + shader.vertexShader;
+      shader.fragmentShader = 'varying vec3 vCelNormal;\n' + shader.fragmentShader.replace(
+        'vec3 outgoingLight = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse + totalEmissiveRadiance;',
+        `vec3 vCelWorld = normalize(vCelNormal) * (gl_FrontFacing ? 1.0 : -1.0);
+         float ndl = dot(normalize(vCelWorld), normalize(vec3(0.52, 0.78, 0.34)));
+         float cel = smoothstep(0.33, 0.38, ndl);
+         vec3 outgoingLight = diffuseColor.rgb * mix(vec3(0.70, 0.72, 0.82), vec3(1.04), cel) + totalEmissiveRadiance;`);
+    };
+    mat.customProgramCacheKey = () => 'facet|' + where;
+    return mat;
+  }
+  // copy of the outline material; skinned=true adds the skinning chunks
+  function outline(skinned) {
+    return new THREE.ShaderMaterial({
+      side: THREE.BackSide, uniforms: { uColor: { value: new THREE.Color(0xff0000) }, uThickness: { value: 0.02 } },
+      vertexShader: skinned ? `
+        uniform float uThickness;
+        #include <common>
+        #include <skinning_pars_vertex>
+        void main() {
+          #include <beginnormal_vertex>
+          #include <skinbase_vertex>
+          #include <skinnormal_vertex>
+          #include <begin_vertex>
+          #include <skinning_vertex>
+          vec4 viewPos = modelViewMatrix * vec4(transformed, 1.0);
+          vec3 viewNorm = normalize(normalMatrix * objectNormal);
+          viewPos.xy += viewNorm.xy * uThickness;
+          viewPos.z -= uThickness * 2.5 + 0.045;
+          gl_Position = projectionMatrix * viewPos;
+        }` : `
+        uniform float uThickness;
+        void main() {
+          vec4 viewPos = modelViewMatrix * vec4(position, 1.0);
+          vec3 viewNorm = normalize(normalMatrix * normal);
+          viewPos.xy += viewNorm.xy * uThickness;
+          viewPos.z -= uThickness * 2.5 + 0.045;
+          gl_Position = projectionMatrix * viewPos;
+        }`,
+      fragmentShader: 'uniform vec3 uColor; void main() { gl_FragColor = vec4(uColor, 1.0); }'
+    });
+  }
+  function arm(material) {
+    const geo = new THREE.BoxGeometry(0.2, 2, 0.2, 1, 8, 1); geo.translate(0, 1, 0);
+    const p = geo.attributes.position, si = [], sw = [];
+    for (let i = 0; i < p.count; i++) { const up = p.getY(i) > 1.001 ? 1 : 0; si.push(up, 0, 0, 0); sw.push(1, 0, 0, 0); }
+    geo.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(si, 4)); geo.setAttribute('skinWeight', new THREE.Float32BufferAttribute(sw, 4));
+    const b0 = new THREE.Bone(), b1 = new THREE.Bone(); b1.position.y = 1; b0.add(b1);
+    const mesh = new THREE.SkinnedMesh(geo, material); mesh.add(b0); mesh.bind(new THREE.Skeleton([b0, b1]));
+    return { mesh, b0, b1, geo };
+  }
+  function shoot(scene, cam) { renderer.render(scene, cam); const gl = renderer.getContext(); return (wx, wy) => { const v = new THREE.Vector3(wx, wy, 0).project(cam); const px = new Uint8Array(4); gl.readPixels(Math.round((v.x * 0.5 + 0.5) * 256), Math.round((v.y * 0.5 + 0.5) * 256), 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px); return Array.from(px.slice(0, 3)); }; }
+  const front = new THREE.OrthographicCamera(-2.5, 2.5, 2.5, -2.5, 0.1, 50); front.position.set(0, 1, 10); front.lookAt(0, 1, 0);
+  const below = new THREE.OrthographicCamera(-2.5, 2.5, 2.5, -2.5, 0.1, 50); below.up.set(0, 0, 1); below.position.set(0.5, -10, 0); below.lookAt(0.5, 0, 0);
+  const lit = (s) => { s.add(new THREE.AmbientLight(0xffffff, 1)); return s; };
+
+  // 1. facet material on a skinned mesh: does it deform, and which normal does the band use?
+  for (const where of ['beginnormal_vertex', 'skinnormal_vertex']) {
+    const s = lit(new THREE.Scene()); const a = arm(facet(where)); s.add(a.mesh); a.b1.rotation.z = -Math.PI / 2;
+    const f = shoot(s, front); const bent = f(0.6, 1.0), bind = f(0, 1.6);
+    renderer.render(s, below); const gl = renderer.getContext(); const v = new THREE.Vector3(0.6, 0.9, 0).project(below); const px = new Uint8Array(4);
+    gl.readPixels(Math.round((v.x * 0.5 + 0.5) * 256), Math.round((v.y * 0.5 + 0.5) * 256), 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
+    out['facet_patch_after_' + where] = { deformed: bent[0] > 0 && bind[0] === 0, undersideOfBentHalf: Array.from(px.slice(0, 3)) };
+  }
+  // 2. outline shells
+  const variants = { plainMeshShell_todayShader: [false, false], skinnedShell_todayShader: [true, false], skinnedShell_shaderWithSkinningChunks: [true, true] };
+  for (const [name, [skinnedShell, chunks]] of Object.entries(variants)) {
+    const s = new THREE.Scene(); const a = arm(new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false })); s.add(a.mesh); a.b1.rotation.z = -Math.PI / 2;
+    let shell;
+    if (skinnedShell) { shell = new THREE.SkinnedMesh(a.geo, outline(chunks)); shell.bind(a.mesh.skeleton, a.mesh.bindMatrix); } else shell = new THREE.Mesh(a.geo, outline(false));
+    a.mesh.add(shell);
+    const f = shoot(s, front); out[name] = { followsBend: f(0.6, 1.0)[0] > 200, stuckInBindPose: f(0, 1.6)[0] > 200 };
+  }
+  // 3. draw calls with a shadow pass: 7 figures of 59 rigid meshes against 7 skinned figures of 1 and of 3 meshes
+  renderer.shadowMap.enabled = true; renderer.info.autoReset = false;
+  const count = (build) => { const s = lit(new THREE.Scene()); const l = new THREE.DirectionalLight(0xffffff, 1); l.position.set(3, 8, 5); l.castShadow = true; s.add(l); const g = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), new THREE.MeshLambertMaterial()); g.rotation.x = -Math.PI / 2; g.receiveShadow = true; s.add(g); for (let i = 0; i < 7; i++) build(s, i); renderer.info.reset(); renderer.render(s, front); return renderer.info.render.calls - 1; };
+  const box = new THREE.BoxGeometry(0.1, 0.1, 0.1);
+  out.calls_7_rigid_59 = count((s, i) => { for (let k = 0; k < 59; k++) { const m = new THREE.Mesh(box, facet('beginnormal_vertex')); m.position.set(i * 0.5 - 1.5, 0.2 + (k % 10) * 0.15, (k / 10 | 0) * 0.15); m.castShadow = true; s.add(m); } });
+  out.calls_7_skinned_1 = count((s, i) => { const a = arm(facet('skinnormal_vertex')); a.mesh.position.x = i * 0.5 - 1.5; a.mesh.castShadow = true; a.b1.rotation.z = -0.5; s.add(a.mesh); });
+  out.calls_7_skinned_3 = count((s, i) => { for (let k = 0; k < 3; k++) { const a = arm(facet('skinnormal_vertex')); a.mesh.position.set(i * 0.5 - 1.5, 0, k * 0.3); a.mesh.castShadow = true; s.add(a.mesh); } });
+} catch (e) { out.errors.push(String(e && e.stack || e)); }
+window.__result = out;
+document.title = 'done';
+</script>
