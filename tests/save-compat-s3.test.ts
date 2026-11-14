@@ -4,7 +4,7 @@ import { createDefaultState } from '../src/state/gameState';
 import { migrateLegacySave, readSave, SAVE_KEY, serializeState, type StorageLike } from '../src/state/save';
 
 const fx = (name: string) => new URL(`./fixtures/s3/${name}`, import.meta.url);
-const readJson = (name: string): any => JSON.parse(readFileSync(fx(name), 'utf8'));
+const readJson = (name: string): unknown =>JSON.parse(readFileSync(fx(name), 'utf8'));
 const v4 = JSON.parse(readFileSync(new URL('./fixtures/save-v4.json', import.meta.url), 'utf8'));
 const UPDATE = process.env.UPDATE_GOLDEN === '1';
 
@@ -60,7 +60,7 @@ describe('Stage 3 save compatibility', () => {
   });
 
   it('a version-4 save without xpMultiplier loads at 10', () => {
-    const raw = readJson('save-v4-no-multiplier.json');
+    const raw = readJson('save-v4-no-multiplier.json') as Record<string, unknown>;
     expect('xpMultiplier' in raw).toBe(false);
     expect(migrateLegacySave(raw, SAVE_KEY).state.xpMultiplier).toBe(10);
   });
@@ -77,6 +77,6 @@ describe('Stage 3 save compatibility', () => {
   it('serializeState writes version 4 and the same keys as the default golden', () => {
     const out = stable(serializeState(createDefaultState(), null, null));
     expect(out.version).toBe(4);
-    expect(Object.keys(out).sort()).toEqual(Object.keys(readJson('default-state.golden.json')).sort());
+    expect(Object.keys(out).sort()).toEqual(Object.keys(readJson('default-state.golden.json') as object).sort());
   });
 });
