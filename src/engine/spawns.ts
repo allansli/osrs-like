@@ -18,12 +18,12 @@ import { loadBlenderWorldTemplate, upgradeResourceNodeWithGltf } from './blender
 import { el } from '../ui/hud';
 
 interface ResourceNodeDef {
-  name?: string;
-  skill?: string;
-  req?: number;
-  xp?: number;
-  item?: string;
-  respawn?: number;
+  name: string;
+  skill: string;
+  req: number;
+  xp: number;
+  item: string;
+  respawn: number;
   kind: string;
   foliageColor?: number;
   trunkColor?: number;
