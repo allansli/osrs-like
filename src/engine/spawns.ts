@@ -2,7 +2,8 @@ import * as THREE from 'three';
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { G, type MonsterEntity, type ResourceNodeEntity } from './context';
 import { MONSTER_TYPES, RESOURCE_NODES_DEF, type MonsterDef } from '../data/world';
-import { MONSTER_PLACEMENTS, NODE_PLACEMENTS } from '../data/placements';
+import { CAMPS } from '../data/worldMap';
+import { NODE_PLACEMENTS } from '../data/placements';
 import { getTerrainHeight } from '../state/terrain';
 import { createMonsterLogic } from '../state/monsterAi';
 import {
@@ -32,7 +33,12 @@ interface ResourceNodeDef {
   scale?: number;
 }
 
-export function spawnMonster(typeKey: string, x: number, z: number): void {
+export function spawnMonster(
+  typeKey: string,
+  x: number,
+  z: number,
+  opts?: { campId?: string; wander?: number }
+): void {
   const def: MonsterDef | undefined = MONSTER_TYPES[typeKey];
   if (!def) return;
   const rig = createMonsterMesh(def, typeKey);
@@ -49,7 +55,7 @@ export function spawnMonster(typeKey: string, x: number, z: number): void {
   `;
   el('world-labels').appendChild(labelEl);
 
-  const logic = createMonsterLogic(typeKey, x, z);
+  const logic = createMonsterLogic(typeKey, x, z, opts);
   logic.wanderTimer = Math.random() * 3;
   const mObj: MonsterEntity = {
     typeKey,
@@ -207,8 +213,10 @@ export function spawnResourceNode(nodeKey: string, x: number, z: number): void {
 }
 
 export function spawnAllResourcesAndMonsters(): void {
-  for (const m of MONSTER_PLACEMENTS) {
-    spawnMonster(m.type, m.x, m.z);
+  for (const camp of CAMPS) {
+    for (const m of camp.members) {
+      spawnMonster(m.type, m.x, m.z, { campId: camp.id, wander: m.wander });
+    }
   }
   for (const n of NODE_PLACEMENTS) {
     spawnResourceNode(n.type, n.x, n.z);

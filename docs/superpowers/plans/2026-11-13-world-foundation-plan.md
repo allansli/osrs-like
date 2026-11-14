@@ -715,6 +715,8 @@ Nothing here starts before **O-9** (Stage 1 accepted and merged) and **O-10** (S
 ### O-10 Approve Stage 2 [OWNER]
 The owner approves or amends CALL-6, CALL-7 with Q7, CALL-8 with Q4, CALL-9, CALL-10 and CALL-15. An amendment changes only the data or test values of the task that the table in 0.5 names. Q2 (renaming) stays out of scope.
 
+**Approved 2026-11-14.** The main session listed CALL-6 to CALL-10, CALL-15, Q4 and Q7 with a recommendation to approve all as written and asked for the owner's approval; the owner answered "segue". No amendment.
+
 ## 2.1 Lanes and files
 
 | Lane | Tasks | Files |

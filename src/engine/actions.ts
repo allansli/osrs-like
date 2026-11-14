@@ -21,10 +21,10 @@ import {
 } from './vfx';
 import { addChatMessage, showBanner, updateTargetHud, updateAllUI, requestUiRefresh, el } from '../ui/hud';
 import { STATE } from '../state/gameState';
-import { prepareAttack, getEquipmentBonuses, mitigateDamage } from '../state/combat';
+import { prepareAttack, getEquipmentBonuses, rollMonsterHit } from '../state/combat';
 import { addItem, removeItem, canAddItem } from '../state/inventory';
 import { SPELLS } from '../data/magic';
-import { isDown, onPlayerHit } from '../state/monsterAi';
+import { AGGRO_GRACE_MS, isDown, onPlayerHit } from '../state/monsterAi';
 import { ITEMS } from '../data/items';
 import { SKILLS_META } from '../data/skills';
 import { addItemToInventory, grantXp } from '../ui/playerActions';
@@ -38,15 +38,15 @@ import {
   noteGather,
   registerKill,
   RESPAWN_SECONDS,
-  resolveDragonfire,
   weaponSpecial
 } from '../state/adventure';
 
 export function teleportToRegion(regionId?: string): void {
   const reg = WORLD_REGIONS.find((r: RegionDef) => r.id === regionId);
   if (!reg) return;
+  G.aggroGraceUntil = performance.now() + AGGRO_GRACE_MS;
   player.targetEntity = null;
-  player.targetPos = null;
+  player.waypoints.length = 0;
   player.pos.set(reg.x, getTerrainHeight(reg.x, reg.z + 4), reg.z + 4);
   player.yaw = Math.PI;
   camState.yaw = Math.PI;
@@ -82,6 +82,12 @@ export function triggerRegionBanner(reg: RegionDef): void {
 
 export function performPlayerAttack(monster: MonsterEntity): void {
   if (isDown(monster.logic) || player.downed) return;
+  if (monster.logic.state === 'return') {
+    // Immune on the way home (design 6.5): spend nothing, say it once, drop the target.
+    addChatMessage(`The ${monster.def.name} has lost interest.`, 'combat');
+    player.targetEntity = null;
+    return;
+  }
   const prep = prepareAttack(STATE);
   if (!prep.ok) {
     addChatMessage(prep.reason, 'combat');
@@ -177,7 +183,17 @@ export function performPlayerAttack(monster: MonsterEntity): void {
 
   const applyDamage = (): void => {
     const hit = onPlayerHit(monster.logic, dmg);
-    if (!hit.applied) return;
+    if (!hit.applied) {
+      SFX.miss();
+      spawnHitSplatWorld(monster.pos, 0, 'miss');
+      // A projectile that lands after the monster turned home. If the player still targets it,
+      // this is the one message and the target goes; otherwise the guard above already said it.
+      if (player.targetEntity?.ref === monster) {
+        addChatMessage(`The ${monster.def.name} has lost interest.`, 'combat');
+        player.targetEntity = null;
+      }
+      return;
+    }
     if (dmg > 0) {
       SFX.hit();
       monster.flinch = 1.0;
@@ -293,30 +309,14 @@ export function handleMonsterDeath(monster: MonsterEntity): void {
 
 export function performMonsterRetaliation(monster: MonsterEntity): void {
   if (isDown(monster.logic) || player.downed || STATE.hp <= 0) return;
-  monster.attackAnim = 1;
-  const bon = getEquipmentBonuses(STATE);
-  const defLvl = STATE.skills.defence.lvl + (STATE.combatStyle === 'defensive' ? 3 : 0);
-  const prayDefMult = STATE.activePrayers.has('piety') ? 1.25 : (STATE.activePrayers.has('thick_skin') ? 1.15 : 1.0);
-  const playerDefScore = (defLvl * 1.2 + bon.def) * prayDefMult + 10;
-  const monAtkScore = monster.def.atk * 1.25 + 8;
-
-  const hitChance = Math.min(0.82, Math.max(0.12, monAtkScore / (monAtkScore + playerDefScore)));
   monster.logic.breathCount = (monster.logic.breathCount || 0) + 1;
-  const dragonfire = monster.typeKey === 'elvarg_dragon' && monster.logic.breathCount % 3 === 0;
-
-  let dmg = 0;
-  let absorbedBreath = false;
-  if (Math.random() < hitChance) {
-    if (dragonfire) {
-      const raw = Math.max(1, Math.floor(Math.random() * 43));
-      const resolved = resolveDragonfire(raw, STATE);
-      dmg = resolved.damage;
-      absorbedBreath = resolved.absorbed && raw > 0;
-    } else {
-      dmg = Math.max(1, Math.floor(Math.random() * (monster.def.maxHit + 1)));
-      dmg = mitigateDamage(dmg, monster.def.style, STATE.activePrayers);
-    }
-  }
+  const { dmg, dragonfire, absorbed: absorbedBreath } = rollMonsterHit(
+    monster.typeKey,
+    monster.logic.breathCount,
+    STATE,
+    Math.random
+  );
+  monster.attackAnim = 1;
 
   const applyHit = (): void => {
     if (absorbedBreath) {
@@ -363,7 +363,7 @@ export function handlePlayerDeath(): void {
   player.downed = true;
   player.downedTimer = RESPAWN_SECONDS;
   player.targetEntity = null;
-  player.targetPos = null;
+  player.waypoints.length = 0;
   STATE.hp = 0;
   STATE.activePrayers.clear();
   const notice = deathNotice();
@@ -376,6 +376,7 @@ export function handlePlayerDeath(): void {
 }
 
 export function finishRespawn(): void {
+  G.aggroGraceUntil = performance.now() + AGGRO_GRACE_MS;
   applyRespawn(STATE);
   player.downed = false;
   player.downedTimer = 0;
