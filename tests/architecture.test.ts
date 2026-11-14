@@ -27,7 +27,7 @@ describe('architecture', () => {
   it('state and data layers do not import engine, ui or three, and do not mention document or window', () => {
     const files = [...listTs(join(srcDir, 'state')), ...listTs(join(srcDir, 'data'))];
     expect(files.length).toBeGreaterThan(10);
-    const badImport = /from\s+['"](?:[^'"]*\/)?(?:engine|ui)(?:\/[^'"]*)?['"]|from\s+['"]three(?:\/[^'"]*)?['"]|import\s*\(\s*['"]three/;
+    const badImport = /(?:from|import)\s*\(?\s*['"](?:(?:[^'"]*\/)?(?:engine|ui)(?:\/[^'"]*)?|three(?:\/[^'"]*)?)['"]/;
     const badGlobal = /\b(?:document|window)\b/;
     for (const file of files) {
       const text = readFileSync(file, 'utf8');
