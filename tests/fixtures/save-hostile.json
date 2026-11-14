@@ -1,0 +1,25 @@
+{
+  "version": 4,
+  "game": "Gielinor Hero",
+  "gp": 1e308,
+  "specEnergy": 1e999,
+  "hp": 1e999,
+  "prayerPts": 1e999,
+  "currentRegion": "not_a_region",
+  "timeOfDay": 1.5,
+  "activeSpell": "not_a_spell",
+  "equipment": { "weapon": "constructor", "head": "__proto__" },
+  "inventory": [
+    { "id": "constructor", "qty": 5 },
+    { "id": "__proto__", "qty": 1 },
+    { "id": "air_rune", "qty": 1e999 },
+    { "id": "mind_rune", "qty": 1e308 },
+    { "id": "feather" }
+  ],
+  "bank": [{ "id": "toString", "qty": 1 }],
+  "quests": {
+    "claimed": ["lumbridge", "lumbridge", "no_such_quest"],
+    "slayer": { "monster": "goblin", "name": "<img src=x onerror=alert(1)>", "remaining": 3, "total": 6 }
+  },
+  "playerPos": { "x": 1e999, "y": 0, "z": 1e999, "yaw": 0 }
+}
