@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import { ITEMS, shopPrice } from '../src/data/items';
 import { getLevelForXp, OSRS_XP_TABLE } from '../src/data/skills';
 import { claimQuest, registerKill } from '../src/state/adventure';
 import { createDefaultState } from '../src/state/gameState';
-import { buyItem, buyRunePack, isGatheredGood, sellInventoryMatch, sellItem } from '../src/state/inventory';
+import { buyItem, buyPrice, buyRunePack, isGatheredGood, sellInventoryMatch, sellItem } from '../src/state/inventory';
 import { levelUnlockLines, unlocksAt } from '../src/state/unlocks';
 
 /** The same pure functions the shop window's Buy, batch and rune-pack buttons call (src/ui/stations.ts). */
@@ -101,5 +102,16 @@ describe('review 1: the unlock line reads the live node table', () => {
   it('Woodcutting 30 unlocks the Maple Tree', () => {
     expect(unlocksAt('woodcutting', 30).map((u) => u.name)).toContain('Maple Tree');
     expect(levelUnlockLines('woodcutting', 'Woodcutting', 29, 30)[0]).toContain('<b>Maple Tree</b>');
+  });
+});
+
+/** The examine line and the item tooltip quote buyPrice, so they agree with the store. */
+describe('review 2: no shop price for goods the store does not sell', () => {
+  it('is null for ore, bars and bones, and the shop price otherwise', () => {
+    for (const id of ['copper_ore', 'runite_bar', 'bones']) {
+      expect(isGatheredGood(id)).toBe(true);
+      expect(buyPrice(ITEMS[id])).toBeNull();
+    }
+    expect(buyPrice(ITEMS.iron_scimitar)).toBe(shopPrice(ITEMS.iron_scimitar));
   });
 });

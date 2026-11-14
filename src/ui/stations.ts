@@ -2,7 +2,7 @@ import { ITEMS, TIER_COLORS, combatClassLabel, isStackableInBackpack, itemCombat
 import { SKILLS_META } from '../data/skills';
 import { FORGE_RECIPES, recipeById } from '../data/recipes';
 import { WORLD_REGIONS, type RegionDef } from '../data/world';
-import { buyItem, buyRunePack, canAddItem, countItem, deposit, isGatheredGood, isUnequippedGear, quoteInventorySale, runePackCost, sellItem, withdraw } from '../state/inventory';
+import { buyItem, buyPrice, buyRunePack, canAddItem, countItem, deposit, isGatheredGood, isUnequippedGear, quoteInventorySale, runePackCost, sellItem, withdraw } from '../state/inventory';
 import { BACKPACK_SIZE, STATE } from '../state/gameState';
 import { questView, starterView } from '../state/adventure';
 import { isShrineDiscovered } from '../state/shrines';
@@ -330,7 +330,7 @@ export function renderShopModal(): void {
             <div class="shop-card-name">${it.name}</div>
             <span class="combat-class-badge ${combat}">${combatClassLabel(combat)}</span>
           </div>
-          <div class="shop-card-desc">${it.slot ? it.slot : it.type} · ${shopPrice(it).toLocaleString('en-US')} GP</div>
+          <div class="shop-card-desc">${it.slot ? it.slot : it.type}${gathered ? '' : ` · ${shopPrice(it).toLocaleString('en-US')} GP`}</div>
           ${req.html}
         </div>
       </div>
@@ -611,7 +611,8 @@ export function itemCompareHtml(it: ItemDef): string {
     if (it.heal) bits.push(`Heals +${it.heal}`);
     if (it.restorePrayer) bits.push(`Prayer +${it.restorePrayer}`);
     if (it.xp) bits.push(`Bury for ${it.xp} Prayer XP`);
-    bits.push(`Shop ${shopPrice(it)} GP · sell ${unitSellPrice(it)} GP`);
+    const price = buyPrice(it);
+    bits.push(`${price === null ? 'Sell' : `Shop ${price} GP · sell`} ${unitSellPrice(it)} GP`);
     return `<div class="tip-title">${it.name}</div><div>${bits.join('<br>')}</div>`;
   }
   const equippedId = STATE.equipment[it.slot];

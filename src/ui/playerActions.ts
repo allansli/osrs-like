@@ -1,7 +1,7 @@
 import { STATE } from '../state/gameState';
 import type { QtyMode } from '../state/types';
 import { getLevelForXp, SKILLS_META, OSRS_XP_TABLE } from '../data/skills';
-import { ITEMS, shopPrice, unitSellPrice } from '../data/items';
+import { ITEMS, unitSellPrice } from '../data/items';
 import {
   addItem,
   removeItem,
@@ -9,6 +9,7 @@ import {
   canAddItem,
   sellItem,
   buyItem,
+  buyPrice,
   sellInventoryMatch,
   isGatheredGood,
   isUnequippedGear
@@ -216,7 +217,8 @@ export function handleInventoryClick(index: number): void {
     updateAllUI();
     return;
   }
-  addChatMessage(`<b>${item.name}</b> — Shop ${shopPrice(item).toLocaleString('en-US')} GP · sells for ${unitSellPrice(item).toLocaleString('en-US')} GP. Use it at the Bank, Anvil, or General Store.`);
+  const price = buyPrice(item);
+  addChatMessage(`<b>${item.name}</b> — ${price === null ? '' : `Shop ${price.toLocaleString('en-US')} GP · `}sells for ${unitSellPrice(item).toLocaleString('en-US')} GP. Use it at the Bank, Anvil, or General Store.`);
 }
 
 export function unequipSlot(slotName: string): void {

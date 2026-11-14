@@ -1,4 +1,4 @@
-import { ITEMS, isStackableInBackpack, isStackableInBank, shopPrice, unitSellPrice } from '../data/items';
+import { ITEMS, isStackableInBackpack, isStackableInBank, shopPrice, unitSellPrice, type ItemDef } from '../data/items';
 import { MAX_GP, MAX_STACK, creditGp } from './economy';
 import { BACKPACK_SIZE, BANK_CAPACITY } from './gameState';
 import { notePurchase, noteSale } from './quests';
@@ -219,6 +219,11 @@ const GATHERED_TYPES = new Set(['resource', 'bones', 'bar']);
 export function isGatheredGood(itemId: string): boolean {
   const item = ITEMS[itemId];
   return !!item && GATHERED_TYPES.has(item.type);
+}
+
+/** What the store charges for an item, or null for the goods it only buys. */
+export function buyPrice(item: ItemDef): number | null {
+  return GATHERED_TYPES.has(item.type) ? null : shopPrice(item);
 }
 
 export function isUnequippedGear(itemId: string): boolean {
