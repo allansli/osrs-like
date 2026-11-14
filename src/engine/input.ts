@@ -44,6 +44,13 @@ export function setupInputHandlers(): void {
   G.scene.add(G.hoverTile);
 
   window.addEventListener('keydown', (e: KeyboardEvent) => {
+    if (e.code === 'Escape') {
+      closeModals();
+    }
+    const t = e.target as HTMLElement;
+    if (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable) {
+      return;
+    }
     G.keysPressed[e.code] = true;
     noteCheatKey(e);
     if (e.code === 'Space' && player.isGrounded && !player.downed) {
@@ -53,9 +60,6 @@ export function setupInputHandlers(): void {
     }
     if (e.code === 'KeyF') {
       toggleSpecialAttack();
-    }
-    if (e.code === 'Escape') {
-      closeModals();
     }
     const tabByKey: Record<string, string> = { F1: 'combat', F2: 'skills', F3: 'inventory', F4: 'equipment', F5: 'prayer', F6: 'magic' };
     if (tabByKey[e.code]) {
@@ -68,6 +72,10 @@ export function setupInputHandlers(): void {
   });
 
   window.addEventListener('keyup', (e: KeyboardEvent) => {
+    const t = e.target as HTMLElement;
+    if (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable) {
+      return;
+    }
     G.keysPressed[e.code] = false;
   });
 
