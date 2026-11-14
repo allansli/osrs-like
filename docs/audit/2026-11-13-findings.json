@@ -1,0 +1,453 @@
+{
+ "date": "2026-11-13",
+ "malicious": false,
+ "security_coverage": "Read in full: scripts/run-blender.mjs, scripts/paint-albedos.mjs, scripts/blender/build_hero.py, export_guard.py, export_from_blend.py, check_local_gear_bounds.py, inspect_all_gear_glb.py, index.html, vite.config.ts, package.json, vercel.json, src/main.ts, src/state/save.ts, src/state/cheats.ts, src/ui/bridge.ts. Inventoried the zip entries of 'Game Anime RPG Character.zip' (22 flat names, no '..' or absolute paths).\n\nThe three large generators (build_gear.py 3156 lines, build_monsters.py 2969, build_world.py 2328) were not all read by eye. I parsed each one with Python's ast module without running it, and listed every import, every call target, every bpy/os/sys attribute and every path-like or long string constant. This covers every line, but only those kinds of node. Imports are limited to math, os, sys, bpy, bmesh and mathutils. Calls are limited to bmesh/bpy geometry, bpy.data.libraries.load on repo-relative BlendSwap .blend files, glTF export, render, save_as_mainfile, and os.makedirs/os.path. There is no subprocess, exec/eval, network, socket, base64, pickle, file open, deletion or bpy.app handlers. I also read their headers, asset loaders, load_imported_character, the geometry primitives, and the render/main sections in full. The remaining geometry-building bodies, made up of numeric vertex data and builder calls, were checked only through that AST inventory.\n\nsrc/ and tests/ (about 14.6k lines): I grepped for fetch, XHR, WebSocket, sendBeacon, navigator, dynamic import, eval, new Function, string timers, cookies, localStorage, sessionStorage, IndexedDB, clipboard, postMessage, window.open, location, atob/btoa, fromCharCode, hex and unicode escapes, URLs, Workers, document.write, insertAdjacentHTML and script creation. I read around every hit. The only storage use is localStorage for the save and the intro/overhaul flags, and there is no network access.\n\nI traced each string loaded from the save to its sink: activeSpell, currentRegion, combatStyle, quests.title, quests.slayer, quests.claimed, inventory, bank and equipment. I also checked the window globals, including __DEV_ACCESS__, and the cheat keystroke buffer, which is 16 characters, local only and used only for matching.\n\npackage-lock.json: all 103 'resolved' URLs point to registry.npmjs.org, and only esbuild and fsevents have install scripts. The one unexpected-looking entry, @napi-rs/lzma-linux-x64-gnu, is an optional dependency of rollup 4.65.0, comes from the registry and has integrity set.\n\nGit history: I ran 'git log -p --all', excluding binaries and the lockfile, and grepped the added and removed lines for risky patterns. Hits were limited to BlendSwap license links, README badges, an old cdnjs three.js r128 script tag that was later removed, and a local-relative fetch of hands-anymove.json on the unmerged branch origin/cursor/oil-paint-renderer-96ec.\n\nNot covered: the content of that unmerged branch and the other remote branches beyond the history grep, the src/ files beyond the grep sweeps (runtime.ts at 6k+ lines and stations.ts were only read around hits and innerHTML sinks), and the binary assets. For the .blend files I relied on the first pass.",
+ "baseline": "Commands run in /home/rdrosa/gitprojects/allan/osrs-like, in order. No files were edited.\n\n=== 1. npm ci (exit 0) ===\nadded 57 packages in 3s\n\n=== 2. vitest run (exit 0) ===\n RUN  v2.1.4 /home/rdrosa/gitprojects/allan/osrs-like\n\n ✓ tests/phase4-combat.test.ts  (2 tests) 8ms\n ✓ tests/cheats.test.ts  (4 tests) 9ms\n ✓ src/__tests__/bulk-sell.test.ts  (4 tests) 8ms\n ✓ tests/phase1.test.ts  (10 tests) 23ms\n ✓ tests/phase3-content.test.ts  (6 tests) 18ms\n ✓ tests/phase2.test.ts  (11 tests) 19ms\n ✓ src/__tests__/lean-rig.test.ts  (8 tests) 22ms\n ✓ src/__tests__/bulk-buy.test.ts  (32 tests) 68ms\n ✓ src/__tests__/combat-class.test.ts  (8 tests) 170ms\n ✓ src/__tests__/blender-hero.test.ts  (4 tests) 356ms\n ✓ tests/textures.test.ts  (14 tests) 15033ms\n   ✓ albedo atlas > ships a seamless 256 painted albedo for every family and no pbr maps 4580ms\n   ✓ biome ground tiles > ships a seamless 256 gouache tile for each regional ground 1910ms\n   ✓ gear tier albedos > ships a 256 gouache tile for every metal tier plus wood, hide, leather, and cloth 4175ms\n   ✓ creature identity albedos > ships a 256 gouache tile for skin, hair, eyes, and every species hide 4329ms\n\n Test Files  11 passed (11)\n      Tests  103 passed (103)\n   Start at  18:13:25\n   Duration  16.18s (transform 1.37s, setup 0ms, collect 3.33s, tests 15.74s, environment 4ms, prepare 1.93s)\n\n=== 3. tsc --noEmit (exit 0) ===\n(no output)\n\n=== 4. vite build (exit 0) ===\nvite v5.4.10 building for production...\ntransforming...\n✓ 35 modules transformed.\nrendering chunks...\ncomputing gzip size...\ndist/index.html                  18.03 kB │ gzip:   5.13 kB\ndist/assets/index-BlOVUbh7.css   29.28 kB │ gzip:   7.09 kB\ndist/assets/index-DPnQ4OPs.js   926.36 kB │ gzip: 250.64 kB\n✓ built in 1.64s\n\n=== 5. npm audit (exit 1) ===\n# npm audit report\n\n@vitest/mocker  <=4.1.11\nSeverity: moderate\nVitest: Path Traversal / Arbitrary File Read via @vitest/mocker Redirect Mock - https://github.com/advisories/GHSA-82fw-gwwq-j7x9\nVitest: Code injection via unauthenticated manual mock registration - https://github.com/advisories/GHSA-qxg6-89mg-rqv8\nfix available via `npm audit fix`\nnode_modules/@vitest/mocker\n  vitest  <=4.1.10\n  Depends on vulnerable versions of @vitest/mocker\n  Depends on vulnerable versions of tinypool\n  node_modules/vitest\n\nesbuild  <=0.24.2\nSeverity: moderate\nesbuild enables any website to send any requests to the development server and read the response - https://github.com/advisories/GHSA-67mh-4wv8-2f99\nfix available via `npm audit fix`\nnode_modules/esbuild\n  vite  <=6.4.3\n  Depends on vulnerable versions of esbuild\n  node_modules/vite\n\ntinypool  <=2.1.1\nSeverity: critical\nTinypool: Prototype Pollution gadget in worker options leads to Remote Code Execution - https://github.com/advisories/GHSA-5gmw-xhrv-c9v3\nTinypool: Prototype Pollution Gadget to RCE in run() options - https://github.com/advisories/GHSA-85c8-ppgw-ccpr\nfix available via `npm audit fix`\nnode_modules/tinypool\n\n5 vulnerabilities (2 moderate, 1 high, 2 critical)\n\nTo address all issues, run:\n  npm audit fix\n\n=== 6. npm outdated (exit 1, npm's normal \"outdated\" status) ===\nPackage       Current   Wanted   Latest  Location                   Depended by\n@types/node   22.20.5  22.20.5   26.6.6  node_modules/@types/node   osrs-like\n@types/three  0.169.0  0.169.0  0.187.0  node_modules/@types/three  osrs-like\nthree         0.169.0  0.169.0  0.187.0  node_modules/three         osrs-like\ntypescript      5.6.3    5.9.3    7.0.2  node_modules/typescript    osrs-like\nvite           5.4.10   5.4.21    8.3.8  node_modules/vite          osrs-like\nvitest          2.1.4    2.1.9    5.1.0  node_modules/vitest        osrs-like\n\n=== 7. du -sh dist dist/assets/* (exit 0) ===\n15M\tdist\n\n=== 8. git status --short (exit 0) ===\n(no output, working tree clean)\n\nMalicious-code check: nothing suspicious seen in the command outputs. The audit findings are advisories in dev-only dependencies (vitest, vite, esbuild, tinypool), not signs of compromise.",
+ "confirmed": {
+  "security": [
+   {
+    "title": "Save-derived slayer task name is interpolated into innerHTML (stored DOM injection)",
+    "file": "src/ui/stations.ts",
+    "line": 505,
+    "severity": "low",
+    "category": "dom-injection",
+    "evidence": "normalizeQuests (src/state/quests.ts:82-91) copies data.slayer.name as any string, with no length limit and no check against the monster catalog. stations.ts:505 builds `<b>${task.name}</b>` into taskLine, and line 536 assigns it with host.innerHTML. runtime.ts:970 interpolates current.name into addChatMessage, which sets div.innerHTML at runtime.ts:166. A save stored under SAVE_KEY with quests.slayer = {monster:'x', name:'<img src=x onerror=alert(1)>', remaining:1, total:1} runs script when the Quests modal opens or Vannaka is asked for a task. The game has no save-import UI and the save is only read from localStorage (runtime.ts:1011), so writing that payload needs same-origin script execution or a user pasting it into devtools. That makes this a self-XSS/persistence vector, which is why it stays low.",
+    "fix": "In normalizeQuests, accept the slayer task only when task.monster is a known monster id, and set name from the static monster catalog instead of the save. Escaping name at the two sinks also works."
+   },
+   {
+    "title": "Save item/equipment ids are checked with ITEMS[id] on a plain object, so inherited keys pass",
+    "file": "src/state/inventory.ts",
+    "line": 72,
+    "severity": "low",
+    "category": "input-validation",
+    "evidence": "ITEMS is a plain object literal typed Record<string, ItemDef> (src/data/items.ts:31). compactSlots (inventory.ts:72) does `if (!slot || !ITEMS[slot.id]) continue;` and the equipment loader (save.ts:55) does `typeof value === 'string' && ITEMS[value]`. Ids such as 'constructor', 'toString' or '__proto__' resolve to truthy inherited members, so they are kept as items whose name, icon and slot are undefined. This can corrupt rendering and equipment mesh building on every load. It is integrity/robustness only, with no code execution. The reviewer's claim about activePrayers is wrong: save.ts:85 validates with PRAYERS.some(p => p.id === id) on an array, which is not affected.",
+    "fix": "Use Object.hasOwn(ITEMS, id) in compactSlots (inventory.ts:72) and in the equipment loop (save.ts:55). The activePrayers check needs no change."
+   },
+   {
+    "title": "Blender build scripts default render output to a hard-coded Gemini agent scratch path",
+    "file": "scripts/blender/build_gear.py",
+    "line": 3113,
+    "severity": "low",
+    "category": "filesystem-hygiene",
+    "evidence": "build_gear.py:3113, build_monsters.py:2925 and build_world.py:2291 set render_path = r\"C:\\Users\\User\\.gemini\\antigravity-cli\\brain\\28c9539a-...\\scratch\\<name>_render.png\" unless '-- --render <path>' is passed. run-blender.mjs never passes that flag. main then always calls setup_*_and_render(render_path) (build_gear.py:3150, build_monsters.py:2963, build_world.py:2322), which makedirs the parent directory and writes the PNG (build_gear.py:3097-3102). On Windows this writes outside the repo, and on Linux it creates a file with backslashes in its name in the cwd. This is leftover from the Gemini Antigravity agent that wrote the scripts, not malicious: it only writes a local render, and nothing is executed or sent anywhere.",
+    "fix": "Default render_path to os.path.join(repo_root, 'scratch', '<name>_render.png'), as build_hero.py does, or to None so rendering is skipped."
+   },
+   {
+    "title": "Third-party .blend files are opened without --disable-autoexec",
+    "file": "scripts/run-blender.mjs",
+    "line": 41,
+    "severity": "low",
+    "category": "supply-chain-hardening",
+    "evidence": "The export branch (run-blender.mjs:40-42) spawns blender with ['--background', blendFile, '--python', exportScript], and the build branches use ['--background', '--python', script]. None of them pass --disable-autoexec. The build scripts open or link third-party BlendSwap files, for example bpy.ops.wm.open_mainfile on kaiV2.blend (build_hero.py:437). If the user has enabled 'Auto Run Python Scripts' in Blender preferences, registered text blocks in those files would execute. This is defense in depth: no embedded script is claimed to exist.",
+    "fix": "Add '--disable-autoexec' as the first argument of every spawn/spawnSync argument array in run-blender.mjs."
+   },
+   {
+    "title": "vercel.json sets no security headers",
+    "file": "vercel.json",
+    "line": 1,
+    "severity": "low",
+    "category": "deployment-hardening",
+    "evidence": "vercel.json contains only framework, buildCommand and outputDirectory, so the deployment sends no CSP, X-Content-Type-Options, Referrer-Policy or frame-ancestors header. Combined with the innerHTML sinks above, the site has no second layer against injected script and can be framed by any origin.",
+    "fix": "Add a headers block with X-Content-Type-Options: nosniff, Referrer-Policy: strict-origin-when-cross-origin, and Content-Security-Policy: frame-ancestors 'self'. A script-src CSP would first require removing the inline onclick handlers."
+   }
+  ],
+  "state-data": [
+   {
+    "title": "The shop sells raw ores and fish for less than the items they craft into sell for, so GP can be printed without limit",
+    "file": "src/state/inventory.ts",
+    "line": 175,
+    "severity": "medium",
+    "category": "economy-logic",
+    "evidence": "buyItem (inventory.ts:175-193) charges item.price and only refuses price <= 0. The 'supplies' shop filter (src/ui/stations.ts:290-291) shows resource, bones and bar items with buy and batch-buy buttons, and every buy path goes through buyItem (stations.ts:428,436; runtime.ts:840). sellItem pays unitSellPrice = floor(price*0.65) (items.ts:70-75) for any item. Using catalog.ts prices: smith_gilded_plate (catalog.ts:425, smithing level 38) takes 3 gold_ore at 185 each = 555 GP, and gilded_plate (8200) sells for 5330 GP. smith_rune_plate takes 3x620 = 1860 and returns 3380. smith_mith_plate takes 345 and returns 552. smith_bronze_plate takes 48 and returns 55. cook_lobster takes 65 and returns 84, and cook_shark takes 150 and returns 182. fletch_shafts takes 12 and returns 15x1 = 15. Each loop also pays recipe XP, multiplied by xpMultiplier, which defaults to 10 (gameState.ts:28). It is a single-player browser game and no other player is affected, so medium, not high.",
+    "fix": "Put the guard in buyItem, which every buy path goes through: `if (isGatheredGood(itemId)) return { ok: false, moved: 0, reason: 'The store only buys that.' };`. Then hide the buy buttons for those types in stations.ts. Feathers are type 'ammo', so bronze arrows still work. The other option is to reprice crafted outputs so that 0.65*output price stays below the cost of the inputs."
+   },
+   {
+    "title": "The Dragon Slayer 'Dragonfire Ward blessing' sets a flag that nothing reads",
+    "file": "src/state/adventure.ts",
+    "line": 359,
+    "severity": "medium",
+    "category": "correctness",
+    "evidence": "claimQuest sets state.quests.dragonfireWard = true when def.ward is set (adventure.ts:441). The wilderness quest has ward: true, and its rewardText (adventure.ts:126) promises 'the Dragonfire Ward blessing'. resolveDragonfire (adventure.ts:356-364) checks only prot_magic and DRAGONFIRE_WARDS. A grep of src finds no other reader of dragonfireWard. The only caller is runtime.ts:4982, which handles Elvarg's breath. A player who has claimed the quest and fights Elvarg without the prayer or a listed shield still takes the full dragonfire. The only test, tests/phase2.test.ts:92, checks that the flag is set.",
+    "fix": "adventure.ts:359: `const absorbed = state.quests.dragonfireWard || state.activePrayers.has('prot_magic') || (DRAGONFIRE_WARDS as readonly string[]).includes(shield);`. In phase2.test.ts, add one assertion that resolveDragonfire(100, claimedState).damage === 25 with no shield equipped."
+   },
+   {
+    "title": "Crafting says 'backpack full' even when using up the inputs would free the slot",
+    "file": "src/data/recipes.ts",
+    "line": 141,
+    "severity": "low",
+    "category": "inventory-logic",
+    "evidence": "tryCraft calls canAddItem for the output (recipes.ts:141) before it removes the inputs (line 144). Every non-equip item stacks in the backpack (items.ts isStackableInBackpack), so with 28 slots used and one copper_ore stack of exactly 3, smith_bronze_plate (output is equipment, so not stackable) fails: canPlace computes 28+1 > 28. The same happens when burning the last log of a stack with no ashes stack yet, and when smelting the last ore of a stack into a bar that has no stack yet.",
+    "fix": "In tryCraft, run the capacity check on a scratch copy: `const scratch = { ...state, inventory: state.inventory.map(s => ({ ...s })) }`, call removeFrom on it for each input, then call canAddItem(scratch, ...). canHoldRewards in adventure.ts already uses this rehearsal pattern."
+   },
+   {
+    "title": "Smelted bars cannot be used for anything, and smelting gold or runite loses money",
+    "file": "src/data/recipes.ts",
+    "line": 96,
+    "severity": "low",
+    "category": "data-table",
+    "evidence": "The smelt_* recipes (recipes.ts:96-100) produce bars defined in src/data/extras.ts:10-14. No recipe takes a bar as input: every smith_* recipe in catalog.ts:416-428 takes ore directly, and grep finds bars outside the data files only in tests. Selling is the only use. smelt_gold turns 185 GP of ore into a bar that sells for floor(240*0.65) = 156, and smelt_runite turns 620 into 507. SKILLS_META.smithing (catalog.ts:11) says 'Smelt bars & forge...'. Smelting still counts for the smelt quest flag through noteSmelt.",
+    "fix": "Change the smith_* inputs from ore to the matching bar (copper_ore -> bronze_bar, gold_ore -> gold_bar, and so on). This also makes forging take two steps and closes part of the shop arbitrage. Check the result against the finding above."
+   },
+   {
+    "title": "No test writes a current save and reads it back",
+    "file": "tests/phase1.test.ts",
+    "line": 22,
+    "severity": "low",
+    "category": "test-coverage",
+    "evidence": "No file in tests/ or src/__tests__/ calls serializeState or writeSave. The save tests only pass hand-written legacy objects to migrateLegacySave and use one v3 readSave. A field that serializeState (save.ts:113) writes but migrateLegacySave does not read back, or a new GameState field that was never added to serializeState, would silently reset on every reload and no test would fail.",
+    "fix": "Add one test: modify createDefaultState() (gp, skills, bank, quests.slayer, quests.claimed, activePrayers, activeSpell, specEnergy), call writeSave on an in-memory StorageLike, then readSave, and expect the result's state to equal the original apart from fields that are not persisted on purpose."
+   }
+  ],
+  "runtime": [
+   {
+    "title": "VFX, projectiles and trail embers are removed from the scene but never disposed, so GPU geometry leaks on every attack and continuously while the lava cape is worn",
+    "file": "src/engine/runtime.ts",
+    "line": 5920,
+    "severity": "high",
+    "category": "resource-leak",
+    "evidence": "The vfx cleanup at 5917-5922 and the projectile cleanup at 5893-5896 only call scene.remove. glowMaterial (4144-4152) returns a new MeshBasicMaterial on every call, and every effect builds a new geometry: spawnBurst at 4186 (one SphereGeometry per mote), spawnRunicCircle at 4476-4486 (RingGeometry and PlaneGeometry per cast), and the fire trails at about 4533 and 4714, which spawn one SphereGeometry ember every 0.03 to 0.04 s of flight. In three 0.169, WebGLGeometries and WebGLBindingStates keep each geometry's buffers and VAO until its 'dispose' event fires, so renderer.info.memory.geometries keeps growing. updateCapePhysics (defined at 5592) is called every frame on every animation branch (5650, 5685, 5705). With the lava cape on, it calls spawnBurst(…,1,…) with probability 0.22 per frame at 5635-5642, which leaks about 13 geometries per second at 60 fps, even while the player stands still.",
+    "fix": "After scene.remove at 5895 and 5920, call `obj.traverse(o => { o.geometry?.dispose(); o.material?.dispose?.(); })`. That is safe here because glowMaterial and these geometries are created per instance. Optional follow-up: cache one unit sphere geometry per size and scale it per mote."
+   },
+   {
+    "title": "Vitals bars freeze during regeneration, and updateAllUI does several full rebuilds plus localStorage writes per hit",
+    "file": "src/engine/runtime.ts",
+    "line": 790,
+    "severity": "medium",
+    "category": "hot-path",
+    "evidence": "updateAllUI (575-803) is the only code that writes hp-fill, prayer-fill and spec-fill (580-585). gameLoop changes STATE.specEnergy (5402), STATE.hp (5405) and STATE.prayerPts (5410) every frame without touching those bars, so they stay stale while idle until some event calls updateAllUI. On the other side, every grantXp ends with updateAllUI (290), and applyDamage calls grantXp 2 to 4 times plus its own updateAllUI. Each call rebuilds the inventory, skills, paperdoll, prayer and magic DOM and runs saveGameState at 790 (JSON.stringify plus localStorage.setItem). Persistence is already handled by the 2 s autosave at 5927-5930 and the beforeunload save at 5989.",
+    "fix": "Remove saveGameState() from line 790, since the autosave and beforeunload cover it. Move lines 578-585 into updateVitals() and call it from gameLoop, throttled to about 10 Hz. A dirty-flag deferral of the rest is optional; if done, first check that no caller reads freshly built DOM synchronously after updateAllUI."
+   },
+   {
+    "title": "Quality tiers never change the shadow map resolution, and 'balanced' actually runs at 2048",
+    "file": "src/engine/runtime.ts",
+    "line": 1300,
+    "severity": "medium",
+    "category": "correctness",
+    "evidence": "applyQualityTier('balanced') runs at 1300. sunLight is declared at 1069 but not created until 1308, so the `if (sunLight)` branch is skipped, and 1311-1312 then hard-code 2048x2048, while balanced should be 1024 (1193). In three 0.169, WebGLShadowMap allocates shadow.map only when `shadow.map === null` (or on a VSM switch). It does not compare sizes, so later mapSize.set calls from cycleGraphicsQuality have no effect once the first frame has rendered.",
+    "fix": "In applyQualityTier, after `sunLight.shadow.mapSize.set(res, res)`, add `if (sunLight.shadow.map) { sunLight.shadow.map.dispose(); sunLight.shadow.map = null; }`. Delete the hard-coded 2048 at 1311-1312 and call applyQualityTier('balanced') after scene.add(sunLight) at 1321."
+   },
+   {
+    "title": "The special-attack spin accumulates a per-frame increment, so it aliases and its speed depends on frame rate",
+    "file": "src/engine/runtime.ts",
+    "line": 5743,
+    "severity": "low",
+    "category": "timing",
+    "evidence": "`player.meshGroup.rotation.y += (1 - player.spinAnim) * Math.PI * 4` runs once per frame with no dt. spinAnim drops by dt*2.4, so at 60 fps the per-frame increment climbs from about 0.5 rad to 4π. It aliases near multiples of 2π, and the next frame's lerpAngle (5578) pulls it partly back. At 144 Hz there are 2.4 times more increments, so the spin looks completely different.",
+    "fix": "Store the base yaw separately: `player.baseYaw = lerpAngle(player.baseYaw, targetMeshYaw, …)` at 5578, compute turnDelta from baseYaw, then set `rotation.y = player.baseYaw + (player.spinAnim > 0 ? (1 - player.spinAnim) * Math.PI * 4 : 0)`. Lerping from rotation.y, as the original fix wrote, would carry the spin offset into the next frame."
+   },
+   {
+    "title": "The turn-velocity wrap compares rad/s against π, which flips the sign of bank and cape roll",
+    "file": "src/engine/runtime.ts",
+    "line": 5581,
+    "severity": "low",
+    "category": "correctness",
+    "evidence": "turnDelta is (Δangle)/dt, an angular velocity. lerpAngle (5364-5369) returns an unwrapped a + diff*t with |diff| ≤ π, so no angle wrap is ever needed. Any turnDelta between π and 2π rad/s, which is normal during the tail of a turn, becomes negative after the wrap. yawVelocity then flips sign, and the bank roll (5586) and cape roll and yaw (5624-5625) lean the wrong way.",
+    "fix": "Delete lines 5581-5582."
+   },
+   {
+    "title": "Level-up fireworks run private rAF loops with a fixed 0.016 s step and never dispose their meshes",
+    "file": "src/engine/runtime.ts",
+    "line": 4740,
+    "severity": "low",
+    "category": "timing",
+    "evidence": "spawnLevelUpFireworks (4723-4745) starts 16 rAF chains. Each moves `vel * 0.016` per frame, so on a 144 Hz display particles travel about 2.4 times farther during their 0.9 s wall-clock life. scene.remove(p) at 4737 never disposes the new SphereGeometry or MeshBasicMaterial. Callers are at 288 (every level-up), 963, 4092, 4938, 5511 and 6104.",
+    "fix": "Replace the loop with `spawnVfx(p, 0.9, (v, dt) => v.mesh.position.addScaledVector(vel, dt))`. The disposal fix in the vfx cleanup then covers these meshes too."
+   },
+   {
+    "title": "rebuildPlayerEquipmentMeshes and attachVannakaGear detach old gear without disposing geometry",
+    "file": "src/engine/runtime.ts",
+    "line": 2227,
+    "severity": "low",
+    "category": "resource-leak",
+    "evidence": "Lines 2225-2229 only call node.parent.remove(node). The new gear is built fresh: cloneBlenderGearNode clones the geometry per mesh (blenderGear.ts:97), and the set-bonus cue gets a new TorusGeometry (2497-2498). The same happens in attachVannakaGear (1978-1979, re-run at 2014). Each leak is triggered by a user action (equip or unequip), so it grows slowly.",
+    "fix": "After node.parent.remove(node), call `node.traverse(o => o.geometry?.dispose())`. Do not dispose materials: outlineMaterial is cached in outlineCache (materials.ts:19), and textures are cached in textures.ts:95."
+   },
+   {
+    "title": "Each mousemove raycasts the 80x80-segment terrain twice",
+    "file": "src/engine/runtime.ts",
+    "line": 6075,
+    "severity": "low",
+    "category": "hot-path",
+    "evidence": "handleWorldHover (3850, called from mousemove at 3799) calls updateHoverTile, which runs raycaster.intersectObject(terrainMesh) at 6075. It then calls intersectObjects(worldInteractiveObjects) at 3864, a list that includes terrainMesh (1426). The terrain is a PlaneGeometry of size 260 with 80x80 segments (1402-1404), so 12,800 triangles are tested twice per event. pointerToWorld (3902-3909) repeats the same double raycast.",
+    "fix": "Raycast once in handleWorldHover, take `hits.find(h => h.object === terrainMesh)` as the ground point and pass it to updateHoverTile. Do the same in pointerToWorld."
+   },
+   {
+    "title": "The outline flag starts as On while every outline shell is created hidden",
+    "file": "src/engine/runtime.ts",
+    "line": 1168,
+    "severity": "low",
+    "category": "correctness",
+    "evidence": "`outlinesEnabled = true` (1168) makes the button read 'Outlines: On' (1227). addCartoonOutline sets `shell.visible = false` (materials.ts:90), and nothing else sets isOutline visibility except toggleOutlines (1210-1221). The first click therefore 'disables' outlines that were already hidden, and outlines created after a toggle (gear rebuilds, guards, glTF swaps) are always hidden.",
+    "fix": "Initialise `let outlinesEnabled = false;`. If outlines should be on by default, apply `shell.visible = outlinesEnabled` when shells are created, through a setter exported from materials.ts."
+   },
+   {
+    "title": "@ts-nocheck hides type errors in a file under a strict tsconfig, including an unimported GLTF type",
+    "file": "src/engine/runtime.ts",
+    "line": 1,
+    "severity": "low",
+    "category": "type-safety",
+    "evidence": "Line 1 is `// @ts-nocheck`, while tsconfig.json sets strict: true. GLTF is used at 2048-2049 but only GLTFLoader is imported (line 3). getElementById results are dereferenced without null checks (580-588, 3392, 3811, and others). The current index.html contains these ids (for example hp-fill at index.html:91), so there is no live crash today, only lost compile-time protection.",
+    "fix": "Add `import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js'`. Remove @ts-nocheck incrementally, together with any module extractions."
+   },
+   {
+    "title": "Frame-loop waste: duplicate getEquipmentBonuses, per-frame Vector3 allocations, frame-rate-dependent damping, dead code",
+    "file": "src/engine/runtime.ts",
+    "line": 5381,
+    "severity": "low",
+    "category": "hot-path",
+    "evidence": "getEquipmentBonuses() runs at 5381 and again at 5383 in every frame with a matched set. 5904 and 5908 allocate two Vector3 objects per oriented projectile per frame. Multiplicative damping without dt appears at 3370-3371 (*= 0.86), 5583 (*0.8), the idle limbs (*= 0.85) and 4448 (rotation.z += 0.02). createSoftMoteTexture, buildAtmosphericParticles and updateAtmosphericParticles (3594-3700) have no callers, and lastMiniYaw (5988) is never read.",
+    "fix": "Compute `const bon = getEquipmentBonuses()` once before the branch at 5381. Hoist scratch Vector3s. Use `x *= Math.pow(k, dt*60)`. Delete the dead functions and lastMiniYaw."
+   }
+  ],
+  "engine-ui": [
+   {
+    "title": "Global keydown handler does not ignore focused text inputs: typing in the bank search or cheat box moves, turns, jumps and toggles the special",
+    "file": "src/engine/runtime.ts",
+    "line": 3733,
+    "severity": "medium",
+    "category": "ui-correctness",
+    "evidence": "runtime.ts:3733-3754 sets keysPressed[e.code] = true, jumps on Space and calls toggleSpecialAttack() on KeyF with no check on the focused element. Only noteCheatKey (6089-6090) and the F1-F6 branch (3748-3749) skip INPUT and TEXTAREA. The movement loop (5430-5438) reads KeyA, KeyD, KeyW and KeyS each frame, and nothing in that path checks for an open modal. With focus in #bank-search (stations.ts:188) or #cheat-code-input: 'd' or 'a' turns the hero, 'w' or 's' walks while the key is held, every space jumps (SFX included), and every 'f' toggles the special and calls updateAllUI(), which also re-renders the bank modal (see the station-modal finding). A Space keypress on a focused button also both activates the button and jumps.",
+    "fix": "At the top of the handler, after the Escape branch so Escape still closes a modal from inside the search box: `const t = e.target as HTMLElement; if (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable) return;`. Put it before `keysPressed[e.code] = true`. Leave keyup as it is so held keys still clear. Optionally skip the jump when `t.tagName === 'BUTTON'`."
+   },
+   {
+    "title": "The projected-UV 'done' flag sits in userData, which geometry clones share, so only the first clone of each GLB node gets projected UVs",
+    "file": "src/engine/textures.ts",
+    "line": 262,
+    "severity": "medium",
+    "category": "correctness",
+    "evidence": "The loaders run `mesh.geometry = mesh.geometry.clone()` on each instance (blenderGear.ts:97, blenderWorld.ts:66, blenderMonsters.ts:111, blenderHero.ts:216). In three 0.169.0, BufferGeometry.copy does `this.userData = source.userData` (node_modules/three/src/core/BufferGeometry.js:1059), which is a shared reference, not a copy. assignProjectedUvs returns early on `geometry.userData.albedoUv` (textures.ts:262) and sets that flag at textures.ts:380 (not 312). sealAlbedoUvs (383-391) runs on each cloned instance. The first instance therefore marks the shared object, and every later clone of the same template node keeps its original authored TEXCOORD_0 with the PROP_REPEAT texture repeat instead of the 2 m-per-tile projection. Nothing else reads the albedoUv flag. I did not re-decode the GLB to check the reviewer's claim that every UV spans 1.0, but the mechanism is deterministic whatever the authored UVs are.",
+    "fix": "Fix it once in textures.ts: add `const projected = new WeakSet<THREE.BufferGeometry>();`, replace line 262 with `if (projected.has(geometry)) return;` and line 380 with `projected.add(geometry);`."
+   },
+   {
+    "title": "Station modals rebuild their whole body on every refresh: scroll position, keyboard focus and the search box's focus are lost",
+    "file": "src/ui/stations.ts",
+    "line": 185,
+    "severity": "medium",
+    "category": "ui-correctness",
+    "evidence": "renderBankModal (stations.ts:180-239) and renderShopModal (243+) assign body.innerHTML. Every station action calls bridge.refresh() (stations.ts:87, 113, 162, 422, 449), which runs updateAllUI, and updateAllUI re-renders whichever modal is open (runtime.ts:798-799). Combat hits also call updateAllUI (runtime.ts:4890), and so does pressing F. #bank-grid, #bank-pack and #shop-pack are .stack-grid elements (styles.css:1337-1344: max-height 48vh, overflow auto) that are recreated on every render, so scrollTop resets to 0 after each withdraw, deposit, buy or sell. The focused button is destroyed. #bank-search is also recreated, so a combat tick while the player types in it drops focus mid-word.",
+    "fix": "Minimal fix: in both render functions, read the scrollTop of #bank-grid, #bank-pack and #shop-pack (and whether #bank-search is the active element, with its caret position) before assigning innerHTML. Restore them afterwards. Better: update only the grid contents and labels instead of the whole body."
+   },
+   {
+    "title": "Global `-webkit-user-select: none` on * can make the bank search input uneditable in WebKit",
+    "file": "src/ui/styles.css",
+    "line": 20,
+    "severity": "low",
+    "category": "ui-correctness",
+    "evidence": "styles.css:18-24 applies `user-select: none; -webkit-user-select: none` to every element, inputs included. The authors already override this for the cheat input (styles.css:1810-1811 sets `user-select: text; -webkit-user-select: text`), which suggests they hit the problem there. The .bank-search rule (1487-1494) has no such override. WebKit, especially iOS Safari, is known to block caret and typing in inputs under -webkit-user-select:none. This is inferred from that known behavior, not tested here.",
+    "fix": "Add `input, textarea { user-select: text; -webkit-user-select: text; }` and drop the per-id override."
+   },
+   {
+    "title": "Re-equipping strands GPU buffers and materials: removed gear nodes are never disposed",
+    "file": "src/engine/runtime.ts",
+    "line": 2226,
+    "severity": "low",
+    "category": "resource-disposal",
+    "evidence": "rebuildPlayerEquipmentMeshes (runtime.ts:2210+) detaches every gear node with `node.parent.remove(node)` (2226) and rebuilds all slots on each equip or unequip (call sites 449, 466, 2169, 2180, 2185). cloneBlenderGearNode clones each mesh's geometry (blenderGear.ts:97) and creates 9 new materials per call (75-92). albedoMaterial and facetMaterial are not cached: each call returns a new material, while textures come from the loadAlbedo cache. The only dispose() call in src is runtime.ts:2202. WebGLGeometries keeps uploaded buffers until a dispose event fires, so each swap strands that gear's VRAM. The leak grows with the number of swaps but is small per swap.",
+    "fix": "Before removing each node: `node.traverse(o => { if (o.isMesh && !o.userData.isOutline) { o.geometry.dispose(); (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => m.dispose()); } })`. Material.dispose leaves the shared cached textures alone, and the outline shells share the mesh geometry and a shared outline material, which is why they are skipped."
+   },
+   {
+    "title": "About 11.9 MB of uncompressed GLBs (float32 attributes, no meshopt, Draco or quantization) is fetched eagerly at boot",
+    "file": "src/engine/blenderMonsters.ts",
+    "line": 13,
+    "severity": "low",
+    "category": "asset-weight",
+    "evidence": "public/models totals about 11.9 MB: monsters 4.88 MB, world 2.78 MB, gear 2.33 MB, guard 1.71 MB, hero 0.22 MB. extensionsUsed is at most KHR_materials_emissive_strength or KHR_materials_specular. Accessor component types are only 5126 (float) and 5123 (uint16 indices). Each module creates its own `new GLTFLoader()` (blenderHero.ts:135, blenderGear.ts:23, blenderWorld.ts:13, blenderMonsters.ts:13, runtime.ts:2054), none with a decoder, and all are triggered during world build. This is an optimization, not a defect.",
+    "fix": "Run the GLBs through `gltfpack -cc`, and set `new GLTFLoader().setMeshoptDecoder(MeshoptDecoder)` (from three/examples/jsm/libs/meshopt_decoder.module.js) on a single shared loader."
+   },
+   {
+    "title": "Five copy-pasted GLB loaders cache a failed load as null for the whole session",
+    "file": "src/engine/blenderWorld.ts",
+    "line": 8,
+    "severity": "low",
+    "category": "duplication",
+    "evidence": "loadBlenderWorldTemplate (blenderWorld.ts:8-27) and its siblings in blenderHero.ts:130, blenderGear.ts:18, blenderMonsters.ts:8 and runtime.ts:2054 share the same structure: a module-level promise that resolves null on error. A transient fetch failure is therefore permanent until reload, even though loadBlenderWorldTemplate() is called again later (runtime.ts:1554, 1709, 1812, 1850, 1906, 1961), where a retry would help. extractColorHex is duplicated verbatim (blenderWorld.ts:45, blenderMonsters.ts:53). REST_POSITIONS (blenderHero.ts:19) is never read, and the `pivots` field (33, 44) is assigned but never read.",
+    "fix": "Add one `loadGltfOnce(url)` helper with a Map cache that deletes its entry on error so a later call retries. Use it in all five places, and delete REST_POSITIONS and `pivots`."
+   },
+   {
+    "title": "The texture cache key includes repeat, so the same PNGs are decoded and uploaded twice (terrain at repeat 3, props at 1.5)",
+    "file": "src/engine/textures.ts",
+    "line": 125,
+    "severity": "low",
+    "category": "texture-sharing",
+    "evidence": "loadAlbedo caches by `${id}:${repeat}` (textures.ts:125-140). terrainMaterial loads grass, stone and the biome tiles alkharid-sand and peak-volcanic at GROUND_REPEAT=3 (446-453). The props load the same ids through albedoMaterial at PROP_REPEAT=1.5 (blenderWorld.ts:105, 112, 114, 119). THREE.Cache.enabled is never set, so each pair means two Image objects, two Sources and two GPU uploads.",
+    "fix": "Cache one base texture per id and return `base.clone()` with its own repeat. Texture.clone shares the Source, so the image uploads once."
+   },
+   {
+    "title": "Text contrast below WCAG AA for equipment slot labels and locked shrine titles",
+    "file": "src/ui/styles.css",
+    "line": 824,
+    "severity": "low",
+    "category": "accessibility",
+    "evidence": "`.equip-slot .slot-placeholder` is #7a6a53 on the .equip-slot background #1a150f (styles.css:803, 821-826), which measures 3.47:1 at 9 px. The locked shrine title uses inline #6b7280 on the .shop-card background #18130e (stations.ts:470, styles.css:999), which measures 3.82:1 before .locked-card adds opacity 0.72 (1503-1506). Both are below 4.5:1.",
+    "fix": "Use #a8997c for .slot-placeholder, which measures about 6.5:1 (not 5.8:1 as reported). Use #9ca3af for the locked title or drop the opacity on .locked-card."
+   },
+   {
+    "title": "Core controls are click-only divs with no keyboard access",
+    "file": "index.html",
+    "line": 191,
+    "severity": "low",
+    "category": "accessibility",
+    "evidence": "The combat style options (index.html:191+, `<div class=\"style-btn\" onclick=...>`), the special attack (235), the perf HUD (119), the compass (166) and the inventory slots (runtime.ts:637, div.inv-slot) have no tabindex, role or key handler. The only ARIA in the project is on #context-menu and #tick-meter.",
+    "fix": "Render them as `<button type=\"button\">` with the same classes, and add aria-labels to the inventory slots and the icon-only tab and close buttons."
+   },
+   {
+    "title": "Modals lack dialog semantics and focus handling, and infinite animations ignore reduced motion",
+    "file": "index.html",
+    "line": 289,
+    "severity": "low",
+    "category": "accessibility",
+    "evidence": "The .modal-backdrop and .modal-window elements (index.html:289 onward) have no role=dialog, aria-modal or aria-labelledby, and focus is neither moved into the modal nor returned on close. styles.css has no prefers-reduced-motion rule, while several animations loop forever.",
+    "fix": "Add `role=\"dialog\" aria-modal=\"true\" aria-labelledby` to .modal-window, focus the first control on open, and add a `@media (prefers-reduced-motion: reduce)` rule that disables the animations."
+   }
+  ],
+  "hygiene-arch": [
+   {
+    "title": "README 'Play Live in Browser' link and Mirror badge point at GitHub Pages, which serves the unbuilt source and cannot run the game",
+    "file": "README.md",
+    "line": 16,
+    "severity": "medium",
+    "category": "docs/deploy",
+    "evidence": "Confirmed live: https://allansli.github.io/osrs-like/ returns HTML containing src=\"/src/main.ts\", and https://allansli.github.io/src/main.ts returns 404, so the page stays blank. A real build would still fail on that subpath: vite.config.ts sets no `base`, and every asset URL is root-absolute (blenderWorld.ts:8, blenderGear.ts:18, blenderMonsters.ts:8, blenderHero.ts:130, textures.ts:118-121, runtime.ts:2057). There is no .github/ directory and no deploy workflow. The badge at README.md:11 points to the same URL. The Vercel URL on README.md:10 works. Lowered to medium: this is a broken docs link with a working alternative, not a code defect.",
+    "fix": "Point README.md:11 and :16 at https://gielinor-hero.vercel.app/, or remove the Pages mirror badge."
+   },
+   {
+    "title": "CC-BY 3.0 derived assets (dragon by yoji, Kai by uchiha007) ship in public/models without the required attribution; the repo presents everything as MIT",
+    "file": "README.md",
+    "line": 131,
+    "severity": "high",
+    "category": "licensing",
+    "evidence": "dragon_3826/BLENDSWAP_LICENSE.txt: 'Dragon Rig And Textures' by yoji, CC-BY 3.0, 'You MUST give credit to yoji'. build_monsters.py:2592 loads it through load_imported_character into monsters.glb. The tracked zip's BLENDSWAP_LICENSE.txt: 'Game Anime RPG Character' by uchiha007, CC-BY 3.0, 'You MUST give credit to uchiha007'. build_hero.py:429-434 extracts it and builds hero.glb from it. Both GLBs are tracked in public/models and deployed. No credit text appears in README, index.html or src (grep for yoji, uchiha, attribution finds nothing). README.md:14 and :131 and LICENSE claim the whole project is MIT. The amulet (CC-BY) is used by no build script, so only the tracked .blend copy carries an obligation for it. Side note: medieval_props_6679/BLENDSWAP_LICENSE.txt names blend 55083 (CC0, Daniel74), which does not match the folder number.",
+    "fix": "Add a Third-party assets section to README (or a CREDITS.md) listing title, author, Blend Swap URL and licence for each asset. Show the CC-BY credits for yoji and uchiha007 in the deployed game as well, for example an in-game credits line. State that MIT covers the code only."
+   },
+   {
+    "title": "knight.blend (source of the shipped guard.glb) has no licence or provenance file",
+    "file": "scripts/blender/export_guard.py",
+    "line": 9,
+    "severity": "high",
+    "category": "licensing",
+    "evidence": "blender/examples/knight_28541/ contains only knight.blend. Every other examples folder holds a Blend Swap licence file. export_guard.py:9-12 opens that file to produce public/models/guard.glb (1.7 MB, tracked), and runtime.ts:2057 loads it in the deployed game. Neither the author nor the licence is recorded anywhere.",
+    "fix": "Recover the licence for the Blend Swap blend behind folder 28541 and commit it next to the .blend, with attribution if the licence requires it. If provenance cannot be established, remove knight.blend and guard.glb. runtime.ts already resolves null on a failed load, so check that the guard then falls back to its procedural model."
+   },
+   {
+    "title": "run-blender.mjs exits 0 when Blender is missing or killed, or when the Python build raises; an unknown mode silently rebuilds the hero",
+    "file": "scripts/run-blender.mjs",
+    "line": 63,
+    "severity": "medium",
+    "category": "build-tooling",
+    "evidence": "Lines 44 and 63 call `process.exit(res.status ?? 0)`, and line 53 tests `(res.status ?? 0) !== 0`. When spawn fails (ENOENT: every candidate at lines 11-14 is a Windows path, and the fallback is a bare 'blender'), or when a signal kills Blender, spawnSync returns status null, so the run exits 0 and `blender:all` reports success without building anything. Blender started with `--background --python` also exits 0 when the script raises, unless it is given `--python-exit-code`. Line 59, `BUILD_SCRIPTS[mode] || BUILD_SCRIPTS.hero`, makes a typo such as `monster` rebuild and overwrite hero.glb.",
+    "fix": "Fail when `res.error || res.status !== 0`, exiting with `res.status ?? 1`. Add `--python-exit-code 1` to the spawn arguments. On an unknown mode, print an error and exit 1."
+   },
+   {
+    "title": "Dev tooling pinned at vulnerable versions (vite 5.4.10, vitest/@vitest/mocker 2.1.4, esbuild 0.21.5, tinypool 1.1.1)",
+    "file": "package.json",
+    "line": 21,
+    "severity": "medium",
+    "category": "dependencies",
+    "evidence": "Lockfile versions confirmed. `npm audit --package-lock-only` reports vitest critical, tinypool critical, vite high, and @vitest/mocker and esbuild moderate. The vite advisories (server.fs.deny bypasses, cross-origin reads of the dev server) apply to `npm run dev`. The critical vitest RCE needs the API or UI server listening, which `vitest run` (npm test) does not start, so day-to-day exposure comes mainly from the vite dev server. Nothing affects the shipped bundle; three is not flagged.",
+    "fix": "Bump vite to a patched line (>= 6.4.4 per the audit, or at least the latest 5.4.x for the fs.deny fixes) and vitest to >= 4.1.12, regenerate package-lock.json, and re-run tests and the build. These are major-version bumps."
+   },
+   {
+    "title": "@ts-nocheck disables type checking for runtime.ts and icons.ts, about half of the non-test TypeScript",
+    "file": "src/engine/runtime.ts",
+    "line": 1,
+    "severity": "medium",
+    "category": "type-safety",
+    "evidence": "runtime.ts (6,253 lines) and src/ui/icons.ts (191 lines) begin with `// @ts-nocheck`. tsconfig is strict and `npm run build` runs `tsc --noEmit`, and README.md:125 says the build typechecks, yet no type error in the game loop, input handling or asset loading can fail the build. The reviewer's example (tabByKey at runtime.ts:3747-3748) is harmless, because the lookup is guarded at runtime, so it is dropped as evidence.",
+    "fix": "Remove the pragma from icons.ts and fix the errors that appear. For runtime.ts, enable checking incrementally, using targeted `@ts-expect-error` lines or by splitting out modules."
+   },
+   {
+    "title": "get_blend_object swallows load failures, so world props become empty roots without any error",
+    "file": "scripts/blender/build_world.py",
+    "line": 54,
+    "severity": "low",
+    "category": "build-correctness",
+    "evidence": "get_blend_object returns None when the file is missing, when the object name is absent, or on any Exception (build_world.py:54-77; identical copies in build_gear.py:38 and build_monsters.py:162). In build_monsters.py the copy is never called. build_world.py:2136-2175 creates the root empty and then only adds a mesh `if src_obj:`, so a renamed object yields an empty World_barrel or World_crate, and the build still succeeds. The world test in src/__tests__/blender-hero.test.ts does not even list the prop nodes. Lowered to low: the .blend files are tracked, so a 'clean clone without examples' does not happen; the realistic trigger is a renamed object or a load error.",
+    "fix": "Make get_blend_object raise instead of returning None, and drop the `except Exception`. Gear callers that want the procedural fallback should catch the error explicitly. Delete the unused copy in build_monsters.py."
+   },
+   {
+    "title": "README counts and the monster table are out of date",
+    "file": "README.md",
+    "line": 13,
+    "severity": "low",
+    "category": "docs",
+    "evidence": "README.md:35 says 1,400 grass blades, but runtime.ts:1482 sets grassCount = 900. README.md:13/:50/:53 claim 33 matched sets, but catalog.ts has 36 `slot: 'body'` and 36 `slot: 'legs'` items. The monster table (README.md:72-76) omits Goblin Archer (Lv 5) and Dark Ranger (Lv 24), both in src/data/world.ts:39 and :59. The 260-item total was not re-derived here.",
+    "fix": "Change 1,400 to 900, recount or drop the item and set totals, and add Goblin Archer and Dark Ranger to the region table."
+   },
+   {
+    "title": "Hashed /assets served with max-age=0; one 926 KB JS chunk is revalidated on every visit",
+    "file": "vercel.json",
+    "line": 1,
+    "severity": "low",
+    "category": "performance",
+    "evidence": "Confirmed live: /assets/index-DPnQ4OPs.js (content-length 926415) and /models/world.glb both return `cache-control: public, max-age=0, must-revalidate`. vercel.json sets no headers. The src tree has no dynamic import(), and vite.config.ts:11 raises chunkSizeWarningLimit to 2000. world.glb and guard.glb have no ?v= cache-buster, so /models must not be made immutable.",
+    "fix": "Add a headers rule in vercel.json for `/assets/(.*)` with `Cache-Control: public, max-age=31536000, immutable`."
+   },
+   {
+    "title": "blender/examples weighs about 77 MB; a tracked zip contradicts the *.zip ignore rule; the amulet .blend is unused",
+    "file": ".gitignore",
+    "line": 7,
+    "severity": "low",
+    "category": "repo-hygiene",
+    "evidence": "du reports 77M for blender/examples, and the pack is 113.43 MiB. 'Game Anime RPG Character.zip' is tracked although .gitignore:7 ignores *.zip, and build_hero.py:429-434 needs it. The zip also contains the unused kaiV2_Backup.blend (2.7 MB). amulet_15782/Amulet_7-15-15.blend is referenced by no script.",
+    "fix": "Delete amulet_15782/. Add `!blender/examples/*.zip` (or commit kaiV2.blend instead of the zip). Consider Git LFS for the .blend and .zip files; shrinking existing history requires rewriting it."
+   },
+   {
+    "title": "No CI runs the tests or the build",
+    "file": "package.json",
+    "line": 9,
+    "severity": "low",
+    "category": "ci",
+    "evidence": "There is no .github/ directory and no other CI config, so `npm test` and `npm run build` (tsc and vite) never run automatically. The broken Pages mirror went unnoticed for the same reason.",
+    "fix": "Add a minimal GitHub Actions workflow that runs `npm ci && npm test && npm run build` on push and pull requests."
+   }
+  ]
+ },
+ "rejected": {
+  "security": [
+   {
+    "title": "build_hero.py extracts the bundled zip with zipfile.extractall and no entry validation",
+    "why": "The reviewer's own analysis already refutes the risk. Python's zipfile strips absolute paths and '..' components and does not create symlinks, the archive is a committed repo file with 22 flat entries, and extraction only runs when the local developer runs the build. A size cap protects against a scenario where an attacker can already replace repo files, so this is speculative hardening, not a finding."
+   },
+   {
+    "title": "BLENDER_PATH and the CLI script argument are trusted as executables or scripts",
+    "why": "The reviewer admits it is not an attack surface. Every input (environment variable, argv) comes from the local user who is already running arbitrary commands, and spawn uses an argument array with no shell. Restricting these inputs adds no security boundary. This is taste."
+   },
+   {
+    "title": "Debug handle __DEV_ACCESS__ exposes live game state on window in production",
+    "why": "The game is a single-player client-side app with all state in localStorage, so there is no boundary to protect. Any same-origin script can already read and modify STATE through localStorage and the many window.* handlers the game registers (runtime.ts:6180-6185). Gating it behind import.meta.env.DEV is a cleanup, not a security fix."
+   }
+  ],
+  "state-data": [
+   {
+    "title": "Loading a save silently deletes backpack items past slot 28",
+    "why": "Saves written by this code cannot reach it: place() never puts more than BACKPACK_SIZE slots in the inventory, and it never puts equipment in a stack with qty > 1, so compactSlots(..., false) never has anything to cut off. The only input that could overflow is a legacy runewilds save with more than 28 entries or a stacked equipment entry. The repo has no sample, schema or test showing the legacy format allowed either. The migration test fixture (phase1.test.ts:39-48) shows legacy saves stored one item per slot, which suggests the old game also had 28 slots. To confirm this finding, we would need evidence that the legacy format allowed more than 28 slots or stacked equipment."
+   },
+   {
+    "title": "Slayer kill and bounty XP always go to Attack",
+    "why": "This is a design choice, not a bug. The game tells the player about it: runtime.ts:4936 prints '... <b>${kill.bountyXp} Attack XP</b>' in the bounty chat message. The game has no slayer skill, and sending the XP to a single skill is consistent with how it is presented. Moving the XP by combat style would be a balance change."
+   },
+   {
+    "title": "An unknown slayer monster in a save blocks slayer tasks forever",
+    "why": "Normal play cannot reach this. assignSlayerTask only creates tasks from SLAYER_BANDS entries, and saves round-trip that monster string. The only triggers are a hand-edited localStorage save or a band renamed in some future version, so the finding is speculative. It is true that nothing can clear a task (grep finds no reset path other than wiping the whole save), but this code gives no way to get stuck."
+   }
+  ],
+  "runtime": [
+   {
+    "title": "Five extractions from this module would pay off most",
+    "why": "This is an architecture and refactoring preference, not a defect with a failing scenario, so it is taste in the sense of this review. The concrete parts are true: the side-effect listeners at 5989, the river formula duplicated at 1131 and 5154 alongside state/collision.ts riverCenterX, and the 610-line gameLoop. The only actionable bug-adjacent item is the river duplication, a one-line reuse of riverCenterX at 1131 and 5154, which can be done without any extraction."
+   }
+  ],
+  "engine-ui": [
+   {
+    "title": "No touch input and fixed-pixel HUD: the game cannot be steered on phones",
+    "why": "The facts are correct: there are no pointer or touch listeners, the HUD uses fixed widths, and the only breakpoint is at 800 px. But this is a desktop OSRS-style 3D game with mouse and keyboard controls, and nothing in the repo claims mobile support. The proposed fix (pointer-event orbit, pinch zoom, a responsive HUD) is a new feature, not a defect correction. At most, add a 'desktop only' notice."
+   }
+  ],
+  "hygiene-arch": [
+   {
+    "title": "The build_*.py duplication is small; extract a shared _common.py and add a blender:guard script",
+    "why": "By the reviewer's own measure the duplication is about 70 lines (under 1%), so the refactor is taste. The parts worth acting on, the unused get_blend_object in build_monsters.py and the swallowed errors, are folded into the get_blend_object finding. Adding a blender:guard npm script is scope creep."
+   }
+  ]
+ }
+}

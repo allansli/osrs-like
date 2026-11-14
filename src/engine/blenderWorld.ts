@@ -1,29 +1,14 @@
 import * as THREE from 'three';
-import { GLTFLoader, type GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { loadGltfOnce } from './gltf';
 import { addCartoonOutline, facetMaterial } from './materials';
 import { albedoMaterial, biomeAlbedoId, biomeGroundId, sealAlbedoUvs } from './textures';
-
-let cachedWorldPromise: Promise<GLTF | null> | null = null;
 
 export function loadBlenderWorldTemplate(url = '/models/world.glb'): Promise<GLTF | null> {
   if (typeof window === 'undefined' || typeof document === 'undefined') {
     return Promise.resolve(null);
   }
-  if (!cachedWorldPromise) {
-    const loader = new GLTFLoader();
-    cachedWorldPromise = new Promise((resolve) => {
-      loader.load(
-        url,
-        (gltf) => resolve(gltf),
-        undefined,
-        (err) => {
-          console.warn('[BlenderWorld] Failed to load world.glb, keeping procedural fallback:', err);
-          resolve(null);
-        }
-      );
-    });
-  }
-  return cachedWorldPromise;
+  return loadGltfOnce(url);
 }
 
 export interface ResourceNodeLike {

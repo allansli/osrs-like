@@ -356,7 +356,7 @@ export interface DragonfireResult {
 export function resolveDragonfire(raw: number, state: GameState): DragonfireResult {
   const amount = Math.max(0, Math.floor(raw));
   const shield = state.equipment.shield || '';
-  const absorbed = state.activePrayers.has('prot_magic') || (DRAGONFIRE_WARDS as readonly string[]).includes(shield);
+  const absorbed = state.quests.dragonfireWard || state.activePrayers.has('prot_magic') || (DRAGONFIRE_WARDS as readonly string[]).includes(shield);
   return {
     damage: absorbed ? Math.floor(amount * 0.25) : amount,
     absorbed

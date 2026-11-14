@@ -127,3 +127,79 @@ export function canCastTeleport(state: GameState, spellId: string): { ok: boolea
   }
   return { ok: true, reason: '', regionId: spell.regionId, xp: spell.xp, runes: spell.runes };
 }
+
+export interface EquipmentBonuses {
+  atk: number;
+  str: number;
+  def: number;
+  rng: number;
+  mag: number;
+  matchedSet: string | null;
+  isFullKit: boolean;
+  dominantCount: number;
+  dominantSetName: string | null;
+}
+
+export function getEquipmentBonuses(state: GameState): EquipmentBonuses {
+  let atk = 0, str = 0, def = 0, rng = 0, mag = 0;
+  const setCounts: Record<string, number> = {};
+  for (const slot of Object.keys(state.equipment)) {
+    const itemId = state.equipment[slot];
+    if (itemId && ITEMS[itemId]) {
+      const it = ITEMS[itemId];
+      atk += (it.atk || 0);
+      str += (it.str || 0);
+      def += (it.def || 0);
+      rng += (it.rng || 0);
+      mag += (it.mag || 0);
+      if (it.setName) {
+        setCounts[it.setName] = (setCounts[it.setName] || 0) + 1;
+      }
+    }
+  }
+
+  const bodyIt = state.equipment.body ? ITEMS[state.equipment.body] : null;
+  const legsIt = state.equipment.legs ? ITEMS[state.equipment.legs] : null;
+
+  let dominantSetName: string | null = null;
+  let dominantCount = 0;
+  for (const [sName, count] of Object.entries(setCounts)) {
+    if (count > dominantCount) {
+      dominantSetName = sName;
+      dominantCount = count;
+    }
+  }
+
+  let matchedSet: string | null = null;
+  let isFullKit = false;
+
+  if (dominantSetName && dominantCount >= 4) {
+    // 4+ matching kit pieces = Full Kit Set Bonus (+20% combat bonuses)
+    matchedSet = `${dominantSetName} (${dominantCount} pcs)`;
+    isFullKit = true;
+    atk = Math.ceil(atk * 1.20);
+    str = Math.ceil(str * 1.20);
+    def = Math.ceil(def * 1.20);
+    rng = Math.ceil(rng * 1.20);
+    mag = Math.ceil(mag * 1.20);
+  } else if (dominantSetName && dominantCount >= 3) {
+    // 3 matching kit pieces = Tri-piece bonus (+15% combat bonuses)
+    matchedSet = `${dominantSetName} (${dominantCount} pcs)`;
+    atk = Math.ceil(atk * 1.15);
+    str = Math.ceil(str * 1.15);
+    def = Math.ceil(def * 1.15);
+    rng = Math.ceil(rng * 1.15);
+    mag = Math.ceil(mag * 1.15);
+  } else if (bodyIt && legsIt && bodyIt.pairId === legsIt.id) {
+    // Matched Top & Bottom pair = Pair bonus (+10% combat bonuses)
+    matchedSet = bodyIt.setName || `${bodyIt.name} & ${legsIt.name}`;
+    atk = Math.ceil(atk * 1.10);
+    str = Math.ceil(str * 1.10);
+    def = Math.ceil(def * 1.10);
+    rng = Math.ceil(rng * 1.10);
+    mag = Math.ceil(mag * 1.10);
+  }
+
+  return { atk, str, def, rng, mag, matchedSet, isFullKit, dominantCount, dominantSetName };
+}
+

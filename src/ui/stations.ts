@@ -304,13 +304,22 @@ export function renderShopModal(): void {
     entries.sort((a, b) => rank(a.it.type) - rank(b.it.type));
   }
   entries.forEach(({ it, req, combat }) => {
+    const gathered = isGatheredGood(it.id);
     const stackable = isStackableInBackpack(it);
-    const batches = stackable
+    const batches = stackable && !gathered
       ? `<div class="shop-batch-row">${STACK_BATCHES.map((qty) => {
           const cost = (it.price || 0) * qty;
           return `<button type="button" class="shop-batch-btn" data-buy-batch="${qty}" data-batch-item="${it.id}" title="Buy ${qty.toLocaleString('en-US')} for ${formatGp(cost)}">${batchLabel(qty)}</button>`;
         }).join('')}</div>`
       : '';
+    const actions = gathered
+      ? ''
+      : `
+      <div class="shop-card-actions">
+        <button type="button" class="shop-buy-btn" data-buy="${it.id}">${shopBuyLabel(it)}</button>
+        ${batches}
+      </div>
+    `;
     const card = document.createElement('div');
     card.className = 'shop-card combat-' + combat + (stackable ? ' stackable-card' : '');
     card.innerHTML = `
@@ -325,10 +334,7 @@ export function renderShopModal(): void {
           ${req.html}
         </div>
       </div>
-      <div class="shop-card-actions">
-        <button type="button" class="shop-buy-btn" data-buy="${it.id}">${shopBuyLabel(it)}</button>
-        ${batches}
-      </div>
+      ${actions}
     `;
     bindItemTooltip(card, it);
     grid.appendChild(card);

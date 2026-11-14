@@ -1,9 +1,11 @@
-// @ts-nocheck
-export function hexToCss(num) {
+import type { ItemDef } from '../data/items';
+import type { SpellDef } from '../data/magic';
+
+export function hexToCss(num: number): string {
   return '#' + (num >>> 0).toString(16).padStart(6, '0');
 }
 
-export function getUiSvg(kind) {
+export function getUiSvg(kind: string): string {
   switch (kind) {
     case 'crest':
       return `<svg viewBox="0 0 32 32"><polygon points="16,3 24,16 16,16" fill="#fde047"/><polygon points="8,17 16,17 12,28" fill="#fde047"/><polygon points="16,17 24,17 20,28" fill="#eab308"/><circle cx="16" cy="16" r="14" fill="none" stroke="#d8b556" stroke-width="1.8"/></svg>`;
@@ -30,7 +32,7 @@ export function getUiSvg(kind) {
   }
 }
 
-export function getSkillSvg(skillKey) {
+export function getSkillSvg(skillKey: string): string {
   switch (skillKey) {
     case 'attack':
       return `<svg viewBox="0 0 32 32"><path d="M6 26 L26 6" stroke="#ef4444" stroke-width="3.2" stroke-linecap="round"/><polygon points="26,4 28,12 20,6" fill="#fca5a5"/><path d="M8 19 L13 24" stroke="#facc15" stroke-width="2.5"/></svg>`;
@@ -61,7 +63,9 @@ export function getSkillSvg(skillKey) {
   }
 }
 
-export function getItemSvg(item) {
+export function getItemSvg(
+  item?: ItemDef | { color?: number; trim?: number; iconKind?: string; slot?: string; type?: string } | null
+): string {
   if (!item) return '';
   const c1 = hexToCss(item.color || 0xd1d5db);
   const c2 = hexToCss(item.trim || item.color || 0xfacc15);
@@ -157,7 +161,7 @@ export function getItemSvg(item) {
   }
 }
 
-export function getPrayerSvg(prayerId) {
+export function getPrayerSvg(prayerId: string): string {
   switch (prayerId) {
     case 'thick_skin':
       return `<svg viewBox="0 0 32 32"><polygon points="16,4 27,10 24,25 16,29 8,25 5,10" fill="#64748b" stroke="#cbd5e1" stroke-width="1.8"/></svg>`;
@@ -180,7 +184,7 @@ export function getPrayerSvg(prayerId) {
   }
 }
 
-export function getSpellSvg(spell) {
+export function getSpellSvg(spell: SpellDef | { color?: number; type?: string }): string {
   const c = hexToCss(spell.color || 0x38bdf8);
   if (spell.type === 'teleport') {
     return `<svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="11" fill="none" stroke="${c}" stroke-width="2.2" stroke-dasharray="4 2"/><polygon points="16,6 22,18 16,15 10,18" fill="${c}"/><circle cx="16" cy="22" r="2.5" fill="#fff"/></svg>`;

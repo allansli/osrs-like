@@ -8,12 +8,12 @@
 *OldSchool RuneScape mechanics and progression in a Breath of the Wild gouache world*
 
 [![Play on Vercel](https://img.shields.io/badge/Play_Live-gielinor--hero.vercel.app-000000?style=for-the-badge&logo=vercel)](https://gielinor-hero.vercel.app/)
-[![Live Demo](https://img.shields.io/badge/Mirror-GitHub_Pages-2ea44f?style=for-the-badge&logo=github)](https://allansli.github.io/osrs-like/)
+[![Live Demo](https://img.shields.io/badge/Live_Demo-Vercel-2ea44f?style=for-the-badge&logo=vercel)](https://gielinor-hero.vercel.app/)
 [![Three.js](https://img.shields.io/badge/3D_Engine-Three.js_+_GLSL-000000?style=for-the-badge&logo=threedotjs)](https://threejs.org/)
-[![Items](https://img.shields.io/badge/Custom_SVG_Items-201_Items_(33_Armor_Sets)-f59e0b?style=for-the-badge)](#item--equipment-progression-201-items--33-matched-sets)
+[![Items](https://img.shields.io/badge/Custom_SVG_Items-260_Items_(36_Armor_Sets)-f59e0b?style=for-the-badge)](#item--equipment-progression-260-items--36-matched-sets)
 [![License: MIT](https://img.shields.io/badge/License-MIT-38bdf8?style=for-the-badge)](./LICENSE)
 
-[**Play Live in Browser**](https://allansli.github.io/osrs-like/) • [**Features**](#key-features) • [**World Regions**](#world-regions--monsters) • [**Controls**](#controls--quick-start) • [**Architecture**](#engine-architecture)
+[**Play Live in Browser**](https://gielinor-hero.vercel.app/) • [**Features**](#key-features) • [**World Regions**](#world-regions--monsters) • [**Controls**](#controls--quick-start) • [**Architecture**](#engine-architecture)
 
 </div>
 
@@ -32,7 +32,7 @@
 - **Animated Water Shader**: Custom GLSL vertex & fragment water shader along the winding River Lum with wave displacement and specular sun shimmer.
 - **Organic Sculpted 3D Geometry**:
   - Contoured `LatheGeometry` character torsos, flared tunics, marble chalice altars, castle towers, and Sheikah teleport shrines with floating gyroscopic rings.
-  - Curved `CatmullRomCurve3` + `TubeGeometry` tree trunks and branches with billowing multi-sphere canopies and 1,400 instanced tapered grass blades.
+  - Curved `CatmullRomCurve3` + `TubeGeometry` tree trunks and branches with billowing multi-sphere canopies and 900 instanced tapered grass blades.
   - Beveled `ExtrudeGeometry` scimitars, longswords, greatswords, and kiteshields.
 - **Smooth Chase Camera**: Behind-character third-person camera with smooth `lerp` tracking, mouse-drag/keyboard orbit, zoom, and soft `PCFSoftShadowMap` shadows.
 
@@ -47,19 +47,19 @@
   - **8 Prayers** including overhead protections (*Protect from Melee*, *Protect from Magic*, *Protect from Ranged*, *Hylian Piety*) rendered above your character's head.
 - **Rotating Radar Minimap**: Live 2D canvas minimap rotating with camera yaw, displaying rivers, stone roads, trees (green), ore veins (cyan), NPCs/Altars/Forges (gold), and monsters (red).
 
-### 3. Item & Equipment Progression (201 Items & 33 Matched Sets)
+### 3. Item & Equipment Progression (260 Items & 36 Matched Sets)
 - **Zero Emojis — 100% Bespoke Vector SVG Artwork**: Every item, skill, prayer, spell, and HUD element uses a custom multi-layered SVG vector renderer dynamically shaded with each item's metallic and trim colors.
 - **Full 10-Slot Equipment Paperdoll**: `Head`, `Cape`, `Neck`, `Weapon`, `Body` (Top), `Shield`, `Legs` (Bottom), `Hands`, `Feet`, and `Ring`—all reflected visually on your 3D character in real time.
-- **33 Matched Top (`body`) & Bottom (`legs`) Armor Sets (+10% Set Bonus)**:
-  - Every single chestpiece/tunic/robetop has an exact 1-to-1 matching leg armor piece (`66` paired Top & Bottom items across 33 sets). Equipping a matching Top + Bottom activates a **+10% Matched Set Bonus** to all combat stats:
+- **36 Matched Top (`body`) & Bottom (`legs`) Armor Sets (+10% Set Bonus)**:
+  - Every single chestpiece/tunic/robetop has an exact 1-to-1 matching leg armor piece (`72` paired Top & Bottom items across 36 sets). Equipping a matching Top + Bottom activates a **+10% Matched Set Bonus** to all combat stats:
     - **Melee & Knight Sets**: *Hylian Traveler*, *Bronze*, *Iron*, *Steel*, *Black Knight*, *White Knight Proselyte*, *Mithril*, *Adamant*, *Rune*, *Gilded Treasure*, *Granite Fortress*, *Dragon*, *Dharok's Barrows*, *Torag's Barrows*, *Bandos War God*, *Justiciar Paladin*, *Inquisitor's*, and *Torva Ancient*.
     - **Hyrule Legend Sets**: *Champion of Hyrule*, *Zora Royal Domain*, and *Fierce Deity*.
-    - **Ranged Sets**: *Green D'hide*, *Blue D'hide*, *Red D'hide*, *Black D'hide*, *Sheikah Stealth*, *Armadyl*, and *Masori*.
-    - **Magic Sets**: *Blue Wizard*, *Mystic*, *Infinity*, *Ahrim's Barrows*, and *Ancestral Archmage*.
+    - **Ranged Sets**: *Green D'hide*, *Blue D'hide*, *Red D'hide*, *Black D'hide*, *Sheikah Stealth*, *Armadyl*, *Masori*, *Karil's Barrows*, and *Crystal Elven*.
+    - **Magic Sets**: *Blue Wizard*, *Mystic*, *Infinity*, *Ahrim's Barrows*, *Ancestral Archmage*, and *Bloodbark*.
 - **Pre-Purchase Requirement Badges**: Every shop and forge card displays the exact skill level required to equip or craft the item—color-coded **Green (`Can Equip`)** or **Red (`Your Lv: X`)**—plus a **Can Equip Now** shop filter.
 
 ### 4. Automatic `localStorage` Persistence
-- Progress is saved automatically on every action, every 2 seconds while exploring, and on page unload (`gielinor_hero_save_v1`). Older `runewilds_save_v3` and `runewilds_save_v2` saves migrate forward, stacking duplicate resources, runes, and bones.
+- Progress is saved every 2 seconds, when the tab is hidden, on exit and on manual save (`gielinor_hero_save_v1`). Older `runewilds_save_v3` and `runewilds_save_v2` saves migrate forward, stacking duplicate resources, runes, and bones.
   - All 12 skill levels & XP, GP pouch, 28-slot backpack, bank vault, and 10-slot worn equipment
   - Hitpoints, Prayer points, Special Attack energy, active Prayers, combat style, and selected spell
   - Exact 3D world position (`x, y, z`), character yaw, camera angle/zoom, and time-of-day preset
@@ -70,11 +70,13 @@
 
 | Region | Biome | Notable Landmarks & Resources | Monsters |
 | :--- | :--- | :--- | :--- |
-| **Lumbridge Haven** | Emerald River Valley | Lumbridge Castle, Sacred Altar, Blacksmith Forge & Range, Grand Emporium, River Lum Bridge, Normal/Oak/Willow Trees, Shrimp/Trout Fishing | Plump Chicken (Lv 1), Goblin Raider (Lv 2) |
-| **Varrock Grand Plaza** | Royal Trade Capital | Cathedral Prayer Altar, Royal Blacksmith, Trade Master, Copper & Iron Quarry | Dark Wizard (Lv 18), Hill Giant (Lv 28) |
-| **Al-Kharid Golden Dunes** | Sunscorched Oasis | Bazaar Merchant, Mithril & Gold Ore Quarry, Desert Shrine | King Scorpion (Lv 12) |
-| **Whispering Korok Woods** | Sacred Forest Sanctuary | Sacred Blossom Yew Trees, Magic Korok Trees, Lobster & Mystic Shark Pools | Moss Guardian (Lv 45) |
-| **Dragon's Peak Highlands** | Volcanic Obsidian Crag | Runite Ore Veins, Wilderness Shrine | Lesser Demon (Lv 68), **Elvarg the Crag Dragon (Lv 95 Boss)** |
+| **Lumbridge Haven** | Emerald River Valley | Lumbridge Castle, Sacred Altar, Blacksmith Forge & Range, Grand Emporium, River Lum Bridge, Normal/Oak/Willow Trees, Shrimp/Trout Fishing | Plump Chicken (Lv 1) x4, Goblin Raider (Lv 2) x5, Goblin Archer (Lv 5) x2 |
+| **Varrock Grand Plaza** | Royal Trade Capital | Cathedral Prayer Altar, Royal Blacksmith, Trade Master, Copper & Iron Quarry | Dark Wizard (Lv 18) x3, Dark Ranger (Lv 24) x2, Hill Giant (Lv 28) x4 |
+| **Al-Kharid Golden Dunes** | Sunscorched Oasis | Bazaar Merchant, Mithril & Gold Ore Quarry, Desert Shrine | King Scorpion (Lv 12) x5 |
+| **Whispering Korok Woods** | Sacred Forest Sanctuary | Sacred Blossom Yew Trees, Magic Korok Trees, Lobster & Mystic Shark Pools | Moss Guardian (Lv 45) x4 |
+| **Dragon's Peak Highlands** | Volcanic Obsidian Crag | Runite Ore Veins, Wilderness Shrine | Lesser Demon (Lv 68) x4, **Elvarg the Crag Dragon (Lv 95 Boss)** x1 |
+
+The world spawns 34 monsters of 10 types; the number after each monster is how many spawn in that region.
 
 ---
 
@@ -126,6 +128,17 @@ npm run build
 
 ---
 
+## Credits
+
+The game uses third-party 3D assets from Blend Swap. Two are under Creative Commons Attribution 3.0 (CC-BY 3.0) and need credit:
+
+- "Dragon Rig And Textures" (the dragon) by yoji, CC-BY 3.0, http://www.blendswap.com/blends/view/21036
+- "Game Anime RPG Character" (Kai, the player character) by uchiha007, CC-BY 3.0, http://www.blendswap.com/blends/view/26667
+
+The guard is "Rigged Knight in Armor" by Xali, Blend Swap blend 28541, CC0. [CREDITS.md](./CREDITS.md) lists every third-party asset with its title, author, source and licence.
+
+---
+
 ## License
 
-Released under the [MIT License](./LICENSE).
+Released under the [MIT License](./LICENSE). The MIT License covers the code only; the third-party assets listed in [CREDITS.md](./CREDITS.md) keep their own licences.

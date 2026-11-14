@@ -1,10 +1,10 @@
 import * as THREE from 'three';
-import { GLTFLoader, type GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { loadGltfOnce } from './gltf';
 import type { ItemDef } from '../data/items';
 import { facetMaterial } from './materials';
 import { albedoForItem, albedoMaterial, sealAlbedoUvs } from './textures';
 
-let cachedGearPromise: Promise<GLTF | null> | null = null;
 let loadedGearRoot: THREE.Object3D | null = null;
 
 export function setBlenderGearRoot(root: THREE.Object3D | null): void {
@@ -19,24 +19,12 @@ export function loadBlenderGearTemplate(url = '/models/gear.glb?v=headgear_v8'):
   if (typeof window === 'undefined' || typeof document === 'undefined') {
     return Promise.resolve(null);
   }
-  if (!cachedGearPromise) {
-    const loader = new GLTFLoader();
-    cachedGearPromise = new Promise((resolve) => {
-      loader.load(
-        url,
-        (gltf) => {
-          loadedGearRoot = gltf.scene;
-          resolve(gltf);
-        },
-        undefined,
-        (err) => {
-          console.warn('[BlenderGear] Failed to load gear.glb, keeping procedural fallback:', err);
-          resolve(null);
-        }
-      );
-    });
-  }
-  return cachedGearPromise;
+  return loadGltfOnce(url).then((gltf) => {
+    if (gltf) {
+      loadedGearRoot = gltf.scene;
+    }
+    return gltf;
+  });
 }
 
 export interface GearCloneOptions {

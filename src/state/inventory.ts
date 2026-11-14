@@ -69,8 +69,10 @@ export function compactSlots(raw: ItemStack[] | undefined, bank: boolean): ItemS
   const capacity = bank ? BANK_CAPACITY : 10000;
   if (!Array.isArray(raw)) return out;
   for (const slot of raw) {
-    if (!slot || !ITEMS[slot.id]) continue;
-    const qty = Math.max(1, Math.floor(Number(slot.qty) || 1));
+    if (!slot || typeof slot.id !== 'string' || !Object.hasOwn(ITEMS, slot.id)) continue;
+    const rawQty = Number(slot.qty);
+    if (rawQty === Infinity || rawQty === -Infinity) continue;
+    const qty = Math.max(1, Math.min(2147483647, Math.floor(rawQty || 1)));
     const item = ITEMS[slot.id];
     const stackable = bank ? isStackableInBank(item) : isStackableInBackpack(item);
     place(out, slot.id, qty, stackable, capacity);
@@ -171,6 +173,7 @@ export function buyRunePack(state: GameState, perRuneQty = 500): TransferResult 
 export function buyItem(state: GameState, itemId: string, mode: QtyMode): TransferResult {
   const item = ITEMS[itemId];
   if (!item) return { ok: false, moved: 0, reason: 'Unknown item.' };
+  if (isGatheredGood(itemId)) return { ok: false, moved: 0, reason: 'The store only buys that.' };
   const price = item.price || 0;
   if (price <= 0) return { ok: false, moved: 0, reason: 'That cannot be bought.' };
   const affordable = Math.floor(state.gp / price);
