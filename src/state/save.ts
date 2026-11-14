@@ -207,12 +207,12 @@ export function writeSave(storage: StorageLike, state: GameState, pose: SavedPos
 
 export function sanitizePose(p: SavedPose): SavedPose {
   if (!Number.isFinite(p.x) || !Number.isFinite(p.z)) {
-    return { x: 0, y: num(p.y, 0), z: 4, yaw: p.yaw };
+    return { x: 0, y: p.y, z: 4, yaw: p.yaw };
   }
   const cx = Math.max(-118, Math.min(118, p.x));
   const cz = Math.max(-118, Math.min(118, p.z));
   if (isWalkable(cx, cz)) {
-    return { x: cx, y: num(p.y, 0), z: cz, yaw: p.yaw };
+    return { x: cx, y: p.y, z: cz, yaw: p.yaw };
   }
   for (let step = 1; step <= 24; step++) {
     const r = step * 0.5;
@@ -221,11 +221,11 @@ export function sanitizePose(p: SavedPose): SavedPose {
       const nx = cx + r * Math.cos(angle);
       const nz = cz + r * Math.sin(angle);
       if (isWalkable(nx, nz)) {
-        return { x: nx, y: num(p.y, 0), z: nz, yaw: p.yaw };
+        return { x: nx, y: p.y, z: nz, yaw: p.yaw };
       }
     }
   }
-  return { x: 0, y: num(p.y, 0), z: 4, yaw: p.yaw };
+  return { x: 0, y: p.y, z: 4, yaw: p.yaw };
 }
 
 export function sanitizeCam(c: SavedCam): SavedCam {
