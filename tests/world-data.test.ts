@@ -334,4 +334,15 @@ describe('world data', () => {
       expect(inCorridor(ridge, m.x, m.z), `${at} in the pass`).toBe(true);
     }
   });
+
+  // Review 6: a node stands at its centre height, so it must be dry.
+  it('every non-fish node is above the water plane and walkable', () => {
+    const land = NODE_PLACEMENTS.filter((p) => !p.type.startsWith('fish_'));
+    expect(land.length).toBeGreaterThan(0);
+    for (const p of land) {
+      const at = `${p.type} at (${p.x}, ${p.z})`;
+      expect(getTerrainHeight(p.x, p.z), `${at} above water`).toBeGreaterThan(WATER_PLANE);
+      expect(isWalkable(p.x, p.z), `${at} walkable`).toBe(true);
+    }
+  });
 });
