@@ -1,7 +1,7 @@
 import { STATE } from '../state/gameState';
 import type { QtyMode } from '../state/types';
 import { getLevelForXp, SKILLS_META, OSRS_XP_TABLE } from '../data/skills';
-import { ITEMS, unitSellPrice } from '../data/items';
+import { ITEMS, shopPrice, unitSellPrice } from '../data/items';
 import {
   addItem,
   removeItem,
@@ -17,6 +17,7 @@ import { tryCraft, isLogId } from '../data/recipes';
 import { noteBury, notePlate, notePrayerOffered, notePurchase, noteSale } from '../state/quests';
 import { equippedWeapon, allowedStyles, canCastTeleport } from '../state/combat';
 import { weaponSpecial, claimQuest, assignSlayerTask } from '../state/adventure';
+import { unlocksAt, unlockLine } from '../state/unlocks';
 import { PRAYERS, SPELLS } from '../data/magic';
 import { getSkillSvg } from './icons';
 import {
@@ -72,6 +73,10 @@ export function grantXp(skillKey: string, baseAmount: number): void {
     }
     const meta = metaMap[skillKey]!;
     addChatMessage(`Level Up! Your <b>${meta.name}</b> level is now <b>${s.lvl}</b>!`, 'lvlup');
+    for (let level = oldLvl + 1; level <= s.lvl; level++) {
+      const line = unlockLine(meta.name, level, unlocksAt(skillKey, level));
+      if (line) addChatMessage(line, 'skill');
+    }
     showLevelUpBanner(meta.name, s.lvl);
     spawnLevelUpFireworks();
   }
@@ -202,7 +207,7 @@ export function handleInventoryClick(index: number): void {
     updateAllUI();
     return;
   }
-  addChatMessage('<b>' + item.name + '</b> — Value: ' + item.price + ' GP. Use it at the Bank, Anvil, or General Store.');
+  addChatMessage(`<b>${item.name}</b> — Shop ${shopPrice(item).toLocaleString('en-US')} GP · sells for ${unitSellPrice(item).toLocaleString('en-US')} GP. Use it at the Bank, Anvil, or General Store.`);
 }
 
 export function unequipSlot(slotName: string): void {
