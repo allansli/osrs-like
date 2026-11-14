@@ -1,5 +1,14 @@
 # Content and systems: design
 
+> **Approved by the owner on 2026-11-14**, design and plan, after the critique and the second-pass check. The main session listed the six open decisions with a recommendation each and asked for approval; the owner answered "Segue". The main session reads that as approval with every recommendation taken, and told the owner so:
+> - CALL-6.29 (strong woodcutters at the high trees): **option (b)**: a hit stops the gathering and the hero fights back on its own. This amends Stage 4's approved rule that automatic fight-back skips gatherers.
+> - CALL-6.24 (the rebalance numbers): approved, with the level-28 exception (magic at 1.43 times melee); the final table is shown to the owner again at step O-6.6 before the rebalance code is written.
+> - CALL-6.27 (sight shrink): 10 combat levels.
+> - CALL-6.25 (Kilnglass): one certain shard per Underkiln clear is kept as ordinary chest loot. No pity counter or saved luck state exists anywhere. The owner had said "a drop chance is a drop chance", and was told that making this shard chance-only too is a data change they can ask for at any time.
+> - CALL-6.28 (which arrow is shot): the best grade carried, with a log line when a better grade starts being shot.
+> - CALL-6.26 (diary middle tier): a deposit box at each shrine.
+> Code starts after Stages 4 and 5 have landed; task R0 re-checks the premises first.
+
 > **Owner note, 2026-11-14 (after this revision was requested):** asked whether dungeons need protection against bad luck, the owner answered: "não, masmorras não precisam dessa proteção contra azar. Chance de drop de item é chance de drop de item." So CALL-6.25 is decided on that point: **no pity counter and no saved luck state, ever.** The drop tables stay as chances. The one Kilnglass that every Underkiln clear gives for certain is ordinary base loot, not a protection mechanism; whether to keep it certain is still the owner's to confirm with the drop chances.
 
 Date: 2026-11-14. Branch: `feat/content-systems`, cut from `main` at `5caa597` (Stages 1 and 2 merged). All line numbers refer to that commit. Stages 3, 4 and 5 are approved and land before this stage; their code is not in this tree, so every task in the plan finds symbols by name and the plan opens with a premise re-check (task R0).
