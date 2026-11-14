@@ -357,3 +357,96 @@ Smaller in two places:
 - **The vertex paint layer.** It is subtle on today's geometry (E7). It matters more in the engine, whose figures have no other ambient term.
 
 Whether the result reaches "old school 8k" rests on M2. If scripted primitives cannot carry form, the remeshed-body route of H6 or the CC0/CC-BY fallback of CALL-M8 has to. Making the figures cheaper (merging, decimation) is a real side effect, but it is not what the proposal mostly does. Done as amended, the stage is not timid. As first written, it would have spent its art budget dressing two statues and re-timing clips that were not broken.
+
+---
+
+## Second pass
+
+Date: 2026-11-14. Branch `feat/models-pass` at `b4e0edc`. Scope: only what commit `d7b41aa` changed (`git diff 8170cc4 d7b41aa`), checked against the engine code at this branch (`src/engine/blenderHero.ts`, `blenderMonsters.ts`, `playerMesh.ts`, `materials.ts`, `dispose.ts`, `monsterMeshes.ts` 793-866, `textures.ts` 256-346), the frozen tests, three 0.169's own source in `node_modules/three`, the Stage 4 design on `origin/feat/combat-weight` (its 6.5) and the Stage 5 design's planned shader (its 6.1).
+
+### Verdict: READY-WITH-FIXES
+
+The central idea holds where the engine depends on it: names, axes, identity rest rotation, gear attached to bones, cloning, posing by `rotation.x`. It did **not** hold for the hero's joint positions, the file layout of skinned monsters, or the clip conversion, and the pilot had no stated gate. All are fixed in the documents; two items are now owner decisions (N-5, N-6).
+
+### What was run
+
+In a scratch directory; Blender 5.0.1 under `timeout 600 systemd-run --user --scope -q -p MemoryMax=3G -p MemorySwapMax=0 ... --background --factory-startup --disable-autoexec`, one process at a time, 1 to 3 s each; node scripts importing three 0.169 by absolute path. Nothing in the worktree was written except these three documents. Results are design 3.5 S14 to S17.
+
+| # | Experiment | Result |
+|---|---|---|
+| X1 | The hero source's bone heads put through `build_hero.py`'s own vertex transform (`S = 1.85 / 11.0498`, `Z0 = 4.2954`, 180 degrees about z), in glTF axes | Shoulders ±0.178 (centred) at 1.478; hips ±0.111 at 1.007; knees 0.604; `neck` 1.504, `head` 1.594; upper arm 28 degrees out. `LEAN_RIG`: shoulders ±0.28 at 1.50, hips 0.90, knees 0.52. Cross-check: the shipped `Boot_L` vertices span x -0.33 to -0.12 in figure space, consistent with the measured ankle at -0.248 |
+| X2 | A prefixed rig as `Monster_probe` at (6, 0, 2), exported, loaded with a bare `GLTFLoader`, cloned with `SkeletonUtils.clone`, reset and moved into a group as `upgradeMonsterRigWithGltf` does | Every vertex 6.32 off; the inverse bind matrices hold the translation (-6, 0, -2). At the origin: 0 error; `rotation.x = 1` rotates an arm vertex exactly about the shoulder; a rigid child of the elbow bone lands exactly where the same offsets on a pivot chain land, with the torso turned |
+| X3 | An empty keyed by today's `t2b_euler` and Blender `XYZ` against a bone keyed with the same numbers | Identical quaternion with the bone in Blender `XZY` (= three `YZX`); Blender `XYZ` is 0.34 rad off |
+| X4 | Clones, shells, spheres, track names | Clones share the template's `boneInverses`; `shell.bind(skeleton)` without the bind matrix mid-pose is 14 off and moves another instance 13.5; with the bind matrix, exact. Tracks keep the prefix. `boundingSphere` is copied on clone |
+| X5 | The 60-line 8-bit step of the revision (`quant.mjs`) on the probe file | Parses with the bare loader; normals `Int8Array` normalised, unit length through `getX`; positions `Float32Array`; no `uv` attribute, so `assignProjectedUvs` makes a `Float32` one. `COLOR_0` at 8 bits was not run |
+
+### Findings
+
+| # | Severity | Finding | Evidence | Fixed |
+|---|---|---|---|---|
+| F1 | Critical | **The hero's bones were to sit at `LEAN_RIG`'s pivots, 8 to 11 cm from the joints its author's weights bend about.** S13 only ever bound at the author's joints, so it did not support H3a. The A-pose fallback was called a 28-degree breach of the 20-degree rule, but today's ten clips were written for that pose (every clip turns the arms in by 0.28 rad): re-posing to arms-down would have made every converted clip push the arms into the body while passing H3a's orientation check | X1; `build_hero.py` 145, 149, 196, 200, 560-574 | Yes: bones at the author's joints, the biped reference pose is the hero's A-pose, no re-pose, mount offsets moved by the joint's move, a third declared replacement (lines 58-59, shoulder x); decision **N-5** |
+| F2 | Critical | **A skinned figure laid out as `monsters.glb` lays out its figures is drawn 6.32 units off** once the engine resets the clone | X2 | Yes: design 6.1.1 rule 2b, `make_rig` at the origin, `cloneFigure` refuses, an S0 case |
+| F3 | High | **The clip conversion was not implementable as written.** `make_clip` keyed Blender `XYZ` (0.34 rad off); `SpinSlash`'s converted arms would hold their direction while the shoulders orbit 4π, through the chest, and pass the 0.02 rad check; moving the torso's position keys to `Hips` sinks the feet 6 cm and slides them 16 cm in `Lunge` and lifts them 4 cm in `Cast`, unseen by an orientation-only check | X3; `build_hero.py` 76-119, 266-269, 302-306, 400-414 | Yes: quaternion keys from the `YZX` order; `SpinSlash` exception for the arm bones only (the head is converted normally, its yaw being 0.85 of the torso's); only the legs' keys go to `Hips`; a check that each leg root moves from rest exactly as the shipped leg pivot does; `Lunge` re-made in H4 |
+| F4 | High | Clones share one `boneInverses` array; an outline shell bound without the bind matrix (and `addCartoonOutline` runs again on every gear change, mid-animation) corrupts every instance | X4; `playerMesh.ts` 397-400 | Yes: rule in 6.1.3, S1b, an S0 case |
+| F5 | High | Clip tracks keep the builder's prefix, but only bones were to be stripped: Ashmantle (`ashmantle_` bones) could never play the dragon's `elvarg_dragon_` clips | X4 | Yes: `stripClipPrefix` per library |
+| F6 | High | The pilot had no stated go/no-go, showed no shared clip on another stance (first seen at M1b, after the hero slice) and no face or hands at close range | plan S3, OM-P | Yes: criteria P-a to P-f, a mixer-only shared-clip capture in the throw-away worktree, three outcomes including "engine path yes, scripted bodies no" |
+| F7 | Medium | Culling of a `SkinnedMesh` reads the object's sphere; today's shell code inflates the geometry's, which does nothing for a skinned shell | three `Frustum.js` 81-93, `SkinnedMesh.js` 38-99; `materials.ts` 98-104 | Yes |
+| F8 | Medium | The chicken on the biped rig cannot play `Walk`, `Slash` or `Death` credibly (wings fold back along a horizontal body; a bird's visible leg joint bends the other way) and breaks the 20-degree rule by construction | `monsters.glb`: only two leg pivots under `Monster_chicken`; `monsterMeshes.ts` 836-841 | Yes: code-posed, exempt, kept by X0 |
+| F9 | Medium | Goblin "target 3 (skin, leather and wood, metal)" merges two engine families; eyes are a separate unlit material | `blenderMonsters.ts` 106-125 | Yes: text says what the builder must author |
+| F10 | Medium | The as-exported per-figure ceiling (115 kB) is below the probe body plus the measured paint cost (about 118 to 122 kB) before any hard part | design 3.3, 3.5 S9 | Stated; the 3.18 MB column is now called optimistic |
+| F11 | Medium | Monster pivot positions "within 0.05" contradicted "rebuilt"; no engine code reads them | `grep` of `src/`: only `rotation` is written on monster pivots | Yes: names kept, positions free |
+| F12 | Low | Shorter legs on the hero's `Walk` slide the feet | `blenderHero.ts` 121-122 | Yes: time scale by leg length |
+| F13 | Low | `Hurt` was added though not asked | design 13.1 | Owner decision **N-6** |
+| F14 | Low | H5b may edit a Stage 4 file that the monster cluster also edits (`loop.ts`) | plan 0.4 | Yes: R0 item 16 |
+
+### Checked and holding
+
+- **Names, axes and rest rotations.** `findPivot` and `getObjectByName` find bones. `poseMonsterLimbs` only writes `rotation` and the group's position (`monsterMeshes.ts` 793-866), and with identity rest rotation a bone's `rotation.x` means what a pivot's does (X2, exact).
+- **Scale.** Monster groups keep the builder's scale, and the clone is reset to 1 (`blenderMonsters.ts` 82-84). `HeroRoot` has no transform today. Rule 2b keeps both true for skinned roots.
+- **Gear offsets on bones.** Exact against a pivot chain (X2). They need only the joint-move arithmetic of F1.
+- **Facing.** The hero's eyes and the goblin's eyes both lie at -z, so shared clips swing the same way on both.
+- **Frozen tests.** `tests/run-blender.test.ts` survives the deletion of `knight.blend`: `export knight` resolves `blender/knight.blend`, which never existed, and no existence check runs. `tests/credits.test.ts` reads only the credit line and `LICENSE.txt`. `tests/textures.test.ts` and `tests/dispose.test.ts` build their own plain meshes. `tests/architecture.test.ts` imports every `src` module in node, and `SkeletonUtils` imports cleanly there. No other test parses a figure file. The count of declared replacements is now three, not two (F1).
+- **three 0.169 claims.** `SkeletonUtils.clone` gives clones their own bones and rebinds with the source's bind matrix (`SkeletonUtils.js` 357-394). A bone texture is always used, so there is no uniform bone limit. The skeleton updates once per frame (`WebGLObjects.js` 52). The bone texture is created and bound in `WebGLRenderer.js` 2056-2058. The skinned variant is its own program (`WebGLPrograms.js` 311), and the depth material includes the skinning chunks (`depth.glsl.js` 7, 35), so shadows follow the pose. Clicks go to invisible hitboxes (`input.ts` 305 and 431 read `entityHit.object`, the hitbox).
+- **Stage 5's planned shader** bands inside `RE_Direct_Lambert` on three's own normal, which is skinned. Its foot gradient reads object-space height, but it is off for figures. Today's `vCelNormal` patch (`materials.ts` 152-155) is the only bind-pose read, as the revision says.
+- **Draw calls.** Recounted primitives from the GLBs: hero 18; goblin 59; camp 7 × 59 × 2 = 826; demon 22 meshes and 24 primitives (the design's 22 counts meshes; no disagreement). Hero 11 by engine role holds: eyes, hair, head, bracers, hands, sleeves, boots, legs, belt, inner chest and coat are 11 distinct material instances in `blenderHero.ts` 233-269. **Guard: the revision's "about 32, more than the knight" is wrong the other way.** `gear.glb` has no arm nodes for the plate body, and the guard's pieces are `Gear_helm` (5 families), plate-body torso, both plate legs, kite shield and sword (2 each). So 11 + 5 + 10 = about 26 per pass after the gear merge, against the knight's 27. That is acceptable as it stands. A per-guard merge at load would save about 13 per guard and is not worth a second path.
+- **The 8-bit step and the engine's reads.** The engine reads `position` as metres and `normal` through `getX` (`textures.ts` 263-284), and writes its own `Float32` `uv`. Figures drop `TEXCOORD_0`, so nothing quantised is ever written back. Positions stay float. The claim holds for normals and weights (X5); colour was not run.
+- **The author's skeleton.** `kaiV2.blend` has 59 deforming bones. All ten meshes carry an `Armature` modifier and 59 groups. Four coat vertices are unweighted, and the fold maps them to `Torso`.
+- **Stage 4's reactions.** Flinch writes absolute `rotation` values and the group's position (`monsterMeshes.ts` 800-808), and the knock-back is a group offset, so both carry over to bones. On clip-driven figures they must run after `mixer.update`, as the revision says.
+- **Plan shape.** Tests come before their implementations (P1, S0, H1, H6, M1, B1, D4, G2, N1, Q1). Every task carries a tag and a tier, with fable used only at S2 and D2. Allowlists collide only at F14. R0 re-checks the premises, and the follow-up stage holds the gear bands and the skinned gear.
+
+### Where my measurements disagree with the revision
+
+- Hero joints: the revision's "1.60, the source's own `neck` bone" is the `head` bone (1.594). `neck` is 1.504.
+- The revision says "the hero's joints at `LEAN_RIG`" in H3a while S13 bound at the author's. Those are 8 to 11 cm apart (X1).
+- "Exactly two assertions": three, if the joints move (F1).
+- Goblin "at most 4, target 3" is not reachable with today's material set: that set gives 5 or 6 (F9).
+- Guard: about 26 calls per pass, not about 32 (fixed in 6.4 and 9.1).
+- 3.18 MB as exported is optimistic, and 3.4 to 3.5 MB is likelier (F10).
+
+### Two questions the task asked
+
+- **Are 16 bones enough for the hero with gear, a face and hands, at these distances?** Yes for the body. The hero is 85 to 410 px tall: the face is rigid with the head and the hands are mittens, which those sizes allow. Gear is rigid on bones, which is standard. The one likely gap is the shoulder with an arm raised to 1.45 to 1.55 rad (`Cast`, `Chop`, `Ranged`): there is no clavicle, so the deltoid may collapse. Optional `LeftShoulder` and `RightShoulder` bones are now allowed if H3a's worst-pose sheet shows it.
+- **Is the 20-degree stance bound enough for the giant and the goblin?** It is a reasonable rule, but unvalidated. S4 varied proportions, not pose. The giant's arms swinging through its belly, or a hunched goblin over-reaching in `Slash`, is first seen at P-d (now in the pilot) and then at M1b. The per-model arm-swing scale and stance offset are the levers, and the chicken is exempt.
+
+### The biggest risk, honestly
+
+The risk is **the form of nine scripted bodies, not the engine.** The engine side is now specified and was measured end to end on a toy rig. A skin modifier over a stick graph, remeshed and decimated, gives smooth, continuous, well-weighted limbs. It gives no edge flow, so a face, an ear, a jaw, a hand, a cloak edge or a wing membrane comes out as a soft blob unless it is built as a hard part and stuck on. The revision's own probe lost its head. At 70 to 340 px that may be enough for "old school", and it may not be enough for "8k". Nobody has seen it yet. The hero is safe here: it keeps a person-made mesh and person-made weights, provided F1 is fixed.
+
+The pilot must therefore show, in the game, at distance 5.4:
+- a head with ears and jaw that reads as a goblin;
+- hands that read as hands;
+- a spear and shield that read as objects;
+- the body bending through `Walk` and `Slash` from the hero's file without losing its hunch.
+
+It must show both routes beside today's goblin, and the owner must be able to say "eight more like this". If the answer is "the engine yes, the bodies no", the plan now has a branch for it: rigged CC0 or CC-BY bases with their weights folded onto the shared rigs, or the rest left rigid and merged. Choose that branch at OM-P, not after the dragon.
+
+### Open owner decisions, after this pass
+
+Real trade-offs first:
+
+1. **N-5, where the hero's joints go.** Recommended: at the author's joints, in the hero's own slightly arms-out pose. The skin then bends where it was made to bend and today's animations stay valid. The cost is one more frozen test line and recomputed gear offsets. The alternative keeps that test line, but the skin shears at the shoulders, hips and knees.
+2. **N-3, 8-bit normals, weights and colour.** Recommended: yes. It saves about 30% on the two figure files with no decoder. Without it the stage probably ends near 3.4 to 3.5 MB, not 3.18 MB, and Stage 6 pushes past today's download.
+3. **N-4, one draw call per monster or up to three.** Recommended: decide on the pilot. One call is cheapest, but cloth, hide and metal then all take the light the same way.
+4. **N-1, the pilot figure.** Recommended: the goblin raider. It is cheap to redo and it tests everything except worn gear.
+5. **N-2, split off the gear work.** Recommended: yes. Gear bands and bending cloth go to a follow-up stage.
+6. **N-6, a `Hurt` animation.** Recommended: not in this stage. Stage 4's lean and flinch already show a hit.
