@@ -641,7 +641,7 @@ Every finding located in `src/engine/runtime.ts` (11, 12, 13, 14, 15, 16, 17, 18
 
 ### 9.1 Review findings left open by Stage 1
 
-The adversarial review of the Stage 1 diff confirmed no critical or high finding. These medium and low findings stay open. The deferrals are proposed by the implementer and wait for the owner's confirmation.
+The adversarial review of the Stage 1 diff confirmed no critical or high finding. These medium and low findings stay open. The owner confirmed these deferrals on 2026-11-14 ("concordo, segue"). On the same date the owner also accepted `testTimeout: 30000` for vitest 4 and the exception in `tests/placements.test.ts` that skips the fishing points at (26,-8) and (28,-62) until Stage 2 moves them.
 
 | Finding | Where | Severity | Decision | Reason |
 |---|---|---|---|---|
