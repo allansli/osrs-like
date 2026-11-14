@@ -28,7 +28,9 @@ Stage 3 lands after Stage 2 is merged. It depends on Stage 2's camps, aggression
 - Everything about the game after the design (the task counts of section 5, the "after" rows of 4.3) comes from the critique's independent model, which is committed (`docs/superpowers/research/pacing-model/pace2.py`), extended for this revision to count kills and gold, to start from the starter chain and to follow the Slayer rule of 4.2. The extension is committed beside it (`tasks.py`, `check.py`, `check2.py`, commit `b68e2d2`).
 - The second-pass check (critique, "Second pass") wrote a third model in TypeScript that imports the real tables and functions of `src/` (`MONSTER_TYPES`, `ITEMS`, `getEquipmentBonuses`, `combatLevel`, `pickSlayerBand`, `getLevelForXp`) and the camps of `feat/world-place` at `b6f38da`. It reproduced every kill count of rows A1, A3 and C and of table 5.2 exactly, at every markup from 8 to 12.
 
-No test, type check, build or dev server was run for this document. The plan's first tasks move the formulas into `src/state` and commit the model as a test that calls them, so the numbers become a proof instead of a claim (section 9). Section 4.2 lists the model's assumptions.
+**Since plan T1 (2026-11-14) the "after" numbers come from the committed test.** The "after" rows of 4.3 and tables 5.1, 5.2 and 5.5 are now the output of `tests/pacing.test.ts`, which runs the committed model (`tests/support/pacingModel.ts`, `tests/support/starterChain.ts`) against the game's own functions and live tables, with every Stage 3 data change in place (markup 10, the drop chances of D3, the bounties of D3, the fishing respawns of D4, smithing from bars). Its printed table is copied into `docs/superpowers/baseline/2026-11-14-stage3-baseline.md`. The test passed without tuning, so no constant moved from the values this document proposed. Every level and kit count is one kill later than the scratch models gave, because the chain's goblin kill is registered for the quest and grants no combat experience; further kills and tiers behind are unchanged to the kill. The "today" rows of 4.3 and the tables of 4.4, 4.5 and 6.1 are still the scratch scripts' (plan M1's reproduction of the "today" rows is in the baseline file).
+
+The design itself was written without running any test, type check, build or dev server. Section 4.2 lists the model's assumptions.
 
 ---
 
@@ -137,23 +139,23 @@ List prices of the three-piece kits (weapon + body + legs, `catalog.ts`): bronze
 | T4 | Today plus Stage 2 rules, 1x, no Slayer | 1x | 0 | 4 m | 10 m | 16 m | 23 m | 40 m | 73 m | 5.2 h |
 | T3 | Today plus Stage 2 rules, 1x, with Slayer | 1x | 0 | 5 m | 13 m | 21 m | 30 m | 54 m | 1.7 h | 7.8 h |
 
-**After the design.** Counted in kills since the new game, with the average time beside each count as information. "Level" is the kill on which Attack and Defence both reach the tier. "Kit" is the kill after which weapon, body and legs of the tier are all worn. Source: the critique's model extended as described at the top of this document, with the camps of `feat/world-place` as they stand today.
+**After the design.** Counted in kills since the new game, with the average time beside each count as information. "Level" is the kill on which Attack and Defence both reach the tier. "Kit" is the kill after which weapon, body and legs of the tier are all worn. Source: the committed test, `tests/pacing.test.ts` (plan T1), on the Stage 2 camps and with every Stage 3 data change in place. The chain's goblin kill counts as kill 1 and gives no combat experience, so each count here is one more than the scratch models' (top of this document).
 
 | Row | Case | | bronze | iron | steel | black | mithril | adamant | rune | dragon |
 |---|---|---|---|---|---|---|---|---|---|---|
-| A1 | **Shop only**, 1x (no drops used, no Slayer after the chain's one task) | level | 0 | 38 | 111 | 155 | 227 | 432 | 815 | 4,605 |
-| | | kit | chain | 131 | 353 | 452 | 539 | 823 | 1,557 | 4,605 |
+| A1 | **Shop only**, 1x (no drops used, no Slayer after the chain's one task) | level | 0 | 39 | 112 | 156 | 228 | 433 | 816 | 4,606 |
+| | | kit | 1 (chain) | 132 | 354 | 453 | 540 | 824 | 1,558 | 4,606 |
 | | | average | 9 m | 23 m | 42 m | 55 m | 64 m | 89 m | 2.4 h | 5.5 h |
-| A3 | **Shop, drops and Slayer**, 1x | level | 0 | 38 | 101 | 145 | 217 | 409 | 791 | 4,582 |
-| | | kit | chain | 113 | 185 | 377 | 409 | 447 | 1,086 | 4,582 |
+| A3 | **Shop, drops and Slayer**, 1x | level | 0 | 39 | 102 | 146 | 218 | 410 | 792 | 4,583 |
+| | | kit | 1 (chain) | 114 | 186 | 378 | 410 | 448 | 1,087 | 4,583 |
 | | | average | 9 m | 24 m | 30 m | 48 m | 51 m | 56 m | 1.8 h | 5.4 h |
-| C | **Control:** the new start with today's prices, drops and bounties, 1x | level | 0 | 38 | 111 | 155 | 227 | 432 | 815 | 4,605 |
-| | | kit | chain | 38 | 111 | 155 | 227 | 432 | 815 | 4,605 |
-| A1 | Shop only with the hidden 10x booster on | level | 0 | 4 | 12 | 17 | 24 | 44 | 83 | 462 |
-| | | kit | chain | 46 | 134 | 233 | 320 | 558 | 738 | 1,270 |
-| | | average | 9 m | 19 m | 30 m | 39 m | 47 m | 67 m | 93 m | 2.6 h |
+| C | **Control:** the new start with today's prices, drops and bounties, 1x | level | 0 | 39 | 112 | 156 | 228 | 433 | 816 | 4,606 |
+| | | kit | 1 (chain) | 39 | 112 | 156 | 228 | 433 | 816 | 4,606 |
+| A1 | Shop only with the hidden 10x booster on | level | 0 | 5 | 13 | 18 | 25 | 45 | 84 | 463 |
+| | | kit | 1 (chain) | 47 | 135 | 234 | 321 | 559 | 739 | 1,271 |
+| | | average | 9 m | 19 m | 30 m | 39 m | 47 m | 67 m | 1.5 h | 2.6 h |
 
-The same kills by monster on row A1: 111 goblins, then 231 scorpions, then hill giants (11 by the steel kit, 481 by adamant, 1,215 by rune, 4,263 by dragon). That last figure is finding F12.
+The same kills by monster on row A1: 112 goblins, then 231 scorpions, then hill giants (11 by the steel kit, 481 by adamant, 1,215 by rune, 4,263 by dragon). That last figure is finding F12.
 
 Reading the tables:
 
@@ -275,23 +277,23 @@ Wind Strike hits for 6 even with no magic bonus, so the staff's own numbers bare
 
 ### 5.1 The milestones, as tasks
 
-Each row is what a new character does to wear the tier's weapon, body and legs. Kills are counted from the new game and include the earlier rows. Source: the extended critique model (4.3), at 1x.
+Each row is what a new character does to wear the tier's weapon, body and legs. Kills are counted from the new game and include the earlier rows. Source: the committed test, `tests/pacing.test.ts` (plan T1), at 1x.
 
 | Tier | To be allowed to wear it | To pay for it at the shop (route A1) | With bounties and drops as well (route A3) | Or to forge it |
 |---|---|---|---|---|
 | Bronze | Level 1 | **The starter chain:** 6 quests, 29 actions: accept 1 task, win 1 fight, gather 7 items, cook 1, smelt 5, forge 2, wear 3, visit the bank, sell 1, buy 1, claim 6 rewards. No coin spent. | The same chain | The chain is the forge route: 5 copper ore, 5 bronze bars, platelegs and a platebody |
-| Iron | Attack and Defence 5: 38 kills (goblins) | 5,350 GP: 131 kills (111 goblins, 20 scorpions), the chain's one goblin bounty and the two start-town quests (1,300 GP) | 113 kills | Mining 10 and Smithing 9: about 49 ore (42 copper, 7 iron), 49 bars, 3 forgings. No coin |
-| Steel | Level 10: 111 kills | 11,100 GP: 353 kills (111 goblins, 231 scorpions, 11 hill giants) | 185 kills | No recipe |
-| Black | Level 15: 155 kills | 15,900 GP: 452 kills | 377 kills | No recipe |
-| Mithril | Level 20: 227 kills | 21,100 GP: 539 kills | 409 kills | Mining 25 and Smithing 24: about 210 ore and bars in all, 10 of them mithril |
-| Adamant | Level 30: 432 kills | 50,000 GP: 823 kills | 447 kills | No recipe |
-| Rune | Level 40: 815 kills | 129,000 GP: 1,557 kills (1,215 of them hill giants) | 1,086 kills | Mining 50 and Smithing 45: about 980 ore and bars in all, 13 of them runite. Runite stands behind Stage 2's pass |
-| Dragon | Level 60: 4,605 kills | 380,000 GP: already earned when the level arrives | 4,582 kills | No recipe |
+| Iron | Attack and Defence 5: 39 kills (goblins, the chain's one included) | 5,350 GP: 132 kills (112 goblins, 20 scorpions), the chain's one goblin bounty and the two start-town quests (1,300 GP) | 114 kills | Mining 10 and Smithing 9: 122 actions: 49 ore (42 copper, 7 iron), 49 bars, 24 forgings (21 bronze platelegs for the Smithing levels, then the iron scimitar, platelegs and platebody). No coin |
+| Steel | Level 10: 112 kills | 11,100 GP: 354 kills (112 goblins, 231 scorpions, 11 hill giants) | 186 kills | No recipe |
+| Black | Level 15: 156 kills | 15,900 GP: 453 kills | 378 kills | No recipe |
+| Mithril | Level 20: 228 kills | 21,100 GP: 540 kills | 410 kills | Mining 25 and Smithing 24: 415 actions: 167 ore (42 copper, 115 iron, 10 mithril), 167 bars, 81 forgings. No coin |
+| Adamant | Level 30: 433 kills | 50,000 GP: 824 kills | 448 kills | No recipe |
+| Rune | Level 40: 816 kills | 129,000 GP: 1,558 kills (1,215 of them hill giants) | 1,087 kills | Mining 50 and Smithing 45: 1,679 actions: 775 ore (42 copper, 115 iron, 122 mithril, 451 gold, 45 runite), 775 bars, 129 forgings. No coin. Runite stands behind Stage 2's pass |
+| Dragon | Level 60: 4,606 kills | 380,000 GP: already earned when the level arrives | 4,583 kills | No recipe |
 
 Notes on reading it:
 
-- The gold in each row is the kit's shop price. The fighter also buys single pieces of later tiers as soon as it can wear and afford them (the purchase rule of 4.2), so what it has spent in total by each kit is more: 5,350, 20,850, 38,150, 53,450, 103,450, 232,450 and 612,450 GP.
-- The forge counts are a rough hand calculation of "mine the best rock you can, smelt it, forge the kit". They are shown to give the size of the task. The committed model prints the real lists (plan M1).
+- The gold in each row is the kit's shop price. The fighter also buys single pieces of later tiers as soon as it can wear and afford them (the purchase rule of 4.2), so what it has spent in total by each kit is more: 5,352, 20,852, 38,152, 53,452, 103,452, 232,452 and 612,452 GP (the 2 GP are the chain's arrow shafts).
+- The forge counts are the committed model's `forgeTasks` (plan M1, design 4.5 and 7.1 item 5): mine the best ore for the levels still missing, smelt and forge everything, then mine, smelt and forge the kit. The extra forgings are the platelegs of a lower tier, made for their Smithing experience. Each route is cumulative from a new game and includes the earlier tiers' levels.
 - Route A3 is the first Slayer implementation anyone has run against these rules. The critique's model had none. Its counts are shown, and less is asserted on them than on A1 (5.3).
 
 ### 5.2 Two quantities the test reads off the milestones
@@ -307,7 +309,9 @@ Notes on reading it:
 | A3, tiers behind | 1 | 1 | 1 | 0 | 0 | 0 | 0 |
 | Control (today's prices, drops and bounties), further kills | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | For information: share of the kit's price earned by the time the level arrives, A1 | 48% | 37% | 44% | 55% | 70% | 79% | 202% |
-| The same share in the control | 7 times | 8 times | 10 times | 14 times | 22 times | 29 times | - |
+| The same share in the control | 7 times | 8 times | 10 times | 14 times | 22 times | 29 times | 80 times |
+
+Source: the committed test (plan T1). The control's rows come from the same model with the test's control options, without and with Slayer; both give 0 further kills from iron to dragon.
 
 ### 5.3 What the pacing test asserts
 
@@ -337,7 +341,7 @@ What is still drawn from the model, said plainly: the floor of 25 and the bound 
 
 ### 5.5 Average times, as information
 
-Never asserted. Model-optimal averages from 4.3, and an assumed factor of about two for a real player.
+Never asserted. Model-optimal averages from 4.3, as printed by the committed test (plan T1), and an assumed factor of about two for a real player.
 
 | | bronze | iron | steel | black | mithril | adamant | rune | dragon |
 |---|---|---|---|---|---|---|---|---|
@@ -974,10 +978,10 @@ By the proofs of section 9. In particular: for saves, the two goldens and three 
 ## 14. What could not be verified
 
 - No test, type check or build was run. Every statement about a test staying green comes from reading it (9.3).
-- The numbers come from scripts with formulas copied from `actions.ts` at `a8cad85`. The first author's script (the "today" rows, 4.4, 4.5, 6.1) is not committed. The task counts and the "after" rows come from the critique's committed model and its committed extension (`docs/superpowers/research/pacing-model/`, `b68e2d2`). The second pass reproduced every kill count with a TypeScript model that imports the game's tables and functions, but it implements the same text of 4.2, so it checks the arithmetic and the transcription, not the rules themselves. Plan M1 commits the model against the game's functions.
+- The "today" rows, 4.4, 4.5 and 6.1 come from the first author's script, with formulas copied from `actions.ts` at `a8cad85`; it is not committed. The task counts and the "after" rows (4.3, 5.1, 5.2, 5.5) now come from the committed test, `tests/pacing.test.ts`, which calls the game's own functions and reads the live tables (plan T1). They matched the scratch models' further kills and tiers behind to the kill; every level and kit count is one later because the chain's kill gives no experience. The committed model still implements the text of 4.2, so it checks the arithmetic against the game, not the rules themselves.
 - The Slayer route (A3) was implemented by the lead for this revision, from the rule in 4.2, and a second time by the second pass, from the same text, with identical counts. Both read the same rule, so a misreading shared by both would not show. Less is asserted on A3 than on A1 for that reason. The A3 floor does discriminate: with today's drops and bounties and the tenfold price, the second-pass model gives 0 further kills at iron, steel and adamant.
 - The floor of 25 further kills and the bound of three tiers were chosen after seeing the counts (5.4). They are far from the measured values, and the control fails them, but they are the lead's numbers until the owner confirms them (Q3.10).
-- The forge route's task counts in 5.1 are a rough hand calculation, not the model. The skilling minutes of the forge route in 4.5 and 7.1 item 5 are the first script's and were not re-measured.
+- The forge route's task counts in 5.1 are now the committed model's (plan T1). The skilling minutes of the forge route in 4.5 and 7.1 item 5 are the first script's and were not re-measured.
 - Average times: the 90 s per starter quest, the 40 s per purchase, the 30 s per change of monster and the walk to the Slayer master are assumptions. So is the factor of about two for a real player. None of them is asserted any more.
 - Stage 2's final world: camp membership and coordinates (task W5), the gate simulation (A7), the two new pond fishing spots, and whether the model's "all camp members attack at once" matches the aggro radius in practice. The counts did not move between the camp table of the Stage 1-2 design and the camps on `feat/world-place` today.
 - The site rule for gathering (nodes within 15 units) is the model's own; no game rule defines a site. Stage 2 moves the yew and magic trees and the river fishing spots, so the gathering numbers and the fishing rhythm of 7.1 item 4 will shift.
