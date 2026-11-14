@@ -1,19 +1,49 @@
-// @ts-nocheck
 import { STATE } from '../state/gameState';
 
 // ============================================================================
 // 1. PROCEDURAL WEB AUDIO SYNTHESIZER
 // ============================================================================
-export const SFX = (() => {
-  let ctx = null;
-  function init() {
+export interface SoundEffects {
+  hit(): void;
+  miss(): void;
+  slash(): void;
+  heavyChop(): void;
+  crush(): void;
+  whipCrack(): void;
+  crossbow(): void;
+  flinch(): void;
+  bow(): void;
+  magic(): void;
+  chop(): void;
+  mine(): void;
+  fish(): void;
+  eat(): void;
+  coin(): void;
+  prayer(): void;
+  jump(): void;
+  levelUp(): void;
+}
+
+export const SFX: SoundEffects = (() => {
+  let ctx: AudioContext | null = null;
+
+  function init(): void {
     if (!ctx) {
-      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      const AudioCtx =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
       if (AudioCtx) ctx = new AudioCtx();
     }
     if (ctx && ctx.state === 'suspended') ctx.resume();
   }
-  function tone(freq, type, duration, vol = 0.12, slideTo = null) {
+
+  function tone(
+    freq: number,
+    type: OscillatorType,
+    duration: number,
+    vol = 0.12,
+    slideTo: number | null = null
+  ): void {
     try {
       if (!STATE.audioEnabled) return;
       init();
@@ -31,6 +61,7 @@ export const SFX = (() => {
       osc.stop(ctx.currentTime + duration);
     } catch (e) {}
   }
+
   return {
     hit: () => { tone(165, 'sawtooth', 0.12, 0.15, 55); tone(95, 'square', 0.09, 0.11, 42); },
     miss: () => { tone(310, 'sine', 0.11, 0.07, 175); },
