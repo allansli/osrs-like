@@ -46,7 +46,7 @@ export function teleportToRegion(regionId?: string): void {
   if (!reg) return;
   G.aggroGraceUntil = performance.now() + 3000;
   player.targetEntity = null;
-  player.targetPos = null;
+  player.waypoints.length = 0;
   player.pos.set(reg.x, getTerrainHeight(reg.x, reg.z + 4), reg.z + 4);
   player.yaw = Math.PI;
   camState.yaw = Math.PI;
@@ -352,7 +352,7 @@ export function handlePlayerDeath(): void {
   player.downed = true;
   player.downedTimer = RESPAWN_SECONDS;
   player.targetEntity = null;
-  player.targetPos = null;
+  player.waypoints.length = 0;
   STATE.hp = 0;
   STATE.activePrayers.clear();
   const notice = deathNotice();

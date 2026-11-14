@@ -4,9 +4,10 @@ import { noteCheatKey } from './session';
 import { SFX } from './audio';
 import { toggleSpecialAttack, closeModals, hideHoverTooltip } from '../ui/playerActions';
 import { switchTab, addChatMessage, updateTargetHud, getCombatLevel, el } from '../ui/hud';
-import { isWalkable } from '../state/collision';
 import { getTerrainHeight } from '../state/terrain';
 import { isDown } from '../state/monsterAi';
+import { entityGoal, findPath } from '../state/pathfind';
+import { STATE } from '../state/gameState';
 import { SKILLS_META } from '../data/skills';
 import {
   attackOptionLabel,
@@ -135,13 +136,14 @@ export function setupInputHandlers(): void {
     const cos = Math.cos(camState.yaw);
     const wx = player.pos.x - (cx * cos - cy * sin) * scale;
     const wz = player.pos.z - (cx * sin + cy * cos) * scale;
-    if (!isWalkable(wx, wz)) {
+    const path = findPath(G.walkGrid, [player.pos.x, player.pos.z], [wx, wz]);
+    if (!path) {
       addChatMessage('You cannot walk there.', 'combat');
       return;
     }
     player.targetEntity = null;
-    player.targetPos = new THREE.Vector3(wx, getTerrainHeight(wx, wz), wz);
-    showClickMarker(player.targetPos.x, player.targetPos.z, 0xfde047);
+    player.waypoints = path;
+    showClickMarker(wx, wz, 0xfde047);
   });
 }
 
@@ -174,12 +176,13 @@ export function handleWorldHover(e: MouseEvent): void {
     if (G.hoverTile) G.hoverTile.visible = false;
     return;
   }
-  updateHoverTile(e);
   const tooltip = el('hover-tooltip');
   G.mouseVec.x = (e.clientX / window.innerWidth) * 2 - 1;
   G.mouseVec.y = -(e.clientY / window.innerHeight) * 2 + 1;
   G.raycaster.setFromCamera(G.mouseVec, G.camera);
   const hits = G.raycaster.intersectObjects(G.worldInteractiveObjects, false);
+  const groundHit = hits.find(h => h.object === G.terrainMesh);
+  updateHoverTile(groundHit ? groundHit.point : null);
   if (hits.length > 0) {
     const ud = hits[0].object.userData;
     if (ud && ud.type !== 'ground') {
@@ -221,8 +224,8 @@ export function pointerToWorld(clientX: number, clientY: number): PickResult {
   G.raycaster.setFromCamera(G.mouseVec, G.camera);
   const hits = G.raycaster.intersectObjects(G.worldInteractiveObjects, false);
   const entityHit = hits.find((hit) => hit.object.userData && hit.object.userData.type && hit.object.userData.type !== 'ground');
-  const groundHits = G.terrainMesh ? G.raycaster.intersectObject(G.terrainMesh, false) : [];
-  return { entityHit, ground: groundHits[0] || null };
+  const ground = hits.find(h => h.object === G.terrainMesh) || null;
+  return { entityHit, ground };
 }
 
 export function onGameContextMenu(e: MouseEvent): void {
@@ -239,9 +242,17 @@ export function onGameContextMenu(e: MouseEvent): void {
       label: attackOptionLabel(ud.entity.def.name, ud.entity.def.level),
       tone,
       run: () => {
-        player.targetEntity = { type: 'monster', ref: ud.entity };
-        player.targetPos = null;
-        showClickMarker(ud.entity.pos.x, ud.entity.pos.z, 0xef4444);
+        const m = ud.entity as MonsterEntity;
+        const stopDist = (STATE.combatStyle === 'rapid' || STATE.combatStyle === 'ranged' || STATE.combatStyle === 'magic') ? 13.5 : 2.9;
+        const goal = entityGoal(G.walkGrid, [player.pos.x, player.pos.z], [m.pos.x, m.pos.z], stopDist);
+        const path = goal ? findPath(G.walkGrid, [player.pos.x, player.pos.z], goal) : null;
+        if (!path) {
+          addChatMessage('You cannot walk there.', 'combat');
+          return;
+        }
+        player.targetEntity = { type: 'monster', ref: m, madeAt: [m.pos.x, m.pos.z] };
+        player.waypoints = path;
+        showClickMarker(m.pos.x, m.pos.z, 0xef4444);
         updateTargetHud();
       }
     });
@@ -249,9 +260,17 @@ export function onGameContextMenu(e: MouseEvent): void {
     options.push({
       label: gatherVerb(ud.entity.def.kind, ud.entity.def.item),
       run: () => {
-        player.targetEntity = { type: 'resource', ref: ud.entity };
-        player.targetPos = null;
-        showClickMarker(ud.entity.pos.x, ud.entity.pos.z, 0x38bdf8);
+        const r = ud.entity as ResourceNodeEntity;
+        const stopDist = 3.1;
+        const goal = entityGoal(G.walkGrid, [player.pos.x, player.pos.z], [r.pos.x, r.pos.z], stopDist);
+        const path = goal ? findPath(G.walkGrid, [player.pos.x, player.pos.z], goal) : null;
+        if (!path) {
+          addChatMessage('You cannot walk there.', 'combat');
+          return;
+        }
+        player.targetEntity = { type: 'resource', ref: r };
+        player.waypoints = path;
+        showClickMarker(r.pos.x, r.pos.z, 0x38bdf8);
         updateTargetHud();
       }
     });
@@ -265,8 +284,15 @@ export function onGameContextMenu(e: MouseEvent): void {
     options.push({
       label,
       run: () => {
+        const stopDist = 3.5;
+        const goal = entityGoal(G.walkGrid, [player.pos.x, player.pos.z], [anchor.x, anchor.z], stopDist);
+        const path = goal ? findPath(G.walkGrid, [player.pos.x, player.pos.z], goal) : null;
+        if (!path) {
+          addChatMessage('You cannot walk there.', 'combat');
+          return;
+        }
         player.targetEntity = { type: 'interactive', ref: ud, pos: anchor };
-        player.targetPos = null;
+        player.waypoints = path;
         showClickMarker(anchor.x, anchor.z, 0xfde047);
       }
     });
@@ -286,12 +312,13 @@ export function onGameContextMenu(e: MouseEvent): void {
     options.push({
       label: 'Walk here',
       run: () => {
-        if (!isWalkable(pt.x, pt.z)) {
+        const path = findPath(G.walkGrid, [player.pos.x, player.pos.z], [pt.x, pt.z]);
+        if (!path) {
           addChatMessage('You cannot walk there.', 'combat');
           return;
         }
         player.targetEntity = null;
-        player.targetPos = new THREE.Vector3(pt.x, getTerrainHeight(pt.x, pt.z), pt.z);
+        player.waypoints = path;
         showClickMarker(pt.x, pt.z, 0xfde047);
         updateTargetHud();
       }
@@ -338,12 +365,13 @@ export function handleWorldClick(e: MouseEvent): void {
 
   if (!ud || ud.type === 'ground') {
     const pt = chosen.point;
-    if (!isWalkable(pt.x, pt.z)) {
+    const path = findPath(G.walkGrid, [player.pos.x, player.pos.z], [pt.x, pt.z]);
+    if (!path) {
       addChatMessage('You cannot walk there.', 'combat');
       return;
     }
     player.targetEntity = null;
-    player.targetPos = new THREE.Vector3(pt.x, getTerrainHeight(pt.x, pt.z), pt.z);
+    player.waypoints = path;
     showClickMarker(pt.x, pt.z, 0xfde047);
     updateTargetHud();
     return;
@@ -351,37 +379,55 @@ export function handleWorldClick(e: MouseEvent): void {
 
   if (ud.type === 'monster') {
     if (isDown(ud.entity.logic)) return;
-    player.targetEntity = { type: 'monster', ref: ud.entity };
-    player.targetPos = null;
-    showClickMarker(ud.entity.pos.x, ud.entity.pos.z, 0xef4444);
+    const m = ud.entity as MonsterEntity;
+    const stopDist = (STATE.combatStyle === 'rapid' || STATE.combatStyle === 'ranged' || STATE.combatStyle === 'magic') ? 13.5 : 2.9;
+    const goal = entityGoal(G.walkGrid, [player.pos.x, player.pos.z], [m.pos.x, m.pos.z], stopDist);
+    const path = goal ? findPath(G.walkGrid, [player.pos.x, player.pos.z], goal) : null;
+    if (!path) {
+      addChatMessage('You cannot walk there.', 'combat');
+      return;
+    }
+    player.targetEntity = { type: 'monster', ref: m, madeAt: [m.pos.x, m.pos.z] };
+    player.waypoints = path;
+    showClickMarker(m.pos.x, m.pos.z, 0xef4444);
     updateTargetHud();
   } else if (ud.type === 'resource') {
     if (ud.entity.depleted) {
       addChatMessage(`This ${ud.entity.def.name} is depleted. Wait a moment for it to replenish.`);
       return;
     }
-    player.targetEntity = { type: 'resource', ref: ud.entity };
-    player.targetPos = null;
-    showClickMarker(ud.entity.pos.x, ud.entity.pos.z, 0xef4444);
+    const r = ud.entity as ResourceNodeEntity;
+    const stopDist = 3.1;
+    const goal = entityGoal(G.walkGrid, [player.pos.x, player.pos.z], [r.pos.x, r.pos.z], stopDist);
+    const path = goal ? findPath(G.walkGrid, [player.pos.x, player.pos.z], goal) : null;
+    if (!path) {
+      addChatMessage('You cannot walk there.', 'combat');
+      return;
+    }
+    player.targetEntity = { type: 'resource', ref: r };
+    player.waypoints = path;
+    showClickMarker(r.pos.x, r.pos.z, 0xef4444);
     updateTargetHud();
   } else if (ud.type === 'interactive') {
-    player.targetEntity = { type: 'interactive', ref: ud, pos: chosen.object.getWorldPosition(new THREE.Vector3()) };
-    player.targetPos = null;
-    showClickMarker(player.targetEntity.pos!.x, player.targetEntity.pos!.z, 0xef4444);
+    const anchor = chosen.object.getWorldPosition(new THREE.Vector3());
+    const stopDist = 3.5;
+    const goal = entityGoal(G.walkGrid, [player.pos.x, player.pos.z], [anchor.x, anchor.z], stopDist);
+    const path = goal ? findPath(G.walkGrid, [player.pos.x, player.pos.z], goal) : null;
+    if (!path) {
+      addChatMessage('You cannot walk there.', 'combat');
+      return;
+    }
+    player.targetEntity = { type: 'interactive', ref: ud, pos: anchor };
+    player.waypoints = path;
+    showClickMarker(anchor.x, anchor.z, 0xef4444);
   }
 }
 
-export function updateHoverTile(e: MouseEvent): void {
-  if (!G.hoverTile || !G.terrainMesh || !G.camera) return;
-  G.mouseVec.x = (e.clientX / window.innerWidth) * 2 - 1;
-  G.mouseVec.y = -(e.clientY / window.innerHeight) * 2 + 1;
-  G.raycaster.setFromCamera(G.mouseVec, G.camera);
-  const hits = G.raycaster.intersectObject(G.terrainMesh, false);
-  if (!hits.length) {
-    G.hoverTile.visible = false;
+export function updateHoverTile(p: THREE.Vector3 | null): void {
+  if (!G.hoverTile || !p) {
+    if (G.hoverTile) G.hoverTile.visible = false;
     return;
   }
-  const p = hits[0].point;
   const gx = Math.floor(p.x) + 0.5;
   const gz = Math.floor(p.z) + 0.5;
   G.hoverTile.visible = true;
