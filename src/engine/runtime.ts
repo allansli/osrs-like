@@ -25,7 +25,7 @@ import {
   spawnHellfireOrb,
   spawnLevelUpFireworks
 } from './vfx';
-import { createMonsterMesh, poseMonsterLimbs } from './monsterMeshes';
+import { poseMonsterLimbs } from './monsterMeshes';
 import { buildPlayerCharacter, rebuildPlayerEquipmentMeshes, syncWhipGeometry } from './playerMesh';
 import {
   buildSkyDomeShader,
@@ -35,11 +35,12 @@ import {
   getBiomeColor
 } from './worldMesh';
 import { buildAllCitiesAndLandmarks } from './worldBuild';
+import { spawnAllResourcesAndMonsters } from './spawns';
 import { ITEMS, TIER_COLORS, isStackableInBackpack, unitSellPrice } from '../data/items';
 import { SKILLS_META, OSRS_XP_TABLE, getLevelForXp } from '../data/skills';
 import { PRAYERS, SPELLS } from '../data/magic';
 import { tryCraft, isLogId } from '../data/recipes';
-import { WORLD_REGIONS, MONSTER_TYPES, RESOURCE_NODES_DEF } from '../data/world';
+import { WORLD_REGIONS } from '../data/world';
 import { STATE, applyState } from '../state/gameState';
 import { addItem, removeItem, countItem, canAddItem, sellItem, buyItem, sellInventoryMatch, isGatheredGood, isUnequippedGear } from '../state/inventory';
 import { readSave, writeSave, SAVE_KEY, LEGACY_SAVE_KEYS } from '../state/save';
@@ -73,23 +74,15 @@ import { applyGold200k, applySkillsPlus10, matchCheat } from '../state/cheats';
 import { addCartoonOutline, facetMaterial, grassMaterial, PALETTE } from './materials';
 import {
   albedoForItem,
-  albedoMaterial,
   applyAlbedo,
   assignGroundUvs,
   BIOME_COLORS,
   biomeAlbedoId,
-  biomeGroundId,
-  offsetAlbedoPhase,
   sealAlbedoUvs,
   speciesAlbedo,
   terrainMaterial
 } from './textures';
 import { loadBlenderGearTemplate } from './blenderGear';
-import { loadBlenderMonstersTemplate, upgradeMonsterRigWithGltf } from './blenderMonsters';
-import {
-  loadBlenderWorldTemplate,
-  upgradeResourceNodeWithGltf
-} from './blenderWorld';
 import { hexToCss, getUiSvg, getSkillSvg, getItemSvg, getPrayerSvg, getSpellSvg } from '../ui/icons';
 import { bridge } from '../ui/bridge';
 import {
@@ -1187,224 +1180,7 @@ function init3DEngine() {
 
 
 
-// ============================================================================
-// 8. SMOOTH SCULPTED 3D CHARACTER, 10-SLOT GEAR, MONSTERS & ORGANIC TREES
-// ============================================================================
 
-function spawnMonster(typeKey, x, z) {
-  const def = MONSTER_TYPES[typeKey];
-  if (!def) return;
-  const rig = createMonsterMesh(def, typeKey);
-  const phase = ((Math.abs(x) * 12.9898 + Math.abs(z) * 78.233) % 1);
-  offsetAlbedoPhase(rig.group, phase, (phase * 1.618) % 1);
-  const y = getTerrainHeight(x, z);
-  rig.group.position.set(x, y, z);
-
-  const labelEl = document.createElement('div');
-  labelEl.className = 'entity-label';
-  labelEl.innerHTML = `
-    <div class="label-text">${def.name} (Lv-${def.level})</div>
-    <div class="entity-hp-bar" style="display:none;"><div class="entity-hp-fill" style="width:100%"></div></div>
-  `;
-  document.getElementById('world-labels').appendChild(labelEl);
-
-  const mObj = {
-    typeKey,
-    def,
-    rig,
-    pos: rig.group.position,
-    spawnPos: new THREE.Vector3(x, y, z),
-    hp: def.hp,
-    maxHp: def.hp,
-    dead: false,
-    isDying: false,
-    dyingTimer: 0,
-    flinch: 0,
-    flashTimer: 0,
-    respawnTimer: 0,
-    wanderTimer: Math.random() * 3,
-    attackCooldown: 0,
-    attackAnim: 0,
-    breathCount: 0,
-    inCombatWithPlayer: false,
-    labelEl
-  };
-
-  const uData = { type: 'monster', entity: mObj, interactRadius: def.style === 'melee' ? 2.8 : 3.4 };
-  rig.group.userData = uData;
-  rig.hitbox.userData = uData;
-  G.worldInteractiveObjects.push(rig.hitbox);
-  G.scene.add(rig.group);
-  G.monstersList.push(mObj);
-  loadBlenderMonstersTemplate().then((gltf) => {
-    if (!gltf) return;
-    upgradeMonsterRigWithGltf(mObj, gltf);
-  });
-}
-
-// Smooth Organic Branching Trees & Sculpted Weathered Ore Boulders
-function spawnResourceNode(nodeKey, x, z) {
-  const def = RESOURCE_NODES_DEF[nodeKey];
-  if (!def) return;
-  const grp = new THREE.Group();
-  const y = def.kind === 'fish' ? -0.30 : getTerrainHeight(x, z);
-  grp.position.set(x, y, z);
-
-  let visualMesh, depletedMesh;
-
-  if (def.kind === 'tree') {
-    const s = def.scale || 1.0;
-    grp.scale.set(s, s, s);
-    visualMesh = new THREE.Group();
-
-    const barkMat = albedoMaterial(def.trunkColor || 0x92400e, 'bark');
-    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.36, 2.2, 12), barkMat);
-    trunk.position.y = 1.1;
-    trunk.castShadow = true;
-    visualMesh.add(trunk);
-
-    const foliageHex = {
-      normal_tree: 0x334835,
-      oak_tree: 0x3e4f38,
-      willow_tree: 0x48523c,
-      maple_tree: 0x5c4228,
-      yew_tree: 0x223628,
-      magic_tree: 0x35545b
-    }[nodeKey] || def.foliageColor || 0x334835;
-    const fMat = albedoMaterial(foliageHex, 'grass');
-    const puffs = [
-      [0, 2.55, 0, 1.25],
-      [0.72, 2.15, 0.28, 0.82],
-      [-0.62, 2.2, -0.32, 0.78]
-    ];
-    puffs.forEach(([px, py, pz, rad]) => {
-      const puff = new THREE.Mesh(new THREE.SphereGeometry(rad, 16, 14), fMat);
-      puff.scale.set(1.08, 0.88, 1.08);
-      puff.position.set(px, py, pz);
-      puff.castShadow = true;
-      visualMesh.add(puff);
-    });
-
-    grp.add(visualMesh);
-
-    depletedMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.52, 0.68, 6), barkMat);
-    depletedMesh.position.y = 0.34;
-    depletedMesh.visible = false;
-    grp.add(depletedMesh);
-  } else if (def.kind === 'rock') {
-    visualMesh = new THREE.Group();
-    const rockBiome = biomeGroundId(x, z);
-    const rockMat = albedoMaterial(0x94a3b8, rockBiome ? biomeAlbedoId(rockBiome) : 'stone');
-    const baseRock = new THREE.Mesh(new THREE.SphereGeometry(0.95, 16, 12), rockMat);
-    baseRock.position.y = 0.7;
-    baseRock.scale.set(1.18, 0.78, 1.05);
-    const sideRock = new THREE.Mesh(new THREE.SphereGeometry(0.58, 14, 10), rockMat);
-    sideRock.position.set(0.78, 0.42, 0.2);
-    sideRock.scale.set(1.1, 0.8, 0.95);
-    visualMesh.add(baseRock, sideRock);
-    const oreMat = facetMaterial({ color: def.oreColor, emissive: def.oreColor, emissiveIntensity: 0.2, flatShading: true });
-    [[0.15, 0.95, 0.72], [-0.35, 0.7, -0.55]].forEach(([ox, oy, oz]) => {
-      const vein = new THREE.Mesh(new THREE.OctahedronGeometry(0.28, 0), oreMat);
-      vein.position.set(ox, oy, oz);
-      visualMesh.add(vein);
-    });
-    grp.add(visualMesh);
-
-    depletedMesh = new THREE.Mesh(
-      new THREE.DodecahedronGeometry(0.85, 0),
-      albedoMaterial(0x64748b, 'stone')
-    );
-    depletedMesh.scale.set(0.95, 0.75, 0.95);
-    depletedMesh.visible = false;
-    grp.add(depletedMesh);
-  } else {
-    visualMesh = new THREE.Group();
-    const ring1 = new THREE.Mesh(
-      new THREE.TorusGeometry(1.15, 0.05, 5, 8),
-      new THREE.MeshBasicMaterial({ color: 0x7a96a3 })
-    );
-    ring1.rotation.x = Math.PI / 2;
-    ring1.position.y = 0.06;
-    visualMesh.add(ring1);
-    G.swayingFoliage.push({ mesh: ring1, speed: 1.8, rotY: true });
-    grp.add(visualMesh);
-
-    depletedMesh = new THREE.Group();
-    depletedMesh.visible = false;
-    grp.add(depletedMesh);
-  }
-
-  const hitbox = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.45, 1.45, 3.2, 6),
-    new THREE.MeshBasicMaterial({ visible: false })
-  );
-  hitbox.position.y = 1.5;
-  hitbox.userData.isCollider = true;
-  grp.add(hitbox);
-  sealAlbedoUvs(grp);
-  addCartoonOutline(grp, 0.038);
-
-  const rObj = {
-    nodeKey,
-    def,
-    group: grp,
-    pos: grp.position,
-    visualMesh,
-    depletedMesh,
-    depleted: false,
-    respawnTimer: 0
-  };
-
-  const uData = { type: 'resource', entity: rObj, interactRadius: 3.4 };
-  grp.userData = uData;
-  hitbox.userData = uData;
-  G.worldInteractiveObjects.push(hitbox);
-  G.scene.add(grp);
-  G.resourceNodesList.push(rObj);
-  loadBlenderWorldTemplate().then((gltf) => {
-    if (!gltf) return;
-    upgradeResourceNodeWithGltf(rObj, gltf);
-  });
-}
-
-function spawnAllResourcesAndMonsters() {
-  // 1. LUMBRIDGE HAVEN (Starter monsters & trees visible right in town & surrounding meadows)
-  [[-13, 4], [-16, 10], [-11, 14], [-17, 17]].forEach(([x, z]) => spawnMonster('chicken', x, z));
-  [[12, 4], [15, 11], [18, 17], [10, 19], [20, 8]].forEach(([x, z]) => spawnMonster('goblin', x, z));
-  [[24, 13], [27, 19]].forEach(([x, z]) => spawnMonster('goblin_archer', x, z));
-
-  [[-19, -2], [-24, 8], [-20, -11], [17, -11], [22, -4]].forEach(([x, z]) => spawnResourceNode('normal_tree', x, z));
-  [[-14, 24], [8, 26], [-25, 20]].forEach(([x, z]) => spawnResourceNode('oak_tree', x, z));
-  [[-6, 22], [16, 24], [4, 30]].forEach(([x, z]) => spawnResourceNode('maple_tree', x, z));
-  [[27, 5], [28, 14], [26, -8]].forEach(([x, z]) => spawnResourceNode('fish_shrimp', x, z));
-  [[29, 22], [27, -18]].forEach(([x, z]) => spawnResourceNode('fish_trout', x, z));
-  [[-18, -22], [-12, -25]].forEach(([x, z]) => spawnResourceNode('copper_rock', x, z));
-
-  // 2. VARROCK GRAND PLAZA
-  [[62, -6], [68, -2], [58, -14]].forEach(([x, z]) => spawnMonster('dark_wizard', x, z));
-  [[74, -10], [80, -4]].forEach(([x, z]) => spawnMonster('dark_ranger', x, z));
-  [[88, -36], [96, -28], [82, -42], [95, -40]].forEach(([x, z]) => spawnMonster('hill_giant', x, z));
-  [[94, -8], [98, -14], [92, -2]].forEach(([x, z]) => spawnResourceNode('iron_rock', x, z));
-  [[102, -18], [100, -24]].forEach(([x, z]) => spawnResourceNode('mith_rock', x, z));
-  [[64, -32], [70, -38]].forEach(([x, z]) => spawnResourceNode('willow_tree', x, z));
-
-  // 3. AL-KHARID GOLDEN DUNES
-  [[52, 54], [60, 76], [76, 58], [82, 72], [68, 84]].forEach(([x, z]) => spawnMonster('scorpion', x, z));
-  [[85, 55], [88, 62], [82, 48]].forEach(([x, z]) => spawnResourceNode('gold_rock', x, z));
-  [[54, 78], [58, 84]].forEach(([x, z]) => spawnResourceNode('mith_rock', x, z));
-
-  // 4. WHISPERING KOROK WOODS
-  [[-64, -18], [-82, -22], [-70, -44], [-86, -38]].forEach(([x, z]) => spawnMonster('moss_guardian', x, z));
-  [[-60, -32], [-66, -48], [-88, -18], [-92, -30]].forEach(([x, z]) => spawnResourceNode('yew_tree', x, z));
-  [[-75, -14], [-84, -48], [-95, -40]].forEach(([x, z]) => spawnResourceNode('magic_tree', x, z));
-  [[25, -36], [27, -44]].forEach(([x, z]) => spawnResourceNode('fish_lobster', x, z));
-  [[26, -54], [28, -62]].forEach(([x, z]) => spawnResourceNode('fish_shark', x, z));
-
-  // 5. DRAGON'S PEAK WILDERNESS
-  [[-56, 56], [-64, 78], [-82, 58], [-58, 84]].forEach(([x, z]) => spawnMonster('lesser_demon', x, z));
-  spawnMonster('elvarg_dragon', -82, 82);
-  [[-92, 68], [-88, 76], [-74, 92]].forEach(([x, z]) => spawnResourceNode('runite_rock', x, z));
-}
 
 // ============================================================================
 // 9. INPUT, CAMERA BEHIND CHARACTER, COMBAT, SKILLING, MINIMAP & MAIN LOOP
