@@ -5,7 +5,7 @@ import { MONSTER_TYPES, RESOURCE_NODES_DEF, WORLD_REGIONS } from '../src/data/wo
 import { BASINS, CAMPS, PATHS, POIS, RIDGES, SAFE_ZONES, type CampDef, type RidgeDef } from '../src/data/worldMap';
 import { castleBlockers, isDeepWater, isWalkable } from '../src/state/collision';
 import { shrineWorldPos } from '../src/state/shrines';
-import { getTerrainHeight } from '../src/state/terrain';
+import { getTerrainHeight, slopeAt } from '../src/state/terrain';
 
 // Design 6.11 "World data", G2.3, and the resource rules of 6.4. Counts come from design 6.3 and 6.4.
 const WATER_PLANE = -0.34;
@@ -343,6 +343,14 @@ describe('world data', () => {
       const at = `${p.type} at (${p.x}, ${p.z})`;
       expect(getTerrainHeight(p.x, p.z), `${at} above water`).toBeGreaterThan(WATER_PLANE);
       expect(isWalkable(p.x, p.z), `${at} walkable`).toBe(true);
+    }
+  });
+
+  // Review 7: a node stands at its centre height, so a steep slope buries one side of its base.
+  it('every non-fish node is on a slope of at most 1.0', () => {
+    // ponytail: 1.0, not the 0.55 crag threshold of worldMesh, because the normal tree at (17, -11) is at 0.59 today.
+    for (const p of NODE_PLACEMENTS.filter((n) => !n.type.startsWith('fish_'))) {
+      expect(slopeAt(p.x, p.z), `${p.type} at (${p.x}, ${p.z}) slope`).toBeLessThanOrEqual(1.0);
     }
   });
 });

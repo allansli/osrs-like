@@ -19,7 +19,7 @@ export const NODE_PLACEMENTS: Placement[] = [
   { type: 'normal_tree', x: 17, z: -7 },
   { type: 'oak_tree', x: -14, z: 24 },
   { type: 'oak_tree', x: 8, z: 26 },
-  { type: 'oak_tree', x: -25, z: 20 },
+  { type: 'oak_tree', x: -22, z: 18 },
   { type: 'maple_tree', x: -6, z: 22 },
   { type: 'maple_tree', x: 16, z: 24 },
   { type: 'maple_tree', x: 4, z: 30 },
