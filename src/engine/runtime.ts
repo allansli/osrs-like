@@ -285,7 +285,7 @@ function grantXp(skillKey, baseAmount) {
     const meta = SKILLS_META[skillKey];
     addChatMessage(`Level Up! Your <b>${meta.name}</b> level is now <b>${s.lvl}</b>!`, 'lvlup');
     showLevelUpBanner(meta.name, s.lvl);
-    if (typeof spawnLevelUpFireworks === 'function') spawnLevelUpFireworks();
+    spawnLevelUpFireworks();
   }
   updateAllUI();
 }
@@ -322,16 +322,6 @@ function addItemToInventory(itemId, count = 1) {
   if (!result.ok) addChatMessage('Your backpack is full.', 'combat');
   updateAllUI();
   return result.added > 0;
-}
-
-function countItemInInventory(itemId) {
-  return countItem(STATE, itemId);
-}
-
-function removeItemsFromInventory(itemId, count = 1) {
-  const removed = removeItem(STATE, itemId, count);
-  updateAllUI();
-  return removed;
 }
 
 function sellInventoryItem(index, qtyMode) {
@@ -406,7 +396,7 @@ function handleInventoryClick(index) {
     const healed = Math.max(1, Math.round(STATE.hp - oldHp));
     SFX.eat();
     addChatMessage('You eat the <b>' + item.name + '</b> and restore ' + healed + ' Hitpoints.', 'skill');
-    if (typeof spawnHitSplatOnPlayer === 'function') spawnHitSplatOnPlayer(healed, 'heal');
+    spawnHitSplatOnPlayer(healed, 'heal');
     updateAllUI();
     return;
   }
@@ -446,7 +436,7 @@ function handleInventoryClick(index) {
       const styles = allowedStyles(ITEMS[item.id]);
       if (!styles.includes(STATE.combatStyle)) STATE.combatStyle = styles[0];
     }
-    if (typeof rebuildPlayerEquipmentMeshes === 'function') rebuildPlayerEquipmentMeshes();
+    rebuildPlayerEquipmentMeshes();
     updateAllUI();
     return;
   }
@@ -1075,7 +1065,6 @@ const resourceNodesList = [];
 const npcList = [];
 const projectilesList = [];
 const vfxList = [];
-const particlesList = [];
 const swayingFoliage = [];
 
 const player = {
@@ -3589,117 +3578,6 @@ function spawnAllResourcesAndMonsters() {
   [[-92, 68], [-88, 76], [-74, 92]].forEach(([x, z]) => spawnResourceNode('runite_rock', x, z));
 }
 
-let atmosphericMotes = null;
-
-function createSoftMoteTexture(): THREE.Texture | null {
-  if (typeof document === 'undefined') return null;
-  const canvas = document.createElement('canvas');
-  canvas.width = 32;
-  canvas.height = 32;
-  const ctx = canvas.getContext('2d');
-  if (ctx) {
-    const gradient = ctx.createRadialGradient(16, 16, 0, 16, 16, 16);
-    gradient.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
-    gradient.addColorStop(0.35, 'rgba(255, 235, 175, 0.55)');
-    gradient.addColorStop(0.7, 'rgba(255, 205, 120, 0.15)');
-    gradient.addColorStop(1, 'rgba(255, 180, 80, 0)');
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, 32, 32);
-  }
-  const tex = new THREE.CanvasTexture(canvas);
-  tex.needsUpdate = true;
-  return tex;
-}
-
-function buildAtmosphericParticles() {
-  const count = 120;
-  const geo = new THREE.BufferGeometry();
-  const positions = new Float32Array(count * 3);
-  const colors = new Float32Array(count * 3);
-  const phases = new Float32Array(count);
-  const speeds = new Float32Array(count);
-
-  for (let i = 0; i < count; i++) {
-    positions[i * 3 + 0] = (Math.random() - 0.5) * 44;
-    positions[i * 3 + 1] = 0.5 + Math.random() * 7;
-    positions[i * 3 + 2] = (Math.random() - 0.5) * 44;
-    colors[i * 3 + 0] = 0.96;
-    colors[i * 3 + 1] = 0.82;
-    colors[i * 3 + 2] = 0.45;
-    phases[i] = Math.random() * Math.PI * 2;
-    speeds[i] = 0.25 + Math.random() * 0.50;
-  }
-
-  geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-  geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-
-  const softMap = createSoftMoteTexture();
-  const mat = new THREE.PointsMaterial({
-    size: 0.075,
-    ...(softMap ? { map: softMap } : {}),
-    vertexColors: true,
-    transparent: true,
-    opacity: 0.42,
-    depthWrite: false,
-    blending: THREE.AdditiveBlending
-  });
-
-  atmosphericMotes = {
-    points: new THREE.Points(geo, mat),
-    positions,
-    colors,
-    phases,
-    speeds,
-    count
-  };
-  scene.add(atmosphericMotes.points);
-}
-
-function updateAtmosphericParticles(dt, now) {
-  if (!atmosphericMotes) return;
-  const px = player.pos.x;
-  const pz = player.pos.z;
-  const curRegId = STATE.currentRegion;
-  const isCrandor = curRegId === 'crandor';
-  const isDraynor = curRegId === 'draynor' || curRegId === 'wilderness';
-  const posAttr = atmosphericMotes.points.geometry.attributes.position;
-  const colAttr = atmosphericMotes.points.geometry.attributes.color;
-
-  const targetR = isCrandor ? 1.0 : (isDraynor ? 0.72 : 0.98);
-  const targetG = isCrandor ? 0.38 : (isDraynor ? 0.45 : 0.88);
-  const targetB = isCrandor ? 0.12 : (isDraynor ? 0.95 : 0.52);
-
-  for (let i = 0; i < atmosphericMotes.count; i++) {
-    const i3 = i * 3;
-    atmosphericMotes.phases[i] += dt * atmosphericMotes.speeds[i];
-
-    posAttr.array[i3 + 0] += Math.sin(atmosphericMotes.phases[i] * 0.7) * dt * 0.5 + 0.32 * dt;
-    posAttr.array[i3 + 1] += (isCrandor ? 0.75 : Math.sin(atmosphericMotes.phases[i])) * dt * 0.35;
-    posAttr.array[i3 + 2] += Math.cos(atmosphericMotes.phases[i] * 0.8) * dt * 0.45 + 0.22 * dt;
-
-    const dx = posAttr.array[i3 + 0] - px;
-    const dz = posAttr.array[i3 + 2] - pz;
-    if (dx > 22) posAttr.array[i3 + 0] -= 44;
-    if (dx < -22) posAttr.array[i3 + 0] += 44;
-    if (dz > 22) posAttr.array[i3 + 2] -= 44;
-    if (dz < -22) posAttr.array[i3 + 2] += 44;
-
-    const terrainH = getTerrainHeight(posAttr.array[i3 + 0], posAttr.array[i3 + 2]);
-    if (posAttr.array[i3 + 1] < terrainH + 0.3) {
-      posAttr.array[i3 + 1] = terrainH + 0.3 + Math.random() * 5.5;
-    } else if (posAttr.array[i3 + 1] > terrainH + 9.0) {
-      posAttr.array[i3 + 1] = terrainH + 0.5;
-    }
-
-    colAttr.array[i3 + 0] += (targetR - colAttr.array[i3 + 0]) * Math.min(1, dt * 2);
-    colAttr.array[i3 + 1] += (targetG - colAttr.array[i3 + 1]) * Math.min(1, dt * 2);
-    colAttr.array[i3 + 2] += (targetB - colAttr.array[i3 + 2]) * Math.min(1, dt * 2);
-  }
-  posAttr.needsUpdate = true;
-  colAttr.needsUpdate = true;
-}
-
-
 // ============================================================================
 // 9. INPUT, CAMERA BEHIND CHARACTER, COMBAT, SKILLING, MINIMAP & MAIN LOOP
 // ============================================================================
@@ -3710,7 +3588,6 @@ let hoveredWorld = null;
 let clickMarkerMesh = null;
 let hoverTile = null;
 const rightPress = { x: 0, y: 0, dist: 0 };
-let contextTarget = null;
 
 function setupInputHandlers() {
   clickMarkerMesh = new THREE.Group();
@@ -3896,7 +3773,6 @@ function hideContextMenu() {
   if (!menu) return;
   menu.classList.remove('open');
   menu.setAttribute('aria-hidden', 'true');
-  contextTarget = null;
 }
 
 function pointerToWorld(clientX, clientY) {
@@ -3916,7 +3792,6 @@ function onGameContextMenu(e) {
   const picked = pointerToWorld(e.clientX, e.clientY);
   const options = [];
   const ud = picked.entityHit ? picked.entityHit.object.userData : null;
-  contextTarget = { ud, ground: picked.ground, point: picked.entityHit ? picked.entityHit.point : (picked.ground ? picked.ground.point : null) };
 
   if (ud && ud.type === 'monster' && ud.entity && !ud.entity.dead) {
     const tone = monsterThreatColor(ud.entity.def.level, getCombatLevel());
@@ -5985,7 +5860,6 @@ let labelTick = 0;
 let miniTick = 1;
 let lastLabelX = 999;
 let lastLabelZ = 999;
-let lastMiniYaw = 999;
 
 function applyLoadedStateToHud() {
   ['accurate', 'aggressive', 'defensive', 'controlled', 'rapid', 'ranged', 'magic'].forEach(s => {
