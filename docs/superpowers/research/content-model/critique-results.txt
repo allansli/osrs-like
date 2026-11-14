@@ -1,0 +1,38 @@
+=== A. Open ground per second (melee, no rests), coins only and coins + goods at sale value (bones excluded)
+  hero 45: cinder_adept 65.5 (76.4 with goods, 13.4 hp/s) | moss_guardian 59.4 (85.0 with goods, 13.2 hp/s) | saltback_stalker 49.6 (63.2 with goods, 12.6 hp/s) | thornwatch_marksman 47.5 (55.7 with goods, 9.6 hp/s)
+  hero 50: slag_brute 73.1 (94.7 with goods, 14.8 hp/s) | cinder_adept 69.5 (81.1 with goods, 14.3 hp/s) | moss_guardian 63.1 (90.3 with goods, 14.1 hp/s) | saltback_stalker 52.3 (66.7 with goods, 13.3 hp/s)
+  hero 55: slag_brute 75.8 (98.2 with goods, 15.3 hp/s) | cinder_adept 71.8 (83.7 with goods, 14.7 hp/s) | moss_guardian 65.2 (93.2 with goods, 14.5 hp/s) | saltback_stalker 53.7 (68.5 with goods, 13.7 hp/s)
+  hero 60: lesser_demon 111.1 (166.6 with goods, 19.4 hp/s) | cinder_adept 88.0 (102.7 with goods, 18.1 hp/s) | slag_brute 87.7 (113.6 with goods, 17.7 hp/s) | moss_guardian 79.9 (114.2 with goods, 17.8 hp/s)
+  hero 65: lesser_demon 114.0 (171.0 with goods, 19.9 hp/s) | cinder_adept 89.8 (104.8 with goods, 18.4 hp/s) | slag_brute 88.7 (114.9 with goods, 17.9 hp/s) | moss_guardian 81.5 (116.6 with goods, 18.2 hp/s)
+  hero 70: lesser_demon 119.0 (178.5 with goods, 20.8 hp/s) | cinder_adept 93.1 (108.6 with goods, 19.1 hp/s) | slag_brute 90.3 (117.0 with goods, 18.2 hp/s) | moss_guardian 84.5 (120.8 with goods, 18.8 hp/s)
+  coins per hitpoint (what the pacing model's fighter is paid per unit of the hp/s it maximises):
+   goblin 2.70, hill_giant 3.66, saltback_stalker 3.93, thornwatch_marksman 4.93, moss_guardian 4.49, cinder_adept 4.88, slag_brute 4.96, lesser_demon 5.72, marrowjaw 1.61
+
+=== B. Dungeon run against the best open ground at the same level, goods counted on BOTH sides (bones excluded)
+  Saltfang Warren (hero 45): 104 s; as the model counts it (monster coins + chest) 34.7 GP/s = 0.53 of cinder_adept 65.5
+     + every monster's and the boss's goods: 41.2 GP/s = 0.49 of moss_guardian with goods 85.0; + one ore from each node (3 s each): 42.1 = 0.50
+     goods left out by model.ts: 682 GP a run, of which the boss 195
+  The Underkiln (hero 70): 128 s; as the model counts it (monster coins + chest) 84.9 GP/s = 0.71 of lesser_demon 119.0
+     + every monster's and the boss's goods: 106.3 GP/s = 0.60 of lesser_demon with goods 178.5; + one ore from each node (3 s each): 106.3 = 0.60
+     goods left out by model.ts: 2727 GP a run, of which the boss 1560
+
+=== C. Material drops at the sale value of what they make (best recipe), against the 25% bound measured raw
+  chicken            coins   10: raw +39%, worked +39%
+  goblin             coins   22: raw +10%, worked +25%
+  goblin_archer      coins   13: raw +23%, worked +55%
+  scorpion           coins   64: raw +24%, worked +44%
+  saltback_stalker   coins  228: raw +13%, worked +25%
+  dark_wizard        coins  107: raw +12%, worked +29%
+  hill_giant         coins  176: raw +13%, worked +32%
+  moss_guardian      coins  350: raw +20%, worked +40%
+  cinder_adept       coins  390: raw +16%, worked +40%
+  slag_brute         coins  555: raw +16%, worked +41%
+  a bone bound and sold instead of sold: big bones 29 -> 72, dragon bones 247 -> 514 (lesser demon coins 715: +37%)
+
+=== D. Kilnglass: first clear 8 + chest 4 (mean) + boss 2 = 14; the kit needs 13 ingots = 13 shards; ml_kiln takes 1 and pays 2 ingots
+
+=== E. Boss kill time, by hand: hp / (damage per swing) x 0.6 s + 2 s per phase change (no dodging, no walking)
+  Marrowjaw the Tollmaster: 8.27 a swing, 43 s with no time lost; the fight model's mean 61 s, so dodging and walking cost 30% of the fight
+  Matron Saltfang: 11.35 a swing, 55 s with no time lost; the fight model's mean 89 s, so dodging and walking cost 38% of the fight
+  The Kiln Warden: 17.23 a swing, 74 s with no time lost; the fight model's mean 99 s, so dodging and walking cost 26% of the fight
+  blood barrage runes: {"blood_rune":2,"death_rune":2}

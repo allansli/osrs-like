@@ -261,7 +261,12 @@ for (const d of C.DUNGEONS) {
   check(fit >= boss.arenaRadius!, `${d.id} arena fits its room`);
   check(Object.values(d.rooms).every((r) => r[0] >= 2 && r[1] >= 2 && r[2] <= n - 2 && r[3] <= n - 2), `${d.id} rooms inside the zone`);
   check(Math.min(...Object.values(d.rooms).map((r) => Math.min(r[2] - r[0], r[3] - r[1]))) >= 6, `${d.id} no room or corridor under 6 wide`);
-  const far = Math.hypot(d.origin[0] - 130, 0) ; check(d.origin[0] - 130 > 360, `${d.id} beyond the camera far plane (360) of every overworld point: ${far.toFixed(0)}`);
+  // Critique fix: Stage 5 raises the camera far plane to 460 and adds a horizon apron out to radius 240 around the origin
+  // (Stage 5 design 6.4), and the camera stands up to 26 from the hero. The nearest zone cell, less the camera's reach,
+  // must be farther than 460 from the apron's outer edge. (The sky dome follows the camera and is hidden in a zone: Z6.)
+  const near = Math.min(...[[d.origin[0], d.origin[1]], [d.origin[0], d.origin[1] + n], [d.origin[0] + n, d.origin[1]], [d.origin[0] + n, d.origin[1] + n]].map(([x, z]) => Math.hypot(x, z)), Math.abs(d.origin[0])) - 26 - 240;
+  p(`    nearest zone cell to the Stage 5 horizon apron (radius 240), less the camera's 26: ${near.toFixed(0)} (camera far plane 460)`);
+  check(near > 460, `${d.id} beyond Stage 5's camera far plane (460) from the horizon apron: ${near.toFixed(0)}`);
 }
 check(Math.abs(C.DUNGEONS[0].origin[1] - C.DUNGEONS[1].origin[1]) - 112 > 240, 'zones well apart');
 
@@ -274,11 +279,16 @@ const campSize: Record<string, number> = {};
 for (const c of CAMPS) for (const m of c.members) campSize[m.type] = Math.max(campSize[m.type] || 0, c.members.filter((x) => x.type === m.type).length);
 Object.assign(campSize, { saltback_stalker: 3, thornwatch_marksman: 2 });
 for (const c of C.NEW_CAMPS) for (const m of c.members) campSize[m.type] = c.members.length;
+// Critique fix: goods (every non-bone item drop at sale value) are counted on both sides. The first draft counted only coins
+// for monsters, which left out the Kiln Warden's two Kilnglass Shards (1,560 GP) while the chest's shards were counted.
+const goodsOf = (m: M) => m.drops.filter((d) => d.id && !['bones', 'big_bones', 'dragon_bones'].includes(d.id)).reduce((s, d) => s + d.chance * (d.qty || 1) * sell(d.id!), 0);
 function openBest(lvl: number) {
   let bestRate = 0, bestName = '';
   for (const [k, n] of Object.entries(campSize)) {
-    const mon = monsters[k]; if (!mon || mon.level > lvl || (C.BOSSES as Record<string, unknown>)[k] || k === 'elvarg_dragon') continue;
-    const kt = (mon.hp / dps('melee', lvl, mon).avg) * 0.6, rate = meanCoin(mon) / Math.max(kt + 1.5, (8.35 + kt) / n);
+    // Critique fix: a hero with every fighting skill at `lvl` is combat ~lvl+9 and fights monsters up to ten levels above its skills
+    // (the Cinder Adept at 52 for a hero at 45). The first draft compared monster level with skill level and left the Adept out.
+    const mon = monsters[k]; if (!mon || mon.level > lvl + 10 || (C.BOSSES as Record<string, unknown>)[k] || k === 'elvarg_dragon') continue;
+    const kt = (mon.hp / dps('melee', lvl, mon).avg) * 0.6, rate = (meanCoin(mon) + goodsOf(mon)) / Math.max(kt + 1.5, (8.35 + kt) / n);
     if (rate > bestRate) { bestRate = rate; bestName = mon.name; }
   }
   return { rate: bestRate, name: bestName };
@@ -286,7 +296,7 @@ function openBest(lvl: number) {
 for (const d of C.DUNGEONS) {
   const lvl = d.id === 'underkiln' ? 70 : 45;
   let hp = 0, secs = 0, coins = 0;
-  for (const c of d.camps) for (const m of c.members) { const mon = monsters[m.type]; const k = dps('melee', lvl, mon); hp += mon.hp; secs += (mon.hp / k.avg) * 0.6; coins += meanCoin(mon); }
+  for (const c of d.camps) for (const m of c.members) { const mon = monsters[m.type]; const k = dps('melee', lvl, mon); hp += mon.hp; secs += (mon.hp / k.avg) * 0.6; coins += meanCoin(mon) + goodsOf(mon); }
   const rooms = Object.entries(d.rooms).filter(([id]) => !/^c\d$/.test(id)).map(([, r]) => [(r[0] + r[2]) / 2, (r[1] + r[3]) / 2]);
   let walkUnits = 0; for (let i = 1; i < rooms.length; i++) walkUnits += Math.hypot(rooms[i][0] - rooms[i - 1][0], rooms[i][1] - rooms[i - 1][1]);
   walkUnits *= 1.5; // doglegs, pulls and the way back to a side room
@@ -295,7 +305,7 @@ for (const d of C.DUNGEONS) {
   const total = secs + walkUnits / 11.5, open = openBest(lvl);
   const firstGp = chest.first.reduce((s, r) => s + sell(r.id) * r.qty, 0);
   p(`  ${d.name}, every fighting skill at ${lvl}: ${hp} hitpoints in ${d.camps.reduce((s, c) => s + c.members.length, 0)} monsters; fighting ${Math.round(secs)} s and walking ${Math.round(walkUnits)} units = ${(total / 60).toFixed(1)} min model-optimal (a person about double; never asserted)`);
-  p(`    pays ${coins.toFixed(0)} coins from monsters + ${chestGp.toFixed(0)} from the chest at sale value = ${((coins + chestGp) / total).toFixed(1)} GP/s; best open ground at that level: ${open.name}, ${open.rate.toFixed(1)} GP/s; ratio ${(((coins + chestGp) / total) / open.rate).toFixed(2)}. First clear, once: ${firstGp} GP of goods`);
+  p(`    pays ${coins.toFixed(0)} coins and goods from monsters + ${chestGp.toFixed(0)} from the chest at sale value = ${((coins + chestGp) / total).toFixed(1)} GP/s; best open ground at that level: ${open.name}, ${open.rate.toFixed(1)} GP/s; ratio ${(((coins + chestGp) / total) / open.rate).toFixed(2)}. First clear, once: ${firstGp} GP of goods`);
   check((coins + chestGp) / total <= 0.9 * open.rate, `${d.id} pays under 90% of open ground`);
 }
 

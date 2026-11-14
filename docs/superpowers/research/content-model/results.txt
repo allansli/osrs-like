@@ -93,7 +93,7 @@ worst ratio 2.50; smithing recipes below 1.00 (a loss): none
   dark_wizard          coins   107  materials +  12.5  (12% of coins)
   hill_giant           coins   176  materials +  22.7  (13% of coins)
   moss_guardian        coins   350  materials +  71.0  (20% of coins)
-  cinder_adept         level 52 hp 80 coins 460 other drops 65
+  cinder_adept         level 52 hp 80 coins 390 other drops 65
   slag_brute           level 58 hp 112 coins 555 other drops 164
   scree_skitter        level 30 hp 20 coins 24 other drops 6
   marrowjaw            level 40 hp 560 coins 900 other drops 849
@@ -196,16 +196,18 @@ running cost per kill of the reference target, against the coins it drops. "made
   door underkiln        (-52, 46) walkable true, aggressive camp no, nearest node 41.0, new camps 42.8, Ashmantle arena 32.6, safe zone no, height 1.70, region wilderness
 
 === 7. Dungeons: geometry, connectivity and size of each zone
-  Saltfang Warren: origin (600,-200), 96 x 96 cells, 2652 open, all reachable with the gate open true; boss cell reachable with the gate shut false; rooms 9; monsters 22
+  Saltfang Warren: origin (1000,-200), 96 x 96 cells, 2652 open, all reachable with the gate open true; boss cell reachable with the gate shut false; rooms 9; monsters 22
     boss room: home (62, 64), arena radius 10, nearest wall 14; farthest corner from home 19.8 (the boss takes damage only from within arena + 6 = 16)
-  The Underkiln: origin (600,200), 112 x 112 cells, 3020 open, all reachable with the gate open true; boss cell reachable with the gate shut false; rooms 8; monsters 15
+    nearest zone cell to the Stage 5 horizon apron (radius 240), less the camera's 26: 734 (camera far plane 460)
+  The Underkiln: origin (1000,200), 112 x 112 cells, 3020 open, all reachable with the gate open true; boss cell reachable with the gate shut false; rooms 8; monsters 15
     boss room: home (68, 78), arena radius 12, nearest wall 16; farthest corner from home 22.6 (the boss takes damage only from within arena + 6 = 18)
+    nearest zone cell to the Stage 5 horizon apron (radius 240), less the camera's 26: 734 (camera far plane 460)
 
 === 8. A dungeon run against open ground: coin per second, the same overheads on both sides
   Saltfang Warren, every fighting skill at 45: 1638 hitpoints in 22 monsters; fighting 90 s and walking 164 units = 1.7 min model-optimal (a person about double; never asserted)
-    pays 2458 coins from monsters + 1165 from the chest at sale value = 34.7 GP/s; best open ground at that level: Moss Guardian, 54.9 GP/s; ratio 0.63. First clear, once: 5456 GP of goods
+    pays 3140 coins and goods from monsters + 1165 from the chest at sale value = 41.2 GP/s; best open ground at that level: Moss Guardian, 78.6 GP/s; ratio 0.52. First clear, once: 5456 GP of goods
   The Underkiln, every fighting skill at 70: 3040 hitpoints in 15 monsters; fighting 112 s and walking 178 units = 2.1 min model-optimal (a person about double; never asserted)
-    pays 6371 coins from monsters + 4815 from the chest at sale value = 87.6 GP/s; best open ground at that level: Lesser Demon, 119.0 GP/s; ratio 0.74. First clear, once: 22815 GP of goods
+    pays 8748 coins and goods from monsters + 4815 from the chest at sale value = 106.3 GP/s; best open ground at that level: Lesser Demon, 178.5 GP/s; ratio 0.60. First clear, once: 22815 GP of goods
 
 === 9. Names against the Stage 2 deny-list (tests/names.test.ts) and the two words the architecture test forbids in src/data
   82 new names, 82 distinct; deny-list hits: none

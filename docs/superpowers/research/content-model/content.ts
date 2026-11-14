@@ -105,7 +105,7 @@ export const NEW_RECIPES: Recipe[] = [
   { id: 'smith_mithril_bolts', name: 'Forge Mithril Bolts', skill: 'smithing', req: 40, xp: 110, input: { mithril_bar: 1 }, output: 'mithril_bolts', outputQty: 12, kind: 'smith' },
   { id: 'smith_rune_bolts', name: 'Forge Rune Bolts', skill: 'smithing', req: 60, xp: 240, input: { runite_bar: 1 }, output: 'rune_bolts', outputQty: 14, kind: 'smith' },
   // Crafting (new skill): leather and cloth
-  { id: 'craft_gloves', name: 'Stitch Leather Gloves', skill: 'crafting', req: 1, xp: 30, input: { rough_hide: 1 }, output: 'leather_gloves', kind: 'craft' },
+  { id: 'craft_gloves', name: 'Stitch Leather Vambraces', skill: 'crafting', req: 1, xp: 30, input: { rough_hide: 1 }, output: 'leather_gloves', kind: 'craft' },
   { id: 'craft_boots', name: 'Stitch Traveler Boots', skill: 'crafting', req: 4, xp: 45, input: { rough_hide: 2 }, output: 'leather_boots', kind: 'craft' },
   { id: 'craft_wizard_bottom', name: 'Sew Wizard Robe Skirt', skill: 'crafting', req: 6, xp: 60, input: { coarse_cloth: 3 }, output: 'wizard_bottom', kind: 'craft' },
   { id: 'craft_wizard_top', name: 'Sew Wizard Robe Top', skill: 'crafting', req: 8, xp: 75, input: { coarse_cloth: 3 }, output: 'wizard_top', kind: 'craft' },
@@ -142,7 +142,7 @@ type Drop = { id?: string; chance: number; gp?: [number, number]; qty?: number }
 export type Monster = { name: string; level: number; hp: number; maxHit: number; atk: number; def: number; style: string; model: string; modelScale: number; tintNote: string; pattern: string; drops: Drop[]; modelNeed: string };
 export const NEW_MONSTERS: Record<string, Monster> = {
   cinder_adept: { name: 'Cinder Adept', level: 52, hp: 80, maxHit: 17, atk: 49, def: 36, style: 'magic', model: 'dark_wizard', modelScale: 1.08, tintNote: 'ash grey robe, ember trim',
-    pattern: 'basic x3, Hexfall', drops: [{ id: 'big_bones', chance: 1 }, { gp: [275, 645], chance: 1 }, { id: 'cinder_silk', chance: 0.1 }, { id: 'ashes', chance: 0.5, qty: 2 }], modelNeed: 'a hooded caster with a brazier staff' },
+    pattern: 'basic x3, Hexfall', drops: [{ id: 'big_bones', chance: 1 }, { gp: [230, 550], chance: 1 }, { id: 'cinder_silk', chance: 0.1 }, { id: 'ashes', chance: 0.5, qty: 2 }], modelNeed: 'a hooded caster with a brazier staff' },
   slag_brute: { name: 'Slag Brute', level: 58, hp: 112, maxHit: 19, atk: 54, def: 48, style: 'melee', model: 'hill_giant', modelScale: 1.12, tintNote: 'dark basalt skin, orange cracks',
     pattern: 'basic x2, Overhead Slam, Rootquake', drops: [{ id: 'big_bones', chance: 1 }, { gp: [340, 770], chance: 1 }, { id: 'slag_hide', chance: 0.1 }, { id: 'shark', chance: 0.4 }], modelNeed: 'a hunched, plated brute, not a recoloured hill dweller' },
   scree_skitter: { name: 'Scree Skitter', level: 30, hp: 20, maxHit: 6, atk: 30, def: 14, style: 'melee', model: 'scorpion', modelScale: 0.6, tintNote: 'pale grey shell',
@@ -201,7 +201,7 @@ export type Dungeon = {
 };
 export const DUNGEONS: Dungeon[] = [
   {
-    id: 'saltfang_warren', name: 'Saltfang Warren', origin: [600, -200], size: 96, door: { x: 106, z: 74 }, entry: [12, 32],
+    id: 'saltfang_warren', name: 'Saltfang Warren', origin: [1000, -200], size: 96, door: { x: 106, z: 74 }, entry: [12, 32],
     rooms: {
       entry: [4, 24, 20, 40], c1: [20, 29, 26, 35], nest: [26, 20, 46, 44], c2: [46, 29, 52, 35],
       gallery: [52, 20, 72, 44], c3: [59, 44, 65, 50], lair: [48, 50, 76, 78],
@@ -218,7 +218,7 @@ export const DUNGEONS: Dungeon[] = [
     chest: [62, 75], needs: { combat: 50, quest: 'ml_salt', fromStage: 3 }
   },
   {
-    id: 'underkiln', name: 'The Underkiln', origin: [600, 200], size: 112, door: { x: -52, z: 46 }, entry: [12, 40],
+    id: 'underkiln', name: 'The Underkiln', origin: [1000, 200], size: 112, door: { x: -52, z: 46 }, entry: [12, 40],
     rooms: {
       entry: [4, 32, 20, 48], c1: [20, 37, 26, 43], ashhall: [26, 26, 50, 54], c2: [50, 37, 56, 43],
       forge: [56, 24, 80, 56], c3: [65, 56, 71, 62], side: [80, 34, 96, 46], kiln: [52, 62, 84, 94]
