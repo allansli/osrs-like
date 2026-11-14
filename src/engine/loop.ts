@@ -603,7 +603,7 @@ export function updateMonsters(f: FrameState): void {
         m.rig.group.visible = false;
         m.rig.group.rotation.x = 0;
       }
-      return;
+      continue;
     }
 
     if (prevState === 'dead') {
@@ -613,7 +613,7 @@ export function updateMonsters(f: FrameState): void {
         m.rig.group.rotation.set(0, 0, 0);
         m.rig.group.visible = true;
       }
-      return;
+      continue;
     }
 
     if (m.rig.lWing && m.rig.rWing) {
