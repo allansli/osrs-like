@@ -19,8 +19,8 @@ Tiers used in this plan, with the reason for every opus that is not a verify:
 
 | Tier | Tasks |
 |---|---|
-| haiku | Every agy run; V2's command runs and captures; every capture run at a checkpoint |
-| sonnet | Every [AGY] fallback; the test tasks written from a clear table (V1a, LT1, AR1, WT1, GR1, WX1, UI2, UI8a, FX1) |
+| haiku | Every agy run; V2's command runs and captures; every capture run at a checkpoint (following V1c's procedure) |
+| sonnet | Every [AGY] fallback; the test tasks written from a clear table (V1a, LT1, AR1, WT1, GR1, WX1, UI2, UI8a, FX1); V1c (writing and proving the capture procedure) |
 | opus | Every verify; **R0** (judging whether the design's premises still hold); **LT3** and **LT4** (rewriting the light model inside three's chunk text, and the tests that pin it); **AR2** (fog chunk replacement across five shaders); **GR3** (the boundary test for generated decoration); **GR6** (a vertex shader that reads the ground field); **LT7**, **GR7** (tuning a look against pictures); **UI1** (licence text); **G-5** |
 | fable | none |
 
@@ -38,7 +38,7 @@ Run every command from the worktree root, in a shell started with an allowlisted
 
 **Standard gate (SG)**: SUITE, TYPES and BUILD all pass. Every task below ends with SG unless it says otherwise. A wrapper OOM kill means a defect to fix. Never raise the cap.
 
-**Capture run (CAP(poses))**: with SERVE up, a browser driver opens the game in a throwaway profile, injects a seeded `Math.random` before any game script, dismisses the onboarding window, waits until `__DEBUG.look.ready()` is true, and for each named pose and time calls `__DEBUG.look.pose(row)`, `look.phase` (or `look.preset` before LT5), `look.weather`, `look.hud(false)`, waits 2 s and saves a JPEG to `docs/superpowers/baseline/stage5/<slice>/<pose>-<time>.jpg`, plus the perf HUD's numbers to `<slice>/perf.md`. Headless captures run on a software renderer: pictures are valid, frame times are not.
+**Capture run (CAP(poses, tiers))**: the procedure written and proven by V1c (`docs/superpowers/baseline/stage5/capture.md`), run with the Playwright browser tools available to the main session; no new dependency. With SERVE up, the browser opens the game in a throwaway profile, an init script seeds `Math.random` before any game script, the onboarding window is dismissed, the run waits until `__DEBUG.look.ready()` is true, and for each tier and each named pose and time it calls `__DEBUG.look.tier(id)`, `look.pose(row)`, `look.phase` (or `look.preset` before LT5a), `look.weather`, `look.hud(false)`, waits 2 s and saves a JPEG to `docs/superpowers/baseline/stage5/<slice>/<pose>-<time>-<tier>.jpg`, plus the perf HUD's calls and triangles to `<slice>/perf.md`. Headless captures run on a software renderer: pictures are valid, frame times are not. Frame times come only from `look.bench` on the owner's GPU.
 
 ### 0.3 Rules that apply to every task
 
@@ -57,7 +57,7 @@ Run every command from the worktree root, in a shell started with an allowlisted
 
 ### 0.4 Branches, worktrees, lanes
 
-- The **spine** runs on `feat/visual-pass`, one task after another: R0, V1, V2, then the lanes LT (light), AR (air), WT (water), GR (ground), WX (weather), FX (effects). They share `materials.ts`, `renderer.ts`, `loop.ts`, `worldMesh.ts` and `look.ts`, so none of them runs in parallel with another.
+- The **spine** runs on `feat/visual-pass`, one task after another: R0, V1, V2, then the lanes LT (light), AR (air), GR (ground), WT (water), WX (weather), FX (effects). They share `materials.ts`, `renderer.ts`, `loop.ts`, `worldMesh.ts` and `look.ts`, so none of them runs in parallel with another.
 - Lane **UI** runs in its own worktree, `../osrs-like-vp/UI`, on the local branch `vp/UI`, cut from the spine head after V2. It can run in parallel with the whole spine. `vp/UI` is never pushed.
 - Files per lane (the check that no two parallel lanes share a file):
 
@@ -69,14 +69,14 @@ Run every command from the worktree root, in a shell started with an allowlisted
 `runtime.ts` is the one shared file: V1b lands before the UI lane is cut, and UI8b is the lane's last task.
 
 - Merge into `feat/visual-pass`: the spine is linear. `vp/UI` rebases onto the spine head and merges after CP-UI, at any point between two spine tasks.
-- Order of slices: light, air, water, ground, weather, then effects. The interface slice runs beside them. Each slice ends with a checkpoint the owner can accept, send back or hold; a held slice does not block the next one, except that the light slice comes first.
+- Order of slices: light, air, ground, water, weather, then effects. Ground comes before water because vegetation and place-making are the larger part of the environment the owner asked for, and merging (GR2) pays for the draws every later slice adds. The interface slice runs beside them. Each slice ends with a checkpoint the owner can accept, send back or hold; a held slice does not block the next one, except that the light slice comes first.
 
 ### 0.5 Owner and human steps (where they block)
 
 | Step | What the owner decides or does | Blocks |
 |---|---|---|
-| OV-1 | Approve the design: CALL-V1 (essence), V2 (cut world, round figures), V5 (tier table), V6 (budgets), V14 (two test replacements), V16 (ledger), V17 (composer on the upper tiers only). | Everything |
-| OV-2 | Frame times on the owner's GPU at poses P1, P3, P5 and P8 on each tier, and which GPU and display they are (QV5). Part of V2. | LT1 |
+| OV-1 | Approve the design: CALL-V1 (essence), V2 (cut world, round figures), V5 (tier table), V6 (budgets, provisional), V14 (two test replacements), V16 (ledger), V17 (composer on the upper tiers only), V18 (tier names), V20 (budgets adjusted once after measuring). | Everything |
+| OV-2 | `look.bench` frame times on the owner's GPU at poses P1, P3, P5 and P8 on each tier, and which GPU and display they are (QV5). Part of V2. Then, per CALL-V20, the owner keeps the budgets of design section 10 or lets the lead adjust them and the tier numbers once; the result is written into design section 10 and frozen. | LT1 |
 | OV-3 | **CALL-V3 / QV1**: running clock or three fixed presets. **CALL-V4**: the night floor. | LT2 |
 | OV-4 | **CALL-V9 / QV3**: decoration never blocks. **CALL-V8**: no new model. | GR3 |
 | OV-5 | **CALL-V10**: the weather set. | WX1 |
@@ -84,7 +84,7 @@ Run every command from the worktree root, in a shell started with an allowlisted
 | OV-7 | Pick the two font families from UI1's report (QV4). | UI3 |
 | OV-8 | **CALL-V13 / QV2**: inline handlers and the full policy now, or Stage 7. | UI8a |
 | OV-9 | **CALL-V15**: effects restyled in shape and colour only. | FX1 |
-| CP-LT, CP-AR, CP-WT, CP-GR, CP-WX, CP-UI, CP-FX | [OWNER] looks at the slice's before and after pictures and answers accept, change or hold. | the slice's merge is final only after it; the next slice may start |
+| CP-LT (also CALL-V19, texel crispness), CP-AR, CP-GR, CP-WT, CP-WX, CP-UI, CP-FX | [OWNER] looks at the slice's before and after pictures and answers accept, change or hold. | the slice's merge is final only after it; the next slice may start |
 | OV-10 | Accept Stage 5 (after G-5 and G-6). | the pull request |
 
 If an owner answer takes the alternative: **V3 presets only**: `DAY_CLOCK.dayMinutes` is set to 0 in LT2 (the clock does not advance); nothing else changes. **V9 trees that block**: the stage stops at GR3 and the design is amended, because walkability is Stage 2 data. **V8 a Blender kit**: task GR8 is added after CP-GR (a `scripts/blender/build_flora.py`, a `flora.glb` of at most 90 kB on the wire, loaded with `loadGltfOnce`, replacing the crag and backdrop-tree pieces of `floraKit.ts`; the five existing GLBs stay untouched). **V13 no**: UI8 is skipped and the main session writes the second deferral of finding 5's script policy to Stage 7 into the foundation design's section 9. **V15 no**: lane FX is skipped.
@@ -104,34 +104,44 @@ If an owner answer takes the alternative: **V3 presets only**: `DAY_CLOCK.dayMin
   4. List the test files that exist on `main` now: that list is "existing tests" for rule 0.3.3. Check whether any of them imports `grassMaterial`, `buildSkyDomeShader`, `G.grassInstanced`, `G.waterUniforms` or `G.skyUniforms`; if one does, the export stays as a thin wrapper and the task that would remove it says so.
   5. Check `three`'s installed version is 0.169.x, that `lights_lambert_pars_fragment`, `lights_fragment_begin` and `normal_fragment_begin` still read as design 6.1 says, and that `Material.customProgramCacheKey` is still `onBeforeCompile.toString()`.
   6. Scan `index.html` and `src/` again for `on<event>=` attributes and `<script` tags; UI8 assumes 38 `onclick` attributes and one external module script.
-- **Accept**: the "Anchors" section exists and covers every cited symbol. A written "premises hold" or a list of what changed. If fact 1 or 5 no longer holds, the stage stops and the design is amended before any task starts.
+  7. Check the Stage 2 data this plan reads by name: `PATHS`, `RIDGES`, `BASINS`, `POIS` and `CAMPS` in `src/data/worldMap.ts` are non-empty (on `feat/world-place` at the time of the critique, the first four were still empty arrays); every POI the design names (Three Kettle Camp, Wardstone Cairn, Cinderstep Pass, Reedglass Tarn, Tamarisk Pool, Lampwright's Hollow, Slagfall Terrace, Millrace Road) exists with a `padRadius`; `isWalkable`, `regionAt`, `riverCenterX` and the walk grid exist; record the walkable bound (118 at `a8cad85`, `collision.ts` 47).
+  8. Re-read the live camera limits in `input.ts` (pitch 0.12 to 1.15, distance 3.6 to 26 at `a8cad85`) and `spawnWorldProp`'s material handling; V1a, LT1 and LT5b depend on them.
+- **Accept**: the "Anchors" section exists and covers every cited symbol. A written "premises hold" or a list of what changed. If fact 1 or 5 no longer holds, or a check of step 7 fails, the stage stops and the design is amended before any task starts.
 - **Must not change**: anything under `src/`, `tests/` or `public/`.
 
 ### V1a Pose and tier-count tests [CLAUDE]
 - **Tier**: sonnet (written from design 8.2).
 - **Depends**: R0.
 - **Files**: `tests/photo-poses.test.ts` (new), `docs/superpowers/baseline/stage5/poses.json` (new).
-- **Change**: `poses.json` holds the twelve poses of design 8.2 as rows `{ id, place, yaw, pitch, distance, times: string[], weather?: string }`, where `place` is a `POIS` id or a `WORLD_REGIONS` id. Tests: `every pose names a known place`; `every pose is inside the camera limits` (pitch at most 0.42, distance at most 9.5, the numbers of `sanitizeCam`); `P10 has eight yaws 45 degrees apart`; `every time is one of night, dawn, morning, noon, golden, dusk`.
+- **Change**: `poses.json` holds the twelve poses of design 8.2 as rows `{ id, place, yaw, pitch, distance, times: string[], weather?: string }`, where `place` is a `POIS` id or a `WORLD_REGIONS` id. Tests: `every pose names a known place`; `every pose is inside the live camera limits` (pitch 0.12 to 1.15, distance 3.6 to 26, the clamps in `input.ts`, as recorded by R0; not `sanitizeCam`, which only clamps a saved camera); `P10 has eight yaws 45 degrees apart at pitch 0.12 and distance 26, plus eight from the walkable corner`; `every time is one of night, dawn, morning, noon, golden, dusk`.
 - **Accept**: `ONE(tests/photo-poses.test.ts)` passes; SG.
 - **Must not change**: `src/`.
 
-### V1b Photo hooks and the honest call counter [AGY]
+### V1b Photo hooks, bench, and the honest call counter [AGY]
 - **Tier**: sonnet.
 - **Depends**: V1a.
 - **Files**: `src/engine/photo.ts` (new), `src/engine/runtime.ts`, `src/engine/loop.ts`.
 - **Change**:
-  - `photo.ts` exports `createLookHooks()` returning `{ ready(): boolean, pose(row: { place: string; yaw: number; pitch: number; distance: number }): void, preset(n: 0 | 1 | 2): void, hud(on: boolean): void }`. The capture driver reads `poses.json` and passes each row; the game does not import it. `pose` resolves the place to coordinates from `POIS` or `WORLD_REGIONS` (an unknown place throws), sets `player.pos` on the terrain, clears the waypoint list, and sets `camState.yaw`, `pitch` and `distance` through `sanitizeCam`. `preset` calls `cycleTimeOfDay` until `STATE.timeOfDay` equals `n`. `hud(false)` sets `hidden` on the HUD's root elements and `hud(true)` clears it; no stylesheet edit. `ready` is true once the world GLB promise has settled. Every DOM access is inside these functions, so the module imports in `node`.
+  - `photo.ts` exports `createLookHooks()` returning `{ ready(): boolean, pose(row: { place: string; yaw: number; pitch: number; distance: number }): void, preset(n: 0 | 1 | 2): void, hud(on: boolean): void, tier(id: QualityTier): void, bench(frames: number): number }`. `tier` calls `applyQualityTier` and sets an exported flag that the governor (AR4b) reads as "the player chose". `bench` renders the current scene and camera `frames` times back to back with `G.renderer.render`, calls `gl.finish()` once, and returns the mean milliseconds per frame measured with `performance.now()`; `frames` is clamped to 1..600. The capture driver reads `poses.json` and passes each row; the game does not import it. `pose` resolves the place to coordinates from `POIS` or `WORLD_REGIONS` (an unknown place throws), sets `player.pos` on the terrain, clears the waypoint list, and sets `camState.yaw`, `pitch` and `distance` through `sanitizeCam`. `preset` calls `cycleTimeOfDay` until `STATE.timeOfDay` equals `n`. `hud(false)` sets `hidden` on the HUD's root elements and `hud(true)` clears it; no stylesheet edit. `ready` is true once the world GLB promise has settled. Every DOM access is inside these functions, so the module imports in `node`.
   - `runtime.ts`: the object assigned to `window.__DEBUG` (line 190 at `a8cad85`) gains `look: createLookHooks()`. Nothing else.
   - `loop.ts`, `renderFrame`: set `G.renderer.info.autoReset = false` once, call `G.renderer.info.reset()` at the start of each frame, and write `perf-calls` as `<calls> calls • <tris>k tris`, now including the shadow pass. Add `telemetryInfo.calls` and `telemetryInfo.triangles` so a capture can read them.
 - **Accept**: SG. `ONE(tests/architecture.test.ts)` passes (the new module imports in `node`).
 - **Must not change**: any rendering result; `index.html`.
 
+### V1c Capture procedure [CLAUDE]
+- **Tier**: sonnet (a written procedure, proven once).
+- **Depends**: V1b.
+- **Files**: `docs/superpowers/baseline/stage5/capture.md` (new).
+- **Change**: write CAP (section 0.2) as an exact step list for the Playwright browser tools the main session has (open, an init script that replaces `Math.random` with a seeded generator before the page's scripts, onboarding dismissal by its element id, `look.ready()` polling with a 60 s limit, the hook calls, JPEG save paths, the perf HUD read). No new dependency and no file under `src/`. Prove it once: capture P1 at noon on performance and balanced into `stage5/proof/`.
+- **Accept**: the two proof pictures exist and differ in shadow (balanced has a shadow pass); the procedure file names every step.
+- **Must not change**: `src/`, `tests/`, `package.json`.
+
 ### V2 Baseline capture [CLAUDE] + [OWNER]
 - **Tier**: haiku (runs and records).
-- **Depends**: V1b.
+- **Depends**: V1c.
 - **Files**: `docs/superpowers/baseline/2026-11-14-stage5-baseline.md` (new), `docs/superpowers/baseline/stage5/before/*`.
-- **Change**: record BUILD's JS and CSS sizes. Run CAP over P1 to P10 at presets 0, 1 and 2 (golden, noon, night) and P11 at its four sizes; these are the "before" pictures. Record per pose and per tier: calls and triangles with shadows on, and calls on the performance tier (shadows off); the difference is the shadow pass. The owner (OV-2) records, on their GPU and display, frame time and FPS at P1, P3, P5 and P8 on each tier, and names the GPU and the display.
-- **Accept**: the baseline file holds every number above and the owner's. From here on, "the V2 chunk" and "the V2 capture" in design section 10 mean these numbers.
+- **Change**: record BUILD's JS and CSS sizes. Run CAP over P1 to P10 at presets 0, 1 and 2 (golden, noon, night) and P11 at its four sizes; these are the "before" pictures. Record per pose and per tier: calls and triangles with shadows on, and calls on the performance tier (shadows off); the difference is the shadow pass. The owner (OV-2) runs `__DEBUG.look.bench(300)` on their GPU and display at P1, P3, P5 and P8 on each tier, records the milliseconds, and names the GPU and the display; then answers CALL-V20.
+- **Accept**: the baseline file holds every number above and the owner's. From here on, "the V2 chunk", "the V2 capture" and "the V2 bench" in design section 10 mean these numbers. If the owner chose to adjust the budgets, the main session writes the adjusted numbers into design section 10 (one `docs` commit) before LT1.
 - **Must not change**: `src/`, `tests/`.
 
 ---
@@ -145,10 +155,10 @@ What the owner gets: shadows on screen for the first time, a sun that moves, fiv
 - **Depends**: V2, OV-3.
 - **Files** (all new): `tests/day-cycle.test.ts`, `tests/look-data.test.ts`, `tests/gfx-tiers.test.ts`, `tests/shadow-fit.test.ts`.
 - **Change**: the G5.2, G5.3 and G5.12 rows of design 8.1, against these exports:
-  - `src/data/look.ts`: `DAY_KEYS: DayKey[]` (the six rows of design 5.3: `phase`, `sunElevationDeg`, `key`, `keyIntensity`, `zenith`, `horizon`, `air`, `fill`, `bounce`, `exposure`, colours as `#rrggbb` strings); `DAY_CLOCK = { dayMinutes: 24, nightSpeed: 2, sunDownBelow: 0.22, sunDownFrom: 0.82 }`; `PRESET_PHASE = [0.70, 0.50, 0.00]`; `GFX_TIERS: Record<'performance' | 'balanced' | 'high' | 'ultra', GfxTier>` with the fields of the design's tier table; `HORIZON_RING = { inner: 150, outer: 240 }`; `CAMERA_FAR = 360`.
+  - `src/data/look.ts`: `DAY_KEYS: DayKey[]` (the six rows of design 5.3: `phase`, `sunElevationDeg`, `key`, `keyIntensity`, `zenith`, `horizon`, `air`, `fill`, `bounce`, `exposure`, colours as `#rrggbb` strings); `DAY_CLOCK = { dayMinutes: 24, nightSpeed: 2, sunDownBelow: 0.22, sunDownFrom: 0.82 }`; `PRESET_PHASE = [0.70, 0.50, 0.00]`; `GFX_TIERS: Record<'performance' | 'balanced' | 'high' | 'ultra', GfxTier>` with one field per row of the design's tier table; `HORIZON_APRON = { inner: 130, outer: 240 }` (inner is the terrain's half-size); `CAMERA_FAR = 460`; `SKY_DOME_RADIUS = 440`; `CAMERA_LIMITS = { pitchMin: 0.12, pitchMax: 1.15, distanceMin: 3.6, distanceMax: 26 }` and `WALK_BOUND = 118` (the values R0 recorded); `SHADOW_SUN_STEP_DEG = 0.5`.
   - `src/state/dayCycle.ts`: `dayFrameAt(phase: number): DayFrame` (linear RGB triples, `sunDir: [x, y, z]`, `keyIsMoon: boolean`); `stepPhase(phase, dtSec, clock)`; `presetToPhase(n)`; `phaseToPreset(phase)`; `litGroundValue(frame, albedoValue)`.
-  - `src/state/shadowFit.ts`: `fitShadow(cam: Vec3, forward: Vec3, lightDir: Vec3, range: number, mapSize: number): { target: Vec3, lightPos: Vec3, texel: number }`.
-  - `look-data.test.ts` in this task holds: every `DayKey` is complete and its colours parse; phases ascend; `litGroundValue` is at least 0.22 for every key on albedo 0.30; `HORIZON_RING.outer < CAMERA_FAR`. Every table-driven test asserts the row count first.
+  - `src/state/shadowFit.ts`: `fitShadow(cam: Vec3, forward: Vec3, lightDir: Vec3, range: number, mapSize: number): { target: Vec3, lightPos: Vec3, texel: number }`; `stepShadowDir(current: Vec3, sun: Vec3, stepDeg: number): Vec3` (returns `current` while the angle to `sun` is at most `stepDeg`, else `sun`).
+  - `look-data.test.ts` in this task holds: every `DayKey` is complete and its colours parse; phases ascend; `litGroundValue` is at least 0.22 for every key on albedo 0.30; `WALK_BOUND * Math.SQRT2 + CAMERA_LIMITS.distanceMax + HORIZON_APRON.outer < CAMERA_FAR`; `SKY_DOME_RADIUS < CAMERA_FAR`; `HORIZON_APRON.inner` equals the terrain's half-size (130). `shadow-fit.test.ts` also: `stepShadowDir` holds below the step and snaps beyond it. Every table-driven test asserts the row count first.
 - **Accept**: red until LT2, within rule 0.3.4.
 - **Must not change**: `src/`.
 
@@ -165,7 +175,7 @@ What the owner gets: shadows on screen for the first time, a sun that moves, fiv
 - **Depends**: LT2.
 - **Files**: `tests/facet-light.test.ts` (new), `tests/textures.test.ts` (the two replacements of design 8.3 only).
 - **Change**:
-  - `facet-light.test.ts`, compiling through `mat.onBeforeCompile` with `THREE.ShaderLib.lambert` as `textures.test.ts` does: `three's lambert fragment still includes lights_lambert_pars_fragment and fog_fragment` (the guard for design risk X2); `facetMaterial replaces RE_Direct_Lambert with a banded response` (the text contains `facetBand(` and no `BRDF_Lambert( material.diffuseColor )`); `the Lambert sum is used again` (contains `reflectedLight.directDiffuse + reflectedLight.indirectDiffuse + totalEmissiveRadiance`); `shade cut sets flatShading and three bands`; `shade round keeps smooth normals and two bands`; `the default shade is round`; `terrainMaterial declares uFacet and still samples the eight ground maps`; `the foot gradient is off when uFootHeight is 0`.
+  - `facet-light.test.ts`, compiling through `mat.onBeforeCompile` with `THREE.ShaderLib.lambert` as `textures.test.ts` does: `three's lambert fragment still includes lights_lambert_pars_fragment and fog_fragment` (the guard for design risk X2); `facetMaterial replaces RE_Direct_Lambert with a banded response` (the text contains `facetBand(` and no `BRDF_Lambert( material.diffuseColor )`); `the Lambert sum is used again` (contains `reflectedLight.directDiffuse + reflectedLight.indirectDiffuse + totalEmissiveRadiance`); `shade cut sets flatShading and three bands`; `shade round keeps smooth normals and two bands`; `the default shade is round`; `terrainMaterial declares uFacet, defines FACET_BLEND, does not set flatShading, and still samples the eight ground maps`; `the foot gradient is off when uFootHeight is 0`; `customProgramCacheKey differs between terrainMaterial, a cut facetMaterial and a round facetMaterial` (the carpet joins this case in GR6).
   - `textures.test.ts`: in "cel-shades the sampled diffuse color and leaves the ink outline alone", the three assertions on the fixed tint line, the fixed `smoothstep` and the absent Lambert sum become `toContain('facetBand(')` and `toContain('reflectedLight.directDiffuse + reflectedLight.indirectDiffuse + totalEmissiveRadiance')`. In "blends grass, dirt, sand, and stone in the terrain cel shader", the fixed tint line becomes `toContain('facetBand(')`. Nothing else in the file changes.
 - **Accept**: red until LT4. The opus verify reads `git diff -- tests/textures.test.ts` and finds exactly those four assertions replaced.
 - **Must not change**: any other assertion in `textures.test.ts`.
@@ -174,31 +184,42 @@ What the owner gets: shadows on screen for the first time, a sun that moves, fiv
 - **Tier**: opus. This is [CLAUDE] because it rewrites text inside three's shader chunks, which a prompt cannot fully specify, and every surface in the game depends on it. A separate opus verify still checks it.
 - **Depends**: LT3.
 - **Files**: `src/engine/materials.ts`, `src/engine/textures.ts`.
-- **Change**: design 6.1. In `facetMaterial`: delete the `outgoingLight` replacement; replace `#include <lights_lambert_pars_fragment>` with a copy whose `RE_Direct_Lambert` is `reflectedLight.directDiffuse += facetBand(dotNL) * directLight.color * material.diffuseColor;` and whose indirect term drops the division by pi; `facetBand` is three steps (0.15 and 0.55, values 0.22, 0.62, 1.0, each 0.04 wide) under `#define FACET_CUT`, two steps (0.35) otherwise. New parameter `shade: 'cut' | 'round'`, default `round`; `cut` sets `flatShading: true` and `material.defines.FACET_CUT`. Every variant is a key in `material.defines`, never text picked in a closure, because three's program cache key is `onBeforeCompile.toString()` plus the defines. A new parameter `facetBlend` (a number; absent means the plain `cut` or `round` behaviour) sets a `uFacet` uniform that blends the smooth and the face normal; `terrainMaterial` passes 0.7. A new parameter `footHeight` (default 0) sets a `uFootHeight` uniform; when it is above 0, an object-space height varying multiplies `diffuseColor` by `mix(0.75, 1.0, smoothstep(0.0, uFootHeight, height))`. The `vCelNormal` code and the old `flatNormal` branch are removed. `metalness`, `roughness`, `map` handling and `userData.albedoSpace` stay as they are.
+- **Change**: design 6.1. In `facetMaterial`: delete the `outgoingLight` replacement; replace `#include <lights_lambert_pars_fragment>` with a copy whose `RE_Direct_Lambert` is `reflectedLight.directDiffuse += facetBand(dotNL) * directLight.color * material.diffuseColor;` and whose indirect term drops the division by pi; `facetBand` is three steps (0.15 and 0.55, values 0.22, 0.62, 1.0, each 0.04 wide) under `#define FACET_CUT`, two steps (0.35) otherwise. New parameter `shade: 'cut' | 'round'`, default `round`; `cut` sets `flatShading: true` and `material.defines.FACET_CUT`. Every variant is a key in `material.defines`, never text picked in a closure, because three's program cache key is `onBeforeCompile.toString()` plus the defines. A new parameter `facetBlend` (a number; absent means the plain `cut` or `round` behaviour) sets `#define FACET_BLEND` and a `uFacet` uniform, keeps `flatShading` off (with `FLAT_SHADED` three declares no `vNormal`), and after `normal_fragment_begin` sets `normal = normalize(mix(normal, faceNormal, uFacet))` with `faceNormal` from `cross(dFdx(vViewPosition), dFdy(vViewPosition))`; `terrainMaterial` passes 0.7 and not `shade: 'cut'`. Every patched material sets `customProgramCacheKey` to a string joined from constant tags of its chain (`facet|cut`, `facet|round`, `facet|blend|terrain`); later hooks (`attachAtmosphere`, the carpet) append their tag. A new parameter `footHeight` (default 0) sets a `uFootHeight` uniform; when it is above 0, an object-space height varying multiplies `diffuseColor` by `mix(0.75, 1.0, smoothstep(0.0, uFootHeight, height))`. The `vCelNormal` code and the old `flatNormal` branch are removed. `metalness`, `roughness`, `map` handling and `userData.albedoSpace` stay as they are.
 - **Accept**: `ONE(tests/facet-light.test.ts)` and `ONE(tests/textures.test.ts)` pass; SG.
 - **Must not change**: `addCartoonOutline`, the outline material, `TERRAIN_SAMPLE`'s map sampling, any texture id.
 
-### LT5 The light rig, the clock, visible shadows, cut world [AGY]
+### LT5a The light rig, the clock, visible shadows [AGY]
 - **Tier**: sonnet.
 - **Depends**: LT4.
-- **Files**: `src/engine/lighting.ts` (new), `src/engine/renderer.ts`, `src/engine/loop.ts`, `src/engine/context.ts`, `src/engine/worldMesh.ts`, `src/engine/worldBuild.ts`, `src/engine/blenderWorld.ts`, `src/engine/spawns.ts`, `src/engine/photo.ts`.
+- **Files**: `src/engine/lighting.ts` (new), `src/engine/renderer.ts`, `src/engine/loop.ts`, `src/engine/context.ts`, `src/engine/worldMesh.ts` (`cycleTimeOfDay` only), `src/engine/photo.ts`.
 - **Change**:
-  - `lighting.ts`: `initLighting()` creates the key `DirectionalLight`, the `HemisphereLight` and a small constant `AmbientLight` (replacing the three in `init3DEngine`, which keeps `G.sunLight`, `G.hemiLight`, `G.ambientLight` pointing at them); `updateLighting(dt)` steps the phase with `stepPhase`, applies `dayFrameAt` to the lights and to `G.renderer.toneMappingExposure`, clamps the cast direction at 12 degrees of elevation, places the light with `fitShadow`, and writes `STATE.timeOfDay = phaseToPreset(phase)` when it changes; `setPhase(p, frozen)`; `applyShadowTier(tier)` sets map size and range from `GFX_TIERS`, disposes the old map (`shadow.map.dispose(); shadow.map = null`) and sets `shadowMap.type = THREE.PCFShadowMap`.
+  - `lighting.ts`: `initLighting()` creates the key `DirectionalLight`, the `HemisphereLight` and a small constant `AmbientLight` (replacing the three in `init3DEngine`, which keeps `G.sunLight`, `G.hemiLight`, `G.ambientLight` pointing at them); `updateLighting(dt)` steps the phase with `stepPhase`, applies `dayFrameAt` to the lights and to `G.renderer.toneMappingExposure`, clamps the cast direction at 12 degrees of elevation, passes it through `stepShadowDir` (the key's shading direction follows the true sun, the shadow light's direction the stepped one), places the light with `fitShadow`, and writes `STATE.timeOfDay = phaseToPreset(phase)` when it changes; `setPhase(p, frozen)`; `applyShadowTier(tier)` sets map size and range from `GFX_TIERS`, disposes the old map (`shadow.map.dispose(); shadow.map = null`), sets `shadowMap.type = THREE.PCFShadowMap`, and sets `bias` and `normalBias` from `look.ts`.
   - `renderer.ts`: `init3DEngine` calls `initLighting()`; `applyQualityTier` calls `applyShadowTier` and no longer sets `PCFSoftShadowMap`.
   - `loop.ts`: the three sun-follow lines at the end of `updateCamera` are removed; `updateLighting(f.dt)` is called once per frame before `renderFrame`.
-  - `worldMesh.ts`: `cycleTimeOfDay` keeps its contract (`STATE.timeOfDay = (n + 1) % 3`, the same three button labels) and now calls `setPhase(presetToPhase(n), false)`; its sky and fog writes are removed (LT6 owns the sky). The terrain mesh gets `castShadow = true` when the tier says so, and its index buffer alternates the quad diagonal like a checkerboard. Positions, heights, vertex colours and UVs are unchanged.
-  - `blenderWorld.ts` (`applyWorldMaterials`), the builders in `worldBuild.ts`, the tree, rock and bridge builders in `spawns.ts` and `worldMesh.ts`: every `facetMaterial` and `albedoMaterial` call for world geometry passes `shade: 'cut'`. `footHeight` is not passed yet: object-space height is per child mesh until GR2 merges props. Hero, guard, monster and gear code is not touched.
+  - `worldMesh.ts`: `cycleTimeOfDay` keeps its contract (`STATE.timeOfDay = (n + 1) % 3`, the same three button labels) and now calls `setPhase(presetToPhase(n), false)`; its sky and fog writes are removed (LT6 owns the sky).
   - `photo.ts`: add `phase(p: number)`, which calls `setPhase(p, true)`.
-- **Accept**: SG. `grep -n "PCFSoftShadowMap" src/engine` prints nothing. `grep -n "sunLight.position.set" src/engine/loop.ts` prints nothing. The opus verify confirms no call site in `humanoid.ts`, `blenderHero.ts`, `blenderMonsters.ts`, `monsterMeshes.ts`, `blenderGear.ts`, `playerGear.ts` or `playerMesh.ts` changed.
-- **Must not change**: terrain heights (`tests/terrain-golden.test.ts` passes untouched); the save's keys; the three preset labels.
+- **Accept**: SG. `grep -n "PCFSoftShadowMap" src/engine` prints nothing. `grep -n "sunLight.position.set" src/engine/loop.ts` prints nothing.
+- **Must not change**: the save's keys; the three preset labels; any material.
+
+### LT5b The cut world [AGY]
+- **Tier**: sonnet.
+- **Depends**: LT5a.
+- **Files**: `src/engine/worldMesh.ts` (terrain and bridge only), `src/engine/worldBuild.ts`, `src/engine/blenderWorld.ts`, `src/engine/spawns.ts`.
+- **Change**:
+  - `blenderWorld.ts` (`applyWorldMaterials`), the builders in `worldBuild.ts`, the tree, rock and bridge builders in `spawns.ts` and `worldMesh.ts`: every `facetMaterial` and `albedoMaterial` call for world geometry passes `shade: 'cut'`. `footHeight` is not passed yet: object-space height is per child mesh until GR2 merges props.
+  - `spawnWorldProp` (`worldBuild.ts`) calls `applyWorldMaterials` on its clone (export it from `blenderWorld.ts`), so its props stop keeping the GLB's `MeshStandardMaterial`; it keeps its own `castShadow` and `receiveShadow` settings.
+  - The terrain mesh gets `castShadow = true` when the tier says so, and its index buffer alternates the quad diagonal like a checkerboard. Positions, heights, vertex colours and UVs are unchanged.
+  - Hero, guard, monster and gear code is not touched.
+- **Accept**: SG. The opus verify confirms `spawnWorldProp` now passes its clone through `applyWorldMaterials`, and confirms no call site in `humanoid.ts`, `blenderHero.ts`, `blenderMonsters.ts`, `monsterMeshes.ts`, `blenderGear.ts`, `playerGear.ts` or `playerMesh.ts` changed.
+- **Must not change**: terrain heights (`tests/terrain-golden.test.ts` passes untouched); node and material names looked up in the GLB.
 
 ### LT6 Sky, and the colour pipeline of the custom shaders [AGY]
 - **Tier**: sonnet.
-- **Depends**: LT5.
+- **Depends**: LT5b.
 - **Files**: `src/engine/sky.ts` (new), `src/engine/atmosphere.ts` (new), `src/engine/worldMesh.ts`, `src/engine/materials.ts` (`grassMaterial` only), `src/engine/renderer.ts`, `src/engine/loop.ts`, `src/engine/context.ts`.
 - **Change**:
-  - `atmosphere.ts`: export the shared uniform objects `AIR = { uSunDir, uKeyColor, uAirColor, uAirSunColor, uZenith, uHorizon, uFill, uTime, uWind, uFogDensity, uFogHeightFalloff, uFogBase, uRegionTint }` (each `{ value }`), `updateAir(frame, dt)`, and the string `COLOR_FOOTER` (`#include <tonemapping_fragment>` then `#include <colorspace_fragment>`). The fog function arrives in AR2.
-  - `sky.ts`: `buildSky()` replaces `buildSkyDomeShader`. One dome `ShaderMaterial` that reads `AIR`: three-stop gradient, a horizon glow toward `uSunDir`, sun and moon discs as `step` edges with one halo step, stars from a hash of the direction with a hard threshold, drawn only when `uNight` is above 0; ends with `COLOR_FOOTER`. `updateSky()` keeps the dome centred on the camera. `scene.fog`'s colour and density follow the frame.
+  - `atmosphere.ts`: export the shared uniform objects (colour values linear; `Color.setHex` converts) `AIR = { uSunDir, uKeyColor, uAirColor, uAirSunColor, uZenith, uHorizon, uFill, uTime, uWind, uFogDensity, uFogHeightFalloff, uFogBase, uRegionTint }` (each `{ value }`), `updateAir(frame, dt)`, and the string `COLOR_FOOTER` (`#include <tonemapping_fragment>` then `#include <colorspace_fragment>`). The fog function arrives in AR2.
+  - `sky.ts`: `buildSky()` replaces `buildSkyDomeShader`. One dome `ShaderMaterial` that reads `AIR`: three-stop gradient, a horizon glow toward `uSunDir`, sun and moon discs as `step` edges with one halo step, stars from a hash of the direction with a hard threshold, drawn only when `uNight` is above 0; `dithering: true`; ends with `COLOR_FOOTER`. The dome's radius is `SKY_DOME_RADIUS`. `updateSky()` keeps the dome centred on the camera. `scene.fog`'s colour and density follow the frame. `renderer.ts`: the camera's far plane is `CAMERA_FAR` from `look.ts`.
   - `worldMesh.ts`: `buildSkyDomeShader` is removed (or kept as a wrapper if R0 said a test imports it); the water shader ends with `COLOR_FOOTER`.
   - `grassMaterial`: its `uLightDir` and tint uniforms are replaced by `AIR.uSunDir` and `AIR.uKeyColor`; it ends with `COLOR_FOOTER`.
 - **Accept**: SG. `grep -n "0.52, 0.78, 0.34" src/engine` prints nothing.
@@ -207,13 +228,13 @@ What the owner gets: shadows on screen for the first time, a sun that moves, fiv
 ### LT7 Look development: light [CLAUDE]
 - **Tier**: opus (a look tuned against pictures and numbers).
 - **Depends**: LT6.
-- **Files**: `src/data/look.ts` (values of `DAY_KEYS` only), `src/engine/materials.ts` (the band constants, `facetBlend`, shadow bias only).
-- **Change**: run CAP over P1 (noon, golden, night), P3 (golden), P5 (noon, night) and P12. Tune until, in the P1 noon picture, a lit meadow pixel is 55 to 65% value and a shadowed one 30 to 38%; at P1 night the lit ground is at least 22%; no shadow acne on the terrain; no band flicker on the flat ground of the start town. Each tune commit changes constants only and leaves the LT1 and LT3 tests green.
+- **Files**: `src/data/look.ts` (values of `DAY_KEYS`, shadow `bias` and `normalBias`, the texel filter constant only), `src/engine/materials.ts` (the band constants and `facetBlend` only), `src/engine/textures.ts` (the magnification filter constant only).
+- **Change**: run CAP over P1 (noon, golden, night), P3 (golden), P5 (noon, night) and P12. Tune until, in the P1 noon picture, a lit meadow pixel is 55 to 65% value and a shadowed one 30 to 38%; at P1 night the lit ground is at least 22%; no shadow acne on the terrain; no band flicker on the flat ground of the start town; shadow edges do not swim during a minute of running clock at P12. For CALL-V19, capture P1 noon and P5 noon twice, with smooth and with crisp (nearest) texel magnification, into `light/texels/`. Each tune commit changes constants only and leaves the LT1 and LT3 tests green.
 - **Accept**: SG; the pictures and the measured pixel values are in `docs/superpowers/baseline/stage5/light/`.
 - **Must not change**: hues' direction (design 5.3), any logic.
 
 ### CP-LT Light checkpoint [OWNER]
-The owner compares `before/` and `light/` at P1, P3 and P5 and watches P12 live. Should see: shadows under every object, long at golden hour; the ridge's shadow at P3; a blue, readable night; planes on rock, trees and ground; round figures. Answers accept, change (back to LT7) or hold.
+The owner compares `before/` and `light/` at P1, P3 and P5 and watches P12 live. Should see: shadows under every object, long at golden hour; the ridge's shadow at P3; a blue, readable night; planes on rock, trees and ground; round figures. Answers accept, change (back to LT7) or hold, and picks smooth or crisp texels (CALL-V19); the main session sets the constant in one `tune` commit.
 
 ---
 
@@ -225,46 +246,125 @@ What the owner gets: depth in three planes, fog that pools and leans to the sun,
 - **Tier**: sonnet.
 - **Depends**: LT7.
 - **Files**: `tests/air.test.ts`, `tests/plain-mode.test.ts` (new); `tests/gfx-tiers.test.ts`, `tests/look-data.test.ts` (new files of this plan, extended).
-- **Change**: against `src/state/dayCycle.ts` `fogFactor(distance, height, frame): number` (the TypeScript twin of the GLSL, used to fill uniforms): monotonic in distance, halves every 9 units of height, equals plain exponential-squared fog when the height terms are 0. Against `src/engine/post.ts`: `effectivePixelRatio(tier, width, height, devicePixelRatio)` never exceeds the tier's ratio cap or megapixel cap; `nextTier(tier, frameTimesMs)` steps down once when the median of a 4 s window is above 24 ms, never up, and stays at `performance`. Against `src/engine/atmosphere.ts`: the text of `AIR_GLSL` contains `applyAir`. `plain-mode.test.ts`: `enterPlainMode()` is idempotent, and `facetMaterial` built while plain mode is on contains no `facetBand(`. `look-data`: `REGION_LOOK` has five rows, one per `WORLD_REGIONS` id, each with an air tint whose weight is at most 0.2.
-- **Accept**: red until AR2 and AR4.
+- **Change**: against `src/state/dayCycle.ts` `fogFactor(distance, height, frame): number` (the TypeScript twin of the GLSL, used to fill uniforms): monotonic in distance, halves every 9 units of height, equals plain exponential-squared fog when the height terms are 0. Against `src/engine/post.ts`: `effectivePixelRatio(tier, width, height, devicePixelRatio)` never exceeds the tier's ratio cap or megapixel cap; `nextTier(tier, frameTimesMs, { hidden, playerChose })` steps down once when the median of a 4 s window is above 24 ms, never up, stays at `performance`, returns the tier unchanged when the window saw the page hidden, and returns it unchanged for the rest of the session once the player chose a tier. Against `src/engine/atmosphere.ts`: the text of `AIR_GLSL` contains `applyAir`; a `facetMaterial` compiled through its hooks contains no `#include <fog_fragment>`, and `applyAir(` appears before `#include <tonemapping_fragment>`; its `customProgramCacheKey` ends in `|air`. `plain-mode.test.ts`: `enterPlainMode(scene)` is idempotent; `facetMaterial` built while plain mode is on contains no `facetBand(`; a facet material registered before `enterPlainMode(scene)` is replaced on its mesh by a `MeshLambertMaterial` with the same colour and map. `look-data`: `REGION_LOOK` has five rows, one per `WORLD_REGIONS` id, each with an air tint whose weight is at most 0.2; `BLOOM.threshold` is at least 1.15 times the brightest lit value over all `DAY_KEYS` (`litGroundValue` at albedo 0.75, full band, fill and bounce included).
+- **Accept**: red until AR2, AR4a and AR4b.
 - **Must not change**: `src/`.
 
 ### AR2 The air function in every shader [CLAUDE]
 - **Tier**: opus (chunk replacement across the facet shader and four custom shaders, with a fallback that must equal today's fog).
 - **Depends**: AR1.
 - **Files**: `src/engine/atmosphere.ts`, `src/engine/materials.ts`, `src/engine/sky.ts`, `src/engine/worldMesh.ts`, `src/data/look.ts` (`REGION_LOOK`), `src/state/dayCycle.ts` (`fogFactor`).
-- **Change**: design 6.3. `AIR_GLSL` holds `applyAir(vec3 color, vec3 worldPos)` and, under `#define CLOUD_SHADOW`, `cloudShade(vec2 xz)` (two octaves of value noise moved by `uWind * uTime`). `attachAtmosphere(material)` chains `onBeforeCompile`, assigns the shared `AIR` objects into `shader.uniforms`, adds a world-position varying that handles `USE_INSTANCING`, and replaces `fog_pars_fragment` and `fog_fragment`. `facetMaterial` calls it and multiplies the key by `cloudShade` inside `RE_Direct_Lambert` when `material.defines.CLOUD_SHADOW` is set. `atmosphere.ts` keeps a list of the materials it attached, and `setAirTier(tier)` updates their defines and sets `needsUpdate`; `applyQualityTier` calls it. The sky, water and grass shaders include `AIR_GLSL` and call `applyAir`. `updateAir` blends `REGION_LOOK` tints by distance to the region centres. `REGION_LOOK` gets the five rows of design 5.5.
+- **Change**: design 6.3. `AIR_GLSL` holds `applyAir(vec3 color, vec3 worldPos)` and, under `#define CLOUD_SHADOW`, `cloudShade(vec2 xz)` (two octaves of value noise moved by `uWind * uTime`). `attachAtmosphere(material)` chains `onBeforeCompile`, assigns the shared `AIR` objects into `shader.uniforms`, adds a world-position varying that handles `USE_INSTANCING`, replaces `fog_pars_fragment`, removes `fog_fragment`, and inserts `outgoingLight = applyAir(outgoingLight, vAirWorld);` before `#include <opaque_fragment>`, so the air acts on linear radiance before tone mapping (design 6.3); it appends `|air` to the material's `customProgramCacheKey`. `facetMaterial` calls it and multiplies the key by `cloudShade` inside `RE_Direct_Lambert` when `material.defines.CLOUD_SHADOW` is set. `atmosphere.ts` keeps a list of the materials it attached, and `setAirTier(tier)` updates their defines and sets `needsUpdate`; `applyQualityTier` calls it. The sky, water and grass shaders include `AIR_GLSL` and call `applyAir` before `COLOR_FOOTER`. `updateAir` blends `REGION_LOOK` tints by distance to the region centres. `REGION_LOOK` gets the five rows of design 5.5.
 - **Accept**: `ONE(tests/air.test.ts)` passes except the `post.ts` cases; the LT tests stay green; SG otherwise within rule 0.3.4.
 - **Must not change**: `glowMaterial` and every `MeshBasicMaterial` (they keep `scene.fog`).
 
-### AR3 Horizon ring and cloud solids [AGY]
+### AR3 Horizon apron and cloud solids [AGY]
 - **Tier**: sonnet.
 - **Depends**: AR2.
 - **Files**: `src/engine/floraKit.ts` (new), `src/engine/sky.ts`.
-- **Change**: `floraKit.ts` exports `makeRng(seed)` and `buildKitPiece(id, rng): THREE.BufferGeometry` for `cloud_a`, `cloud_b`, `cloud_c` (3 to 5 jittered icosahedra of detail 0 merged, vertex colours, at most 120 triangles) and `horizon_ring` (two rows of jittered hills between `HORIZON_RING.inner` and `outer`, about 600 triangles). `sky.ts` adds the ring as one mesh with a `cut` facet material tinted toward `uAirColor`, and the clouds as `InstancedMesh`es (count from `GFX_TIERS.clouds`), 60 to 90 units up, moved by `uWind` and wrapped inside the 260-unit square. Neither casts or receives shadows.
-- **Accept**: SG; `floraKit.ts` contains no `Math.random`.
-- **Must not change**: the camera's far plane.
+- **Change**: `floraKit.ts` exports `makeRng(seed)` and `buildKitPiece(id, rng): THREE.BufferGeometry` for `cloud_a`, `cloud_b`, `cloud_c` (3 to 5 jittered icosahedra of detail 0 merged, vertex colours, at most 120 triangles) and `horizon_apron` (inner boundary the terrain's square edge at `HORIZON_APRON.inner`, its vertices sharing the terrain's edge heights from `getTerrainHeight`, rising to two rows of jittered hills out to radius `HORIZON_APRON.outer`, 600 to 800 triangles). `sky.ts` adds the apron as one mesh with a `cut` facet material tinted toward `uAirColor`, and the clouds as `InstancedMesh`es (count from `GFX_TIERS.clouds`), 60 to 90 units up, their instance matrices moved on the CPU each frame by the wind and wrapped inside the 260-unit square. Neither casts or receives shadows.
+- **Accept**: SG; `floraKit.ts` contains no `Math.random`. CAP over P10 (both sets of eight yaws) on performance shows no void between terrain and apron.
+- **Must not change**: the camera's far plane (set in LT6).
 
-### AR4 Output path, pixel budget, governor, plain mode [AGY]
+### AR4a Output path and pixel budget [AGY]
 - **Tier**: sonnet.
 - **Depends**: AR3.
-- **Files**: `src/engine/post.ts` (new), `src/engine/renderer.ts`, `src/engine/loop.ts`, `src/engine/materials.ts` (plain-mode branch only).
-- **Change**: design 6.10. `post.ts`: `effectivePixelRatio`, `nextTier`, `enterPlainMode`, `isPlainMode`, and `createOutput(renderer, scene, camera, tier)` returning `{ render(), setSize(), dispose() }`. For `performance` and `balanced`, `render` is `renderer.render`. For `high` and `ultra` it is an `EffectComposer` on a `WebGLRenderTarget` with `HalfFloatType` (or `UnsignedByteType` when the device cannot render to half float) and 4 samples (2 above 8.3 megapixels), a `RenderPass`, an `UnrealBloomPass` at half resolution with the threshold, strength and radius of `GFX_TIERS`, and one `ShaderPass` that tone maps, converts colour space, applies a 6% vignette and a one-step hash dither. `renderer.ts`: `applyQualityTier` and `onWindowResize` use `effectivePixelRatio` and rebuild the output on a path change; `init3DEngine` sets `renderer.debug.onShaderError` to `enterPlainMode` and reads `new URLSearchParams(location.search).has('plain')` as a boolean. `loop.ts`: `renderFrame` calls the output's `render`, feeds frame times to `nextTier`, and applies a step down with one chat line. In plain mode `facetMaterial` returns a stock `MeshLambertMaterial` with the map and colour, and `attachAtmosphere` does nothing.
-- **Accept**: `ONE(tests/air.test.ts)`, `ONE(tests/plain-mode.test.ts)` and `ONE(tests/gfx-tiers.test.ts)` pass; SG; BUILD's JS size is recorded.
+- **Files**: `src/engine/post.ts` (new), `src/engine/renderer.ts`, `src/engine/loop.ts`, `src/data/look.ts` (`BLOOM` only).
+- **Change**: design 6.10. `look.ts`: `BLOOM = { threshold, strength, radius }` with the threshold the AR1 rule requires. `post.ts`: `effectivePixelRatio` and `createOutput(renderer, scene, camera, tier)` returning `{ render(), setSize(), dispose() }`. For `performance` and `balanced`, `render` is `renderer.render`. For `high` and `ultra` it is an `EffectComposer` on a `WebGLRenderTarget` with `HalfFloatType` (or `UnsignedByteType` when the device cannot render to half float) and 4 samples (2 above 8.3 megapixels), a `RenderPass`, an `UnrealBloomPass` at half resolution with `BLOOM`'s values, and three's stock `OutputPass`. No custom output shader and no vignette. `renderer.ts`: `applyQualityTier` and `onWindowResize` use `effectivePixelRatio` and rebuild the output on a path change. `loop.ts`: `renderFrame` calls the output's `render`.
+- **Accept**: the `post.ts` pixel-budget cases of `ONE(tests/air.test.ts)`, the `BLOOM` case of `ONE(tests/look-data.test.ts)` and `ONE(tests/gfx-tiers.test.ts)` pass; SG; BUILD's JS size is recorded.
 - **Must not change**: `getQualityDpr`'s four caps; the perf HUD's ids.
 
+### AR4b Governor, plain mode, tier labels [AGY]
+- **Tier**: sonnet.
+- **Depends**: AR4a.
+- **Files**: `src/engine/post.ts`, `src/engine/renderer.ts`, `src/engine/loop.ts`, `src/engine/materials.ts` (registry and plain-mode branch only), `src/engine/atmosphere.ts` (plain-mode branch only), `src/engine/photo.ts`.
+- **Change**: `post.ts`: `nextTier` as AR1 tests it; `enterPlainMode(scene)`, `isPlainMode`. `materials.ts`: every material `facetMaterial` patches is pushed, with its mesh-independent parameters, to a module-level list; `enterPlainMode` walks the scene and replaces every registered material on its mesh with a stock `MeshLambertMaterial` with the same colour, map, emissive, side and `vertexColors`, then turns off the composer, carpet, particles, clouds and water effects; in plain mode `facetMaterial` returns the stock material directly and `attachAtmosphere` does nothing. `renderer.ts`: `init3DEngine` sets `renderer.debug.onShaderError` to a handler that logs the program's info log with `console.error` (three no longer logs once a handler is set) and then calls `enterPlainMode`, and reads `new URLSearchParams(location.search).has('plain')` as a boolean. `loop.ts`: `renderFrame` feeds frame times and `document.hidden` to `nextTier` and applies a step down with one chat line. `cycleGraphicsQuality` marks the player's choice, which stops the governor for the session; `photo.ts`'s `tier` does the same. If OV-1 renamed the tiers (CALL-V18), `syncGraphicsButtons` and the chat line show Low, Medium, High, Ultra; the `QualityTier` ids are unchanged.
+- **Accept**: `ONE(tests/air.test.ts)`, `ONE(tests/plain-mode.test.ts)` and `ONE(tests/gfx-tiers.test.ts)` pass; SG.
+- **Must not change**: the `QualityTier` ids; the perf HUD's ids; the graphics button's id.
+
 ### CP-AR Air checkpoint [OWNER]
-CAP over P10 (eight yaws), P3 (golden), P4 (night), P1 (golden), P2 (dawn) on the balanced and the high tier. Should see: three planes at every yaw of P10 and no map edge; mist low at P2 and the ridge's crest clear at P3; glow only on lava, lanterns and runes at P4, and only on the high tier; the same colours on both tiers apart from the glow. The owner also opens the game with `?plain` and sees a playable, plainly lit world.
+CAP over P10 (both sets of eight yaws), P3 (golden), P4 (night), P1 (golden, noon), P2 (dawn) on the balanced and the high tier. Should see: three planes at every yaw of P10 and no map edge; mist low at P2 and the ridge's crest clear at P3; glow only on lava, lanterns and runes at P4, and only on the high tier (no lit sand or grass glowing at P1 noon on high); the same colours on both tiers apart from the glow, including where the sky meets the terrain. The owner also opens the game with `?plain` and sees a playable, plainly lit world.
 
 ---
 
-## 4. Slice 3, lane WT: water
+## 4. Slice 3, lane GR: ground, vegetation, places
+
+What the owner gets: a filled world. Meadow, verge, reeds, ferns, scrub, rocks, logs, a forest frame, crags on the ridge, and props textured as intended. Cost (estimate): merging about -40 to -55% of draw calls and -1 to -3 ms of CPU; carpet and scatter +18 draws and about +1 to 2 ms; triangles up to the new budget; about +21 kB of JS.
+
+### GR1 Batching, UV and texture-cache tests [CLAUDE]
+- **Tier**: sonnet.
+- **Depends**: AR4b.
+- **Files** (new): `tests/batching.test.ts`, `tests/uv-projection.test.ts`, `tests/texture-cache.test.ts`.
+- **Change**:
+  - `batching`: against `mergeByMaterial(group: THREE.Group): THREE.Group` and `materialKey(mat): string`. A group of 6 meshes over 2 material keys, with child transforms and one negative scale, becomes 2 meshes; the triangle count is unchanged; world-space bounds are unchanged within 1e-5; `castShadow` and `receiveShadow` are true on a merged mesh if any source was; a mesh with `userData.noOutline` or `isCollider` is left unmerged; meshes with and without `uv` merge (the missing attribute is filled with zeros); an indexed and a non-indexed mesh with the same key merge.
+  - `uv-projection` (**finding 23**): two geometries where the second is `first.clone()` both get projected UVs from `sealAlbedoUvs`; calling it twice on the same geometry does not project twice.
+  - `texture-cache` (**finding 29**): against `loadAlbedo` with the default loader in `node`: the same id at repeat 3 and 1.5 returns two textures with `a.source === b.source` and different `repeat`; the same id and repeat returns the same object.
+- **Accept**: red until GR2.
+- **Must not change**: `src/`.
+
+### GR2 Merge static props; fix findings 23 and 29 [AGY]
+- **Tier**: sonnet.
+- **Depends**: GR1.
+- **Files**: `src/engine/batching.ts` (new), `src/engine/blenderWorld.ts`, `src/engine/worldBuild.ts`, `src/engine/textures.ts`, `src/engine/renderer.ts`.
+- **Change**: three commits.
+  1. `feat(ground): merge prop meshes by material`. `materialKey` is `colour hex | albedo id | emissive hex and intensity | shade | side`. `mergeByMaterial` bakes each child's matrix relative to the group into a clone of its geometry (flipping the winding under a negative determinant), keeps only `position`, `normal` and `uv`, merges per key with `mergeGeometries` from `three/examples/jsm/utils/BufferGeometryUtils.js`, keeps the first material of each key and disposes the rest. `cloneWorldNode` calls it after `applyWorldMaterials`; `spawnWorldProp` calls it after `applyWorldMaterials` (added in LT5b). Non-indexed inputs are given an index before `mergeGeometries`, which refuses a mix. Now that a prop's geometry is in the prop's own space, `applyWorldMaterials` passes `footHeight: 0.6`. The per-mesh `mesh.geometry.clone()` in `applyWorldMaterials` goes, because the merge makes new geometry.
+  2. `fix(#23): track projected UVs in a WeakSet`. In `assignProjectedUvs`, `geometry.userData.albedoUv` is replaced by a module-level `WeakSet`. `assignGroundUvs` adds the terrain geometry to the same set.
+  3. `fix(#29): one texture source per albedo id`. `loadAlbedo` caches a base texture per id and a clone per `id:repeat`; clones copy wrap, filter and colour space and set their own `repeat`. The path with an explicit `loader` argument stays uncached and returns the loader's own texture, as the frozen test "loads each painted tile from /textures with ground and prop repeats" needs. It also sets `anisotropy` from `GFX_TIERS`, clamped by `renderer.capabilities.getMaxAnisotropy()` through a setter `setAlbedoAnisotropy(n)` that `applyQualityTier` calls.
+- **Accept**: the three GR1 files pass; `ONE(tests/textures.test.ts)` and `ONE(tests/dispose.test.ts)` pass untouched; SG. The opus verify confirms every `getObjectByName('World_...')` and every material-name test in `applyWorldMaterials` still runs before the merge.
+- **Must not change**: any GLB; node and material names; the live and depleted swap of `upgradeResourceNodeWithGltf`; what `upgradeWorldPropWithGltf` pushes to the interactive list (it now pushes the merged meshes); `addCartoonOutline` (three frozen tests read its shell right after the call).
+
+### GR3 Scatter tests [CLAUDE]
+- **Tier**: opus. These tests are the boundary check for generated decoration (design V8), and choosing the clear radii and the unwalkable-only rule is judgment.
+- **Depends**: GR2, OV-4.
+- **Files**: `tests/scatter.test.ts` (new), `tests/look-data.test.ts` (extended).
+- **Change**: the G5.6 and G5.8 rows of design 8.1 against `buildScatter(seed: number, tier: GfxTierId): ScatterResult` where `ScatterResult = Record<KitPieceId, { x: number, z: number, rot: number, scale: number }[]>`, and against `KIT_PIECES` (each with `layer: 'understorey' | 'canopy'`, `maxHeight`) and `FLORA_RULES` (one row per region id plus rows keyed by POI id). Tests assert row counts first, then: determinism; no instance inside any path's half-width, any POI's `padRadius`, 2.5 units of any node placement, station, shrine or camp member home, the corridor of Cinderstep Pass, or a safe zone's inner 6 units; every `canopy` instance is at a point where `isWalkable(x, z)` is false and not in water (the walk grid stops at 118, so `isWalkable` is the source); every `understorey` piece has `maxHeight` at most 1.2; reeds within 3 units of a water cell; ferns only where `regionAt` is `woods`; no two understorey or canopy instances closer than the larger piece's footprint radius (`KIT_PIECES[id].radius`); each region and each POI has at least one cluster; each of 16 sectors of the 118 to 130 border ring has canopy instances; total instances per tier equal `GFX_TIERS.scatterDensity` times the full count within 5%.
+- **Accept**: red until GR4.
+- **Must not change**: `src/`.
+
+### GR4 Flora rules and scatter [AGY]
+- **Tier**: sonnet.
+- **Depends**: GR3.
+- **Files**: `src/data/look.ts` (`KIT_PIECES`, `FLORA_RULES`), `src/state/scatter.ts` (new).
+- **Change**: design 5.6 and 6.7. `KIT_PIECES`: `boulder_s`, `boulder_m`, `boulder_l`, `bush_a`, `bush_b`, `fern`, `reed`, `log`, `snag`, `sapling`, `mushrooms`, `backdrop_tree_a`, `backdrop_tree_b`, `crag_a`, `crag_b`, each with layer, `maxHeight`, tint family and whether it casts a shadow. `FLORA_RULES`: per region, the pieces and their cluster density; per POI id, the frame, focus and floor of design 5.6. `KIT_PIECES` rows also carry `radius` (footprint). `buildScatter` draws cluster centres from the seeded generator, places 3 to 9 members per cluster by Poisson-disk sampling (Bridson's method, seeded, minimum distance from the larger footprint radius) with size falling from the centre, rejects every position the GR3 tests forbid, and thins by the tier's density.
+- **Accept**: `ONE(tests/scatter.test.ts)` passes; the layering test passes; SG.
+- **Must not change**: `worldMap.ts`, `collision.ts`, `pathfind.ts`.
+
+### GR5 The kit and the instanced scatter [AGY]
+- **Tier**: sonnet.
+- **Depends**: GR4.
+- **Files**: `src/engine/floraKit.ts`, `src/engine/flora.ts` (new), `src/engine/renderer.ts`.
+- **Change**: `floraKit.ts` gains a builder per `KIT_PIECES` id: jittered icosahedra and dodecahedra for boulders, bushes and crowns; stacked jittered cones for `backdrop_tree_b`; hexagonal cylinders for logs and trunks; thin triangles for reeds and ferns; each with vertex colours from its tint family and within its triangle limit (boulder 20, bush 40, backdrop tree 80, crag 60). `flora.ts` `buildFlora(tier)` calls `buildScatter` with a fixed seed and makes one `InstancedMesh` per piece with a `cut` facet material (`vertexColors`, `footHeight` 0.6), the instance's Y from `getTerrainHeight`, `castShadow` from the piece. Nothing is added to `G.worldInteractiveObjects`. `init3DEngine` calls it after the world is built.
+- **Accept**: SG; `grep -n "worldInteractiveObjects" src/engine/flora.ts` prints nothing; `grep -n "Math.random" src/engine/flora.ts src/engine/floraKit.ts` prints nothing.
+- **Must not change**: resource nodes, stations, landmarks.
+
+### GR6 The ground field and the carpet [CLAUDE]
+- **Tier**: opus (a vertex shader that wraps instances around the hero and reads a data texture; a prompt cannot fully specify it).
+- **Depends**: GR5.
+- **Files**: `src/engine/flora.ts`, `src/engine/floraKit.ts`, `src/engine/worldMesh.ts`, `src/engine/materials.ts` (`grassMaterial` removed or wrapped), `src/engine/loop.ts`, `src/engine/context.ts`.
+- **Change**: design 6.7. `buildGroundField()` fills a 257 by 257 `HalfFloatType` RGBA `DataTexture` with linear filtering: height, carpet density (0 inside a path's half-width, a POI pad, water, slope above the Stage 2 crag threshold, the paved plaza; 1.5 on the 2-unit path verge), variant, region blend. `buildCarpet(tier)` makes one `InstancedMesh` per variant (`tuft`, `flower`, `tussock`, `ember_grass`, about 8 triangles each, vertex colours for a root-to-tip tint) with `GFX_TIERS.carpetTufts` instances in total and `frustumCulled = false` (instances are placed in the shader, so the bounding sphere would sit at the origin). Its material is `facetMaterial({ shade: 'round', vertexColors: true })` plus one more `onBeforeCompile` link that replaces `begin_vertex`: it computes the tuft's cell from `gl_InstanceID` and `uHeroXZ` on a wrapping jittered grid, samples the field, scales to 0 where density is 0 and within the last 15% of the carpet's radius, and bends by `uWind` and the gust noise of `AIR_GLSL`; the link appends `|carpet` to `customProgramCacheKey`. Lighting, shadows received from trees and props, and `applyAir` then come from the facet and atmosphere hooks; the carpet does not cast. The 900-blade block leaves `buildTerrainAndWater`; `loop.ts` stops writing the old grass uniform and sets `uHeroXZ`.
+- **Accept**: SG. A new `tests/ground-field.test.ts` (written in this task, since the field's rules come from the scatter rules already tested): density is 0 at the centre of every path sample, every POI centre and the river centre, and positive at three named meadow points; the carpet material's `customProgramCacheKey` differs from the terrain's and from a round facet's.
+- **Must not change**: the terrain mesh; `getTerrainHeight`.
+
+### GR7 Place-making pass [CLAUDE]
+- **Tier**: opus (a look tuned against pictures).
+- **Depends**: GR6.
+- **Files**: `src/data/look.ts` (`FLORA_RULES`, `KIT_PIECES` tints and densities only).
+- **Change**: CAP over P1, P3, P6, P7, P8, P9 and P10. For each POI and region, tune the rules until the frame, focus and floor of design 5.6 are visible in its pose and the regions differ at a glance. Then record calls and triangles at P1, P3, P5 and P8 on every tier.
+- **Accept**: `ONE(tests/scatter.test.ts)` stays green; SG; at P1 on balanced, colour-pass calls are at most 60% of the V2 capture and at most 1000, calls with the shadow pass at most 60% of V2's, triangles at most 550k. If a limit is missed, thin `scatterDensity` or `carpetTufts` in `GFX_TIERS` (and the tier test with it, in a declared tune commit), never the limits.
+- **Must not change**: any rule the scatter test holds.
+
+### CP-GR Ground checkpoint [OWNER]
+The owner compares `before/` and `ground/` at P1, P3, P6, P7, P8 and P10, and looks closely at props for finding 23's texture change. Should see: a meadow with a verge along the road; reeds only at water; a dense woods floor inside a tall frame; crags along the ridge; no straight map edge at any yaw; nothing in front of a node, a station or the pass. The owner also runs `look.bench` on their GPU at P1 and P8. Here the owner answers CALL-V8 again if the crags or backdrop trees do not convince.
+
+---
+
+## 5. Slice 4, lane WT: water
 
 What the owner gets: a river and two ponds with banks, depth, foam, facets and sky. Cost (estimate): about -0.2 to +0.3 ms, no draw call added, about +4 kB of JS.
 
 ### WT1 Water-grid tests [CLAUDE]
 - **Tier**: sonnet.
-- **Depends**: AR4.
+- **Depends**: GR7.
 - **Files**: `tests/water-grid.test.ts` (new).
 - **Change**: the G5.5 row of design 8.1 against `src/state/waterGrid.ts` `buildWaterGrid(): { positions: number[], depth: number[], flow: number[], index: number[], cells: number }` and `WATER_LEVEL = -0.34`.
 - **Accept**: red until WT2.
@@ -291,86 +391,15 @@ CAP over P2 (dawn, noon), P6 (dawn), P7 (noon). Should see: three water colours 
 
 ---
 
-## 5. Slice 4, lane GR: ground, vegetation, places
-
-What the owner gets: a filled world. Meadow, verge, reeds, ferns, scrub, rocks, logs, a forest frame, crags on the ridge, and props textured as intended. Cost (estimate): merging about -40 to -55% of draw calls and -1 to -3 ms of CPU; carpet and scatter +18 draws and about +1 to 2 ms; triangles up to the new budget; about +21 kB of JS.
-
-### GR1 Batching, UV and texture-cache tests [CLAUDE]
-- **Tier**: sonnet.
-- **Depends**: WT3.
-- **Files** (new): `tests/batching.test.ts`, `tests/uv-projection.test.ts`, `tests/texture-cache.test.ts`.
-- **Change**:
-  - `batching`: against `mergeByMaterial(group: THREE.Group): THREE.Group` and `materialKey(mat): string`. A group of 6 meshes over 2 material keys, with child transforms and one negative scale, becomes 2 meshes; the triangle count is unchanged; world-space bounds are unchanged within 1e-5; `castShadow` and `receiveShadow` are true on a merged mesh if any source was; a mesh with `userData.noOutline` or `isCollider` is left unmerged; meshes with and without `uv` merge (the missing attribute is filled with zeros).
-  - `uv-projection` (**finding 23**): two geometries where the second is `first.clone()` both get projected UVs from `sealAlbedoUvs`; calling it twice on the same geometry does not project twice.
-  - `texture-cache` (**finding 29**): against `loadAlbedo` with the default loader in `node`: the same id at repeat 3 and 1.5 returns two textures with `a.source === b.source` and different `repeat`; the same id and repeat returns the same object.
-- **Accept**: red until GR2.
-- **Must not change**: `src/`.
-
-### GR2 Merge static props; fix findings 23 and 29 [AGY]
-- **Tier**: sonnet.
-- **Depends**: GR1.
-- **Files**: `src/engine/batching.ts` (new), `src/engine/blenderWorld.ts`, `src/engine/worldBuild.ts`, `src/engine/textures.ts`, `src/engine/renderer.ts`.
-- **Change**: three commits.
-  1. `feat(ground): merge prop meshes by material`. `materialKey` is `colour hex | albedo id | emissive hex and intensity | shade | side`. `mergeByMaterial` bakes each child's matrix relative to the group into a clone of its geometry (flipping the winding under a negative determinant), keeps only `position`, `normal` and `uv`, merges per key with `mergeGeometries` from `three/examples/jsm/utils/BufferGeometryUtils.js`, keeps the first material of each key and disposes the rest. `cloneWorldNode` calls it after `applyWorldMaterials`; `spawnWorldProp` calls it after its traverse. Now that a prop's geometry is in the prop's own space, `applyWorldMaterials` passes `footHeight: 0.6`. The per-mesh `mesh.geometry.clone()` in `applyWorldMaterials` goes, because the merge makes new geometry.
-  2. `fix(#23): track projected UVs in a WeakSet`. In `assignProjectedUvs`, `geometry.userData.albedoUv` is replaced by a module-level `WeakSet`. `assignGroundUvs` adds the terrain geometry to the same set.
-  3. `fix(#29): one texture source per albedo id`. `loadAlbedo` caches a base texture per id and a clone per `id:repeat`; clones copy wrap, filter and colour space and set their own `repeat`. The path with an explicit `loader` argument stays uncached and returns the loader's own texture, as the frozen test "loads each painted tile from /textures with ground and prop repeats" needs. It also sets `anisotropy` from `GFX_TIERS`, clamped by `renderer.capabilities.getMaxAnisotropy()` through a setter `setAlbedoAnisotropy(n)` that `applyQualityTier` calls.
-- **Accept**: the three GR1 files pass; `ONE(tests/textures.test.ts)` and `ONE(tests/dispose.test.ts)` pass untouched; SG. The opus verify confirms every `getObjectByName('World_...')` and every material-name test in `applyWorldMaterials` still runs before the merge.
-- **Must not change**: any GLB; node and material names; the live and depleted swap of `upgradeResourceNodeWithGltf`; what `upgradeWorldPropWithGltf` pushes to the interactive list (it now pushes the merged meshes); `addCartoonOutline` (three frozen tests read its shell right after the call).
-
-### GR3 Scatter tests [CLAUDE]
-- **Tier**: opus. These tests are the boundary check for generated decoration (design V8), and choosing the clear radii and the unwalkable-only rule is judgment.
-- **Depends**: GR2, OV-4.
-- **Files**: `tests/scatter.test.ts` (new), `tests/look-data.test.ts` (extended).
-- **Change**: the G5.6 and G5.8 rows of design 8.1 against `buildScatter(seed: number, tier: GfxTierId): ScatterResult` where `ScatterResult = Record<KitPieceId, { x: number, z: number, rot: number, scale: number }[]>`, and against `KIT_PIECES` (each with `layer: 'understorey' | 'canopy'`, `maxHeight`) and `FLORA_RULES` (one row per region id plus rows keyed by POI id). Tests assert row counts first, then: determinism; no instance inside any path's half-width, any POI's `padRadius`, 2.5 units of any node placement, station, shrine or camp member home, the corridor of Cinderstep Pass, or a safe zone's inner 6 units; every `canopy` instance is at a point where `isWalkable(x, z)` is false and not in water (the walk grid stops at 118, so `isWalkable` is the source); every `understorey` piece has `maxHeight` at most 1.2; reeds within 3 units of a water cell; ferns only where `regionAt` is `woods`; each region and each POI has at least one cluster; each of 16 sectors of the 118 to 130 border ring has canopy instances; total instances per tier equal `GFX_TIERS.scatterDensity` times the full count within 5%.
-- **Accept**: red until GR4.
-- **Must not change**: `src/`.
-
-### GR4 Flora rules and scatter [AGY]
-- **Tier**: sonnet.
-- **Depends**: GR3.
-- **Files**: `src/data/look.ts` (`KIT_PIECES`, `FLORA_RULES`), `src/state/scatter.ts` (new).
-- **Change**: design 5.6 and 6.7. `KIT_PIECES`: `boulder_s`, `boulder_m`, `boulder_l`, `bush_a`, `bush_b`, `fern`, `reed`, `log`, `snag`, `sapling`, `mushrooms`, `backdrop_tree_a`, `backdrop_tree_b`, `crag_a`, `crag_b`, each with layer, `maxHeight`, tint family and whether it casts a shadow. `FLORA_RULES`: per region, the pieces and their cluster density; per POI id, the frame, focus and floor of design 5.6. `buildScatter` draws cluster centres from the seeded generator, 3 to 9 members per cluster with size falling from the centre, rejects every position the GR3 tests forbid, and thins by the tier's density.
-- **Accept**: `ONE(tests/scatter.test.ts)` passes; the layering test passes; SG.
-- **Must not change**: `worldMap.ts`, `collision.ts`, `pathfind.ts`.
-
-### GR5 The kit and the instanced scatter [AGY]
-- **Tier**: sonnet.
-- **Depends**: GR4.
-- **Files**: `src/engine/floraKit.ts`, `src/engine/flora.ts` (new), `src/engine/renderer.ts`.
-- **Change**: `floraKit.ts` gains a builder per `KIT_PIECES` id: jittered icosahedra and dodecahedra for boulders, bushes and crowns; stacked jittered cones for `backdrop_tree_b`; hexagonal cylinders for logs and trunks; thin triangles for reeds and ferns; each with vertex colours from its tint family and within its triangle limit (boulder 20, bush 40, backdrop tree 80, crag 60). `flora.ts` `buildFlora(tier)` calls `buildScatter` with a fixed seed and makes one `InstancedMesh` per piece with a `cut` facet material (`vertexColors`, `footHeight` 0.6), the instance's Y from `getTerrainHeight`, `castShadow` from the piece. Nothing is added to `G.worldInteractiveObjects`. `init3DEngine` calls it after the world is built.
-- **Accept**: SG; `grep -n "worldInteractiveObjects" src/engine/flora.ts` prints nothing; `grep -n "Math.random" src/engine/flora.ts src/engine/floraKit.ts` prints nothing.
-- **Must not change**: resource nodes, stations, landmarks.
-
-### GR6 The ground field and the carpet [CLAUDE]
-- **Tier**: opus (a vertex shader that wraps instances around the hero and reads a data texture; a prompt cannot fully specify it).
-- **Depends**: GR5.
-- **Files**: `src/engine/flora.ts`, `src/engine/floraKit.ts`, `src/engine/worldMesh.ts`, `src/engine/materials.ts` (`grassMaterial` removed or wrapped), `src/engine/loop.ts`, `src/engine/context.ts`.
-- **Change**: design 6.7. `buildGroundField()` fills a 257 by 257 `HalfFloatType` RGBA `DataTexture` with linear filtering: height, carpet density (0 inside a path's half-width, a POI pad, water, slope above the Stage 2 crag threshold, the paved plaza; 1.5 on the 2-unit path verge), variant, region blend. `buildCarpet(tier)` makes one `InstancedMesh` per variant (`tuft`, `flower`, `tussock`, `ember_grass`, about 8 triangles each) with `GFX_TIERS.carpetTufts` instances in total and a `ShaderMaterial` whose vertex shader computes the tuft's cell from `gl_InstanceID` and `uHeroXZ` on a wrapping jittered grid, samples the field, scales to 0 where density is 0 and within the last 15% of the carpet's radius, bends by `uWind` and the gust noise of `AIR_GLSL`, shades by `uKeyColor` and `uFill` with a root-to-tip tint, and ends with `applyAir` and `COLOR_FOOTER`. The 900-blade block leaves `buildTerrainAndWater`; `loop.ts` stops writing the old grass uniform and sets `uHeroXZ`.
-- **Accept**: SG. A new `tests/ground-field.test.ts` (written in this task, since the field's rules come from the scatter rules already tested): density is 0 at the centre of every path sample, every POI centre and the river centre, and positive at three named meadow points.
-- **Must not change**: the terrain mesh; `getTerrainHeight`.
-
-### GR7 Place-making pass [CLAUDE]
-- **Tier**: opus (a look tuned against pictures).
-- **Depends**: GR6.
-- **Files**: `src/data/look.ts` (`FLORA_RULES`, `KIT_PIECES` tints and densities only).
-- **Change**: CAP over P1, P3, P6, P7, P8, P9 and P10. For each POI and region, tune the rules until the frame, focus and floor of design 5.6 are visible in its pose and the regions differ at a glance. Then record calls and triangles at P1, P3, P5 and P8 on every tier.
-- **Accept**: `ONE(tests/scatter.test.ts)` stays green; SG; at P1 on balanced, colour-pass calls are at most 60% of the V2 capture and at most 1000, calls with the shadow pass at most 60% of V2's, triangles at most 550k. If a limit is missed, thin `scatterDensity` or `carpetTufts` in `GFX_TIERS` (and the tier test with it, in a declared tune commit), never the limits.
-- **Must not change**: any rule the scatter test holds.
-
-### CP-GR Ground checkpoint [OWNER]
-The owner compares `before/` and `ground/` at P1, P3, P6, P7, P8 and P10, and looks closely at props for finding 23's texture change. Should see: a meadow with a verge along the road; reeds only at water; a dense woods floor inside a tall frame; crags along the ridge; no straight map edge at any yaw; nothing in front of a node, a station or the pass. The owner also reads the frame time on their GPU at P1 and P8. Here the owner answers CALL-V8 again if the crags or backdrop trees do not convince.
-
----
-
 ## 6. Slice 5, lane WX: weather, motes, local light
 
 What the owner gets: air that moves. Leaves, pollen, fireflies, embers, ash; rain, mist and haze; lanterns and lava that light the ground at night. Cost (estimate): about +0.3 to 0.6 ms, +2 draw calls, about +8 kB of JS; point lights only on high and ultra.
 
 ### WX1 Weather tests [CLAUDE]
 - **Tier**: sonnet.
-- **Depends**: GR7, OV-5.
-- **Files**: `tests/weather.test.ts` (new), `tests/gfx-tiers.test.ts` (extended).
-- **Change**: against `WEATHER` (rows `id`, `regions: string[]`, `keyScale`, `fogScale`, `motes`, `fall`) and `weatherAt(dayIndex: number, phase: number, regionWeights: Record<string, number>): { id: string, blend: number }`: the same inputs give the same output; a state appears only in a region its row lists; `rain` never in `desert` or `wilderness`, `sand_haze` only in `desert`, `ash_fall` only in `wilderness`; no state changes more often than every 0.08 of phase; mote, fall and point-light counts are in `GFX_TIERS` and are 0 on `performance`.
+- **Depends**: WT3, OV-5.
+- **Files**: `tests/weather.test.ts` (new), `tests/gfx-tiers.test.ts`, `tests/look-data.test.ts` (extended).
+- **Change**: against `WEATHER` (rows `id`, `regions: string[]`, `keyScale`, `fogScale`, `motes`, `fall`) and `weatherAt(dayIndex: number, phase: number, regionWeights: Record<string, number>): { id: string, blend: number }`: the same inputs give the same output; a state appears only in a region its row lists; `rain` never in `desert` or `wilderness`, `sand_haze` only in `desert`, `ash_fall` only in `wilderness`; no state changes more often than every 0.08 of phase; mote, fall and point-light counts are in `GFX_TIERS` and are 0 on `performance`. In `look-data.test.ts`: every `EMITTERS` colour, and every glowing mote colour, is at least 1.2 times `BLOOM.threshold` in luminance.
 - **Accept**: red until WX2.
 - **Must not change**: `src/`.
 
@@ -386,7 +415,7 @@ What the owner gets: air that moves. Leaves, pollen, fireflies, embers, ash; rai
 - **Tier**: sonnet.
 - **Depends**: WX2.
 - **Files**: `src/engine/particles.ts` (new), `src/engine/lighting.ts`, `src/engine/loop.ts`, `src/engine/renderer.ts`, `src/engine/photo.ts`.
-- **Change**: design 6.8. Two `InstancedMesh`es of small flat shapes (diamond, leaf, sliver, flake as four tiny geometries selected by an instance attribute), each with a `ShaderMaterial` that places the instance in a box around the camera from a per-instance seed and `uTime`, moves it by `uWind` and a fall speed, fades at the box faces, colours it from the weather row and, for fireflies and embers, writes above 1.0 so it blooms. Counts from `GFX_TIERS`. `updateLighting` multiplies the key and the fog by the weather row's scales through `weatherAt`. When `matchMedia('(prefers-reduced-motion: reduce)')` matches, fall counts are halved, wind amplitude is a third and the camera shake in `updateCamera` is skipped. `photo.ts` gains `weather(id)`.
+- **Change**: design 6.8. Two `InstancedMesh`es of small flat shapes (diamond, leaf, sliver, flake as four tiny geometries selected by an instance attribute), each with a `ShaderMaterial` that places the instance in a box around the camera from a per-instance seed and `uTime`, moves it by `uWind` and a fall speed, fades at the box faces, colours it from the weather row and, for fireflies and embers, writes above `BLOOM.threshold` so it blooms. Both meshes have `frustumCulled = false` (instances are placed in the shader). Counts from `GFX_TIERS`. `updateLighting` multiplies the key and the fog by the weather row's scales through `weatherAt`. When `matchMedia('(prefers-reduced-motion: reduce)')` matches, fall counts are halved, wind amplitude is a third and the camera shake in `updateCamera` is skipped. `photo.ts` gains `weather(id)`.
 - **Accept**: SG; `grep -n "Math.random" src/engine/particles.ts` prints nothing.
 - **Must not change**: `vfx.ts`.
 
@@ -481,15 +510,15 @@ What the owner gets: spells, slashes and fireworks made of shards and planes tha
 - **Tier**: sonnet.
 - **Depends**: WX4.
 - **Files**: `tests/vfx-shape.test.ts`, `tests/fixtures/vfx-timings.json` (new).
-- **Change**: the fixture is generated before FX2 from `vfx.ts` as it stands after Stage 4: every numeric literal passed as a lifetime to `spawnVfx` and every duration passed to `launchProjectile`, by function name and order. Tests: `no SphereGeometry in vfx.ts`; `no ring or cylinder with more than 10 radial segments`; `lifetimes and durations equal the fixture`; `every exported function of vfx.ts at FX1 is still exported`.
-- **Accept**: the first two cases red until FX2.
+- **Change**: the fixture is generated before FX2 from `vfx.ts` as it stands after Stage 4: every numeric literal passed as a lifetime to `spawnVfx` and every duration passed to `launchProjectile`, by function name and order. Tests: `no SphereGeometry in vfx.ts`; `no ring or cylinder with more than 10 radial segments`; `vfx.ts imports BLOOM from look.ts`; `lifetimes and durations equal the fixture`; `every exported function of vfx.ts at FX1 is still exported`.
+- **Accept**: the first three cases red until FX2.
 - **Must not change**: `src/`.
 
 ### FX2 Cut the effects [AGY]
 - **Tier**: sonnet.
 - **Depends**: FX1.
 - **Files**: `src/engine/vfx.ts`.
-- **Change**: by this table, and nothing else: `SphereGeometry(r, ...)` becomes `IcosahedronGeometry(r, 0)` (`OctahedronGeometry(r, 0)` for radii under 0.08); `RingGeometry` theta segments become 8; `CylinderGeometry` and `ConeGeometry` radial segments become 6; `TubeGeometry` radial segments 5 and tubular segments 10; `TorusGeometry` 5 by 8. Core colours of spell, loot and heal effects are multiplied to 1.6 so they pass the bloom threshold. Positions, scales, counts, lifetimes, ticks and `disposeObject3D` calls are untouched.
+- **Change**: by this table, and nothing else: `SphereGeometry(r, ...)` becomes `IcosahedronGeometry(r, 0)` (`OctahedronGeometry(r, 0)` for radii under 0.08); `RingGeometry` theta segments become 8; `CylinderGeometry` and `ConeGeometry` radial segments become 6; `TubeGeometry` radial segments 5 and tubular segments 10; `TorusGeometry` 5 by 8. Core colours of spell, loot and heal effects are multiplied so their luminance is 1.2 times `BLOOM.threshold` (read from `look.ts`, not a literal). Positions, scales, counts, lifetimes, ticks and `disposeObject3D` calls are untouched.
 - **Accept**: `ONE(tests/vfx-shape.test.ts)` passes; SG.
 - **Must not change**: any timing; any function signature.
 
@@ -519,7 +548,7 @@ The owner fights with melee, ranged and magic, gains a level and gets a rare dro
 
 ### G-6 Stage 5 human checks [HUMAN]
 - CAP over every pose and time of design 8.2 on all four tiers into `stage5/final/`; the pictures match what each row says the owner should see.
-- On the owner's GPU, at P1, P3, P5 and P8 on every tier: calls, triangles and frame time against design section 10.
+- On the owner's GPU, at P1, P3, P5 and P8 on every tier: calls, triangles and `look.bench` frame time against design section 10 as frozen at OV-2.
 - The Stage 1 leak check again: GPU geometries return to the first value after 200 attacks, 5 level-ups and 20 gear swaps.
 - The smoke list of the foundation design 5.7, once, on the balanced tier.
 - A full day watched once at P1 with the clock sped up through `__DEBUG.look.phase`: no jump in light or sky at any phase.
@@ -544,26 +573,26 @@ The owner accepts after G-5 and G-6. The main session pushes the branch, opens t
 | 31 | UI2, UI5 |
 | 32 | UI2, UI4 (motion), UI5 (dialogs), WX3 (engine motion) |
 | 5, script policy | UI8, or the written deferral to Stage 7 if OV-8 says no |
-| 13, reopened | LT5 (`applyShadowTier` disposes the map), AR1 and LT1 (tier table tests) |
+| 13, reopened | LT5a (`applyShadowTier` disposes the map), AR1 and LT1 (tier table tests) |
 | 27 | not touched; stays with Stage 7 (design section 11) |
 
 ### 10.2 Goals to proofs
 
 | Goal | Proof task(s) |
 |---|---|
-| G5.1 | LT3, LT4; CP-LT |
-| G5.2 | LT1 (`shadow-fit`), LT5; CP-LT with P12 |
+| G5.1 | LT3, LT4, LT5b; CP-LT |
+| G5.2 | LT1 (`shadow-fit`, stepped sun), LT5a, GR6 (carpet receives shadows); CP-LT with P12 |
 | G5.3 | LT1 (`day-cycle`), LT2; G-6 full day |
-| G5.4 | AR1 (`air`, `look-data`), AR2; CP-AR |
+| G5.4 | AR1 (`air`, `look-data`, bloom threshold), AR2; CP-AR |
 | G5.5 | WT1, WT2; CP-WT |
 | G5.6 | GR3, GR4, GR6 (`ground-field`); CP-GR |
 | G5.7 | WX1, WX2, FX1; CP-WX, CP-FX |
-| G5.8 | GR3 (border sectors), LT1 (`look-data` horizon); CP-AR with P10 |
+| G5.8 | GR3 (border sectors), LT1 (`look-data` far plane and apron), AR3; CP-AR with P10 |
 | G5.9 | AR1 (`gfx-tiers` pixel budget), UI2 (sizes, minimap); CP-UI |
 | G5.10 | UI2 (`ui-tokens`, `ui-fonts`); CP-UI |
 | G5.11 | UI2 (`ui-a11y`, `scroll-snapshot`), UI5, UI6; CP-UI |
-| G5.12 | LT1, AR1, WX1 (`gfx-tiers`), GR7 (limits), G-5 step 3, G-6 |
-| G5.13 | AR1 (`plain-mode`), AR4; CP-AR with `?plain` |
+| G5.12 | V1b (`bench`), V2 and OV-2 (measured budgets), LT1, AR1, WX1 (`gfx-tiers`), GR7 (limits), G-5 step 3, G-6 |
+| G5.13 | AR1 (`plain-mode`), AR4b; CP-AR with `?plain` |
 | G5.14 | GR1, UI2, G-5 step 7 |
 
 ### 10.3 Slices in order, with their cost
@@ -572,10 +601,10 @@ The owner accepts after G-5 and G-6. The main session pushes the branch, opens t
 |---|---|---|---|---|---|
 | 1 | Light, shadow, sky | CP-LT | about +0.3 ms | +1 | JS about +14 kB |
 | 2 | Air, horizon, clouds, output | CP-AR | about +0.3 ms; upper tiers +1.5 to 2.5 ms | +3 to +5 | JS about +19 kB |
-| 3 | Water | CP-WT | about -0.2 to +0.3 ms | 0 | JS about +4 kB |
-| 4 | Ground, vegetation, places | CP-GR | about 0 net (merging pays for the carpet) | about -40 to -55%, then +18 | JS about +21 kB |
+| 3 | Ground, vegetation, places | CP-GR | about 0 net (merging pays for the carpet) | about -40 to -55%, then +18 | JS about +21 kB |
+| 4 | Water | CP-WT | about -0.2 to +0.3 ms | 0 | JS about +4 kB |
 | 5 | Weather, motes, local light | CP-WX | about +0.3 to 0.6 ms | +2 | JS about +8 kB |
 | 6 | Interface (parallel) | CP-UI | negative (blurs removed) | 0 | fonts up to 120 kB, CSS up to +16 kB, JS about +8 kB |
 | 7 | Effects in the idiom | CP-FX | about 0 | 0 | about 0 |
 
-Every frame cost above is an estimate made without a GPU measurement; V2, GR7 and G-6 replace them with numbers.
+Every frame cost above is an estimate made without a GPU measurement; V2 (benched, OV-2), GR7 and G-6 replace them with numbers.
