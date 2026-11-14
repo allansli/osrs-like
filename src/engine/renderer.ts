@@ -10,7 +10,7 @@ import { setupInputHandlers } from './input';
 
 export type QualityTier = 'performance' | 'balanced' | 'high' | 'ultra';
 export let currentQuality: QualityTier = 'balanced';
-export let outlinesEnabled = true;
+export let outlinesEnabled = false;
 
 export function getQualityDpr(tier: QualityTier): number {
   const dpr = typeof window !== 'undefined' ? (window.devicePixelRatio || 1) : 1;
