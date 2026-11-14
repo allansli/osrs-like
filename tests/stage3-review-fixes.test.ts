@@ -179,3 +179,12 @@ describe('review 8: an old save never sees the starter chain', () => {
     }
   });
 });
+
+describe('review 9: no hit, drop or gather formula is left inline in actions.ts', () => {
+  const source = readFileSync(new URL('../src/engine/actions.ts', import.meta.url), 'utf8');
+
+  it('the engine calls the shared functions and holds none of their arithmetic', () => {
+    expect(source).not.toMatch(/d\.chance|0\.50 \+|accuracyScore \/|monAtkScore/);
+    for (const call of ['playerHitChance(', 'rollDrops(', 'gatherChance(', 'fishDepletes(']) expect(source).toContain(call);
+  });
+});
