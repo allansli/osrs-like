@@ -9,14 +9,16 @@ import {
   canAddItem,
   sellItem,
   buyItem,
+  buyPrice,
   sellInventoryMatch,
   isGatheredGood,
   isUnequippedGear
 } from '../state/inventory';
 import { tryCraft, isLogId } from '../data/recipes';
-import { noteBury, notePlate, notePrayerOffered, notePurchase, noteSale } from '../state/quests';
+import { noteBury, notePlate, notePrayerOffered } from '../state/quests';
 import { equippedWeapon, allowedStyles, canCastTeleport } from '../state/combat';
 import { weaponSpecial, claimQuest, assignSlayerTask } from '../state/adventure';
+import { levelUnlockLines } from '../state/unlocks';
 import { PRAYERS, SPELLS } from '../data/magic';
 import { getSkillSvg } from './icons';
 import {
@@ -72,10 +74,24 @@ export function grantXp(skillKey: string, baseAmount: number): void {
     }
     const meta = metaMap[skillKey]!;
     addChatMessage(`Level Up! Your <b>${meta.name}</b> level is now <b>${s.lvl}</b>!`, 'lvlup');
+    printUnlocks(skillKey, oldLvl, s.lvl);
     showLevelUpBanner(meta.name, s.lvl);
     spawnLevelUpFireworks();
   }
   requestUiRefresh();
+}
+
+function printUnlocks(skillKey: string, fromLevel: number, toLevel: number): void {
+  for (const line of levelUnlockLines(skillKey, metaMap[skillKey]!.name, fromLevel, toLevel)) addChatMessage(line, 'skill');
+}
+
+export function skillLevels(): Record<string, number> {
+  return Object.fromEntries(Object.entries(STATE.skills).map(([key, skill]) => [key, skill.lvl]));
+}
+
+/** Unlock lines for levels raised outside grantXp (quest and Slayer experience). */
+export function announceUnlocksSince(before: Record<string, number>): void {
+  for (const [key, level] of Object.entries(before)) printUnlocks(key, level, STATE.skills[key]!.lvl);
 }
 
 export function addItemToInventory(itemId: string, count: number = 1): boolean {
@@ -96,7 +112,6 @@ export function sellInventoryItem(index: number, qtyMode?: QtyMode): void {
     return;
   }
   SFX.coin();
-  noteSale(STATE);
   const name = item ? item.name : slot.id;
   addChatMessage('Sold <b>' + result.moved + ' × ' + name + '</b> for <b style="color:#ffe642">' + result.gp!.toLocaleString() + ' GP</b> (65%).', 'loot');
   updateAllUI();
@@ -202,7 +217,8 @@ export function handleInventoryClick(index: number): void {
     updateAllUI();
     return;
   }
-  addChatMessage('<b>' + item.name + '</b> — Value: ' + item.price + ' GP. Use it at the Bank, Anvil, or General Store.');
+  const price = buyPrice(item);
+  addChatMessage(`<b>${item.name}</b> — ${price === null ? '' : `Shop ${price.toLocaleString('en-US')} GP · `}sells for ${unitSellPrice(item).toLocaleString('en-US')} GP. Use it at the Bank, Anvil, or General Store.`);
 }
 
 export function unequipSlot(slotName: string): void {
@@ -349,7 +365,6 @@ export function buyShopItem(itemId: string): void {
   if (!result.ok) addChatMessage(result.reason || 'Cannot buy that.', 'combat');
   else {
     SFX.coin();
-    notePurchase(STATE);
     addChatMessage('Purchased <b>' + result.moved + ' × ' + ITEMS[itemId].name + '</b> for ' + (result.gp || 0).toLocaleString() + ' GP.', 'loot');
   }
   updateAllUI();
@@ -369,7 +384,6 @@ export function buyShopPair(topId: string, bottomId: string): void {
     updateAllUI();
     return;
   }
-  notePurchase(STATE);
   SFX.coin();
   addChatMessage('Purchased matched pair <b>' + ITEMS[topId].name + '</b> + <b>' + ITEMS[bottomId].name + '</b>.', 'loot');
   updateAllUI();
@@ -459,6 +473,7 @@ export function locateQuestRegion(regionId: string): void {
 }
 
 export function claimQuestReward(questId: string): void {
+  const before = skillLevels();
   const result = claimQuest(STATE, questId);
   if (!result.ok) {
     addChatMessage(result.reason || 'You cannot claim that yet.', 'combat');
@@ -467,6 +482,7 @@ export function claimQuestReward(questId: string): void {
   SFX.coin();
   SFX.levelUp();
   addChatMessage(result.chat || 'Quest complete.', 'lvlup');
+  announceUnlocksSince(before);
   showBanner('Quest Reward', result.banner || 'Reward claimed');
   spawnLevelUpFireworks(0xfde047);
   updateAllUI();

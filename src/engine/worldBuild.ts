@@ -4,7 +4,7 @@ import { loadGltfOnce } from './gltf';
 import { G } from './context';
 import { disposeObject3D } from './dispose';
 import { WORLD_REGIONS, type RegionDef } from '../data/world';
-import { PATHS, POIS } from '../data/worldMap';
+import { PATHS, POIS, RIDGES } from '../data/worldMap';
 import { ITEMS, type ItemDef } from '../data/items';
 import { riverCenterX } from '../state/collision';
 import { shrineWorldPos } from '../state/shrines';
@@ -760,8 +760,17 @@ export function buildSignpost(x: number, z: number, rotY = 0, scale = 1.0): THRE
   return grp;
 }
 
+const PLACE_LABEL_RANGE = 24;
+
 export function buildPointsOfInterest(): void {
   for (const poi of POIS) {
+    G.npcList.push({
+      pos: new THREE.Vector3(poi.x, getTerrainHeight(poi.x, poi.z), poi.z),
+      name: poi.name,
+      color: '#fde047',
+      yOffset: 3,
+      showWithin: PLACE_LABEL_RANGE
+    });
     for (const piece of poi.pieces) {
       const px = poi.x + piece.dx;
       const pz = poi.z + piece.dz;
@@ -797,6 +806,21 @@ export function buildPointsOfInterest(): void {
     }
   }
 
+  for (const ridge of RIDGES) {
+    // The middle of the last crest segment lies inside the map and clear of the gap.
+    const [ax, az] = ridge.points[ridge.points.length - 2];
+    const [bx, bz] = ridge.points[ridge.points.length - 1];
+    const x = (ax + bx) / 2;
+    const z = (az + bz) / 2;
+    G.npcList.push({
+      pos: new THREE.Vector3(x, getTerrainHeight(x, z), z),
+      name: ridge.name,
+      color: '#fde047',
+      yOffset: 3,
+      showWithin: PLACE_LABEL_RANGE
+    });
+  }
+
   for (const path of PATHS) {
     const p0 = path.points[0];
     const p1 = path.points[1];
@@ -830,7 +854,8 @@ export function buildPointsOfInterest(): void {
       pos: grp.position,
       name: `${path.name} (${nearestRegion.name})`,
       color: '#fde047',
-      yOffset: 2.2
+      yOffset: 2.2,
+      showWithin: PLACE_LABEL_RANGE
     });
   }
 }

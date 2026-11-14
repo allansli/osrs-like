@@ -13,7 +13,7 @@ import { PATHS, RIDGES } from '../data/worldMap';
 import { PRAYERS } from '../data/magic';
 import { STATE } from '../state/gameState';
 import { getTerrainHeight } from '../state/terrain';
-import { riverCenterX } from '../state/collision';
+import { riverCenterX, ridgeSpans } from '../state/collision';
 import { monsterThreatColor } from '../state/adventure';
 import { inCombat, isDown } from '../state/monsterAi';
 import { getPrayerSvg } from '../ui/icons';
@@ -79,14 +79,16 @@ export function renderMinimap(): void {
   ctx.strokeStyle = '#1c1917';
   ctx.lineWidth = 8;
   RIDGES.forEach((ridge) => {
-    ctx.beginPath();
-    ridge.points.forEach(([wx, wz], i) => {
-      const px = (wx - player.pos.x) * scale;
-      const pz = (wz - player.pos.z) * scale;
-      if (i === 0) ctx.moveTo(px, pz);
-      else ctx.lineTo(px, pz);
-    });
-    ctx.stroke();
+    for (const span of ridgeSpans(ridge)) {
+      ctx.beginPath();
+      span.forEach(([wx, wz], i) => {
+        const px = (wx - player.pos.x) * scale;
+        const pz = (wz - player.pos.z) * scale;
+        if (i === 0) ctx.moveTo(px, pz);
+        else ctx.lineTo(px, pz);
+      });
+      ctx.stroke();
+    }
   });
 
   // Resource Nodes (Muted Slate / Iron)
@@ -100,6 +102,7 @@ export function renderMinimap(): void {
 
   // NPCs, Altars & Forges (Nordic Muted Brass)
   G.npcList.forEach((n: NpcLabel) => {
+    if (n.showWithin !== undefined) return; // place labels are not NPCs
     const px = (n.pos.x - player.pos.x) * scale;
     const pz = (n.pos.z - player.pos.z) * scale;
     ctx.beginPath();
@@ -277,11 +280,11 @@ export function updateFloatingWorldLabels(): void {
     }
     const hovered = G.hoveredWorld && G.hoveredWorld.type === 'interactive' && G.hoveredWorld.name === n.name;
     const aimed = player.targetEntity && player.targetEntity.type === 'interactive' && player.targetEntity.ref && player.targetEntity.ref.name === n.name;
-    if (!hovered && !aimed) {
+    const dist = player.pos.distanceTo(n.pos);
+    if (!hovered && !aimed && !(n.showWithin !== undefined && dist <= n.showWithin)) {
       n.el.style.display = 'none';
       return;
     }
-    const dist = player.pos.distanceTo(n.pos);
     if (dist > 32) {
       n.el.style.display = 'none';
       return;

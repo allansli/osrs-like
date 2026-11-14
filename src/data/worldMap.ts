@@ -180,7 +180,7 @@ export const CAMPS: CampDef[] = [
   ]),
   makeCamp('three_kettle', [
     { type: 'goblin', x: 12, z: 4 },
-    { type: 'goblin', x: 15, z: 11 },
+    { type: 'goblin', x: 16, z: 13.5 },
     { type: 'goblin', x: 18, z: 17 },
     { type: 'goblin', x: 10, z: 19 },
     { type: 'goblin', x: 20, z: 8 },

@@ -10,7 +10,7 @@
 [![Play on Vercel](https://img.shields.io/badge/Play_Live-gielinor--hero.vercel.app-000000?style=for-the-badge&logo=vercel)](https://gielinor-hero.vercel.app/)
 [![Live Demo](https://img.shields.io/badge/Live_Demo-Vercel-2ea44f?style=for-the-badge&logo=vercel)](https://gielinor-hero.vercel.app/)
 [![Three.js](https://img.shields.io/badge/3D_Engine-Three.js_+_GLSL-000000?style=for-the-badge&logo=threedotjs)](https://threejs.org/)
-[![Items](https://img.shields.io/badge/Custom_SVG_Items-260_Items_(36_Armor_Sets)-f59e0b?style=for-the-badge)](#item--equipment-progression-260-items--36-matched-sets)
+[![Items](https://img.shields.io/badge/Custom_SVG_Items-261_Items_(36_Armor_Sets)-f59e0b?style=for-the-badge)](#item--equipment-progression-261-items--36-matched-sets)
 [![License: MIT](https://img.shields.io/badge/License-MIT-38bdf8?style=for-the-badge)](./LICENSE)
 
 [**Play Live in Browser**](https://gielinor-hero.vercel.app/) • [**Features**](#key-features) • [**World Regions**](#world-regions--monsters) • [**Controls**](#controls--quick-start) • [**Architecture**](#engine-architecture)
@@ -40,14 +40,16 @@
 - **12 Trainable Skills (Levels 1–99)**:
   - **Combat**: *Attack*, *Strength*, *Defence*, *Hitpoints*, *Ranged*, *Magic*, *Prayer*
   - **Gathering & Artisan**: *Woodcutting*, *Mining*, *Smithing*, *Fishing*, *Cooking*
-- **Official OSRS Experience Curve**: Exact OSRS XP formula from Level 1 (`0 XP`) to Level 99 (`13,034,431 XP`), with an interactive **XP Table Modal** and a toggleable **10x League XP / 1x Classic OSRS** rate switch.
+- **Official OSRS Experience Curve**: Exact OSRS XP formula from Level 1 (`0 XP`) to Level 99 (`13,034,431 XP`) at the classic 1x rate, with an interactive **XP Table Modal**.
+- **A Start Worth Earning**: The hero begins with nothing in hand. Six start-town quests (*A Name in the Ledger*, *First Quarrel*, *Stone, Timber, Tide*, *Fire and Hammer*, *Left in Keeping*, *Fair Coin*) pay out the first kit. Shop equipment costs ten times its list price, while selling stays at 65% of list; gear and gold you already own are kept.
+- **Earned Gear**: Monsters drop rare gear. Fishing spots empty on each catch and refill after a while. Ore is smelted into bars before it is forged. Bows take several logs each, and the **Hazel Staff** is the entry-level magic weapon.
 - **Combat Triangle & Special Attacks**:
   - Switch between *Accurate (Slash)*, *Aggressive (Lunge)*, *Defensive (Parry)*, *Rapid Ranged*, and *Autocast Magic* (*Wind Strike*, *Fire Bolt*, *Ancient Ice Burst*, *Blood Barrage*).
   - **Hylian Spin-Slash Special Attack** (25% Special Energy) with 360° shockwave cleave.
   - **8 Prayers** including overhead protections (*Protect from Melee*, *Protect from Magic*, *Protect from Ranged*, *Hylian Piety*) rendered above your character's head.
 - **Rotating Radar Minimap**: Live 2D canvas minimap rotating with camera yaw, displaying rivers, stone roads, trees (green), ore veins (cyan), NPCs/Altars/Forges (gold), and monsters (red).
 
-### 3. Item & Equipment Progression (260 Items & 36 Matched Sets)
+### 3. Item & Equipment Progression (261 Items & 36 Matched Sets)
 - **Zero Emojis — 100% Bespoke Vector SVG Artwork**: Every item, skill, prayer, spell, and HUD element uses a custom multi-layered SVG vector renderer dynamically shaded with each item's metallic and trim colors.
 - **Full 10-Slot Equipment Paperdoll**: `Head`, `Cape`, `Neck`, `Weapon`, `Body` (Top), `Shield`, `Legs` (Bottom), `Hands`, `Feet`, and `Ring`—all reflected visually on your 3D character in real time.
 - **36 Matched Top (`body`) & Bottom (`legs`) Armor Sets (+10% Set Bonus)**:
@@ -70,10 +72,10 @@
 
 | Region | Biome | Notable Landmarks & Resources | Monsters |
 | :--- | :--- | :--- | :--- |
-| **Lumbridge Haven** | Emerald River Valley | Lumbridge Castle, Sacred Altar, Blacksmith Forge & Range, Grand Emporium, River Lum Bridge, Normal/Oak/Willow Trees, Shrimp/Trout Fishing, Three Kettle Camp | Plump Chicken (Lv 1) x4, Goblin Raider (Lv 2) x5, Goblin Archer (Lv 5) x2 (both camps passive) |
-| **Varrock Grand Plaza** | Royal Trade Capital | Cathedral Prayer Altar, Royal Blacksmith, Trade Master, Copper & Iron Quarry; Millrace Road ends at its shrine | Dark Wizard (Lv 18) x3, Dark Ranger (Lv 24) x2, Hill Giant (Lv 28) x4 (all aggressive) |
+| **Lumbridge Haven** | Emerald River Valley | Lumbridge Castle, Sacred Altar, Blacksmith Forge & Range, Grand Emporium, River Lum Bridge, Normal/Oak/Maple Trees, Copper Rocks, Shrimp/Trout Fishing, Lobster & Shark river spots (south, along the River Lum), Three Kettle Camp | Plump Chicken (Lv 1) x4, Goblin Raider (Lv 2) x5, Goblin Archer (Lv 5) x2 (both camps passive) |
+| **Varrock Grand Plaza** | Royal Trade Capital | Cathedral Prayer Altar, Royal Blacksmith, Trade Master, Willow Trees, Iron & Mithril Quarry; Millrace Road ends at its shrine | Dark Wizard (Lv 18) x3, Dark Ranger (Lv 24) x2, Hill Giant (Lv 28) x4 (all aggressive) |
 | **Al-Kharid Golden Dunes** | Sunscorched Oasis | Bazaar Merchant, Mithril & Gold Ore Quarry, Desert Shrine, Tamarisk Pool (fishing); Saltwind Track ends at its shrine | King Scorpion (Lv 12) x5 in two nests (aggressive) |
-| **Whispering Korok Woods** | Sacred Forest Sanctuary | Sacred Blossom Yew Trees and Magic Korok Trees (deep woods only), Lobster & Mystic Shark Pools, Reedglass Tarn (fishing), Lampwright's Hollow; Lanternway ends at its shrine | Moss Guardian (Lv 45) x4 in two deep-woods camps (aggressive) |
+| **Whispering Korok Woods** | Sacred Forest Sanctuary | Sacred Blossom Yew Trees and Magic Korok Trees (deep woods only), Reedglass Tarn (fishing), Lampwright's Hollow; Lanternway ends at its shrine | Moss Guardian (Lv 45) x4 in two deep-woods camps (aggressive) |
 | **Dragon's Peak Highlands** | Volcanic Obsidian Crag | Runite Ore Veins, Wilderness Shrine, Wardstone Cairn, Slagfall Terrace; Harrowback Ridge walls off the crag and Cinderstep Pass is its only gap; Cinder Stair ends at its shrine | Lesser Demon (Lv 68) x6 (four pass sentries, two at Slagfall Terrace), **Elvarg the Crag Dragon (Lv 95 Boss)** x1 (all aggressive) |
 
 The world spawns 36 monsters of 10 types; the number after each monster is how many spawn in that region. Every camp is aggressive except the hen yard and Three Kettle Camp: aggressive monsters notice a player within 9 units (melee) or 12 units (ranged and magic) when the monster's level is at least the player's combat level (its name is not shown in green), and never in the first 3 seconds after a load, a respawn or a teleport.
