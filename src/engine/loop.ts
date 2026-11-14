@@ -665,6 +665,7 @@ export function updateWorldTimers(f: FrameState): void {
         r.depleted = false;
         r.visualMesh.visible = true;
         r.depletedMesh.visible = false;
+        if (r.def.kind === 'fish' && Math.hypot(r.pos.x - player.pos.x, r.pos.z - player.pos.z) <= 14) SFX.spotReturn();
       }
     }
   });

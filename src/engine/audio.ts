@@ -22,6 +22,8 @@ export interface SoundEffects {
   prayer(): void;
   jump(): void;
   levelUp(): void;
+  spotEmpty(): void;
+  spotReturn(): void;
 }
 
 export const SFX: SoundEffects = (() => {
@@ -76,6 +78,8 @@ export const SFX: SoundEffects = (() => {
     chop: () => { tone(135, 'triangle', 0.09, 0.14, 70); },
     mine: () => { tone(980, 'square', 0.07, 0.09, 1420); setTimeout(() => tone(1320, 'sine', 0.08, 0.08), 30); },
     fish: () => { tone(360, 'sine', 0.15, 0.09, 540); },
+    spotEmpty: () => { tone(420, 'sine', 0.16, 0.08, 210); },
+    spotReturn: () => { tone(300, 'sine', 0.14, 0.07, 520); },
     eat: () => { tone(240, 'sine', 0.09, 0.12, 330); setTimeout(() => tone(310, 'sine', 0.1, 0.12, 410), 80); },
     coin: () => { tone(1200, 'sine', 0.09, 0.11, 1600); setTimeout(() => tone(1650, 'sine', 0.14, 0.11), 65); },
     prayer: () => { tone(528, 'sine', 0.25, 0.12, 792); },

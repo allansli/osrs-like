@@ -408,6 +408,7 @@ export function performResourceGather(node: ResourceNodeEntity): void {
     node.respawnTimer = def.respawn! / 1000;
     node.visualMesh.visible = false;
     node.depletedMesh.visible = true;
+    if (def.kind === 'fish') SFX.spotEmpty();
     player.targetEntity = null;
     updateTargetHud();
   }
