@@ -28,14 +28,27 @@ export function saveGameState(): void {
     const mm = String(t.getMinutes()).padStart(2, '0');
     const ss = String(t.getSeconds()).padStart(2, '0');
     saveBtn.textContent = 'Saved (' + hh + ':' + mm + ':' + ss + ')';
-  } catch (e) {}
+  } catch (e) {
+    try {
+      el('save-status-btn').textContent = 'Save failed';
+    } catch (e) {}
+  }
 }
 
 export function loadGameState(): boolean {
   try {
     const migrated = readSave(localStorage);
     if (!migrated) return false;
-    applyState(STATE, migrated.state);
+    if (migrated.corrupt) {
+      addChatMessage('Save file was corrupt; backed up to <b>gielinor_hero_save_v1_corrupt</b>.', 'combat');
+      return false;
+    }
+    try {
+      applyState(STATE, migrated.state);
+    } catch (e) {
+      console.error(e);
+      return false;
+    }
 
     // One-time automatic migration for existing saves:
     // If the saved character was wearing the starter outfit (hood, tunic, trousers, cape) that covers
