@@ -1,4 +1,3 @@
-// @ts-nocheck
 import * as THREE from 'three';
 import {
   TICK_SEC,
@@ -7,7 +6,13 @@ import {
   _camTargetVec,
   _lookTargetVec,
   telemetryInfo,
-  G
+  G,
+  MonsterEntity,
+  ResourceNodeEntity,
+  type PlayerTargetEntity,
+  ProjectileEntry,
+  VfxEntry,
+  SwayingFoliageEntry
 } from './context';
 import { SFX } from './audio';
 import {
@@ -37,7 +42,7 @@ import { moveWithCollision } from '../state/collision';
 import { isDown, stepMonster } from '../state/monsterAi';
 import { getTerrainHeight } from '../state/terrain';
 import { discoverShrines } from '../state/shrines';
-import { addChatMessage, updateAllUI } from '../ui/hud';
+import { addChatMessage, el, updateAllUI } from '../ui/hud';
 import {
   openShopModal,
   openBankModal,
@@ -46,7 +51,7 @@ import {
   openQuestsModal
 } from '../ui/playerActions';
 
-export function lerpAngle(a, b, t) {
+export function lerpAngle(a: number, b: number, t: number): number {
   let diff = b - a;
   while (diff < -Math.PI) diff += Math.PI * 2;
   while (diff > Math.PI) diff -= Math.PI * 2;
@@ -63,11 +68,11 @@ export interface FrameState {
   moveDirZ: number;
 }
 
-export function updateVitalsAndRegen(f: FrameState) {
+export function updateVitalsAndRegen(f: FrameState): void {
   if (player.downed) {
     player.downedTimer -= f.dt;
-    const count = document.getElementById('death-count');
-    if (count) count.textContent = String(Math.max(0, Math.ceil(player.downedTimer)));
+    const count = el('death-count');
+    count.textContent = String(Math.max(0, Math.ceil(player.downedTimer)));
     if (player.downedTimer <= 0) finishRespawn();
   } else if (getEquipmentBonuses(STATE).matchedSet) {
     G.setBonusTimer += f.dt;
@@ -106,9 +111,8 @@ export function updateVitalsAndRegen(f: FrameState) {
   }
 }
 
-export function updatePlayerIntent(f: FrameState) {
+export function updatePlayerIntent(f: FrameState): void {
   const turnSpeed = 2.6;
-  let manualMoving = false;
 
   if (G.keysPressed['KeyQ']) camState.manualOffset += turnSpeed * f.dt;
   if (G.keysPressed['KeyE']) camState.manualOffset -= turnSpeed * f.dt;
@@ -145,7 +149,7 @@ export function updatePlayerIntent(f: FrameState) {
     }
   } else if (player.targetEntity) {
     const tType = player.targetEntity.type;
-    let targetVec = null;
+    let targetVec: THREE.Vector3 | null = null;
     let stopDist = 2.8;
 
     if (tType === 'monster') {
@@ -165,7 +169,7 @@ export function updatePlayerIntent(f: FrameState) {
         stopDist = 3.1;
       }
     } else if (tType === 'interactive') {
-      targetVec = player.targetEntity.pos;
+      targetVec = player.targetEntity.pos ?? null;
       stopDist = 3.5;
     }
 
@@ -183,7 +187,7 @@ export function updatePlayerIntent(f: FrameState) {
         if (!camState.isDragging) camState.manualOffset *= Math.pow(0.25, f.dt);
       } else {
         if (tType === 'interactive') {
-          const act = player.targetEntity.ref.action;
+          const act = player.targetEntity!.ref.action;
           player.targetEntity = null;
           if (act === 'shop') openShopModal('all');
           else if (act === 'bank') openBankModal();
@@ -191,8 +195,8 @@ export function updatePlayerIntent(f: FrameState) {
           else if (act === 'worldmap') openWorldMapModal();
           else if (act === 'slayer') openQuestsModal();
           else if (act === 'dialogue') {
-            const dlg = player.targetEntity.ref.dialogue || 'Greetings, traveler.';
-            const name = player.targetEntity.ref.name || 'Guard';
+            const dlg = (player.targetEntity as PlayerTargetEntity | null)!.ref!.dialogue || 'Greetings, traveler.';
+            const name = (player.targetEntity as PlayerTargetEntity | null)!.ref!.name || 'Guard';
             addChatMessage(`${name}: "${dlg}"`, 'combat');
           }
           else if (act === 'altar') {
@@ -205,10 +209,10 @@ export function updatePlayerIntent(f: FrameState) {
           }
         } else if (player.actionCooldown <= 0) {
           if (tType === 'monster') {
-            performPlayerAttack(player.targetEntity.ref);
+            performPlayerAttack(player.targetEntity!.ref);
             player.actionCooldown = TICK_SEC;
           } else if (tType === 'resource') {
-            performResourceGather(player.targetEntity.ref);
+            performResourceGather(player.targetEntity!.ref);
             player.actionCooldown = TICK_SEC;
           }
         }
@@ -235,7 +239,7 @@ export function updatePlayerIntent(f: FrameState) {
   f.moveDirZ = moveDirZ;
 }
 
-export function updatePlayerMotion(f: FrameState) {
+export function updatePlayerMotion(f: FrameState): void {
   // Smooth Acceleration & Deceleration Momentum
   const targetSpeed = f.hasMoveIntent ? f.moveSpeed : 0;
   const accelRate = f.hasMoveIntent ? 16 : 12;
@@ -267,14 +271,14 @@ export function updatePlayerMotion(f: FrameState) {
   }
 
   player.isMoving = player.currentSpeed > 0.4;
-  player.meshGroup.position.copy(player.pos);
+  player.meshGroup!.position.copy(player.pos);
 
   // Smooth Yaw & Turning Angular Velocity
-  const lastMeshYaw = player.meshGroup.rotation.y;
+  const lastMeshYaw = player.meshGroup!.rotation.y;
   const targetMeshYaw = player.yaw + Math.PI;
-  player.meshGroup.rotation.y = lerpAngle(player.meshGroup.rotation.y, targetMeshYaw, Math.min(1, f.dt * 12));
+  player.meshGroup!.rotation.y = lerpAngle(player.meshGroup!.rotation.y, targetMeshYaw, Math.min(1, f.dt * 12));
 
-  let turnDelta = (player.meshGroup.rotation.y - lastMeshYaw) / Math.max(0.001, f.dt);
+  let turnDelta = (player.meshGroup!.rotation.y - lastMeshYaw) / Math.max(0.001, f.dt);
   if (turnDelta > Math.PI) turnDelta -= Math.PI * 2;
   if (turnDelta < -Math.PI) turnDelta += Math.PI * 2;
   player.yawVelocity = (player.yawVelocity ?? 0) * 0.8 + turnDelta * 0.2;
@@ -282,13 +286,13 @@ export function updatePlayerMotion(f: FrameState) {
   // Dynamic Bank Roll (lean subtly into turns while running)
   const targetBank = player.isMoving ? THREE.MathUtils.clamp(-player.yawVelocity * 0.07, -0.20, 0.20) : 0;
   player.bankRoll = (player.bankRoll ?? 0) + (targetBank - (player.bankRoll ?? 0)) * Math.min(1, f.dt * 10);
-  player.meshGroup.rotation.z = player.bankRoll;
+  player.meshGroup!.rotation.z = player.bankRoll;
 }
 
-export function updatePlayerAnimation(f: FrameState) {
+export function updatePlayerAnimation(f: FrameState): void {
   // Dynamic cape physics: realistic cloth aerodynamics in Three.js coordinates
   // Note: with Y-up & -Z forward, negative rotation.x swings cape BACKWARD (+Z away from body).
-  const updateCapePhysics = (isMoving, animTime) => {
+  const updateCapePhysics = (isMoving: boolean, animTime: number): void => {
     if (!player.parts.capeMesh) return;
     const isAva = player.parts.capeMesh.userData?.silhouette === 'ava';
     if (isAva) {
@@ -439,7 +443,7 @@ export function updatePlayerAnimation(f: FrameState) {
 
   if (player.spinAnim > 0) {
     player.spinAnim = Math.max(0, player.spinAnim - f.dt * 2.4);
-    player.meshGroup.rotation.y += (1 - player.spinAnim) * Math.PI * 4;
+    player.meshGroup!.rotation.y += (1 - player.spinAnim) * Math.PI * 4;
     player.parts.spinRing.material.opacity = player.spinAnim * 0.85;
     player.parts.spinRing.scale.setScalar(0.8 + (1 - player.spinAnim) * 0.9);
   } else if (player.parts.spinRing) {
@@ -450,13 +454,16 @@ export function updatePlayerAnimation(f: FrameState) {
     G.clickMarkerMesh.userData.life = Math.max(0, G.clickMarkerMesh.userData.life - f.dt * 1.4);
     const life = G.clickMarkerMesh.userData.life;
     G.clickMarkerMesh.scale.setScalar(1 + (1 - life) * 0.35);
-    G.clickMarkerMesh.traverse(obj => {
-      if (obj.material && obj.material.transparent) obj.material.opacity = life;
+    G.clickMarkerMesh.traverse((obj: THREE.Object3D) => {
+      const mesh = obj as THREE.Mesh;
+      if (mesh.material && (mesh.material as THREE.Material).transparent) {
+        (mesh.material as THREE.Material).opacity = life;
+      }
     });
   }
 }
 
-export function updateCamera(f: FrameState) {
+export function updateCamera(f: FrameState): void {
   // Smooth Behind-Character Chase Camera
   const desiredCamYaw = player.yaw + camState.manualOffset;
   camState.yaw = lerpAngle(camState.yaw, desiredCamYaw, Math.min(1, f.dt * 8.5));
@@ -486,9 +493,9 @@ export function updateCamera(f: FrameState) {
   G.sunLight.target.updateMatrixWorld();
 }
 
-export function updateMonsters(f: FrameState) {
+export function updateMonsters(f: FrameState): void {
   // Monsters Update: rules in stepMonster, mesh, pose and events here.
-  G.monstersList.forEach(m => {
+  G.monstersList.forEach((m: MonsterEntity) => {
     const L = m.logic;
     const prevState = L.state;
     const prevTimer = L.timer;
@@ -556,8 +563,8 @@ export function updateMonsters(f: FrameState) {
   });
 }
 
-export function updateWorldTimers(f: FrameState) {
-  G.resourceNodesList.forEach(r => {
+export function updateWorldTimers(f: FrameState): void {
+  G.resourceNodesList.forEach((r: ResourceNodeEntity) => {
     if (r.depleted) {
       r.respawnTimer -= f.dt;
       if (r.respawnTimer <= 0) {
@@ -569,7 +576,7 @@ export function updateWorldTimers(f: FrameState) {
   });
 
   for (let i = G.projectilesList.length - 1; i >= 0; i--) {
-    const p = G.projectilesList[i];
+    const p: ProjectileEntry = G.projectilesList[i];
     p.progress += p.speed * f.dt;
     if (p.progress >= 1.0) {
       G.scene.remove(p.mesh);
@@ -593,7 +600,7 @@ export function updateWorldTimers(f: FrameState) {
   }
 
   for (let i = G.vfxList.length - 1; i >= 0; i--) {
-    const v = G.vfxList[i];
+    const v: VfxEntry = G.vfxList[i];
     v.age += f.dt;
     if (v.onTick) v.onTick(v, f.dt);
     if (v.age >= v.life) {
@@ -602,7 +609,7 @@ export function updateWorldTimers(f: FrameState) {
     }
   }
 
-  G.swayingFoliage.forEach(item => {
+  G.swayingFoliage.forEach((item: SwayingFoliageEntry) => {
     if (item.rotY) item.mesh.rotation.z += f.dt * item.speed;
   });
 
@@ -612,7 +619,7 @@ export function updateWorldTimers(f: FrameState) {
   }
 }
 
-export function updateOverlay(f: FrameState) {
+export function updateOverlay(f: FrameState): void {
   checkRegionChange();
   G.labelTick += f.dt;
   G.miniTick += f.dt;
@@ -630,20 +637,18 @@ export function updateOverlay(f: FrameState) {
       });
     }
   }
-  const compass = document.getElementById('compass-badge');
-  if (compass) compass.style.transform = `rotate(${(camState.yaw - Math.PI)}rad)`;
+  el('compass-badge').style.transform = `rotate(${(camState.yaw - Math.PI)}rad)`;
 
   if (G.miniTick >= 0.08 || Math.hypot(player.pos.x - G.lastLabelX, player.pos.z - G.lastLabelZ) > 0.4) {
     G.miniTick = 0;
     renderMinimap();
   }
-  const tickArc = document.getElementById('tick-arc');
-  if (tickArc) tickArc.style.strokeDashoffset = String(88 * Math.max(0, Math.min(1, player.actionCooldown / TICK_SEC)));
+  el('tick-arc').style.strokeDashoffset = String(88 * Math.max(0, Math.min(1, player.actionCooldown / TICK_SEC)));
 }
 
-export function renderFrame(f: FrameState) {
-  if (G.grassInstanced && G.grassInstanced.material && G.grassInstanced.material.uniforms) {
-    G.grassInstanced.material.uniforms.uTime.value = f.elapsedSec;
+export function renderFrame(f: FrameState): void {
+  if (G.grassInstanced && G.grassInstanced.material && (G.grassInstanced.material as THREE.ShaderMaterial).uniforms) {
+    (G.grassInstanced.material as THREE.ShaderMaterial).uniforms.uTime.value = f.elapsedSec;
   }
   G.renderer.render(G.scene, G.camera);
 
@@ -655,16 +660,14 @@ export function renderFrame(f: FrameState) {
     G.frameCounter = 0;
     G.lastFpsTime = f.now;
 
-    const fpsEl = document.getElementById('perf-fps');
-    if (fpsEl) fpsEl.textContent = `${telemetryInfo.fps} FPS (${telemetryInfo.frameTimeMs}ms)`;
-    const callsEl = document.getElementById('perf-calls');
-    if (callsEl && G.renderer) {
-      callsEl.textContent = `${G.renderer.info.render.calls} calls • ${Math.round(G.renderer.info.render.triangles / 1000)}k tris`;
+    el('perf-fps').textContent = `${telemetryInfo.fps} FPS (${telemetryInfo.frameTimeMs}ms)`;
+    if (G.renderer) {
+      el('perf-calls').textContent = `${G.renderer.info.render.calls} calls • ${Math.round(G.renderer.info.render.triangles / 1000)}k tris`;
     }
   }
 }
 
-export function gameLoop(now) {
+export function gameLoop(now: number): void {
   requestAnimationFrame(gameLoop);
   const dt = Math.min(0.08, (now - G.lastFrameTime) / 1000);
   G.lastFrameTime = now;
