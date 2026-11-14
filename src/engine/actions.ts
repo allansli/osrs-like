@@ -19,7 +19,7 @@ import {
   spawnExpandingRing,
   spawnProjectile
 } from './vfx';
-import { addChatMessage, showBanner, updateTargetHud, updateAllUI, el } from '../ui/hud';
+import { addChatMessage, showBanner, updateTargetHud, updateAllUI, requestUiRefresh, el } from '../ui/hud';
 import { STATE } from '../state/gameState';
 import { prepareAttack, getEquipmentBonuses, mitigateDamage } from '../state/combat';
 import { addItem, removeItem, canAddItem } from '../state/inventory';
@@ -222,7 +222,7 @@ export function performPlayerAttack(monster: MonsterEntity): void {
       spawnHitSplatWorld(monster.pos, 0, 'miss');
     }
     updateTargetHud();
-    updateAllUI();
+    requestUiRefresh();
   };
 
   if ((style === 'rapid' || style === 'ranged')) {
@@ -288,7 +288,7 @@ export function handleMonsterDeath(monster: MonsterEntity): void {
     });
   }
   if (rareBeam) spawnRareLootBeam(monster.pos);
-  updateAllUI();
+  requestUiRefresh();
 }
 
 export function performMonsterRetaliation(monster: MonsterEntity): void {
@@ -331,7 +331,7 @@ export function performMonsterRetaliation(monster: MonsterEntity): void {
     } else {
       spawnHitSplatOnPlayer(0, 'miss');
     }
-    updateAllUI();
+    requestUiRefresh();
   };
 
   if (dragonfire) {

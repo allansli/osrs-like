@@ -45,7 +45,14 @@ import { moveWithCollision } from '../state/collision';
 import { isDown, stepMonster } from '../state/monsterAi';
 import { getTerrainHeight } from '../state/terrain';
 import { discoverShrines } from '../state/shrines';
-import { addChatMessage, el, updateAllUI } from '../ui/hud';
+import {
+  addChatMessage,
+  el,
+  updateAllUI,
+  updateVitalsBars,
+  isUiRefreshRequested,
+  clearUiRefreshRequest
+} from '../ui/hud';
 import {
   openShopModal,
   openBankModal,
@@ -625,8 +632,19 @@ export function updateWorldTimers(f: FrameState): void {
   }
 }
 
+let vitalsTick = 0;
+
 export function updateOverlay(f: FrameState): void {
   checkRegionChange();
+  vitalsTick += f.dt;
+  if (vitalsTick >= 0.1) {
+    vitalsTick = 0;
+    updateVitalsBars();
+  }
+  if (isUiRefreshRequested()) {
+    updateAllUI();
+    clearUiRefreshRequest();
+  }
   G.labelTick += f.dt;
   G.miniTick += f.dt;
   if (G.labelTick >= 0.1 || Math.hypot(player.pos.x - G.lastLabelX, player.pos.z - G.lastLabelZ) > 0.4) {

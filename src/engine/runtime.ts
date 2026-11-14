@@ -157,6 +157,11 @@ function wireBridge(): void {
 // ============================================================================
 export function boot(): void {
   window.addEventListener('beforeunload', saveGameState);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') {
+      saveGameState();
+    }
+  });
   window.addEventListener('DOMContentLoaded', () => {
     wireBridge();
     initStaticSvgIcons();
