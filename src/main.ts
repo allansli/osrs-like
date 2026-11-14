@@ -1,2 +1,5 @@
 import './ui/styles.css';
-import './engine/runtime';
+import { boot } from './engine/runtime';
+
+boot();
+
