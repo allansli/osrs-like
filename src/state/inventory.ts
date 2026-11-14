@@ -173,6 +173,7 @@ export function buyRunePack(state: GameState, perRuneQty = 500): TransferResult 
 export function buyItem(state: GameState, itemId: string, mode: QtyMode): TransferResult {
   const item = ITEMS[itemId];
   if (!item) return { ok: false, moved: 0, reason: 'Unknown item.' };
+  if (isGatheredGood(itemId)) return { ok: false, moved: 0, reason: 'The store only buys that.' };
   const price = item.price || 0;
   if (price <= 0) return { ok: false, moved: 0, reason: 'That cannot be bought.' };
   const affordable = Math.floor(state.gp / price);
