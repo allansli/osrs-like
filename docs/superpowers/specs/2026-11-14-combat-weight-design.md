@@ -1,5 +1,14 @@
 # Combat with weight: design
 
+> **Approved by the owner on 2026-11-14**, design and plan, after the critique and the second-pass check. The owner answered each open decision of section 13:
+> - CALL-4.18 (the boss's unwarned bolt): "ok" to the recommendation. The fight opens with a 2-second roar, a banner and the line that its bolts are magic; the bolt's damage stays.
+> - CALL-4.17 (dying): "ok" to the recommendation. 3% of the current level's span from every fighting skill; (a) 10x characters keep the same rule; (b) a loss under a quarter of what the vow can guard costs nothing and leaves the vow; (c) a vow carried across levels is accepted; (d) a skill at 99 loses nothing.
+> - CALL-4.9 (names): the owner said it is not a problem to share names with other games ("não tem problemas termos os mesmos nomes de outros games"). **The names stay as written**: Ashmantle the Slag Wyrm, phase III "Fury", Saltback Stalker and the rest. The renames the second pass recommended are NOT applied; where this note and section 13 differ, this note wins. `tests/names.test.ts` and its deny-list are unchanged.
+> - CALL-4.19 (regeneration 0.25 in combat, 1.0 out): "ok".
+> - CALL-4.14, 4.16, 4.7, 4.3, 4.2, 4.1, 4.10 to 4.13: "ok" as recommended.
+> - The rule the second pass added (the boss takes no damage from a hero farther than arena radius + 6 from its home) was shown to the owner and not vetoed.
+> Code starts after Stage 3 is merged; task R0 re-checks the premises first.
+
 Date: 2026-11-14. Branch: `feat/combat-weight`, cut from `feat/world-place` at `54736ba`. All line numbers refer to that commit. Stage 2 is still receiving review fixes (`2b5086a` and `74f7ea4` were read with `git show`, not merged) and Stage 3 is not in this tree, so every task in the plan finds symbols by name.
 
 Status: proposal, partly decided. On 2026-11-14 the owner answered four decisions: what dying costs (CALL-4.6), the dragon (CALL-4.4), regeneration (CALL-4.5) and the two new monsters (CALL-4.8). Three of the answers changed the design, and this revision applies them (section 13.1 quotes each; the review log lists what moved). Every other decision marked **CALL-4.n** is still the lead's proposal and needs the owner's check (section 13.2).
