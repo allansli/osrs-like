@@ -23,8 +23,7 @@ import { getCombatLevel } from './runtime';
 // ============================================================================
 export function renderMinimap(): void {
   const canvas = el<HTMLCanvasElement>('minimap-canvas');
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return;
+  const ctx = canvas.getContext('2d')!;
   const w = canvas.width;
   const h = canvas.height;
   const cx = w / 2;
@@ -228,13 +227,13 @@ export function updateFloatingWorldLabels(): void {
     const txtDiv = m.labelEl.querySelector<HTMLElement>('.label-text');
     if (txtDiv) txtDiv.style.color = col;
 
-    const hpBar = m.labelEl.querySelector<HTMLElement>('.entity-hp-bar');
-    const hpFill = m.labelEl.querySelector<HTMLElement>('.entity-hp-fill');
+    const hpBar = m.labelEl.querySelector<HTMLElement>('.entity-hp-bar')!;
+    const hpFill = m.labelEl.querySelector<HTMLElement>('.entity-hp-fill')!;
     if (m.hp < m.maxHp || m.inCombatWithPlayer) {
-      if (hpBar) hpBar.style.display = 'block';
-      if (hpFill) hpFill.style.width = Math.max(0, (m.hp / m.maxHp) * 100) + '%';
+      hpBar.style.display = 'block';
+      hpFill.style.width = Math.max(0, (m.hp / m.maxHp) * 100) + '%';
     } else {
-      if (hpBar) hpBar.style.display = 'none';
+      hpBar.style.display = 'none';
     }
   });
 
