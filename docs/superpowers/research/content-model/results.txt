@@ -1,0 +1,225 @@
+
+=== 1. Loops: where each non-equipment item comes from and where it goes
+today: 24 open
+  salmon           source: SHOP ONLY      use: consume
+  swordfish        source: SHOP ONLY      use: consume
+  anglerfish       source: SHOP ONLY      use: consume
+  hearty_elixir    source: SHOP ONLY      use: consume
+  saradomin_brew   source: SHOP ONLY      use: consume
+  prayer_potion    source: SHOP ONLY      use: consume
+  super_restore    source: SHOP ONLY      use: consume
+  feather          source: SHOP ONLY      use: craft
+  bronze_bolts     source: SHOP ONLY      use: shoot
+  ashes            source: craft          use: NONE (sell only)
+  bronze_bar       source: craft          use: NONE (sell only)
+  iron_bar         source: craft          use: NONE (sell only)
+  mithril_bar      source: craft          use: NONE (sell only)
+  gold_bar         source: craft          use: NONE (sell only)
+  runite_bar       source: craft          use: NONE (sell only)
+  air_rune         source: SHOP ONLY      use: cast
+  mind_rune        source: SHOP ONLY      use: cast
+  water_rune       source: SHOP ONLY      use: cast
+  earth_rune       source: SHOP ONLY      use: cast
+  fire_rune        source: SHOP ONLY      use: cast
+  chaos_rune       source: SHOP ONLY      use: cast
+  death_rune       source: SHOP ONLY      use: cast
+  blood_rune       source: SHOP ONLY      use: cast
+  law_rune         source: SHOP ONLY      use: cast
+after Stage 6: 4 open
+  salmon           source: SHOP ONLY      use: consume
+  anglerfish       source: SHOP ONLY      use: consume
+  saradomin_brew   source: SHOP ONLY      use: consume
+  bronze_bolts     source: SHOP ONLY      use: shoot
+equipment with a recipe: today 19, after Stage 6 47 (of 211)
+
+=== 2. Stage 3 rule G3.3 on the new recipes: output sells for at most 2.5 times what the inputs sell for
+  smelt_steel            smithing    req 10 xp   40  in 1 iron_ore + 1 coal            out 1 steel_bar          ratio 1.98
+  smelt_black            smithing    req 15 xp   48  in 1 steel_bar + 1 coal           out 1 black_bar          ratio 1.06
+  smelt_adamant          smithing    req 30 xp   75  in 1 adamantite_ore + 2 coal      out 1 adamant_bar        ratio 1.51
+  smelt_wyrmsteel        smithing    req 60 xp  150  in 1 runite_bar + 1 kiln_shard    out 1 wyrmsteel_ingot    ratio 1.44
+  smith_steel_sword      smithing    req 10 xp  100  in 2 steel_bar                    out 1 steel_longsword    ratio 1.03
+  smith_steel_legs       smithing    req 12 xp  115  in 2 steel_bar                    out 1 steel_legs         ratio 1.29
+  smith_steel_plate      smithing    req 14 xp  140  in 3 steel_bar                    out 1 steel_plate        ratio 1.10
+  smith_black_scim       smithing    req 15 xp  125  in 2 black_bar                    out 1 black_scimitar     ratio 1.22
+  smith_black_legs       smithing    req 17 xp  145  in 2 black_bar                    out 1 black_legs         ratio 1.41
+  smith_black_plate      smithing    req 19 xp  175  in 3 black_bar                    out 1 black_plate        ratio 1.19
+  smith_addy_scim        smithing    req 30 xp  250  in 3 adamant_bar                  out 1 addy_scimitar      ratio 1.00
+  smith_addy_legs        smithing    req 32 xp  290  in 3 adamant_bar                  out 1 addy_legs          ratio 1.15
+  smith_addy_plate       smithing    req 34 xp  350  in 4 adamant_bar                  out 1 addy_plate         ratio 1.17
+  smith_wyrm_scim        smithing    req 60 xp  700  in 4 wyrmsteel_ingot              out 1 dragon_scimitar    ratio 1.05
+  smith_wyrm_legs        smithing    req 62 xp  800  in 4 wyrmsteel_ingot              out 1 dragon_legs        ratio 1.01
+  smith_wyrm_chain       smithing    req 65 xp  950  in 5 wyrmsteel_ingot              out 1 dragon_chain       ratio 1.02
+  fletch_iron_arrows     smithing    req 20 xp   45  in 1 iron_bar + 15 arrow_shaft + 15 feather out 15 iron_arrow         ratio 2.20
+  fletch_mithril_arrows  smithing    req 40 xp  110  in 1 mithril_bar + 15 arrow_shaft + 15 feather out 15 mithril_arrow      ratio 2.35
+  fletch_rune_arrows     smithing    req 60 xp  240  in 1 runite_bar + 15 arrow_shaft + 15 feather out 15 rune_arrow         ratio 1.09
+  smith_mithril_bolts    smithing    req 40 xp  110  in 1 mithril_bar                  out 12 mithril_bolts      ratio 2.36
+  smith_rune_bolts       smithing    req 60 xp  240  in 1 runite_bar                   out 14 rune_bolts         ratio 1.08
+  craft_gloves           crafting    req  1 xp   30  in 1 rough_hide                   out 1 leather_gloves     ratio 2.44
+  craft_boots            crafting    req  4 xp   45  in 2 rough_hide                   out 1 leather_boots      ratio 1.06
+  craft_wizard_bottom    crafting    req  6 xp   60  in 3 coarse_cloth                 out 1 wizard_bottom      ratio 1.90
+  craft_wizard_top       crafting    req  8 xp   75  in 3 coarse_cloth                 out 1 wizard_top         ratio 2.44
+  craft_green_chaps      crafting    req 18 xp  140  in 3 chitin_plate                 out 1 green_dhide_chaps  ratio 1.90
+  craft_green_body       crafting    req 20 xp  170  in 3 chitin_plate                 out 1 green_dhide_body   ratio 2.46
+  craft_mystic_bottom    crafting    req 20 xp  170  in 3 hexed_cloth                  out 1 mystic_bottom      ratio 1.94
+  craft_mystic_top       crafting    req 22 xp  200  in 3 hexed_cloth                  out 1 mystic_top         ratio 2.50
+  craft_blue_chaps       crafting    req 33 xp  300  in 3 tough_hide                   out 1 blue_dhide_chaps   ratio 1.86
+  craft_blue_body        crafting    req 35 xp  340  in 3 tough_hide                   out 1 blue_dhide_body    ratio 2.48
+  craft_infinity_bottom  crafting    req 43 xp  430  in 3 cinder_silk                  out 1 infinity_bottom    ratio 1.99
+  craft_infinity_top     crafting    req 45 xp  500  in 3 cinder_silk                  out 1 infinity_top       ratio 2.48
+  craft_red_chaps        crafting    req 48 xp  560  in 3 mossed_hide                  out 1 red_dhide_chaps    ratio 1.88
+  craft_red_body         crafting    req 50 xp  640  in 3 mossed_hide                  out 1 red_dhide_body     ratio 2.48
+  craft_black_chaps      crafting    req 58 xp  820  in 3 slag_hide                    out 1 black_dhide_chaps  ratio 1.95
+  craft_black_body       crafting    req 60 xp  940  in 3 slag_hide                    out 1 black_dhide_body   ratio 2.50
+  bind_air               runebinding req  1 xp   14  in 1 runestone                    out 4 air_rune           ratio 2.00
+  bind_mind              runebinding req  1 xp   15  in 1 runestone                    out 4 mind_rune          ratio 2.00
+  bind_water             runebinding req  5 xp   19  in 1 runestone                    out 4 water_rune         ratio 2.00
+  bind_earth             runebinding req  8 xp   23  in 1 runestone                    out 4 earth_rune         ratio 2.00
+  bind_fire              runebinding req 12 xp   30  in 1 runestone + 1 ashes          out 4 fire_rune          ratio 2.00
+  bind_chaos             runebinding req 26 xp   55  in 1 runestone + 1 big_bones      out 3 chaos_rune         ratio 2.23
+  bind_law               runebinding req 34 xp   80  in 1 runestone + 1 big_bones      out 1 law_rune           ratio 2.23
+  bind_death             runebinding req 44 xp  100  in 1 runestone + 1 big_bones      out 1 death_rune         ratio 1.66
+  bind_blood             runebinding req 48 xp  140  in 1 runestone + 1 dragon_bones   out 5 blood_rune         ratio 2.06
+  brew_prayer            cooking     req 30 xp  110  in 1 sting_gland + 2 ashes        out 1 prayer_potion      ratio 2.26
+  brew_restore           cooking     req 55 xp  220  in 1 mire_root + 2 ashes          out 1 super_restore      ratio 1.80
+  brew_stew              cooking     req 60 xp  260  in 1 shark + 1 mire_root          out 1 hearty_elixir      ratio 1.20
+worst ratio 2.50; smithing recipes below 1.00 (a loss): none
+
+=== 3. Income per kill: mean coins (unchanged) and what the new material drops add at sale value
+  chicken              coins    10  materials +   4.0  (39% of coins)
+  goblin               coins    22  materials +   2.3  (10% of coins)
+  goblin_archer        coins    13  materials +   2.9  (22% of coins)
+  scorpion             coins    64  materials +  15.2  (24% of coins)
+  saltback_stalker     coins   228  materials +  29.2  (13% of coins)
+  dark_wizard          coins   107  materials +  12.5  (12% of coins)
+  hill_giant           coins   176  materials +  22.7  (13% of coins)
+  moss_guardian        coins   350  materials +  71.0  (20% of coins)
+  cinder_adept         level 52 hp 80 coins 460 other drops 65
+  slag_brute           level 58 hp 112 coins 555 other drops 164
+  scree_skitter        level 30 hp 20 coins 24 other drops 6
+  marrowjaw            level 40 hp 560 coins 900 other drops 849
+  saltfang             level 48 hp 960 coins 450 other drops 195
+  kiln_warden          level 80 hp 2000 coins 1200 other drops 1560
+
+=== 4. New skills on the current XP curve: actions from one unlock to the next (1x, no lamps)
+  crafting to  4:     10 actions (running total 10), XP 276
+  crafting to  6:      5 actions (running total 15), XP 512
+  crafting to  8:      5 actions (running total 20), XP 801
+  crafting to 18:     36 actions (running total 56), XP 3523
+  crafting to 20:      7 actions (running total 63), XP 4470
+  crafting to 22:      7 actions (running total 70), XP 5624
+  crafting to 33:     63 actions (running total 133), XP 18247
+  crafting to 35:     14 actions (running total 147), XP 22406
+  crafting to 43:     82 actions (running total 229), XP 50339
+  crafting to 45:     26 actions (running total 255), XP 61512
+  crafting to 48:     43 actions (running total 298), XP 83014
+  crafting to 50:     33 actions (running total 331), XP 101333
+  crafting to 58:    193 actions (running total 524), XP 224466
+  crafting to 60:     60 actions (running total 584), XP 273742
+  crafting to 70:    493 actions (running total 1077), XP 737627
+  crafting to 99:  13082 actions (running total 14159), XP 13034431
+  runebinding to  5:     26 actions (running total 26), XP 388
+  runebinding to  8:     22 actions (running total 48), XP 801
+  runebinding to 12:     34 actions (running total 82), XP 1584
+  runebinding to 26:    239 actions (running total 321), XP 8740
+  runebinding to 34:    209 actions (running total 530), XP 20224
+  runebinding to 44:    443 actions (running total 973), XP 55649
+  runebinding to 48:    274 actions (running total 1247), XP 83014
+  runebinding to 70:   4676 actions (running total 5923), XP 737627
+  runebinding to 99:  87834 actions (running total 93757), XP 13034431
+  unlock tables:
+    crafting: 1 Leather Vambraces; 4 Traveler Boots; 6 Blue Wizard Robe Skirt; 8 Blue Wizard Robe Top; 18 Green D'hide Chaps; 20 Green D'hide Body; 20 Mystic Robe Bottom; 22 Mystic Robe Top; 33 Blue D'hide Chaps; 35 Blue D'hide Body; 43 Infinity Bottoms; 45 Infinity Top; 48 Red D'hide Chaps; 50 Red D'hide Body; 58 Black D'hide Chaps; 60 Black D'hide Body
+    runebinding: 1 Air Rune; 1 Mind Rune; 5 Water Rune; 8 Earth Rune; 12 Fire Rune; 26 Chaos Rune; 34 Law Rune; 44 Death Rune; 48 Blood Rune
+  materials for one full set, by the recipes above:
+    Green D'hide Body + Green D'hide Chaps: 6 chitin_plate  <- scorpion 67 kills or saltback_stalker 30 kills or scree_skitter 100 kills; shop price of the pair 19500 GP
+    Blue D'hide Body + Blue D'hide Chaps: 6 tough_hide  <- hill_giant 60 kills; shop price of the pair 45500 GP
+    Red D'hide Body + Red D'hide Chaps: 6 mossed_hide  <- moss_guardian 67 kills; shop price of the pair 102000 GP
+    Black D'hide Body + Black D'hide Chaps: 6 slag_hide  <- slag_brute 60 kills; shop price of the pair 187000 GP
+    Mystic Robe Top + Mystic Robe Bottom: 6 hexed_cloth  <- dark_wizard 75 kills; shop price of the pair 32000 GP
+    Infinity Top + Infinity Bottoms: 6 cinder_silk  <- cinder_adept 60 kills; shop price of the pair 130000 GP
+  embers: all fifteen diary tiers pay 242500 XP in all; put into one skill from level 1 that is level 58; one hard-tier ember is 33 minutes of a level-67 fighter's experience in one melee skill (section 11)
+  melee kits by the forge (bars for sword + legs + body):
+    steel: 7 steel_bar, Smithing 10 to 14; shop price of the kit 11100 GP
+    black: 7 black_bar, Smithing 15 to 19; shop price of the kit 15900 GP
+    adamant: 10 adamant_bar, Smithing 30 to 34; shop price of the kit 50000 GP
+    dragon: 13 wyrmsteel_ingot, Smithing 60 to 65; shop price of the kit 380000 GP
+
+=== 5. Gear ladders: damage per 0.6 s swing by style, best wearable weapon + body + legs at each level
+level vs target         melee dmg (def, kit GP)        ranged dmg (def, kit GP, GP/shot)      magic dmg (def, kit GP, GP/cast)   ranged/melee  magic/melee
+  1 goblin              1.47 ( 19,   1950)         2.30 (  0,    950, 8)               7.08 ( 13,   6400,  11)        1.57         4.83
+ 10 scorpion            3.32 ( 43,  11100)         3.63 (  0,    950, 8)               7.52 ( 13,   6400,  11)        1.09         2.27
+ 20 dark_wizard         5.86 ( 62,  21100)        11.11 ( 53,  24000, 8)              14.39 ( 44,  35200,  19)        1.90         2.46
+ 30 hill_giant          7.80 ( 85,  50000)        13.01 ( 53,  28500, 8)              20.88 ( 44,  56000,  92)        1.67         2.68
+ 40 saltback_stalker   10.31 (113, 129000)        17.99 ( 73,  66500, 8)              21.44 ( 44,  56000,  92)        1.74         2.08
+ 50 moss_guardian      11.57 (113, 129000)        24.16 ( 93, 166000, 8)              30.01 ( 44, 142000, 500)        2.09         2.59
+ 60 slag_brute         15.61 (141, 380000)        27.84 (113, 251000, 8)              35.40 (111, 365000, 500)        1.78         2.27
+ 70 lesser_demon       16.63 (141, 380000)        28.83 (113, 251000, 8)              35.91 (111, 365000, 500)        1.73         2.16
+kits picked at 40 and 70:
+  40 melee: rune_scimitar, rune_plate, rune_legs
+  40 ranged: yew_bow, blue_dhide_body, blue_dhide_chaps
+  40 magic: mystic_staff, mystic_top, mystic_bottom
+  70 melee: dragon_scimitar, dragon_chain, dragon_legs
+  70 ranged: magic_bow, black_dhide_body, black_dhide_chaps
+  70 magic: ancient_staff, bloodbark_top, bloodbark_bottom
+running cost per kill of the reference target, against the coins it drops. "made" prices each rune or arrow at what its inputs sell for:
+    1 goblin             coins   22 | ranged today   28 GP (129%), with bronze_arrow bought   28 (129%), made   28 (129%) | magic wind_strike bought    12 (58%), bound     3 (16%)
+   10 scorpion           coins   64 | ranged today   49 GP (76%), with bronze_arrow bought   49 (76%), made   49 (76%) | magic wind_strike bought    32 (50%), bound     9 (14%)
+   20 dark_wizard        coins  107 | ranged today   22 GP (20%), with bronze_arrow bought   22 (20%), made   22 (20%) | magic fire_bolt bought    40 (37%), bound    10 (10%)
+   30 hill_giant         coins  176 | ranged today   30 GP (17%), with iron_arrow bought   66 (38%), made   18 (10%) | magic ice_burst bought   212 (120%), bound    61 (34%)
+   40 saltback_stalker   coins  228 | ranged today   26 GP (11%), with iron_arrow bought   58 (25%), made   16 (7%) | magic ice_burst bought   249 (109%), bound    71 (31%)
+   50 moss_guardian      coins  350 | ranged today   26 GP (7%), with mithril_arrow bought  116 (33%), made   32 (9%) | magic blood_barrage bought  1299 (371%), bound   445 (127%)
+   60 slag_brute         coins  555 | ranged today   32 GP (6%), with mithril_arrow bought  145 (26%), made   39 (7%) | magic blood_barrage bought  1582 (285%), bound   542 (98%)
+   70 lesser_demon       coins  715 | ranged today   35 GP (5%), with mithril_arrow bought  156 (22%), made   42 (6%) | magic blood_barrage bought  1741 (243%), bound   596 (83%)
+
+=== 6. Placement: people, nodes, camps and doors against the world as it is on main
+  Bran Tolley      (4, 12) walkable true, safe zone lumbridge, aggressive camp no, nearest station 3.8, nearest path 10.0, height 0.00
+  Odalys Venn      (-8, -6) walkable true, safe zone lumbridge, aggressive camp no, nearest station 11.0, nearest path 6.3, height 0.00
+  Pell Greaves     (12, -8) walkable true, safe zone no, aggressive camp no, nearest station 4.5, nearest path 9.5, height 0.00
+  Tamsin Reeve     (88, -22) walkable true, safe zone varrock, aggressive camp no, nearest station 6.3, nearest path 16.0, height 0.00
+  Qadir Salt-Hand  (60, 66) walkable true, safe zone desert, aggressive camp no, nearest station 5.7, nearest path 13.6, height 0.00
+  Hesper Moth      (-52, -10) walkable true, safe zone no, aggressive camp no, nearest station 47.4, nearest path 9.5, height 0.19
+  Corin Ashby      (-5, 48) walkable true, safe zone no, aggressive camp no, nearest station 40.9, nearest path 8.4, height 1.04
+  bench_dunes      (62, 68) walkable true, aggressive camp no, nearest station 6.3, nearest person 2.8, safe zone desert
+  bench_town       (8, 14) walkable true, aggressive camp no, nearest station 6.0, nearest person 4.5, safe zone no
+  coal_rock        (106, -6) walkable true, walkable ground within 1, aggressive camp no, nearest existing node 11.3, safe zone no
+  coal_rock        (108, -12) walkable true, walkable ground within 1, aggressive camp no, nearest existing node 8.5, safe zone no
+  coal_rock        (104, 0) walkable true, walkable ground within 1, aggressive camp no, nearest existing node 12.2, safe zone no
+  runestone_rock   (-44, -6) walkable true, walkable ground within 1, aggressive camp no, nearest existing node 24.4, safe zone no
+  runestone_rock   (-48, -4) walkable true, walkable ground within 1, aggressive camp no, nearest existing node 26.8, safe zone no
+  camp cinder_circle  centre (-0.7, 72.7) radius 11, reach 15: gaps camp 2.0, safe zone 39.8, path 5.3, node 27.9, Ashmantle arena 70.0; open cells 709/709; height range 0.8; region none
+  camp brute_shelf    centre (-2.0, 102.0) radius 9, reach 13: gaps camp 23.8, safe zone 49.0, path 33.7, node 47.9, Ashmantle arena 79.9; open cells 529/529; height range 0.8; region none
+  camp tollmaster     centre (4.0, -70.0) radius 9, reach 15: gaps camp 28.7, safe zone 41.1, path 51.0, node 7.5, Ashmantle arena 130.1; open cells 709/709; height range 1.2; region none
+  new camps cinder_circle and brute_shelf: gap 1.4
+  new camps cinder_circle and tollmaster: gap 112.7
+  new camps brute_shelf and tollmaster: gap 144.1
+  Corin Ashby to cinder_circle: 25.0 from its centre, 10.0 outside its leash
+  door saltfang_warren  (106, 74) walkable true, aggressive camp no, nearest node 19.4, new camps 91.7, Ashmantle arena 191.0, safe zone no, height 1.96, region desert
+  door underkiln        (-52, 46) walkable true, aggressive camp no, nearest node 41.0, new camps 42.8, Ashmantle arena 32.6, safe zone no, height 1.70, region wilderness
+
+=== 7. Dungeons: geometry, connectivity and size of each zone
+  Saltfang Warren: origin (600,-200), 96 x 96 cells, 2652 open, all reachable with the gate open true; boss cell reachable with the gate shut false; rooms 9; monsters 22
+    boss room: home (62, 64), arena radius 10, nearest wall 14; farthest corner from home 19.8 (the boss takes damage only from within arena + 6 = 16)
+  The Underkiln: origin (600,200), 112 x 112 cells, 3020 open, all reachable with the gate open true; boss cell reachable with the gate shut false; rooms 8; monsters 15
+    boss room: home (68, 78), arena radius 12, nearest wall 16; farthest corner from home 22.6 (the boss takes damage only from within arena + 6 = 18)
+
+=== 8. A dungeon run against open ground: coin per second, the same overheads on both sides
+  Saltfang Warren, every fighting skill at 45: 1638 hitpoints in 22 monsters; fighting 90 s and walking 164 units = 1.7 min model-optimal (a person about double; never asserted)
+    pays 2458 coins from monsters + 1165 from the chest at sale value = 34.7 GP/s; best open ground at that level: Moss Guardian, 54.9 GP/s; ratio 0.63. First clear, once: 5456 GP of goods
+  The Underkiln, every fighting skill at 70: 3040 hitpoints in 15 monsters; fighting 112 s and walking 178 units = 2.1 min model-optimal (a person about double; never asserted)
+    pays 6371 coins from monsters + 4815 from the chest at sale value = 87.6 GP/s; best open ground at that level: Lesser Demon, 119.0 GP/s; ratio 0.74. First clear, once: 22815 GP of goods
+
+=== 9. Names against the Stage 2 deny-list (tests/names.test.ts) and the two words the architecture test forbids in src/data
+  82 new names, 82 distinct; deny-list hits: none
+  recipe names that repeat an existing item's borrowed word (allowed, listed): Forge Dragon Scimitar; Forge Dragon Platelegs; Forge Dragon Platebody; Sew Wizard Robe Skirt; Sew Wizard Robe Top
+  new ids: 26 items, 3 nodes, 49 recipes, 6 monster types, 13 story quests, 7 people, 2 dungeons, 2 skills
+
+=== 10. Save: size of the new optional block at its bounds
+  stat keys 133; diary tiers 15; diary tasks 75
+  default save today 2139 bytes; the new block at every bound 4977 bytes; two new skills add about 76 bytes
+
+=== 11. Where a player stands at hours 3, 10 and 30 (estimates from Stage 3 section 5.5; never asserted)
+  Stage 3 route A3 at 1x, model-optimal: adamant (level 30) at 56 min, rune (40) at 1.8 h, dragon (60) at 5.4 h; a real player about double.
+  XP for Attack: level 30 13363, 40 37224, 50 101333, 60 273742, 70 737627, 80 1986068
+  after dragon gear, on lesser demons: model hour 10: level 67, about 72k XP an hour per melee skill; model hour 15: level 72, about 73k XP an hour per melee skill
+  so: real hour 3 = about model hour 1.5 = Attack and Defence in the high 30s, adamant worn, rune next; real hour 10 = about model hour 5 = level 58 to 60, rune worn, dragon next; real hour 30 = about model hour 15 = the level printed above.
+
+ALL CHECKS PASS
