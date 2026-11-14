@@ -51,9 +51,9 @@ const MELEE_RANGE = 2.9;
 const FAR_RANGE = 11.0;
 const CHASE_SPEED = 5.2;
 const WANDER_SPEED = 1.8;
-const ATTACK_INTERVAL = 1.65;
-const DYING_SECS = 0.85;
-const DEAD_SECS = 7.5;
+export const ATTACK_INTERVAL = 1.65;
+export const DYING_SECS = 0.85;
+export const DEAD_SECS = 7.5;
 
 /** Aggression grace after load, teleport and respawn (design 6.5). */
 export const AGGRO_GRACE_MS = 3000;

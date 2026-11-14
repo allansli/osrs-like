@@ -22,6 +22,7 @@ import {
 import { addChatMessage, showBanner, updateTargetHud, updateAllUI, requestUiRefresh, el } from '../ui/hud';
 import { STATE } from '../state/gameState';
 import { prepareAttack, playerAttackProfile, playerHitChance, rollMonsterHit } from '../state/combat';
+import { gatherChance, rollDrops } from '../state/economy';
 import { addItem, removeItem, canAddItem } from '../state/inventory';
 import { SPELLS } from '../data/magic';
 import { AGGRO_GRACE_MS, isDown, onPlayerHit } from '../state/monsterAi';
@@ -263,23 +264,18 @@ export function handleMonsterDeath(monster: MonsterEntity): void {
   }
 
   let rareBeam = isBossLoot(monster.typeKey);
-  if (monster.def.drops) {
-    monster.def.drops.forEach(d => {
-      if (Math.random() <= d.chance) {
-        if (d.gp) {
-          const coins = d.gp[0] + Math.floor(Math.random() * (d.gp[1] - d.gp[0] + 1));
-          STATE.gp += coins;
-          SFX.coin();
-          addChatMessage(`Looted <b style="color:#ffe642">${coins} GP</b> from ${monster.def.name}.`, 'loot');
-        } else if (d.id && ITEMS[d.id]) {
-          if (isRareLoot(ITEMS[d.id])) rareBeam = true;
-          const qty = d.qty || 1;
-          const gained = addItem(STATE, d.id, qty);
-          if (gained.added > 0) addChatMessage('Looted <b>' + ITEMS[d.id].name + '</b>' + (gained.added > 1 ? ' x' + gained.added : '') + '.', 'loot');
-          if (!gained.ok) addChatMessage('Your backpack is full. The <b>' + ITEMS[d.id].name + '</b> is left behind.', 'combat');
-        }
-      }
-    });
+  const drops = rollDrops(monster.typeKey, Math.random);
+  for (const drop of drops) {
+    if (drop.kind === 'gp') {
+      STATE.gp += drop.amount;
+      SFX.coin();
+      addChatMessage(`Looted <b style="color:#ffe642">${drop.amount} GP</b> from ${monster.def.name}.`, 'loot');
+    } else if (drop.kind === 'item' && ITEMS[drop.id]) {
+      if (isRareLoot(ITEMS[drop.id])) rareBeam = true;
+      const gained = addItem(STATE, drop.id, drop.qty);
+      if (gained.added > 0) addChatMessage('Looted <b>' + ITEMS[drop.id].name + '</b>' + (gained.added > 1 ? ' x' + gained.added : '') + '.', 'loot');
+      if (!gained.ok) addChatMessage('Your backpack is full. The <b>' + ITEMS[drop.id].name + '</b> is left behind.', 'combat');
+    }
   }
   if (rareBeam) spawnRareLootBeam(monster.pos);
   requestUiRefresh();
@@ -401,7 +397,7 @@ export function performResourceGather(node: ResourceNodeEntity): void {
     if (player.blenderAnimator) player.blenderAnimator.playAction('Fish', 1.15);
   }
 
-  const successChance = Math.min(0.92, 0.50 + (skillLvl - def.req!) * 0.02);
+  const successChance = gatherChance(skillLvl, def.req!);
   if (Math.random() <= successChance) {
     addItemToInventory(def.item!, 1);
     noteGather(STATE, def.item!);

@@ -46,6 +46,7 @@ import { moveWithCollision } from '../state/collision';
 import { isDown, isPlayerSafe, stepMonster } from '../state/monsterAi';
 import { getTerrainHeight } from '../state/terrain';
 import { discoverShrines } from '../state/shrines';
+import { HP_REGEN_PER_SEC } from '../state/economy';
 import { entityAim, escapeStall, shouldRepath, STALL_SEC, stallTime, walkSpent } from '../state/pathfind';
 import { CAMPS } from '../data/worldMap';
 import {
@@ -112,7 +113,7 @@ export function updateVitalsAndRegen(f: FrameState): void {
     STATE.specEnergy = Math.min(100, STATE.specEnergy + f.dt * 2.5);
   }
   if (STATE.hp < STATE.maxHp && STATE.hp > 0) {
-    STATE.hp = Math.min(STATE.maxHp, STATE.hp + f.dt * 0.25);
+    STATE.hp = Math.min(STATE.maxHp, STATE.hp + f.dt * HP_REGEN_PER_SEC);
   }
   if (STATE.activePrayers.size > 0) {
     let drainRate = 0;
