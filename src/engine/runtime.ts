@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { player, camState, G } from './context';
 import { SFX } from './audio';
 import { rebuildPlayerEquipmentMeshes } from './playerMesh';
@@ -35,6 +34,7 @@ import { STATE } from '../state/gameState';
 import { loadBlenderGearTemplate } from './blenderGear';
 import { bridge } from '../ui/bridge';
 import {
+  el,
   initStaticSvgIcons,
   addChatMessage,
   switchTab,
@@ -73,9 +73,46 @@ import {
 } from '../ui/playerActions';
 import { gameLoop } from './loop';
 
+const WINDOW_ACTIONS = {
+  cheatSkillsPlus10,
+  cheatGold200k,
+  applyTypedCheat,
+  setCombatStyle,
+  closeModals,
+  switchTab,
+  craftRecipe,
+  openWorldMapModal,
+  openShopModal,
+  openSmithingModal,
+  openXpTableModal,
+  openBankModal,
+  openQuestsModal,
+  openSettingsModal,
+  cycleGraphicsQuality,
+  toggleOutlines,
+  toggleXpMultiplier,
+  cycleTimeOfDay,
+  toggleAudio,
+  resetGameSave,
+  manualSaveToast,
+  sellInventoryItem,
+  buyShopItem,
+  buyShopPair,
+  sellAllLoot,
+  sellAllUnequippedGear,
+  unequipSlot,
+  toggleSpecialAttack,
+  togglePrayer,
+  handleSpellClick,
+  teleportToRegion,
+  resetCameraBehindPlayer,
+  dismissOnboarding,
+  replayOnboarding,
+};
 
+export const WINDOW_GLOBALS: readonly string[] = Object.keys(WINDOW_ACTIONS);
 
-function wireBridge() {
+function wireBridge(): void {
   bridge.chat = (text, type) => addChatMessage(text, type || '');
   bridge.refresh = () => updateAllUI();
   bridge.close = () => closeModals();
@@ -97,41 +134,11 @@ function wireBridge() {
   bridge.showSellMenu = (ev, index) => showSellChooseMenu(ev, index);
   bridge.sellGathered = () => sellAllLoot();
   bridge.sellGear = () => sellAllUnequippedGear();
-  window.cheatSkillsPlus10 = cheatSkillsPlus10;
-  window.cheatGold200k = cheatGold200k;
-  window.applyTypedCheat = applyTypedCheat;
-  window.setCombatStyle = setCombatStyle;
-  window.closeModals = closeModals;
-  window.switchTab = switchTab;
-  window.craftRecipe = craftRecipe;
-  window.openWorldMapModal = openWorldMapModal;
-  window.openShopModal = openShopModal;
-  window.openSmithingModal = openSmithingModal;
-  window.openXpTableModal = openXpTableModal;
-  window.openBankModal = openBankModal;
-  window.openQuestsModal = openQuestsModal;
-  window.openSettingsModal = openSettingsModal;
-  window.cycleGraphicsQuality = cycleGraphicsQuality;
-  window.toggleOutlines = toggleOutlines;
-  window.toggleXpMultiplier = toggleXpMultiplier;
-  window.cycleTimeOfDay = cycleTimeOfDay;
-  window.toggleAudio = toggleAudio;
-  window.resetGameSave = resetGameSave;
-  window.manualSaveToast = manualSaveToast;
-  window.sellInventoryItem = sellInventoryItem;
-  window.buyShopItem = buyShopItem;
-  window.buyShopPair = buyShopPair;
-  window.sellAllLoot = sellAllLoot;
-  window.sellAllUnequippedGear = sellAllUnequippedGear;
-  window.unequipSlot = unequipSlot;
-  window.toggleSpecialAttack = toggleSpecialAttack;
-  window.togglePrayer = togglePrayer;
-  window.handleSpellClick = handleSpellClick;
-  window.teleportToRegion = teleportToRegion;
-  window.resetCameraBehindPlayer = resetCameraBehindPlayer;
-  window.dismissOnboarding = dismissOnboarding;
-  window.replayOnboarding = replayOnboarding;
-  (window as any).__DEV_ACCESS__ = {
+
+  for (const [name, fn] of Object.entries(WINDOW_ACTIONS)) {
+    (window as unknown as Record<string, unknown>)[name] = fn;
+  }
+  (window as unknown as { __DEV_ACCESS__?: unknown }).__DEV_ACCESS__ = {
     player,
     get camera() { return G.camera; },
     camState,
@@ -166,15 +173,13 @@ export function boot(): void {
     }
     addChatMessage('The courtyard holds the <b>Bank booth</b>, the <b>General Store</b>, and the <b>Anvil</b>. Walk up to use them. Press <b>F1–F6</b> to switch panels and <b>Esc</b> to close a window.', 'loot');
     addChatMessage('Cheat codes: type <b>skills10</b> to raise every skill by 10, or <b>gold200k</b> for 200,000 GP. Both are also in Settings.', 'skill');
-    const cheatInput = document.getElementById('cheat-code-input');
-    if (cheatInput) {
-      cheatInput.addEventListener('keydown', (ev) => {
-        if (ev.key === 'Enter') {
-          ev.preventDefault();
-          applyTypedCheat();
-        }
-      });
-    }
+    const cheatInput = el<HTMLInputElement>('cheat-code-input');
+    cheatInput.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter') {
+        ev.preventDefault();
+        applyTypedCheat();
+      }
+    });
     const startReg = WORLD_REGIONS.find(r => r.id === STATE.currentRegion) || WORLD_REGIONS[0];
     triggerRegionBanner(startReg);
     (window as unknown as { __DEBUG?: unknown }).__DEBUG = { STATE, player, camState, rebuildPlayerEquipmentMeshes, ITEMS };
