@@ -133,9 +133,9 @@ const LENSES = [
 ]
 const g3 = agent(`Carry out task G-3 of ${PLAN} exactly, in ${MAIN} on branch feat/world-place. It is read-only: change nothing. ${GATE} For check 1, the allowed test edits are the three planned replacements plus the removal of the fishing-spot exceptions in tests/pathfind.test.ts and tests/placements.test.ts. Return the written report: each of the seven checks with pass or fail and the real evidence.`, { label: 'G-3', phase: 'Review', model: 'opus' })
 const reviewed = await pipeline(LENSES,
-  l => agent(l.prompt, { label: `review:${l.key}`, phase: 'Review', model: 'opus', schema: FINDINGS }),
-  (r, l) => parallel(((r && r.findings) || []).map(f => () =>
+  l => slot(() => agent(l.prompt, { label: `review:${l.key}`, phase: 'Review', model: 'opus', schema: FINDINGS })),
+  (r, l) => parallel(((r && r.findings) || []).map(f => () => slot(() =>
     agent(`Try to refute this review finding about ${MAIN} (branch feat/world-place). Read the code yourself; change nothing. Finding: ${f.title}. File: ${f.file}${f.line ? ':' + f.line : ''}. Evidence given: ${f.evidence}. Scenario given: ${f.scenario}. Claimed severity: ${f.severity}. Decide whether it is real (the scenario can happen and has the stated effect) and what the right severity is. If you cannot confirm it from the code, real=false.`, { label: `check:${l.key}`, phase: 'Review', model: 'opus', schema: CHECK })
-      .then(v => ({ ...f, lens: l.key, check: v })))))
+      .then(v => ({ ...f, lens: l.key, check: v }))))))
 const findings = reviewed.flat().filter(Boolean)
 return { a7, g3: await g3, confirmed: findings.filter(f => f.check && f.check.real), rejected: findings.filter(f => !f.check || !f.check.real).map(f => ({ title: f.title, reason: f.check && f.check.reason })) }
