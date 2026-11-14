@@ -1,5 +1,7 @@
 import { ammoForWeapon, ITEMS, type ItemDef } from '../data/items';
 import { SPELLS } from '../data/magic';
+import { MONSTER_TYPES } from '../data/world';
+import { resolveDragonfire } from './adventure';
 import { countItem } from './inventory';
 import type { GameState } from './types';
 
@@ -201,5 +203,38 @@ export function getEquipmentBonuses(state: GameState): EquipmentBonuses {
   }
 
   return { atk, str, def, rng, mag, matchedSet, isFullKit, dominantCount, dominantSetName };
+}
+
+export function rollMonsterHit(
+  typeKey: string,
+  breathCount: number,
+  state: GameState,
+  rand: () => number
+): { dmg: number; dragonfire: boolean; absorbed: boolean } {
+  const def = MONSTER_TYPES[typeKey];
+  const bon = getEquipmentBonuses(state);
+  const defLvl = state.skills.defence.lvl + (state.combatStyle === 'defensive' ? 3 : 0);
+  const prayDefMult = state.activePrayers.has('piety') ? 1.25 : (state.activePrayers.has('thick_skin') ? 1.15 : 1.0);
+  const playerDefScore = (defLvl * 1.2 + bon.def) * prayDefMult + 10;
+  const monAtkScore = def.atk * 1.25 + 8;
+
+  const hitChance = Math.min(0.82, Math.max(0.12, monAtkScore / (monAtkScore + playerDefScore)));
+  const dragonfire = typeKey === 'elvarg_dragon' && breathCount % 3 === 0;
+
+  let dmg = 0;
+  let absorbed = false;
+  if (rand() < hitChance) {
+    if (dragonfire) {
+      const raw = Math.max(1, Math.floor(rand() * 43));
+      const resolved = resolveDragonfire(raw, state);
+      dmg = resolved.damage;
+      absorbed = resolved.absorbed && raw > 0;
+    } else {
+      dmg = Math.max(1, Math.floor(rand() * (def.maxHit + 1)));
+      dmg = mitigateDamage(dmg, def.style, state.activePrayers);
+    }
+  }
+
+  return { dmg, dragonfire, absorbed };
 }
 
