@@ -229,6 +229,43 @@ export function findPath(
   return waypoints.slice(1);
 }
 
+/** The open cell centre nearest (x, z) within 4 cells that `accept` allows, or null. */
+export function nearestOpenCell(
+  grid: WalkGrid,
+  x: number,
+  z: number,
+  accept: (c: [number, number]) => boolean = () => true
+): [number, number] | null {
+  const cgx = Math.floor(x - grid.origin);
+  const cgz = Math.floor(z - grid.origin);
+  let best: [number, number] | null = null;
+  let bestD = Infinity;
+  for (let gz = Math.max(0, cgz - 4); gz <= Math.min(grid.size - 1, cgz + 4); gz++) {
+    for (let gx = Math.max(0, cgx - 4); gx <= Math.min(grid.size - 1, cgx + 4); gx++) {
+      if (grid.cells[gz * grid.size + gx] === 0) continue;
+      const c: [number, number] = [grid.origin + gx + 0.5, grid.origin + gz + 0.5];
+      const d = Math.hypot(c[0] - x, c[1] - z);
+      if (d < bestD && accept(c)) { bestD = d; best = c; }
+    }
+  }
+  return best;
+}
+
+/**
+ * Ground walk: findPath, except that a walkable point whose cell centre is blocked (bridge edge,
+ * shoreline, wall face) routes to the nearest open cell that reaches it straight, then to the point.
+ */
+export function findWalkPath(grid: WalkGrid, from: [number, number], to: [number, number]): [number, number][] | null {
+  const gx = Math.floor(to[0] - grid.origin);
+  const gz = Math.floor(to[1] - grid.origin);
+  const inGrid = gx >= 0 && gx < grid.size && gz >= 0 && gz < grid.size;
+  if (!inGrid || grid.cells[gz * grid.size + gx] === 1 || !grid.walkable(to[0], to[1])) return findPath(grid, from, to);
+  const near = nearestOpenCell(grid, to[0], to[1], (c) => segmentWalkable(grid, c, to));
+  if (!near) return null;
+  const path = findPath(grid, from, near);
+  return path ? [...path, to] : null;
+}
+
 export function entityGoal(
   grid: WalkGrid,
   from: [number, number],

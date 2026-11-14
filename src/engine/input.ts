@@ -6,7 +6,7 @@ import { toggleSpecialAttack, closeModals, hideHoverTooltip } from '../ui/player
 import { switchTab, addChatMessage, updateTargetHud, getCombatLevel, el } from '../ui/hud';
 import { getTerrainHeight } from '../state/terrain';
 import { isDown } from '../state/monsterAi';
-import { entityGoal, findPath } from '../state/pathfind';
+import { entityGoal, findPath, findWalkPath, nearestOpenCell } from '../state/pathfind';
 import { STATE } from '../state/gameState';
 import { SKILLS_META } from '../data/skills';
 import {
@@ -22,24 +22,13 @@ function pathStart(): [number, number] {
   const { x, z } = player.pos;
   const cgx = Math.floor(x - g.origin);
   const cgz = Math.floor(z - g.origin);
-  const open = (gx: number, gz: number) => gx >= 0 && gx < g.size && gz >= 0 && gz < g.size && g.cells[gz * g.size + gx] === 1;
-  if (open(cgx, cgz)) return [x, z];
-  let best: [number, number] | null = null;
-  let bestD = Infinity;
-  for (let gz = cgz - 4; gz <= cgz + 4; gz++) {
-    for (let gx = cgx - 4; gx <= cgx + 4; gx++) {
-      if (!open(gx, gz)) continue;
-      const cx = g.origin + gx + 0.5;
-      const cz = g.origin + gz + 0.5;
-      const d = Math.hypot(cx - x, cz - z);
-      if (d < bestD) { bestD = d; best = [cx, cz]; }
-    }
-  }
-  return best ?? [x, z];
+  const open = cgx >= 0 && cgx < g.size && cgz >= 0 && cgz < g.size && g.cells[cgz * g.size + cgx] === 1;
+  if (open) return [x, z];
+  return nearestOpenCell(g, x, z) ?? [x, z];
 }
 
 export function planWalk(to: [number, number]): [number, number][] | null {
-  return findPath(G.walkGrid, pathStart(), to);
+  return findWalkPath(G.walkGrid, pathStart(), to);
 }
 
 // Empty list when already within stopDist (no path needed); null when unreachable.
