@@ -353,4 +353,18 @@ describe('world data', () => {
       expect(slopeAt(p.x, p.z), `${p.type} at (${p.x}, ${p.z}) slope`).toBeLessThanOrEqual(1.0);
     }
   });
+
+  // Review 8: a camp member must not spawn inside a prop of a point of interest.
+  it('no POI piece is within 2 units of a camp member', () => {
+    for (const poi of POIS) {
+      for (const piece of poi.pieces) {
+        for (const c of CAMPS) {
+          for (const m of c.members) {
+            const d = Math.hypot(poi.x + piece.dx - m.x, poi.z + piece.dz - m.z);
+            expect(d, `${poi.name} ${JSON.stringify(piece)} near ${c.id} ${m.type} (${m.x}, ${m.z})`).toBeGreaterThanOrEqual(2);
+          }
+        }
+      }
+    }
+  });
 });
