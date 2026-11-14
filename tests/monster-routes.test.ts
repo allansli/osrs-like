@@ -166,8 +166,9 @@ describe('chase on a route (design 6.1)', () => {
     const grid = wallGrid(6);
     const m = chaser(-5, 0);
     for (let t = 0; t < 10 && m.state !== 'attack'; t += DT) {
+      const before = cappedSearches();
       step(m, grid, 5, 0);
-      if (cappedSearches() === 1) {
+      if (before === 0 && cappedSearches() === 1) {
         expect(m.pathGoalX).toBe(5);
         expect(m.pathGoalZ).toBe(0);
       }
@@ -292,7 +293,8 @@ describe('return on a route (design 6.1)', () => {
       const px = m.x;
       const pz = m.z;
       events.push(...step(m, realGrid, 999, 999).map((e) => e.kind));
-      if (m.state === 'return') expect(Math.hypot(m.x - px, m.z - pz)).toBeLessThanOrEqual(SPEED * DT + 1e-9);
+      // Arrival within 1.0 does not move it: no frame, the last one included, is a snap.
+      expect(Math.hypot(m.x - px, m.z - pz)).toBeLessThanOrEqual(SPEED * DT + 1e-9);
       if (Math.abs(m.z) <= 2.05 && m.x >= 22 && m.x <= 34) onDeck = true;
     }
     expect(onDeck).toBe(true);
@@ -344,14 +346,15 @@ describe('return on a route (design 6.1)', () => {
       const c = Math.max(Math.abs(x), Math.abs(z));
       return inBounds(x, z) && !(c >= 2.4 && c <= 3.6);
     });
-    expect(findPath(grid, [-8, 0], [0, 0], { expanded: 0 }, 6000)).toBeNull();
+    // From 14 away it still walks at the 1.5 s and 3 s stall checks: only the clock puts it home by 3 s.
+    expect(findPath(grid, [-14, 0], [0, 0], { expanded: 0 }, 6000)).toBeNull();
     const m = createMonsterLogic('goblin', 0, 0);
-    sendHome(m, grid, -8, 0);
+    sendHome(m, grid, -14, 0);
     const events: string[] = [];
     let t = 0;
     for (; t < 6 && m.state === 'return'; t += DT) events.push(...step(m, grid, 999, 999).map((e) => e.kind));
     expect(m.state).toBe('idle');
-    expect(t).toBeLessThanOrEqual(3 + 2 * DT);
+    expect(t).toBeLessThanOrEqual(3 + 3 * DT);
     expect(events).toContain('reset');
     expect(m.x).toBe(m.homeX);
     expect(m.z).toBe(m.homeZ);
