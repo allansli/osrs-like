@@ -1,5 +1,7 @@
 # Start and pacing: design
 
+> **Approved by the owner on 2026-11-14**, design and plan, after two independent checks. The owner answered "ok" to each of the six remaining decisions: the two pacing-test numbers, the 10x notice on load, the fishing "depleted" line decided after the play check, typed cheat codes kept, the starter chain hidden from existing saves, and the list of new names (to be web-searched with the Stage 2 names). Code starts after Stage 2 is merged.
+
 Date: 2026-11-14. Branch: `feat/start-pacing`, cut from `main`. All line numbers refer to commit `a8cad85`. Stage 2 (`feat/world-place`) is being built now and will move some of them; every task in the plan finds symbols by name.
 
 Status: proposal, revised with the owner's decisions of 2026-11-14. Every open question of the first two drafts is now decided (section 15 gives each decision, its date and the owner's words). Decisions marked **CALL** that the owner did not speak to remain the lead's proposals (section 12). Two small new decisions came out of the answers (section 15.2).
