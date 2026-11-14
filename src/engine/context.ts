@@ -92,6 +92,9 @@ export const camState: CamState = {
 export const _tmpScratchVec = new THREE.Vector3();
 export const _camTargetVec = new THREE.Vector3();
 export const _lookTargetVec = new THREE.Vector3();
+export const _emberOffsetVec = new THREE.Vector3();
+export const _projNextVec = new THREE.Vector3();
+export const _upAxisVec = new THREE.Vector3(0, 1, 0);
 
 export interface TelemetryInfo {
   gpuName: string;

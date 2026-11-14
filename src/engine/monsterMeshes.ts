@@ -858,8 +858,8 @@ export function poseMonsterLimbs(m: MonsterEntity, moving: boolean, now: number,
   rig.group.position.y = groundY + Math.abs(breath) * 0.04;
   if (rig.headGroup) rig.headGroup.rotation.y = Math.sin(now * 0.0016) * 0.14;
   if (rig.leftLegPivot && rig.rightLegPivot) {
-    rig.leftLegPivot.rotation.x *= 0.86;
-    rig.rightLegPivot.rotation.x *= 0.86;
+    rig.leftLegPivot.rotation.x *= Math.pow(0.86, dt * 60);
+    rig.rightLegPivot.rotation.x *= Math.pow(0.86, dt * 60);
   }
   if (rig.leftArmPivot) rig.leftArmPivot.rotation.x = breath;
   if (rig.rightArmPivot) rig.rightArmPivot.rotation.x = -breath * 0.45;

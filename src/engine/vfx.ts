@@ -405,7 +405,7 @@ export function spawnSpellImpact(
     spawnVfx(sigil, 1.2, (v) => {
       const t = v.age / v.life;
       v.mesh.scale.setScalar(1 + t * 2.4);
-      v.mesh.rotation.z += 0.02;
+      v.mesh.rotation.z = v.age * 1.2;
       (sigil.material as THREE.MeshBasicMaterial).opacity = 0.95 * (1 - t);
     });
     spawnBurst(targetPos.clone().add(new THREE.Vector3(0, 1.3, 0)), 10, 0xfb7185, 0.7, 3.1);

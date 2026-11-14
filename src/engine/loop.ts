@@ -5,6 +5,9 @@ import {
   camState,
   _camTargetVec,
   _lookTargetVec,
+  _emberOffsetVec,
+  _projNextVec,
+  _upAxisVec,
   telemetryInfo,
   G,
   MonsterEntity,
@@ -38,7 +41,7 @@ import { disposeObject3D } from './dispose';
 import { PRAYERS } from '../data/magic';
 import { WORLD_REGIONS } from '../data/world';
 import { STATE } from '../state/gameState';
-import { getEquipmentBonuses } from '../state/combat';
+import { getEquipmentBonuses, type EquipmentBonuses } from '../state/combat';
 import { moveWithCollision } from '../state/collision';
 import { isDown, stepMonster } from '../state/monsterAi';
 import { getTerrainHeight } from '../state/terrain';
@@ -63,6 +66,7 @@ export interface FrameState {
   now: number;
   dt: number;
   elapsedSec: number;
+  equipmentBonuses: EquipmentBonuses;
   moveSpeed: number;
   hasMoveIntent: boolean;
   moveDirX: number;
@@ -75,9 +79,9 @@ export function updateVitalsAndRegen(f: FrameState): void {
     const count = el('death-count');
     count.textContent = String(Math.max(0, Math.ceil(player.downedTimer)));
     if (player.downedTimer <= 0) finishRespawn();
-  } else if (getEquipmentBonuses(STATE).matchedSet) {
+  } else if (f.equipmentBonuses.matchedSet) {
     G.setBonusTimer += f.dt;
-    const bon = getEquipmentBonuses(STATE);
+    const bon = f.equipmentBonuses;
     const threshold = bon.isFullKit ? 1.25 : 1.7;
     if (G.setBonusTimer > threshold) {
       G.setBonusTimer = 0;
@@ -280,7 +284,8 @@ export function updatePlayerMotion(f: FrameState): void {
   player.meshGroup!.rotation.y = lerpAngle(player.meshGroup!.rotation.y, targetMeshYaw, Math.min(1, f.dt * 12));
 
   let turnDelta = (player.meshGroup!.rotation.y - lastMeshYaw) / Math.max(0.001, f.dt);
-  player.yawVelocity = (player.yawVelocity ?? 0) * 0.8 + turnDelta * 0.2;
+  const a = Math.pow(0.8, f.dt * 60);
+  player.yawVelocity = (player.yawVelocity ?? 0) * a + turnDelta * (1 - a);
 
   // Dynamic Bank Roll (lean subtly into turns while running)
   const targetBank = player.isMoving ? THREE.MathUtils.clamp(-player.yawVelocity * 0.07, -0.20, 0.20) : 0;
@@ -335,12 +340,13 @@ export function updatePlayerAnimation(f: FrameState): void {
     player.parts.capeMesh.rotation.y = player.capeAngleY;
 
     if (player.parts.capeMesh.userData?.silhouette === 'lava-cape' && Math.random() < 0.22) {
-      const emberPos = player.pos.clone().add(new THREE.Vector3(
+      _emberOffsetVec.set(
         -Math.sin(player.yaw) * 0.45 + (Math.random() - 0.5) * 0.2,
         0.5 + Math.random() * 0.3,
         -Math.cos(player.yaw) * 0.45 + (Math.random() - 0.5) * 0.2
-      ));
-      spawnBurst(emberPos, 1, 0xf97316, 0.35, 0.6);
+      );
+      _emberOffsetVec.add(player.pos);
+      spawnBurst(_emberOffsetVec, 1, 0xf97316, 0.35, 0.6);
     }
   };
 
@@ -388,13 +394,13 @@ export function updatePlayerAnimation(f: FrameState): void {
     } else {
       player.animTime += f.dt * 2.0;
       const breath = Math.sin(player.animTime) * 0.035;
-      player.parts.leftLegPivot.rotation.x *= 0.85;
-      player.parts.rightLegPivot.rotation.x *= 0.85;
-      if (player.parts.leftKneePivot) player.parts.leftKneePivot.rotation.x *= 0.85;
-      if (player.parts.rightKneePivot) player.parts.rightKneePivot.rotation.x *= 0.85;
+      player.parts.leftLegPivot.rotation.x *= Math.pow(0.85, f.dt * 60);
+      player.parts.rightLegPivot.rotation.x *= Math.pow(0.85, f.dt * 60);
+      if (player.parts.leftKneePivot) player.parts.leftKneePivot.rotation.x *= Math.pow(0.85, f.dt * 60);
+      if (player.parts.rightKneePivot) player.parts.rightKneePivot.rotation.x *= Math.pow(0.85, f.dt * 60);
       if (player.parts.torso) {
         player.parts.torso.rotation.x = breath * 0.5;
-        player.parts.torso.rotation.y *= 0.88;
+        player.parts.torso.rotation.y *= Math.pow(0.88, f.dt * 60);
       }
       player.parts.leftArmPivot.rotation.x = 0.10 + breath;
       player.parts.leftArmPivot.rotation.z = 0.28;
@@ -587,11 +593,12 @@ export function updateWorldTimers(f: FrameState): void {
       p.mesh.position.y += Math.sin(p.progress * Math.PI) * arc;
       if (p.orient) {
         const aheadT = Math.min(1, p.progress + 0.06);
-        const next = new THREE.Vector3().lerpVectors(p.start, p.end, aheadT);
-        next.y += Math.sin(aheadT * Math.PI) * arc;
-        const dir = next.sub(p.mesh.position);
+        _projNextVec.lerpVectors(p.start, p.end, aheadT);
+        _projNextVec.y += Math.sin(aheadT * Math.PI) * arc;
+        const dir = _projNextVec.sub(p.mesh.position);
         if (dir.lengthSq() > 1e-8) {
-          p.mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.normalize());
+          _upAxisVec.set(0, 1, 0);
+          p.mesh.quaternion.setFromUnitVectors(_upAxisVec, dir.normalize());
         }
       }
       if (p.onTick) p.onTick(p, f.dt);
@@ -676,6 +683,7 @@ export function gameLoop(now: number): void {
     now,
     dt,
     elapsedSec,
+    equipmentBonuses: getEquipmentBonuses(STATE),
     moveSpeed: 11.5,
     hasMoveIntent: false,
     moveDirX: 0,
