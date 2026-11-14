@@ -9,6 +9,7 @@ import {
   type NpcLabel
 } from './context';
 import { WORLD_REGIONS, type RegionDef } from '../data/world';
+import { PATHS, RIDGES } from '../data/worldMap';
 import { PRAYERS } from '../data/magic';
 import { STATE } from '../state/gameState';
 import { getTerrainHeight } from '../state/terrain';
@@ -59,6 +60,34 @@ export function renderMinimap(): void {
     else ctx.lineTo(px, pz);
   }
   ctx.stroke();
+
+  // Paths
+  ctx.strokeStyle = '#473b30';
+  PATHS.forEach((path) => {
+    ctx.lineWidth = path.halfWidth * 2 * scale;
+    ctx.beginPath();
+    path.points.forEach(([wx, wz], i) => {
+      const px = (wx - player.pos.x) * scale;
+      const pz = (wz - player.pos.z) * scale;
+      if (i === 0) ctx.moveTo(px, pz);
+      else ctx.lineTo(px, pz);
+    });
+    ctx.stroke();
+  });
+
+  // Ridges
+  ctx.strokeStyle = '#1c1917';
+  ctx.lineWidth = 8;
+  RIDGES.forEach((ridge) => {
+    ctx.beginPath();
+    ridge.points.forEach(([wx, wz], i) => {
+      const px = (wx - player.pos.x) * scale;
+      const pz = (wz - player.pos.z) * scale;
+      if (i === 0) ctx.moveTo(px, pz);
+      else ctx.lineTo(px, pz);
+    });
+    ctx.stroke();
+  });
 
   // Resource Nodes (Muted Slate / Iron)
   G.resourceNodesList.forEach((r: ResourceNodeEntity) => {

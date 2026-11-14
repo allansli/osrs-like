@@ -69,12 +69,90 @@ export type SafeZoneDef = {
   radius: number;
 };
 
-export const PATHS: PathDef[] = [];
-export const RIDGES: RidgeDef[] = [];
-export const BASINS: BasinDef[] = [];
-export const POIS: PoiDef[] = [];
+// Design 6.3. Each path starts where its signpost stands (a town exit or a fork) and ends near its shrine.
+export const PATHS: PathDef[] = [
+  { id: 'millrace_road', name: 'Millrace Road', halfWidth: 2, points: [[12, 2], [18, 0], [38, 0], [50, -6], [64, -16], [72, -22]] },
+  { id: 'saltwind_track', name: 'Saltwind Track', halfWidth: 1.8, points: [[41, 3.5], [44, 12], [54, 24], [63, 36], [68, 48], [68, 55]] },
+  { id: 'lanternway', name: 'Lanternway', halfWidth: 1.8, points: [[-14, -4], [-28, -10], [-44, -16], [-58, -26], [-68, -33]] },
+  { id: 'cinder_stair', name: 'Cinder Stair', halfWidth: 1.8, points: [[-6, 12], [-12, 32], [-14, 55], [-46, 55], [-56, 58], [-64, 61]] }
+];
 
-function makeCamp(id: string, members: CampMember[]): CampDef {
+// Harrowback Ridge closes the volcanic corner; both ends run past the walkable bound. Its one gap is Cinderstep Pass,
+// 5 wide and 22 long (twice the core half-width).
+export const RIDGES: RidgeDef[] = [
+  {
+    id: 'harrowback_ridge',
+    name: 'Harrowback Ridge',
+    points: [[-124, 22], [-38, 30], [-32, 38], [-32, 124]],
+    height: 12,
+    halfWidth: 18,
+    coreHalfWidth: 11,
+    gaps: [{ at: [-32, 55], halfWidth: 2.5 }]
+  }
+];
+
+export const BASINS: BasinDef[] = [
+  { id: 'reedglass_tarn', name: 'Reedglass Tarn', x: -40, z: -30, radius: 6, depth: 1.2 },
+  { id: 'tamarisk_pool', name: 'Tamarisk Pool', x: 96, z: 90, radius: 6, depth: 1.2 }
+];
+
+export const POIS: PoiDef[] = [
+  {
+    id: 'three_kettle_camp', name: 'Three Kettle Camp', x: 13, z: 8, padRadius: 5,
+    pieces: [
+      { builder: 'tent', dx: -2.8, dz: 2.2, rot: 0.4 },
+      { builder: 'tent', dx: 2.6, dz: 2.8, rot: -0.5 },
+      { builder: 'fireRing', dx: 0, dz: 0 },
+      { node: 'World_crate', dx: 3.4, dz: -0.8, rot: 0.3 },
+      { node: 'World_barrel', dx: -3.4, dz: -1.2 },
+      { node: 'World_bag_grain', dx: 0.2, dz: 4.2, rot: 1.1 }
+    ]
+  },
+  {
+    id: 'wardstone_cairn', name: 'Wardstone Cairn', x: -8, z: 50, padRadius: 2,
+    pieces: [
+      { builder: 'cairn', dx: 0, dz: 0 },
+      { node: 'World_plaza_pillar', dx: 1.2, dz: 1, scale: 0.6 },
+      { node: 'World_woods_lantern', dx: -1.2, dz: 1.2 }
+    ],
+    sign: 'Beyond this cairn the pass is held. Go through prepared, or not at all.'
+  },
+  {
+    id: 'cinderstep_pass', name: 'Cinderstep Pass', x: -19, z: 55, padRadius: 3,
+    pieces: [
+      { node: 'World_obsidian_spire', dx: 0, dz: 2.9 },
+      { node: 'World_obsidian_spire', dx: 0, dz: -2.9, rot: 1.6 }
+    ]
+  },
+  {
+    id: 'slagfall_terrace', name: 'Slagfall Terrace', x: -84, z: 98, padRadius: 6,
+    pieces: [
+      { node: 'World_obsidian_spire', dx: -3.5, dz: 2.5 },
+      { node: 'World_lava_fissure', dx: 2, dz: -1.5, rot: 0.7 },
+      { node: 'World_obsidian_spire', dx: 3.8, dz: 3, scale: 0.8 }
+    ]
+  },
+  {
+    id: 'lampwrights_hollow', name: "Lampwright's Hollow", x: -50, z: -13, padRadius: 2.5,
+    pieces: [
+      { node: 'World_woods_lantern', dx: -1.5, dz: 0.5 },
+      { node: 'World_mystic_mushroom', dx: 1.2, dz: 1.2 },
+      { node: 'World_crate', dx: 0.8, dz: -1.4, rot: 0.5 }
+    ]
+  },
+  { id: 'reedglass_tarn', name: 'Reedglass Tarn', x: -29, z: -30, padRadius: 0, pieces: [] },
+  {
+    id: 'tamarisk_pool', name: 'Tamarisk Pool', x: 85, z: 90, padRadius: 2.5,
+    pieces: [
+      { node: 'World_palm_tree', dx: 0, dz: 1.5 },
+      { node: 'World_sandstone_arch', dx: 1, dz: -1.2, rot: 1.57 }
+    ]
+  }
+];
+
+// Camp circle: members' centroid, radius = farthest member + 4.5, rounded up (design 6.4).
+// Aggressive camps notice a player within aggroRadius: 9 for melee, 12 for ranged and magic.
+function makeCamp(id: string, members: CampMember[], aggroRadius?: number): CampDef {
   const count = members.length;
   const cx = members.reduce((s, m) => s + m.x, 0) / count;
   const cz = members.reduce((s, m) => s + m.z, 0) / count;
@@ -84,10 +162,14 @@ function makeCamp(id: string, members: CampMember[]): CampDef {
     x: cx,
     z: cz,
     radius: Math.ceil(maxDist + 4.5),
-    aggressive: false,
+    aggressive: aggroRadius !== undefined,
+    aggroRadius,
     members
   };
 }
+
+const MELEE_AGGRO = 9;
+const RANGED_AGGRO = 12;
 
 export const CAMPS: CampDef[] = [
   makeCamp('hen_yard', [
@@ -106,42 +188,50 @@ export const CAMPS: CampDef[] = [
     { type: 'goblin_archer', x: 27, z: 19 }
   ]),
   makeCamp('wizards', [
-    { type: 'dark_wizard', x: 62, z: -6 },
-    { type: 'dark_wizard', x: 68, z: -2 },
-    { type: 'dark_wizard', x: 58, z: -14 }
-  ]),
+    { type: 'dark_wizard', x: 45, z: -24 },
+    { type: 'dark_wizard', x: 51, z: -30 },
+    { type: 'dark_wizard', x: 41, z: -32 }
+  ], RANGED_AGGRO),
   makeCamp('rangers', [
-    { type: 'dark_ranger', x: 74, z: -10 },
-    { type: 'dark_ranger', x: 80, z: -4 }
-  ]),
+    { type: 'dark_ranger', x: 76, z: -52 },
+    { type: 'dark_ranger', x: 84, z: -50 }
+  ], RANGED_AGGRO),
   makeCamp('giants', [
-    { type: 'hill_giant', x: 88, z: -36 },
-    { type: 'hill_giant', x: 96, z: -28 },
-    { type: 'hill_giant', x: 82, z: -42 },
-    { type: 'hill_giant', x: 95, z: -40 }
-  ]),
-  makeCamp('scorpions', [
-    { type: 'scorpion', x: 52, z: 54 },
-    { type: 'scorpion', x: 60, z: 76 },
-    { type: 'scorpion', x: 76, z: 58 },
-    { type: 'scorpion', x: 82, z: 72 },
-    { type: 'scorpion', x: 68, z: 84 }
-  ]),
-  makeCamp('guardians', [
-    { type: 'moss_guardian', x: -64, z: -18 },
-    { type: 'moss_guardian', x: -82, z: -22 },
-    { type: 'moss_guardian', x: -70, z: -44 },
-    { type: 'moss_guardian', x: -86, z: -38 }
-  ]),
-  makeCamp('demons', [
-    { type: 'lesser_demon', x: -56, z: 56 },
-    { type: 'lesser_demon', x: -64, z: 78 },
-    { type: 'lesser_demon', x: -82, z: 58 },
-    { type: 'lesser_demon', x: -58, z: 84 }
-  ]),
+    { type: 'hill_giant', x: 74, z: 14 },
+    { type: 'hill_giant', x: 82, z: 18 },
+    { type: 'hill_giant', x: 72, z: 24 },
+    { type: 'hill_giant', x: 82, z: 28 }
+  ], MELEE_AGGRO),
+  makeCamp('dune_nest_west', [
+    { type: 'scorpion', x: 44, z: 42 },
+    { type: 'scorpion', x: 52, z: 40 },
+    { type: 'scorpion', x: 48, z: 50 }
+  ], MELEE_AGGRO),
+  makeCamp('dune_nest_east', [
+    { type: 'scorpion', x: 88, z: 36 },
+    { type: 'scorpion', x: 96, z: 40 }
+  ], MELEE_AGGRO),
+  makeCamp('deep_woods_west', [
+    { type: 'moss_guardian', x: -99, z: -26 },
+    { type: 'moss_guardian', x: -99, z: -34 }
+  ], MELEE_AGGRO),
+  makeCamp('deep_woods_south', [
+    { type: 'moss_guardian', x: -72, z: -58 },
+    { type: 'moss_guardian', x: -78, z: -54 }
+  ], MELEE_AGGRO),
+  makeCamp('pass_sentries', [
+    { type: 'lesser_demon', x: -42, z: 55, wander: 1 },
+    { type: 'lesser_demon', x: -37, z: 55, wander: 1 },
+    { type: 'lesser_demon', x: -27, z: 55, wander: 1 },
+    { type: 'lesser_demon', x: -22, z: 55, wander: 1 }
+  ], MELEE_AGGRO),
+  makeCamp('slagfall_terrace', [
+    { type: 'lesser_demon', x: -86, z: 96 },
+    { type: 'lesser_demon', x: -78, z: 104 }
+  ], MELEE_AGGRO),
   makeCamp('dragon', [
-    { type: 'elvarg_dragon', x: -82, z: 82 }
-  ])
+    { type: 'elvarg_dragon', x: -102, z: 100 }
+  ], RANGED_AGGRO)
 ];
 
 export const SAFE_ZONES: SafeZoneDef[] = WORLD_REGIONS.map((reg) => ({

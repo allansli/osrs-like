@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { MONSTER_PLACEMENTS, NODE_PLACEMENTS } from '../src/data/placements';
 import { MONSTER_TYPES, RESOURCE_NODES_DEF } from '../src/data/world';
-import { isWalkable, riverCenterX } from '../src/state/collision';
+import { BASINS } from '../src/data/worldMap';
+import { isDeepWater, isWalkable } from '../src/state/collision';
+import { getTerrainHeight } from '../src/state/terrain';
 
 const fishing = NODE_PLACEMENTS.filter((p) => p.type.startsWith('fish_'));
 
@@ -24,10 +26,12 @@ describe('placements', () => {
     }
   });
 
-  it('every fishing point is within 6.8 of riverCenterX(z)', () => {
+  it('every fishing point stands on unwalkable water: river by isDeepWater, or a basin', () => {
     expect(fishing.length).toBeGreaterThan(0);
     for (const p of fishing) {
-      expect(Math.abs(p.x - riverCenterX(p.z)), `${p.type} at (${p.x}, ${p.z})`).toBeLessThanOrEqual(6.8);
+      const inBasin = BASINS.some((b) => Math.hypot(p.x - b.x, p.z - b.z) <= b.radius && getTerrainHeight(p.x, p.z) < -0.34);
+      expect(isDeepWater(p.x, p.z) || inBasin, `${p.type} at (${p.x}, ${p.z})`).toBe(true);
+      expect(isWalkable(p.x, p.z), `${p.type} at (${p.x}, ${p.z})`).toBe(false);
     }
   });
 
