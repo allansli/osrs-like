@@ -6,9 +6,9 @@ export type DropResult =
 
 export const HP_REGEN_PER_SEC = 0.25;
 
-export function rollDrops(typeKey: string, rand: () => number = Math.random): DropResult[] {
+export function rollDrops(typeKey: string, rand: () => number): DropResult[] {
   const def = MONSTER_TYPES[typeKey];
-  if (!def || !def.drops) return [];
+  if (!def.drops) return [];
   const results: DropResult[] = [];
   for (const d of def.drops) {
     if (rand() <= d.chance) {
