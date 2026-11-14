@@ -44,7 +44,6 @@ interface FlashState {
 
 const entityFlashes = new Map<Entity, FlashState>();
 const entityLastFlashTime = new Map<Entity, number>();
-const entityMaterialsCache = new WeakMap<Entity, THREE.Material[]>();
 let reactionTimeMs = 0;
 const _whiteColor = new THREE.Color(0xffffff);
 const _tempColor = new THREE.Color();
@@ -53,12 +52,10 @@ function collectMaterials(root: THREE.Object3D): THREE.Material[] {
   const materials: THREE.Material[] = [];
   root.traverse((child: THREE.Object3D) => {
     const mesh = child as THREE.Mesh;
-    if (mesh.isMesh && mesh.material) {
-      if (Array.isArray(mesh.material)) {
-        materials.push(...mesh.material);
-      } else {
-        materials.push(mesh.material);
-      }
+    // Outline shells share one colourless ShaderMaterial: never flash them.
+    if (mesh.isMesh && mesh.material && !mesh.userData.isOutline) {
+      const list = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+      for (const m of list) if ('color' in m) materials.push(m);
     }
   });
   return materials;
@@ -71,11 +68,8 @@ export function flash(entity: Entity): void {
   }
   entityLastFlashTime.set(entity, reactionTimeMs);
 
-  let materials = entityMaterialsCache.get(entity);
-  if (!materials) {
-    materials = collectMaterials(meshRoot(entity));
-    entityMaterialsCache.set(entity, materials);
-  }
+  // Collected on every flash: the hero's gear meshes are rebuilt when equipment changes.
+  const materials = collectMaterials(meshRoot(entity));
 
   const originalColors: number[] = [];
   for (const mat of materials) {
@@ -95,6 +89,8 @@ interface HeroFlinchState {
   dirZ: number;
   elapsedMs: number;
   durationMs: number;
+  lastX: number;
+  lastZ: number;
 }
 
 let activeHeroFlinch: HeroFlinchState | null = null;
@@ -107,6 +103,8 @@ export function flinchHero(dirX: number, dirZ: number): void {
     dirZ: dirZ / len,
     elapsedMs: 0,
     durationMs: FLINCH.heroMs,
+    lastX: 0,
+    lastZ: 0,
   };
 }
 
@@ -267,17 +265,20 @@ export function updateReactions(dt: number): void {
   }
 
   if (activeHeroFlinch) {
-    activeHeroFlinch.elapsedMs += dtMs;
+    // Additive lean on top of the pose: remove last frame's offset, add this frame's (like the camera kick).
+    const f = activeHeroFlinch;
     const torso = player.parts.torso as THREE.Group;
-    if (activeHeroFlinch.elapsedMs >= activeHeroFlinch.durationMs) {
-      torso.rotation.x = 0;
-      torso.rotation.z = 0;
+    torso.rotation.x -= f.lastX;
+    torso.rotation.z -= f.lastZ;
+    f.elapsedMs += dtMs;
+    if (f.elapsedMs >= f.durationMs) {
       activeHeroFlinch = null;
     } else {
-      const progress = activeHeroFlinch.elapsedMs / activeHeroFlinch.durationMs;
-      const lean = Math.sin(progress * Math.PI) * FLINCH.heroLeanRad;
-      torso.rotation.z = -activeHeroFlinch.dirX * lean;
-      torso.rotation.x = activeHeroFlinch.dirZ * lean;
+      const lean = Math.sin((f.elapsedMs / f.durationMs) * Math.PI) * FLINCH.heroLeanRad;
+      f.lastX = f.dirZ * lean;
+      f.lastZ = -f.dirX * lean;
+      torso.rotation.x += f.lastX;
+      torso.rotation.z += f.lastZ;
     }
   }
 
