@@ -639,6 +639,17 @@ Every finding located in `src/engine/runtime.ts` (11, 12, 13, 14, 15, 16, 17, 18
 
 ---
 
+### 9.1 Review findings left open by Stage 1
+
+The adversarial review of the Stage 1 diff confirmed no critical or high finding. These medium and low findings stay open. The deferrals are proposed by the implementer and wait for the owner's confirmation.
+
+| Finding | Where | Severity | Decision | Reason |
+|---|---|---|---|---|
+| The corrupt-save backup is written only once, so a second corruption is not kept | `src/state/save.ts` | medium | Deferred to Stage 6 | The plan asked for this (a test holds it): the first backup is never overwritten. Keeping several backups needs a retention rule, which belongs with the save changes Stage 6 makes for new systems. |
+| A corrupt main save no longer falls back to the legacy save keys | `src/state/save.ts` | low | Deferred to Stage 6 | The plan asked for this (a test holds it): loading a much older save silently over a corrupt current one would look like lost progress with no notice. Revisit with the backup rule. |
+| If writing the backup throws (storage full), the raw corrupt save is lost at the next autosave | `src/state/save.ts` | low | Deferred to Stage 6 | Needs autosave to hold off while an unsaved corrupt copy exists; that is a save-flow change, not a hardening of the reader. |
+| The gp and stack cap (2147483647) is applied only on load | `src/state/save.ts`, `src/state/inventory.ts` | low | Deferred to Stage 3 | A cap during play is an economy rule; Stage 3 reworks prices and income. Not reachable in normal play today. |
+
 ## 10. Threat model
 
 ### 10.1 What are we working on?
