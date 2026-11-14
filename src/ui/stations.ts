@@ -1,4 +1,4 @@
-import { ITEMS, TIER_COLORS, combatClassLabel, isStackableInBackpack, itemCombatClass, unitSellPrice, type ItemDef } from '../data/items';
+import { ITEMS, TIER_COLORS, combatClassLabel, isStackableInBackpack, itemCombatClass, shopPrice, unitSellPrice, type ItemDef } from '../data/items';
 import { SKILLS_META } from '../data/skills';
 import { FORGE_RECIPES, recipeById } from '../data/recipes';
 import { WORLD_REGIONS, type RegionDef } from '../data/world';
@@ -48,7 +48,7 @@ function batchLabel(qty: number): string {
 }
 
 function affordableBuyQty(it: ItemDef): number {
-  const price = it.price || 0;
+  const price = shopPrice(it);
   if (price <= 0) return 0;
   let qty = Math.floor(STATE.gp / price);
   if (!isStackableInBackpack(it)) {
@@ -60,7 +60,7 @@ function affordableBuyQty(it: ItemDef): number {
 }
 
 function shopBuyLabel(it: ItemDef): string {
-  const price = it.price || 0;
+  const price = shopPrice(it);
   const mode = STATE.transferQty;
   if (mode === 'all') {
     const qty = affordableBuyQty(it);
@@ -308,7 +308,7 @@ export function renderShopModal(): void {
     const stackable = isStackableInBackpack(it);
     const batches = stackable && !gathered
       ? `<div class="shop-batch-row">${STACK_BATCHES.map((qty) => {
-          const cost = (it.price || 0) * qty;
+          const cost = shopPrice(it) * qty;
           return `<button type="button" class="shop-batch-btn" data-buy-batch="${qty}" data-batch-item="${it.id}" title="Buy ${qty.toLocaleString('en-US')} for ${formatGp(cost)}">${batchLabel(qty)}</button>`;
         }).join('')}</div>`
       : '';
@@ -330,7 +330,7 @@ export function renderShopModal(): void {
             <div class="shop-card-name">${it.name}</div>
             <span class="combat-class-badge ${combat}">${combatClassLabel(combat)}</span>
           </div>
-          <div class="shop-card-desc">${it.slot ? it.slot : it.type} · ${it.price.toLocaleString('en-US')} GP</div>
+          <div class="shop-card-desc">${it.slot ? it.slot : it.type} · ${shopPrice(it).toLocaleString('en-US')} GP</div>
           ${req.html}
         </div>
       </div>
@@ -611,7 +611,7 @@ export function itemCompareHtml(it: ItemDef): string {
     if (it.heal) bits.push(`Heals +${it.heal}`);
     if (it.restorePrayer) bits.push(`Prayer +${it.restorePrayer}`);
     if (it.xp) bits.push(`Bury for ${it.xp} Prayer XP`);
-    bits.push(`Value ${it.price} GP · sell ${unitSellPrice(it)} GP`);
+    bits.push(`Shop ${shopPrice(it)} GP · sell ${unitSellPrice(it)} GP`);
     return `<div class="tip-title">${it.name}</div><div>${bits.join('<br>')}</div>`;
   }
   const equippedId = STATE.equipment[it.slot];

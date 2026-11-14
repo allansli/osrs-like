@@ -1,4 +1,4 @@
-import { ITEMS, isStackableInBackpack, isStackableInBank, unitSellPrice } from '../data/items';
+import { ITEMS, isStackableInBackpack, isStackableInBank, shopPrice, unitSellPrice } from '../data/items';
 import { BACKPACK_SIZE, BANK_CAPACITY } from './gameState';
 import type { GameState, ItemStack, QtyMode } from './types';
 
@@ -174,7 +174,7 @@ export function buyItem(state: GameState, itemId: string, mode: QtyMode): Transf
   const item = ITEMS[itemId];
   if (!item) return { ok: false, moved: 0, reason: 'Unknown item.' };
   if (isGatheredGood(itemId)) return { ok: false, moved: 0, reason: 'The store only buys that.' };
-  const price = item.price || 0;
+  const price = shopPrice(item);
   if (price <= 0) return { ok: false, moved: 0, reason: 'That cannot be bought.' };
   const affordable = Math.floor(state.gp / price);
   let want = resolveQty(mode, affordable);
