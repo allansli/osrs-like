@@ -14,7 +14,9 @@ const DENY = [
   // franchises and their proper nouns
   'runescape', 'osrs', 'oldschool', 'runewilds', 'hylian', 'hyrule', 'zelda', 'zora', 'breath of the wild',
   'bandos', 'armadyl', 'saradomin', 'zamorak', 'guthix', 'barrows', 'dharok', 'torag', 'torva',
-  'justiciar', 'inquisitor', 'ancestral', 'abyssal', 'elysian', 'fierce deity'
+  'justiciar', 'inquisitor', 'ancestral', 'abyssal', 'elysian', 'fierce deity',
+  'sheikah', 'masori', 'karil', 'ahrim', 'proselyte', 'zulrah', 'kodai', 'neitiznot', 'tzkal',
+  'godsword', 'pegasian', 'ultor'
 ];
 
 const denied = (name: string) => DENY.filter((t) => name.toLowerCase().includes(t));
