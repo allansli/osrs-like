@@ -244,7 +244,11 @@ export function updatePlayerIntent(f: FrameState): void {
           }
         }
 
-        while (player.waypoints.length > 0) {
+        // Only a monster target aims at the entity on the last segment (design 6.7). Resources and
+        // stations keep the goal cell, which is within stop distance, so the hero never pushes into
+        // the water or wall between the goal and the entity.
+        const keepGoal = target.type === 'monster' ? 0 : 1;
+        while (player.waypoints.length > keepGoal) {
           const wp = player.waypoints[0];
           const dWp = Math.hypot(wp[0] - player.pos.x, wp[1] - player.pos.z);
           if (dWp <= 0.45) {
@@ -256,7 +260,7 @@ export function updatePlayerIntent(f: FrameState): void {
 
         let aimX: number;
         let aimZ: number;
-        if (player.waypoints.length > 1) {
+        if (player.waypoints.length > 1 - keepGoal) {
           aimX = player.waypoints[0][0];
           aimZ = player.waypoints[0][1];
         } else {
