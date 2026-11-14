@@ -24,7 +24,7 @@ import { STATE } from '../state/gameState';
 import { prepareAttack, getEquipmentBonuses, rollMonsterHit } from '../state/combat';
 import { addItem, removeItem, canAddItem } from '../state/inventory';
 import { SPELLS } from '../data/magic';
-import { isDown, onPlayerHit } from '../state/monsterAi';
+import { AGGRO_GRACE_MS, isDown, onPlayerHit } from '../state/monsterAi';
 import { ITEMS } from '../data/items';
 import { SKILLS_META } from '../data/skills';
 import { addItemToInventory, grantXp } from '../ui/playerActions';
@@ -44,7 +44,7 @@ import {
 export function teleportToRegion(regionId?: string): void {
   const reg = WORLD_REGIONS.find((r: RegionDef) => r.id === regionId);
   if (!reg) return;
-  G.aggroGraceUntil = performance.now() + 3000;
+  G.aggroGraceUntil = performance.now() + AGGRO_GRACE_MS;
   player.targetEntity = null;
   player.waypoints.length = 0;
   player.pos.set(reg.x, getTerrainHeight(reg.x, reg.z + 4), reg.z + 4);
@@ -376,7 +376,7 @@ export function handlePlayerDeath(): void {
 }
 
 export function finishRespawn(): void {
-  G.aggroGraceUntil = performance.now() + 3000;
+  G.aggroGraceUntil = performance.now() + AGGRO_GRACE_MS;
   applyRespawn(STATE);
   player.downed = false;
   player.downedTimer = 0;

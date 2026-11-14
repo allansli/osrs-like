@@ -4,6 +4,7 @@ import { spawnLevelUpFireworks } from './vfx';
 import { STATE, applyState } from '../state/gameState';
 import { readSave, writeSave, SAVE_KEY, LEGACY_SAVE_KEYS, sanitizeCam } from '../state/save';
 import { matchCheat, applySkillsPlus10, applyGold200k } from '../state/cheats';
+import { AGGRO_GRACE_MS } from '../state/monsterAi';
 import { el, addChatMessage, showBanner, updateAllUI } from '../ui/hud';
 import { closeModals } from '../ui/playerActions';
 
@@ -35,7 +36,7 @@ export function saveGameState(): void {
 }
 
 export function loadGameState(): boolean {
-  G.aggroGraceUntil = performance.now() + 3000;
+  G.aggroGraceUntil = performance.now() + AGGRO_GRACE_MS;
   try {
     const migrated = readSave(localStorage);
     if (!migrated) return false;

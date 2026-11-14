@@ -2,7 +2,7 @@
 // a pure step function and the hit entry point.
 // The engine owns meshes, sounds and the HUD; it applies the events returned here.
 import { MONSTER_TYPES } from '../data/world';
-import type { CampDef } from '../data/worldMap';
+import { isInSafeZone, type CampDef } from '../data/worldMap';
 import { monsterThreatColor } from './adventure';
 import { moveWithCollision } from './collision';
 
@@ -54,6 +54,14 @@ const WANDER_SPEED = 1.8;
 const ATTACK_INTERVAL = 1.65;
 const DYING_SECS = 0.85;
 const DEAD_SECS = 7.5;
+
+/** Aggression grace after load, teleport and respawn (design 6.5). */
+export const AGGRO_GRACE_MS = 3000;
+
+/** `playerSafe` for stepMonster: inside a safe zone, or before `graceUntil` (same clock as `now`). */
+export function isPlayerSafe(x: number, z: number, now: number, graceUntil: number): boolean {
+  return isInSafeZone(x, z) || now < graceUntil;
+}
 
 export function createMonsterLogic(
   typeKey: string,

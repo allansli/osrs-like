@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { isWalkable } from '../src/state/collision';
-import { createMonsterLogic, stepMonster } from '../src/state/monsterAi';
+import { WORLD_REGIONS } from '../src/data/world';
+import { isInSafeZone } from '../src/data/worldMap';
+import { AGGRO_GRACE_MS, createMonsterLogic, isPlayerSafe, stepMonster } from '../src/state/monsterAi';
 import { buildWalkGrid, findPath, findWalkPath } from '../src/state/pathfind';
 
 // Confirmed Stage 2 review findings (docs/superpowers/baseline/stage2-review-findings.json).
@@ -63,5 +65,25 @@ describe('review 3: a ground click on walkable ground whose cell centre is block
 
   it('an open cell routes exactly as findPath does', () => {
     expect(findWalkPath(grid, from, [29, 1.9])).toEqual(findPath(grid, from, [29, 1.9]));
+  });
+});
+
+describe('review 12: the aggression grace after load, teleport and respawn', () => {
+  it('lasts 3 seconds', () => {
+    expect(AGGRO_GRACE_MS).toBe(3000);
+  });
+
+  it('makes the player safe until graceUntil and not after, outside every safe zone', () => {
+    // The giants camp, aggressive and outside every safe zone.
+    const [x, z] = [77.5, 21];
+    expect(isInSafeZone(x, z)).toBe(false);
+    const graceUntil = 10_000 + AGGRO_GRACE_MS;
+    expect(isPlayerSafe(x, z, graceUntil - 1, graceUntil)).toBe(true);
+    expect(isPlayerSafe(x, z, graceUntil + 1, graceUntil)).toBe(false);
+  });
+
+  it('a safe zone stays safe after the grace', () => {
+    const r = WORLD_REGIONS[0];
+    expect(isPlayerSafe(r.x, r.z, 1_000_000, 0)).toBe(true);
   });
 });

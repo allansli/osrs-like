@@ -43,11 +43,11 @@ import { WORLD_REGIONS } from '../data/world';
 import { STATE } from '../state/gameState';
 import { getEquipmentBonuses, type EquipmentBonuses } from '../state/combat';
 import { moveWithCollision } from '../state/collision';
-import { isDown, stepMonster } from '../state/monsterAi';
+import { isDown, isPlayerSafe, stepMonster } from '../state/monsterAi';
 import { getTerrainHeight } from '../state/terrain';
 import { discoverShrines } from '../state/shrines';
 import { shouldRepath } from '../state/pathfind';
-import { CAMPS, isInSafeZone } from '../data/worldMap';
+import { CAMPS } from '../data/worldMap';
 import {
   addChatMessage,
   el,
@@ -563,7 +563,7 @@ export function updateCamera(f: FrameState): void {
 export function updateMonsters(f: FrameState): void {
   // Monsters Update: rules in stepMonster, mesh, pose and events here.
   const playerCombat = getCombatLevel();
-  const playerSafe = isInSafeZone(player.pos.x, player.pos.z) || f.now < G.aggroGraceUntil;
+  const playerSafe = isPlayerSafe(player.pos.x, player.pos.z, f.now, G.aggroGraceUntil);
   const camps = CAMPS;
 
   G.monstersList.forEach((m: MonsterEntity) => {
