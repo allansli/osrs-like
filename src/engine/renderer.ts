@@ -1,7 +1,6 @@
-// @ts-nocheck
 import * as THREE from 'three';
 import { G, telemetryInfo } from './context';
-import { addChatMessage } from '../ui/hud';
+import { addChatMessage, el } from '../ui/hud';
 import { buildSkyDomeShader, buildTerrainAndWater } from './worldMesh';
 import { buildAllCitiesAndLandmarks } from './worldBuild';
 import { buildPlayerCharacter } from './playerMesh';
@@ -41,8 +40,8 @@ export function applyQualityTier(tier: QualityTier): void {
       }
     }
   }
-  const dprEl = document.getElementById('perf-dpr');
-  if (dprEl) dprEl.textContent = `${dpr.toFixed(2)}x DPR`;
+  const dprEl = el('perf-dpr');
+  dprEl.textContent = `${dpr.toFixed(2)}x DPR`;
   syncGraphicsButtons();
 }
 
@@ -67,18 +66,18 @@ export function toggleOutlines(): void {
 }
 
 export function syncGraphicsButtons(): void {
-  const gBtn = document.getElementById('graphics-quality-btn');
-  if (gBtn) gBtn.textContent = `Graphics: ${currentQuality.charAt(0).toUpperCase() + currentQuality.slice(1)}`;
-  const oBtn = document.getElementById('outlines-toggle-btn');
-  if (oBtn) oBtn.textContent = outlinesEnabled ? 'Outlines: On' : 'Outlines: Off';
+  const gBtn = el('graphics-quality-btn');
+  gBtn.textContent = `Graphics: ${currentQuality.charAt(0).toUpperCase() + currentQuality.slice(1)}`;
+  const oBtn = el('outlines-toggle-btn');
+  oBtn.textContent = outlinesEnabled ? 'Outlines: On' : 'Outlines: Off';
 }
 
 export function initGpuTelemetry(gl: WebGLRenderingContext | WebGL2RenderingContext): void {
   try {
     const dbg = gl.getExtension('WEBGL_debug_renderer_info');
     if (dbg) {
-      telemetryInfo.gpuName = gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) || 'WebGL Renderer';
-      telemetryInfo.vendor = gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL) || '';
+      telemetryInfo.gpuName = (gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) as string) || 'WebGL Renderer';
+      telemetryInfo.vendor = (gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL) as string) || '';
     } else {
       telemetryInfo.gpuName = (gl.getParameter(gl.RENDERER) as string) || 'WebGL';
     }
@@ -93,23 +92,21 @@ export function initGpuTelemetry(gl: WebGLRenderingContext | WebGL2RenderingCont
 
   telemetryInfo.isHardwareAccelerated = !/swiftshader|software|llvmpipe|basic render/i.test(lower);
 
-  const nameEl = document.getElementById('perf-gpu-name');
-  const dotEl = document.getElementById('perf-dot');
-  if (nameEl) {
-    if (!telemetryInfo.isHardwareAccelerated) {
-      nameEl.textContent = 'CPU SwiftShader (GPU Acceleration OFF!)';
-      nameEl.title = 'Hardware acceleration is disabled in your browser. Enable it in chrome://settings/system!';
-      if (dotEl) dotEl.className = 'perf-status-dot warning';
-    } else {
-      nameEl.textContent = cleanName;
-      nameEl.title = telemetryInfo.gpuName;
-      if (dotEl) dotEl.className = 'perf-status-dot';
-    }
+  const nameEl = el('perf-gpu-name');
+  const dotEl = el('perf-dot');
+  if (!telemetryInfo.isHardwareAccelerated) {
+    nameEl.textContent = 'CPU SwiftShader (GPU Acceleration OFF!)';
+    nameEl.title = 'Hardware acceleration is disabled in your browser. Enable it in chrome://settings/system!';
+    dotEl.className = 'perf-status-dot warning';
+  } else {
+    nameEl.textContent = cleanName;
+    nameEl.title = telemetryInfo.gpuName;
+    dotEl.className = 'perf-status-dot';
   }
 }
 
-export function init3DEngine() {
-  const container = document.getElementById('game-canvas-container');
+export function init3DEngine(): void {
+  const container = el('game-canvas-container');
   G.scene = new THREE.Scene();
   G.scene.fog = new THREE.FogExp2(0x9ab0c2, 0.0028);
 
@@ -168,7 +165,7 @@ export function init3DEngine() {
   setupInputHandlers();
 }
 
-export function onWindowResize() {
+export function onWindowResize(): void {
   G.camera.aspect = window.innerWidth / window.innerHeight;
   G.camera.updateProjectionMatrix();
   G.renderer.setSize(window.innerWidth, window.innerHeight);
