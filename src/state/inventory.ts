@@ -1,6 +1,7 @@
 import { ITEMS, isStackableInBackpack, isStackableInBank, shopPrice, unitSellPrice } from '../data/items';
 import { MAX_GP, MAX_STACK, creditGp } from './economy';
 import { BACKPACK_SIZE, BANK_CAPACITY } from './gameState';
+import { notePurchase } from './quests';
 import type { GameState, ItemStack, QtyMode } from './types';
 
 export function resolveQty(mode: QtyMode, available: number): number {
@@ -168,6 +169,7 @@ export function buyRunePack(state: GameState, perRuneQty = 500): TransferResult 
   }
   state.gp -= cost;
   for (const it of runes) addItem(state, it.id, qty);
+  notePurchase(state);
   return { ok: true, moved: qty * runes.length, gp: cost };
 }
 
@@ -189,6 +191,7 @@ export function buyItem(state: GameState, itemId: string, mode: QtyMode): Transf
   if (want <= 0) return { ok: false, moved: 0, reason: 'Your backpack is full.' };
   state.gp -= price * want;
   place(state.inventory, itemId, want, stackable, BACKPACK_SIZE);
+  notePurchase(state);
   return { ok: true, moved: want, gp: price * want, unit: price };
 }
 
