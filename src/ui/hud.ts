@@ -22,6 +22,7 @@ import {
 } from './stations';
 import { cycleTimeOfDay } from '../engine/worldMesh';
 import { player, type MonsterEntity, type ResourceNodeEntity } from '../engine/context';
+import { saveGameState } from '../engine/runtime';
 import {
   handleInventoryClick,
   showSellChooseMenu,
@@ -29,10 +30,9 @@ import {
   unequipSlot,
   togglePrayer,
   handleSpellClick,
-  saveGameState,
   renderShopModal,
   renderSmithingModal
-} from '../engine/runtime';
+} from './playerActions';
 
 export function el<T extends HTMLElement = HTMLElement>(id: string): T {
   const node = typeof document !== 'undefined' ? document.getElementById(id) : null;
