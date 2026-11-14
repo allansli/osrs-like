@@ -35,13 +35,8 @@ describe('placements', () => {
     }
   });
 
-  // Known defect kept by "same coordinates", fixed in Stage 2 (design 5.7): the river's deep-water band
-  // makes these two unwalkable beyond 3.1 (3.28 and 3.97 from the nearest walkable point).
-  const KNOWN_DEEP = new Set(['26,-8', '28,-62']);
-
   it('every fishing point is within 3.1 of a walkable point', () => {
     for (const p of fishing) {
-      if (KNOWN_DEEP.has(`${p.x},${p.z}`)) continue;
       let found = false;
       for (let i = 0; i < 16 && !found; i++) {
         const a = (i / 16) * Math.PI * 2;

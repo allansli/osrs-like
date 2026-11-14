@@ -122,10 +122,8 @@ describe('pathfinding', () => {
   it('the start point reaches stop distance 3.1 of every fishing spot', () => {
     const spots = NODE_PLACEMENTS.filter((n) => n.type.startsWith('fish_'));
     expect(spots.length).toBeGreaterThan(0);
-    // Known Stage 1 defects: (26,-8), (28,-62) and (26,-54) have no walkable grid cell centre within
-    // 3.1, so no route can reach them until Stage 2 restores the trough. (26,-54) has walkable ground
-    // 3.000 away but the nearest cell centre of the 1-unit grid is 3.536 away, so the scan uses the
-    // grid's own cell centres, not continuous ground. Skipped by that scan, max 3.
+    // Stage 2 moved every fishing spot onto water beside walkable ground, so no spot may be skipped.
+    // The scan uses the grid's own cell centres, as the pathfinder does.
     const nearGround = (x: number, z: number) => {
       for (let cx = Math.floor(x) - 4 + 0.5; cx <= x + 4; cx++) {
         for (let cz = Math.floor(z) - 4 + 0.5; cz <= z + 4; cz++) {
@@ -150,7 +148,7 @@ describe('pathfinding', () => {
       const last = route![route!.length - 1];
       expect(Math.hypot(last[0] - spot.x, last[1] - spot.z)).toBeLessThanOrEqual(3.1 + 1e-6);
     }
-    expect(skipped).toBeLessThanOrEqual(3);
+    expect(skipped).toBe(0);
   });
 
   it('a follower re-paths when the target moves more than 2 and ends within stop distance', () => {
