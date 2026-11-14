@@ -163,3 +163,73 @@ Real trade-offs first; the others are confirmations. Each is in design section 1
 8. **CALL-4.7, auto-retaliation** (now never during a warning). Recommend accept.
 9. **CALL-4.3, no warned attacks in the start region.** Recommend accept.
 10. CALL-4.1, 4.2, 4.9, 4.10, 4.11, 4.12, 4.13: confirmations; recommend accept.
+
+---
+
+## Second pass
+
+Date: 2026-11-14. Subject: only what commit `fe5966a` changed (`git diff 3455aa7 fe5966a`), the revision that applied the owner's four answers (dying, the dragon, regeneration, two new monsters). Read against the code of this worktree (Stage 2 at `54736ba`), Stage 3's design and plan on `origin/feat/start-pacing`, and the owner's answers. Every claim was treated as wrong until code or a model run showed otherwise.
+
+Method: the committed models rerun (`run.sh`; every committed number reproduced except the machine-dependent search time); independent scripts written from scratch, not committed (the death table in Python from the XP formula; three boss rows with a separate fight loop, a numerical escape search and its own swing transcription; the Stage 2 gate over ten seed blocks; the arena with `isWalkable` and `getTerrainHeight` instead of the grid; a max-hit sweep of the boss's bolt); Stage 3's committed pacing model (`check.py`) run with its rest rate at 0.25 and 1.0. No test suite, type check, build or dev server was run.
+
+### Verdict: READY-WITH-FIXES
+
+The revision applies the owner's answers faithfully: the existing dragon is untouched by every task, the death rule never drops a level and cannot go negative, the optional saved flag leaves every golden and key test unchanged, and the boss's proof rows reproduce independently. It was not ready as written: the arena could be shot from outside without an answer (which also bypassed the proof that an unprepared hero loses), a maxed hero paid 147,460 coins to protect experience that does nothing, two engine paths (the altar's menu, the respawn chat line) were underspecified or would print a false notice, and one frozen-test replacement and one allowlist overlap were not exact. All of those are fixed in the documents. What is left is owner choices, listed at the end.
+
+### Findings
+
+Critical: none.
+
+| # | Severity | Finding | Evidence | Status |
+|---|---|---|---|---|
+| H-1 | High | **The arena can be shot from outside.** The boss's reach is 11 and a ranged or magic hero's is 13.5; pinned at its arena edge (12 from home) the boss cannot answer a hero 23 to 25.5 from home. Stepping back inside 18 resets the 5-s count, so a hero can shoot 4.9 s, dip in, repeat. This also lets an unprepared ranged or magic hero skip the bolt that makes FR and FM lose. The first critique's "no safe shooting spot" was wrong too. | `monsterAi.ts` 51 (`FAR_RANGE` 11); `input.ts` stop distance 13.5; design 6.4 arena rule | **Fixed**: no damage to the boss while the target is beyond `arenaRadius + 6` (reason `arena`); design 6.4, 9.1; plan B1, B2, B4. No proof row moves (every fighter stands at 2.9 or 11). Side effect, for the owner to veto: a hero 18 to 23 from home is still hit (the boss follows to within 11) while its hits do nothing, for at most the 5 s before the reset. The rule is this pass's addition. |
+| H-2 | High | **A skill at 99 paid for nothing.** XP is uncapped and there is no level 100, so experience past 99 only shows in a tooltip and the total. The rule charged 3% of the 98-to-99 span (36,864 points per skill): "about 230 kills" per death at all-99 and a vow of 147,460 coins guarding cosmetic numbers. | `skills.ts` 6-22; `grantXp` (`playerActions.ts` 53-59); `hud.ts` 258-262 | **Fixed as the lead's proposal, owner to confirm** (CALL-4.17 d): a skill at 99 loses nothing and is not priced; `decisions.ts` rerun (99 row: 0 lost, vow at its 250 floor); design 6.6, 9.1; plan S1, S2. The trade-off: a maxed hero then has no death cost and no gold sink. |
+| H-3 | High | **The vow could be bought from across the map, and its path did not exist.** The engine's right-click menu on an interactive object has one "Use" entry that walks there and acts on arrival by `action`; W1 said "calling `buyVow`" from the menu. | `input.ts` 297-315; `loop.ts` 200-223 | **Fixed**: a second entry walks there with a `vow` intent; the arrival branch buys at the price of that moment; design 6.6; plan W1. |
+| M-1 | Medium | **The respawn chat line would contradict the notice.** `finishRespawn` prints `deathNotice()` with no argument, which is the "nothing lost" text, right after a loss. | `actions.ts` 392 | **Fixed**: the outcome is kept until the respawn and used there; design 6.6; plan W1. |
+| M-2 | Medium | **Allowlist overlap.** S2 (side cluster, `deathNotice`) and B2 (spine, `isBossLoot`, `registerKill`) both edit `src/state/adventure.ts`, against rule 0.4 "side clusters never touch a spine file". | plan 1.1 lanes B and S | **Fixed**: declared as the one exception, with the tests run after the S merge; plan 0.4. |
+| M-3 | Medium | **Replacement 1 was not exact.** Stage 3's `content-freeze` adds declared ids through a constant (`DECLARED_NEW_ITEMS`) and never regenerates its golden; 9.3 said the "captured list gains" three keys. | Stage 3 plan P1 | **Fixed**: `DECLARED_NEW_MONSTERS`, golden untouched; design 9.3; plan M3, R0. |
+| M-4 | Medium | **The gate's "thin margin" is a seed artefact, and the decision does not touch it.** Seeds 1 to 1000 are among the hardest blocks. Over seeds 1 to 10,000 the fresh runner survives 3.33% without regeneration and 3.66% at 0.25 HP/s (worst block 4.8%). With the 6-s timer every run equals the 0.25 HP/s run seed for seed: the longest gap between blows is 0.97 s, and a survivor's crossing lasts at most 5.4 s after the first blow. The frozen test has no regeneration, so this stage cannot move it. | `decisions-results.txt` section 2 (ten blocks added); own script | **Fixed** in text and in S1 (seed-for-seed equality, pooled 10,000-seed bound; no per-block bound, which would sit at 4.8%). Nothing needed to restore margin. |
+| M-5 | Medium | **The unwarned bolt against the stage's promise.** The bolt is the one attack without a warning and the one that decides who loses. Lowering it does not rescue the rule: FM wins 18% at 64 (bound 15%), 35% at 56, 89% at 32; the bound needs about 68, which still one-shots a 50-HP hero. A per-bolt tell would be an answer by prayer inside a 1.65 s window, which 6.3 forbids. | max-hit sweep with `fight.ts`, 1,000 seeds | **Owner** (CALL-4.18): an opening 2-s roar with "Its bolts are magic" offered and recommended; no proof row moves (the unprepared fighters have Prayer 20, Protect from Magic needs 25). A level-50 hero who heeds it and prays (no ward, no potions) wins: Prayer 25, melee 3%, ranged 24%, magic 91%; Prayer 43, 12%, 84%, 94%. |
+| M-6 | Medium | **10x saves.** Today's default is 10x and Stage 3 keeps every existing save at its rate, including saves without the field. For those characters a death is a tenth of the work and the vow is not worth buying, so the new gold sink barely bites for most existing players. The design called 10x only "the hidden fast mode". | Stage 3 design section 8 (`xpMultiplier` row); `save.ts` 35 | **Owner** (CALL-4.17 a); stated in 6.6. |
+| M-7 | Medium | **A vow spent on a trivial loss.** A death just after level-ups costs 1 point and still spends a vow bought for thousands. | design 6.6 "When it is spent" | **Owner** (CALL-4.17 b), recommendation: waive a loss under a quarter of what the vow can guard. |
+| L-1 | Low | The boss's aggression circle is its camp circle, radius 5 (one-member `makeCamp`), not 12; the design said 12 in two places. Less aggressive than stated, which is harmless. | `worldMap.ts` 155-169; `monsterAi.ts` 228-231 | **Fixed** in 6.4. |
+| L-2 | Low | The vow's price is what it **can** guard, not what a death would take now (a skill at 0 progress, or never trained, is charged in full); deliberate, against buying at the floor right after a level-up, but the text said "guards". A vow carried across levels covers a larger loss once. | design 6.6 | **Fixed** wording; carry-over accepted (CALL-4.17 c). |
+| L-3 | Low | Fractional experience in a save made the "whole number" loss test fail for a `min(xp inside, ...)` that is not floored. | `save.ts` 60 (no floor on load) | **Fixed**: both terms floored; design 6.6; plan S1, S2. |
+| L-4 | Low | M1's dragon golden is captured after lanes P and T edit `world.ts`. The explicit field assertions would catch drift; the verify now also compares with `main`. The golden proves data only. | plan M1 | **Fixed**. |
+| L-5 | Low | The arena's west edge is 4 units from the world's bound; a hero west of a boss pulled to that edge must step round Tail Sweep and Slagburst. | own arena script | Noted for B3 and G-8 (design 6.4). |
+| L-6 | Low | Names: no deny-list hit (script against all 81 tokens). From recall: "Wyrm" (RuneScape, Tibia), "Fury" (Tibia), "Stalker" (Ragnarok) are names in those games. | `tests/names.test.ts` 6-21 | **Owner** (CALL-4.9). |
+| L-7 | Low | The model's melee swing leaves out the controlled style's +2 attack and +1 strength (`actions.ts` 114-118), so melee rows are slightly pessimistic; B3 ports onto Stage 3's functions anyway. | `fight.ts` `swing` | Noted, no change. |
+
+### Numbers: the revision's and this check's
+
+| Quantity | Revision | This check | Agree? |
+|---|---|---|---|
+| Death table, 1%, 3%, 5%, levels 12 to 90 (loss, kills back, vow, coins) | `decisions-results.txt` 1 | Python from the XP formula: identical to the point | Yes |
+| Death table, level 99 | 147,456 lost, 226.9 kills, vow 147,460 | 0 lost, vow 250 (after H-2) | Changed by the fix |
+| Boss A, B, FM (2,000 seeds) | 98.9%, 0.0%, 9.2% | own loop, 1,000 seeds: 99.1%, 0.0%, 8.8% (and FM never moving 0.0%) | Yes |
+| Committed boss table rerun | all rows | identical | Yes |
+| Gate, fresh, seeds 1 to 1000, 0.25 HP/s | 4.5 / 4.4 / 4.4% | same; pooled 10,000: 3.66% | Yes; the margin is wider than stated |
+| Stage 3 pacing with rest at 1.0 | iron at kill 35; A1 extras 95, 243, 297, 312, 392; A3 iron kit at 76; 10x steel-to-rune 122 to 595 | `check.py` with one constant changed: the same | Yes |
+| Arena (-102, 54) | all cells open, rise 3.8, steepest 0.52, smallest gap 2.9 (safe zone), node 3.2 | same by `isWalkable` and `getTerrainHeight`; blocked points within arena + 6 are only the 70 past x = -118; ridge 19.0 from home | Yes |
+| Counts | 42 monsters, 13 type keys, 10 model keys | 36 + 3 + 2 + 1 = 42; 10 + 3 = 13; every new type reuses one of the 10; `world-data` 162, `world-budget` 27/41, `blender-hero` 135-136 are the only pins (grep of `tests` and `src/__tests__`) | Yes |
+
+### Checked and found sound
+
+- **The death rule cannot drop a level or go negative**: the loss is bounded by the experience inside the level; `getLevelForXp(xp - loss)` is the level in every case of the Python check. No item, coin, maximum hitpoints or requirement changes.
+- **The three-text notice is true in every case** (nothing lost, vow held, loss) and the frozen test (`phase4-combat.test.ts` 13-17: `/dead/i` in the title, `/Lumbridge/` in the body) passes with each.
+- **The saved flag**: absent by default, so `defaultQuests()`, both Stage 3 goldens, Stage 3's `no new saved field` and "same keys" tests, and Stage 2's `save-relocation` golden and `SAVE_KEYS` are unchanged. The reader takes only `=== true`. An old build drops the unknown key (`normalizeQuests` reads a fixed list), losing the vow; accepted in the design.
+- **Stage 3's starter chain**: a new game is at 1x and combat 3; the chain cannot reach combat 15, so a death in it costs nothing. With the hidden booster, combat 15 can come sooner and the loss is earned back ten times faster.
+- **The vow as a teleport home**: a death costs the loss or the vow, so the vow adds no cheaper way home; below combat 15 a death was free before and stays free.
+- **The existing dragon**: no task's allowlist holds `catalog.ts`; its camp is in no task's edits; T2 sets patterns on six other types; M2 and M3 leave its model key, tint and scale at their defaults; `isBossLoot` stays true; `rollMonsterHit` is not edited. The golden of M1 plus `monster-hit` and B1 cover data and behaviour.
+- **Reload and the pass**: a reload resets the boss to full health in phase I, so it cannot be used to skip the fight; the pass sentries leash 54 units away and cannot join.
+- **Plan structure**: every new or changed task has a tag, tier, files, change, accept and must-not-change; tests come first (M1, B1, S1 before M3, B2, S2); every frozen-test replacement names file and assertion.
+
+### Owner decisions after this pass
+
+Real trade-offs first.
+
+1. **CALL-4.18, the new boss's bolt.** Recommend accepting the boss with an opening warning: a 2-second roar before the first bolt, with a banner and "Its bolts are magic." The bolt cannot be lowered enough to matter without the unprepared hero winning; the warning makes the stage's promise true for this fight. Cost that remains: an aggressive boss that can kill an unprepared hero in one bolt, now with an experience loss. Cost of the warning: a level-50 caster who heeds it and prays wins over 90%, which is the deferred style gap.
+2. **CALL-4.17, the numbers of dying.** Recommend 3%, every fighting skill, one death fully covered, one coin per point it can guard. Four sub-choices: (a) 10x characters, probably most existing ones, barely feel a death or the sink; recommend accept, alternative is to scale the share by the rate; (b) a vow spent on a 1-point loss; recommend waiving losses under a quarter of what the vow can guard; (c) a vow carried across levels covers more than it was priced for, once; recommend accept; (d) level 99: recommend nothing lost at 99, because experience past 99 buys nothing, knowing that a maxed hero then has no death cost and no sink; the alternative keeps the 98-to-99 span (about 230 kills and a 147,460-coin vow at all-99). The gold sink overall: 2 to 5% of a level's coin per vow at 1x from level 30 to 90, barely felt at 10x, nothing at all-99 under (d).
+3. **CALL-4.9, names.** Recommend renaming phase III "Fury" and the epithet "Slag Wyrm" (both names in Tibia, "Wyrm" also in RuneScape), keeping "Saltback Stalker", then the web search.
+4. **CALL-4.19, the two regeneration rates.** Recommend as stated: the gate and every fight are exactly today's, and only waiting gets shorter.
+5. The rest (CALL-4.14, 4.16, 4.7, 4.3, 4.2, 4.1, 4.10 to 4.13) are unchanged by this pass; recommendations as in design section 13.2.

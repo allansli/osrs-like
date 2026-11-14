@@ -32,18 +32,21 @@ export const NO_LOSS_BELOW_COMBAT = 15;
 const VOW_COINS_PER_XP = 1, VOW_FLOOR = 250;
 /** Span of a level; level 99 has no next level, so it uses the span of 98 to 99. */
 const span = (lvl: number) => { const l = Math.min(98, Math.max(1, lvl)); return OSRS_XP_TABLE[l + 1] - OSRS_XP_TABLE[l]; };
+/** What a death can take from a skill at this level: experience past 99 buys nothing (no level 100), so a skill at 99
+ *  has nothing at stake (second-pass check of 2026-11-14). */
+const atStake = (lvl: number) => (lvl >= 99 ? 0 : span(lvl));
 function deathLoss(skills: Record<string, { xp: number; lvl: number }>, share: number): Record<string, number> {
   const out: Record<string, number> = {};
   for (const k of FIGHTING_SKILLS) {
     const s = skills[k];
-    out[k] = Math.max(0, Math.min(Math.floor(s.xp - OSRS_XP_TABLE[s.lvl]), Math.floor(share * span(s.lvl))));
+    out[k] = Math.max(0, Math.min(Math.floor(s.xp - OSRS_XP_TABLE[s.lvl]), Math.floor(share * atStake(s.lvl))));
   }
   return out;
 }
-const atRisk = (skills: Record<string, { lvl: number }>, share: number) => FIGHTING_SKILLS.reduce((n, k) => n + Math.floor(share * span(skills[k].lvl)), 0);
+const atRisk = (skills: Record<string, { lvl: number }>, share: number) => FIGHTING_SKILLS.reduce((n, k) => n + Math.floor(share * atStake(skills[k].lvl)), 0);
 const vowPrice = (skills: Record<string, { lvl: number }>, share: number) => Math.max(VOW_FLOOR, Math.ceil(VOW_COINS_PER_XP * atRisk(skills, share)));
 
-// self-check of the rule: never a level, level 99 defined, nothing below the level's floor
+// self-check of the rule: never a level, a skill at 99 loses nothing, nothing below the level's floor
 {
   const s = createDefaultState();
   for (const k of FIGHTING_SKILLS) { s.skills[k] = { xp: OSRS_XP_TABLE[99] + 5_000_000, lvl: 99 }; }
@@ -54,7 +57,7 @@ const vowPrice = (skills: Record<string, { lvl: number }>, share: number) => Mat
     if (!Number.isFinite(loss[k]) || loss[k] < 0) throw new Error(`death rule: bad loss for ${k}`);
     if (getLevelForXp(s.skills[k].xp - loss[k]) !== s.skills[k].lvl) throw new Error(`death rule: ${k} dropped a level`);
   }
-  if (loss.attack !== 3 || loss.magic !== 0 || loss.strength !== Math.floor(0.03 * span(98))) throw new Error('death rule: wrong amounts');
+  if (loss.attack !== 3 || loss.magic !== 0 || loss.strength !== 0) throw new Error('death rule: wrong amounts');
 }
 
 // A melee hero in the controlled style (Stage 3's fighter, its design 4.2): Attack = Strength = Defence = L,
@@ -88,7 +91,7 @@ const coinsPerKill = (typeKey: string) => {
   return c;
 };
 p('== 1. What a death costs: experience lost, in kills to earn it back, and the price of the blessing');
-p(`   rule: each of ${FIGHTING_SKILLS.join(', ')} loses min(experience inside its level, share x the level's span); never a level;`);
+p(`   rule: each of ${FIGHTING_SKILLS.join(', ')} loses min(experience inside its level, share x the level's span); never a level; nothing at 99;`);
 p(`   nothing below combat level ${NO_LOSS_BELOW_COMBAT}. Blessing: ${VOW_COINS_PER_XP} coin per point it guards (share x span, summed), at least ${VOW_FLOOR} coins.`);
 p('   hero: melee, controlled style, Attack = Strength = Defence = L, halfway through each level; 1x experience.');
 p('   "kills back" = kills of the same monster until the slowest skill has re-earned its loss; at the 10x rate divide by 10.');
@@ -149,6 +152,18 @@ for (const [label, regen] of [['none (the frozen test)', 0], ['0.25 HP/s (in com
     return `${(n / 10).toFixed(1)}%`;
   }).join(' / '));
   p(`${label.padEnd(40)} ${cells[0].padEnd(40)} ${cells[1]}`);
+}
+// Second pass (2026-11-14): is the margin under 5% a property of the pass or of seeds 1 to 1000? Ten blocks of 1000.
+p('   the fresh character over seeds 1 to 10000 (ten blocks of 1000 on each of the three lines):');
+for (const regen of [0, 0.25]) {
+  let alive = 0, runs = 0, worst = 0, worstAt = '';
+  for (let b = 0; b < 10; b++) for (const z of [55, 52.5, 57.5]) {
+    let n = 0;
+    for (let seed = b * 1000 + 1; seed <= b * 1000 + 1000; seed++) if (crossing(fresh, z, seed, regen)) n++;
+    alive += n; runs += 1000;
+    if (n / 10 > worst) { worst = n / 10; worstAt = `seeds ${b * 1000 + 1}-${b * 1000 + 1000}, z ${z}`; }
+  }
+  p(`   ${(regen === 0 ? 'none (the frozen test)' : '0.25 HP/s (in combat, as today)').padEnd(34)} pooled ${((alive / runs) * 100).toFixed(2)}%   worst block ${worst.toFixed(1)}% (${worstAt})`);
 }
 p('   time to regenerate from 1 hitpoint to full while resting, by maximum hitpoints (0.25 HP/s today, 1.0 HP/s proposed):');
 p('   ' + [10, 30, 50, 70, 99].map((hp) => `${hp} HP: ${((hp - 1) / 0.25).toFixed(0)} s -> ${((hp - 1) / 1.0).toFixed(0)} s`).join(', '));
