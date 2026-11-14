@@ -20,9 +20,3 @@ These assets are read by the generator scripts in `scripts/blender/`, and the re
 The CC-BY 3.0 licence requires credit to the author: the dragon is by yoji and Kai is by uchiha007 (https://creativecommons.org/licenses/by/3.0/). CC0 assets need no credit; they are credited anyway.
 
 Note on the knight: its author says the base mesh came from a CGTrader model whose terms are not stated. See `blender/examples/knight_28541/LICENSE.txt`.
-
-## In the repository only (not shipped)
-
-| Asset | Author | Source | Licence | Folder |
-|---|---|---|---|---|
-| "Amulet" (Blend Swap blend 80554) | not recorded in the licence file | http://www.blendswap.com/blends/view/80554 | Creative Commons Attribution 3.0 (CC-BY 3.0) | `blender/examples/amulet_15782/`, read by no script |
