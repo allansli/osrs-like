@@ -4332,7 +4332,7 @@ function worldToScreenPos(x, y, z) {
   };
 }
 
-export function worldToScreen(vec3) {
+export function worldToScreen(vec3: THREE.Vector3): { x: number; y: number; visible: boolean } {
   return worldToScreenPos(vec3.x, vec3.y, vec3.z);
 }
 

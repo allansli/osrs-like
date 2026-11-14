@@ -1,30 +1,37 @@
-// @ts-nocheck
 import * as THREE from 'three';
 import { G, player } from './context';
+import type { MonsterEntity, ProjectileEntry, VfxEntry } from './context';
 import { getTerrainHeight } from '../state/terrain';
 import { worldToScreen } from './runtime';
+import { el } from '../ui/hud';
+import type { ItemDef } from '../data/items';
+import type { SpellDef } from '../data/magic';
 
 // ============================================================================
 // 10. COMBAT HIT SPLATS, PROJECTILES & SKILLING EXECUTION
 // ============================================================================
-export function spawnHitSplatWorld(worldPos, dmg, splatType = 'hit') {
+export function spawnHitSplatWorld(
+  worldPos: THREE.Vector3,
+  dmg: number,
+  splatType = 'hit'
+): void {
   const screenPos = worldToScreen(worldPos.clone().add(new THREE.Vector3((Math.random() - 0.5) * 0.6, 1.8, 0)));
   if (!screenPos.visible) return;
-  const el = document.createElement('div');
-  el.className = `hitsplat ${splatType}`;
-  el.style.left = screenPos.x + 'px';
-  el.style.top = screenPos.y + 'px';
+  const splatEl = document.createElement('div');
+  splatEl.className = `hitsplat ${splatType}`;
+  splatEl.style.left = screenPos.x + 'px';
+  splatEl.style.top = screenPos.y + 'px';
   const label = splatType === 'heal' ? `+${dmg}` : String(dmg);
-  el.innerHTML = `<span class="hitsplat-num">${label}</span>`;
-  document.getElementById('world-labels').appendChild(el);
-  setTimeout(() => el.remove(), 1050);
+  splatEl.innerHTML = `<span class="hitsplat-num">${label}</span>`;
+  el('world-labels').appendChild(splatEl);
+  setTimeout(() => splatEl.remove(), 1050);
 }
 
-export function spawnHitSplatOnPlayer(dmg, splatType = 'hit') {
+export function spawnHitSplatOnPlayer(dmg: number, splatType = 'hit'): void {
   spawnHitSplatWorld(player.pos, dmg, splatType);
 }
 
-export function glowMaterial(color, opacity = 0.92) {
+export function glowMaterial(color: THREE.ColorRepresentation, opacity = 0.92): THREE.MeshBasicMaterial {
   return new THREE.MeshBasicMaterial({
     color,
     transparent: true,
@@ -34,12 +41,32 @@ export function glowMaterial(color, opacity = 0.92) {
   });
 }
 
-export function spawnVfx(mesh, life, onTick) {
+export function spawnVfx(
+  mesh: THREE.Object3D,
+  life: number,
+  onTick?: (v: VfxEntry, dt: number) => void
+): void {
   G.scene.add(mesh);
   G.vfxList.push({ mesh, life, age: 0, onTick });
 }
 
-export function launchProjectile(mesh, fromPos, toPos, onImpact, opts = {}) {
+export interface LaunchProjectileOptions {
+  y0?: number;
+  y1?: number;
+  speed?: number;
+  arc?: number;
+  orient?: boolean;
+  onImpact?: (() => void) | null;
+  onTick?: ((p: ProjectileEntry, dt: number) => void) | null;
+}
+
+export function launchProjectile(
+  mesh: THREE.Object3D,
+  fromPos: THREE.Vector3,
+  toPos: THREE.Vector3,
+  onImpact?: (() => void) | null,
+  opts: LaunchProjectileOptions = {}
+): void {
   const start = fromPos.clone().add(new THREE.Vector3(0, opts.y0 ?? 1.4, 0));
   const end = toPos.clone().add(new THREE.Vector3(0, opts.y1 ?? 1.2, 0));
   mesh.position.copy(start);
@@ -58,7 +85,12 @@ export function launchProjectile(mesh, fromPos, toPos, onImpact, opts = {}) {
   });
 }
 
-export function spawnProjectile(fromPos, toPos, colorHex, onImpact) {
+export function spawnProjectile(
+  fromPos: THREE.Vector3,
+  toPos: THREE.Vector3,
+  colorHex: THREE.ColorRepresentation,
+  onImpact?: (() => void) | null
+): void {
   const orb = new THREE.Mesh(
     new THREE.SphereGeometry(0.22, 12, 10),
     new THREE.MeshBasicMaterial({ color: colorHex })
@@ -66,7 +98,13 @@ export function spawnProjectile(fromPos, toPos, colorHex, onImpact) {
   launchProjectile(orb, fromPos, toPos, onImpact, { speed: 3.5, arc: 1.4 });
 }
 
-export function spawnBurst(origin, count, color, life = 0.5, speed = 3.2) {
+export function spawnBurst(
+  origin: THREE.Vector3,
+  count: number,
+  color: THREE.ColorRepresentation,
+  life = 0.5,
+  speed = 3.2
+): void {
   for (let i = 0; i < count; i++) {
     const mote = new THREE.Mesh(new THREE.SphereGeometry(0.055, 8, 6), glowMaterial(color, 1));
     mote.position.copy(origin);
@@ -75,13 +113,20 @@ export function spawnBurst(origin, count, color, life = 0.5, speed = 3.2) {
     spawnVfx(mote, life, (v, dt) => {
       vel.y -= 7 * dt;
       v.mesh.position.addScaledVector(vel, dt);
-      v.mesh.material.opacity = 1 - v.age / v.life;
+      (mote.material as THREE.MeshBasicMaterial).opacity = 1 - v.age / v.life;
       v.mesh.scale.setScalar(1 - v.age / v.life * 0.6);
     });
   }
 }
 
-export function spawnExpandingRing(position, color, life = 0.7, grow = 4.2, inner = 0.35, outer = 0.52) {
+export function spawnExpandingRing(
+  position: THREE.Vector3,
+  color: THREE.ColorRepresentation,
+  life = 0.7,
+  grow = 4.2,
+  inner = 0.35,
+  outer = 0.52
+): THREE.Mesh {
   const ring = new THREE.Mesh(
     new THREE.RingGeometry(inner, outer, 32),
     glowMaterial(color, 0.9)
@@ -93,12 +138,28 @@ export function spawnExpandingRing(position, color, life = 0.7, grow = 4.2, inne
     const t = v.age / v.life;
     v.mesh.scale.setScalar(1 + t * grow);
     const fade = t < 0.55 ? 1 : 1 - (t - 0.55) / 0.45;
-    v.mesh.material.opacity = 0.95 * fade;
+    (ring.material as THREE.MeshBasicMaterial).opacity = 0.95 * fade;
   });
   return ring;
 }
 
-export function spawnSlashArc(color, origin, yaw, opts = {}) {
+export interface SlashArcOptions {
+  inner?: number;
+  outer?: number;
+  theta0?: number;
+  thetaLen?: number;
+  opacity?: number;
+  roll?: number;
+  scale?: number;
+  life?: number;
+}
+
+export function spawnSlashArc(
+  color: THREE.ColorRepresentation,
+  origin: THREE.Vector3,
+  yaw: number,
+  opts: SlashArcOptions = {}
+): void {
   const arc = new THREE.Mesh(
     new THREE.RingGeometry(opts.inner ?? 0.5, opts.outer ?? 0.78, 28, 1, opts.theta0 ?? 0.25, opts.thetaLen ?? 1.65),
     glowMaterial(color, opts.opacity ?? 0.95)
@@ -111,11 +172,11 @@ export function spawnSlashArc(color, origin, yaw, opts = {}) {
   spawnVfx(arc, opts.life ?? 0.48, (v) => {
     const t = v.age / v.life;
     v.mesh.scale.setScalar(base * (1 + t * 0.28));
-    v.mesh.material.opacity = (opts.opacity ?? 0.95) * (1 - t);
+    (arc.material as THREE.MeshBasicMaterial).opacity = (opts.opacity ?? 0.95) * (1 - t);
   });
 }
 
-export function metalSlashTint(item) {
+export function metalSlashTint(item?: Partial<ItemDef> | null): number {
   const tier = item?.tier;
   if (tier === 'bronze') return 0xd97706;
   if (tier === 'iron' || tier === 'steel' || tier === 'black') return 0x94a3b8;
@@ -123,10 +184,16 @@ export function metalSlashTint(item) {
   if (tier === 'adamant') return 0x34d399;
   if (tier === 'rune') return 0x38bdf8;
   if (tier === 'gilded') return 0xfacc15;
-  return item?.color || 0xe2e8f0;
+  return (item?.color as number | undefined) || 0xe2e8f0;
 }
 
-export function spawnMeleeSlashEffect(weaponItem, playerPos, playerYaw, targetPos, isSpec) {
+export function spawnMeleeSlashEffect(
+  weaponItem: Partial<ItemDef> | null | undefined,
+  playerPos: THREE.Vector3,
+  playerYaw: number,
+  targetPos: THREE.Vector3,
+  isSpec?: boolean
+): void {
   const id = weaponItem?.id || '';
   const forward = new THREE.Vector3(Math.sin(playerYaw), 0, Math.cos(playerYaw));
   const origin = playerPos.clone().add(new THREE.Vector3(0, 1.2, 0)).add(forward.clone().multiplyScalar(0.95));
@@ -151,7 +218,10 @@ export function spawnMeleeSlashEffect(weaponItem, playerPos, playerYaw, targetPo
     spawnVfx(grp, 0.75, (v) => {
       const t = v.age / v.life;
       v.mesh.traverse((obj) => {
-        if (obj.material && obj.material.transparent) obj.material.opacity = 1 - t;
+        const mesh = obj as THREE.Mesh;
+        if (mesh.material && (mesh.material as THREE.Material).transparent) {
+          (mesh.material as THREE.Material).opacity = 1 - t;
+        }
       });
     });
     if (isSpec) {
@@ -166,7 +236,10 @@ export function spawnMeleeSlashEffect(weaponItem, playerPos, playerYaw, targetPo
       spawnVfx(twinGrp, 0.75, (v) => {
         const t = v.age / v.life;
         v.mesh.traverse((obj) => {
-          if (obj.material && obj.material.transparent) obj.material.opacity = 1 - t;
+          const mesh = obj as THREE.Mesh;
+          if (mesh.material && (mesh.material as THREE.Material).transparent) {
+            (mesh.material as THREE.Material).opacity = 1 - t;
+          }
         });
       });
     }
@@ -176,7 +249,7 @@ export function spawnMeleeSlashEffect(weaponItem, playerPos, playerYaw, targetPo
     spawnVfx(crack, 0.48, (v) => {
       const t = v.age / v.life;
       v.mesh.scale.setScalar(1 + t * 1.8);
-      v.mesh.material.opacity = 0.9 * (1 - t);
+      (crack.material as THREE.MeshBasicMaterial).opacity = 0.9 * (1 - t);
     });
     return;
   }
@@ -237,13 +310,13 @@ export function spawnMeleeSlashEffect(weaponItem, playerPos, playerYaw, targetPo
       goldBeam.position.set(targetPos.x, targetPos.y + (pillarH + 1.2) * 0.5, targetPos.z);
       spawnVfx(goldBeam, 0.85, (v) => {
         const t = v.age / v.life;
-        v.mesh.material.opacity = 0.85 * (1 - t);
+        (goldBeam.material as THREE.MeshBasicMaterial).opacity = 0.85 * (1 - t);
       });
     }
     spawnVfx(column, 0.7, (v) => {
       const t = v.age / v.life;
       v.mesh.scale.set(1 + t * 0.4, 1, 1 + t * 0.4);
-      v.mesh.material.opacity = 0.8 * (1 - t);
+      (column.material as THREE.MeshBasicMaterial).opacity = 0.8 * (1 - t);
     });
     spawnExpandingRing(targetPos.clone().setY(targetPos.y), color, isSpec ? 0.85 : 0.6, isSpec ? 6.4 : 3.2);
     return;
@@ -252,7 +325,11 @@ export function spawnMeleeSlashEffect(weaponItem, playerPos, playerYaw, targetPo
   spawnSlashArc(metalSlashTint(weaponItem), origin, playerYaw, { scale: specScale, life: 0.4 });
 }
 
-export function spawnSpellImpact(spell, targetPos, casterPos) {
+export function spawnSpellImpact(
+  spell: Partial<SpellDef> | null | undefined,
+  targetPos: THREE.Vector3,
+  casterPos?: THREE.Vector3 | null
+): void {
   const id = spell?.id || '';
   const ground = targetPos.clone();
   if (id === 'wind_strike') {
@@ -266,7 +343,7 @@ export function spawnSpellImpact(spell, targetPos, casterPos) {
     spawnVfx(gust, 0.7, (v) => {
       const t = v.age / v.life;
       v.mesh.scale.set(1 + t * 1.4, 1, 1 + t * 1.4);
-      v.mesh.material.opacity = 0.8 * (1 - t);
+      (gust.material as THREE.MeshBasicMaterial).opacity = 0.8 * (1 - t);
     });
     spawnBurst(targetPos.clone().add(new THREE.Vector3(0, 1.1, 0)), 6, 0x7dd3fc, 0.45, 2.4);
     return;
@@ -297,7 +374,7 @@ export function spawnSpellImpact(spell, targetPos, casterPos) {
         const grow = Math.min(1, v.age / 0.22);
         v.mesh.scale.y = grow;
         v.mesh.position.y = targetPos.y + (1.35 * grow) * 0.5;
-        if (v.age > 0.9) v.mesh.material.opacity = 0.72 * (1 - (v.age - 0.9) / 0.55);
+        if (v.age > 0.9) (spire.material as THREE.MeshBasicMaterial).opacity = 0.72 * (1 - (v.age - 0.9) / 0.55);
       });
     }
     spawnExpandingRing(ground, 0x38bdf8, 0.8, 4.6, 0.4, 0.62);
@@ -320,7 +397,7 @@ export function spawnSpellImpact(spell, targetPos, casterPos) {
       const pulse = 1 + Math.sin(v.age * 18) * 0.08;
       v.mesh.scale.set(pulse, 1, pulse);
       v.mesh.rotation.y += dt * 5;
-      v.mesh.material.opacity = 0.88 * (1 - Math.max(0, t - 0.45) / 0.55);
+      (pillar.material as THREE.MeshBasicMaterial).opacity = 0.88 * (1 - Math.max(0, t - 0.45) / 0.55);
     });
     const sigil = new THREE.Mesh(new THREE.RingGeometry(0.55, 0.78, 28), glowMaterial(0xbe123c, 0.95));
     sigil.rotation.x = -Math.PI / 2;
@@ -329,7 +406,7 @@ export function spawnSpellImpact(spell, targetPos, casterPos) {
       const t = v.age / v.life;
       v.mesh.scale.setScalar(1 + t * 2.4);
       v.mesh.rotation.z += 0.02;
-      v.mesh.material.opacity = 0.95 * (1 - t);
+      (sigil.material as THREE.MeshBasicMaterial).opacity = 0.95 * (1 - t);
     });
     spawnBurst(targetPos.clone().add(new THREE.Vector3(0, 1.3, 0)), 10, 0xfb7185, 0.7, 3.1);
     const from = targetPos.clone().add(new THREE.Vector3(0, 1.4, 0));
@@ -346,13 +423,18 @@ export function spawnSpellImpact(spell, targetPos, casterPos) {
         const a = start.clone().lerp(ctrl, t);
         const b = ctrl.clone().lerp(end, t);
         v.mesh.position.lerpVectors(a, b, t);
-        v.mesh.material.opacity = 1 - t * 0.2;
+        (wisp.material as THREE.MeshBasicMaterial).opacity = 1 - t * 0.2;
       });
     }
   }
 }
 
-export function spawnRunicCircle(pos, colorHex, life = 0.85, scale = 1.0) {
+export function spawnRunicCircle(
+  pos: THREE.Vector3,
+  colorHex: THREE.ColorRepresentation,
+  life = 0.85,
+  scale = 1.0
+): void {
   const grp = new THREE.Group();
   grp.position.set(pos.x, getTerrainHeight(pos.x, pos.z) + 0.05, pos.z);
 
@@ -380,19 +462,27 @@ export function spawnRunicCircle(pos, colorHex, life = 0.85, scale = 1.0) {
     outerRing.rotation.z -= dt * 1.5;
     const fade = t < 0.6 ? 1 : 1 - (t - 0.6) / 0.4;
     v.mesh.traverse((obj) => {
-      if (obj.material && obj.material.transparent) obj.material.opacity = fade * 0.92;
+      const mesh = obj as THREE.Mesh;
+      if (mesh.material && (mesh.material as THREE.Material).transparent) {
+        (mesh.material as THREE.Material).opacity = fade * 0.92;
+      }
     });
   });
 }
 
-export function spawnSpellProjectile(spell, fromPos, toPos, onImpact) {
+export function spawnSpellProjectile(
+  spell: Partial<SpellDef> | null | undefined,
+  fromPos: THREE.Vector3,
+  toPos: THREE.Vector3,
+  onImpact?: (() => void) | null
+): void {
   const id = spell?.id || 'wind_strike';
   const spellColor = id === 'fire_bolt' ? 0xf97316 : (id === 'ice_burst' ? 0x38bdf8 : (id === 'blood_barrage' ? 0xf43f5e : 0xa855f7));
   spawnRunicCircle(fromPos, spellColor, 0.8, 1.15);
   const grp = new THREE.Group();
   let speed = 4.2;
   let arc = 0.7;
-  let onTick = null;
+  let onTick: ((p: ProjectileEntry, dt: number) => void) | null = null;
 
   if (id === 'wind_strike') {
     grp.add(new THREE.Mesh(new THREE.SphereGeometry(0.16, 14, 12), glowMaterial(0xf8fafc, 1)));
@@ -401,7 +491,7 @@ export function spawnSpellProjectile(spell, fromPos, toPos, onImpact) {
     grp.add(ring);
     speed = 6.2;
     arc = 0.35;
-    onTick = (p, dt) => { ring.rotation.z += dt * 9; };
+    onTick = (_p, dt) => { ring.rotation.z += dt * 9; };
   } else if (id === 'fire_bolt') {
     grp.add(new THREE.Mesh(new THREE.SphereGeometry(0.2, 14, 12), glowMaterial(0xf97316, 1)));
     const core = new THREE.Mesh(new THREE.SphereGeometry(0.1, 12, 10), glowMaterial(0xfde047, 1));
@@ -409,14 +499,14 @@ export function spawnSpellProjectile(spell, fromPos, toPos, onImpact) {
     speed = 4.4;
     arc = 0.65;
     onTick = (p, dt) => {
-      p.trailAcc += dt;
+      p.trailAcc = (p.trailAcc ?? 0) + dt;
       if (p.trailAcc < 0.03) return;
       p.trailAcc = 0;
       const ember = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 6), glowMaterial(Math.random() > 0.5 ? 0xf97316 : 0xfde047, 0.9));
       ember.position.copy(p.mesh.position);
       spawnVfx(ember, 0.32, (v) => {
         v.mesh.scale.setScalar(1 - v.age / v.life);
-        v.mesh.material.opacity = 0.9 * (1 - v.age / v.life);
+        (ember.material as THREE.MeshBasicMaterial).opacity = 0.9 * (1 - v.age / v.life);
       });
     };
   } else if (id === 'ice_burst') {
@@ -437,7 +527,7 @@ export function spawnSpellProjectile(spell, fromPos, toPos, onImpact) {
     });
     speed = 2.6;
     arc = 0.85;
-    onTick = (p, dt) => {
+    onTick = (p) => {
       const pulse = 1 + Math.sin(p.progress * 28) * 0.14;
       shell.scale.setScalar(pulse);
       drops.forEach((drop, i) => {
@@ -456,7 +546,12 @@ export function spawnSpellProjectile(spell, fromPos, toPos, onImpact) {
   }, { speed, arc, orient, onTick, y0: 1.45, y1: 1.15 });
 }
 
-export function spawnArrowProjectile(weapon, fromPos, toPos, onImpact) {
+export function spawnArrowProjectile(
+  weapon: Partial<ItemDef> | null | undefined,
+  fromPos: THREE.Vector3,
+  toPos: THREE.Vector3,
+  onImpact?: (() => void) | null
+): void {
   const grp = new THREE.Group();
   const shaft = new THREE.Mesh(
     new THREE.CylinderGeometry(0.012, 0.015, 0.72, 8),
@@ -486,19 +581,23 @@ export function spawnArrowProjectile(weapon, fromPos, toPos, onImpact) {
     y0: 1.35,
     y1: 1.15,
     onTick: trail ? (p, dt) => {
-      p.trailAcc += dt;
+      p.trailAcc = (p.trailAcc ?? 0) + dt;
       if (p.trailAcc < 0.025) return;
       p.trailAcc = 0;
       const spark = new THREE.Mesh(new THREE.SphereGeometry(0.035, 6, 6), glowMaterial(trail, 0.85));
       spark.position.copy(p.mesh.position);
       spawnVfx(spark, 0.22, (v) => {
-        v.mesh.material.opacity = 0.85 * (1 - v.age / v.life);
+        (spark.material as THREE.MeshBasicMaterial).opacity = 0.85 * (1 - v.age / v.life);
       });
     } : null
   });
 }
 
-export function spawnPiercingBeam(fromPos, toPos, color) {
+export function spawnPiercingBeam(
+  fromPos: THREE.Vector3,
+  toPos: THREE.Vector3,
+  color: THREE.ColorRepresentation
+): void {
   const start = fromPos.clone().add(new THREE.Vector3(0, 1.35, 0));
   const end = toPos.clone().add(new THREE.Vector3(0, 1.15, 0));
   const delta = end.clone().sub(start);
@@ -508,14 +607,14 @@ export function spawnPiercingBeam(fromPos, toPos, color) {
   beam.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), delta.clone().normalize());
   spawnVfx(beam, 0.45, (v) => {
     const t = v.age / v.life;
-    v.mesh.material.opacity = 0.95 * (1 - t);
+    (beam.material as THREE.MeshBasicMaterial).opacity = 0.95 * (1 - t);
     v.mesh.scale.x = 1 + t * 2;
     v.mesh.scale.z = 1 + t * 2;
   });
   spawnBurst(end, 8, color, 0.4, 3.2);
 }
 
-export function spawnRareLootBeam(worldPos) {
+export function spawnRareLootBeam(worldPos: THREE.Vector3): void {
   const grp = new THREE.Group();
   const gold = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.42, 6.5, 16, 1, true), glowMaterial(0xfde047, 0.88));
   gold.position.y = 3.25;
@@ -527,8 +626,8 @@ export function spawnRareLootBeam(worldPos) {
     v.mesh.rotation.y += dt * 1.6;
     const t = v.age / v.life;
     const fade = t < 0.55 ? 1 : 1 - (t - 0.55) / 0.45;
-    gold.material.opacity = 0.88 * fade;
-    purple.material.opacity = 0.75 * fade;
+    (gold.material as THREE.MeshBasicMaterial).opacity = 0.88 * fade;
+    (purple.material as THREE.MeshBasicMaterial).opacity = 0.75 * fade;
   });
   for (let i = 0; i < 14; i++) {
     const spark = new THREE.Mesh(new THREE.SphereGeometry(0.055, 6, 6), glowMaterial(i % 2 ? 0xfde047 : 0xc084fc, 1));
@@ -538,12 +637,15 @@ export function spawnRareLootBeam(worldPos) {
     spawnVfx(spark, 3.5, (v, dt) => {
       vel.y -= 0.35 * dt;
       v.mesh.position.addScaledVector(vel, dt);
-      v.mesh.material.opacity = 1 - v.age / v.life;
+      (spark.material as THREE.MeshBasicMaterial).opacity = 1 - v.age / v.life;
     });
   }
 }
 
-export function spawnDragonfireEffect(monster, onImpact) {
+export function spawnDragonfireEffect(
+  monster: Pick<MonsterEntity, 'pos'>,
+  onImpact?: (() => void) | null
+): void {
   const from = monster.pos.clone();
   const to = player.pos.clone();
   spawnExpandingRing(to, 0xf97316, 1.05, 2.6, 0.45, 0.75);
@@ -561,7 +663,11 @@ export function spawnDragonfireEffect(monster, onImpact) {
   }, { speed: 1.7, arc: 0.25, orient: true, y0: 3.2, y1: 1.1 });
 }
 
-export function spawnShadowBolt(fromPos, toPos, onImpact) {
+export function spawnShadowBolt(
+  fromPos: THREE.Vector3,
+  toPos: THREE.Vector3,
+  onImpact?: (() => void) | null
+): void {
   const grp = new THREE.Group();
   const shell = new THREE.Mesh(new THREE.SphereGeometry(0.28, 12, 10), glowMaterial(0x1c1917, 0.95));
   const core = new THREE.Mesh(new THREE.SphereGeometry(0.14, 10, 8), glowMaterial(0x7c3aed, 1));
@@ -581,7 +687,11 @@ export function spawnShadowBolt(fromPos, toPos, onImpact) {
   });
 }
 
-export function spawnHellfireOrb(fromPos, toPos, onImpact) {
+export function spawnHellfireOrb(
+  fromPos: THREE.Vector3,
+  toPos: THREE.Vector3,
+  onImpact?: (() => void) | null
+): void {
   const grp = new THREE.Group();
   grp.add(new THREE.Mesh(new THREE.SphereGeometry(0.3, 12, 10), glowMaterial(0xef4444, 1)));
   grp.add(new THREE.Mesh(new THREE.SphereGeometry(0.14, 10, 8), glowMaterial(0xf97316, 1)));
@@ -591,19 +701,19 @@ export function spawnHellfireOrb(fromPos, toPos, onImpact) {
     y0: 1.8,
     y1: 1.2,
     onTick: (p, dt) => {
-      p.trailAcc += dt;
+      p.trailAcc = (p.trailAcc ?? 0) + dt;
       if (p.trailAcc < 0.04) return;
       p.trailAcc = 0;
       const ember = new THREE.Mesh(new THREE.SphereGeometry(0.05, 6, 6), glowMaterial(0xf97316, 0.95));
       ember.position.copy(p.mesh.position);
       spawnVfx(ember, 0.32, (v) => {
-        v.mesh.material.opacity = 0.95 * (1 - v.age / v.life);
+        (ember.material as THREE.MeshBasicMaterial).opacity = 0.95 * (1 - v.age / v.life);
       });
     }
   });
 }
 
-export function spawnLevelUpFireworks(colorHex = 0xfde047) {
+export function spawnLevelUpFireworks(colorHex: THREE.ColorRepresentation = 0xfde047): void {
   for (let i = 0; i < 16; i++) {
     const p = new THREE.Mesh(
       new THREE.SphereGeometry(0.14, 7, 6),
@@ -614,7 +724,7 @@ export function spawnLevelUpFireworks(colorHex = 0xfde047) {
     G.scene.add(p);
     const vel = new THREE.Vector3(Math.cos(ang) * 2.5, 3.5 + Math.random() * 2, Math.sin(ang) * 2.5);
     const startT = performance.now();
-    const tick = () => {
+    const tick = (): void => {
       const dt = (performance.now() - startT) / 1000;
       if (dt > 0.9) {
         G.scene.remove(p);
@@ -626,4 +736,3 @@ export function spawnLevelUpFireworks(colorHex = 0xfde047) {
     requestAnimationFrame(tick);
   }
 }
-
