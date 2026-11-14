@@ -30,35 +30,61 @@ const BUILD_SCRIPTS = {
   world: 'scripts/blender/build_world.py'
 };
 
+const KNOWN_MODES = ['open', 'export', 'all', ...Object.keys(BUILD_SCRIPTS)];
+if (!KNOWN_MODES.includes(mode) && !fs.existsSync(mode)) {
+  console.error(`Unknown mode: "${mode}". Valid modes: ${KNOWN_MODES.join(', ')}`);
+  process.exit(2);
+}
+
+function checkExit(res) {
+  if (res.error) {
+    console.error(res.error);
+    process.exit(1);
+  }
+  if (res.signal) {
+    console.error(`Process killed by signal: ${res.signal}`);
+    process.exit(1);
+  }
+  if (res.status !== 0) {
+    process.exit(res.status ?? 1);
+  }
+}
+
 if (mode === 'open') {
   const blendFile = path.resolve(`blender/${argTarget}.blend`);
   console.log(`[Blender] Launching Blender GUI with ${blendFile}...`);
-  const child = spawn(blenderExe, [blendFile], { detached: true, stdio: 'ignore' });
+  const child = spawn(blenderExe, ['--disable-autoexec', blendFile], { detached: true, stdio: 'ignore' });
   child.unref();
 } else if (mode === 'export') {
   const blendFile = path.resolve(`blender/${argTarget}.blend`);
   const exportScript = path.resolve('scripts/blender/export_from_blend.py');
-  const res = spawnSync(blenderExe, ['--background', blendFile, '--python', exportScript], {
-    stdio: 'inherit'
-  });
-  process.exit(res.status ?? 0);
+  const res = spawnSync(
+    blenderExe,
+    ['--background', '--disable-autoexec', blendFile, '--python-exit-code', '1', '--python', exportScript],
+    { stdio: 'inherit' }
+  );
+  checkExit(res);
+  process.exit(0);
 } else if (mode === 'all') {
   for (const [key, scriptRel] of Object.entries(BUILD_SCRIPTS)) {
     const scriptFile = path.resolve(scriptRel);
     if (!fs.existsSync(scriptFile)) continue;
     console.log(`[Blender] Building ${key} (${scriptRel})...`);
-    const res = spawnSync(blenderExe, ['--background', '--python', scriptFile], {
-      stdio: 'inherit'
-    });
-    if ((res.status ?? 0) !== 0) {
-      process.exit(res.status ?? 1);
-    }
+    const res = spawnSync(
+      blenderExe,
+      ['--background', '--disable-autoexec', '--python-exit-code', '1', '--python', scriptFile],
+      { stdio: 'inherit' }
+    );
+    checkExit(res);
   }
 } else {
-  const scriptRel = fs.existsSync(mode) ? mode : (BUILD_SCRIPTS[mode] || BUILD_SCRIPTS.hero);
+  const scriptRel = fs.existsSync(mode) ? mode : BUILD_SCRIPTS[mode];
   const scriptFile = path.resolve(scriptRel);
-  const res = spawnSync(blenderExe, ['--background', '--python', scriptFile], {
-    stdio: 'inherit'
-  });
-  process.exit(res.status ?? 0);
+  const res = spawnSync(
+    blenderExe,
+    ['--background', '--disable-autoexec', '--python-exit-code', '1', '--python', scriptFile],
+    { stdio: 'inherit' }
+  );
+  checkExit(res);
+  process.exit(0);
 }

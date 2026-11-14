@@ -6,6 +6,7 @@ dist
 .playwright-mcp/
 *.blend1
 *.zip
+!blender/examples/Game Anime RPG Character.zip
 scratch/
 blender/examples/kai/
 
