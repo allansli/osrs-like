@@ -96,9 +96,9 @@ worst ratio 2.50; smithing recipes below 1.00 (a loss): none
   cinder_adept         level 52 hp 80 coins 390 other drops 65
   slag_brute           level 58 hp 112 coins 555 other drops 164
   scree_skitter        level 30 hp 20 coins 24 other drops 6
-  marrowjaw            level 40 hp 560 coins 900 other drops 849
-  saltfang             level 48 hp 960 coins 450 other drops 195
-  kiln_warden          level 80 hp 2000 coins 1200 other drops 1560
+  marrowjaw            level 40 hp 560 coins 900 other drops 912
+  saltfang             level 48 hp 960 coins 450 other drops 370
+  kiln_warden          level 80 hp 2000 coins 1200 other drops 575
 
 === 4. New skills on the current XP curve: actions from one unlock to the next (1x, no lamps)
   crafting to  4:     10 actions (running total 10), XP 276
@@ -143,32 +143,77 @@ worst ratio 2.50; smithing recipes below 1.00 (a loss): none
     adamant: 10 adamant_bar, Smithing 30 to 34; shop price of the kit 50000 GP
     dragon: 13 wyrmsteel_ingot, Smithing 60 to 65; shop price of the kit 380000 GP
 
-=== 5. Gear ladders: damage per 0.6 s swing by style, best wearable weapon + body + legs at each level
-level vs target         melee dmg (def, kit GP)        ranged dmg (def, kit GP, GP/shot)      magic dmg (def, kit GP, GP/cast)   ranged/melee  magic/melee
-  1 goblin              1.47 ( 19,   1950)         2.30 (  0,    950, 8)               7.08 ( 13,   6400,  11)        1.57         4.83
- 10 scorpion            3.32 ( 43,  11100)         3.63 (  0,    950, 8)               7.52 ( 13,   6400,  11)        1.09         2.27
- 20 dark_wizard         5.86 ( 62,  21100)        11.11 ( 53,  24000, 8)              14.39 ( 44,  35200,  19)        1.90         2.46
- 30 hill_giant          7.80 ( 85,  50000)        13.01 ( 53,  28500, 8)              20.88 ( 44,  56000,  92)        1.67         2.68
- 40 saltback_stalker   10.31 (113, 129000)        17.99 ( 73,  66500, 8)              21.44 ( 44,  56000,  92)        1.74         2.08
- 50 moss_guardian      11.57 (113, 129000)        24.16 ( 93, 166000, 8)              30.01 ( 44, 142000, 500)        2.09         2.59
- 60 slag_brute         15.61 (141, 380000)        27.84 (113, 251000, 8)              35.40 (111, 365000, 500)        1.78         2.27
- 70 lesser_demon       16.63 (141, 380000)        28.83 (113, 251000, 8)              35.91 (111, 365000, 500)        1.73         2.16
-kits picked at 40 and 70:
-  40 melee: rune_scimitar, rune_plate, rune_legs
-  40 ranged: yew_bow, blue_dhide_body, blue_dhide_chaps
-  40 magic: mystic_staff, mystic_top, mystic_bottom
-  70 melee: dragon_scimitar, dragon_chain, dragon_legs
-  70 ranged: magic_bow, black_dhide_body, black_dhide_chaps
-  70 magic: ancient_staff, bloodbark_top, bloodbark_bottom
-running cost per kill of the reference target, against the coins it drops. "made" prices each rune or arrow at what its inputs sell for:
-    1 goblin             coins   22 | ranged today   28 GP (129%), with bronze_arrow bought   28 (129%), made   28 (129%) | magic wind_strike bought    12 (58%), bound     3 (16%)
-   10 scorpion           coins   64 | ranged today   49 GP (76%), with bronze_arrow bought   49 (76%), made   49 (76%) | magic wind_strike bought    32 (50%), bound     9 (14%)
-   20 dark_wizard        coins  107 | ranged today   22 GP (20%), with bronze_arrow bought   22 (20%), made   22 (20%) | magic fire_bolt bought    40 (37%), bound    10 (10%)
-   30 hill_giant         coins  176 | ranged today   30 GP (17%), with iron_arrow bought   66 (38%), made   18 (10%) | magic ice_burst bought   212 (120%), bound    61 (34%)
-   40 saltback_stalker   coins  228 | ranged today   26 GP (11%), with iron_arrow bought   58 (25%), made   16 (7%) | magic ice_burst bought   249 (109%), bound    71 (31%)
-   50 moss_guardian      coins  350 | ranged today   26 GP (7%), with mithril_arrow bought  116 (33%), made   32 (9%) | magic blood_barrage bought  1299 (371%), bound   445 (127%)
-   60 slag_brute         coins  555 | ranged today   32 GP (6%), with mithril_arrow bought  145 (26%), made   39 (7%) | magic blood_barrage bought  1582 (285%), bound   542 (98%)
-   70 lesser_demon       coins  715 | ranged today   35 GP (5%), with mithril_arrow bought  156 (22%), made   42 (6%) | magic blood_barrage bought  1741 (243%), bound   596 (83%)
+=== 5. The three styles, level band by level band: today and after the rebalance (design 7.12)
+5a. Damage per second (damage per 0.6 s swing / 0.6) against a monster of the level; x = times melee. Melee is identical before and after.
+level target             melee | TODAY ranged (bronze)   magic (best spell) | AFTER ranged bronze   ranged, arrow of its level   magic (best spell) | fastest / slowest today -> after
+  1   goblin              2.4 |   3.8 x1.57             11.8 x4.83       |   3.2 x1.30            3.2 x1.30 bronze_arrow       5.7 x2.31 wind_strike   | 4.83 -> 2.31
+ 10   scorpion            5.5 |   6.0 x1.09             12.5 x2.27       |   4.8 x0.86            4.8 x0.86 bronze_arrow       6.0 x1.09 wind_strike   | 2.27 -> 1.26
+ 20   dark_wizard         9.8 |  18.5 x1.90             24.0 x2.46       |  10.4 x1.07           10.4 x1.07 bronze_arrow      12.1 x1.23 fire_bolt     | 2.46 -> 1.23
+ 30   hill_giant         13.0 |  21.7 x1.67             34.8 x2.68       |  13.1 x1.00           14.5 x1.11 iron_arrow        17.1 x1.31 ice_burst     | 2.68 -> 1.31
+ 40   saltback_stalker   17.2 |  30.0 x1.74             35.7 x2.08       |  17.6 x1.02           19.0 x1.11 iron_arrow        17.5 x1.02 ice_burst     | 2.08 -> 1.11
+ 50   moss_guardian      19.3 |  40.3 x2.09             50.0 x2.59       |  22.0 x1.14           24.9 x1.29 mithril_arrow     24.7 x1.28 blood_barrage | 2.59 -> 1.29
+ 60   slag_brute         26.0 |  46.4 x1.78             59.0 x2.27       |  25.4 x0.98           28.3 x1.09 mithril_arrow     29.2 x1.12 blood_barrage | 2.27 -> 1.12
+ 70   lesser_demon       27.7 |  48.1 x1.73             59.8 x2.16       |  27.3 x0.98           31.6 x1.14 rune_arrow        29.6 x1.07 blood_barrage | 2.16 -> 1.14
+  levels 20 to 70 after: ranged 1.07 to 1.29 of melee (band 0.9 to 1.35), magic 1.02 to 1.31 (band 0.95 to 1.4); the fastest style at most 1.31 times the slowest (bound 1.4); today up to 2.68
+  kits (weapon, body, legs) and max hits, today -> after:
+    20: melee mith_scimitar, mith_plate, mith_legs max hit 14 (defence bonus 62) | ranged willow_bow, green_dhide_body, green_dhide_chaps max hit 25 -> 14 (defence 53) | magic fire_staff, mystic_top, mystic_bottom max hit 32 -> 16 (defence 44)
+    40: melee rune_scimitar, rune_plate, rune_legs max hit 25 (defence bonus 113) | ranged yew_bow, blue_dhide_body, blue_dhide_chaps max hit 41 -> 26 (defence 73) | magic mystic_staff, mystic_top, mystic_bottom max hit 49 -> 24 (defence 44)
+    70: melee dragon_scimitar, dragon_chain, dragon_legs max hit 42 (defence bonus 141) | ranged magic_bow, black_dhide_body, black_dhide_chaps max hit 67 -> 44 (defence 113) | magic ancient_staff, bloodbark_top, bloodbark_bottom max hit 83 -> 41 (defence 111)
+
+5b. What a kill costs to make, against the coins it drops. "bought" is the shop price; "made" prices each arrow or rune at what its inputs sell for.
+    After the rebalance ice burst and blood barrage take one rune of each kind (today two); wind strike and fire bolt keep their runes.
+level target            coins | ranged TODAY bronze | AFTER bronze bought | AFTER arrow of its level: bought, made | magic TODAY best spell: bought, bound | AFTER best spell: bought, bound
+  1   goblin              22 |    28 GP 129% |    34 GP 156% | bronze_arrow     34 GP 156%,    34 GP 156% | wind_strike      12 GP  58%,     3 GP  16% |    26 GP 120%,     7 GP  33%
+ 10   scorpion            64 |    49 GP  76% |    62 GP  96% | bronze_arrow     62 GP  96%,    62 GP  96% | wind_strike      32 GP  50%,     9 GP  14% |    67 GP 104%,    18 GP  28%
+ 20   dark_wizard        107 |    22 GP  20% |    38 GP  36% | bronze_arrow     38 GP  36%,    38 GP  36% | fire_bolt        40 GP  37%,    10 GP  10% |    79 GP  74%,    21 GP  19%
+ 30   hill_giant         176 |    30 GP  17% |    49 GP  28% | iron_arrow       99 GP  57%,    28 GP  16% | ice_burst       212 GP 120%,    61 GP  34% |   216 GP 123%,    62 GP  35%
+ 40   saltback_stalker   228 |    26 GP  11% |    44 GP  19% | iron_arrow       91 GP  40%,    25 GP  11% | ice_burst       249 GP 109%,    71 GP  31% |   253 GP 111%,    73 GP  32%
+ 50   moss_guardian      350 |    26 GP   7% |    47 GP  14% | mithril_arrow   188 GP  54%,    51 GP  15% | blood_barrage  1299 GP 371%,   445 GP 127% |  1317 GP 376%,   451 GP 129%
+ 60   slag_brute         555 |    32 GP   6% |    59 GP  11% | mithril_arrow   237 GP  43%,    65 GP  12% | blood_barrage  1582 GP 285%,   542 GP  98% |  1600 GP 288%,   548 GP  99%
+ 70   lesser_demon       715 |    35 GP   5% |    61 GP   9% | rune_arrow      396 GP  55%,   236 GP  33% | blood_barrage  1741 GP 243%,   596 GP  83% |  1760 GP 246%,   603 GP  84%
+  every spell a caster of the level can cast, AFTER: times melee, then cost per kill bought / bound as a share of the kill's coins
+     20 dark_wizard       wind_strike x0.93 57%/15% | fire_bolt x1.23 74%/19%
+     30 hill_giant        wind_strike x0.86 45%/12% | fire_bolt x1.09 61%/16% | ice_burst x1.31 123%/35%
+     40 saltback_stalker  wind_strike x0.68 40%/11% | fire_bolt x0.85 55%/14% | ice_burst x1.02 111%/32%
+     50 moss_guardian     wind_strike x0.76 28%/8% | fire_bolt x0.90 40%/11% | ice_burst x1.05 84%/24% | blood_barrage x1.28 376%/129%
+     60 slag_brute        wind_strike x0.73 19%/5% | fire_bolt x0.84 29%/8% | ice_burst x0.95 62%/18% | blood_barrage x1.12 288%/99%
+     70 lesser_demon      wind_strike x0.70 16%/4% | fire_bolt x0.81 25%/7% | ice_burst x0.91 53%/15% | blood_barrage x1.07 246%/84%
+  the same TODAY (two runes of each for the big spells):
+     20 dark_wizard       wind_strike x1.92 27%/7% | fire_bolt x2.46 37%/10%
+     30 hill_giant        wind_strike x1.77 22%/6% | fire_bolt x2.17 31%/8% | ice_burst x2.68 120%/34%
+     40 saltback_stalker  wind_strike x1.40 19%/5% | fire_bolt x1.70 28%/7% | ice_burst x2.08 109%/31%
+     50 moss_guardian     wind_strike x1.54 14%/4% | fire_bolt x1.81 20%/5% | ice_burst x2.14 83%/24% | blood_barrage x2.59 371%/127%
+     60 slag_brute        wind_strike x1.48 10%/3% | fire_bolt x1.68 15%/4% | ice_burst x1.93 62%/18% | blood_barrage x2.27 285%/98%
+     70 lesser_demon      wind_strike x1.43 8%/2% | fire_bolt x1.61 12%/3% | ice_burst x1.85 52%/15% | blood_barrage x2.16 243%/83%
+  arrow and bolt grades: max-hit points added, shop price, made cost each (inputs at sale value), smithing level of the recipe
+    bronze_arrow   +0  shop  8 GP  made (no recipe)
+    iron_arrow     +2  shop 18 GP  made 5.0  Smithing 20, 15 from one bar
+    mithril_arrow  +4  shop 36 GP  made 9.8  Smithing 40, 15 from one bar
+    rune_arrow     +6  shop 60 GP  made 35.8  Smithing 60, 15 from one bar
+    bronze_bolts   +0  shop 10 GP  made (no recipe)
+    mithril_bolts  +4  shop 36 GP  made 9.8  Smithing 40, 12 from one bar
+    rune_bolts     +6  shop 60 GP  made 36.2  Smithing 60, 14 from one bar
+  what a better arrow buys at level 70 (lesser demon): bronze_arrow max hit 38 (+0%) 61 GP a kill bought, 61 made; iron_arrow max hit 40 (+5%) 131 GP a kill bought, 36 made; mithril_arrow max hit 42 (+10%) 249 GP a kill bought, 68 made; rune_arrow max hit 44 (+16%) 396 GP a kill bought, 236 made
+
+5c. Outside the standard kit (information): every tier allowed (special sets and uniques), weapon + body + legs; times melee, today -> after with the arrow of the level
+    50: melee gilded_scimitar 19.2 | ranged magic_bow x1.99 -> x1.23 | magic ancient_staff x2.74 -> x1.35
+    60: melee dragon_scimitar 25.3 | ranged ancient_bow x2.00 -> x1.17 | magic ancient_staff x2.29 -> x1.13
+    70: melee dharok_greataxe 31.4 | ranged armadyl_crossbow x2.00 -> x1.16 | magic ahrim_staff x2.10 -> x1.05
+    80: melee deity_sword 46.4 | ranged armadyl_crossbow x1.55 -> x0.89 | magic kodai_wand x1.70 -> x0.84
+    90: melee deity_sword 48.8 | ranged twisted_bow x1.62 -> x0.93 | magic tumeken_shadow x1.72 -> x0.85
+
+5e. Training speed: experience per hour of continuous swings in the style's own skill (melee: 4 a point of damage on one skill; ranged: 4 a point; magic: 3 a point plus 0.4 of the spell's experience on a hit), today -> after
+     20: melee 141k | ranged 267k -> 150k with bronze arrows (-44%), 150k with the arrow of the level (-44%) | magic 341k -> 212k (-38%)
+     30: melee 187k | ranged 312k -> 188k with bronze arrows (-40%), 209k with the arrow of the level (-33%) | magic 521k -> 329k (-37%)
+     40: melee 247k | ranged 432k -> 253k with bronze arrows (-41%), 274k with the arrow of the level (-36%) | magic 529k -> 332k (-37%)
+     50: melee 278k | ranged 580k -> 317k with bronze arrows (-45%), 359k with the arrow of the level (-38%) | magic 780k -> 507k (-35%)
+     60: melee 375k | ranged 668k -> 366k with bronze arrows (-45%), 407k with the arrow of the level (-39%) | magic 878k -> 556k (-37%)
+     70: melee 399k | ranged 692k -> 393k with bronze arrows (-43%), 455k with the arrow of the level (-34%) | magic 885k -> 558k (-37%)
+
+5d. The values the declared test replacements take (Stage 3, tests/combat-profile.test.ts and tests/entry-staff.test.ts), level 1, no other gear:
+    shortbow on rapid: max hit 5 -> 4; with sharp_eye 7 -> 5 (accuracy 29.4, unchanged)
+    fire_staff, wind_strike: 10 -> 5; fire_bolt: 17 -> 8; wind_strike with mystic_might: 12 -> 6 (accuracy 41.5, unchanged)
+    hazel_staff (Stage 3's starter staff, magic bonus 4), wind_strike at Magic 1: 6 -> 3 (accuracy 21.5, unchanged)
 
 === 6. Placement: people, nodes, camps and doors against the world as it is on main
   Bran Tolley      (4, 12) walkable true, safe zone lumbridge, aggressive camp no, nearest station 3.8, nearest path 10.0, height 0.00
@@ -205,9 +250,28 @@ running cost per kill of the reference target, against the coins it drops. "made
 
 === 8. A dungeon run against open ground: coin per second, the same overheads on both sides
   Saltfang Warren, every fighting skill at 45: 1638 hitpoints in 22 monsters; fighting 90 s and walking 164 units = 1.7 min model-optimal (a person about double; never asserted)
-    pays 3140 coins and goods from monsters + 1165 from the chest at sale value = 41.2 GP/s; best open ground at that level: Moss Guardian, 78.6 GP/s; ratio 0.52. First clear, once: 5456 GP of goods
+    pays 3315 coins and goods from monsters + 1321 from the chest at sale value = 44.4 GP/s; best open ground at that level: Moss Guardian, 78.6 GP/s; ratio 0.57. Nothing is paid once: a chest has no first-clear reward (design 7.6)
   The Underkiln, every fighting skill at 70: 3040 hitpoints in 15 monsters; fighting 112 s and walking 178 units = 2.1 min model-optimal (a person about double; never asserted)
-    pays 8748 coins and goods from monsters + 4815 from the chest at sale value = 106.3 GP/s; best open ground at that level: Lesser Demon, 178.5 GP/s; ratio 0.60. First clear, once: 22815 GP of goods
+    pays 7763 coins and goods from monsters + 3606 from the chest at sale value = 89.1 GP/s; best open ground at that level: Lesser Demon, 178.5 GP/s; ratio 0.50. Nothing is paid once: a chest has no first-clear reward (design 7.6)
+
+=== 8b. Drop tables: what a dungeon and a boss can give, the chance of each entry, and how many runs a specific thing takes
+  Saltfang Warren, the chest, every clear: 3 to 5 Adamantite Ore, 1 to 2 Tough Hide, 100 to 300 GP
+    chance   5%: 1 Rune Crossbow (equipment): on average 1 clear in 20; half of all players have it within 14 clears, nine in ten within 45
+  Matron Saltfang, every kill: 1 Big Bones, 300 to 600 GP, 3 Sting Gland
+    chance  20%: 3 Adamant Bar: on average 1 kill in 5
+  The Underkiln, the chest, every clear: 1 Kilnglass Shard, 1 to 2 Cinder Silk, 500 to 1000 GP
+    chance  20%: 3 Kilnglass Shard: on average 1 clear in 5; half of all players have it within 4 clears, nine in ten within 11
+    chance   4%: 1 Bloodbark Body (equipment): on average 1 clear in 25; half of all players have it within 17 clears, nine in ten within 57
+    chance   4%: 1 Bloodbark Legs (equipment): on average 1 clear in 25; half of all players have it within 17 clears, nine in ten within 57
+  The Kiln Warden, every kill: 1 Dragon Bones, 800 to 1600 GP
+    chance  50%: 1 Kilnglass Shard: on average 1 kill in 2
+    chance  10%: 1 Wyrmsteel Ingot: on average 1 kill in 10
+  Marrowjaw the Tollmaster (open ground, back every 180 s), every kill: 1 Big Bones, 600 to 1200 GP, 3 Tough Hide, 2 Roast Lobster
+    chance  13%: 1 Runite Bar: on average 1 kill in 8
+  both Bloodbark pieces from the Underkiln chest: 37 clears on average
+  Kilnglass for the whole dragon kit (13 ingots): 2.2 a clear on average (1 always, 3 more at 20%, 1 more at 50%, 1 more at 10%): 6.4 clears on average; half of all players within 6, nine in ten within 8; never more than 13 (the guaranteed part alone)
+  Kilnglass for one dragon scimitar (4 ingots): 2.2 a clear on average (1 always, 3 more at 20%, 1 more at 50%, 1 more at 10%): 2.3 clears on average; half of all players within 2, nine in ten within 3; never more than 4 (the guaranteed part alone)
+  (a Wyrmsteel Ingot from the Kiln Warden counts as one Kilnglass: it is a shard and a runite bar already smelted.)
 
 === 9. Names against the Stage 2 deny-list (tests/names.test.ts) and the two words the architecture test forbids in src/data
   82 new names, 82 distinct; deny-list hits: none

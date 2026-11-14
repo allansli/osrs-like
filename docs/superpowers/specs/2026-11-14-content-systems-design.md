@@ -2,7 +2,7 @@
 
 Date: 2026-11-14. Branch: `feat/content-systems`, cut from `main` at `5caa597` (Stages 1 and 2 merged). All line numbers refer to that commit. Stages 3, 4 and 5 are approved and land before this stage; their code is not in this tree, so every task in the plan finds symbols by name and the plan opens with a premise re-check (task R0).
 
-Status: proposal, critiqued (`2026-11-14-content-systems-critique.md`, READY-WITH-FIXES; its fixes are applied below and marked "critique"). The owner has not reviewed any of it. Every decision marked **CALL-6.n** is the lead's proposal and needs the owner's check (section 15). Nothing here has been agreed.
+Status: proposal, critiqued (`2026-11-14-content-systems-critique.md`, READY-WITH-FIXES; its fixes are applied below and marked "critique"), and **revised on 2026-11-14 for the owner's answers** to its main decisions. Four answers changed the design: arrows (7.4), a real rebalance of the three styles (7.12), aggressive and passive monsters in place of Stage 2's level rule (7.13), and dungeon rewards as drops with quest rewards paid once (7.3, 7.6). Section 15 quotes each answer and lists what is still open; the review log at the end lists what this revision moved. A decision marked **CALL-6.n** that section 15 does not show as decided is still the lead's proposal.
 
 Inputs read for this document: `docs/superpowers/specs/2026-11-13-world-foundation-design.md` ("the foundation design") and its plan; the approved designs of Stage 3 ("Start and pacing"), Stage 4 ("Combat with weight") and Stage 5 ("Visual pass"), as reference copies; the Stage 3 plan and code as they stand on `origin/feat/start-pacing` at `ffa87cb` (read with `git show`); the Stage 4 combat model on `feat/combat-weight` at `732cb8c`; `docs/audit/2026-11-13-findings.json`; `src/state/*.ts`, `src/data/*.ts`, `src/engine/actions.ts`, `loop.ts`, `session.ts`, `spawns.ts`, `worldBuild.ts`, `input.ts`, `overlay.ts`, `renderer.ts`, `src/ui/stations.ts`, `hud.ts`, `index.html`, `tests/names.test.ts`.
 
@@ -16,9 +16,11 @@ It is built as a small foundation and eight slices that each ship alone (section
 
 - `content.ts` holds the whole proposal as data: items, nodes, recipes, monsters, drops, camps, people, dungeons, chests, bosses, quests. It also holds, as named constants, the Stage 3 and Stage 4 numbers this tree does not have yet (the tenfold shop price, the gear drop cut, bars in recipes, the two Stage 4 monsters, Ashmantle's arena).
 - `model.ts` (`results.txt`) imports the game's real tables and pure functions (`ITEMS`, `unitSellPrice`, `FORGE_RECIPES`, `MONSTER_TYPES`, `RESOURCE_NODES_DEF`, `SPELLS`, `CAMPS`, `PATHS`, `SAFE_ZONES`, `NODE_PLACEMENTS`, `OSRS_XP_TABLE`, `isWalkable`, `getTerrainHeight`, `getEquipmentBonuses`, `serializeState`) through the repository's own esbuild and checks the proposal against them. It ends with `ALL CHECKS PASS` in the committed run and exits non-zero otherwise.
-- `check.ts` (`check-results.txt`) runs the three new bosses through Stage 4's positional fight model, 2,000 seeded fights per row. `fight.ts` and `boss.ts` are copies from the Stage 4 branch; the header of `fight.ts` states the two-line difference.
+- `check.ts` (`check-results.txt`) runs the three new bosses, and Stage 4's Ashmantle with its own rows, through Stage 4's positional fight model, 2,000 seeded fights per row, each row twice: with today's attack formula and with the rebalance of 7.12. `fight.ts` and `boss.ts` are copies from the Stage 4 branch; the header of `fight.ts` states the three marked differences.
+- `aggro.ts` is the aggression rule of 7.13 as the pure function the game will get. `aggro-check.ts` (`aggro-results.txt`) checks it, patches it into a copy of Stage 2's `stepMonster` (nothing under `src/` is edited) and reruns Stage 2's gate simulation before and after.
+- `pacing-rerun.sh` (`pacing-results.txt`) takes Stage 3's `tests/pacing.test.ts` and its model from `origin/feat/start-pacing` at `9ccbdae`, bundles the test unedited with a stand-in for vitest (`vitest-stub.ts`), and runs it against the model as committed and with the new aggression rule. It is the model that is run, not the test suite.
 
-The player's attack arithmetic in both scripts is transcribed by hand from `performPlayerAttack` (`actions.ts` 83-264), as Stage 4's model does. No test, type check, build or dev server was run. Section 17 lists what could not be verified.
+The player's attack arithmetic in both scripts is transcribed by hand from `performPlayerAttack` (`actions.ts` 83-264), as Stage 4's model does. No test suite, type check, build or dev server was run. Section 17 lists what could not be verified.
 
 ---
 
@@ -41,14 +43,14 @@ Hours are a real player's, taken as about twice the Stage 3 model's (its section
 | | Where the player is | What they are doing | What pulls them forward |
 |---|---|---|---|
 | **Hour 3** | Attack and Defence in the high 30s, adamant worn, combat about 45. Chapters 1 and 2 done. | Killing hill giants for coin and Tough Hide; smelting steel and adamant for the forge; in the dunes with Qadir Salt-Hand, learning leatherwork. Marrowjaw the Tollmaster is the first boss they can beat. | Chapter 3 points at a door in the dunes: Saltfang Warren. Rune gear is one tier up. The diary's easy tiers are nearly done in two regions. |
-| **Hour 10** | Level 58 to 60, rune worn, combat about 72. Chapters 1 to 4 done, the Warren cleared several times. | Binding their own runes with Hesper Moth; farming Mossed Hide and Mire Root from the guardians; brewing prayer vials for the pass. | Chapter 5: the pass, with a vow taken. Dragon gear needs Kilnglass, which only the Underkiln holds. Medium diary tiers pay embers and make a region's camps leave them alone. |
+| **Hour 10** | Level 58 to 60, rune worn, combat about 72. Chapters 1 to 4 done, the Warren cleared several times. | Binding their own runes with Hesper Moth; farming Mossed Hide and Mire Root from the guardians; brewing prayer vials for the pass. | Chapter 5: the pass, with a vow taken. Dragon gear needs Kilnglass, which only the Underkiln holds. Medium diary tiers pay embers and put a deposit box at a region's shrine. |
 | **Hour 30** | About level 72, dragon worn or half forged. Chapters 1 to 6 done. | Running the Underkiln for Kilnglass and Cinder Silk; forging wyrmsteel; fighting Ashmantle for the last chapter. | "Ashfall", the title Wardkeeper, the hard diary tiers (a bank at every shrine), levels 70 to 99 in ten skills. |
 
 ### Essence to preserve (CALL-6.1)
 
 Unchanged from the earlier stages: progression by skills on the existing XP curve (`OSRS_XP_TABLE`, `skills.ts` 6-14), click-to-act, the 28-slot backpack, bank, shops, forge, the faceted painted look, and control never taken from the player. Existing saves under `gielinor_hero_save_v1` (version 4) keep loading and lose nothing.
 
-Stage 6 changes no combat formula, no XP value of an existing action, no price or requirement of an existing item, no existing recipe, no existing quest's steps or reward, and no monster stat that exists when it starts. It adds content, two skills, one saved block, one aggression rule that applies only inside dungeons (7.6, CALL-6.18), and one rule that takes something back: bows worn at Ranged 25 or more need better arrows (7.4, CALL-6.8).
+Stage 6 changes no XP value of an existing action, no price, requirement or stat of an existing item, no existing recipe, no existing quest's steps or reward, and no monster stat that exists when it starts. It adds content, two skills and one saved block. And, by the owner's decisions of 2026-11-14, it changes two rules that earlier stages left alone, each in a slice of its own with its own tests and declared test replacements: **three style numbers of the attack formula and the rune counts of two spells** (7.12: ranged and magic stop being twice as fast as melee), and **the aggression rule** (7.13: aggressive and passive monsters, replacing Stage 2's level rule for the whole game). Arrows take nothing back: any bow shoots any arrow (7.4).
 
 ---
 
@@ -61,7 +63,7 @@ Stage 6 changes no combat formula, no XP value of an existing action, no price o
 | C3 | No new model. `monsters.glb`, `world.glb`, `hero.glb`, `gear.glb` are as they are; the models pass is a later stage. | Every new monster is a row with Stage 4's `model`, `tint` and `modelScale`. Every person is the existing humanoid rig with a tunic colour (`createMerchantNPC`, `worldBuild.ts` 505-533). Dungeons are built from boxes, the painted tiles and existing `world.glb` nodes. Section 7.5 records the model each one should get. |
 | C4 | Names: sharing generic words with other games is fine (owner, 2026-11-14); copying a specific game's characters, quests, maps or look is not. Existing borrowed names stay. The Stage 2 deny-list test stays enforced for new names. | 82 new names, none with a deny-listed token (`results.txt` section 9). Recipes are named after the existing items they make. A person searches each name before merge, as in Stages 2 and 4. |
 | C5 | Saves: key `gielinor_hero_save_v1`, `version: 4`. A new saved field is allowed; the save must stay version-compatible. | One optional top-level block, `progress`, absent until used, plus two skill keys. `version` stays 4. Section 9 gives defaults, reader rules, bounds, fixtures and what an older build drops. |
-| C6 | Existing tests are frozen. Tests pin: `QUEST_DEFS` at ten ids (`tests/phase3-content.test.ts`), Stage 3's `STARTER_QUESTS` at seven, the ids and names of every content table (`tests/content-freeze.test.ts` on the Stage 3 branch), the serialised default state and a loaded version-4 save (`tests/save-compat-s3.test.ts`), exactly twelve names in `worldMap.ts` (`tests/names.test.ts`). | Story quests, people and dungeons live in their own tables, never in `QUEST_DEFS`, `STARTER_QUESTS` or `POIS`. Four test replacements are declared in 11.3, each additive. |
+| C6 | Existing tests are frozen. Tests pin: `QUEST_DEFS` at ten ids (`tests/phase3-content.test.ts`), Stage 3's `STARTER_QUESTS` at seven, the ids and names of every content table (`tests/content-freeze.test.ts` on the Stage 3 branch), the serialised default state and a loaded version-4 save (`tests/save-compat-s3.test.ts`), exactly twelve names in `worldMap.ts` (`tests/names.test.ts`). | Story quests, people and dungeons live in their own tables, never in `QUEST_DEFS`, `STARTER_QUESTS` or `POIS`. Every test replacement is declared in 11.3 with its file and assertion: seven additive ones for content, and four that follow the owner's two rule changes. |
 | C7 | `src/state` and `src/data` import nothing from the engine or `three`, and no file there may contain the words `document` or `window`, in code, comments or strings (`tests/architecture.test.ts`). | All rules of this stage are pure modules with injected time and randomness. Dialogue text is data under `src/data` and cannot use those two words; a data test checks it. |
 | C8 | Vitest runs in `node` with no DOM. | Every automated proof is DOM-free. What needs a screen is a human check. |
 | C9 | No new runtime dependency. | Dialogue, quests, dungeons and the diary are plain TypeScript tables and reducers. |
@@ -82,17 +84,20 @@ Goals:
 - **G6.6** Dungeons exist as a mechanism where a new dungeon is a table row, and two are built: Saltfang Warren (levels 30 to 48) and the Underkiln (52 to 80).
 - **G6.7** Stage 4's five prepared slots are filled: Cinder Adept, Slag Brute, a camp captain, a swarm creature, a dungeon boss, plus a second dungeon boss. Each boss asks a different question, and the proof is a seeded fight table.
 - **G6.8** A diary: five regions, three tiers, 75 tasks that touch every system, with rewards that are experience and convenience, never coin income.
-- **G6.9** Stage 3's pacing test and economy invariants pass unedited with all of this in place.
+- **G6.9** Stage 3's pacing test and economy invariants pass unedited with all of this in place. (The pacing test's support model holds Stage 2's aggression rule in one line; that line follows the rule: 7.13, replacement 9 of 11.3.)
 - **G6.10** A version-4 save loads to exactly the state it loads to today, plus two skills at level 1. The new block survives a round trip, rejects hostile values, and is bounded in size.
 - **G6.11** Every item owed to Stage 6 by Stages 1, 3 and 4 is fixed or deferred again in writing (section 12).
+- **G6.13** The three styles are in one band: from level 20 to 70, with the standard kit of the level, the fastest deals at most 1.4 times the slowest's damage per second (today up to 2.68), each keeps a character of its own, nothing is taken from a save, and every fight bound of Stage 4 and of this stage holds with the formula before and after (7.12).
+- **G6.14** Monsters are aggressive or passive. An aggressive one attacks any hero it sees; how far it sees shrinks as the hero outlevels it; the pass sentries, bosses and dungeon camps keep their sight. One pure function, and Stage 2's gate and Stage 3's pacing proofs still hold (7.13).
 - **G6.12** Every new rule is a pure function under `src/state` with injected randomness and time; every new piece of content is a table; every new player action is a command. Section 8 lists what a second player would break.
 
 Non-goals: new models; voice acting or portraits; branching story with exclusive outcomes; reputation or factions; a party system or any networking; generated dungeon layouts; timed lockouts; a third new skill (farming, agility, thieving and the like); new gather kinds (herb patches); raw fish for salmon, swordfish and anglerfish; pets; an auction or player trade; renaming borrowed names (Stage 8, if the owner decides).
 
 Anti-goals:
 
-- No change to a combat formula, the XP table, or the XP of an existing action.
-- No edit to the price, requirement or stats of an existing item, or to an existing recipe's inputs.
+- No change to the XP table or the XP of an existing action, and no change to a combat formula beyond the three style numbers of 7.12. Melee's formula, accuracy, the hit chance and every monster's attack are not touched.
+- No edit to the price, requirement or stats of an existing item, or to an existing recipe's inputs. (The rune counts of two spells change, in the caster's favour: 7.12.)
+- No reward paid once that is not a quest's: a chest, a boss and a dungeon pay the same table every time (7.6).
 - No edit to `QUEST_DEFS`, to Stage 3's `STARTER_QUESTS`, or to any existing quest's reward.
 - No reward that pays coin faster than open ground does at the same level.
 - No quest or dialogue that locks content for good: every choice can be made again, nothing is missable.
@@ -159,7 +164,7 @@ Open loops, from `results.txt` section 1 (24 items today):
 | 60 | 15.6 | 27.8 | 35.4 | 1.8 | 2.3 | 32 GP, 6% | 1,582 GP, 285% |
 | 70 | 16.6 | 28.8 | 35.9 | 1.7 | 2.2 | 35 GP, 5% | 1,741 GP, 243% |
 
-Reading it. This is the fact behind Stage 4's "ranged and magic kill the boss in half the time". Ranged deals about 1.8 times melee's damage and magic about 2.3 times, at every level from 20 up, in the item tables as they are. Magic pays for it: from level 30 a caster spends more on runes than the kill drops. Ranged pays nothing: one arrow price for every bow, falling from 20% of a kill's coins to 5%. The gear ladders exist as rows (ten bows and crossbows, four hide sets, four robe sets, eight staffs); what is missing is a way to make them and a running cost for ranged that grows with the bow.
+Reading it. This is the fact behind Stage 4's "ranged and magic kill the boss in half the time". Ranged deals about 1.8 times melee's damage and magic about 2.3 times, at every level from 20 up, in the item tables as they are. Magic pays for it: from level 30 a caster spends more on runes than the kill drops. Ranged pays nothing: one arrow price for every bow, falling from 20% of a kill's coins to 5%. The gear ladders exist as rows (ten bows and crossbows, four hide sets, four robe sets, eight staffs); what is missing is a way to make them, and a formula that does not value a point of ranged or magic gear at twice a point of melee gear (7.12). One correction to this reading, found when the rebalance was modelled: magic "pays for it" only with its dearest spell. A level-70 caster using the level-12 spell deals 1.61 times melee's damage for 12% of the kill's coins (`results.txt` 5b).
 
 ### 4.4 Monsters, dungeons, bosses
 
@@ -175,12 +180,12 @@ There is no dungeon. The engine assumes one world: `isWalkable` and `moveWithCol
 | F6.2 | A step is a closure, so a data test cannot read what a quest asks. | `adventure.ts` 33-36 | New quests use tagged conditions (7.2). Old tables are not touched. |
 | F6.3 | Nothing counts what the player does; only "did it once" flags exist. | `quests.ts` 3-32 | A bounded counter table (7.3). |
 | F6.4 | Open loops L1 to L7. | 4.2 | 7.4 |
-| F6.5 | Ranged has no running cost that grows; magic has one that outruns income. | 4.3 | 7.4 (ammunition tiers; runes at their inputs' value) |
+| F6.5 | Ranged and magic deal about twice melee's damage at every level; ranged has no running cost that grows; magic has one that outruns income only for its dearest spell. | 4.3 | 7.12 (the rebalance); 7.4 (arrow grades; runes at their inputs' value) |
 | F6.6 | `addChatMessage` writes `innerHTML` (`hud.ts` 64). The corrupt-save notice already passes a key name through it; any quest or dialogue text sent that way would be markup. | `hud.ts` 60-68 | Dialogue and journal text is written with `textContent` only (7.2, section 13). |
 | F6.7 | The shop lists every entry of `ITEMS` (`stations.ts` 289). New materials are safe because their types are `resource` and `bar`, which cannot be bought (`inventory.ts` 208-214). A new item of any other type would be on sale the moment it exists. | `stations.ts`, `inventory.ts` | Every new item is `resource`, `bar` or `ammo`; a test pins it (7.4). |
 | F6.8 | A new POI, path or basin name changes the count that `tests/names.test.ts` pins at twelve. | `tests/names.test.ts` | Doors and people are not `POIS` rows (7.3, 7.6). |
 | F6.9 | Kills are fast: a fighter with every skill at 45 cuts 1,638 hitpoints in 90 s. A dungeon of twenty monsters is under two minutes for the model and three to four for a person. | `results.txt` section 8 | Dungeons are short on purpose; their gate is the boss, not the corridor (7.6). |
-| F6.10 | A monster's level is compared with the hero's combat level, which runs ahead of its skills: a hero ready for a level-48 boss is combat 62 and is ignored by everything under that. Under Stage 2's rule a dungeon's rooms would stand and watch. | `monsterAi.ts`, transition T2; `adventure.ts` 252-275 | Dungeon camps attack whatever the hero's level (7.6, CALL-6.18). |
+| F6.10 | A monster's level is compared with the hero's combat level, which runs ahead of its skills: a hero ready for a level-48 boss is combat 62 and is ignored by everything under that. Under Stage 2's rule a dungeon's rooms would stand and watch. | `monsterAi.ts`, transition T2; `adventure.ts` 252-275 | Stage 2's rule is replaced for the whole game (7.13, the owner's decision): aggressive camps attack at any level, and dungeon camps are aggressive camps that keep their full sight. |
 
 ---
 
@@ -195,7 +200,9 @@ Techniques only. No name, character, quest, map or number is taken from any of t
 | Quest structure | **Staged quests with a journal**: one integer per quest, each stage a "talk to" or "do", the journal showing the current stage's text. | **Yes.** One number per quest is the whole saved state. |
 | Teaching a system | **The trainer quest**: the person who teaches a craft gives a short quest that makes the player do it once and pays the first materials. | **Yes.** It is what Stage 3's starter chain does for the first hour. |
 | Skills that matter | **Loops and sinks**: every gathered thing has a use, every used thing has a source, and each combat style has a production skill behind it. Secondary ingredients come from monsters, so mid-level monsters stay worth killing. | **Yes.** Drops as ingredients need no new gather kind and no new model. |
-| Ranged cost | **Ammunition tiers**: better bows need better arrows, made from the same bars as armour. | **Yes**, with one cost: it takes something back from existing ranged characters (CALL-6.8). |
+| Ranged cost | **Arrow grades**: a better arrow hits harder with any bow, and is made from the same bars as armour. (The other common form, a better bow refusing a worse arrow, was the first draft's; the owner chose this one: "bows shoot arrows. Good ones and bad ones.") | **Yes.** It takes nothing from an existing ranged character. |
+| Who attacks whom | **Aggressive and passive creatures, with a sight radius that shrinks as the player outlevels them** (the common MMO form; the owner named World of Warcraft's feel). | **Yes.** One function of the two levels; camps already carry the aggressive flag. |
+| Chasing a specific item | **Drop tables with rare entries**: a boss or its chest rolls each entry every time; a guaranteed part bounds bad luck. | **Yes.** Rows and an injected random source. No lockout is needed for it. |
 | Self-contained challenge areas | **Instanced dungeons**: a private copy of an area per party, reset on entry, with trash packs, gates and an end boss. | **The instance part is free here**: with one player, every area is already private. What transfers is the shape: reset on entry, gates opened by clearing, a chest at the end. Kept as data so a per-party copy is possible later. |
 | Stopping reward farming | **Lockouts**: a boss's chest pays once per day or week. | **No.** A wall clock in a single-player game with local saves is not a boundary and only punishes honest players. The run itself is the gate, and the chest is deliberately poorer than open ground (7.6, CALL-6.5). |
 | Bosses | **Mechanics as questions**: each boss tests one thing (position, tempo, preparation), and its phases are the same question asked harder. | **Yes**, and Stage 4 built it: a boss is rows of attacks and phases. Three new bosses, no new rule. |
@@ -257,7 +264,7 @@ Recommendation: **A**. B is smaller but stops at one dungeon and cannot hold a b
 
 ### 6.5 What stops a chest from being farmed
 
-- **A (recommended): nothing but the run.** A dungeon resets on entry; the boss door opens only when the rooms are cleared; the run pays less per second than open ground at that level (41.2 GP/s in the Warren against 78.6 from the best open ground at that level, 106.3 against 178.5 in the Underkiln, with the same overheads and every drop's goods counted on both sides; `results.txt` section 8, after the critique's corrections). What the chest has that open ground has not is the material: adamantite and Kilnglass.
+- **A (recommended): nothing but the run.** A dungeon resets on entry; the boss door opens only when the rooms are cleared; the run pays less per second than open ground at that level (44.4 GP/s in the Warren against 78.6 from the best open ground at that level, 89.1 against 178.5 in the Underkiln, with the same overheads, every drop's goods counted on both sides and every rare entry at its chance; `results.txt` section 8). What the chest has that open ground has not is the material and the rare piece: adamantite, Kilnglass, and a chance at a crossbow or a robe. **Decided by the owner on 2026-11-14** (section 15).
 - **B: a daily lockout.** Needs a saved wall-clock time, which a player changes by changing the clock, and which makes "play when you have an evening" worse.
 - **C: a key consumed on entry.** A real sink, and a second thing to farm before the thing the player wants to do. Kept as a slot: `needs` in the dungeon row can name an item later.
 
@@ -269,7 +276,9 @@ Recommendation: **A**. B is smaller but stops at one dungeon and cannot hold a b
 
 ### 6.7 Ranged and magic ladders
 
-- **A (recommended): parity of cost, not of damage.** Leave every damage number. Give ranged a running cost that grows with the bow (ammunition tiers made by Smithing) and let Runebinding bring magic's cost down from "more than the kill pays" to "about what the kill pays". Melee stays the slow, free, sturdy style.
+**Decided by the owner on 2026-11-14: not A.** "Let's structure the rebalancing, no problem." The design is B in a much smaller form than the first draft feared: three numbers of the formula instead of sixty item rows (7.12). The options as first written:
+
+- **A (the first draft's recommendation, declined): parity of cost, not of damage.** Leave every damage number. Give ranged a running cost that grows with the bow (ammunition tiers made by Smithing) and let Runebinding bring magic's cost down from "more than the kill pays" to "about what the kill pays". Melee stays the slow, free, sturdy style.
 - **B: rebalance the item tables** so the three styles deal the same damage at a level. About sixty rows of an existing table, every one a number existing players own, and Stage 4's boss proofs are tuned against today's numbers.
 - **C: per-monster resistances.** A new term in the damage formula, which this stage may not add.
 - **D: defer again.**
@@ -382,13 +391,22 @@ Work done before a quest counts. A hero who has already killed four stalkers fin
 |---|---|---|
 | `ml_wards` The Guttering Wards. Offered when the starter chain is finished, or at once to a save that never had the chain. | T Odalys. D carry 3 ashes (burn three logs). T Odalys, who takes them. T Corin at Wardstone Cairn. | 300 GP, 300 Prayer XP, a Faint Ember |
 | `ml_east` Iron for the East Lamp | T Tamsin. D mine 4 coal. D smelt 2 steel bars. T Tamsin, who takes 2 steel bars. T Odalys. | 1,200 GP, 600 Smithing XP, a Faint Ember |
-| `ml_salt` Salt on the Wind | T Qadir. D kill 4 Saltback Stalkers. T Qadir, who opens the Warren (7.6). D kill Matron Saltfang. T Odalys. | 4,000 GP, 2,000 Crafting XP, a Steady Ember |
+| `ml_salt` Salt on the Wind | T Qadir. D kill 4 Saltback Stalkers. T Qadir, who opens the Warren (7.6). D kill Matron Saltfang. T Odalys. | 4,000 GP, 2,000 Crafting XP, 8 Adamant Bars, the title Warrenbreaker, a Steady Ember |
 | `ml_hollow` What the Hollow Keeps | T Hesper. D bind fire runes 3 times (Runebinding 12). T Hesper. D discover the woods shrine and kill 2 moss guardians. T Odalys. | 6,000 GP, 3,000 Runebinding XP, 50 chaos runes, a Steady Ember |
 | `ml_pass` The Held Pass | T Corin. D hold a Lantern Vow once. D discover the shrine behind the pass. T Corin. | 8,000 GP, 5,000 Prayer XP, a Steady Ember |
-| `ml_kiln` Under the Ridge | T Corin. D kill 3 Cinder Adepts and 3 Slag Brutes. T Corin, who opens the Underkiln. D kill the Kiln Warden. T Odalys, who takes 1 Kilnglass Shard. | 15,000 GP, 10,000 Smithing XP, 2 Wyrmsteel Ingots, a Bright Ember |
+| `ml_kiln` Under the Ridge | T Corin. D kill 3 Cinder Adepts and 3 Slag Brutes. T Corin, who opens the Underkiln. D open the Underkiln's chest (it opens only when the Kiln Warden is dead). T Odalys, who takes 1 Kilnglass Shard. | 15,000 GP, 10,000 Smithing XP, 2 Wyrmsteel Ingots, the title Kilnbreaker, a Bright Ember |
 | `ml_ash` Ashfall | T Odalys. D kill Ashmantle. T Corin. T Odalys. | 30,000 GP, the title Wardkeeper, a Bright Ember |
 
 The seven pay 64,500 GP in all, over about thirty hours. Stage 3 sized the ten existing quests at 57,300 GP, "about one adamant kit"; a level-70 fighter earns 64,500 GP from lesser demons in nine minutes (119 GP/s, `results.txt` section 8). The largest share against its tier is chapter 2: 1,200 GP when a steel kit costs 11,100. Stage 3's pacing model plays none of these, so no assertion of its test reads them; R0 and the slice gate re-run it all the same.
+
+**A quest is a quest: its reward is taken once (owner, 2026-11-14).** "A quest's reward is taken only once, regardless of whether the quest is opening a chest." This is how it holds, and how the two kinds of pay are told apart in data:
+
+- **Quest pay lives in one place**: the `reward` of a `STORY_QUESTS` row, paid by `finishQuest` when the quest's last stage is done. The id then moves to `quests.claimed`, and a claimed quest cannot be started, advanced or finished. Nothing else in the game pays once.
+- **Dungeon loot lives in another**: the `loot` of a `DUNGEONS` row (7.6), rolled by `openChest` on every clear. A chest row has no field that can hold a once-only reward; the first draft's "first clear" list is gone, and what it held moved into the two quests above (the adamant bars and the two titles) or into the chest's rare entries (the crossbow and the robes).
+- **A quest step can be "open a chest"**: chapter 6 has one. It is a `do` stage whose condition reads the counter `clear:<dungeon>`, which `openChest` bumps. Opening the chest pays the chest's own roll, every time; the quest notices the counter, moves on, and pays its reward at its end, once. Opening the same chest fifty times more pays fifty rolls and no quest reward.
+- **A chest that exists only for a quest** (none is built in this stage) would be an object whose one action is the dialogue effect `advance`: it has no loot table, so it cannot pay twice by construction.
+
+The proof (plan Z1, Q5): with chapter 6 at its chest stage, `openChest` three times pays three rolls, advances the quest once, and `finishQuest` pays once and is refused a second time; a data test fails if a dungeon row carries a reward field other than `loot`, or if any quest's reward is reachable by a path that does not end in `finish`.
 
 **Side quests.** Each teaches one loop and pays its first materials.
 
@@ -439,7 +457,7 @@ Every recipe below is in `content.ts` and was checked against the 2.5 rule (`res
 | Adamant Bar | 1 adamantite ore + 2 coal | 30 | 3 / 3 / 4 | 30, 32, 34 |
 | Wyrmsteel Ingot | 1 runite bar + 1 Kilnglass Shard | 60 | 4 / 4 / 5 | 60, 62, 65 |
 
-The outputs are the existing steel longsword, black scimitar, adamant scimitar and dragon scimitar with their platelegs and platebodies. Kilnglass comes only from the Underkiln's chest and boss and from nothing else. Dragon gear by the forge needs 13 ingots: the first clear alone gives 14 shards (8 first-clear, about 4 from the chest, 2 from the boss), so it is one clear, not three (critique M3; owner decision 6.20). The shop still sells all of it at Stage 3's price (380,000 GP for the dragon kit).
+The outputs are the existing steel longsword, black scimitar, adamant scimitar and dragon scimitar with their platelegs and platebodies. Kilnglass comes only from the Underkiln's chest and boss and from nothing else, and it comes by chance (7.6): one shard is certain every clear and the rest are rolls, 2.2 a clear on average. Dragon gear by the forge needs 13 ingots: 6.4 clears on average, nine players in ten within 8, never more than 13 (`results.txt` 8b; CALL-6.25). The critique's finding that one clear gave the whole kit (M3) is closed by the owner's rule that a dungeon's rewards are drops. The shop still sells all of it at Stage 3's price (380,000 GP for the dragon kit).
 
 **Crafting (new skill; L3).** Hides and cloth are drops, appended to the end of each monster's table so the order of earlier random draws does not change:
 
@@ -469,7 +487,7 @@ Three of each material make a piece (one and two for the gloves and boots). Stat
 | Death | 1 | 1 big bones | 44 | 100 |
 | Blood | 5 | 1 dragon bones | 48 | 140 |
 
-Each level sits about two levels under the Magic level of the first spell that needs the rune (fire bolt 12, ice burst 28, the blood spell 50). Runestone Outcrops (Mining 1, two rocks at (-44, -6) and (-48, -4), beside the woods road near Hesper Moth) give the stones. Bones now have a second use, so a player chooses between Prayer and runes with every bone: the first choice in the game between two skills for one resource. On the curve: 82 binds to reach 12, 321 to 26, 1,247 to 48. What it does to magic's cost is in 4.3's terms: a kill at level 70 costs a caster 1,741 GP in bought runes and 596 GP in bound ones, against 715 GP of coins dropped: magic stops losing money from about level 60 (bound runes cost 127% of a kill's coins at 50, 98% at 60, 83% at 70: the price stays real). Lesser demons drop the dragon bones the blood spell's runes need.
+Each level sits about two levels under the Magic level of the first spell that needs the rune (fire bolt 12, ice burst 28, the blood spell 50). Runestone Outcrops (Mining 1, two rocks at (-44, -6) and (-48, -4), beside the woods road near Hesper Moth) give the stones. Bones now have a second use, so a player chooses between Prayer and runes with every bone: the first choice in the game between two skills for one resource. On the curve: 82 binds to reach 12, 321 to 26, 1,247 to 48. What it does to magic's cost, after the rebalance of 7.12 (half the damage, and half the runes for the two big spells): a kill with blood barrage at level 70 costs a caster 1,760 GP in bought runes and 603 GP in bound ones, against 715 GP of coins dropped; bound runes cost 129% of a kill's coins at 50, 99% at 60, 84% at 70. The best spell stays a real price, and the cheaper spells are the way to train: ice burst at 70 costs 15% of the kill in bound runes (`results.txt` 5b). Lesser demons drop the dragon bones the blood spell's runes need.
 
 **Brewing: three Cooking recipes (L2, L5).** No new skill and no new station; they appear in the forge and range window beside the fish.
 
@@ -481,18 +499,24 @@ Each level sits about two levels under the Magic level of the first spell that n
 
 Stage 4 gave food a job; this gives the potions a source and ashes two uses. Chickens gain a feather drop (5 at 0.8), so arrows can be made without the shop.
 
-**Ammunition tiers (L6, F6.5; CALL-6.8).** `ammoForWeapon` (`items.ts` 52-57) picks the arrow or bolt by the level the weapon is worn at:
+**Arrows: good ones and bad ones (L6, F6.5; CALL-6.8, decided by the owner on 2026-11-14).** The first draft made a better bow need a better arrow. The owner's answer: "Bows shoot arrows. Good ones and bad ones." So:
 
-| Worn at Ranged | Bows need | Crossbows need | Recipe (Smithing) | Shop price each |
+- **Any bow shoots any arrow, and any crossbow any bolt.** No bow is ever refused the arrows a player carries. `ammoForWeapon` keeps deciding only the kind (arrows for bows, bolts for crossbows, nothing for the three self-drawn bows), as it does today.
+- **A better arrow hits harder.** Each grade adds to the max hit of the shot, with any bow:
+
+| Grade | Added to the max hit | Shop price each | Made by (Smithing) | Made cost each, inputs at sale value |
 |---|---|---|---|---|
-| 1 to 24 | Bronze Arrow | Bronze Bolts | exists | 8, 10 |
-| 25 to 44 | Iron Arrow | Bronze Bolts | 1 iron bar + 15 shafts + 15 feathers makes 15 (level 20) | 18 |
-| 45 to 69 | Mithril Arrow | Mithril Bolts | 1 mithril bar (+ shafts, feathers) makes 15 arrows or 12 bolts (40) | 36 |
-| 70 and up | Rune Arrow | Rune Bolts | 1 runite bar makes 15 arrows or 14 bolts (60) | 60 |
+| Bronze Arrow, Bronze Bolts (exist) | 0 | 8, 10 | exists (arrows) | |
+| Iron Arrow | +2 | 18 | 1 iron bar + 15 shafts + 15 feathers makes 15 (level 20) | 5.0 |
+| Mithril Arrow, Mithril Bolts | +4 | 36 | 1 mithril bar (+ shafts, feathers) makes 15 arrows or 12 bolts (40) | 9.8 |
+| Rune Arrow, Rune Bolts | +6 | 60 | 1 runite bar makes 15 arrows or 14 bolts (60) | 35.8, 36.2 |
 
-The three self-drawn bows stay self-drawn. Damage does not change. What changes is cost: at level 30 a ranged kill costs 38% of its coins in bought arrows or 10% in made ones (today 17%); at level 70, 22% bought or 6% made (today 5%). So a ranger who buys pays about a quarter of the kill and one who smiths pays what they pay now. Said plainly (critique M2): for a self-sufficient ranger the price does not change, and ranged stays about 1.8 times melee's damage for 6 to 10% of a kill; owner decision 6.19. **What it takes back:** an existing character with a maple or better bow and a stack of bronze arrows cannot shoot that bow until it has the new arrows (the existing quest `maple` rewards a maple bow, which then needs iron arrows); the frozen test of the shortbow with bronze arrows (`tests/phase1.test.ts` 144-149) is unaffected. This is the last slice and can be cut without touching any other.
+- **Which arrow is shot**: the best grade in the backpack. A player who wants to save the good ones leaves them in the bank. No setting, no saved field; `prepareAttack` picks, and the shot's `ammoPower` goes into `playerAttackProfile` (7.12).
+- **What an existing ranger loses to this rule: nothing.** Bronze is today's arrow and adds 0. The existing quest `maple` still rewards a bow that shoots what the player has, and the frozen shortbow test (`tests/phase1.test.ts` 144-149) passes unedited. What an existing ranger does lose is damage, to the rebalance of 7.12, said there.
 
-**Where each style now stands** (the answer to Stage 4's "ranged and magic kill the boss in half the time", CALL-6.7): the damage ratios of 4.3 stay. Melee is the slowest, costs nothing to swing, wears the most armour (defence 141 against 113 and 111 at level 70) and its whole ladder can be forged. Ranged is 1.7 to 2.1 times as fast, now pays by the arrow, and its armour is hunted and worked. Magic is 2.1 to 2.7 times as fast, pays the most per kill, and its runes are bound from bones the caster has to go and get. Equal damage is not the goal; each style having a price is.
+What a better arrow buys, at level 70 against a lesser demon (`results.txt` 5b): bronze, max hit 38, 61 GP a kill; iron, 40 (+5%), 131 GP bought or 36 made; mithril, 42 (+10%), 249 bought or 68 made; rune, 44 (+16%), 396 bought or 236 made, against 715 GP of coins. So grades are a way to spend for damage: a smith's iron and mithril arrows are worth shooting at everything, and rune arrows are for a boss. The same six points are worth more to a weak bow (a level-20 archer's max hit goes from 14 to 20 with rune arrows), at 60 GP a shot against monsters that drop about 100: nothing stops it and the price does not repay it.
+
+**Where each style now stands** is 7.12: one band, three characters.
 
 **What stays open, deferred in writing** (`results.txt` section 1, four items): salmon, anglerfish and the golden brew have no source but the shop, and bronze bolts no recipe. Each needs a new fishing spot or a new low-tier recipe and none blocks anything; they go to the list in 14.3.
 
@@ -500,16 +524,16 @@ The three self-drawn bows stay self-drawn. Damage does not change. What changes 
 
 ### 7.5 The roster (G6.7)
 
-Six monster types, all rows with Stage 4's `model`, `tint`, `modelScale` and `pattern`. None drops equipment.
+Six monster types, all rows with Stage 4's `model`, `tint`, `modelScale` and `pattern`. None drops equipment: a rare piece of equipment can come only from a dungeon chest (7.6). The meshes are placeholders: the later models pass rebuilds every figure as a skinned mesh and may rebuild any of these.
 
 | Monster | Level | HP | Max hit | Attack | Defence | Style | Mesh, scale | Coins | Other drops |
 |---|---|---|---|---|---|---|---|---|---|
 | **Cinder Adept** | 52 | 80 | 17 | 49 | 36 | magic | dark wizard, 1.08 | 230 to 550 | big bones; Cinder Silk 0.10; 2 ashes 0.5 |
 | **Slag Brute** | 58 | 112 | 19 | 54 | 48 | melee | hill giant, 1.12 | 340 to 770 | big bones; Slagscale Hide 0.10; shark 0.4 |
 | **Scree Skitter** | 30 | 20 | 6 | 30 | 14 | melee | scorpion, 0.6 | 20 to 60 (0.6) | bones; Chitin Plate 0.06 |
-| **Marrowjaw the Tollmaster** | 40 | 560 | 21 | 52 | 30 | melee | hill giant, 1.3 | 600 to 1,200 | big bones; 3 Tough Hide; 2 lobsters |
-| **Matron Saltfang** | 48 | 960 | 36 | 66 | 42 | melee | scorpion, 2.2 | 300 to 600 | big bones; 3 Sting Glands |
-| **The Kiln Warden** | 80 | 2,000 | 64 | 110 | 72 | melee | moss guardian, 1.5 | 800 to 1,600 | dragon bones; 2 Kilnglass Shards |
+| **Marrowjaw the Tollmaster** | 40 | 560 | 21 | 52 | 30 | melee | hill giant, 1.3 | 600 to 1,200 | big bones; 3 Tough Hide; 2 lobsters; 1 Runite Bar (1 kill in 8) |
+| **Matron Saltfang** | 48 | 960 | 36 | 66 | 42 | melee | scorpion, 2.2 | 300 to 600 | big bones; 3 Sting Glands; 3 Adamant Bars (1 kill in 5) |
+| **The Kiln Warden** | 80 | 2,000 | 64 | 110 | 72 | melee | moss guardian, 1.5 | 800 to 1,600 | dragon bones; 1 Kilnglass Shard (1 kill in 2); 1 Wyrmsteel Ingot (1 kill in 10) |
 
 The Adept and the Brute take Stage 4's interpolation between the moss guardian and the lesser demon, with the caster's hitpoints and defence set below the line and the brute's above; their coins sit on the line by coins per hitpoint (moss guardian 4.49, Adept 4.88, Brute 4.96, lesser demon 5.72). The first draft's 275 to 645 paid the Adept 5.75 a hitpoint, a level-68 demon's rate at level 52, and made it the best income from 45 to 59 (critique H1). Patterns are Stage 4's: Adept "basic x3, Hexfall", Brute "basic x2, Overhead Slam, Rootquake", Skitter basics only.
 
@@ -519,7 +543,7 @@ The Adept and the Brute take Stage 4's interpolation between the moss guardian a
 |---|---|---|---|
 | `cinder_circle` | South of the start town, east of the ridge, centre (-0.7, 72.7), 5.3 clear of Cinder Stair | 3 Cinder Adepts, aggressive | The ash has come out through the pass. Corin Ashby stands 25 units from its centre, 10 outside its leash. Stage 4 proposed the corner inside the ridge for these two; measured, that corner has no room left beside Ashmantle's arena, the old lair, the terrace and the shrine. |
 | `brute_shelf` | Further south, centre (-2, 102) | 2 Slag Brutes, aggressive | Same strip, 1.4 clear of the Adepts' leash and 3 inside the south bound. |
-| `tollmaster` | North of the start town, centre (4, -70), arena radius 9 | Marrowjaw alone | Open ground between the castle and the north edge, 7.5 clear of the nearest fishing spot. A one-member camp attacks only a hero who walks into its 5-unit circle. |
+| `tollmaster` | North of the start town, centre (4, -70), arena radius 9 | Marrowjaw alone | Open ground between the castle and the north edge, 7.5 clear of the nearest fishing spot. A one-member camp attacks only a hero who walks into its 5-unit circle; it keeps its sight (7.13), so it attacks at any level. |
 
 **Model needs, recorded for the models pass.** Every one of these ships as a recoloured, rescaled existing mesh, and each is a known compromise:
 
@@ -550,6 +574,7 @@ Dungeon = {
   gates: { id, rect, opensWhen: campId[] }[],           // shut cells that open when those camps are dead
   camps: { id, room, aggro, arenaRadius?, members: { type, x, z }[] }[],
   nodes: { type, x, z }[], chest: [x, z],
+  loot: { run: { id, qty: [min, max] }[], runGp: [min, max], rare: { id, qty, chance }[] },   // every clear; nothing is paid once
   needs: Cond                           // a combat level, and a story quest done or at the stage that opens the door
 }
 ```
@@ -561,8 +586,8 @@ Dungeon = {
 | Space | Zones stand at x of 1000, z of -200 and +200 (critique C1). Stage 5's camera far plane is 460 and its horizon apron reaches radius 240; the nearest zone cell, less the camera's 26, is 734 from the apron (`results.txt` section 7 checks it). Only one zone exists at a time, so their 304 apart does not matter. While in a zone the engine hides the sky dome (it follows the camera) and the apron. Floor height is 0: `getTerrainHeight` returns 0 for x of 400 or more (one line; the terrain golden samples -130 to 130 and does not move). | `terrain.ts` 21; Stage 5's sky module |
 | Walking | `zoneWalk(def, openGates)(x, z)`: inside a room rectangle and not inside a shut gate. `buildWalkGrid(walk, origin, originZ, size)` builds the zone's grid; with no arguments it builds today's. On entry the engine sets `G.walkGrid` to it; on leaving, back. The hero's step passes the grid's walk test to `moveWithCollision`, which does not clamp to ±118 when given one. | `pathfind.ts` 3-25; `context.ts` 217; Stage 4's walk-test parameter |
 | Paths, clicks | Unchanged code on the swapped grid: A*, smoothing, "You cannot walk there." | `input.ts` 21-39 |
-| Monsters | Zone camps are `CampDef` rows built from the dungeon row, with ids prefixed by the dungeon's (`saltfang_warren:nest`, so Stage 4's per-camp wind-up gate never mixes them with an overworld camp), and handed to `stepMonster` with the zone's grid, in place of `CAMPS`. `stepMonster` passes `world.grid.walkable` to its three movement calls (return, chase, wander), and `moveWithCollision` does not clamp when given a test: without both, a zone monster is put back at x 118 on its first step (critique C2). Territory, leashing, routes, wind-ups and the camp wind-up gate are the same rules; aggression differs by one condition (next row). Overworld monsters are not stepped while the hero is in a zone, and zone monsters are not stepped while it is outside. | `monsterAi.ts` 38-47, 125; Stage 4's 6.1 and 6.2 |
-| Everything attacks | **One rule is added.** A zone camp carries `ignoresLevel: true`, and transition T2 skips the threat-colour test for such a camp: in a dungeon a monster attacks a hero of any level who comes within its reach. Without it a hero strong enough for the boss would be ignored by every room (F6.10). Overworld camps do not carry the flag and behave exactly as today. | one condition in `stepMonster` |
+| Monsters | Zone camps are `CampDef` rows built from the dungeon row, with ids prefixed by the dungeon's (`saltfang_warren:nest`, so Stage 4's per-camp wind-up gate never mixes them with an overworld camp), and handed to `stepMonster` with the zone's grid, in place of `CAMPS`. `stepMonster` passes `world.grid.walkable` to its three movement calls (return, chase, wander), and `moveWithCollision` does not clamp when given a test: without both, a zone monster is put back at x 118 on its first step (critique C2). Territory, leashing, routes, wind-ups, the camp wind-up gate and aggression are the same rules as outside. Overworld monsters are not stepped while the hero is in a zone, and zone monsters are not stepped while it is outside. | `monsterAi.ts` 38-47, 125; Stage 4's 6.1 and 6.2 |
+| Everything attacks | **No rule is added** (the first draft's CALL-6.18 is deleted). By 7.13 every aggressive camp attacks a hero of any level, and a dungeon contains aggressive camps. `zoneCamps` sets `keepsSight: true` on each, the field the pass sentries carry, so inside a dungeon a monster's sight does not shrink for a strong hero: "of course, in a dungeon everything attacks" (owner, 2026-11-14). | `sightRadius` (7.13); no dungeon branch in `stepMonster` |
 | No respawn inside | `createMonsterLogic` gains a per-monster option `respawn: false`: such a monster goes from `dead` nowhere. Zone monsters use it. Stage 4's `respawnSecs` cannot do this: it is keyed by type, and stalkers, marksmen, Adepts and Brutes share their type with overworld camps (critique H3). A zone's resource nodes likewise give one gather a run and do not respawn, so a cleared lair is not an endless safe mine. | one option in `createMonsterLogic` and `stepMonster` |
 | Bosses | A `BOSSES` row and a one-member camp with `arenaRadius`. Phases, the phase gate, the arena rule and "no damage from outside arena + 6" are Stage 4's. The lairs' corners lie 19.8 and 22.6 from the boss's home, past arena + 6 (16 and 18): a hero standing in a corner cannot hurt the boss, and the veins and the chest stand inside that distance (`results.txt` section 7). | Stage 4's 6.4 |
 | Gates | When a camp's last member dies, `runStep(run, { campDead })` (pure, `src/state/dungeon.ts`) returns the gates that open; the engine rebuilds the zone grid (at most 12,544 cells) and removes the gate mesh. | new, about 60 lines |
@@ -574,7 +599,7 @@ Dungeon = {
 |---|---|
 | Enter | `canEnter(state, def)` is `evalCond(state, def.needs)`. Then a new run: every zone monster alive at home, every gate shut, the chest shut. The hero appears at `entry` with the 3-second aggression grace. |
 | Inside | The entry room is safe: while in a zone the engine computes `playerSafe` from `zoneSafe(def, x, z)` (within 6 of `entry`) or the grace, in place of the overworld's safe zones. Nothing respawns, monsters or nodes. Teleport spells and shrine travel work and count as leaving. |
-| The chest | Opens only when the boss is dead. `openChest(state, def, rand)` pays the run's reward, and the first-clear reward if `progress.dungeons[id].clears` is 0, after rehearsing the backpack. If it does not fit, the chest stays shut and says so: nothing is lost by being full. Then `clears` goes up by one, `clear:<id>` is counted, and `best` keeps the fastest run in whole seconds. |
+| The chest | Opens only when the boss is dead. `openChest(state, def, rand)` pays the row's `loot`: the fixed part, the coins, and each rare entry rolled with `rand` at its chance, after rehearsing the backpack with what was rolled. If it does not fit, the chest stays shut, keeps the roll, and says so: nothing is lost by being full and a full backpack is not a way to roll again. Nothing is paid once (7.3). Then `clears` goes up by one, `clear:<id>` is counted, and `best` keeps the fastest run in whole seconds. |
 | Leave | By the door in the entry room, by teleport, by dying, or by closing the page. The run is gone. Nothing of it is saved. |
 | Death | Stage 4's rule, unchanged: a small share of experience or the vow; the hero wakes in the start town. |
 | Reload | While the hero is in a zone, the autosave writes the dungeon's **door** as its position, not the zone coordinates. A reload therefore puts the hero outside the door with the run gone. No reader rule is needed and an older build loads the same save correctly (section 9). |
@@ -592,7 +617,7 @@ Dungeon = {
 | The Brood Hall | 22 by 22, off the Nest | 6 Skitters and 2 Stalkers. |
 | The Lair | 28 by 28, behind a gate that opens when all three rooms are dead | Matron Saltfang, arena radius 10; three Adamantite Veins; the chest. |
 
-Chest, every clear: 3 to 5 adamantite ore, 1 to 2 Tough Hide, 100 to 300 GP. First clear: 8 Adamant Bars, a Rune Crossbow, the title Warrenbreaker. A fighter with every skill at 45 cuts through 1,638 hitpoints: 90 s of model fighting and 164 units of walking, 1.7 minutes in all, three to four for a person, and then the boss. The run pays 41.2 GP a second against 78.6 from moss guardians, the best open ground at that level, goods counted on both sides: 52% (CALL-6.5; the first draft's 63% counted coins only and compared monster level with skill level).
+Chest and boss: the drop tables below. A fighter with every skill at 45 cuts through 1,638 hitpoints: 90 s of model fighting and 164 units of walking, 1.7 minutes in all, three to four for a person, and then the boss. The run pays 44.4 GP a second against 78.6 from moss guardians, the best open ground at that level, goods and every rare entry at its chance counted: 57% (CALL-6.5).
 
 **The Underkiln.** An old kiln-works under Harrowback Ridge. Door at (-52, 46), at the ridge's foot inside the corner, 32 clear of Ashmantle's arena margin. Needs combat 72 and chapter 6 at the stage where Corin opens it. 112 by 112 cells, 3,020 open, 15 monsters.
 
@@ -604,7 +629,24 @@ Chest, every clear: 3 to 5 adamantite ore, 1 to 2 Tough Hide, 100 to 300 GP. Fir
 | The Ore Side | 16 by 12, off the Forge Floor, optional | 2 Brutes and an Adept guarding 2 runite rocks and an Adamantite Vein. |
 | The Kiln | 32 by 32, behind a gate that opens when the Ash Hall and the Forge Floor are dead | The Kiln Warden, arena radius 12; the chest. |
 
-Chest, every clear: 3 to 5 Kilnglass Shards, 1 to 2 Cinder Silk, 500 to 1,000 GP. First clear: 8 Kilnglass Shards, the two robe pieces worn at Magic and Defence 60, the title Kilnbreaker. 3,040 hitpoints, 112 s of model fighting with every skill at 70, 2.1 minutes with the walk. 106.3 GP a second against 178.5 from lesser demons, goods counted on both sides: 60% (the first draft left out the Kiln Warden's two Kilnglass, 1,560 GP a run).
+Chest and boss: the drop tables below. 3,040 hitpoints, 112 s of model fighting with every skill at 70, 2.1 minutes with the walk. 89.1 GP a second against 178.5 from lesser demons, goods and rare entries counted: 50%.
+
+**Drop tables: a dungeon is a dungeon (owner, 2026-11-14).** "A dungeon is a dungeon; sometimes you have to do it N times to drop a specific item." Dungeons stay repeatable with no lockout (CALL-6.5, decided), and what is special about them is a drop with a chance. Every entry is rolled on every clear (chest) or every kill (boss), with the injected random source (`results.txt` 8b):
+
+| Source | Every time | By chance | A specific thing takes |
+|---|---|---|---|
+| **Saltfang Warren, chest** | 3 to 5 adamantite ore, 1 to 2 Tough Hide, 100 to 300 GP | Rune Crossbow, 5% | 20 clears on average; half of all players within 14, nine in ten within 45 |
+| **Matron Saltfang** | big bones, 300 to 600 GP, 3 Sting Glands | 3 Adamant Bars, 20% | 5 kills on average |
+| **The Underkiln, chest** | 1 Kilnglass Shard, 1 to 2 Cinder Silk, 500 to 1,000 GP | 3 more Kilnglass, 20%. Bloodbark Body, 4%. Bloodbark Legs, 4% (the robe worn at Magic and Defence 60). | One named robe piece: 25 clears on average, half within 17, nine in ten within 57. Both: 37 on average. |
+| **The Kiln Warden** | dragon bones, 800 to 1,600 GP | 1 Kilnglass Shard, 50%. 1 Wyrmsteel Ingot, 10%. | |
+| **Marrowjaw** (open ground, back every 180 s) | big bones, 600 to 1,200 GP, 3 Tough Hide, 2 lobsters | 1 Runite Bar, 12.5% | 8 kills on average |
+
+| What the player is after | A clear gives | Clears: on average, half of players, nine in ten, at the very worst |
+|---|---|---|
+| Kilnglass for one dragon scimitar (4 ingots) | 2.2 on average, 1 for certain | 2.3, 2, 3, 4 |
+| Kilnglass for the whole dragon kit (13 ingots) | the same | 6.4, 6, 8, 13 |
+
+Three rules hold the tables in place. **Bad luck is bounded without a counter**: what the main line and the forge need (Kilnglass, adamantite) has a certain part every clear, so the worst case is a number, not a tail, and no saved "pity" field exists. Only the three equipment pieces are pure chance; all three are also in the shop, and none is needed for anything. **Equipment comes only from a chest**, never from a monster's table, at no more than Stage 3's boss cap of 0.05: Stage 3's gear-drop test and this stage's "no new monster drops equipment" both pass unedited. **The income bound counts every entry at its chance** (the ratios above).
 
 Dungeons are short (F6.9). That is how fast this game kills, and stretching them with hitpoints would only be waiting. The boss is the content: 89 to 99 seconds for a prepared melee hero, about as long as everything before its door.
 
@@ -648,30 +690,35 @@ A melee hero at 2.9 stands inside the vent and outside the ring; a far hero stan
 
 **The fights, simulated** (`check-results.txt`; Stage 4's positional model, 2,000 seeded fights a row; fighters fixed, only boss rows tuned):
 
-| Boss | Fighter | Wins | Bound | Mean length |
+| Boss | Fighter | Bound | Wins and mean length, today's formula | With the rebalance of 7.12 |
 |---|---|---|---|---|
-| Marrowjaw | Melee 35, adamant, 10 lobsters, moves | 96.3% | at least 85% | 61 s |
-| | The same, 300 ms slower | 95.8% | at least 70% | |
-| | The same, never moves | 0.0% | at most 25% | |
-| | Melee 22, mithril, 8 trout, moves | 26.5% | at most 35% | 93 s |
-| | Ranged 35 / Magic 35, move | 99.9% / 100% | at least 85% | 26 s / 22 s |
-| Matron Saltfang | Melee 50, rune, Protect from Melee, 16 swordfish, 2 vials | 99.4% | at least 85% | 89 s |
-| | The same, 300 ms slower | 81.3% | at least 65% | |
-| | The same, never moves | 0.0% | at most 5% | |
-| | The same, no food | 82.5% | (information) | |
-| | Melee 38, adamant, no prayer, 10 lobsters (combat 46, below the door) | 10.4% | at most 15% | |
-| | At the door: melee 41, rune, Protect from Melee, 12 lobsters, 1 vial (combat 51) | 96.3% | (information) | 101 s |
-| | Ranged 50 / Magic 50, prepared | 100% / 100% | at least 85% | 45 s / 34 s |
-| The Kiln Warden | Melee 70, dragon, Protect from Melee, 20 sharks, 4 vials | 96.7% | at least 85% | 99 s |
-| | The same, 300 ms slower | 95.6% | at least 65% | |
-| | The same, never moves | 0.0% | at most 5% | |
-| | The same, no prayer | 56.8% | (information) | |
-| | Melee 55, rune, no prayer, 12 lobsters (combat 65, below the door) | 2.9% | at most 15% | |
-| | At the door: melee 58, rune, Protect from Melee, 16 sharks, 2 vials (combat 72) | 77.3% | (information) | 157 s |
-| | Ranged 70 / Magic 70, prepared, move | 94.3% / 99.3% | at least 85% | 63 s / 58 s |
-| | Ranged 70 / Magic 70, never move | 0.0% / 0.0% | at most 5% | |
+| Marrowjaw | Melee 35, adamant, 10 lobsters, moves | at least 85% | 96.3%, 61 s | the same |
+| | The same, 300 ms slower | at least 70% | 95.8% | the same |
+| | The same, never moves | at most 25% | 0.0% | the same |
+| | Melee 22, mithril, 8 trout, moves | at most 35% | 26.5%, 93 s | the same |
+| | Ranged 35, moves | at least 85% | 99.9%, 26 s | 99.6%, 45 s (bronze arrows); 99.6%, 41 s (iron) |
+| | Magic 35, moves | at least 85% | 100%, 22 s | 99.7%, 42 s |
+| Matron Saltfang | Melee 50, rune, Protect from Melee, 16 swordfish, 2 vials | at least 85% | 99.4%, 89 s | the same |
+| | The same, 300 ms slower | at least 65% | 81.3% | the same |
+| | The same, never moves | at most 5% | 0.0% | the same |
+| | The same, no food | (information) | 82.5% | the same |
+| | Melee 38, adamant, no prayer, 10 lobsters (combat 46, below the door) | at most 15% | 10.4% | the same |
+| | At the door: melee 41, rune, Protect from Melee, 12 lobsters, 1 vial (combat 51) | (information) | 96.3%, 101 s | the same |
+| | Ranged 50, prepared | at least 85% | 100%, 45 s | 99.6%, 80 s (bronze arrows); 99.6%, 70 s (mithril) |
+| | Magic 50, prepared | at least 85% | 100%, 34 s | 100%, 64 s |
+| The Kiln Warden | Melee 70, dragon, Protect from Melee, 20 sharks, 4 vials | at least 85% | 96.7%, 99 s | the same |
+| | The same, 300 ms slower | at least 65% | 95.6% | the same |
+| | The same, never moves | at most 5% | 0.0% | the same |
+| | The same, no prayer | (information) | 56.8% | the same |
+| | Melee 55, rune, no prayer, 12 lobsters (combat 65, below the door) | at most 15% | 2.9% | the same |
+| | At the door: melee 58, rune, Protect from Melee, 16 sharks, 2 vials (combat 72) | (information) | 77.3%, 157 s | the same |
+| | Ranged 70, prepared, moves | at least 85% | 94.3%, 63 s | 87.3%, 116 s (bronze bolts); 89.1%, 102 s (rune bolts) |
+| | Magic 70, prepared, moves | at least 85% | 99.3%, 58 s | 98.0%, 114 s |
+| | Ranged 70 / Magic 70, never move | at most 5% | 0.0% / 0.0% | 0.0% / 0.0% |
 
-Reading it. Every bound holds. The fighters' combat levels are 43 and 27 (Marrowjaw's melee rows), 62 (Saltfang's prepared melee; 54 for its ranged and magic rows) and 86 (the Warden's; 74 for ranged and magic). The doors are set under the prepared rows and above the under-levelled ones: a hero who has just reached the Warren's door with the prayer wins 96%; one who has just reached the Underkiln's, still in rune, wins three in four, and dragon gear and ten more levels make it sure. Marrowjaw's under-levelled bound is 35% on purpose, not Stage 4's 15%: it is the first boss a player meets, at hour three, and a careful level-22 character who dodges everything winning one fight in four is the right lesson. Saltfang's slower-hand row (81%) is the thinnest; the spit's 1.4 s is the lever if the trackpad check fails. Ranged and magic end every fight in half the time, as in Stage 4; that is the measured gap of 4.3 and the reason for 7.4's last table. The plan ports these rows as a test with 500 seeds each (B2); if a bound misses there, the boss row moves, never the bound.
+Reading it. Every bound holds. The fighters' combat levels are 43 and 27 (Marrowjaw's melee rows), 62 (Saltfang's prepared melee; 54 for its ranged and magic rows) and 86 (the Warden's; 74 for ranged and magic). The doors are set under the prepared rows and above the under-levelled ones: a hero who has just reached the Warren's door with the prayer wins 96%; one who has just reached the Underkiln's, still in rune, wins three in four, and dragon gear and ten more levels make it sure. Marrowjaw's under-levelled bound is 35% on purpose, not Stage 4's 15%: it is the first boss a player meets, at hour three, and a careful level-22 character who dodges everything winning one fight in four is the right lesson. Saltfang's slower-hand row (81%) is the thinnest; the spit's 1.4 s is the lever if the trackpad check fails. **Every bound holds with the formula as it is today and as 7.12 leaves it, and no boss row was changed for the rebalance.** With today's formula ranged and magic end every fight in half the time, as in Stage 4; with the rebalance the Kiln Warden takes 99, 102 and 114 seconds in the three styles. Against the two earlier bosses ranged and magic are still about a third quicker (41 and 42 s against 61; 70 and 64 against 89): a melee hero loses time walking out of a shape and back, an archer does not, and levels 35 and 50 are where the ranged and magic ladders have just stepped up (7.12). The thinnest row after the rebalance is the Warden's ranged one (87.3% with bronze bolts, 89.1% with rune bolts, against 85%); the Kiln Ring's power is its lever. B1 and B2 are written before arrow grades exist, so their archers shoot bronze, before and after slice 6; B3 is written after it and gives its archer rune bolts. The plan ports these rows as tests with 500 seeds each (B1 to B3) and, because they hold on both sides, they are written once and are not edited when the rebalance slice lands; if a bound misses there, the boss row moves, never the bound.
+
+**Matron Saltfang's question** (critique M4: it is the first boss's, faster). Looked at for this revision and left as it is, as an owner decision with a recommendation (CALL-6.22). A different question inside Stage 4's four shapes was tried in the model: her spit replaced by a ring that burns everything farther than 4.5 units, so that the fight asks the hero to stay on her. It does ask that of an archer or a caster (their rows held at 95 to 100%). It asks nothing of a melee hero, who already stands at 2.9: the melee fight got shorter and easier, and the under-levelled hero won 28 to 43% against a bound of 15%, so her health and max hit would need a new tuning for a change only two styles feel. So it is not cheap. The question that would be hers alone is a brood: eggs or hatchlings that must be dealt with while she is fought. That needs helpers in the boss room, which Stage 4's fight model cannot test and which the models pass (a brood mother with egg clusters, 7.5) is the natural moment for.
 
 ### 7.8 The diary (G6.8)
 
@@ -682,10 +729,12 @@ Reading it. Every bound holds. The fighters' combat levels are 43 and 27 (Marrow
 | Tier | Experience | Lasting perk in that region |
 |---|---|---|
 | Easy | a Faint Ember (1,000 XP in a skill the player picks) and 500 GP | none |
-| Medium | a Steady Ember (7,500 XP) | **Peace**: the region's aggressive camps no longer attack first. They fight back as always. In the start town, which is already passive: the home teleport costs no runes. |
-| Hard | a Bright Ember (40,000 XP) | **A bank at the region's shrine.** In the start town, which has a bank: the Lantern Vow costs a quarter less. |
+| Medium | a Steady Ember (7,500 XP) | **A deposit box at the region's shrine**: things can be put into the bank there, not taken out. In the start town, which has a bank: the home teleport costs no runes. |
+| Hard | a Bright Ember (40,000 XP) | **A full bank at the region's shrine**: the deposit box becomes a bank. In the start town: the Lantern Vow costs a quarter less. |
 
-An ember is an item (type `resource`, so it cannot be bought; it sells for 1 GP). Because the store's one-click "sell gathered goods" sells every `resource`, the bulk-sell match skips items with `lampXp`, and `buyItem` refuses them by that field as well as by type, so moving one guard never puts a 40,000-XP item on sale for 1 GP (critique H6). Using it opens a list of skills. It is not multiplied by the hidden 10x rate. All fifteen tiers pay 242,500 XP: put into one skill from nothing, that is level 58 (`results.txt` section 4). One hard-tier ember is about 33 minutes of a level-67 fighter's experience in one skill. The 2,500 GP of the five easy tiers is the only coin the diary pays. Perks are read from the claimed list by one pure function, `perks(state)`, at exactly four places: the `playerSafe`-style check for a camp's region, the teleport rune check, the shrine's menu, and Stage 4's `vowPrice`. Stage 3's pacing model plays a state with no diary, so no perk reaches it.
+**No perk touches aggression (owner, 2026-11-14).** The first draft's middle perk was "peace": a region's aggressive camps stopped attacking first, the four pass sentries included. The owner agreed to remove the reward that stopped the sentries, and with 7.13 the kind goes everywhere: an aggressive monster is aggressive, and a hero who has finished a region's middle tier outlevels its camps by more than ten levels anyway, so their sight is already at arm's length. The main session's suggestion for the volcanic corner was a bank at its shrine; checked against the hard tier, that would have given the volcanic middle tier what every other region gets only at the top, and left its own hard tier with nothing. The deposit box is the same comfort one step down, in every region, and the hard tier completes it. Behind the pass it is what a player with a backpack full of runite and dragon bones wants. The choice of the middle perk is the owner's (CALL-6.26).
+
+An ember is an item (type `resource`, so it cannot be bought; it sells for 1 GP). Because the store's one-click "sell gathered goods" sells every `resource`, the bulk-sell match skips items with `lampXp`, and `buyItem` refuses them by that field as well as by type, so moving one guard never puts a 40,000-XP item on sale for 1 GP (critique H6). Using it opens a list of skills. It is not multiplied by the hidden 10x rate. All fifteen tiers pay 242,500 XP: put into one skill from nothing, that is level 58 (`results.txt` section 4). One hard-tier ember is about 33 minutes of a level-67 fighter's experience in one skill. The 2,500 GP of the five easy tiers is the only coin the diary pays. Perks are read from the claimed list by one pure function, `perks(state)`, at exactly three places: the teleport rune check, the shrine's menu (deposit box or bank), and Stage 4's `vowPrice`. None is in `stepMonster`. Stage 3's pacing model plays a state with no diary, so no perk reaches it.
 
 **The tasks.** Each row lists a tier's five. Level and place decide the tier: easy is what a visitor does, hard is what a resident has done.
 
@@ -748,13 +797,15 @@ Generic words shared with other games (Coal, Steel Bar, Crafting, Rune Arrow) ar
 | `src/data/npcs.ts`, `dialogue.ts`, `story.ts`, `diary.ts`, `dungeons.ts` (new) | Tables and types only. |
 | `src/data/catalog.ts` | `SKILLS_META` gains `crafting` and `runebinding`. Nothing else. |
 | `src/data/extras.ts`, `world.ts`, `recipes.ts`, `placements.ts`, `worldMap.ts`, `attacks.ts` (Stage 4) | 26 items; 6 monster rows and the appended drops; 3 node rows; 49 recipes and `kind` gaining `'craft'` and `'bind'`; 5 node placements; 3 camps; 7 attacks and 3 boss rows. |
-| `src/data/items.ts` | `ammoForWeapon` by tier. |
+| `src/data/items.ts` | `ammoForWeapon` unchanged (it names the kind). New: `ammoPower(itemId)` and `bestAmmo(state, kind)`, read from an `ammoPower` number on the five new arrow and bolt items (absent, as on the two bronze ones, means 0). |
+| `src/state/combat.ts`, `src/data/magic.ts` | The three style constants and the arrow's power in `playerAttackProfile`; `prepareAttack` spends the best arrow carried; two rows of `RUNE_COSTS` (7.12). |
+| `src/data/worldMap.ts` | `CampDef.keepsSight?: boolean`, set on `pass_sentries` and the boss camps (7.13). |
 | `src/state/progress.ts` (new) | The `Progress` type, `STAT_KEYS`, `bump`, `normalizeProgress` (the reader), `perks`. |
 | `src/state/dialogue.ts`, `story.ts`, `dungeon.ts`, `diary.ts` (new) | `evalCond`, `openDialogue`, `chooseOption`; `advanceStory`, `finishQuest`, `journalView`, `useEmber`; `zoneWalk`, `canEnter`, `runStep`, `openChest`; `diaryView`, `claimTier`. All pure; time and randomness are parameters. |
 | `src/state/saveRecovery.ts` (new) | `rotateCorrupt`, `legacyPreview`. |
 | `src/state/types.ts`, `gameState.ts`, `save.ts` | `GameState.progress?`; `applyState` and `cloneState` carry it; `serializeState` writes it when it is not empty; `migrateLegacySave` reads it through `normalizeProgress` and accepts story ids as claimed. |
 | `src/state/adventure.ts`, `quests.ts`, `recipes.ts` (data), Stage 4's `sustain.ts` | One `bump` call each in `registerKill`, `noteGather`, `noteBury`, `tryCraft`, `buyVow`, `applyDeathLoss`. `QUEST_DEFS`, `STARTER_QUESTS`, `questView`, `claimQuest` are not edited, except the tracker's two new entries. |
-| `src/state/pathfind.ts`, `collision.ts`, `terrain.ts`, `monsterAi.ts` | Grid origin and size; no clamp with a walk test; zone floor; in `monsterAi`, beyond what Stage 4 adds, two conditions in the acquisition rule: `ignoresLevel` camps (7.6) and the diary's peace regions (7.8). |
+| `src/state/pathfind.ts`, `collision.ts`, `terrain.ts`, `monsterAi.ts` | Grid origin and size; no clamp with a walk test; zone floor; in `monsterAi`, beyond what Stage 4 adds: `sightRadius` (exported, pure) in place of the threat-colour test in the acquisition rule (7.13), the walk test in the three movement calls, and the per-monster `respawn` option. |
 | `src/state/commands.ts` (Stage 4) | New commands: `talk`, `choose`, `claimTier`, `useEmber`, `enterDungeon`, `leaveDungeon`, `openChest`; all pure appliers. |
 | `src/engine/zones.ts` (new) | Zone mesh, enter and leave, the grid swap, fog. |
 | `src/engine/worldBuild.ts`, `spawns.ts`, `loop.ts`, `input.ts`, `actions.ts`, `overlay.ts`, `session.ts` | People, benches and doors from tables; zone spawns; the `talk`, `bench`, `altar` menu and `door` cases; which monsters are stepped; the minimap in a zone; the door as saved position; the save hold and notice. |
@@ -762,6 +813,167 @@ Generic words shared with other games (Coal, Steel Bar, Crafting, Rune Arrow) ar
 | `README.md` | Quests, skills, dungeons, bosses, diary; the monster table. |
 
 `src/state` and `src/data` still import nothing from the engine (the architecture test stays).
+
+### 7.12 The three styles: a rebalance (G6.13; owner, 2026-11-14)
+
+**Decided.** The first draft kept ranged and magic about twice as fast as melee and gave each a price (CALL-6.7). The owner answered: "Let's structure the rebalancing, no problem." So the damage changes, and this section is the structure: the target, the numbers that move, the table before and after, and what it does to everything already proven. The numbers themselves are the owner's to approve (CALL-6.24).
+
+**What was wrong, measured** (`results.txt` 5a, 5b). At every level from 20 up, ranged deals 1.7 to 2.1 times melee's damage per second and magic 2.1 to 2.7 times. The first draft said magic "pays for it". That was true only of its dearest spell: a level-70 caster using the level-12 spell deals 1.6 times melee's damage for 12% of a kill's coins. Two causes, both in the formula of `playerAttackProfile` and not in any one item:
+
+- **Ranged**: a point of ranged bonus adds 0.22 to the max hit, the same as a point of melee strength bonus, but ranged gear carries 2.3 times as many points (188 against 81 in the level-70 kits).
+- **Magic**: the spell's own number, the level term and the gear term each add as much as melee's whole max hit.
+
+**The target.** From level 20 to 70, with the standard kit of the level (the best ordinary weapon, body and legs; special sets left out), against a monster of the level:
+
+| Style | Damage per second, as a share of melee's | Its character |
+|---|---|---|
+| Melee | 1.00 (not touched) | Free to use, the most armour (defence 141 against 113 and 111 at level 70), has to stand next to the monster. |
+| Ranged, with the arrow of its level | 0.9 to 1.35 | Pays by the arrow, hits from 13.5 units away so the first blows are free while a monster walks in, less armour. A dearer arrow buys more damage. |
+| Magic, with the best spell of its level | 0.95 to 1.4 | Pays the most, in runes. The burst style: its best spell is the fastest thing in the game and heals, and no kill repays it. Cheaper spells are slower than melee. |
+
+and the fastest of the three is never more than 1.4 times the slowest (today: up to 2.68). The band is as wide as it is because the three gear ladders step up at different levels (a new spell at 28 and 50, rune at 40, dragon at 60); no formula removes that, and the best fit of three free numbers per style has the same spread (1.24 to 1.29) as the choice below.
+
+**The numbers that change.** Three in the formula, four rune counts, and nothing in any item row:
+
+| Number | Today | After | Where |
+|---|---|---|---|
+| Ranged: what a point of ranged bonus adds to the max hit | 0.22 | **0.06** | `playerAttackProfile`, the constant `RANGED_GEAR` |
+| Ranged: the base of the max hit | 2 | **3** | the constant `RANGED_BASE`. Without it a level-10 archer, who has one bow and no armour, falls to three quarters of melee. |
+| Magic: the whole max hit is multiplied by | 1 | **0.5** | the constant `MAGIC_DAMAGE` |
+| Ice burst: runes a cast | 2 water, 2 chaos | **1 water, 1 chaos** | `RUNE_COSTS` in `src/data/magic.ts` |
+| Blood barrage: runes a cast | 2 blood, 2 death | **1 blood, 1 death** | the same table |
+
+The formulas after, written out (prayer multipliers where they are today; accuracy, the hit chance, the 0.6 s swing, experience per point of damage and every monster number unchanged):
+
+```
+ranged  max hit = max(2, floor((3 + 0.35 x Ranged + 0.06 x ranged bonus + arrow power) x prayer))
+magic   max hit = max(3, floor((spell + 0.22 x Magic + 0.18 x magic bonus) x 0.5 x prayer))
+melee   max hit = max(2, floor((1.5 + 0.32 x (Strength + style) + 0.22 x strength bonus) x prayer))     unchanged
+```
+
+Why these and not sixty item rows: the gap is in how the formula values a style's points, so it is fixed there; every bow, hide, staff, robe and spell keeps its place in its own ladder, and every item keeps its numbers. Why magic also gets cheaper casts: at half the damage a kill takes twice the casts, so without it the two big spells would cost twice what they cost today (blood barrage five times what a kill pays). With one rune of each kind a kill with them costs what it costs today. Wind strike and fire bolt already take one or two cheap runes and cannot be halved: a kill with them costs twice today's, which from level 20 up is 4 to 19% of the kill's coins in bound runes.
+
+**The table** (`results.txt` 5a; damage per second, and "x" is times melee):
+
+| Level | Melee | Ranged today | Magic today | Ranged after, bronze arrows | Ranged after, arrow of its level | Magic after, best spell | Fastest over slowest, today, after |
+|---|---|---|---|---|---|---|---|
+| 1 | 2.4 | 3.8 (x1.57) | 11.8 (x4.83) | 3.2 (x1.30) | 3.2 (x1.30) | 5.7 (x2.31) | 4.83, 2.31 |
+| 10 | 5.5 | 6.0 (x1.09) | 12.5 (x2.27) | 4.8 (x0.86) | 4.8 (x0.86) | 6.0 (x1.09) | 2.27, 1.26 |
+| 20 | 9.8 | 18.5 (x1.90) | 24.0 (x2.46) | 10.4 (x1.07) | 10.4 (x1.07), bronze | 12.1 (x1.23) | 2.46, 1.23 |
+| 30 | 13.0 | 21.7 (x1.67) | 34.8 (x2.68) | 13.1 (x1.00) | 14.5 (x1.11), iron | 17.1 (x1.31) | 2.68, 1.31 |
+| 40 | 17.2 | 30.0 (x1.74) | 35.7 (x2.08) | 17.6 (x1.02) | 19.0 (x1.11), iron | 17.5 (x1.02) | 2.08, 1.11 |
+| 50 | 19.3 | 40.3 (x2.09) | 50.0 (x2.59) | 22.0 (x1.14) | 24.9 (x1.29), mithril | 24.7 (x1.28) | 2.59, 1.29 |
+| 60 | 26.0 | 46.4 (x1.78) | 59.0 (x2.27) | 25.4 (x0.98) | 28.3 (x1.09), mithril | 29.2 (x1.12) | 2.27, 1.12 |
+| 70 | 27.7 | 48.1 (x1.73) | 59.8 (x2.16) | 27.3 (x0.98) | 31.6 (x1.14), rune | 29.6 (x1.07) | 2.16, 1.14 |
+
+From 20 to 70 after: ranged 1.07 to 1.29 of melee, magic 1.02 to 1.31, the fastest at most 1.31 times the slowest. Levels 1 and 10 are outside the target and shown for honesty: at level 1 the first staff and robe have no level requirement and are priced as a mithril-tier kit, so a new caster who could afford them (6,400 GP) still hits twice as hard as a new swordsman; at level 10 an archer has one bow and no armour until 20.
+
+**What a kill costs** (`results.txt` 5b; share of the coins the monster drops; "made" prices an arrow or rune at what its inputs sell for):
+
+| Level | Melee | Ranged today | Ranged after, bronze bought | Ranged after, arrow of its level: bought, made | Magic today, best spell: bought, bound | Magic after, best spell: bought, bound |
+|---|---|---|---|---|---|---|
+| 20 | 0 | 20% | 36% | bronze: 36% | 37%, 10% | 74%, 19% |
+| 30 | 0 | 17% | 28% | iron: 57%, 16% | 120%, 34% | 123%, 35% |
+| 40 | 0 | 11% | 19% | iron: 40%, 11% | 109%, 31% | 111%, 32% |
+| 50 | 0 | 7% | 14% | mithril: 54%, 15% | 371%, 127% | 376%, 129% |
+| 60 | 0 | 6% | 11% | mithril: 43%, 12% | 285%, 98% | 288%, 99% |
+| 70 | 0 | 5% | 9% | rune: 55%, 33% | 243%, 83% | 246%, 84% |
+
+Reading it. Melee pays nothing. A ranger pays 9 to 36% with bought bronze arrows, about one and a half times today's share, because a kill takes more arrows; one who smiths the arrow of the level pays 11 to 16% up to mithril and a third of the kill for rune arrows, which are 16% faster than bronze: an arrow for bosses, not for every kill. A caster's best spell costs what it costs today. And a caster now has a real choice at every level (`results.txt` 5b, "every spell"): at 70, fire bolt is 0.81 of melee for 7% of the kill in bound runes, ice burst 0.91 for 15%, blood barrage 1.07 with its healing for 84%. Today the same three are 1.61, 1.85 and 2.16.
+
+**What it does to gear an existing character owns.** Nothing is removed from a save, no item changes a number, a name or a requirement, and nothing a character wears is unequipped. What changes is what the formula makes of it:
+
+- **Every bow and crossbow hits less**: the max hit of the level-20, 40 and 70 kits goes from 25, 41 and 67 to 14, 26 and 44 with the arrow of the level. Ranged armour (hides) adds a quarter of the damage it added; its defence and its accuracy are unchanged.
+- **Every staff, robe and combat spell hits half as hard**: 32, 49 and 83 become 16, 24 and 41.
+- **Nothing melee changes**: no sword, no armour, no kill time.
+- **Training a bow or a staff is slower**, because experience is paid per point of damage (`results.txt` 5e): Ranged experience per hour of fighting falls by 33 to 39% with the arrow of the level and 40 to 45% with bronze arrows; Magic experience by 35 to 38% (less than its damage, because part of a cast's experience is the spell's own). A level-70 archer still earns more per hour (455k with rune arrows) than a swordsman puts into one skill (399k). No experience value is edited.
+- The four combat spells' descriptions print a "Max Hit" figure (6, 13, 22, 34) that was never the real max hit and would now sit beside half the damage. S2 rewrites those four strings without the figure; no test pins them.
+- Ice burst and blood barrage cost half the runes a cast. A stack of runes a character holds lasts as many kills as before with those two spells and half as many with the two small ones.
+- Special sets and uniques are in the same formula. With the best of them at levels 80 and 90 ranged ends at 0.89 to 0.93 of melee and magic at 0.84 to 0.85 (today 1.55 to 1.72): the top melee unique out-scales the others (`results.txt` 5c). Stated, not tuned: those items are outside this stage.
+
+**What it does to everything already proven with numbers.**
+
+| Proof | Effect | Evidence |
+|---|---|---|
+| Stage 3's pacing test (kill counts) | **None.** Its fighter is melee. | The melee column is checked identical in `results.txt` 5a; `playerAttackProfile`'s melee branch is not edited. |
+| Stage 3's `combat-profile` and `entry-staff` tests | **Six pinned values change**: declared replacements 10 and 11 of 11.3, with the new values (`results.txt` 5d). | The shortbow at level 1: 5 to 4 (with Sharp Eye 7 to 5). The fire staff: wind strike 10 to 5, fire bolt 17 to 8, with Mystic Might 12 to 6. The starter staff's wind strike: 6 to 3, which is the bronze sword's max hit. |
+| Stage 2's gate simulation | **None.** It rolls the sentries' hits on the hero; the hero does not attack. | 7.13 |
+| Stage 4's boss rows (Ashmantle, approved; its row is not touched) | **Every threshold holds with both formulas, and with bronze arrows as well as the arrow of the level.** Prepared ranged wins 98.5% (was 98.5%) in 93 s (was 61 s), or 97.5% in 108 s with bronze bolts; prepared magic 99.6% (was 100%) in 93 s (was 47 s); melee 98.9% in 103 s, unchanged. The unprepared level-50 ranged and magic heroes fall from 1.8% and 9.2% to 0.3% and 0.9%. | `check-results.txt`, last block: all sixteen rows, three columns |
+| This stage's boss rows | **Every bound holds with both formulas**, with no boss row changed. | 7.7 |
+| The dungeon income bound, the 2.5 rule, drops | **None**: they use the melee fighter and sale prices. | `results.txt` 2, 8 |
+
+So the half-the-time kills are gone: against Ashmantle the three styles now take 103, 93 and 93 seconds. A fight test written before the arrow grades exist gives its archer bronze arrows, and keeps doing so afterwards; that column is run too and holds. Because every fight bound holds on both sides of the change, with either arrow, no boss test depends on when the rebalance lands; that is what frees its place in the order of work (14.1).
+
+**In code** (plan slice 6): three named constants in `src/state/combat.ts` read by `playerAttackProfile`; `ammoPower` read from the arrow that will be shot; two rows of `RUNE_COSTS`. One test file holds the band: for every level from 20 to 70 in steps of 10 it builds the three standard kits from the item table by the stated rule and asserts the two shares and the fastest-over-slowest bound of the table above. If a later stage adds gear that breaks the band, that test names the level.
+
+### 7.13 Aggressive and passive monsters (G6.14; owner, 2026-11-14)
+
+**Decided.** The owner replaced Stage 2's rule (a camp attacks only a hero whose combat level is not above the monster's) with a simpler one, in their words: "wouldn't it be enough to have aggressive and passive monsters? The aggressive ones attack by default on seeing a player, the passive ones don't. A World of Warcraft feel as well." Confirmed with these details: an aggressive monster attacks on sight whatever the hero's level; a passive one never starts a fight; the sight radius shrinks as the hero outlevels the monster, down to about strike range; the pass sentries are exempt from the shrink; and "of course, in a dungeon everything attacks". This replaces Stage 2's rule for the whole game.
+
+**The rule.** A camp is aggressive or passive: that is the existing `aggressive` field of `CampDef`, and no row changes (the hen yard and Three Kettle Camp stay the two passive camps). An idle member of an aggressive camp acquires a hero who is not down, not safe (a safe zone or the 3-second grace), inside the camp's circle, and within the monster's **sight radius**:
+
+```
+sightRadius(base, monsterLevel, heroCombat, keepsSight):
+  if keepsSight                      -> base
+  over = heroCombat - monsterLevel
+  if over <= 0                       -> base
+  if over >= SIGHT_GAP               -> min(base, SIGHT_MIN)
+  otherwise                          -> base - (base - min(base, SIGHT_MIN)) x over / SIGHT_GAP
+```
+
+| Input | What it is |
+|---|---|
+| `base` | The camp's `aggroRadius`: 9 for melee monsters, 12 for ranged and magic, as today. |
+| `monsterLevel`, `heroCombat` | The monster's level and the hero's combat level, the two numbers Stage 2's rule compared. |
+| `keepsSight` | **Data on the camp** (`CampDef.keepsSight?: boolean`): the camp never shrinks. Set on `pass_sentries`, on the boss camps `ashmantle` and `tollmaster`, and by `zoneCamps` on every dungeon camp. |
+| `SIGHT_MIN` = 3 | About a melee strike (2.9). A hero far above a monster is attacked only from arm's length: by walking into it, or when it wanders up to a hero who is standing still. The same minimum for archers and casters, or a strong hero would still be shot at from 11 units by weak ones. |
+| `SIGHT_GAP` = 10 | Combat levels above the monster at which the minimum is reached. A straight line between. |
+
+| Hero's combat level minus the monster's | 0 or less | 1 | 2 | 4 | 5 | 6 | 8 | 10 or more |
+|---|---|---|---|---|---|---|---|---|
+| A melee camp sees at | 9.0 | 8.4 | 7.8 | 6.6 | 6.0 | 5.4 | 4.2 | 3.0 |
+| A ranged or magic camp | 12.0 | 11.1 | 10.2 | 8.4 | 7.5 | 6.6 | 4.8 | 3.0 |
+| Sentries, bosses, dungeon camps | 9.0 | 9.0 | 9.0 | 9.0 | 9.0 | 9.0 | 9.0 | 9.0 |
+
+It is a pure function of four values, in `src/state/monsterAi.ts`, written first as `docs/superpowers/research/content-model/aggro.ts` and checked there (`aggro-results.txt` 1): never wider than `base`, never under the minimum, never growing with the hero's level, full at or below the monster's level, flat from ten levels above, and constant for a camp that keeps its sight. Everything else about a monster is Stage 2's and Stage 4's: fighting back when hit, the leash, the return home, the safe-zone rule, the grace, routes, wind-ups. The threat colour of a monster's name (`monsterThreatColor`) stays as the label it is; it no longer decides anything.
+
+**Why ten levels.** Combat level runs about ten ahead of a fighter's skills (F6.10), so with a gap of 10 a hero whose skills equal a monster's level is seen only at arm's length, and a hero whose skills are ten under it is seen in full. That keeps open ground close to what Stage 2 made it, where such a hero was ignored outright. It is not the value that moves Stage 3's pacing least: a gap of 5 moves it less and a gap of 20 more (the table below), and no gap makes it move nothing, because Stage 2's rule was a sight of zero from one level above. Ten is the lead's choice between a rule the player can feel and a pace close to the approved one; it is one constant (CALL-6.27).
+
+**Who is newly exposed: a strong hero standing still inside an aggressive camp.** Under Stage 2's rule a hero above a camp's level was never attacked there, whatever it did. Now a monster that wanders within 3 units attacks. Monsters wander up to 4.5 from home, so this is not only "walking into it". The case that matters is measured (`aggro-results.txt` 4): all four yew trees and all three magic trees stand inside the two moss-guardian camps, by Stage 2's design, and at every one of the seven a guardian can wander to within a unit of the tree. A level-70 woodcutter who was left alone there will now be attacked from time to time by a level-45 guardian, which it kills easily. No other resource node stands inside an aggressive camp. This is what "aggressive monsters attack on seeing a player" means and it is kept; if the owner wants the high trees quiet for a strong hero, the lever is those two camps' rows (a smaller wander for the guardians), not the rule.
+
+**Dungeons are not a special case any more.** The first draft's CALL-6.18 ("in a dungeon everything attacks whatever your level", a flag `ignoresLevel` and a condition in the acquisition rule) is deleted. A dungeon simply contains aggressive camps, as the open world does, and its camps keep their sight: the same field the sentries carry. There is no dungeon branch in `stepMonster`.
+
+**The pass stays a test of preparation.** The sentries keep their sight, so they attack every hero who enters the pass, at any level. Under Stage 2's rule a hero of combat 69 or more walked through untouched; now a level-80 hero is struck too, and passes (below). The diary perk that made them stop is removed (7.8).
+
+**Stage 2's gate simulation, rerun** (`aggro-results.txt` 3: Stage 2's own `stepMonster` with the rule patched into a copy, 1,000 seeds on each of the three lines):
+
+| Hero | Combat | Before: survives | After: survives | |
+|---|---|---|---|---|
+| Fresh character, 10 hitpoints, no prayer (the test's) | 3 | 4.4%, 4.3%, 4.3% | 4.4%, 4.3%, 4.3% | identical, blow for blow |
+| 40 hitpoints and Protect from Melee (the test's) | 10 | 100% | 100% | identical, blow for blow |
+| Every melee skill 70, dragon kit, no prayer | 80 | 100%, never attacked | 100%, 4 attacks a crossing | new: the pass tests it |
+| The same with Protect from Melee | 80 | 100%, never attacked | 100%, 4 attacks a crossing | |
+
+The test's three bounds (under 5%, every run, at least one attack per sentry) hold with the same numbers, because both of its heroes are below level 68 and the sentries never shrink. `tests/gate-simulation.test.ts` passes unedited.
+
+**Stage 3's pacing, rerun** (`pacing-results.txt`). Stage 3's `tests/pacing.test.ts` was run unedited from its branch, against its model three times: as committed (it reproduces the table in Stage 3's baseline document to the kill); with one modelling convention changed alone (below; nothing moves); and with the new rule. The model counts how many members of a camp attack at once: the whole pack when the hero is not above the monster's level, otherwise one. Now the pack applies at every level, scaled by how much of the sight radius is left and rounded up (`packAttackers`: 4, 4, 4, 4, 3, 3, 3, 2, 2, 2, 1 for a pack of four at 0 to 10 levels above). It equals Stage 2's count at or below the monster's level and from ten levels above.
+
+Kills from a new game to each complete kit, shop only (route A1), and with bounties and drops (A3):
+
+| | Iron | Steel | Black | Mithril | Adamant | Rune | Dragon |
+|---|---|---|---|---|---|---|---|
+| A1 before | 132 | 354 | 453 | 540 | 824 | 1,558 | 4,606 |
+| **A1 after (gap 10)** | **169** | **434** | **637** | **724** | **1,009** | **1,743** | **4,771** |
+| A1, gap 5 | 159 | 401 | 548 | 635 | 920 | 1,654 | 4,691 |
+| A1, gap 20 | 169 | 434 | 704 | 943 | 1,247 | 1,981 | 4,976 |
+| A3 before | 114 | 186 | 378 | 410 | 448 | 1,087 | 4,583 |
+| **A3 after (gap 10)** | **126** | **223** | **482** | **611** | **682** | **1,322** | **4,725** |
+
+Further kills after the level, A1, iron to rune: 93, 242, 297, 312, 391, 742 before; 130, 322, 422, 437, 411, 762 after. **Every assertion of the test holds, before and after, at every gap tried** (in order; at least 25 further kills shop-only; at least 1 with bounties and drops; never more than three tiers behind; the negative control; the 10x rows; the forge routes; purity). Nothing was tuned. What moves is the middle of the game: the fighter stays on scorpions longer (394 kills against 231) because a pack of giants stays dangerous until it is ten levels above them, so the mithril kit comes a third later in kills and the dragon kit 3.6% later. The count is an upper estimate (it ignores that a hero can pull from a camp's edge). If the owner wants the old pace exactly, the lever is `SIGHT_GAP`, never the test.
+
+Two things about that rerun, said plainly. The model's line that counts attackers is itself Stage 2's rule written into a test support file, so it has to change with the rule: declared replacement 9 of 11.3. And its pack is now counted over camps that do not keep their sight, since the pass is a gate and not a training ground; alone, that convention changes no number (`pacing-results.txt` 2). The rerun used Stage 3's world: Stage 4's two camps and this stage's three are not in that tree (section 17).
+
+**Where it is built.** In this stage's foundation slice (plan G1, G2), after Stage 4 is merged. Stage 4, approved and not built, rewrites how a monster moves in `chase` and `return` (routes), and adds patterns and phases to the same file; this rule touches only the idle branch's acquisition test, which Stage 4 leaves as Stage 2 wrote it. So the order is Stage 4's three changes, then this one, and R0 records the acquisition block's lines on the merged code. One sentence of Stage 4's design is superseded: Ashmantle "attacks a hero of combat level 110 or less". Its camp keeps its sight, so it attacks any hero who comes within its camp circle of 5.
 
 ---
 
@@ -781,7 +993,7 @@ Generic words shared with other games (Coal, Steel Bar, Crafting, Rune Arrow) ar
 | 1 | One current grid. `G.walkGrid` is swapped when the hero enters a zone; two players in different spaces need a grid per player. | `engine/zones.ts`, `context.ts` 217 | The grid looked up by the space a player or monster is in. |
 | 2 | "Only the hero's space is stepped." Overworld monsters freeze while the hero is in a dungeon. | `loop.ts`, `updateMonsters` | Step every space that holds a player. |
 | 3 | One run per session, reset on entry. A second player walking in would reset the first player's dungeon. | `engine/zones.ts`, `state/dungeon.ts` | A run keyed by party, and a copy of the zone at its own origin. |
-| 4 | Credit goes to "the" state: a kill counts for whoever's state `registerKill` is called with, a chest pays one backpack, a camp's "peace" perk asks one player's diary. | `adventure.ts` `registerKill`; `dungeon.ts` `openChest`; `progress.ts` `perks` | A rule for shared credit, and aggression decided per target (already on Stage 4's list). |
+| 4 | Credit goes to "the" state: a kill counts for whoever's state `registerKill` is called with, a chest rolls once and pays one backpack, and a camp's sight is measured against one hero's combat level. | `adventure.ts` `registerKill`; `dungeon.ts` `openChest`; `monsterAi.ts` `sightRadius` | A rule for shared credit and shared rolls, and aggression decided per target (already on Stage 4's list; `sightRadius` already takes the level as a parameter). |
 | 5 | A boss's return time lives in one player's save. | `progress.bossDownUntil` | World state owned by the host, not by a character. |
 
 Not on the list, because they already hold per player: quest stages, counters, the diary, dialogue (no pause, no world lock), embers.
@@ -863,10 +1075,12 @@ No frame time has been recorded on a real GPU (Stage 5, section 10); counters an
 | G6.3 | `STARTER_QUESTS` deep-equals a fixture taken before the stage. Stage 3's starter and tracker tests and its 29-action pacing assertion pass unedited. For the three kinds of save of 7.3: Bran Tolley's first node is the expected one; `claimStarter` pays exactly what `claimQuest` pays and a second claim by either route is refused. |
 | G6.4 | The loop audit as a test: every non-equipment item has a source and a use, except a named list of four (7.4). Every new recipe passes Stage 3's 2.5 rule (its own test, unedited, reads the recipe table). No new item has a type the shop sells except the five kinds of ammunition. No new monster drops equipment. New material drops add at most 25% to each monster's mean coin. |
 | G6.5 | The two skills exist in `SKILLS_META`; a recipe of each can be crafted at its level and not below; `unlocksAt` returns each table row at its level; the actions-to-level table of `results.txt` section 4 is reproduced within one action. |
-| G6.6 | Through `stepMonster`: a camp with `ignoresLevel` acquires a hero far above its level, and a camp without it does not (Stage 2's territory tests pass unedited). Dungeon data test: every zone camp carries the flag; a run's coin per second is under 90% of the best open ground at its level; rooms inside the zone and at least 6 wide; every member inside its room and of a known type; with gates open every cell is reachable from the entry; with gates shut the boss and the chest are not; the boss's arena fits its room; zones are at least 400 from the overworld and from each other; each door is walkable and outside every camp's leash. `runStep` opens a gate only when its camps are dead. `openChest`: refused while the boss lives; pays the first-clear reward exactly once; with a full backpack pays nothing and stays shut. A state saved in a zone reads back at the door. `findPath` on a zone grid routes entry to chest only with the gate open. Through `stepMonster` with the zone grid, a monster at x 1000 chases, returns and wanders without leaving the zone; a zone monster with `respawn: false` stays dead while an overworld one of the same type respawns. Stage 2's frozen pathfinding and terrain tests pass unedited. |
+| G6.6 | Dungeon data test: every zone camp is aggressive and keeps its sight (through `stepMonster`, a zone monster acquires a hero 60 levels above it at its full radius); a run's coin per second is under 90% of the best open ground at its level; rooms inside the zone and at least 6 wide; every member inside its room and of a known type; with gates open every cell is reachable from the entry; with gates shut the boss and the chest are not; the boss's arena fits its room; zones are at least 400 from the overworld and from each other; each door is walkable and outside every camp's leash. `runStep` opens a gate only when its camps are dead. `openChest`: refused while the boss lives; pays the fixed part every time and each rare entry exactly when the injected random value is under its chance; over 20,000 seeded opens every rare entry's rate is within a stated tolerance of its chance; with a full backpack pays nothing, stays shut and keeps its roll; no dungeon row has a reward field other than `loot`, and no equipment entry is above 0.05. **Quest pay once**: with chapter 6 at its chest stage, three opens pay three rolls and advance the quest once, `finishQuest` pays once and is refused again (7.3). The expected-clears table of 7.6 is reproduced from the rows within 0.1. A state saved in a zone reads back at the door. `findPath` on a zone grid routes entry to chest only with the gate open. Through `stepMonster` with the zone grid, a monster at x 1000 chases, returns and wanders without leaving the zone; a zone monster with `respawn: false` stays dead while an overworld one of the same type respawns. Stage 2's frozen pathfinding and terrain tests pass unedited. |
 | G6.7 | The fight table of 7.7 as a test, 500 seeds a row, the same bounds. Each new boss row is valid by Stage 4's attack-table test. Marrowjaw's arena passes Stage 4's placement criteria on the real grid; the two new overworld camps pass Stage 2's world-data rules. |
-| G6.8 | Diary data test: 15 tiers of 5 tasks; every condition valid; every stat family and both new skills read by at least one task. `claimTier`: refused until all five are done, pays once, refused when the ember does not fit. `perks` returns each perk exactly from its tier. A peace perk stops acquisition by that region's camps and nothing else (through `stepMonster`). An ember's experience is not multiplied at 10x and cannot lower a level. |
-| G6.9 | Stage 3's `pacing.test.ts` and `economy-invariants.test.ts` pass unedited at the end of every slice. Dungeon camps are not in `CAMPS`. |
+| G6.8 | Diary data test: 15 tiers of 5 tasks; every condition valid; every stat family and both new skills read by at least one task. `claimTier`: refused until all five are done, pays once, refused when the ember does not fit. `perks` returns each perk exactly from its tier. A deposit box accepts a deposit and refuses a withdrawal; the hard tier makes it a bank. No perk is read in `stepMonster` (a scan). An ember's experience is not multiplied at 10x and cannot lower a level. |
+| G6.9 | Stage 3's `pacing.test.ts` and `economy-invariants.test.ts` pass unedited at the end of every slice (the pacing model's one line: replacement 9). Dungeon camps are not in `CAMPS`. |
+| G6.13 | `tests/style-balance.test.ts`: for levels 20 to 70 in steps of 10, the three standard kits built from the item table by 7.12's rule; ranged with the arrow of its level within 0.9 to 1.35 of melee's damage per second, magic with its best spell within 0.95 to 1.4, the fastest at most 1.4 times the slowest; the melee profile of twelve fixed states equals values written out from today's formula (melee did not move); each arrow grade adds exactly its power with every bow and crossbow; `canUseStyle` accepts every bow with every arrow and every crossbow with every bolt; the best grade carried is the one spent; ice burst and blood barrage take one rune of each kind. The fight tests B1 to B3 and Stage 4's boss test pass unedited before and after the slice. |
+| G6.14 | `tests/aggression.test.ts`: `sightRadius` over a grid of levels and bases (full at or below the monster's level, the minimum from ten above, linear between, never above `base`, never growing with the hero's level, constant with `keepsSight`); through `stepMonster`, the farthest distance at which an idle monster acquires a standing hero equals `sightRadius` within one step, for a melee, a ranged and a magic monster; a passive camp never acquires at any level; `pass_sentries`, `ashmantle`, `tollmaster` and every zone camp carry `keepsSight`, and no other camp of `CAMPS` does. `tests/gate-simulation.test.ts` passes unedited. `tests/pacing.test.ts` passes unedited on the model with replacement 9. |
 | G6.10 | Section 9's fixtures and tests. |
 | G6.11 | One test per fixed debt: the three-copy rotation; the guarded write; the hold (a pure `shouldAutosave(hold)` and the session's use of it by reading); the boss timer's clamp. |
 | G6.12 | The architecture test passes unedited (no engine import, no `document` or `window` under `src/state` and `src/data`). A scan: no new module under `src/state` calls `Math.random`, `Date.now` or `performance.now`. Every new command has a pure applier with a test. |
@@ -881,12 +1095,14 @@ No frame time has been recorded on a real GPU (Stage 5, section 10); counters an
 - Enter Saltfang Warren: the overworld is not visible, the rooms read as rooms, the minimap shows them, the gate opens when the third room is dead, the chest pays, the door leads out. Die inside; reload inside; teleport out. Expected in each case: outside, the run gone, nothing else lost.
 - Fight each of the three bosses with a mouse and with a trackpad. Judged for: the question of 7.7 is what the fight feels like.
 - Walk past the Cinder Adepts on Cinder Stair as a combat-40 character: the road is safe; stepping 6 units off it is not.
+- As a strong character, walk through the scorpions and the giants: nothing comes from a distance. Chop a yew among the moss guardians as a level-70 character: a guardian that wanders up attacks, and that reads as fair. As a weak one, the camp comes from a distance. Cross the pass at combat 75: the sentries attack.
+- Shoot the same monster with the same bow and each grade of arrow: the better arrow hits harder and the bow is never refused. Cast each spell as a level-50 caster: the dearer spell is visibly the stronger.
 - Break the main save by hand (delete its last character) and reload: the notice appears, "Copy the save text" works, nothing is overwritten until a choice is made.
 - Perf HUD inside each dungeon and at the two Stage 1 poses, against section 10.
 
 ### 11.3 Declared test replacements
 
-Declared here so they are not mistaken for weakening. Each is additive, names its file and assertion, and is made by the test task named. (Critique H4: the first draft declared three of these seven.)
+Declared here so they are not mistaken for weakening. Each names its file and assertion and is made by the test task named. Items 1 to 7 are additive (critique H4: the first draft declared three of them). Items 8 to 11 are of another kind: the owner replaced a rule (aggression) and asked for a rebalance (the formula), on 2026-11-14, and each of those tests pins the old rule or the old number. Each is replaced by an assertion at least as strict about the new one.
 
 1. `tests/content-freeze.test.ts` (Stage 3): `DECLARED_NEW_ITEMS` and Stage 4's `DECLARED_NEW_MONSTERS` gain exactly the ids of `content.ts` (26 items, 6 monster types). The test has no list for nodes or recipes (it pins them through `content-ids.golden.json`), so D1 adds two constants, `DECLARED_NEW_NODES` and `DECLARED_NEW_RECIPES`, subtracted from the current ids exactly as the item list is, and each later test task appends its slice's ids (3 nodes, 49 recipes in all). The golden is not regenerated. `QUEST_DEFS`, `PRAYERS` and `SPELLS` gain nothing.
 2. `tests/fixtures/s3/default-state.golden.json` and `save-v4-loaded.golden.json` (Stage 3): regenerated with `UPDATE_GOLDEN=1` once per new skill (K1, N1); each diff is one added entry under `skills` and nothing else.
@@ -894,7 +1110,13 @@ Declared here so they are not mistaken for weakening. Each is additive, names it
 4. `tests/world-budget.test.ts` (Stage 2, "CAMPS hold N monsters"): from Stage 4's 42 to 48 (D3).
 5. `tests/world-data.test.ts` 162 (Stage 2, `expect(memberCount()).toBe(...)`): from Stage 4's 42 to 48 (D3). Its `aggressive().length === CAMPS.length - 2` holds unedited: the three new camps are aggressive.
 6. `src/__tests__/blender-hero.test.ts` (as Stage 4 rewrites it: 13 monster type keys, every model key one of the ten meshes): the type-key count from 13 to 19, at the slices that add types (D3: 16, Z3: 18, U0: 19). The model-key assertion holds unedited: every new row uses an existing mesh.
-7. Only if R0 finds another Stage 4 or Stage 5 test that pins the number of skills, commands or interactive actions: that count, named by R0 before any code, and the owner is asked.
+8. `tests/monster-territory.test.ts` (Stage 2), the test "an aggressive camp ignores a player whose combat level is above the monster's" (lines 259-273). Its first half is the old rule itself: fifty steps with a hero one level above a goblin, 2 units away, each `expect(kinds(stepMonster(above, ...))).toEqual([])`, then `expect(st(above)).toBe('idle')`. Replaced (G1) by: at one level above and 2 units the step emits `aggro`; at ten levels above, fifty steps at 3.5 units stay `idle` and a step at 2.9 emits `aggro`. Its second half (equal level emits `aggro`) stays as written, and the test is renamed "an aggressive camp attacks at any level, from a distance that shrinks". Every other test of that file passes unedited: each plays a hero of combat 1 against a goblin (level 2), a goblin archer or a dark wizard, at or below the monster's level, where the radius is the old one (`aggro-results.txt` 2).
+9. `tests/support/pacingModel.ts` (Stage 3; the model behind `tests/pacing.test.ts`, which is not edited). Two expressions (G1): `const attackers = pack > 0 && monsterThreatColor(m.level, combatLevel(state)) !== 'green' ? pack : 1;` becomes `const attackers = packAttackers(pack, m, combatLevel(state));`, a function exported beside `sightRadius` that scales the pack by the sight radius left, rounded up; and `if (camp.aggressive) largestAggressive[type] = ...` becomes `if (camp.aggressive && !camp.keepsSight) ...`. The import of `monsterThreatColor` goes. No assertion, threshold, route or fighter changes; all eleven tests pass (`pacing-results.txt`).
+10. `tests/combat-profile.test.ts` (Stage 3), five expected max hits, each written out from the formula of 7.12 as the originals are from today's (S1): "shortbow on rapid: max hit 5" becomes 4 (`floor(3 + 0.35 + 16 x 0.06)`); "with sharp_eye: max hit 7" becomes 5 (`floor(4.31 x 1.2)`); "fire_staff ... wind_strike: max hit 10" becomes 5 (`floor(10.54 x 0.5)`); "fire_bolt: max hit 17" becomes 8; "wind_strike and mystic_might: max hit 12" becomes 6. Every accuracy, every melee case and every `playerHitChance` and `monsterHitChance` case stays as written.
+11. `tests/entry-staff.test.ts` (Stage 3), "Wind Strike with it hits for 6 at Magic 1": `expect(playerAttackProfile(state)).toEqual({ maxHit: 6, accuracy: 21.5 })` becomes `{ maxHit: 3, accuracy: 21.5 }`, and the test's name says 3 (S1). The starter staff then hits as hard as the starter sword.
+12. Only if R0 finds another Stage 4 or Stage 5 test that pins the number of skills, commands or interactive actions: that count, named by R0 before any code, and the owner is asked.
+
+Checked and **not** replacements: no test on `main` or on Stage 3's branch pins a spell's rune count or its description (grep for `RUNE_COSTS`, `.runes`, `runeList`, the rune ids and "Max Hit": the hits are shop tests in `src/__tests__/bulk-buy.test.ts` and name lists; `tests/phase1.test.ts` 157 and `tests/stage2-review-fixes.test.ts` 139 read what an attack consumes for the bow and for wind strike, which do not change); `tests/gate-simulation.test.ts` (identical numbers, 7.13); `tests/phase2.test.ts` 226-229 (`monsterThreatColor` keeps its values: it is the label's colour); `tests/world-data.test.ts` (`aggressive().length === CAMPS.length - 2` and "the pass camp is aggressive" hold: no camp changes sides); `tests/phase1.test.ts` 144-149 (a shortbow with bronze arrows fires, without them it does not); `tests/stage2-review-fixes.test.ts` (the grace). Stage 4's tests do not exist yet; its design's sentence that Ashmantle attacks "a hero of combat level 110 or less" is superseded by 7.13, and R0 checks that no Stage 4 test pins it.
 
 Every other existing test stays as it is, including `tests/names.test.ts` (twelve names in `worldMap.ts`), `tests/phase3-content.test.ts` (ten quests), Stage 3's starter, tracker and pacing tests, and Stage 1's save tests.
 
@@ -912,7 +1134,7 @@ Every other existing test stays as it is, including `tests/names.test.ts` (twelv
 | Food that matters | Stage 3 design 7.2 | **Done by Stage 4**; extended | 7.4: potions and the stew can be made; 7.7 measures food in a fight |
 | The giants plateau, level 28 to 45 to 68 (F12) | Stage 3 design section 10 | **Fixed** | 7.5, 7.6: 40, 48, 52, 58, and a dungeon from 30 to 48 |
 | Quests that lead the first hour; quest givers, dialogue, talk-to steps for the starter chain | Stage 3 design 7.1 item 9, section 10 | **Fixed** | 7.2, 7.3 |
-| Ranged and magic gear ladders as designed curves | Stage 3 section 10, Stage 4 section 11 | **Resolved as parity of cost** (CALL-6.7); damage parity **declined, in writing** | 4.3, 7.4. If the owner wants equal damage it is a rebalance of about sixty item rows and a re-tune of four bosses: a stage of its own. |
+| Ranged and magic gear ladders as designed curves | Stage 3 section 10, Stage 4 section 11 | **Fixed by a rebalance** (the owner's decision of 2026-11-14, CALL-6.7) | 7.12: three numbers of the formula, no item row, no boss re-tuned; armour and runes made by the two new skills; arrow grades (7.4). |
 | Saving a boss's respawn timer | Stage 4 design section 8, CALL-4.12 | **Fixed** | 7.9 |
 | The remaining co-op blockers | Stage 4 design section 7 | **Deferred again** to the co-op stage, with this stage's own five added | Section 8 |
 | The prepared slots: Cinder Adept, Slag Brute, captain, swarm, dungeon boss | Stage 4 design 6.8 | **Filled**, on existing meshes, with the model each needs recorded | 7.5 |
@@ -926,7 +1148,6 @@ Deferred again, in writing:
 |---|---|---|
 | Salmon, anglerfish, the golden brew, bronze bolts: no source but the shop | A later content stage | Each needs a new fishing spot or recipe; none blocks a loop a player meets. |
 | New models for six monsters, seven people and the dungeon kit | The models pass | 7.5 lists each. |
-| Damage parity between styles | Only if the owner asks | Above. |
 | A script policy without `unsafe-inline` for styles | Stage 7, as Stage 5 left it | Not touched here. |
 
 ---
@@ -969,6 +1190,9 @@ Trust boundaries: the `localStorage` read, as before; and one that is new in kin
 | R16 | The zone swap leaves the wrong grid active: the hero walks through dungeon walls, or cannot move in the overworld. | Engine |
 | R17 | A new name is taken from a published game. | Content |
 | R18 | A counter is bumped under a key that is not in the list and silently grows the save. | Rules |
+| R19 | The rebalance breaks a fight or a proof that was tuned on the old numbers, or quietly makes a style useless. | Rules |
+| R20 | The new aggression rule kills heroes Stage 2 kept safe: a strong hero standing idle in a camp, or one reading a dialogue. | Rules |
+| R21 | A drop table becomes a slot machine with no end, or a full backpack becomes a way to roll a chest again. | Rules, content |
 
 ### 13.3 What are we going to do about it?
 
@@ -992,6 +1216,9 @@ Trust boundaries: the `localStorage` read, as before; and one that is new in kin
 | R16 | **Mitigate**: one function enters and one leaves, each sets grid, monster set and fog together; teleport, death and load all go through "leave". A test drives enter, die, enter, teleport, enter, reload on the pure parts; the engine part is a human check. |
 | R17 | **Mitigate**: the deny-list test and a person's search per name. **Accept** the remainder: no test proves originality. |
 | R18 | **Mitigate**: `bump` throws on a key outside `STAT_KEYS`; the reader keeps only listed keys. |
+| R19 | **Mitigate**: every fight row of Stage 4 and of this stage was run with both formulas and holds (7.7, 7.12); the band is a test over the item table; melee is not edited, so the pacing and income proofs cannot move. **Accept**: what a style feels like after it is a play check. |
+| R20 | **Mitigate**: safe zones and the 3-second grace are unchanged; a hero ten levels above a camp is attacked only within 3 units; people stand outside every camp's leash (the placement test); the dialogue panel closes on a hit. **Accept**: a hero who walks into a monster, or stands where one wanders, is attacked: a strong woodcutter at the seven yew and magic trees among the moss guardians is the measured case (7.13). That is the rule the owner chose. |
+| R21 | **Mitigate**: what progress needs has a certain part every clear, so its worst case is a number (7.6); pure-chance entries are three shop-sold pieces nobody needs; a chest that does not fit keeps its roll. |
 
 ### 13.4 Did we do a good enough job?
 
@@ -1007,17 +1234,23 @@ Ordered by how much each improves the game for the work it takes. Each ends gree
 
 | # | Slice | The owner sees | Rough size | Needs |
 |---|---|---|---|---|
-| 0 | **Foundation.** Premise re-check; the `progress` block, counters, reader, fixtures; save recovery; the boss timer. | The recovery notice on a broken save. Otherwise nothing: it is what the rest stands on. | 8 tasks | Stages 3, 4, 5 merged |
+| 0 | **Foundation.** Premise re-check; the `progress` block, counters, reader, fixtures; save recovery; the boss timer; **aggressive and passive monsters** (7.13). | The recovery notice on a broken save. Monsters that come at a weak hero from a distance and leave a strong one alone until walked into; the pass that tests everybody. | 10 tasks | Stages 3, 4, 5 merged |
 | 1 | **The forge's missing tiers and the roster.** Coal, steel, blacksteel; brewing; feathers; Cinder Adepts, Slag Brutes, Marrowjaw. All data on systems that exist. | New rocks, new forge recipes, three new things to fight, the first boss a mid-level player can beat. | 6 tasks | 0 |
 | 2 | **People and the first chapters.** The dialogue system, the seven people, the journal, Bran Tolley's voice for the starter chain, chapters 1 and 2, four side quests, embers. | People to talk to; a story that says where to go. | 11 tasks | 1 |
-| 3 | **The first dungeon.** The zone mechanism, Saltfang Warren, the swarm, Matron Saltfang, adamant, chapter 3. | A door in the dunes and what is behind it. | 9 tasks | 2 |
+| 3 | **The first dungeon.** The zone mechanism, Saltfang Warren, its drop table, the swarm, Matron Saltfang, adamant, chapter 3. | A door in the dunes and what is behind it. | 9 tasks | 2 |
 | 4 | **Crafting.** The skill, the bench, hides and cloth, sixteen recipes, its side quest. | A third production skill; ranged and magic armour made, not bought. | 5 tasks | 2 |
 | 5 | **Runebinding.** The skill, the altar's second use, its side quest, chapters 4 and 5. | Runes made from stone and bone; the road to the pass. | 5 tasks | 2 |
-| 6 | **The Underkiln and the end.** The second dungeon, the Kiln Warden, wyrmsteel, chapters 6 and 7. | Dragon gear by the forge; an ending. | 5 tasks | 3, 5 |
-| 7 | **The diary.** 75 tasks, perks, its tab. | A reason to do everything once, in every region. | 6 tasks | 1 to 6: its tasks read everything else |
-| 8 | **Ammunition tiers.** Five kinds of ammunition, five recipes, the rule. | Ranged pays by the arrow. | 3 tasks | 1; cuttable (CALL-6.8) |
+| 6 | **The three styles.** The rebalance (7.12) and the arrow grades (7.4): three numbers, two spells' rune counts, five kinds of arrow and bolt, five recipes. | Melee, ranged and magic within a third of each other; arrows that are good or bad; spells that are cheap or strong. | 5 tasks | 1, 4, 5 |
+| 7 | **The Underkiln and the end.** The second dungeon, its drop table, the Kiln Warden, wyrmsteel, chapters 6 and 7. | Dragon gear by the forge, a few runs at a time; an ending. | 5 tasks | 3, 5, 6 |
+| 8 | **The diary.** 75 tasks, perks, its tab. | A reason to do everything once, in every region. | 6 tasks | 1 to 7: its tasks read everything else |
 
-The diary is the cheapest system and comes seventh only because its tasks name content from every other slice; it could ship earlier with fewer tiers, at the price of a second pass over its table. Slices 4 and 5 touch the same data tables at their ends and are built one after the other. If the stage must be cut short, it is cut from the bottom: after slice 3 the game already has people, a main line to chapter 3, a dungeon and two bosses.
+The diary is the cheapest system and comes last only because its tasks name content from every other slice; it could ship earlier with fewer tiers, at the price of a second pass over its table. Slices 4 and 5 touch the same data tables at their ends and are built one after the other. If the stage must be cut short, it is cut from the bottom: after slice 3 the game already has people, a main line to chapter 3, a dungeon and two bosses.
+
+**Where the two rule changes sit, and why.**
+
+- **Aggression is in the foundation.** It is a rule under everything: the roster's camps (slice 1), where people may stand (slice 2) and the dungeon's rooms (slice 3) are all checked against it, and the dungeon needs it or its rooms stand and watch (F6.10). It edits the file Stage 4 edits three times, so it goes right after R0 has recorded what Stage 4 left, before anything of this stage builds on the old rule. Its declared replacements (8 and 9) are made once, at the start.
+- **The rebalance is slice 6: after both new skills, before the last boss.** Three reasons. It takes damage from ranged and magic, and what the stage gives those styles in return (armour made at a bench, runes bound at an altar, arrows fletched from bars) exists only after slices 4 and 5; landing it earlier would ship a slice that only takes, and a stage cut short after it would leave casters with half the damage and nothing cheaper to cast. It needs no boss re-tuned, because every fight bound holds with the formula before and after (7.7, 7.12): the tests of Marrowjaw, Saltfang and Ashmantle written in earlier slices pass on both sides and are not touched. And putting it before the Underkiln means the hardest fight is tuned and played once, on the final numbers. If the stage is cut before slice 6 the styles stay as unbalanced as they are today and nothing is half-done; the owner has decided it is wanted, so it is not marked cuttable.
+- **Arrows ride with the rebalance**, because an arrow's power is a term of the ranged formula and the band is stated with the arrow of the level. They need only slice 1's feathers.
 
 ### 14.2 What each system costs and what it adds to the save
 
@@ -1026,8 +1259,10 @@ The diary is the cheapest system and comes seventh only because its tasks name c
 | Dialogue | 1 pure module, 1 UI module, 1 table | 350 lines + about 300 nodes of text | `talk:` counters |
 | Quests and journal | 1 pure module, 1 UI module, 1 table | 300 lines | `story` (one number per active quest); ids in `claimed` |
 | Skills and loops | Tables; two station actions; one filter on the recipe window | 150 lines + 49 recipe rows | two skill entries; `craft:` and `gather:` counters |
+| Aggression | One pure function and one field on a camp | 30 lines; minus the threat-colour condition | nothing |
+| The three styles and arrows | Three constants, one term, two table rows, a number on seven items | 40 lines + 5 recipe rows | nothing |
 | Roster | Rows on Stage 4's mechanisms | 0 lines of rules | `kill:` counters |
-| Dungeons | 1 pure module, 1 engine module, 1 table; four small edits to pure modules | 500 lines | `dungeons` (two numbers each); nothing of a run |
+| Dungeons | 1 pure module, 1 engine module, 1 table with its drop tables; four small edits to pure modules | 500 lines | `dungeons` (two numbers each); nothing of a run, no roll, no pity counter |
 | Bosses | Rows | 0 lines of rules | `bossDownUntil` for overworld bosses |
 | Diary | 1 pure module, 1 tab, 1 table | 250 lines + 75 task rows | `diary` (claimed tiers) |
 | Save recovery | 1 pure module, 1 notice | 150 lines | two more backup keys |
@@ -1041,26 +1276,42 @@ The diary is the cheapest system and comes seventh only because its tasks name c
 - **More skills**: a gathering skill for herbs, farming, an agility skill that uses the relief. Each needs a gather kind or a movement rule this stage does not add.
 - **The four open sources** of 7.4 (three foods, bronze bolts).
 - **A fourth diary tier** and per-boss challenges (no damage taken, a time), which need a few more counters.
-- **Damage parity between styles**, only if the owner asks (section 12).
+- **The top of the style ladders**: with the best special sets at levels 80 and 90, ranged and magic end a little under melee after the rebalance (7.12). A look at those few items belongs with whatever stage next adds gear.
 - **Renaming borrowed names** (the owner's Stage 8).
 
 ---
 
 ## 15. Owner decisions
 
-Each is the lead's proposal. The ones with a real trade-off come first, in plain language.
+### 15.1 Decided by the owner on 2026-11-14
+
+Each answer is quoted as given (translated), with what it settled and where the design now carries it.
+
+| # | The owner's words | What it settles | Where |
+|---|---|---|---|
+| **CALL-6.8** arrows | "Bows shoot arrows. Good ones and bad ones." | Any bow shoots any arrow. A better arrow does more, a worse one less. The first draft's rule that a better bow needs a better arrow is removed: no bow is ever blocked, and an existing ranger loses nothing to this rule. Grades stay as a way to spend for damage. | 7.4 |
+| **CALL-6.7** style balance (and **CALL-6.19**, which it replaces) | "Let's structure the rebalancing, no problem." | Ranged and magic do not stay about twice as fast as melee with only a price. A real rebalance, structured so it can be seen and approved. The structure is decided; its numbers are CALL-6.24 below. | 7.12 |
+| **CALL-6.18** aggression, replaced | "Wouldn't it be enough to have aggressive and passive monsters? The aggressive ones attack by default on seeing a player, the passive ones don't. A World of Warcraft feel as well." Confirmed with: an aggressive monster attacks on sight whatever the hero's level; a passive one never starts a fight; the sight radius shrinks as the hero outlevels the monster, down to about strike range; the pass sentries are exempt. And: "of course, in a dungeon everything attacks." | Stage 2's rule (a camp attacks only when the monster's level is at least the hero's combat level) is replaced for the whole game. The dungeon exception of the first draft is deleted as a separate rule: dungeons contain aggressive monsters, which keep their sight inside. | 7.13 |
+| **CALL-6.6** diary, in part | The owner agreed that the reward which stopped the pass sentries attacking is removed. | No diary reward touches aggression. What the middle tier gives instead is CALL-6.26 below. | 7.8 |
+| **CALL-6.5** no lockout, and **CALL-6.20**, which it answers | "A dungeon is a dungeon; sometimes you have to do it N times to drop a specific item. But a quest is a quest: a quest's reward is taken only once, regardless of whether the quest is opening a chest." | Dungeons stay repeatable with no lockout. Their special rewards are drops with a chance. Nothing in a dungeon is paid once; a quest's reward is paid once, also when the quest's step is opening a chest. One Underkiln clear no longer gives the whole dragon kit. The chances themselves are CALL-6.25 below. | 7.3, 7.6 |
+| **CALL-6.23** Runebinding and the diary resemble one game's systems | The owner has said the game takes RuneScape, Tibia and Ragnarok as inspirations and that sharing generic names with other games is not a problem. | Both stay, as borrowed techniques with original content: stones bound into runes at an altar and tiered regional task lists are forms many games share; every name, place, person, task, recipe and number here is this game's own (7.10), and the deny-list test keeps a specific game's names out. | 7.4, 7.8 |
+
+### 15.2 Still open
+
+Each is the lead's proposal with a recommendation. The ones with a real trade-off come first, in plain language. The first four are new in this revision and are the numbers inside the owner's own decisions.
 
 | # | Decision | Options | Recommendation |
 |---|---|---|---|
-| **CALL-6.8** | **Better bows need better arrows.** Today every bow shoots the same cheap arrow, so ranged deals almost twice melee's damage and pays almost nothing for it. The proposal makes arrows and bolts in four grades, made at the forge from bars. An existing character with a strong bow and a pile of bronze arrows could not shoot it until it had the new ones. | Do it; or leave ranged as it is; or do it only for new characters (two rules for one item). | **Do it, as the last slice.** It costs a ranger who buys arrows about a quarter of each kill's coins and one who smiths them nothing more than today. It is the only thing in the stage that takes something away, and it can be dropped without touching anything else. |
-| **CALL-6.7** | **Ranged and magic stay about twice as fast as melee.** Stage 4 found bosses die in half the time to arrows and spells. Measured here: 1.8 and 2.3 times melee's damage at every level, in the item list as it is. The proposal does not change any damage number. Instead each style gets a price: melee is slow, free and sturdy; ranged pays by the arrow; magic pays most and can now make its own runes. | Accept "equal cost, not equal damage"; or rebalance about sixty items so all three hit alike (changes gear players own, and Stage 4's boss tuning with it); or leave it for later. | **Accept.** Equal damage would make the three styles the same thing with different pictures. If the owner wants it anyway it should be its own stage. |
-| **CALL-6.5** | **Dungeons have no lockout, and their chests pay less coin than fighting in the open.** A player can run a dungeon again at once. What stops it being a money machine is that it pays less per minute than ordinary monsters; what makes it worth doing is that adamantite and Kilnglass come from nowhere else. | As proposed; or one chest a day (needs a clock the player can change, and punishes playing in long sittings); or a key that is used up on entry. | **As proposed.** A daily limit in a game saved in the player's own browser stops nobody who wants to cheat and annoys everybody else. |
+| **CALL-6.24** | **The numbers of the rebalance.** Ranged: a point of ranged gear adds 0.06 to the max hit instead of 0.22, and the base rises from 2 to 3. Magic: every spell hits half as hard, and the two big spells take half the runes. Melee is untouched. After it, from level 20 to 70, ranged is 1.07 to 1.29 of melee and magic 1.02 to 1.31 (today 1.7 to 2.1 and 2.1 to 2.7). The cost: every bow, hide, staff, robe and spell an existing character owns hits less (a level-70 archer's max hit goes from 67 to 44, a caster's from 83 to 41), and against a boss the three styles take about the same time where two of them took half. Nothing is taken from a save. | Approve; or a milder cut (for example magic at 0.6: 1.2 to 1.6 of melee, which keeps casters clearly ahead); or keep the rune counts as they are (then the two big spells cost twice today's per kill); or move any of the three numbers: they are constants, and a test says whether the styles still fit the band. | **Approve as proposed.** It is the smallest change that reaches the band: three numbers and two spells, no item edited, no boss re-tuned, every fight proof still holding. The band test and the three constants let the owner turn it after playing. |
+| **CALL-6.27** | **How quickly a monster's sight shrinks.** Proposed: it is at its smallest (3 units, about arm's length) when the hero is 10 combat levels above the monster. One thing comes with the rule at any setting: a strong hero standing still inside an aggressive camp is attacked when a monster wanders up to it, which today never happens; the seven yew and magic trees stand among the moss guardians, so a high-level woodcutter will be interrupted there (7.13). A hero's combat level runs about 10 ahead of its skills, so a camp "of your level" barely notices you and a camp ten levels up sees you in full. By Stage 3's model the game's middle gets slower than it tuned: the mithril kit comes about a third later in kills, the dragon kit 3.6% later; every one of its checks still holds. | 10; or 5 (closer to today's pace: mithril 18% later); or 20 (monsters of your own level come at you from half distance; mithril 75% later, dragon 8% later). | **10.** Between a rule the player can feel and a pace close to the approved one; 5 is closer to that pace and gives less of the rule. It is one number. For the trees: leave it, or give the two guardian camps a smaller wander. |
+| **CALL-6.25** | **How many runs a specific thing takes.** Kilnglass: 1 for certain every Underkiln clear, more by chance, 2.2 on average: the whole dragon kit takes 6.4 clears on average, 8 for nine players in ten, 13 at the very worst; one scimitar 2 or 3. Three pieces of equipment are pure chance: a Rune Crossbow from the Warren's chest (1 in 20) and the two Bloodbark robe pieces from the Underkiln's (1 in 25 each). Bosses add a small prize (a runite bar, adamant bars, an ingot). | As proposed; or a quicker kit (2 certain a clear: 4 clears on average, 7 at worst); or a slower one; or no equipment in chests at all (then nothing is pure chance); or a counter that guarantees a rare piece after N clears (a new saved field). | **As proposed, with no counter.** What progress needs is bounded by its certain part, so bad luck has a ceiling without saving anything. The three pure-chance pieces are extras that the shop also sells; a counter for them would be a saved field guarding something nobody needs. |
+| **CALL-6.26** | **What the diary's middle tier gives, now that "peace" is gone.** Proposed: a deposit box at that region's shrine (put things into the bank, not take out), which the top tier turns into a full bank. The main session's suggestion, a bank at the volcanic shrine, would have given that region at the middle tier what the others get at the top, and left its own top tier empty. | A deposit box in every region (proposed); or a bank at the volcanic shrine only, with the other regions' middle tier paying only the ember; or no middle perk anywhere. | **The deposit box.** One kind of perk in every region, a real comfort behind the pass, and the top tier still has something to add. |
+| **CALL-6.22** | **Matron Saltfang asks the first boss's question, faster** (critique M4). A different one was tried in the model and is not cheap: a "stay close" ring works for archers and casters and does nothing to a melee hero, so it would need a re-tune for a change two styles feel (7.7). The question that would be hers is a brood to deal with, which needs helpers in the room. | Accept for this stage; or re-tune her around the ring; or hold her for a brood mechanic. | **Accept**, and give her the brood with the models pass, which rebuilds her anyway. |
+| **CALL-6.21** | **Working drops makes monsters pay more** (critique M1). Turning a monster's hide into armour, or its bones into runes, can add a third to a half to what it pays, though each drop alone adds at most a quarter. | Accept (it is what the two skills are for, and each recipe is capped at 2.5 times its inputs); or lower the material drop chances. | **Accept.** After the rebalance a caster also spends more runes on the small spells, which takes some of it back. |
 | **CALL-6.4** | **A dungeon is short and forgets everything when you leave.** Three to four minutes of rooms for a person, then a boss of about a minute and a half. Leaving, dying or reloading ends the run; nothing of a half-finished run is saved. Reloading inside puts the hero at the door outside. | As proposed; or save the run (the first world state in the save; needs rules for every half-state); or make dungeons long by giving monsters several times the health. | **As proposed.** Monsters die fast in this game; a long dungeon would be the same fights with more waiting. The boss is where the time goes. |
-| **CALL-6.18** | **In a dungeon, everything attacks, whatever your level.** In the open, a monster leaves alone a hero whose combat level is above its own; that rule stays. But combat level runs ahead of skills, so a hero ready for a dungeon's boss would be ignored by every room on the way: the Warren would be a walk past monsters that stand and watch. The proposal is one exception: monsters inside a dungeon attack anyone who comes close. | As proposed; or keep the open-ground rule inside too (rooms are optional for a strong hero, and "the swarm" never swarms); or raise the rooms' levels until they out-level the boss's challengers (which makes them harder than the boss). | **As proposed.** It is one condition, it touches no open-ground camp, and it is what a player expects of a dungeon. |
 | **CALL-6.3** | **Two new skills, not one and not three.** Crafting (hides and cloth into ranged and magic armour) and Runebinding (blank stones into runes, with bones and ashes). Potions go under Cooking. Arrows and the missing metal tiers go under Smithing. | As proposed; or only Crafting (magic keeps buying runes); or a third skill for potions. | **As proposed.** After it, each way of fighting has a craft of its own. A third skill would need herbs to gather, which is a new kind of node and a model. |
-| **CALL-6.6** | **Diary rewards are experience and comfort, never coin.** Each finished tier gives an ember (experience in a skill of the player's choice: 1,000, 7,500 or 40,000). The middle tier makes that region's monsters stop attacking first, including the four sentries of the pass once the volcanic diary's middle tier is done. The top tier puts a bank at that region's shrine. | As proposed; or coin and gear (moves the economy Stage 3 tuned); or no lasting perks. | **As proposed.** The one to look at is the pass: a player who has finished chapter 5 and killed 25 demons walks through it unbothered. They are about level 60 by then, and the sentries stop at 69 anyway. Checked by the critique: that tier cannot be finished without crossing the pass and killing 25 of the sentries' kind, so the perk frees return trips, never the first crossing. |
 | **CALL-6.2** | **The starter chain gets a person, and nothing else changes.** Bran Tolley speaks each of the six first quests and takes them in. Their steps and rewards are Stage 3's, untouched. Existing characters still do not see the chain. | As proposed; or make "talk to Bran" a required step (breaks Stage 3's 29-action proof); or show the chain to existing characters too. | **As proposed.** |
-| **CALL-6.10** | **Six new monsters and three bosses ship on recoloured, resized existing models.** Stage 4 said three of them need new models. They do: a boss that is a big white scorpion is a compromise. The models pass replaces them; the list is written down. Also: the first boss is forgiving on purpose (a careful under-levelled player wins about one fight in four). | Ship as proposed; or hold the dungeons until the models exist. | **Ship.** The fights do not depend on the picture, and waiting would hold half the stage. |
+| **CALL-6.10** | **Six new monsters and three bosses ship on recoloured, resized existing models.** Stage 4 said three of them need new models. They do: a boss that is a big white scorpion is a compromise. The models pass replaces them; the list is written down. Also: the first boss is forgiving on purpose (a careful under-levelled player wins about one fight in four). | Ship as proposed; or hold the dungeons until the models exist. | **Ship.** The fights do not depend on the picture, and waiting would hold half the stage. The later models pass rebuilds every figure as a skinned mesh and may rebuild any of these. |
 | **CALL-6.11** | **The save gains one block and two skills, and stays version 4.** An older build of the game opening a newer save would ignore the new parts, and lose them if it saved again. | As proposed; or bump the version and refuse to load newer saves in older builds. | **As proposed.** Nobody is expected to run an older build, and it matches what Stages 3 and 4 did. |
 | **CALL-6.12** | **A broken save now stops and asks.** Today the game starts a new character and saves over the broken one two seconds later. The proposal shows a notice instead: start anew (keeping up to three copies of broken saves), load an older save if this browser has one, or copy the save's text. Nothing is overwritten until the player picks. | As proposed; or keep today's silent behaviour with more backups. | **As proposed.** It is one screen almost nobody will ever see, and it closes four debts at once. |
 | **CALL-6.13** | **Cinder Adepts and Slag Brutes stand outside the ridge, south of the start town**, not inside the volcanic corner as Stage 4 sketched. Measured, the corner is full. Outside, they are the story's "the ash is spreading" and they sit beside Cinder Stair, which stays safe. | As proposed; or shrink something inside the corner to fit them. | **As proposed.** |
@@ -1068,11 +1319,6 @@ Each is the lead's proposal. The ones with a real trade-off come first, in plain
 | **CALL-6.15** | **Quest coin.** The seven chapters pay 64,500 GP in all and the side quests 3,800, spread over about thirty hours. | As proposed; or pay only items and experience. | **As proposed.** It is nine minutes of late-game income in total, and early it is about a tenth of the kit of its tier. |
 | **CALL-6.16** | **Who writes the dialogue.** About 300 short passages. The proposal: written by Claude from the voices and beats of section 7, then read by a person before merge. | As proposed; or the owner writes or rewrites them. | **As proposed**, with the owner free to rewrite any line: they are data. |
 | **CALL-6.9** | **The names**: seven people, thirteen quests, six monsters, two dungeons, two skills, 26 items and the rest (7.10). Generic words are shared with other games by the owner's rule. | Accept; or change any. | **Accept**, subject to the name search. |
-| **CALL-6.19** | **Ranged stays the strongest style for a player who makes their own arrows** (critique M2). With the new arrows a buyer pays about a quarter of each kill; a player who smiths them pays what they pay today, and ranged still kills about 1.8 times as fast as melee. Magic's price is real (most of what a kill drops, even with bound runes). | Accept; or make arrow-making dearer (fewer arrows a bar); or a separate rebalance stage. | **Accept for now**, and look again after the ammunition slice has been played. |
-| **CALL-6.20** | **One Underkiln clear is enough for the whole dragon kit** (critique M3): the first clear gives 14 Kilnglass, the kit needs 13. | Keep; or cut the first-clear Kilnglass from 8 to 2, so the kit takes two or three clears. | **Cut to 2** if dragon gear should feel earned; otherwise keep. The owner's taste decides. |
-| **CALL-6.21** | **Working drops makes monsters pay more** (critique M1). Turning a monster's hide into armour, or its bones into runes, can add a third to a half to what it pays, though each drop alone adds at most a quarter. | Accept (it is what the two skills are for, and each recipe is capped at 2.5 times its inputs); or lower the material drop chances. | **Accept.** |
-| **CALL-6.22** | **Matron Saltfang asks the first boss's question, faster** (critique M4): both are "step out of the circle placed at you". | Accept; or give it a second kind of attack (a small new rule). | **Accept** for this stage; revisit with the models pass. |
-| **CALL-6.23** | **Two systems are close to one specific game** (critique L5): Runebinding (blank stones mined, bound at an altar into several runes) and the diary (easy, medium, hard lists per region, rewards of experience lamps). | Keep them as techniques, which the owner allows; or change their shape (for example runes from monster drops instead of mined stones). | **Keep**, but it is the owner's call. |
 | **CALL-6.17** | **What is in and what waits** (14.1, 14.3): a foundation and eight slices now; new models, co-op, more dungeons, more skills and a fourth diary tier later. | | Accept. |
 | **CALL-6.1** | **The essence list.** | | Accept. |
 
@@ -1089,6 +1335,9 @@ Each is the lead's proposal. The ones with a real trade-off come first, in plain
 | The hours of section 1 are wrong. | They are estimates from Stage 3's model and say so; nothing is built on a clock. Chapter levels are the gates, and they are data. |
 | Stage 3's pacing model picks the new overworld monsters. It chooses the type with the most hitpoints a second from `CAMPS`: the Adept and the Brute are candidates (the Adept's coins were cut for that, critique H1), and Marrowjaw is a 560-hitpoint target it respawns in 8.35 s. | D4 prints the model's choice per tier. If ECON fails or Marrowjaw is chosen, the declared fallback is to keep Marrowjaw's camp out of `CAMPS` (a `BOSS_CAMPS` list the engine spawns, held to the same world-data rules by D3), not to tune the test or the fighter. |
 | New drops and recipes move Stage 3's pacing in play even though its test passes (its model fights and shops only). Worked into armour or runes, drops add 25 to 55% to a monster's coins, against 10 to 24% raw (`critique-results.txt` C). | The 25% bound on drops; the printed crafting incomes; Stage 3's own acceptance of crafting as earning (its F15). The play check of slice 1 and slice 4 looks at it. |
+| The rebalance feels like a loss to a player who fights with a bow or a staff today. | It is one: said in 7.12 with the numbers. What softens it is in the same stage (made armour, bound runes, cheaper casts of the two big spells, arrows that add damage), and it lands after those. The three constants are data: if the play check of slice 6 says a style is dead, the owner moves one number and the band test says whether the three still fit. |
+| The new aggression makes the middle of the game slower than Stage 3 tuned it (the mithril kit a third later in kills by the model, 7.13). | Every pacing assertion holds. The model's count is an upper estimate. `SIGHT_GAP` is the lever and the table of 7.13 shows it at 5, 10 and 20. |
+| A rare piece that takes 57 clears for one player in ten reads as a grind. | Only three pieces are pure chance, none is needed, all are in the shop. What the forge and the story need is bounded (7.6). The chances are data. |
 | The trackpad rows are thin (Saltfang at 81%). | The same answer as Stage 4: test with a trackpad; the spit's warning is the lever. |
 | Fourteen skills do not fit the skills tab. | A human check in slice 4; the fallback is a scrolling grid, which Stage 5's panel allows. |
 | The far-offset zone shows something unexpected: shadows, the sky, a horizon apron Stage 5 adds. | Slice 3's first engine task is a bare room with the hero in it, looked at before anything else is built. |
@@ -1097,10 +1346,16 @@ Each is the lead's proposal. The ones with a real trade-off come first, in plain
 
 ## 17. What could not be verified
 
-- **Nothing was run but the model scripts.** No test, type check, build or dev server. Every claim about a frozen test passing is from reading it.
+- **Nothing was run but the model scripts.** No test suite, type check, build or dev server. Every claim about a frozen test passing is from reading it, with two exceptions that were run as models: Stage 3's pacing test file, unedited, through a stand-in for vitest (`pacing-rerun.sh`), and Stage 2's gate simulation, transcribed (`aggro-check.ts`).
+- **The pacing rerun used Stage 3's world.** Stage 4's two camps and this stage's three overworld camps are not in that branch, so what the fighter does with Stalkers, Marksmen, Adepts, Brutes and Marrowjaw under the new rule is still unrun (critique H2 stands; R0 and D4 run it). The model's new count of attackers is one reading of the rule (linear in the sight left, rounded up); the game's real number depends on where a player stands.
+- **The aggression rule was run in a patched copy of Stage 2's `stepMonster`**, not in Stage 4's, which does not exist. That the acquisition block survives Stage 4 as Stage 2 wrote it is read from Stage 4's design.
+- **The rebalance was measured on kits chosen by a rule** (best ordinary weapon, body and legs) and on the fight model's fixed fighters. Full kits with helmets, boots, rings and capes were looked at once in exploration and are not in the committed output: magic stayed at 1.07 to 1.30 of melee from level 20 to 70, and ranged with bronze arrows came out lower than in the table, 0.86 to 1.00, because melee's rings and amulets add strength. The band test of G6.13 uses the three-piece kit; S1 prints the full-kit figures beside it so the owner sees both. Special sets at 80 and 90 fall just under melee (7.12).
+- **Rune and arrow costs are at sale value of the inputs.** A caster cannot buy bones, so "bound" assumes the caster has them: an ice burst kill at level 70 needs about two big bones' worth of chaos runes and a lesser demon drops dragon bones. Binding covers part of a caster's runes, not all, and how much was not modelled.
+- **Stage 3's `combat-profile` and `entry-staff` values** were computed from the formula with the item numbers of this tree; the starter staff's magic bonus (4) is read from Stage 3's branch.
+- **Whether best-arrow-first is what players want** (against choosing the arrow) is a guess; it costs no saved field and can change.
 - **The critique re-ran the model and recomputed the economy independently** (`critique-check.ts`); its corrections are in `results.txt`. It ran no test either.
 - **Stages 4 and 5 are designs, not code.** Every Stage 4 name this design uses (`BOSSES`, `ATTACKS`, `PATTERNS`, `model`, `tint`, `modelScale`, `arenaRadius`, the grid and walk-test parameters, `respawnSecs`, `commands.ts`, `sustain.ts`, `buyVow`, `applyDeathLoss`, `vowPrice`) is from its design document. Stage 3 is partly built: `economy.ts`, `STARTER_QUESTS`, `starterView`, `shopPrice`, the freeze and compatibility tests exist on its branch; its drop, recipe and fishing changes had not landed there when it was read, so they are overlaid as constants (`content.ts`, `S3`).
-- **The pacing test was not run with this content.** The claim that it cannot move rests on reading: dungeon camps are outside `CAMPS`, no new monster drops equipment, the model plays no story quest. The three overworld camps are in `CAMPS`, and the model's fighter may choose Adepts or Brutes in its printed table; its assertions are order and floors and are expected to hold. R0 and every slice gate run it.
+- **The pacing test was not run with this content** (it was run with the new aggression rule on Stage 3's world, above). The claim that this stage's content cannot move it rests on reading: dungeon camps are outside `CAMPS`, no new monster drops equipment, the model plays no story quest. The three overworld camps are in `CAMPS`, and the model's fighter may choose Adepts or Brutes in its printed table; its assertions are order and floors and are expected to hold. R0 and every slice gate run it.
 - **Marrowjaw is in `CAMPS`, where Stage 3's pacing model can see it.** It is one target of 560 hitpoints and about 900 coins, and that model gives every type an 8.35 s return, not Marrowjaw's 180 s. By reading, its fighter cannot "win" against it until late (the fight is long and the model allows 60% of its hitpoints lost per kill), and by then lesser demons give more hitpoints a second; this was not run. If ECON moves in D4, the lever is Marrowjaw's row (its coins, hitpoints or basic max hit), never the test.
 - **The income comparison of 7.6 is a model**: one fighter per dungeon (every skill at 45 and at 70), melee, no rests on either side, a walk estimated from room centres. It was one-sided in the first draft (a rest charged to the dungeon only) and was corrected; the chests and the two bosses' coins were cut to hold it.
 - **Combat level against skill level.** Every gate is a combat level and every fighter's is printed. The gates were set from the melee and ranged rows of the fight table; nobody has played them.
@@ -1111,3 +1366,17 @@ Each is the lead's proposal. The ones with a real trade-off come first, in plain
 - **The hours** of section 1 are twice a model's, extended by a second small model; nobody has played thirty hours of this game at 1x.
 - **Originality of the names**: checked against the deny-list by script and against memory, not searched.
 - **Bundle size** in section 10 is an estimate.
+
+---
+
+## Review log
+
+- 2026-11-14, critique (`2026-11-14-content-systems-critique.md`), applied in one commit: zones at x 1000 with the dome and apron hidden; the walk test in `stepMonster`; per-monster no-respawn; the Adept's coins; the income comparison with goods on both sides; ember guards; `keepCorrupt` on every exit; every declared replacement (11.3); the critique's owner decisions.
+
+- 2026-11-14, **owner decisions** (section 15.1), applied in one commit:
+  - **Aggression** (answer 3). New 7.13: aggressive and passive monsters, the `sightRadius` function (minimum 3, reached 10 combat levels above the monster, `keepsSight` as data on the camp for the sentries, bosses and dungeon camps). CALL-6.18, the flag `ignoresLevel` and the dungeon branch are deleted; 7.6's "everything attacks" row says a dungeon holds aggressive camps that keep their sight. The diary's "peace" perk is removed everywhere and replaced by a deposit box (7.8, CALL-6.26); `perks` is read at three places and none is in `stepMonster`. Declared replacements 8 (one test of `tests/monster-territory.test.ts`) and 9 (two expressions of Stage 3's pacing model). Stage 2's gate simulation rerun: identical for the test's two heroes. Stage 3's pacing test rerun: every assertion holds; kit kills 132 / 354 / 453 / 540 / 824 / 1,558 / 4,606 become 169 / 434 / 637 / 724 / 1,009 / 1,743 / 4,771. Built in the foundation slice, after Stage 4's route-following.
+  - **Style rebalance** (answer 2). New 7.12 and G6.13: the target band, three formula numbers (ranged gear 0.22 to 0.06, ranged base 2 to 3, magic x0.5), the rune counts of ice burst and blood barrage halved, the before and after tables of damage and cost per level band, what gets weaker for an existing character, and the effect on every earlier proof. CALL-6.7's "parity of cost" and the anti-goal "no formula change" are replaced; 6.7, 4.3 and the ledger follow. `check-results.txt` now runs every boss row, Stage 4's included, with both formulas: all hold, no boss row changed. Declared replacements 10 and 11 (six pinned values of two Stage 3 tests). A slice of its own, the sixth, after both new skills and before the last boss (14.1).
+  - **Arrows** (answer 1). 7.4's ammunition block rewritten: any bow, any arrow; grades add 0, 2, 4, 6 to the max hit; the best carried is shot; nothing is refused. The old last slice is merged into the styles slice.
+  - **Dungeons and quests** (answer 4). First-clear chest rewards removed; drop tables with rare entries and expected runs for both dungeons and all three bosses (7.6, `results.txt` 8b); Kilnglass by chance with a certain part (6.4 clears for the kit on average, 13 at worst); the rule and proof that a quest's reward is paid once, also for a chest step (7.3); chapter 3 and 6 rewards take what the first-clear lists held; chapter 6 gets a chest step. Income ratios rerun with rare entries counted: 0.57 and 0.50.
+  - **The critique's open points** (answer 5). Saltfang: a different question modelled, found not cheap, left as CALL-6.22 with the measurement. Runebinding and the diary: decided to stay as borrowed techniques (CALL-6.23). Crafting and binding raising a kill's worth: CALL-6.21, recommendation unchanged.
+  - Section 15 split into decided (with the owner's words) and open; new open decisions CALL-6.24 to 6.27. Sections 11.1, 11.2, 11.3, 12, 13, 14, 16 and 17 follow. The model gained `aggro.ts`, `aggro-check.ts`, `pacing-rerun.sh` and `vitest-stub.ts`; `model.ts` section 5 is the before and after of the rebalance and 8b the drop tables.

@@ -131,15 +131,25 @@ for (const [tier, ids] of Object.entries({ steel: ['smith_steel_sword', 'smith_s
   p(`    ${tier}: ${n} ${bar}, Smithing ${rs[0].req} to ${rs[2].req}; shop price of the kit ${rs.reduce((s, r) => s + items[r.output!].price, 0) * C.S3.GEAR_MARKUP} GP`);
 }
 
-// ---------------------------------------------------------------- 5. the three styles, tier by tier
-h('5. Gear ladders: damage per 0.6 s swing by style, best wearable weapon + body + legs at each level');
-function dps(style: 'melee' | 'ranged' | 'magic', lvl: number, target: M) {
+// ---------------------------------------------------------------- 5. the three styles: today, and after the rebalance (design 7.12)
+h('5. The three styles, level band by level band: today and after the rebalance (design 7.12)');
+// The kit of a band: the best ORDINARY weapon, body and legs the level can wear (special tiers and uniques left out; 5c shows them).
+// The attack arithmetic is Stage 3's playerAttackProfile, transcribed, with the three style numbers of content.ts as parameters:
+//   ranged  max hit = max(2, floor(rangedBase + 0.35 x Ranged + rangedGear x ranged bonus + arrow power))
+//   magic   max hit = max(3, floor((spell + 0.22 x Magic + 0.18 x magic bonus) x magicScale))
+//   melee   max hit = max(2, floor(1.5 + 0.32 x (Strength + style) + 0.22 x strength bonus))            (not touched)
+// Accuracy, the hit chance, the 0.6 s swing and every monster number are not touched either.
+type StyleCfg = typeof C.STYLE_TODAY;
+type Opt = { cfg?: StyleCfg; ammo?: number; spell?: string; special?: boolean; runes?: Record<string, Record<string, number>> };
+const combatSpells = () => [...SPELLS].filter((x) => x.type === 'combat').sort((a, b) => (a.maxHit || 0) - (b.maxHit || 0));
+const tierSpell = (lvl: number) => combatSpells().filter((x) => x.req <= lvl).pop()!;
+function kitOf(style: 'melee' | 'ranged' | 'magic', lvl: number, special = false) {
   const s = createDefaultState();
   for (const k of Object.keys(s.equipment)) s.equipment[k] = null;
   for (const k of Object.keys(s.skills)) if (k !== 'hitpoints' && k !== 'prayer') s.skills[k].lvl = lvl;
   const wearable = (it: AnyItem) => Object.entries((it.req as Record<string, number>) || {}).every(([, v]) => v <= lvl);
   const key = style === 'melee' ? (i: AnyItem) => ((i.atk as number) || 0) + ((i.str as number) || 0) : style === 'ranged' ? (i: AnyItem) => (i.rng as number) || 0 : (i: AnyItem) => (i.mag as number) || 0;
-  const tierOk = (i: AnyItem) => !['raids', 'botw', 'barrows', 'bandos', 'gilded'].includes(String(i.tier)) && !['abyssal_whip', 'toxic_blowpipe', 'trident_seas', 'granite_body', 'granite_legs'].includes(String(i.id));
+  const tierOk = (i: AnyItem) => special || (!['raids', 'botw', 'barrows', 'bandos', 'gilded'].includes(String(i.tier)) && !['abyssal_whip', 'toxic_blowpipe', 'trident_seas', 'granite_body', 'granite_legs'].includes(String(i.id)));
   const ids: string[] = [];
   for (const slot of ['weapon', 'body', 'legs']) {
     const pool = Object.values(ITEMS as Record<string, AnyItem>).filter((i) => i.type === 'equip' && i.slot === slot && wearable(i) && tierOk(i))
@@ -147,37 +157,115 @@ function dps(style: 'melee' | 'ranged' | 'magic', lvl: number, target: M) {
     const pick = pool.sort((a, b) => (slot === 'weapon' ? key(b) - key(a) : (style === 'melee' ? ((b.def as number) - (a.def as number)) : key(b) - key(a))))[0];
     if (pick) { s.equipment[slot] = String(pick.id); ids.push(String(pick.id)); }
   }
+  return { s, ids };
+}
+function profileOf(style: 'melee' | 'ranged' | 'magic', lvl: number, bon: { atk: number; str: number; rng: number; mag: number }, o: Opt = {}) {
+  const cfg = o.cfg || C.STYLE_TODAY;
+  if (style === 'ranged') return { maxHit: Math.max(2, Math.floor(cfg.rangedBase + lvl * 0.35 + bon.rng * cfg.rangedGear + (o.ammo || 0))), acc: lvl * 1.4 + bon.rng + 12 };
+  if (style === 'magic') { const sp = o.spell ? SPELLS.find((x) => x.id === o.spell)! : tierSpell(lvl); return { maxHit: Math.max(3, Math.floor(((sp.maxHit || 0) + lvl * 0.22 + bon.mag * 0.18) * cfg.magicScale)), acc: lvl * 1.5 + bon.mag + 16 }; }
+  return { maxHit: Math.max(2, Math.floor(1.5 + (lvl + 1) * 0.32 + bon.str * 0.22)), acc: (lvl + 2) * 1.35 + bon.atk + 12 };
+}
+function dps(style: 'melee' | 'ranged' | 'magic', lvl: number, target: M, o: Opt = {}) {
+  const { s, ids } = kitOf(style, lvl, o.special);
   const bon = getEquipmentBonuses(s);
-  let maxHit: number, acc: number, cost = 0;
-  if (style === 'ranged') { maxHit = Math.max(2, Math.floor(2 + lvl * 0.35 + bon.rng * 0.22)); acc = lvl * 1.4 + bon.rng + 12; cost = items.bronze_arrow.price; }
-  else if (style === 'magic') {
-    const sp = [...SPELLS].filter((x) => x.type === 'combat' && x.req <= lvl).sort((a, b) => (b.maxHit || 0) - (a.maxHit || 0))[0];
-    maxHit = Math.max(3, Math.floor((sp.maxHit || 0) + lvl * 0.22 + bon.mag * 0.18)); acc = lvl * 1.5 + bon.mag + 16;
-    cost = Object.entries(sp.runes).reduce((t, [r, q]) => t + items[r].price * q, 0);
-  } else { maxHit = Math.max(2, Math.floor(1.5 + (lvl + 1) * 0.32 + bon.str * 0.22)); acc = (lvl + 2) * 1.35 + bon.atk + 12; }
+  const { maxHit, acc } = profileOf(style, lvl, bon, o);
+  const sp = style === 'magic' ? (o.spell ? SPELLS.find((x) => x.id === o.spell)! : tierSpell(lvl)) : null;
+  const runes = sp ? ((o.runes && o.runes[sp.id]) || sp.runes) : {};
+  const cost = style === 'ranged' ? items.bronze_arrow.price : Object.entries(runes).reduce((t, [r, q]) => t + items[r].price * q, 0);
   const hc = Math.min(0.94, Math.max(0.22, acc / (acc + (target.def * 1.1 + 4) * 0.75)));
   const avg = hc * (1 + (maxHit * (maxHit + 1)) / 2) / (maxHit + 1);
   const price = ids.reduce((t, i) => t + (ITEMS as Record<string, AnyItem>)[i].price, 0) * C.S3.GEAR_MARKUP;
-  return { avg, maxHit, cost, def: bon.def, ids, price };
+  return { avg, maxHit, cost, def: bon.def, ids, price, spell: sp?.id || '', runes };
 }
+const AFTER = C.STYLE_AFTER, SWING = 0.6;
 const refs: [number, string][] = [[1, 'goblin'], [10, 'scorpion'], [20, 'dark_wizard'], [30, 'hill_giant'], [40, 'saltback_stalker'], [50, 'moss_guardian'], [60, 'slag_brute'], [70, 'lesser_demon']];
-p('level vs target         melee dmg (def, kit GP)        ranged dmg (def, kit GP, GP/shot)      magic dmg (def, kit GP, GP/cast)   ranged/melee  magic/melee');
-for (const [lvl, t] of refs) {
-  const m = dps('melee', lvl, monsters[t]), r = dps('ranged', lvl, monsters[t]), g = dps('magic', lvl, monsters[t]);
-  p(`${String(lvl).padStart(3)} ${t.padEnd(18)} ${m.avg.toFixed(2).padStart(5)} (${String(m.def).padStart(3)}, ${String(m.price).padStart(6)})        ${r.avg.toFixed(2).padStart(5)} (${String(r.def).padStart(3)}, ${String(r.price).padStart(6)}, ${r.cost})              ${g.avg.toFixed(2).padStart(5)} (${String(g.def).padStart(3)}, ${String(g.price).padStart(6)}, ${String(g.cost).padStart(3)})        ${(r.avg / m.avg).toFixed(2)}         ${(g.avg / m.avg).toFixed(2)}`);
-}
-p('kits picked at 40 and 70:');
-for (const lvl of [40, 70]) for (const st of ['melee', 'ranged', 'magic'] as const) p(`  ${lvl} ${st}: ${dps(st, lvl, monsters.lesser_demon).ids.join(', ')}`);
-p('running cost per kill of the reference target, against the coins it drops. "made" prices each rune or arrow at what its inputs sell for:');
+const ammoTier = (lvl: number) => [...C.AMMO_TIERS].reverse().find((a) => a.fromReq <= lvl)!;
+const ammoFor = (lvl: number, weaponId: string) => (String((ITEMS as Record<string, AnyItem>)[weaponId].iconKind) === 'crossbow' ? ammoTier(lvl).bolt : ammoTier(lvl).arrow);
 const madeCost = (id: string) => { const r = C.NEW_RECIPES.find((x) => x.output === id); return r ? Object.entries(r.input).reduce((t, [i, q]) => t + sell(i) * q, 0) / (r.outputQty || 1) : items[id].price; };
+const f1 = (x: number) => x.toFixed(1), f2 = (x: number) => x.toFixed(2), pc = (x: number) => (x * 100).toFixed(0) + '%';
+
+p('5a. Damage per second (damage per 0.6 s swing / 0.6) against a monster of the level; x = times melee. Melee is identical before and after.');
+p('level target             melee | TODAY ranged (bronze)   magic (best spell) | AFTER ranged bronze   ranged, arrow of its level   magic (best spell) | fastest / slowest today -> after');
+const band: { lvl: number; r: number; g: number }[] = [];
 for (const [lvl, t] of refs) {
-  const tm = monsters[t], r = dps('ranged', lvl, tm), g = dps('magic', lvl, tm), coins = meanCoin(tm);
-  const tier = [...C.AMMO_TIERS].reverse().find((a) => a.fromReq <= Math.max(...Object.values((ITEMS as Record<string, AnyItem>)[r.ids[0]].req as Record<string, number>)))!;
-  const ammo = String((ITEMS as Record<string, AnyItem>)[r.ids[0]].iconKind) === 'crossbow' ? tier.bolt : tier.arrow;
-  const sp = [...SPELLS].filter((x) => x.type === 'combat' && x.req <= lvl).sort((a, b) => (b.maxHit || 0) - (a.maxHit || 0))[0];
-  const castMade = Object.entries(sp.runes).reduce((s, [rn, q]) => s + madeCost(rn) * q, 0);
-  const shots = tm.hp / r.avg, casts = tm.hp / g.avg;
-  p(`  ${String(lvl).padStart(3)} ${t.padEnd(18)} coins ${coins.toFixed(0).padStart(4)} | ranged today ${(shots * 8).toFixed(0).padStart(4)} GP (${((shots * 8 / coins) * 100).toFixed(0)}%), with ${ammo} bought ${(shots * items[ammo].price).toFixed(0).padStart(4)} (${((shots * items[ammo].price / coins) * 100).toFixed(0)}%), made ${(shots * madeCost(ammo)).toFixed(0).padStart(4)} (${((shots * madeCost(ammo) / coins) * 100).toFixed(0)}%) | magic ${sp.id} bought ${(casts * g.cost).toFixed(0).padStart(5)} (${((casts * g.cost / coins) * 100).toFixed(0)}%), bound ${(casts * castMade).toFixed(0).padStart(5)} (${((casts * castMade / coins) * 100).toFixed(0)}%)`);
+  const tm = monsters[t], m = dps('melee', lvl, tm), m2 = dps('melee', lvl, tm, { cfg: AFTER });
+  check(m.avg === m2.avg && m.maxHit === m2.maxHit, `melee at ${lvl} unchanged by the rebalance`);
+  const r0 = dps('ranged', lvl, tm), g0 = dps('magic', lvl, tm);
+  const rb = dps('ranged', lvl, tm, { cfg: AFTER }), am = ammoFor(lvl, rb.ids[0]), ra = dps('ranged', lvl, tm, { cfg: AFTER, ammo: C.AMMO[am].power });
+  const g1 = dps('magic', lvl, tm, { cfg: AFTER });
+  const sp0 = Math.max(m.avg, r0.avg, g0.avg) / Math.min(m.avg, r0.avg, g0.avg), sp1 = Math.max(m.avg, ra.avg, g1.avg) / Math.min(m.avg, ra.avg, g1.avg);
+  p(`${String(lvl).padStart(3)}   ${t.padEnd(17)} ${f1(m.avg / SWING).padStart(5)} | ${f1(r0.avg / SWING).padStart(5)} x${f2(r0.avg / m.avg)}            ${f1(g0.avg / SWING).padStart(5)} x${f2(g0.avg / m.avg)}       | ${f1(rb.avg / SWING).padStart(5)} x${f2(rb.avg / m.avg)}          ${f1(ra.avg / SWING).padStart(5)} x${f2(ra.avg / m.avg)} ${am.padEnd(13)}    ${f1(g1.avg / SWING).padStart(5)} x${f2(g1.avg / m.avg)} ${g1.spell.padEnd(13)} | ${f2(sp0)} -> ${f2(sp1)}`);
+  if (lvl >= 20) band.push({ lvl, r: ra.avg / m.avg, g: g1.avg / m.avg });
+}
+{
+  const B = C.STYLE_BAND, rs = band.map((b) => b.r), gs = band.map((b) => b.g);
+  p(`  levels 20 to 70 after: ranged ${f2(Math.min(...rs))} to ${f2(Math.max(...rs))} of melee (band ${B.ranged.join(' to ')}), magic ${f2(Math.min(...gs))} to ${f2(Math.max(...gs))} (band ${B.magic.join(' to ')}); the fastest style at most ${f2(Math.max(...band.map((b) => Math.max(1, b.r, b.g) / Math.min(1, b.r, b.g))))} times the slowest (bound ${B.fastestOverSlowest}); today up to ${f2(Math.max(...refs.filter(([l]) => l >= 20).map(([l, t]) => { const a = dps('melee', l, monsters[t]).avg, b = dps('ranged', l, monsters[t]).avg, c = dps('magic', l, monsters[t]).avg; return Math.max(a, b, c) / Math.min(a, b, c); })))}`);
+  for (const b of band) {
+    check(b.r >= B.ranged[0] && b.r <= B.ranged[1], `ranged at ${b.lvl} in band: ${f2(b.r)}`);
+    check(b.g >= B.magic[0] && b.g <= B.magic[1], `magic at ${b.lvl} in band: ${f2(b.g)}`);
+    check(Math.max(1, b.r, b.g) / Math.min(1, b.r, b.g) <= B.fastestOverSlowest, `fastest over slowest at ${b.lvl}`);
+  }
+}
+p('  kits (weapon, body, legs) and max hits, today -> after:');
+for (const lvl of [20, 40, 70]) {
+  const tm = monsters[refs.find(([l]) => l === lvl)![1]];
+  const m = dps('melee', lvl, tm), r0 = dps('ranged', lvl, tm), ra = dps('ranged', lvl, tm, { cfg: AFTER, ammo: C.AMMO[ammoFor(lvl, r0.ids[0])].power }), g0 = dps('magic', lvl, tm), g1 = dps('magic', lvl, tm, { cfg: AFTER });
+  p(`    ${lvl}: melee ${m.ids.join(', ')} max hit ${m.maxHit} (defence bonus ${m.def}) | ranged ${r0.ids.join(', ')} max hit ${r0.maxHit} -> ${ra.maxHit} (defence ${r0.def}) | magic ${g0.ids.join(', ')} max hit ${g0.maxHit} -> ${g1.maxHit} (defence ${g0.def})`);
+}
+
+p();
+p('5b. What a kill costs to make, against the coins it drops. "bought" is the shop price; "made" prices each arrow or rune at what its inputs sell for.');
+p('    After the rebalance ice burst and blood barrage take one rune of each kind (today two); wind strike and fire bolt keep their runes.');
+p('level target            coins | ranged TODAY bronze | AFTER bronze bought | AFTER arrow of its level: bought, made | magic TODAY best spell: bought, bound | AFTER best spell: bought, bound');
+for (const [lvl, t] of refs) {
+  const tm = monsters[t], coins = meanCoin(tm);
+  const r0 = dps('ranged', lvl, tm), rb = dps('ranged', lvl, tm, { cfg: AFTER }), am = ammoFor(lvl, rb.ids[0]), ra = dps('ranged', lvl, tm, { cfg: AFTER, ammo: C.AMMO[am].power });
+  const g0 = dps('magic', lvl, tm), g1 = dps('magic', lvl, tm, { cfg: AFTER, runes: C.SPELL_RUNES_AFTER });
+  const bound = (g: typeof g0) => Object.entries(g.runes).reduce((s, [rn, q]) => s + madeCost(rn) * q, 0);
+  const k = (x: number) => `${x.toFixed(0).padStart(5)} GP ${pc(x / coins).padStart(4)}`;
+  p(`${String(lvl).padStart(3)}   ${t.padEnd(17)} ${coins.toFixed(0).padStart(4)} | ${k(tm.hp / r0.avg * 8)} | ${k(tm.hp / rb.avg * 8)} | ${am.padEnd(13)} ${k(tm.hp / ra.avg * items[am].price)}, ${k(tm.hp / ra.avg * madeCost(am))} | ${g0.spell.padEnd(13)} ${k(tm.hp / g0.avg * g0.cost)}, ${k(tm.hp / g0.avg * bound(g0))} | ${k(tm.hp / g1.avg * g1.cost)}, ${k(tm.hp / g1.avg * bound(g1))}`);
+}
+p('  every spell a caster of the level can cast, AFTER: times melee, then cost per kill bought / bound as a share of the kill\'s coins');
+for (const [lvl, t] of refs.filter(([l]) => l >= 20)) {
+  const tm = monsters[t], coins = meanCoin(tm), m = dps('melee', lvl, tm);
+  p(`    ${String(lvl).padStart(3)} ${t.padEnd(17)} ` + combatSpells().filter((x) => x.req <= lvl).map((sp) => { const g = dps('magic', lvl, tm, { cfg: AFTER, spell: sp.id, runes: C.SPELL_RUNES_AFTER }); const bd = Object.entries(g.runes).reduce((s, [rn, q]) => s + madeCost(rn) * q, 0); return `${sp.id} x${f2(g.avg / m.avg)} ${pc(tm.hp / g.avg * g.cost / coins)}/${pc(tm.hp / g.avg * bd / coins)}`; }).join(' | '));
+}
+p('  the same TODAY (two runes of each for the big spells):');
+for (const [lvl, t] of refs.filter(([l]) => l >= 20)) {
+  const tm = monsters[t], coins = meanCoin(tm), m = dps('melee', lvl, tm);
+  p(`    ${String(lvl).padStart(3)} ${t.padEnd(17)} ` + combatSpells().filter((x) => x.req <= lvl).map((sp) => { const g = dps('magic', lvl, tm, { spell: sp.id }); const bd = Object.entries(g.runes).reduce((s, [rn, q]) => s + madeCost(rn) * q, 0); return `${sp.id} x${f2(g.avg / m.avg)} ${pc(tm.hp / g.avg * g.cost / coins)}/${pc(tm.hp / g.avg * bd / coins)}`; }).join(' | '));
+}
+p('  arrow and bolt grades: max-hit points added, shop price, made cost each (inputs at sale value), smithing level of the recipe');
+for (const [id, a] of Object.entries(C.AMMO)) { const r = C.NEW_RECIPES.find((x) => x.output === id); p(`    ${id.padEnd(14)} +${a.power}  shop ${String(items[id].price).padStart(2)} GP  made ${r ? madeCost(id).toFixed(1) : '(no recipe)'}${r ? `  Smithing ${r.req}, ${r.outputQty} from one bar` : ''}`); }
+p('  what a better arrow buys at level 70 (lesser demon): ' + ['bronze_arrow', 'iron_arrow', 'mithril_arrow', 'rune_arrow'].map((id) => { const tm = monsters.lesser_demon, g = dps('ranged', 70, tm, { cfg: AFTER, ammo: C.AMMO[id].power }), b = dps('ranged', 70, tm, { cfg: AFTER }); return `${id} max hit ${g.maxHit} (${g.avg >= b.avg ? '+' : ''}${pc(g.avg / b.avg - 1)}) ${(tm.hp / g.avg * items[id].price).toFixed(0)} GP a kill bought, ${(tm.hp / g.avg * madeCost(id)).toFixed(0)} made`; }).join('; '));
+
+p();
+p('5c. Outside the standard kit (information): every tier allowed (special sets and uniques), weapon + body + legs; times melee, today -> after with the arrow of the level');
+for (const lvl of [50, 60, 70, 80, 90]) {
+  const tm = monsters.lesser_demon, m = dps('melee', lvl, tm, { special: true }), r0 = dps('ranged', lvl, tm, { special: true }), g0 = dps('magic', lvl, tm, { special: true });
+  const ra = dps('ranged', lvl, tm, { cfg: AFTER, special: true, ammo: C.AMMO[ammoFor(lvl, r0.ids[0])].power }), g1 = dps('magic', lvl, tm, { cfg: AFTER, special: true });
+  p(`    ${lvl}: melee ${m.ids[0]} ${f1(m.avg / SWING)} | ranged ${r0.ids[0]} x${f2(r0.avg / m.avg)} -> x${f2(ra.avg / m.avg)} | magic ${g0.ids[0]} x${f2(g0.avg / m.avg)} -> x${f2(g1.avg / m.avg)}`);
+}
+
+p();
+p('5e. Training speed: experience per hour of continuous swings in the style\'s own skill (melee: 4 a point of damage on one skill; ranged: 4 a point; magic: 3 a point plus 0.4 of the spell\'s experience on a hit), today -> after');
+for (const [lvl, t] of refs.filter(([l]) => l >= 20)) {
+  const tm = monsters[t], perHour = 3600 / SWING;
+  const m = dps('melee', lvl, tm), r0 = dps('ranged', lvl, tm), rb = dps('ranged', lvl, tm, { cfg: AFTER }), ra = dps('ranged', lvl, tm, { cfg: AFTER, ammo: C.AMMO[ammoFor(lvl, r0.ids[0])].power });
+  const mx = (cfg: StyleCfg) => { const g = dps('magic', lvl, tm, { cfg }), sp = SPELLS.find((x) => x.id === g.spell)!; const { acc } = profileOf('magic', lvl, getEquipmentBonuses(kitOf('magic', lvl).s), { cfg }); const hc = Math.min(0.94, Math.max(0.22, acc / (acc + (tm.def * 1.1 + 4) * 0.75))); return (g.avg * 3 + hc * sp.xp * 0.4) * perHour; };
+  const k = (x: number) => (x / 1000).toFixed(0) + 'k';
+  p(`    ${String(lvl).padStart(3)}: melee ${k(m.avg * 4 * perHour)} | ranged ${k(r0.avg * 4 * perHour)} -> ${k(rb.avg * 4 * perHour)} with bronze arrows (${pc(rb.avg / r0.avg - 1)}), ${k(ra.avg * 4 * perHour)} with the arrow of the level (${pc(ra.avg / r0.avg - 1)}) | magic ${k(mx(C.STYLE_TODAY))} -> ${k(mx(AFTER))} (${pc(mx(AFTER) / mx(C.STYLE_TODAY) - 1)})`);
+}
+
+p();
+p('5d. The values the declared test replacements take (Stage 3, tests/combat-profile.test.ts and tests/entry-staff.test.ts), level 1, no other gear:');
+{
+  const rngBon = (ITEMS as Record<string, AnyItem>).shortbow.rng as number, magBon = (ITEMS as Record<string, AnyItem>).fire_staff.mag as number;
+  const rangedMax = (cfg: StyleCfg, pray: number) => Math.max(2, Math.floor((cfg.rangedBase + 1 * 0.35 + rngBon * cfg.rangedGear) * pray));
+  const magicMax = (cfg: StyleCfg, spell: number, mag: number, pray: number) => Math.max(3, Math.floor((spell + 1 * 0.22 + mag * 0.18) * cfg.magicScale * pray));
+  p(`    shortbow on rapid: max hit ${rangedMax(C.STYLE_TODAY, 1)} -> ${rangedMax(AFTER, 1)}; with sharp_eye ${rangedMax(C.STYLE_TODAY, 1.2)} -> ${rangedMax(AFTER, 1.2)} (accuracy 29.4, unchanged)`);
+  p(`    fire_staff, wind_strike: ${magicMax(C.STYLE_TODAY, 6, magBon, 1)} -> ${magicMax(AFTER, 6, magBon, 1)}; fire_bolt: ${magicMax(C.STYLE_TODAY, 13, magBon, 1)} -> ${magicMax(AFTER, 13, magBon, 1)}; wind_strike with mystic_might: ${magicMax(C.STYLE_TODAY, 6, magBon, 1.2)} -> ${magicMax(AFTER, 6, magBon, 1.2)} (accuracy 41.5, unchanged)`);
+  p(`    hazel_staff (Stage 3's starter staff, magic bonus 4), wind_strike at Magic 1: ${magicMax(C.STYLE_TODAY, 6, 4, 1)} -> ${magicMax(AFTER, 6, 4, 1)} (accuracy 21.5, unchanged)`);
 }
 
 // ---------------------------------------------------------------- 6. placement against the Stage 2 world
@@ -301,12 +389,56 @@ for (const d of C.DUNGEONS) {
   let walkUnits = 0; for (let i = 1; i < rooms.length; i++) walkUnits += Math.hypot(rooms[i][0] - rooms[i - 1][0], rooms[i][1] - rooms[i - 1][1]);
   walkUnits *= 1.5; // doglegs, pulls and the way back to a side room
   const chest = C.CHESTS[d.id];
-  const chestGp = (chest.runGp[0] + chest.runGp[1]) / 2 + chest.run.reduce((s, r) => s + sell(r.id) * (r.qty[0] + r.qty[1]) / 2, 0);
+  // every clear: the fixed part and the coins, plus each rare entry at its chance (equipment at its sale value)
+  const chestGp = (chest.runGp[0] + chest.runGp[1]) / 2 + chest.run.reduce((s, r) => s + sell(r.id) * (r.qty[0] + r.qty[1]) / 2, 0) + chest.rare.reduce((s, r) => s + r.chance * r.qty * sell(r.id), 0);
   const total = secs + walkUnits / 11.5, open = openBest(lvl);
-  const firstGp = chest.first.reduce((s, r) => s + sell(r.id) * r.qty, 0);
   p(`  ${d.name}, every fighting skill at ${lvl}: ${hp} hitpoints in ${d.camps.reduce((s, c) => s + c.members.length, 0)} monsters; fighting ${Math.round(secs)} s and walking ${Math.round(walkUnits)} units = ${(total / 60).toFixed(1)} min model-optimal (a person about double; never asserted)`);
-  p(`    pays ${coins.toFixed(0)} coins and goods from monsters + ${chestGp.toFixed(0)} from the chest at sale value = ${((coins + chestGp) / total).toFixed(1)} GP/s; best open ground at that level: ${open.name}, ${open.rate.toFixed(1)} GP/s; ratio ${(((coins + chestGp) / total) / open.rate).toFixed(2)}. First clear, once: ${firstGp} GP of goods`);
+  p(`    pays ${coins.toFixed(0)} coins and goods from monsters + ${chestGp.toFixed(0)} from the chest at sale value = ${((coins + chestGp) / total).toFixed(1)} GP/s; best open ground at that level: ${open.name}, ${open.rate.toFixed(1)} GP/s; ratio ${(((coins + chestGp) / total) / open.rate).toFixed(2)}. Nothing is paid once: a chest has no first-clear reward (design 7.6)`);
   check((coins + chestGp) / total <= 0.9 * open.rate, `${d.id} pays under 90% of open ground`);
+}
+
+// ---------------------------------------------------------------- 8b. drop tables and expected runs
+h('8b. Drop tables: what a dungeon and a boss can give, the chance of each entry, and how many runs a specific thing takes');
+// Owner, 2026-11-14: "a dungeon is a dungeon; sometimes you have to do it N times to drop a specific item". No lockout, no
+// first-clear reward: every entry below is rolled on every clear (chest) or every kill (boss).
+const runsFor = (pp: number, q: number) => Math.ceil(Math.log(1 - q) / Math.log(1 - pp));
+for (const d of C.DUNGEONS) {
+  const ch = C.CHESTS[d.id], boss = monsters[d.camps.find((c) => c.arenaRadius)!.members[0].type];
+  p(`  ${d.name}, the chest, every clear: ${ch.run.map((r) => `${r.qty[0] === r.qty[1] ? r.qty[0] : r.qty.join(' to ')} ${items[r.id].name}`).join(', ')}, ${ch.runGp.join(' to ')} GP`);
+  for (const r of ch.rare) {
+    p(`    chance ${pc(r.chance).padStart(4)}: ${r.qty} ${items[r.id].name}${items[r.id].type === 'equip' ? ' (equipment)' : ''}: on average 1 clear in ${(1 / r.chance).toFixed(0)}; half of all players have it within ${runsFor(r.chance, 0.5)} clears, nine in ten within ${runsFor(r.chance, 0.9)}`);
+    if (items[r.id].type === 'equip') check(r.chance <= 0.05, `${d.id} chest: ${r.id} above Stage 3's boss cap of 0.05`);
+    check(!!items[r.id], `${d.id} chest rare ${r.id} exists`);
+  }
+  p(`  ${boss.name}, every kill: ${boss.drops.filter((x) => x.chance >= 1).map((x) => x.gp ? `${x.gp.join(' to ')} GP` : `${x.qty || 1} ${items[x.id!].name}`).join(', ')}`);
+  for (const x of boss.drops.filter((y) => y.chance < 1 && y.id)) p(`    chance ${pc(x.chance).padStart(4)}: ${x.qty || 1} ${items[x.id!].name}: on average 1 kill in ${(1 / x.chance).toFixed(0)}`);
+}
+{
+  const mj = monsters.marrowjaw;
+  p(`  ${mj.name} (open ground, back every ${C.BOSSES.marrowjaw.respawnSecs} s), every kill: ${mj.drops.filter((x) => x.chance >= 1).map((x) => x.gp ? `${x.gp.join(' to ')} GP` : `${x.qty || 1} ${items[x.id!].name}`).join(', ')}`);
+  for (const x of mj.drops.filter((y) => y.chance < 1 && y.id)) p(`    chance ${pc(x.chance).padStart(4)}: ${x.qty || 1} ${items[x.id!].name}: on average 1 kill in ${(1 / x.chance).toFixed(0)}`);
+  const both = (pp: number) => 2 / pp - 1 / (2 * pp - pp * pp);
+  const bb = C.CHESTS.underkiln.rare.find((r) => r.id === 'bloodbark_top')!.chance;
+  p(`  both Bloodbark pieces from the Underkiln chest: ${both(bb).toFixed(0)} clears on average`);
+}
+for (const ch of C.CHASES) {
+  // distribution of the count after n runs, capped at `need`
+  let dist = new Array(ch.need + 1).fill(0); dist[0] = 1;
+  const step = (dd: number[]) => { let cur = dd.map(() => 0); dd.forEach((pr, k) => { cur[Math.min(ch.need, k + ch.perRun.always)] += pr; }); for (const c of ch.perRun.chances) { const nx = cur.map(() => 0); cur.forEach((pr, k) => { nx[k] += pr * (1 - c.chance); nx[Math.min(ch.need, k + c.qty)] += pr * c.chance; }); cur = nx; } return cur; };
+  let expected = 0, n = 0, half = 0, nine = 0;
+  while (dist[ch.need] < 1 - 1e-12 && n < 10000) { expected += 1 - dist[ch.need]; dist = step(dist); n++; if (!half && dist[ch.need] >= 0.5) half = n; if (!nine && dist[ch.need] >= 0.9) nine = n; }
+  const mean = ch.perRun.always + ch.perRun.chances.reduce((s, c) => s + c.qty * c.chance, 0);
+  p(`  ${ch.what}: ${mean.toFixed(1)} a clear on average (${ch.perRun.always} always${ch.perRun.chances.map((c) => `, ${c.qty} more at ${pc(c.chance)}`).join('')}): ${expected.toFixed(1)} clears on average; half of all players within ${half}, nine in ten within ${nine}; never more than ${Math.ceil(ch.need / ch.perRun.always)} (the guaranteed part alone)`);
+  check(ch.perRun.always >= 1, `${ch.what}: a guaranteed part bounds bad luck`);
+}
+{
+  // the chase table must describe the real tables
+  const ch = C.CHESTS.underkiln, w = monsters.kiln_warden;
+  const always = ch.run.find((r) => r.id === 'kiln_shard')!.qty[0];
+  const chances = [...ch.rare.filter((r) => r.id === 'kiln_shard').map((r) => ({ qty: r.qty, chance: r.chance })), ...w.drops.filter((x) => x.id === 'kiln_shard' || x.id === 'wyrmsteel_ingot').map((x) => ({ qty: x.qty || 1, chance: x.chance }))];
+  for (const c of C.CHASES) check(c.perRun.always === always && JSON.stringify(c.perRun.chances) === JSON.stringify(chances), `${c.what}: CHASES matches the chest and the Kiln Warden's table`);
+  p('  (a Wyrmsteel Ingot from the Kiln Warden counts as one Kilnglass: it is a shard and a runite bar already smelted.)');
+  for (const [k, m] of Object.entries(C.NEW_MONSTERS)) for (const x of m.drops) if (x.id && items[x.id]?.type === 'equip') check(false, `${k} drops equipment ${x.id}: equipment may only come from a chest`);
 }
 
 // ---------------------------------------------------------------- 9. names

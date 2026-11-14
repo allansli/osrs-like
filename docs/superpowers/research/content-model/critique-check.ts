@@ -75,7 +75,8 @@ for (const d of C.DUNGEONS) {
   let walk = 0; for (let i = 1; i < rooms.length; i++) walk += Math.hypot(rooms[i][0] - rooms[i - 1][0], rooms[i][1] - rooms[i - 1][1]);
   const total = secs + walk * 1.5 / 11.5;
   const ch = C.CHESTS[d.id];
-  const chest = (ch.runGp[0] + ch.runGp[1]) / 2 + ch.run.reduce((s, r) => s + sell(r.id) * (r.qty[0] + r.qty[1]) / 2, 0);
+  // Revised 2026-11-14 (owner decision 4): a chest has rare entries rolled every clear and no first-clear reward.
+  const chest = (ch.runGp[0] + ch.runGp[1]) / 2 + ch.run.reduce((s, r) => s + sell(r.id) * (r.qty[0] + r.qty[1]) / 2, 0) + ch.rare.reduce((s, r) => s + r.chance * r.qty * sell(r.id), 0);
   const ore = d.nodes.reduce((s, n) => s + sell(n.type === 'runite_rock' ? 'runite_ore' : 'adamantite_ore'), 0);
   const cand = Object.keys(size).filter((k) => mons[k] && mons[k].level <= lvl + 10 && !bosses.has(k)).map((k) => ({ k, ...rate(k, lvl) }));
   const bestC = cand.sort((a, b) => b.c - a.c)[0], bestG = [...cand].sort((a, b) => b.g - a.g)[0];
@@ -104,8 +105,11 @@ p(`  a bone bound and sold instead of sold: big bones ${sell('big_bones')} -> ${
 
 // ---- D. Kilnglass for a dragon kit
 p('');
-const ch = C.CHESTS.underkiln, perRun = (ch.run[0].qty[0] + ch.run[0].qty[1]) / 2 + 2;
-p(`=== D. Kilnglass: first clear ${ch.first[0].qty} + chest ${(ch.run[0].qty[0] + ch.run[0].qty[1]) / 2} (mean) + boss 2 = ${ch.first[0].qty + perRun}; the kit needs 13 ingots = 13 shards; ml_kiln takes 1 and pays 2 ingots`);
+// Revised 2026-11-14 (owner decision 4): Kilnglass is a chance drop; the critique's "one clear gives the whole kit" (M3) no longer holds.
+const ch = C.CHESTS.underkiln, warden = mons.kiln_warden;
+const perRun = (ch.run[0].qty[0] + ch.run[0].qty[1]) / 2 + ch.rare.filter((r) => r.id === 'kiln_shard').reduce((s, r) => s + r.qty * r.chance, 0)
+  + warden.drops.filter((d) => d.id === 'kiln_shard' || d.id === 'wyrmsteel_ingot').reduce((s, d) => s + d.chance * (d.qty || 1), 0);
+p(`=== D. Kilnglass: ${perRun.toFixed(1)} a clear on average (chest and boss, an ingot counted as a shard), ${ch.run[0].qty[0]} guaranteed; the kit needs 13 ingots = 13 shards: about ${(13 / perRun).toFixed(1)} clears by the mean, at most ${Math.ceil(13 / ch.run[0].qty[0])}; ml_kiln takes 1 and pays 2 ingots`);
 
 // ---- E. one hand-check per boss: mean time to cut the boss's hitpoints with the fighter's own kit, no dodging, plus the phase shifts
 p('');

@@ -2,7 +2,7 @@
 
 Date: 2026-11-14. Branch: `feat/content-systems`. Design: `docs/superpowers/specs/2026-11-14-content-systems-design.md` (called "the design" below; section numbers refer to it). Data: `docs/superpowers/research/content-model/content.ts` (called "the content file"): every row a data task adds is written there, and a task that says "as the content file" copies those rows without changing a number or a name. Earlier documents this plan builds on: the foundation design and plan (`2026-11-13-world-foundation-*`), and the approved designs of Stage 3 (start and pacing), Stage 4 (combat with weight) and Stage 5 (visual pass). Source line numbers are at commit `5caa597`.
 
-The design is a proposal. Nothing in this plan starts before owner step **O-6.1**, and before Stages 3, 4 and 5 are merged to `main` (section 0.5). The first task, **R0**, re-checks every premise the design takes from those three stages and stops the stage if one fails. Critiqued on 2026-11-14 (`../specs/2026-11-14-content-systems-critique.md`); its fixes are applied below.
+The design is a proposal. Nothing in this plan starts before owner step **O-6.1**, and before Stages 3, 4 and 5 are merged to `main` (section 0.5). The first task, **R0**, re-checks every premise the design takes from those three stages and stops the stage if one fails. Critiqued on 2026-11-14 (`../specs/2026-11-14-content-systems-critique.md`); its fixes are applied below. **Revised on 2026-11-14 for the owner's answers** (design section 15.1): aggressive and passive monsters (tasks G1, G2 in slice 0), the style rebalance and arrow grades (a new slice 6, tasks S1 to S4, replacing the old last slice), dungeon drop tables and quest rewards paid once (Z1 to Z5, U0 to U3), and the diary without "peace" (Y1, Y2, Y5). The review log at the end lists what moved.
 
 ---
 
@@ -16,7 +16,7 @@ These are the conventions of the earlier plans, restated so this plan can be rea
 - **[CLAUDE]**: tests that define acceptance, the premise re-check, tuning against a test, every piece of written content (dialogue, journal text, quest text), governance text, and every verification. Tests that define acceptance for an [AGY] task are their own [CLAUDE] task and come first.
 - **[OWNER]** and **[HUMAN]**: a decision only the owner can make, or something a person has to look at in the running game. These are not agent tasks.
 - Agents never merge, tag, push or open pull requests. The main session merges after verification. No commit carries an AI attribution trailer (owner's global rule).
-- Tiers used in this plan: haiku for running agy; sonnet for tests written from a stated spec, for fully specified implementation and for doc sync; opus for the premise re-check (R0), the fight tests and their tuning (B1 to B3), the written content (Q6, Z5, K4, N4, U3) and every verify. No task needs a higher tier: the design is done and each task is bounded.
+- Tiers used in this plan: haiku for running agy; sonnet for tests written from a stated spec, for fully specified implementation and for doc sync; opus for the premise re-check (R0), the fight tests and their tuning (B1 to B3), the two tests that replace frozen assertions after an owner's rule change (G1, S1: each has to judge that its replacement is at least as strict as what it replaces), the written content (Q6, Z5, K4, N4, U3) and every verify. No task needs a higher tier: the design is done and each task is bounded.
 
 ### 0.2 Commands
 
@@ -28,7 +28,8 @@ Run every command from the worktree root, in a shell started with an allowlisted
 | ONE(file) | `systemd-run --user --scope -q -p MemoryMax=3G -p MemorySwapMax=0 env TEST_CONCURRENCY=4 npx vitest run <file>` | as stated in the task |
 | TYPES | `systemd-run --user --scope -q -p MemoryMax=3G -p MemorySwapMax=0 env TEST_CONCURRENCY=4 npx tsc --noEmit` | exit 0, no output |
 | BUILD | `systemd-run --user --scope -q -p MemoryMax=3G -p MemorySwapMax=0 env TEST_CONCURRENCY=4 npm run build` | exit 0; the JS chunk size is reported |
-| MODEL | `bash docs/superpowers/research/content-model/run.sh` | exit 0; `results.txt` ends with `ALL CHECKS PASS`, `check-results.txt` with `EVERY BOUND HOLDS` |
+| MODEL | `bash docs/superpowers/research/content-model/run.sh` | exit 0; `results.txt` ends with `ALL CHECKS PASS`, `check-results.txt` with `EVERY BOUND HOLDS, WITH TODAY'S FORMULA AND WITH THE REBALANCE`, `aggro-results.txt` with `ALL AGGRESSION CHECKS PASS` |
+| PACE | `bash docs/superpowers/research/content-model/pacing-rerun.sh` (until R0 replaces it: it reads Stage 3's branch) | exit 0; every block of `pacing-results.txt` ends with `EVERY ASSERTION OF pacing.test.ts HOLDS` |
 | ECON | `ONE(tests/pacing.test.ts)` and `ONE(tests/economy-invariants.test.ts)` (Stage 3's, unedited) | both pass |
 
 **Standard gate (SG)**: SUITE, TYPES and BUILD all pass. Every task below ends with SG unless it says otherwise. A wrapper OOM kill means a defect to fix. Never raise the cap.
@@ -39,11 +40,11 @@ Run every command from the worktree root, in a shell started with an allowlisted
 
 1. **Allowlist.** A task touches only the files listed for it. The opus verify rejects a diff with any other file in it.
 2. **Line numbers go stale.** Three stages land between `5caa597` and the first task. Every task names the symbols it changes; find them by name. R0 records their current lines.
-3. **Existing tests are frozen.** No edit to any file that exists under `tests/` or `src/__tests__/` when R0 records the baseline: the 103 original tests and every test of Stages 1 to 5. A new test goes in a new file under `tests/`. Stage 6 declares the seven replacements of design 11.3 and no other: the declared lists of `tests/content-freeze.test.ts` (D1 adds `DECLARED_NEW_NODES` and `DECLARED_NEW_RECIPES` beside Stage 3's item list and Stage 4's monster list; D1, Z3, K1, N1, U0, A1 each append exactly the ids their slice adds); the two Stage 3 save goldens, regenerated once per new skill (K1, N1); Stage 2's `tests/fixtures/save-relocation/v4-loaded.json`, one added `saved.skills` entry per new skill (K1, N1); the overworld monster counts of `tests/world-budget.test.ts` and `tests/world-data.test.ts` 162, 42 to 48 (D3); the monster type-key count of `src/__tests__/blender-hero.test.ts` as Stage 4 leaves it, 13 to 16, 18, 19 (D3, Z3, U0). If R0 finds a Stage 4 or Stage 5 test that pins a number of skills, commands or interactive actions, it names it and the owner is asked before any code. If any other existing test goes red, the change is wrong, not the test: stop and report.
+3. **Existing tests are frozen.** No edit to any file that exists under `tests/` or `src/__tests__/` when R0 records the baseline: the 103 original tests and every test of Stages 1 to 5. A new test goes in a new file under `tests/`. Stage 6 declares the replacements of design 11.3 and no other. Seven are additive: the declared lists of `tests/content-freeze.test.ts` (D1 adds `DECLARED_NEW_NODES` and `DECLARED_NEW_RECIPES` beside Stage 3's item list and Stage 4's monster list; D1, Z3, K1, N1, S3, U0 each append exactly the ids their slice adds); the two Stage 3 save goldens, regenerated once per new skill (K1, N1); Stage 2's `tests/fixtures/save-relocation/v4-loaded.json`, one added `saved.skills` entry per new skill (K1, N1); the overworld monster counts of `tests/world-budget.test.ts` and `tests/world-data.test.ts` 162, 42 to 48 (D3); the monster type-key count of `src/__tests__/blender-hero.test.ts` as Stage 4 leaves it, 13 to 16, 18, 19 (D3, Z3, U0). Four follow the owner's two rule changes of 2026-11-14, each made by the opus test task named and each replaced by an assertion at least as strict about the new rule: one test of Stage 2's `tests/monster-territory.test.ts`, "an aggressive camp ignores a player whose combat level is above the monster's" (G1); two expressions of Stage 3's `tests/support/pacingModel.ts`, the `attackers` line and the `largestAggressive` filter (G1; `tests/pacing.test.ts` itself is not edited); five expected max hits of Stage 3's `tests/combat-profile.test.ts` (S1); one expected profile of Stage 3's `tests/entry-staff.test.ts` (S1). Design 11.3 items 8 to 11 give the exact old and new assertions. If R0 finds a Stage 4 or Stage 5 test that pins a number of skills, commands or interactive actions, it names it and the owner is asked before any code. If any other existing test goes red, the change is wrong, not the test: stop and report.
 4. **Test-first pairs.** A [CLAUDE] test task may leave the suite red until the [AGY] task that implements it lands on the same branch. Allowed in that window: SUITE failures only in the new test files and in the one frozen file the test task is authorised to edit; TYPES and BUILD errors only in the new test files and only because a module, export, field or union member that the paired task adds does not exist yet. The opus verify of the test task lists them. The paired task's accept restores full SG.
 5. **Commit kinds, never mixed.** *Test*. *Data*: rows in a table. *Rule*: a pure module under `src/state`. *Engine*. *UI*. *Text*: dialogue and quest wording. *Docs*. Every commit message names its kind and task: `test(Q1): dialogue rules`, `data(D2): coal, steel, blacksteel`, `rule(Z2): zone walk and dungeon run`.
 6. **Content comes from the content file.** Every id, name and number of a data task is in `docs/superpowers/research/content-model/content.ts` or in the design's tables. A task that seems to need another name or number stops and reports. New ids are added to the declared lists of the freeze test by the test task of the same slice, never by the data task.
-7. **No formula edits.** The XP table, the XP of existing actions, the hit and damage formulas, the price, requirement and stats of existing items, existing recipes' inputs, existing monsters' stats, `QUEST_DEFS`, `STARTER_QUESTS` and every existing quest's reward do not change. One named exception: `ammoForWeapon` (A2).
+7. **No formula edits, with two named exceptions the owner decided.** The XP table, the XP of existing actions, the hit and damage formulas, the price, requirement and stats of existing items, existing recipes' inputs, existing monsters' stats, `QUEST_DEFS`, `STARTER_QUESTS` and every existing quest's reward do not change. The exceptions, each in one task and nowhere else: the acquisition rule of `stepMonster` (G2, design 7.13); and the three style constants of `playerAttackProfile`, the arrow term, and the rune counts of ice burst and blood barrage (S2 and S4, design 7.12). Melee's branch of `playerAttackProfile`, `playerHitChance`, `monsterHitChance` and `rollMonsterHit` are never edited.
 8. **Pure rules.** A new module under `src/state` takes time and randomness as parameters and never calls `Math.random`, `Date.now` or `performance.now`. `src/state` and `src/data` import nothing from the engine or the UI and contain neither of the two words the architecture test forbids, in code, comments or strings: say "the log" or "the panel" in text.
 9. **No save string as markup.** New UI modules write text with `textContent`. No new `innerHTML` assignment takes a value that came from the save or from a dialogue table. No inline handler attribute is added to `index.html`.
 10. **No new runtime dependency.** No change to `package.json` or `package-lock.json`.
@@ -71,13 +72,13 @@ If the owner answers a CALL with the alternative, only the named task changes:
 
 | Answer | Change |
 |---|---|
-| CALL-6.8: no ammunition tiers | Slice 8 is not built. Nothing else changes; the diary has no task that reads it. |
-| CALL-6.7: equal damage wanted | Return to the design: it is a stage of its own. Slices 0 to 7 are unaffected. |
-| CALL-6.5: a daily chest | Return to the design: a saved time and its reader rule (as `bossDownUntil`), Z1 and Z2 change. |
+| CALL-6.24: other rebalance numbers | S1's written-out values and S2's three constants take the owner's numbers; MODEL is rerun first and must show every fight bound holding, or the task stops. Rune counts kept as today: S2 drops the two `RUNE_COSTS` rows and S1 its case. |
+| CALL-6.27: another sight gap | `SIGHT_GAP` in G2 and `aggro.ts`; PACE is rerun and its table goes into the design. No other task changes. |
+| CALL-6.25: other chances | The `loot` rows and boss rows of Z4 and U1, and the expected-clears figures U0 reproduces; MODEL section 8 must still hold the income bound. A pity counter: return to the design (a saved field). |
+| CALL-6.26: another middle-tier perk | Y1, Y2 and Y5. A bank at the volcanic shrine only: Y5 reads one region. No middle perk: Y5 keeps the hard tier's bank and the two start-town perks. |
 | CALL-6.4: save the run | Return to the design. |
-| CALL-6.18: dungeon monsters keep the open-ground rule | Z1 and Z2 drop `ignoresLevel`; Z7 does not set it. The rooms then ignore most heroes who can enter; the doors' levels stay. |
 | CALL-6.3: only Crafting | Slice 5 keeps chapters 4 and 5 without the binding stage and drops N1 to N3; the diary's woods rows change (Y3). |
-| CALL-6.6: no perks | Y2 and Y5 drop `perks`; Y1 drops its cases. Embers stay. |
+| CALL-6.22: re-tune Matron Saltfang around a ring | B2 gets the new rows and tunes her health and max hit until its bounds hold; the content file and design 7.7 follow. |
 | CALL-6.2: existing saves see the chain | Return to Stage 3's design, which decided it. |
 | CALL-6.10: wait for models | Slices 3 and 6 wait for the models pass; slices 0, 1 (without Marrowjaw), 2, 4, 5 (without the dungeon stages), 7 are built. |
 | CALL-6.12: keep the silent behaviour | F3 and F4 keep the three copies and the guarded write and drop the hold and the notice. |
@@ -105,10 +106,11 @@ The owner approves or amends the CALLs of design section 15 and the names. An am
   3. **Names assumed from Stage 4.** `src/data/attacks.ts` with `AttackDef`, `ATTACKS`, `PATTERNS`, `BossDef`, `BOSSES`; `MonsterDef.pattern`, `.model`, `.tint`, `.modelScale`; `CampDef.arenaRadius`; `StepWorld.grid`, `.pathBudget`, `.windupGate`; the optional walk test of `moveWithCollision` and whether it still clamps to ±118 when given one; `findPath`'s `maxExpanded`; `segmentWalkable` and `openStart` exported; a boss's `respawnSecs` and how `createMonsterLogic` receives it; the events `windup`, `resolve`, `cancel`, `phase`; `src/state/sustain.ts` with `buyVow`, `vowPrice`, `applyDeathLoss`, `deathLoss`; `quests.lanternVow`; `src/state/commands.ts` with `PlayerCommand` and `applyCommand`; the engine's `dispatchCommand`; a monster's stable `id`; `isBossLoot` true for a type with a `BOSSES` row; the rows `saltback_stalker`, `thornwatch_marksman`, `ashmantle`; the ids and coordinates of their camps; the name and exports of the fight model its plan task B3 put under `tests/support`.
   4. **Names assumed from Stage 5.** The class names of its panel, button, tab and modal; whether CALL-V13 was taken (`data-action` and no inline handlers) and the delegation function; the token names; the table of woods-tree cells and how the walk grid reads it (and whether `buildWalkGrid`'s signature changed); the module that owns fog, the sky dome and the horizon apron, how each is hidden, and the values of `CAMERA_FAR` and the apron's outer radius (design: 460 and 240).
   4b. **Stage 4 code the zones depend on** (critique C2, H3): whether `stepMonster` passes `world.grid.walkable` to its three `moveWithCollision` calls, whether `moveWithCollision` still clamps to ±118 when given a test, and how a monster's dead time is chosen (`BOSSES[type].respawnSecs` or something per monster).
+  4c. **What the two rule changes stand on** (design 7.12, 7.13). The acquisition block of `stepMonster` after Stage 4 (the idle branch, transition T2): its lines, and whether it is still Stage 2's test of `camp.aggressive`, `playerDown`, `playerSafe`, the threat colour, `aggroRadius` and the camp circle; any Stage 4 test that pins "a camp ignores a hero above its level" or Ashmantle attacking only "combat level 110 or less" (its design says so; 7.13 supersedes it). `playerAttackProfile` after Stage 4: that its ranged and magic branches are still the expressions design 7.12 writes out, and where a shot's arrow is known (`prepareAttack`). Every existing test that pins a ranged or magic max hit, by grep for `playerAttackProfile` and `maxHit`, compared with design 11.3 items 10 and 11.
   5. **Frozen counts.** Every existing test that pins a count this stage changes: skills, monster types, overworld monsters, recipes, items, commands, interactive actions. Compare with design 11.3; anything not declared there is reported under O-6.1b.
-  6. **The model on the real code.** In the content file, delete the `S3` and `S4_MONSTERS` overlays and read the game's own tables; replace `fight.ts` and `boss.ts` by imports of Stage 4's fight model; add Stage 4's two camps and Stage 5's tree cells to the placement checks; replace the far-plane check's 460 and 240 by Stage 5's constants. Run MODEL and `critique-check.sh`. Commit the new outputs.
+  6. **The model on the real code.** In the content file, delete the `S3` and `S4_MONSTERS` overlays and read the game's own tables; replace `fight.ts` and `boss.ts` by imports of Stage 4's fight model; add Stage 4's two camps and Stage 5's tree cells to the placement checks; replace the far-plane check's 460 and 240 by Stage 5's constants. Replace `pacing-rerun.sh`'s extraction of Stage 3's branch by the merged tree, so that PACE runs the real `tests/pacing.test.ts` on the real world with Stage 4's camps; the three patched expressions stay as written until G1 lands them. Run MODEL, PACE and `critique-check.sh`. Commit the new outputs, and record PACE's kit-kill table beside design 7.13's.
 - **Accept**: SG and ECON pass. The baseline file holds items 1 to 5. MODEL passes on the real code, or the file lists each failed check with the smallest change to the content file that fixes it (a coordinate, a drop chance, a boss number) and MODEL passes with those changes. `git diff main --stat` shows only files under `docs/`.
-- **Stop rule**: stop and report to the main session (O-6.1b) if any of these is true: a name in items 2 to 4 does not exist and has no equivalent; `moveWithCollision` cannot take a walk test; a boss row cannot be data alone; ECON fails on `main`; a MODEL check fails and no change to the content file fixes it; a frozen test pins a count that design 11.3 does not declare.
+- **Stop rule**: stop and report to the main session (O-6.1b) if any of these is true: a name in items 2 to 4 does not exist and has no equivalent; `moveWithCollision` cannot take a walk test; a boss row cannot be data alone; ECON fails on `main`; a MODEL check fails and no change to the content file fixes it; a frozen test pins a count that design 11.3 does not declare; Stage 4 rewrote the acquisition block or the ranged or magic branch of `playerAttackProfile`; an assertion of PACE fails on the merged world with the new rule (then the lever is `SIGHT_GAP` or a camp row, decided with the owner, never the test).
 - **Must not change**: anything under `src/`, `tests/`, `index.html` or `package*.json`.
 
 ### F1 Progress and save tests [CLAUDE]
@@ -168,10 +170,31 @@ The owner approves or amends the CALLs of design section 15 and the names. An am
 - **Accept**: `ONE(tests/boss-timer.test.ts)`; Stage 4's boss tests unchanged; SG.
 - **Must not change**: `stepMonster`; the existing dragon, which has no `BOSSES` row.
 
+### G1 Aggression tests and the two declared replacements [CLAUDE]
+- **Tier**: opus (it replaces frozen assertions of Stages 2 and 3 after the owner's rule change, and must judge that each replacement is at least as strict).
+- **Depends**: R0 (Stage 4 merged: this rule lands after its route-following, patterns and phases, in the same file).
+- **Files**: `tests/aggression.test.ts` (new); the declared edits to `tests/monster-territory.test.ts` (one test, design 11.3 item 8) and to `tests/support/pacingModel.ts` (two expressions and one import, item 9).
+- **Change**:
+  - `aggression.test.ts`, against `sightRadius(base, monsterLevel, heroCombat, keepsSight)`, `SIGHT_MIN`, `SIGHT_GAP` and `packAttackers` exported from `src/state/monsterAi.ts`: `SIGHT_MIN` is 3 and `SIGHT_GAP` 10; for bases 5, 9 and 12 and every level difference from -20 to 60 the radius is `base` at or below the monster's level, 3 from ten levels above, on the straight line between, never above `base`, never larger for a higher hero, and `base` whenever `keepsSight` is true; a base under 3 is returned as it is. Through `stepMonster` with a test camp and a monster that stands still: for a goblin, a goblin archer and a dark wizard, at level differences -1, 0, 1, 2, 5, 9, 10 and 30, the farthest distance (steps of 0.05) at which a standing hero is acquired equals `sightRadius` within 0.051; a passive camp acquires nobody in 600 steps at combat 1 and at combat 99; a camp with `keepsSight: true` acquires a combat-126 hero at 9. Data: of `CAMPS`, exactly `pass_sentries` and every camp with an `arenaRadius` carry `keepsSight`; the count of aggressive camps is unchanged. `packAttackers(pack, monster, heroCombat)`: the whole pack at or below the monster's level, 1 from ten levels above, `4, 4, 4, 4, 3, 3, 3, 2, 2, 2, 1` for a pack of four at 0 to 10 above, and 1 for a pack of one.
+  - `monster-territory.test.ts`, the test "an aggressive camp ignores a player whose combat level is above the monster's": renamed "an aggressive camp attacks at any level, from a distance that shrinks". Its first half (fifty steps, each expecting no event, then `idle`) becomes: one level above at 2 units, the step's events contain `aggro`; ten levels above at 3.5 units, fifty steps each return no event and the state is `idle`; ten levels above at 2.9 units, the events contain `aggro`. Its second half (equal level emits `aggro`) is not touched. No other test of the file is edited.
+  - `tests/support/pacingModel.ts`: `const attackers = pack > 0 && monsterThreatColor(m.level, combatLevel(state)) !== 'green' ? pack : 1;` becomes `const attackers = packAttackers(pack, m, combatLevel(state));`; `if (camp.aggressive) largestAggressive[type] = ...` becomes `if (camp.aggressive && !camp.keepsSight) ...`; the import of `monsterThreatColor` is replaced by `packAttackers`. Nothing else in the file and nothing in `tests/pacing.test.ts`.
+- **Accept**: red until G2 (missing exports and field). The verify lists the errors, confirms the two frozen files' diffs are exactly the three edits above, and confirms by reading that the replaced territory assertions fail on the code before G2 and that no threshold of `pacing.test.ts` moved.
+- **Must not change**: `src/`; `tests/pacing.test.ts`; `tests/gate-simulation.test.ts`; `tests/phase2.test.ts`; any other assertion of the two edited files.
+
+### G2 Aggressive and passive monsters [AGY]
+- **Tier**: sonnet (the function is written out in design 7.13 and exists as `docs/superpowers/research/content-model/aggro.ts`).
+- **Depends**: G1.
+- **Files**: `src/state/monsterAi.ts`, `src/data/worldMap.ts`.
+- **Change**: Rule commit, then Data commit.
+  - `monsterAi.ts`: export `SIGHT_MIN = 3`, `SIGHT_GAP = 10`, `sightRadius` and `packAttackers` as in `aggro.ts` (`packAttackers` takes the monster row and reads its level and style). In the idle branch's acquisition test (transition T2), delete the condition `monsterThreatColor(m.level, world.playerCombat) !== 'green'` and replace `const aggroRadius = camp.aggroRadius ?? (...)` by `const aggroRadius = sightRadius(camp.aggroRadius ?? (...), m.level, world.playerCombat, !!camp.keepsSight)`. Remove the import of `monsterThreatColor` if nothing else in the file uses it. No other line of `stepMonster`.
+  - `worldMap.ts`: `CampDef.keepsSight?: boolean`; set to `true` on `pass_sentries` and on Stage 4's `ashmantle` camp. `makeCamp` passes it through. No other camp row changes; no camp changes between aggressive and passive.
+- **Accept**: `ONE(tests/aggression.test.ts)`, `ONE(tests/monster-territory.test.ts)`, `ONE(tests/gate-simulation.test.ts)` (unedited), `ONE(tests/world-data.test.ts)`, `ONE(tests/phase2.test.ts)`, ECON, Stage 4's route, pattern and boss tests; SG. The verify prints the pacing table and compares its kit kills with design 7.13's (they may differ by Stage 4's camps; every assertion must hold).
+- **Must not change**: `monsterThreatColor` (it still colours the name label); the leash, return, stall, safe-zone and grace rules; chase and attack; anything Stage 4 added to the file; `aggroRadius` of any camp.
+
 ### G-6.0 Slice 0 gate [CLAUDE] + H-0 [HUMAN]
 - **Tier**: opus.
-- **Change**: the slice gate. Check by reading: no new module under `src/state` calls a clock or `Math.random` (grep); `serializeState` output of the default state is byte-identical to Stage 3's golden.
-- **H-0**: break the main save by hand and reload (design 11.2, the recovery item). Kill Ashmantle, reload at once: it is still gone.
+- **Change**: the slice gate, with PACE. Check by reading: no new module under `src/state` calls a clock or `Math.random` (grep); `serializeState` output of the default state is byte-identical to Stage 3's golden.
+- **H-0**: break the main save by hand and reload (design 11.2, the recovery item). Kill Ashmantle, reload at once: it is still gone. As a strong character walk through the scorpions and the giants: nothing comes from a distance; chop a yew among the moss guardians at level 70: a guardian that wanders up attacks (design 7.13); as a new one, the scorpions come from a distance; cross the pass at combat 75: the sentries attack.
 
 ---
 
@@ -182,7 +205,7 @@ The owner approves or amends the CALLs of design section 15 and the names. An am
 - **Depends**: G-6.0.
 - **Files**: `tests/content-s6.test.ts` (new), `tests/names-s6.test.ts` (new), and the declared edit to `tests/content-freeze.test.ts`.
 - **Change**:
-  - `content-s6.test.ts`, written to read the tables, so later slices are covered without editing it: every recipe's inputs and output are own keys of `ITEMS` and its skill a key of `SKILLS_META`; every node's item exists; every drop id exists; no monster whose key is not in a fixed list of the twelve pre-Stage-6 types drops an item of type `equip`; every item whose id is not in the pre-Stage-6 golden has type `resource`, `bar` or `ammo`; for every monster, the summed sale value of its non-bone, non-food item drops is at most 25% of its mean coin drop, chickens excepted by name; no forging recipe added after the golden sells for less than its inputs, `smith_mithril_bolts` and `smith_rune_bolts` excepted by name; the loop audit of design 7.4: every non-equipment item has a source (node, recipe, drop) and a use (recipe input, spell, food, potion, bones, ammunition, or an `ember_` id), except the named list `salmon`, `anglerfish`, `saradomin_brew`, `bronze_bolts`, and except items a later slice closes, held in a second named list that each later test task shortens (this file's one declared kind of edit).
+  - `content-s6.test.ts`, written to read the tables, so later slices are covered without editing it: every recipe's inputs and output are own keys of `ITEMS` and its skill a key of `SKILLS_META`; every node's item exists; every drop id exists; no monster whose key is not in a fixed list of the twelve pre-Stage-6 types drops an item of type `equip`; every item whose id is not in the pre-Stage-6 golden has type `resource`, `bar` or `ammo`; for every monster without a `BOSSES` row, the summed sale value of its non-bone, non-food item drops is at most 25% of its mean coin drop, chickens excepted by name (a boss's table is held by the dungeon income bound of Z3 instead); no forging recipe added after the golden sells for less than its inputs, `smith_mithril_bolts` and `smith_rune_bolts` excepted by name; the loop audit of design 7.4: every non-equipment item has a source (node, recipe, drop) and a use (recipe input, spell, food, potion, bones, ammunition, or an `ember_` id), except the named list `salmon`, `anglerfish`, `saradomin_brew`, `bronze_bolts`, and except items a later slice closes, held in a second named list that each later test task shortens (this file's one declared kind of edit).
   - `names-s6.test.ts`: the deny-list of `tests/names.test.ts`, copied, over the `name` of every item, node, monster, recipe, person, quest, dungeon, attack and phase whose id is not in the pre-Stage-6 golden; recipes named after an existing item are excepted by a list of the five of design 7.10.
   - `content-freeze.test.ts`: add `DECLARED_NEW_NODES` and `DECLARED_NEW_RECIPES` (empty arrays subtracted from the current ids exactly as Stage 3 subtracts `DECLARED_NEW_ITEMS`; the golden is not regenerated); then the declared lists gain the ids of slice 1 from the content file: items `coal`, `steel_bar`, `black_bar`, `sting_gland`, `mire_root`; node `coal_rock`; recipes `smelt_steel`, `smelt_black`, the three steel and three black forging recipes, the three brews; monsters `cinder_adept`, `slag_brute`, `marrowjaw`.
 - **Accept**: red until D2 and D4. The verify confirms the freeze test's diff only adds ids.
@@ -200,7 +223,7 @@ The owner approves or amends the CALLs of design section 15 and the names. An am
 - **Tier**: sonnet.
 - **Depends**: D2.
 - **Files**: `tests/roster-s6.test.ts` (new); the declared edits to `tests/world-budget.test.ts` and `tests/world-data.test.ts` 162 (the overworld monster count, 42 to 48) and to `src/__tests__/blender-hero.test.ts` (the type-key count, 13 to 16).
-- **Change**: the three new rows have the stats of design 7.5 and a `model` that is an existing mesh key; `cinder_circle` and `brute_shelf` pass every rule Stage 2's world-data test applies to a camp (members inside, on open cells, no safe zone, no path, no node inside), are clear of every other camp's leash, and of Ashmantle's arena plus 6; `tollmaster` passes Stage 4's arena criteria (design of Stage 4, 6.4) with radius 9 on the real grid; `BOSSES.marrowjaw` is the row of design 7.7 and passes Stage 4's attack-table test; the Adept's coin drop is 230 to 550 (critique H1).
+- **Change**: the three new rows have the stats of design 7.5 and a `model` that is an existing mesh key; `cinder_circle` and `brute_shelf` pass every rule Stage 2's world-data test applies to a camp (members inside, on open cells, no safe zone, no path, no node inside), are clear of every other camp's leash, and of Ashmantle's arena plus 6; `tollmaster` passes Stage 4's arena criteria (design of Stage 4, 6.4) with radius 9 on the real grid; `BOSSES.marrowjaw` is the row of design 7.7 and passes Stage 4's attack-table test; the Adept's coin drop is 230 to 550 (critique H1); `tollmaster` carries `keepsSight` and the two other new camps do not; Marrowjaw's table ends with one Runite Bar at 0.125 (design 7.6).
 - **Accept**: red until D4.
 - **Must not change**: `src/`.
 
@@ -208,7 +231,7 @@ The owner approves or amends the CALLs of design section 15 and the names. An am
 - **Tier**: sonnet.
 - **Depends**: D3.
 - **Files**: `src/data/world.ts`, `src/data/worldMap.ts`, `src/data/attacks.ts`.
-- **Change**: Data commit, as the content file (with R0's corrections): three monster rows with `model`, `tint`, `modelScale`, `pattern` and drops (the Adept's Cinder Silk and the Brute's Slagscale Hide are left out until K2; Marrowjaw's Tough Hide likewise); three camps; `toll_slam` and `camp_sweep` in `ATTACKS`; `BOSSES.marrowjaw` with `respawnSecs` 180, `arenaRadius` 9, title unset.
+- **Change**: Data commit, as the content file (with R0's corrections): three monster rows with `model`, `tint`, `modelScale`, `pattern` and drops (the Adept's Cinder Silk and the Brute's Slagscale Hide are left out until K2; Marrowjaw's Tough Hide likewise); three camps (`tollmaster` with `keepsSight: true`); `toll_slam` and `camp_sweep` in `ATTACKS`; `BOSSES.marrowjaw` with `respawnSecs` 180, `arenaRadius` 9, title unset.
 - **Accept**: `ONE(tests/roster-s6.test.ts)`; `ONE(tests/world-budget.test.ts)`; ECON; SG. Marrowjaw is the one boss in `CAMPS` that Stage 3's model fighter might choose (design section 17). The verify prints the pacing model's chosen target per tier. If ECON fails or the table shows Marrowjaw being farmed, the declared fallback (critique H2) is to move Marrowjaw's camp out of `CAMPS` into a `BOSS_CAMPS` list in `worldMap.ts` that `spawns.ts` also spawns (add `src/engine/spawns.ts` to this task's allowlist for that case only), with D3's world-data rules applied to it by name, and to restore the counts of design 11.3 item 4 and 5 to 47. Never edit the pacing test or its fighter. If ECON fails because of the Adept or the Brute, their coins move down along the moss-to-demon line, written back to the content file.
 - **Must not change**: any existing camp, monster or attack row; any Stage 3 test.
 
@@ -329,7 +352,7 @@ The owner approves or amends the CALLs of design section 15 and the names. An am
 - **Tier**: sonnet (from design 7.6).
 - **Depends**: G-6.2.
 - **Files**: `tests/zone-rules.test.ts` (new), `tests/support/dungeonFixture.ts` (new: a three-room zone with one gate and a one-member boss camp).
-- **Change**: `buildWalkGrid()` with no arguments equals today's grid cell for cell (size 236, origin -118); with `(walk, 1000, -200, 96)` it has that origin and size and `findPath` routes on it. `zoneWalk(def, open)` is true inside a room, false outside every room, false inside a shut gate and true inside an open one. `moveWithCollision` with a walk test moves at x of 1020 and does not clamp; without one it behaves as today. Through `stepMonster` with a zone grid (critique C2): a monster at x 1020 chases, returns and wanders and stays inside the zone's rooms. `createMonsterLogic(type, x, z, { respawn: false })` (critique H3): after dying it stays `dead` for 10 simulated minutes, while a monster of the same type without the option respawns as today. `getTerrainHeight(1000, 0)` is 0; Stage 2's terrain golden is unchanged. `canEnter(state, def)` equals `evalCond(state, def.needs)`: refused below the combat level and before the quest stage that opens the door, allowed at it and after the quest is done. `zoneSafe(def, x, z)` is true within 6 of the entry and false elsewhere. Through `stepMonster` with a fixture camp: a camp with `ignoresLevel: true` acquires a hero whose combat level is far above the monster's; the same camp without the flag does not; the flag changes nothing else (leash, return, attack cadence). `runStep`: a camp's death opens a gate only when every camp it names is dead; the boss's death arms the chest. `openChest`: refused while the boss lives; pays the run reward with `rand` injected; pays the first-clear reward when `clears` is 0 and never again; with a full backpack pays nothing and stays armed; bumps `clear:<id>` and `clears`; keeps the smaller `best`. `zoneCamps(def)` returns `CampDef` rows in world coordinates with `arenaRadius` kept and ids prefixed `<dungeon id>:` (critique L2). `savedPose(pose, zone)` returns the door when a zone is given.
+- **Change**: `buildWalkGrid()` with no arguments equals today's grid cell for cell (size 236, origin -118); with `(walk, 1000, -200, 96)` it has that origin and size and `findPath` routes on it. `zoneWalk(def, open)` is true inside a room, false outside every room, false inside a shut gate and true inside an open one. `moveWithCollision` with a walk test moves at x of 1020 and does not clamp; without one it behaves as today. Through `stepMonster` with a zone grid (critique C2): a monster at x 1020 chases, returns and wanders and stays inside the zone's rooms. `createMonsterLogic(type, x, z, { respawn: false })` (critique H3): after dying it stays `dead` for 10 simulated minutes, while a monster of the same type without the option respawns as today. `getTerrainHeight(1000, 0)` is 0; Stage 2's terrain golden is unchanged. `canEnter(state, def)` equals `evalCond(state, def.needs)`: refused below the combat level and before the quest stage that opens the door, allowed at it and after the quest is done. `zoneSafe(def, x, z)` is true within 6 of the entry and false elsewhere. Through `stepMonster` with the camps `zoneCamps` returns for the fixture: every one is aggressive and has `keepsSight: true`, and a zone monster acquires a hero 60 combat levels above it at its full radius (no dungeon rule exists: this is G2's rule with the camp's flag). `runStep`: a camp's death opens a gate only when every camp it names is dead; the boss's death arms the chest. `openChest(state, def, run, rand)`: refused while the boss lives; pays the fixed part of `loot` and coins in range; pays a rare entry exactly when the injected value for it is under its chance (a `rand` of 0 pays every rare entry, a `rand` of 0.999 none); over 20,000 seeded opens each rare entry's rate is within 15% of its chance; with a full backpack pays nothing, stays armed and pays the SAME roll when opened again with room (the roll is kept in the run, so a full backpack is not a second roll); bumps `clear:<id>` and `clears`; keeps the smaller `best`; the `Dungeon` type has no field for a once-only reward. **A quest's reward is paid once** (design 7.3), on the fixture quest with a `do` stage `{ stat: ['clear:<fixture>', 1] }`: three clears pay three chest rolls, `advanceStory` moves the quest once, `finishQuest` pays its reward once and is refused a second time; with the counter already at 1 before the quest starts, the stage is done at once and the reward is still paid once. `zoneCamps(def)` returns `CampDef` rows in world coordinates with `arenaRadius` kept and ids prefixed `<dungeon id>:` (critique L2). `savedPose(pose, zone)` returns the door when a zone is given.
 - **Accept**: red until Z2.
 - **Must not change**: `src/`.
 
@@ -337,15 +360,15 @@ The owner approves or amends the CALLs of design section 15 and the names. An am
 - **Tier**: sonnet.
 - **Depends**: Z1.
 - **Files**: `src/state/dungeon.ts` (new), `src/state/pathfind.ts`, `src/state/collision.ts`, `src/state/terrain.ts`, `src/state/monsterAi.ts`, `src/state/progress.ts`, `src/data/worldMap.ts` (the type only), `src/data/dungeons.ts` (new, types and an empty table).
-- **Change**: Rule commit. `buildWalkGrid(walkable = isWalkable, origin = -118, originZ = origin, size = 236)` and `WalkGrid.originZ`; every reader of `grid.origin` for the z axis uses `originZ`. `moveWithCollision`: when a walk test is passed, no clamp. `stepMonster`: its three `moveWithCollision` calls pass `world.grid?.walkable` (critique C2). `createMonsterLogic` gains `opts.respawn?: boolean`; with `false`, `dead` never returns to `idle` (critique H3). `getTerrainHeight`: `if (x >= 400) return 0;` as its first line. `dungeon.ts`: the `Dungeon` type's functions of Z1 and `DungeonRun = { id, startedAt, deadCamps: string[], bossDead: boolean, chestOpen: boolean }`. `clear:` keys in `STAT_KEYS` from `DUNGEONS`. `CampDef.ignoresLevel?: boolean`, and in `stepMonster`'s acquisition rule (transition T2) the threat-colour test is skipped for a camp that has it: one condition. `Dungeon.needs` is a `Cond`; `zoneCamps` sets `ignoresLevel: true` on every camp it returns; `zoneSafe`.
+- **Change**: Rule commit. `buildWalkGrid(walkable = isWalkable, origin = -118, originZ = origin, size = 236)` and `WalkGrid.originZ`; every reader of `grid.origin` for the z axis uses `originZ`. `moveWithCollision`: when a walk test is passed, no clamp. `stepMonster`: its three `moveWithCollision` calls pass `world.grid?.walkable` (critique C2). `createMonsterLogic` gains `opts.respawn?: boolean`; with `false`, `dead` never returns to `idle` (critique H3). `getTerrainHeight`: `if (x >= 400) return 0;` as its first line. `dungeon.ts`: the `Dungeon` type's functions of Z1 and `DungeonRun = { id, startedAt, deadCamps: string[], bossDead: boolean, chestOpen: boolean, roll?: { id: string; qty: number }[] }`. `clear:` keys in `STAT_KEYS` from `DUNGEONS`. `Dungeon.needs` is a `Cond` and `Dungeon.loot` the table of design 7.6; `zoneCamps` returns aggressive camps with `keepsSight: true` (G2's field; `stepMonster`'s acquisition rule is not edited here); `openChest` rolls each rare entry once per run with the injected `rand` and keeps the roll in `DungeonRun.roll` until it is paid; `zoneSafe`.
 - **Accept**: `ONE(tests/zone-rules.test.ts)`; `ONE(tests/pathfind.test.ts)`, `ONE(tests/terrain-golden.test.ts)`, `ONE(tests/reachability.test.ts)`, `ONE(tests/monster-territory.test.ts)`, `ONE(tests/gate-simulation.test.ts)`, Stage 4's route tests unchanged; SG.
-- **Must not change**: `isWalkable`; A* itself; any height for x below 400; aggression for a camp without the flag; any row of `CAMPS`; the behaviour of `stepMonster` when `world.grid` is absent and of a monster created without the `respawn` option.
+- **Must not change**: `isWalkable`; A* itself; any height for x below 400; the acquisition rule of `stepMonster` (G2 owns it); any row of `CAMPS`; the behaviour of `stepMonster` when `world.grid` is absent and of a monster created without the `respawn` option.
 
 ### Z3 Dungeon data test and slice 3 content tests [CLAUDE]
 - **Tier**: sonnet.
 - **Depends**: Z2.
 - **Files**: `tests/dungeon-data.test.ts` (new); declared edits to `tests/content-freeze.test.ts` (ids of slice 3: `adamantite_ore`, `adamant_bar`, `adamantite_rock`, `smelt_adamant`, the three adamant forging recipes, `scree_skitter`, `saltfang`), to the "closed later" list of `tests/content-s6.test.ts`, and to `src/__tests__/blender-hero.test.ts` (type keys 16 to 18).
-- **Change**: `dungeon-data.test.ts` reads `DUNGEONS`: rooms inside the zone with a 2-cell margin and at least 6 wide; every member inside its room and of a known type; with gates open every open cell is reachable from the entry; with gates shut neither the boss's cell nor the chest is; the arena fits its room; the zone is at least 400 from the overworld's bound and from every other zone; the door is on an open overworld cell, outside every camp's leash and every arena plus 6, at least 3 from every node; every node in a zone is on an open cell; the chest's ids exist; every zone camp carries `ignoresLevel`; the ratio of a run's pay to the best open ground's, for the model fighter, is at most 0.9, by the arithmetic of design 7.6 and `model.ts` section 8 (the same fighter and no rests on both sides; every non-bone drop counted at sale value on both sides, the boss's included; open-ground candidates up to ten levels above the fighter's skills; open ground pays per kill with 1.5 s to the next monster or the camp's shared respawn wait, whichever is longer; the dungeon pays its monsters and chest over the fights plus the walk between room centres times 1.5). The test asserts the dimensionless ratio, never a duration (Stage 3's rule 10). Every zone node is created without respawn.
+- **Change**: `dungeon-data.test.ts` reads `DUNGEONS`: rooms inside the zone with a 2-cell margin and at least 6 wide; every member inside its room and of a known type; with gates open every open cell is reachable from the entry; with gates shut neither the boss's cell nor the chest is; the arena fits its room; the zone is at least 400 from the overworld's bound and from every other zone; the door is on an open overworld cell, outside every camp's leash and every arena plus 6, at least 3 from every node; every node in a zone is on an open cell; every id of the chest's `loot` exists, every chance is above 0 and at most 1, an entry whose item is equipment has a chance of at most 0.05 (Stage 3's boss cap), and no dungeon row has a reward field other than `loot`; no monster of a zone or boss row drops equipment; every zone camp is aggressive (`zoneCamps` gives it `keepsSight`); the ratio of a run's pay to the best open ground's, for the model fighter, is at most 0.9, by the arithmetic of design 7.6 and `model.ts` section 8 (the same fighter and no rests on both sides; every non-bone drop counted at sale value on both sides, the boss's included, and every chance entry of a boss or a chest at its chance; open-ground candidates up to ten levels above the fighter's skills; open ground pays per kill with 1.5 s to the next monster or the camp's shared respawn wait, whichever is longer; the dungeon pays its monsters and chest over the fights plus the walk between room centres times 1.5). The test asserts the dimensionless ratio, never a duration (Stage 3's rule 10). Every zone node is created without respawn.
 - **Accept**: passes vacuously until Z4.
 - **Must not change**: `src/`.
 
@@ -353,7 +376,7 @@ The owner approves or amends the CALLs of design section 15 and the names. An am
 - **Tier**: sonnet.
 - **Depends**: Z3.
 - **Files**: `src/data/dungeons.ts`, `src/data/world.ts`, `src/data/extras.ts`, `src/data/recipes.ts`, `src/data/attacks.ts`.
-- **Change**: Data commit, as the content file: the dungeon row and its chest; `scree_skitter` and `saltfang` rows; `adamantite_rock`, `adamantite_ore`, `adamant_bar`, `smelt_adamant` and the three adamant forging recipes; `sting_arc`, `brine_spit` and `BOSSES.saltfang` (`respawnSecs` unset: a zone monster does not respawn).
+- **Change**: Data commit, as the content file: the dungeon row and its `loot` (3 to 5 adamantite ore, 1 to 2 Tough Hide, 100 to 300 GP; rare: a Rune Crossbow at 0.05); `scree_skitter` and `saltfang` rows (hers ends with 3 Adamant Bars at 0.2); `adamantite_rock`, `adamantite_ore`, `adamant_bar`, `smelt_adamant` and the three adamant forging recipes; `sting_arc`, `brine_spit` and `BOSSES.saltfang` (`respawnSecs` unset: a zone monster does not respawn).
 - **Accept**: `ONE(tests/dungeon-data.test.ts)`, `ONE(tests/content-s6.test.ts)`; ECON (zone camps are not in `CAMPS`); SG.
 - **Must not change**: `CAMPS`.
 
@@ -361,7 +384,7 @@ The owner approves or amends the CALLs of design section 15 and the names. An am
 - **Tier**: opus (writing).
 - **Depends**: Z4.
 - **Files**: `src/data/story.ts`, `src/data/dialogue.ts`.
-- **Change**: `ml_salt` with the stages and reward of design 7.3; Qadir Salt-Hand's and Odalys Venn's nodes for it; the dungeon's `needs.quest` satisfied from the stage where Qadir opens the door.
+- **Change**: `ml_salt` with the stages and reward of design 7.3 (the reward carries the 8 Adamant Bars and the title Warrenbreaker that the first draft's chest paid once); Qadir Salt-Hand's and Odalys Venn's nodes for it; the dungeon's `needs.quest` satisfied from the stage where Qadir opens the door.
 - **Accept**: Q5's three data tests; SG.
 - **Must not change**: earlier passages, except "come back when" lines this chapter replaces.
 
@@ -478,13 +501,59 @@ The owner approves or amends the CALLs of design section 15 and the names. An am
 
 ---
 
-## 6.6 Slice 6: the Underkiln and the end
+## 6.6 Slice 6: the three styles (rebalance and arrows)
 
-### U0 Slice 6 content tests [CLAUDE]
-- **Tier**: sonnet.
+Design 7.12 and 7.4. Placed after both new skills and before the last boss (design 14.1): what it takes from ranged and magic arrives with what the stage gives them, no boss is re-tuned because every fight bound holds with the formula before and after, and the Kiln Warden is then tuned once on the final numbers.
+
+### S1 Style balance tests and the two declared replacements [CLAUDE]
+- **Tier**: opus (it replaces six pinned values of two Stage 3 tests after the owner's decision, each written out from the new formula, and defines the band the owner approves).
 - **Depends**: G-6.5.
+- **Files**: `tests/style-balance.test.ts` (new); the declared edits to `tests/combat-profile.test.ts` (five expected max hits, design 11.3 item 10) and `tests/entry-staff.test.ts` (one expected profile, item 11).
+- **Change**:
+  - `style-balance.test.ts`. The constants: `RANGED_BASE` is 3, `RANGED_GEAR` 0.06, `MAGIC_DAMAGE` 0.5. **Melee did not move**: twelve states (levels 1, 20, 40, 70; bronze, mithril, rune and dragon kits; accurate, aggressive, controlled; with and without Piety) give max hits and accuracies written out in the test from today's expression. **The band**: for levels 20, 30, 40, 50, 60, 70, build the standard kit of each style from `ITEMS` by design 7.12's rule (best wearable ordinary weapon, body and legs; the listed special tiers and uniques left out), take a reference monster of the level from a fixed list, and compute damage per swing as hit chance times the mean of the damage roll, through `playerAttackProfile` and `playerHitChance`; assert ranged with the arrow of the level (bronze under 25, iron from 25, mithril from 45, rune from 70) within 0.9 to 1.35 of melee, magic with its highest unlocked spell within 0.95 to 1.4, and the largest of the three at most 1.4 times the smallest. It prints the table of design 7.12, and beside it the same with every slot filled, as information. **Runes**: `SPELLS` gives ice burst 1 water and 1 chaos, blood barrage 1 blood and 1 death, wind strike and fire bolt what they have today. **Prayers**: Sharp Eye and Mystic Might multiply inside the floor, as written in design 7.12. **Descriptions**: no combat spell's `desc` contains "Max". It also prints experience per hour by style before and after (design 7.12, `results.txt` 5e), as information.
+  - `combat-profile.test.ts`: "shortbow on rapid: max hit 5" becomes 4, its comment `floor(3 + 0.35 + 0.96) = 4`; "with sharp_eye: max hit 7" becomes 5 (`floor(4.31 * 1.2)`); "fire_staff ... wind_strike: max hit 10" becomes 5 (`floor(10.54 * 0.5)`); "fire_bolt: max hit 17" becomes 8 (`floor(17.54 * 0.5)`); "wind_strike and mystic_might: max hit 12" becomes 6 (`floor(10.54 * 0.5 * 1.2)`). The test names and the two formula comments above them follow. Every accuracy and every other case stays.
+  - `entry-staff.test.ts`: "Wind Strike with it hits for 6 at Magic 1" becomes "hits for 3", `{ maxHit: 3, accuracy: 21.5 }`.
+- **Accept**: red until S2. The verify confirms the two frozen files' diffs are exactly those six values with their names and comments, and recomputes each by hand.
+- **Must not change**: `src/`; any other test; the fight tests B1, B2 and Stage 4's boss test.
+
+### S2 The three style numbers and the two spells [AGY]
+- **Tier**: sonnet.
+- **Depends**: S1.
+- **Files**: `src/state/combat.ts`, `src/data/magic.ts`, `src/data/catalog.ts` (the `desc` of the four combat spells only).
+- **Change**: Rule commit, then Data commit. In `catalog.ts`: the four combat spells' `desc` lose their "(Max Hit N)" or "(Max N)" figure and nothing else (it was never the real max hit; design 7.12). In `combat.ts`: `export const RANGED_BASE = 3`, `RANGED_GEAR = 0.06`, `MAGIC_DAMAGE = 0.5`; the ranged branch of `playerAttackProfile` becomes `Math.max(2, Math.floor((RANGED_BASE + s.ranged.lvl * 0.35 + bon.rng * RANGED_GEAR) * prayRngMult))` and the magic branch `Math.max(3, Math.floor((sp.maxHit! + s.magic.lvl * 0.22 + bon.mag * 0.18) * MAGIC_DAMAGE * prayMagMult))`. In `magic.ts`: `ice_burst: { water_rune: 1, chaos_rune: 1 }`, `blood_barrage: { blood_rune: 1, death_rune: 1 }`.
+- **Accept**: `ONE(tests/style-balance.test.ts)` except the arrow cases (S4), which the verify lists; `ONE(tests/combat-profile.test.ts)`, `ONE(tests/entry-staff.test.ts)`; the fight tests of B1 and B2 and Stage 4's boss test **unedited** (they hold on both formulas, `check-results.txt`); ECON; MODEL; SG.
+- **Must not change**: the melee branch; accuracy of any style; `playerHitChance`, `monsterHitChance`, `rollMonsterHit`; any spell's `maxHit`, level, experience, id or name; any item row; the two small spells' runes; the teleports' runes.
+
+### S3 Arrow tests [CLAUDE]
+- **Tier**: sonnet (from design 7.4).
+- **Depends**: S2.
+- **Files**: `tests/arrows.test.ts` (new); the declared lists of `tests/content-freeze.test.ts` (five items, five recipes).
+- **Change**: `ammoForWeapon` returns what it returns today for every weapon (arrows for bows, bolts for crossbows, `null` for the three self-drawn bows). `ammoPower`: 0 for bronze arrows and bolts, 2 iron, 4 mithril, 6 rune, 0 for anything else. **Any bow, any arrow**: for every bow that takes arrows and every arrow grade, `canUseStyle('rapid', bow, state)` is ok with only that arrow in the backpack, and likewise every crossbow with every bolt; with no ammunition of the kind it is refused with today's reason. **The best is shot**: with bronze and mithril arrows carried, `prepareAttack` consumes one mithril arrow; `playerAttackProfile` then gives the max hit of the same state with no better arrow, plus 4, for a shortbow and for a magic bow, and plus `floor` effects with Sharp Eye as design 7.12 writes it. A crossbow ignores arrows and a bow ignores bolts. The frozen shortbow case of `tests/phase1.test.ts` still holds. The five recipes exist with the content file's inputs and pass Stage 3's rule.
+- **Accept**: red until S4.
+- **Must not change**: `src/`; `tests/phase1.test.ts`.
+
+### S4 Arrows and bolts [AGY]
+- **Tier**: sonnet.
+- **Depends**: S3.
+- **Files**: `src/data/items.ts`, `src/data/extras.ts`, `src/data/recipes.ts`, `src/state/combat.ts`.
+- **Change**: Data and Rule commits, as the content file's `AMMO`. Five items of type `ammo` with an `ammoPower` number; five recipes. `items.ts`: `ammoPower(id)` and `bestAmmo(state, kind)` (the carried item of that kind with the highest `ammoPower`; ties by table order). `combat.ts`: `canUseStyle` asks `bestAmmo` for the kind `ammoForWeapon` names, `prepareAttack` consumes that item, and the ranged branch of `playerAttackProfile` adds its `ammoPower` inside the floor, beside the gear term.
+- **Accept**: `ONE(tests/arrows.test.ts)`, `ONE(tests/style-balance.test.ts)` whole, `ONE(tests/phase1.test.ts)` and `ONE(tests/phase4-combat.test.ts)` unchanged; ECON; MODEL; SG.
+- **Must not change**: `ammoForWeapon`'s results; the three self-drawn bows; the price of bronze arrows and bolts; anything S2 set.
+
+### G-6.6 Slice 6 gate [CLAUDE] + H-6 [HUMAN]
+- **Tier**: opus (verification).
+- **Change**: the slice gate of 0.2 (SG, ECON, MODEL, PACE); the diff of the slice against its tasks' allowlists; the six replaced values and nothing else changed in the two Stage 3 tests; the printed band table equals design 7.12's, or the design's table is updated to the real kits and the band still holds.
+- **H-6**: load a save with a yew bow and bronze arrows: it shoots, and hits less than before; fletch iron arrows: they are shot first and hit harder. As a level-50 caster cast fire bolt, ice burst and blood barrage at the same monster: each is stronger and dearer than the last. Fight Marrowjaw with each style: about the same length. Judged for: no style feels dead.
+
+---
+
+## 6.7 Slice 7: the Underkiln and the end
+
+### U0 Slice 7 content tests [CLAUDE]
+- **Tier**: sonnet.
+- **Depends**: G-6.6.
 - **Files**: `tests/wyrmsteel.test.ts` (new); the declared edits to `tests/content-freeze.test.ts` (`kiln_shard`, `wyrmsteel_ingot`, `smelt_wyrmsteel`, the three dragon forging recipes, `kiln_warden`), to the "closed later" list of `tests/content-s6.test.ts`, and to `src/__tests__/blender-hero.test.ts` (type keys 18 to 19).
-- **Change**: `wyrmsteel.test.ts`: an ingot needs one runite bar and one Kilnglass Shard at Smithing 60; the three forging recipes make the existing dragon scimitar, platelegs and platebody from 4, 4 and 5 ingots at 60, 62 and 65; Kilnglass is dropped by the Kiln Warden and paid by the Underkiln's chest and by nothing else. Z3's `dungeon-data.test.ts` reads the table and needs no edit.
+- **Change**: `wyrmsteel.test.ts`: an ingot needs one runite bar and one Kilnglass Shard at Smithing 60; the three forging recipes make the existing dragon scimitar, platelegs and platebody from 4, 4 and 5 ingots at 60, 62 and 65; Kilnglass comes from the Kiln Warden's table and the Underkiln's `loot` and from nothing else; the chest's fixed part holds at least one shard (the bound on bad luck: 13 clears at worst for the kit); from the rows, by the exact distribution and not by sampling, the mean per clear is 2.2 within 0.05 and the expected clears for 4 and for 13 ingots are 2.3 and 6.4 within 0.1 (design 7.6; an ingot from the boss counts as a shard). Z3's `dungeon-data.test.ts` reads the table and needs no edit.
 - **Accept**: red until U1 (missing ids). The verify confirms the freeze test's diff only adds ids.
 - **Must not change**: `src/`, any other existing test.
 
@@ -492,7 +561,7 @@ The owner approves or amends the CALLs of design section 15 and the names. An am
 - **Tier**: sonnet.
 - **Depends**: U0.
 - **Files**: `src/data/dungeons.ts`, `src/data/world.ts`, `src/data/extras.ts`, `src/data/recipes.ts`, `src/data/attacks.ts`.
-- **Change**: Data commit, as the content file: the dungeon row and chest; the Kiln Warden; `kiln_ring`, `core_vent`, `hammer_arc`, `BOSSES.kiln_warden`; Kilnglass, the ingot and its four recipes. The door is a procedural frame (the existing signpost builder's posts) at (-52, 46).
+- **Change**: Data commit, as the content file: the dungeon row and its `loot` (1 Kilnglass Shard, 1 to 2 Cinder Silk, 500 to 1,000 GP; rare: 3 Kilnglass at 0.2, Bloodbark Body at 0.04, Bloodbark Legs at 0.04); the Kiln Warden (its table: dragon bones, 800 to 1,600 GP, 1 Kilnglass at 0.5, 1 Wyrmsteel Ingot at 0.1); `kiln_ring`, `core_vent`, `hammer_arc`, `BOSSES.kiln_warden`; Kilnglass, the ingot and its four recipes. The door is a procedural frame (the existing signpost builder's posts) at (-52, 46).
 - **Accept**: `ONE(tests/wyrmsteel.test.ts)`, `ONE(tests/dungeon-data.test.ts)`, `ONE(tests/content-s6.test.ts)`; ECON; SG.
 - **Must not change**: `CAMPS`; the Warren's row; the price or stats of any dragon piece.
 
@@ -500,7 +569,7 @@ The owner approves or amends the CALLs of design section 15 and the names. An am
 - **Tier**: opus.
 - **Depends**: U1.
 - **Files**: `tests/boss-kiln-warden.test.ts` (new); `src/data/world.ts` and `src/data/attacks.ts` only if a bound misses.
-- **Change**: the rows of design 7.7 for the Kiln Warden through Stage 4's fight model, 500 seeds each: prepared melee at least 85%; the same 300 ms slower at least 65%; the same never moving at most 5%; melee 55 in rune without prayer at most 15%; prepared ranged and prepared magic at least 85% each, and each never moving at most 5%. The no-prayer row and the at-the-door row are printed, not asserted. If a bound misses, the boss's numbers move as in B2.
+- **Change**: the rows of design 7.7 for the Kiln Warden through Stage 4's fight model, 500 seeds each (the ranged fighter carries rune bolts: slice 6 is built by now; B1 and B2, written before it, play bronze and are not edited): prepared melee at least 85%; the same 300 ms slower at least 65%; the same never moving at most 5%; melee 55 in rune without prayer at most 15%; prepared ranged and prepared magic at least 85% each, and each never moving at most 5%. The no-prayer row and the at-the-door row are printed, not asserted. If a bound misses, the boss's numbers move as in B2.
 - **Accept**: the test passes; MODEL passes with the same numbers; `ONE(tests/dungeon-data.test.ts)` still holds the income bound.
 - **Must not change**: the fight model; the fighters; any other boss's rows.
 
@@ -508,24 +577,24 @@ The owner approves or amends the CALLs of design section 15 and the names. An am
 - **Tier**: opus (writing).
 - **Depends**: U1.
 - **Files**: `src/data/story.ts`, `src/data/dialogue.ts`.
-- **Change**: `ml_kiln` and `ml_ash`; the last conversations of Corin Ashby and Odalys Venn; a closing line for each of the other five people once `ml_ash` is done.
+- **Change**: `ml_kiln` and `ml_ash` as design 7.3: `ml_kiln`'s fourth stage is the chest step, `{ kind: 'do', done: { stat: ['clear:underkiln', 1] } }`, and its reward carries the title Kilnbreaker; the last conversations of Corin Ashby and Odalys Venn; a closing line for each of the other five people once `ml_ash` is done.
 - **Accept**: Q5's data tests; the walk now finishes all thirteen quests; SG.
 - **Must not change**: any earlier quest's stages or reward; Stage 4's Ashmantle rows.
 
-### G-6.6 Slice 6 gate [CLAUDE] + H-6 [HUMAN]
+### G-6.7 Slice 7 gate [CLAUDE] + H-7 [HUMAN]
 - **Tier**: opus (verification).
 - **Change**: read every passage U3 added or changed once for sense, voice and the rules of Q6, and list any to rewrite (critique M7); the slice gate of 0.2 (SG, ECON, MODEL); the diff of the slice against its tasks' allowlists; no frozen test edited beyond the declared ones.
-- **H-6**: read the closing lines of all seven people; the Underkiln as H-3; the Kiln Warden with each style; forge a wyrmsteel ingot and a dragon piece; finish Ashfall and see the title.
+- **H-7**: read the closing lines of all seven people; the Underkiln as H-3, cleared three times: the chest pays each time, chapter 6 pays once; the Kiln Warden with each style; forge a wyrmsteel ingot and a dragon piece; finish Ashfall and see the title.
 
 ---
 
-## 6.7 Slice 7: the diary
+## 6.8 Slice 8: the diary
 
 ### Y1 Diary tests [CLAUDE]
 - **Tier**: sonnet (from design 7.8).
-- **Depends**: G-6.6.
+- **Depends**: G-6.7.
 - **Files**: `tests/diary.test.ts`, `tests/diary-data.test.ts` (new).
-- **Change**: rules, on a fixture tier: `diaryView` marks tasks and counts; `claimTier` is refused until five are done, pays the ember and the easy tier's 500 GP once, is refused when the ember does not fit, and records the tier; `perks(state)` returns exactly the perk of each claimed tier (design 7.8's table). Through `stepMonster`: a hero with `peace` for a region is not acquired by a camp whose centre is in that region, is still fought back when it attacks, and is acquired as before by camps elsewhere. Data: 15 tiers of 5 tasks; every condition valid by `evalCond`'s vocabulary and ids; each stat family (`kill`, `gather`, `craft`, `talk`, `clear`, `bury`, `vows`) and each of Crafting and Runebinding read by at least one task; no task is true for a new game.
+- **Change**: rules, on a fixture tier: `diaryView` marks tasks and counts; `claimTier` is refused until five are done, pays the ember and the easy tier's 500 GP once, is refused when the ember does not fit, and records the tier; `perks(state)` returns exactly the perk of each claimed tier (design 7.8's table): a deposit box at a region's shrine from its middle tier, a bank from its hard tier, the two start-town perks. `shrineBank(state, regionId)` is `'none'`, `'deposit'` or `'bank'`; in deposit mode a deposit succeeds and a withdrawal is refused with a reason. No perk concerns aggression: a scan finds no read of `perks` in `src/state/monsterAi.ts`. Data: 15 tiers of 5 tasks; every condition valid by `evalCond`'s vocabulary and ids; each stat family (`kill`, `gather`, `craft`, `talk`, `clear`, `bury`, `vows`) and each of Crafting and Runebinding read by at least one task; no task is true for a new game.
 - **Accept**: red until Y2 and Y3.
 - **Must not change**: `src/`, any existing test.
 
@@ -534,7 +603,7 @@ The owner approves or amends the CALLs of design section 15 and the names. An am
 - **Depends**: Y1.
 - **Files**: `src/state/diary.ts` (new), `src/state/progress.ts`, `src/state/commands.ts`, `src/data/diary.ts` (new, types and an empty table).
 - **Change**: Rule commit: `diaryView`, `claimTier`, `perks`, and the command `claimTier`.
-- **Accept**: `ONE(tests/diary.test.ts)` except the `stepMonster` cases (Y5); SG.
+- **Accept**: `ONE(tests/diary.test.ts)`; SG.
 - **Must not change**: `normalizeProgress`'s rules for the other fields; `finishQuest`.
 
 ### Y3 The 75 tasks [AGY]
@@ -556,40 +625,15 @@ The owner approves or amends the CALLs of design section 15 and the names. An am
 ### Y5 Where the perks are read [AGY]
 - **Tier**: sonnet.
 - **Depends**: Y2.
-- **Files**: `src/engine/loop.ts`, `src/state/combat.ts`, `src/engine/worldBuild.ts`, `src/state/sustain.ts`.
-- **Change**: four reads of `perks(STATE)`, one each: the engine passes `peace` regions in `StepWorld` as an optional `peaceRegions?: string[]`, and `stepMonster`'s acquisition rule skips a camp whose centre lies in one (one condition beside the threat-colour check); `canCastTeleport` asks for no runes for the home teleport with that perk; a region's shrine opens the bank from its menu with that perk; `vowPrice` returns three quarters with that perk.
-- **Accept**: `ONE(tests/diary.test.ts)`; Stage 2's territory tests and Stage 4's vow tests unchanged; SG.
-- **Must not change**: aggression for a state without perks.
-
-### G-6.7 Slice 7 gate [CLAUDE] + H-7 [HUMAN]
-- **Tier**: opus (verification).
-- **Change**: the slice gate of 0.2 (SG, ECON, MODEL); the diff of the slice against its tasks' allowlists; no frozen test edited beyond the declared ones.
-- **H-7**: finish one easy tier from a new game and one medium tier with a prepared save; use an ember; walk through a camp with the peace perk; open the bank at a shrine.
-
----
-
-## 6.8 Slice 8: ammunition tiers (only if CALL-6.8 is accepted)
-
-### A1 Ammunition tests [CLAUDE]
-- **Tier**: sonnet.
-- **Depends**: G-6.7 (or G-6.1, if the slice is taken early; it needs only slice 1).
-- **Files**: `tests/ammo-tiers.test.ts` (new); the freeze list (five items, five recipes).
-- **Change**: `ammoForWeapon` returns bronze for bows worn below 25, iron from 25, mithril from 45, rune from 70, bolts likewise for crossbows, and `null` for the three self-drawn bows; `canUseStyle` with a maple bow and only bronze arrows is refused with a reason that names the arrow needed; with iron arrows it is allowed; the frozen shortbow case of `tests/phase1.test.ts` still holds; the five recipes exist and pass Stage 3's rule.
-- **Accept**: red until A2.
-- **Must not change**: `src/`; `tests/phase1.test.ts`.
-
-### A2 Arrows, bolts and the rule [AGY]
-- **Tier**: sonnet.
-- **Depends**: A1.
-- **Files**: `src/data/items.ts`, `src/data/extras.ts`, `src/data/recipes.ts`, `src/state/combat.ts`.
-- **Change**: Data and Rule commits, as the content file's `AMMO_TIERS`; the refusal text names the arrow.
-- **Accept**: `ONE(tests/ammo-tiers.test.ts)`, `ONE(tests/phase1.test.ts)`, `ONE(tests/phase4-combat.test.ts)` unchanged; ECON; SG.
-- **Must not change**: any damage or accuracy number; the three self-drawn bows; the price of bronze arrows and bolts.
+- **Files**: `src/state/combat.ts`, `src/engine/worldBuild.ts`, `src/ui/stations.ts`, `src/state/sustain.ts`.
+- **Change**: three reads of `perks(STATE)`, one each: `canCastTeleport` asks for no runes for the home teleport with that perk; a region's shrine offers "Deposit" (the bank window in deposit-only mode: the withdraw controls are not drawn and `withdraw` is refused) with the middle perk and "Bank" with the hard one; `vowPrice` returns three quarters with that perk.
+- **Accept**: `ONE(tests/diary.test.ts)`; `ONE(tests/aggression.test.ts)` and Stage 4's vow tests unchanged; SG.
+- **Must not change**: `stepMonster`; the bank's own behaviour at the bank.
 
 ### G-6.8 Slice 8 gate [CLAUDE] + H-8 [HUMAN]
 - **Tier**: opus (verification).
 - **Change**: the slice gate of 0.2 (SG, ECON, MODEL); the diff of the slice against its tasks' allowlists; no frozen test edited beyond the declared ones.
-- **H-8**: load a save with a yew bow and bronze arrows: the refusal reads clearly; fletch iron arrows; shoot.
+- **H-8**: finish one easy tier from a new game and one medium tier with a prepared save; use an ember; put things into the deposit box at a shrine and find them in the bank; open the bank at a shrine with a hard tier.
 
 ---
 
@@ -619,8 +663,8 @@ The owner approves or amends the CALLs of design section 15 and the names. An am
 
 Run in order, from a clean checkout of the stage's head:
 
-1. SG, ECON, MODEL.
-2. `git diff <R0 baseline> --stat -- tests/ src/__tests__/` lists, among files that existed at the baseline, only `tests/content-freeze.test.ts`, `tests/world-budget.test.ts`, `tests/world-data.test.ts`, `src/__tests__/blender-hero.test.ts`, the two Stage 3 goldens and `tests/fixtures/save-relocation/v4-loaded.json`; each diff is of the kind design 11.3 declares.
+1. SG, ECON, MODEL, PACE.
+2. `git diff <R0 baseline> --stat -- tests/ src/__tests__/` lists, among files that existed at the baseline, only `tests/content-freeze.test.ts`, `tests/world-budget.test.ts`, `tests/world-data.test.ts`, `src/__tests__/blender-hero.test.ts`, the two Stage 3 goldens, `tests/fixtures/save-relocation/v4-loaded.json`, and the four of the owner's rule changes: `tests/monster-territory.test.ts` (one test), `tests/support/pacingModel.ts` (two expressions, one import), `tests/combat-profile.test.ts` (five values), `tests/entry-staff.test.ts` (one value); each diff is exactly what design 11.3 declares.
 3. `grep -rn "Math.random\|Date.now\|performance.now" src/state` shows no line in a module this stage created.
 4. `grep -rn "innerHTML" src/ui/dialogue.ts src/ui/journal.ts` prints nothing.
 5. The walk test finishes all thirteen quests; the three fight tests pass; the dungeon, dialogue, story, diary and placement data tests pass.
@@ -640,12 +684,14 @@ Run in order, from a clean checkout of the stage's head:
 | G6.1 dialogue | Q1, Q2, Q5, Q8 | `dialogue-rules`, `dialogue-data`, the UI scan |
 | G6.2 main line, side quests, journal | Q3, Q4, Q5, Q6, Q9, Z5, K4, N4, U3 | `story-rules`, the walk in `story-data` |
 | G6.3 starter chain's voice | Q1, Q6 | `dialogue-rules` (`claimStarter`), Stage 3's tests unedited |
-| G6.4 loops closed | D1, D2, Z4, K2, N2, U1, A2 | the loop audit in `content-s6` |
+| G6.4 loops closed | D1, D2, Z4, K2, N2, U1, S4 | the loop audit in `content-s6` |
 | G6.5 two skills | K1 to K3, N1 to N3 | `crafting`, `runebinding` |
-| G6.6 dungeons | Z1 to Z7, U0, U1 | `zone-rules`, `dungeon-data`, H-3, H-6 |
+| G6.6 dungeons | Z1 to Z7, U0, U1 | `zone-rules`, `dungeon-data`, H-3, H-7 |
 | G6.7 roster and bosses | D3, D4, Z4, U1, B1 to B3 | `roster-s6`, the three fight tests |
 | G6.8 diary | Y1 to Y5; embers in Q3, Q4, Q6, Q9 | `diary`, `diary-data`, `story-rules` |
-| G6.9 Stage 3's economy holds | every slice gate | ECON, unedited |
+| G6.9 Stage 3's economy holds | every slice gate | ECON, the pacing test unedited (its model: G1) |
+| G6.13 the three styles in one band | S1 to S4 | `style-balance`, `arrows`; the fight tests unedited on both sides; H-6 |
+| G6.14 aggressive and passive monsters | G1, G2; Z1, Z2 for dungeon camps | `aggression`, the gate simulation unedited, PACE; H-0 |
 | G6.10 save | F1, F2 | `save-progress`, the goldens |
 | G6.11 debts | F3 to F6 | `save-recovery`, `boss-timer` |
 | G6.12 ready for co-op | rule 0.3.8; the commands in Q8, Z7, Y2 | final verification step 3; the architecture test |
@@ -659,7 +705,7 @@ Run in order, from a clean checkout of the stage's head:
 | Food that matters, extended | D2 (brewing) |
 | The giants plateau | D4, Z4 |
 | Givers, dialogue, talk-to steps; the first hour | Q1 to Q9 |
-| Ranged and magic ladders | K2 (armour), N2 (runes), A2 (ammunition); the measurement is MODEL section 5 |
+| Ranged and magic ladders | S1, S2 (the rebalance), S3, S4 (arrows), K2 (armour), N2 (runes); the measurement is MODEL section 5 |
 | A boss's respawn timer | F5, F6 |
 | The prepared slots | D4, Z4, U1 |
 | Audit findings 1, 10, 24 | rule 0.3.9 and Q8's scan; F1; Q9 |
@@ -670,9 +716,11 @@ Run in order, from a clean checkout of the stage's head:
 |---|---|
 | 6.2 | Q6 |
 | 6.3 | K1 to K3, N1 to N3, D2 |
-| 6.4, 6.5, 6.18 | Z1, Z2, Z3, Z7 |
-| 6.6 | Y2, Y5 |
-| 6.7, 6.8 | A1, A2; MODEL |
+| 6.4, 6.5 (decided), 6.25 | Z1, Z2, Z3, Z4, Z7, U0, U1 |
+| 6.18 (replaced, decided), 6.27 | G1, G2 |
+| 6.6 (decided in part), 6.26 | Y1, Y2, Y5 |
+| 6.7, 6.8 (decided), 6.24 | S1 to S4; MODEL |
+| 6.22 | B2 |
 | 6.10 | D4, Z4, U1; R1 lists the compromises |
 | 6.11 | F1, F2 |
 | 6.12 | F3, F4 |
@@ -691,4 +739,19 @@ Run in order, from a clean checkout of the stage's head:
 - **How Stage 4 passes a boss's respawn time into a monster's logic** is not in its design in code form; F6 and Z7 say "the option R0 recorded".
 - **Whether Stage 5 took CALL-V13** decides how Q8, Q9 and F4 wire buttons; both ways are allowed by rule 0.3.9 as long as no inline handler is added.
 - **Allowlists for engine tasks** (Q7, Z6, Z7, K3, Y5) name the files that hold the code today; if Stage 4 or 5 moved a function, R0's symbol table is the guide and the verify stage accepts the file that now holds it, recorded.
+- **G2 edits a block Stage 4 has not written its changes around yet.** The task names the two expressions as they are on `main`; R0 item 4c records them on the merged code and stops the stage if Stage 4 rewrote the block.
+- **S2's expressions are Stage 3's as read on its branch**; Stage 4 is not expected to touch `playerAttackProfile`, and R0 checks.
+- **PACE was run on Stage 3's world only.** With Stage 4's and this stage's overworld camps the fighter's choices under the new rule are unrun; R0, G2 and D4 run them.
+- **The deposit-only bank window** (Y5) is described, not designed against Stage 5's components.
 - **No suite, type check or build was run** while writing this plan. The commands of 0.2 are the earlier plans', which were run on this machine.
+
+---
+
+# 6. Review log
+
+- 2026-11-14, critique: rule 0.3.3, R0, F3, F4, D1, D3, D4, Q2 to Q5, Z1 to Z3, Z6, Z7, K1, N1, U0, the slice gates.
+- 2026-11-14, **owner decisions** (design 15.1), one commit:
+  - **Aggression**: new tasks G1 (tests, and declared replacements 8 and 9) and G2 (the rule) in slice 0, after Stage 4's work on the same file; R0 item 4c and a new stop rule; the command PACE; `ignoresLevel` removed from Z1, Z2, Z3 (zone camps are aggressive camps with `keepsSight`); `peace` removed from Y1, Y2, Y5 (a deposit box instead; `stepMonster` is no longer in Y5's files); H-0 gains the walk-through checks.
+  - **Style rebalance and arrows**: new slice 6 (S1 to S4, G-6.6, H-6) with declared replacements 10 and 11; the old slice 8 (A1, A2: bows refusing arrows) is deleted and its recipes moved to S4; rule 0.3.7 names the two exceptions; the Underkiln becomes slice 7 and the diary slice 8 (gates and human checks renumbered).
+  - **Dungeon drops and quests**: `openChest` rolls a `loot` table with rare entries and keeps its roll; no first-clear reward (Z1, Z2, Z3, Z4, U0, U1); the quest-pays-once proof (Z1); chapter 3's and 6's rewards and chapter 6's chest step (Z5, U3); boss tables with chance entries (D3, D4, Z4, U1); D1's 25% rule excludes boss rows.
+  - Tables 0.5, 4.1, 4.2, 4.3 and section 5 follow.

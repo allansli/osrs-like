@@ -1,7 +1,9 @@
 // STAGE 6 COPY of docs/superpowers/research/combat-model/fight.ts from branch feat/combat-weight at 732cb8c (Stage 4 is not
-// merged into this tree). Two edits, both marked by `f.prayer`: the Fighter type gains `prayer?: string`, and a prayer
-// potion re-lights that prayer instead of always Protect from Magic. Everything else is byte-identical. boss.ts beside it
-// is an unchanged copy. When Stage 4 lands, plan task R0 replaces both copies by imports.
+// merged into this tree). Edits, all marked: (1) `f.prayer`: the Fighter type gains `prayer?: string`, and a prayer potion
+// re-lights that prayer instead of always Protect from Magic; (2) `STYLE`: the three numbers of the Stage 6 style rebalance
+// (design 7.12) are read from this object, whose defaults are today's formula, so every caller that does not set it gets
+// Stage 4's arithmetic unchanged; (3) `f.ammo`: the max-hit points of the arrow or bolt a ranged fighter shoots (0 = bronze).
+// boss.ts beside it is an unchanged copy. When Stage 4 lands, plan task R0 replaces both copies by imports.
 // The positional boss fight (written by the Stage 4 critique as check.ts, 2026-11-14; extended for the owner's
 // decisions of the same day). The hero has a position, shapes are tested geometrically at the resolve, the hero
 // keeps attacking until it reacts, and after a dodge it clicks the boss again and, if out of reach, walks back.
@@ -79,6 +81,8 @@ function escape(l: Locked, p: V): V {
 }
 
 export type Style = 'melee' | 'ranged' | 'magic';
+/** The style numbers of the attack formula. Defaults are today's (Stage 3's playerAttackProfile); check.ts sets the rebalance. */
+export const STYLE = { rangedBase: 2, rangedGear: 0.22, magicScale: 1 };
 export function profile(style: Style, lvl: number, hp: number, prayer: number, gear: Record<string, string>, prayers: string[], spell = 'blood_barrage'): GameState {
   const s = createDefaultState();
   const trained = style === 'melee' ? ['attack', 'strength', 'defence'] : [style, 'defence'];
@@ -93,15 +97,15 @@ export function profile(style: Style, lvl: number, hp: number, prayer: number, g
   return s;
 }
 /** One attack of the hero, transcribed from performPlayerAttack (actions.ts 104-121, 179-182). [damage, heal]. */
-function swing(s: GameState, typeKey: string, r: () => number): [number, number] {
+function swing(s: GameState, typeKey: string, r: () => number, ammo = 0): [number, number] {
   const bon = getEquipmentBonuses(s);
   let maxHit: number, acc: number, healRatio = 0;
   if (s.combatStyle === 'ranged') {
-    maxHit = Math.max(2, Math.floor(2 + s.skills.ranged.lvl * 0.35 + bon.rng * 0.22));
+    maxHit = Math.max(2, Math.floor(STYLE.rangedBase + s.skills.ranged.lvl * 0.35 + bon.rng * STYLE.rangedGear + ammo));
     acc = s.skills.ranged.lvl * 1.4 + bon.rng + 12;
   } else if (s.combatStyle === 'magic') {
     const sp = SPELLS.find((x: { id: string }) => x.id === s.activeSpell) as { maxHit: number; healRatio?: number };
-    maxHit = Math.max(3, Math.floor(sp.maxHit + s.skills.magic.lvl * 0.22 + bon.mag * 0.18));
+    maxHit = Math.max(3, Math.floor((sp.maxHit + s.skills.magic.lvl * 0.22 + bon.mag * 0.18) * STYLE.magicScale));
     acc = s.skills.magic.lvl * 1.5 + bon.mag + 16;
     healRatio = sp.healRatio || 0;
   } else {
@@ -116,7 +120,7 @@ function swing(s: GameState, typeKey: string, r: () => number): [number, number]
 
 export type Fighter = {
   style: Style; make: () => GameState; food: number; heal: number; pots: number; moves: boolean; extraMs: number;
-  ward: boolean; prayer?: string; capFrac?: number; autoRetaliate?: boolean; regen?: number; eatCd?: number;
+  ward: boolean; prayer?: string; ammo?: number; capFrac?: number; autoRetaliate?: boolean; regen?: number; eatCd?: number;
 };
 export type Outcome = { win: boolean; t: number; oneShot: number; heavies: number; dodged: number; by: Record<string, number> };
 
@@ -196,7 +200,7 @@ export function fight(f: Fighter, boss: BossConfig, seed: number): Outcome {
     if (swinging && atkCd <= 0 && shift <= 0) {
       atkCd = TICK;
       const floor = Math.ceil(HP * PH[ph].untilHpFrac);
-      const [dmg, healed] = swing(s, boss.typeKey, r);
+      const [dmg, healed] = swing(s, boss.typeKey, r, f.ammo ?? 0);
       if (healed) s.hp = Math.min(s.maxHp, s.hp + healed);
       bossHp = Math.max(floor, bossHp - dmg);
       if (bossHp <= 0) return out(true);

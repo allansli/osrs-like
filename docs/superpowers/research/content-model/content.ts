@@ -51,7 +51,7 @@ export const NEW_ITEMS: Record<string, { name: string; type: string; price: numb
   slag_hide: { name: 'Slagscale Hide', type: 'resource', price: 1400 },
   // runebinding
   runestone: { name: 'Blank Runestone', type: 'resource', price: 10 },
-  // ammunition tiers (ranged)
+  // arrow and bolt grades (ranged): any bow shoots any arrow, any crossbow any bolt; a better grade adds to the max hit (AMMO)
   iron_arrow: { name: 'Iron Arrow', type: 'ammo', price: 18 },
   mithril_arrow: { name: 'Mithril Arrow', type: 'ammo', price: 36 },
   rune_arrow: { name: 'Rune Arrow', type: 'ammo', price: 60 },
@@ -149,11 +149,11 @@ export const NEW_MONSTERS: Record<string, Monster> = {
     pattern: 'basic only', drops: [{ id: 'bones', chance: 1 }, { gp: [20, 60], chance: 0.6 }, { id: 'chitin_plate', chance: 0.06 }], modelNeed: 'a small, fast, many-legged body that reads at a glance in a group of eight' },
   // bosses (each also has a row in BOSSES below)
   marrowjaw: { name: 'Marrowjaw the Tollmaster', level: 40, hp: 560, maxHit: 21, atk: 52, def: 30, style: 'melee', model: 'hill_giant', modelScale: 1.3, tintNote: 'war paint, iron collar',
-    pattern: 'BOSSES row', drops: [{ id: 'big_bones', chance: 1 }, { gp: [600, 1200], chance: 1 }, { id: 'tough_hide', chance: 1, qty: 3 }, { id: 'lobster', chance: 1, qty: 2 }], modelNeed: 'a camp leader: banner pole, shoulder armour, a silhouette taller than its camp' },
+    pattern: 'BOSSES row', drops: [{ id: 'big_bones', chance: 1 }, { gp: [600, 1200], chance: 1 }, { id: 'tough_hide', chance: 1, qty: 3 }, { id: 'lobster', chance: 1, qty: 2 }, { id: 'runite_bar', chance: 0.125 }], modelNeed: 'a camp leader: banner pole, shoulder armour, a silhouette taller than its camp' },
   saltfang: { name: 'Matron Saltfang', level: 48, hp: 960, maxHit: 36, atk: 66, def: 42, style: 'melee', model: 'scorpion', modelScale: 2.2, tintNote: 'salt-white shell, violet sting',
-    pattern: 'BOSSES row', drops: [{ id: 'big_bones', chance: 1 }, { gp: [300, 600], chance: 1 }, { id: 'sting_gland', chance: 1, qty: 3 }], modelNeed: 'a brood mother: swollen abdomen, egg clusters, a wider stance than the stalkers' },
+    pattern: 'BOSSES row', drops: [{ id: 'big_bones', chance: 1 }, { gp: [300, 600], chance: 1 }, { id: 'sting_gland', chance: 1, qty: 3 }, { id: 'adamant_bar', chance: 0.2, qty: 3 }], modelNeed: 'a brood mother: swollen abdomen, egg clusters, a wider stance than the stalkers' },
   kiln_warden: { name: 'The Kiln Warden', level: 80, hp: 2000, maxHit: 64, atk: 110, def: 72, style: 'melee', model: 'moss_guardian', modelScale: 1.5, tintNote: 'fired clay, glowing seams, no moss',
-    pattern: 'BOSSES row', drops: [{ id: 'dragon_bones', chance: 1 }, { gp: [800, 1600], chance: 1 }, { id: 'kiln_shard', chance: 1, qty: 2 }], modelNeed: 'a furnace golem with an open, glowing chest: must not read as the woods creature' }
+    pattern: 'BOSSES row', drops: [{ id: 'dragon_bones', chance: 1 }, { gp: [800, 1600], chance: 1 }, { id: 'kiln_shard', chance: 0.5 }, { id: 'wyrmsteel_ingot', chance: 0.1 }], modelNeed: 'a furnace golem with an open, glowing chest: must not read as the woods creature' }
 };
 
 /** Material drops added to existing monsters (appended to the end of each table, so earlier random draws keep their order). */
@@ -234,13 +234,24 @@ export const DUNGEONS: Dungeon[] = [
     chest: [68, 91], needs: { combat: 72, quest: 'ml_kiln', fromStage: 3 }
   }
 ];
-/** What the end chest pays. `first` once per character; `run` every clear. Coins are [min, max]. */
-export const CHESTS: Record<string, { first: { id: string; qty: number }[]; firstTitle: string; run: { id: string; qty: [number, number] }[]; runGp: [number, number] }> = {
-  saltfang_warren: { first: [{ id: 'adamant_bar', qty: 8 }, { id: 'rune_crossbow', qty: 1 }], firstTitle: 'Warrenbreaker',
-    run: [{ id: 'adamantite_ore', qty: [3, 5] }, { id: 'tough_hide', qty: [1, 2] }], runGp: [100, 300] },
-  underkiln: { first: [{ id: 'kiln_shard', qty: 8 }, { id: 'bloodbark_top', qty: 1 }, { id: 'bloodbark_bottom', qty: 1 }], firstTitle: 'Kilnbreaker',
-    run: [{ id: 'kiln_shard', qty: [3, 5] }, { id: 'cinder_silk', qty: [1, 2] }], runGp: [500, 1000] }
+/**
+ * What the end chest of a dungeon pays, EVERY clear (owner, 2026-11-14: "a dungeon is a dungeon; sometimes you have to do
+ * it N times to drop a specific item"). `run` and `runGp` are paid on every clear; each `rare` entry is rolled on every
+ * clear with its own chance. Nothing here is paid once: once-only rewards belong to a quest's `reward` (design 7.3, 7.6),
+ * and a chest row has no field that could hold one. Equipment may appear only here, never in a monster's table, and at
+ * most at Stage 3's boss cap of 0.05.
+ */
+export const CHESTS: Record<string, { run: { id: string; qty: [number, number] }[]; runGp: [number, number]; rare: { id: string; qty: number; chance: number }[] }> = {
+  saltfang_warren: { run: [{ id: 'adamantite_ore', qty: [3, 5] }, { id: 'tough_hide', qty: [1, 2] }], runGp: [100, 300],
+    rare: [{ id: 'rune_crossbow', qty: 1, chance: 0.05 }] },
+  underkiln: { run: [{ id: 'kiln_shard', qty: [1, 1] }, { id: 'cinder_silk', qty: [1, 2] }], runGp: [500, 1000],
+    rare: [{ id: 'kiln_shard', qty: 3, chance: 0.2 }, { id: 'bloodbark_top', qty: 1, chance: 0.04 }, { id: 'bloodbark_bottom', qty: 1, chance: 0.04 }] }
 };
+/** What the player is told to expect: the things worth running a dungeon or a boss for, and the recipe count that needs them. */
+export const CHASES: { what: string; source: string; need: number; perRun: { always: number; chances: { qty: number; chance: number }[] } }[] = [
+  { what: 'Kilnglass for the whole dragon kit (13 ingots)', source: 'underkiln', need: 13, perRun: { always: 1, chances: [{ qty: 3, chance: 0.2 }, { qty: 1, chance: 0.5 }, { qty: 1, chance: 0.1 }] } },
+  { what: 'Kilnglass for one dragon scimitar (4 ingots)', source: 'underkiln', need: 4, perRun: { always: 1, chances: [{ qty: 3, chance: 0.2 }, { qty: 1, chance: 0.5 }, { qty: 1, chance: 0.1 }] } }
+];
 
 // ------------------------------------------------------------------ bosses, in the shape of Stage 4's BossConfig
 const A = (a: Attack) => a;
@@ -314,10 +325,31 @@ export const DIARY_TASKS_PER_TIER = 5;
 export const OTHER_NAMES = ['Crafting', 'Runebinding', 'Warrenbreaker', 'Kilnbreaker', 'Tollbreaker', 'The Toll', 'The Reckoning', 'Stirring', 'Roused', 'Frenzy', 'Banked', 'Stoked', 'White Heat',
   'Toll Slam', 'Camp Sweep', 'Sting Arc', 'Brine Spit', 'Kiln Ring', 'Core Vent', 'Hammer Arc', 'Wardlight', 'Lampwright', 'Gatewarden', 'Wardkeeper', 'The Failing Wards'];
 
-/** Ammunition a ranged weapon needs after the stage, by the level it is worn at (bows: arrows; crossbows: bolts). */
+/**
+ * Arrow and bolt grades (owner, 2026-11-14: "bows shoot arrows. Good ones and bad ones"). ANY bow shoots ANY arrow and any
+ * crossbow any bolt; `power` is added to the max hit of the shot. With several grades in the backpack the best one is shot.
+ * Bronze is today's arrow and adds nothing, so no bow an existing character owns is ever refused its arrows.
+ */
+export const AMMO: Record<string, { kind: 'arrow' | 'bolt'; power: number }> = {
+  bronze_arrow: { kind: 'arrow', power: 0 }, iron_arrow: { kind: 'arrow', power: 2 }, mithril_arrow: { kind: 'arrow', power: 4 }, rune_arrow: { kind: 'arrow', power: 6 },
+  bronze_bolts: { kind: 'bolt', power: 0 }, mithril_bolts: { kind: 'bolt', power: 4 }, rune_bolts: { kind: 'bolt', power: 6 }
+};
+/** The grade the MODEL gives a fighter of each level (the first level whose smith can make it, 5 levels in): information, not a rule. */
 export const AMMO_TIERS = [
   { fromReq: 1, arrow: 'bronze_arrow', bolt: 'bronze_bolts' },
   { fromReq: 25, arrow: 'iron_arrow', bolt: 'bronze_bolts' },
   { fromReq: 45, arrow: 'mithril_arrow', bolt: 'mithril_bolts' },
   { fromReq: 70, arrow: 'rune_arrow', bolt: 'rune_bolts' }
 ];
+
+// ------------------------------------------------------------------ the style rebalance (design 7.12, plan slice 6)
+/** The three style numbers of the attack formula, today (Stage 3's playerAttackProfile) and after. Melee is not touched. */
+export const STYLE_TODAY = { rangedBase: 2, rangedGear: 0.22, magicScale: 1 };
+export const STYLE_AFTER = { rangedBase: 3, rangedGear: 0.06, magicScale: 0.5 };
+/** Rune counts of the two big spells after the rebalance (today both take two of each). The two small spells keep theirs. */
+export const SPELL_RUNES_AFTER: Record<string, Record<string, number>> = {
+  ice_burst: { water_rune: 1, chaos_rune: 1 },
+  blood_barrage: { blood_rune: 1, death_rune: 1 }
+};
+/** The band the three styles must stay in, levels 20 to 70, standard kit of the level: damage per second over melee's. */
+export const STYLE_BAND = { ranged: [0.9, 1.35], magic: [0.95, 1.4], fastestOverSlowest: 1.4 };

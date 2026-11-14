@@ -1,9 +1,14 @@
-// Stage 6 bosses through Stage 4's positional fight (fight.ts, copied; see its header). 2,000 seeded fights per row.
+// Stage 6 bosses, and Stage 4's Ashmantle, through Stage 4's positional fight (fight.ts, copied; see its header).
+// 2,000 seeded fights per row, each row TWICE: with today's attack formula and with the style rebalance of design 7.12
+// (STYLE_AFTER), the latter with bronze arrows and, for a ranged fighter, with the arrow or bolt grade of its level
+// (AMMO_TIERS). Every bound must hold in every column, so the fight tests do not depend on where the rebalance slice lands
+// nor on which arrow their ranged fighter is given.
 // Tuning rule, as in Stage 4: the fighters are fixed, only the boss rows in content.ts move.
 import { MONSTER_TYPES } from '../../../../src/data/world';
 import { combatLevel } from '../../../../src/state/adventure';
-import { fight, profile, type Fighter } from './fight';
-import { BOSSES, NEW_MONSTERS } from './content';
+import { fight, profile, FIGHTERS, LABELS, STYLE, type Fighter } from './fight';
+import { BOSS, BOSS_ROW } from './boss';
+import { AMMO, AMMO_TIERS, BOSSES, NEW_MONSTERS, STYLE_AFTER, STYLE_TODAY } from './content';
 
 for (const [k, m] of Object.entries(NEW_MONSTERS)) {
   (MONSTER_TYPES as Record<string, unknown>)[k] = { name: m.name, level: m.level, hp: m.hp, maxHit: m.maxHit, atk: m.atk, def: m.def, scale: 1, style: m.style, bodyColor: 0, accentColor: 0, kind: 'x', drops: [] };
@@ -55,21 +60,47 @@ const ROWS: Record<string, Row[]> = {
   ]
 };
 
+/** Stage 4's own proof rows for Ashmantle (its design 6.4), with its thresholds: the approved boss row is not touched. */
+const S4_BOUNDS: Record<string, string> = { A: '>= 85', B: '<= 5', C: '>= 65', F: '<= 15', G: '<= 5', R: '>= 85', Rstill: '<= 5', M: '>= 85', Mstill: '<= 5', FR: '<= 15', FM: '<= 15' };
+const S4_ROWS: Row[] = ['A', 'B', 'C', 'C2', 'D', 'E', 'F', 'G', 'R', 'Rslow', 'Rstill', 'M', 'Mslow', 'Mstill', 'FR', 'FM'].map((k) => [LABELS[k], FIGHTERS[k], S4_BOUNDS[k] || 'information']);
+
+/** Max-hit points of the arrow or bolt the model gives a ranged fighter after the rebalance: the grade of its Ranged level. */
+function ammoOf(f: Fighter): number {
+  if (f.style !== 'ranged') return 0;
+  const s = f.make(), lvl = s.skills.ranged.lvl, tier = [...AMMO_TIERS].reverse().find((t) => t.fromReq <= lvl)!;
+  const bolt = /crossbow/.test(String(s.equipment.weapon));
+  return AMMO[bolt ? tier.bolt : tier.arrow].power;
+}
+
 const N = 2000;
 let bad = 0;
-for (const [key, rows] of Object.entries(ROWS)) {
-  const boss = BOSSES[key], m = NEW_MONSTERS[key];
-  console.log(`\n=== ${m.name} (level ${m.level}, ${m.hp} hitpoints, basic max hit ${m.maxHit} ${m.style}; ${boss.phases.length} phases)`);
-  console.log(`    ${boss.question}`);
-  console.log('fighter                                                             combat   win%   bound        mean s (wins)  heavies dodged  damage taken per fight, by source');
+const sets: [string, { typeKey: string; hp: number }, Row[], string][] = [
+  ...Object.entries(ROWS).map(([key, rows]) => [`${NEW_MONSTERS[key].name} (level ${NEW_MONSTERS[key].level}, ${NEW_MONSTERS[key].hp} hitpoints, basic max hit ${NEW_MONSTERS[key].maxHit} ${NEW_MONSTERS[key].style}; ${BOSSES[key].phases.length} phases)`, BOSSES[key], rows, BOSSES[key].question] as [string, typeof BOSS, Row[], string]),
+  [`${BOSS_ROW.name}, Stage 4's boss, row unchanged (level ${BOSS_ROW.level}, ${BOSS_ROW.hp} hitpoints, basic max hit ${BOSS_ROW.maxHit} ${BOSS_ROW.style})`, BOSS, S4_ROWS, "Stage 4's proof rows and thresholds (its design 6.4)."]
+];
+for (const [title, boss, rows, question] of sets) {
+  console.log(`\n=== ${title}`);
+  console.log(`    ${question}`);
+  console.log('fighter                                                             combat   bound        | today: win%  mean s | rebalanced, bronze arrows: win%  mean s | rebalanced, arrow of the level: win%  mean s  arrow');
   for (const [label, f, bound] of rows) {
-    let w = 0, secs = 0, hv = 0, dg = 0; const by: Record<string, number> = {};
-    for (let i = 1; i <= N; i++) { const o = fight(f, boss, i); if (o.win) { w++; secs += o.t; } hv += o.heavies; dg += o.dodged; for (const [id, d] of Object.entries(o.by)) by[id] = (by[id] || 0) + d; }
-    const pct = (w / N) * 100, mt = /^(>=|<=) (\d+)$/.exec(bound);
-    const ok = !mt || (mt[1] === '>=' ? pct >= +mt[2] : pct <= +mt[2]);
-    if (!ok) bad++;
-    console.log(`${label.padEnd(68)} ${String(combatLevel(f.make())).padStart(5)}  ${pct.toFixed(1).padStart(5)}  ${bound.padEnd(12)} ${ok ? ' ' : '!'} ${(w ? secs / w : 0).toFixed(0).padStart(6)} ${((dg / Math.max(1, hv)) * 100).toFixed(0).padStart(14)}%   ${Object.entries(by).map(([id, d]) => `${id} ${(d / N).toFixed(0)}`).join(', ')}`);
+    const cell: string[] = [];
+    // Three columns: today; the rebalance with bronze arrows (what a fight test written before the arrow grades exist plays,
+    // and what it keeps playing after them: its fighter carries no better arrow); the rebalance with the arrow of the level.
+    for (const mode of [0, 1, 2]) {
+      const after = mode > 0;
+      if (mode === 2 && f.style !== 'ranged') { cell.push('              (as the column before)'); continue; }
+      Object.assign(STYLE, after ? STYLE_AFTER : STYLE_TODAY);
+      const ff = { ...f, ammo: mode === 2 ? ammoOf(f) : 0 };
+      let w = 0, secs = 0;
+      for (let i = 1; i <= N; i++) { const o = fight(ff, boss as never, i); if (o.win) { w++; secs += o.t; } }
+      const pct = (w / N) * 100, mt = /^(>=|<=) (\d+)$/.exec(bound);
+      const ok = !mt || (mt[1] === '>=' ? pct >= +mt[2] : pct <= +mt[2]);
+      if (!ok) bad++;
+      cell.push(`${pct.toFixed(1).padStart(11)}${ok ? ' ' : '!'} ${(w ? secs / w : 0).toFixed(0).padStart(6)}` + (mode === 2 ? `   +${ff.ammo}` : ''));
+    }
+    console.log(`${label.padEnd(68)} ${String(combatLevel(f.make())).padStart(5)}   ${bound.padEnd(12)} |${cell[0]} |${cell[1]}              |${cell[2]}`);
   }
 }
-console.log(bad === 0 ? '\nEVERY BOUND HOLDS' : `\n${bad} BOUND(S) MISSED`);
+Object.assign(STYLE, STYLE_TODAY);
+console.log(bad === 0 ? '\nEVERY BOUND HOLDS, WITH TODAY\'S FORMULA AND WITH THE REBALANCE' : `\n${bad} BOUND(S) MISSED`);
 if (bad) process.exitCode = 1;

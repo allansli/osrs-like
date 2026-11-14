@@ -1,38 +1,58 @@
 
 === Marrowjaw the Tollmaster (level 40, 560 hitpoints, basic max hit 21 melee; 2 phases)
     Do you step off the spot? One mechanic at a time, with long warnings: the first boss teaches the language.
-fighter                                                             combat   win%   bound        mean s (wins)  heavies dodged  damage taken per fight, by source
-melee 35, adamant, 10 lobsters, moves                                   43   96.3  >= 85              61             92%   basic 58, camp_sweep 4, toll_slam 7
-the same, +300 ms (trackpad)                                            43   95.8  >= 70              61             90%   basic 58, camp_sweep 5, toll_slam 9
-the same, never moves                                                   43    0.0  <= 25               0              0%   basic 27, toll_slam 68, camp_sweep 20
-melee 22, mithril, 8 trout, moves                                       27   26.5  <= 35              93             94%   basic 77, toll_slam 7, camp_sweep 3
-ranged 35, yew bow, blue hides, moves                                   37   99.9  >= 85              26             84%   basic 27, toll_slam 3
-magic 35, mystic, ice burst, moves                                      37  100.0  >= 85              22             89%   basic 25, toll_slam 2
+fighter                                                             combat   bound        | today: win%  mean s | rebalanced, bronze arrows: win%  mean s | rebalanced, arrow of the level: win%  mean s  arrow
+melee 35, adamant, 10 lobsters, moves                                   43   >= 85        |       96.3      61 |       96.3      61              |              (as the column before)
+the same, +300 ms (trackpad)                                            43   >= 70        |       95.8      61 |       95.8      61              |              (as the column before)
+the same, never moves                                                   43   <= 25        |        0.0       0 |        0.0       0              |              (as the column before)
+melee 22, mithril, 8 trout, moves                                       27   <= 35        |       26.5      93 |       26.5      93              |              (as the column before)
+ranged 35, yew bow, blue hides, moves                                   37   >= 85        |       99.9      26 |       99.6      45              |       99.6      41   +2
+magic 35, mystic, ice burst, moves                                      37   >= 85        |      100.0      22 |       99.7      42              |              (as the column before)
 
 === Matron Saltfang (level 48, 960 hitpoints, basic max hit 36 melee; 3 phases)
     Can you keep up? Its tempo rises in every phase: the fight is won by ending it, so food and damage are the plan.
-fighter                                                             combat   win%   bound        mean s (wins)  heavies dodged  damage taken per fight, by source
-melee 50, rune, Protect from Melee, 16 swordfish, 2 potions             62   99.4  >= 85              89             91%   basic 19, brine_spit 21, sting_arc 4
-the same, +300 ms                                                       62   81.3  >= 65              93             79%   basic 18, brine_spit 85, sting_arc 9
-the same, never moves                                                   62    0.0  <= 5                0              0%   basic 8, sting_arc 20, brine_spit 73
-the same, no food                                                       62   82.5  information        89             91%   basic 18, brine_spit 20, sting_arc 4
-melee 38, adamant, no prayer, 10 lobsters                               46   10.4  <= 15             127             93%   basic 113, brine_spit 10, sting_arc 14
-at the door: melee 41, rune, Protect from Melee, 12 lobsters, 1 potion    51   96.3  information       101             92%   basic 22, brine_spit 25, sting_arc 5
-ranged 50, magic bow, red hides, Protect from Melee, 16 swordfish       54  100.0  >= 85              45             89%   basic 11, brine_spit 10, sting_arc 1
-magic 50, infinity, blood barrage, Protect from Melee                   54  100.0  >= 85              34             89%   basic 9, brine_spit 7, sting_arc 1
+fighter                                                             combat   bound        | today: win%  mean s | rebalanced, bronze arrows: win%  mean s | rebalanced, arrow of the level: win%  mean s  arrow
+melee 50, rune, Protect from Melee, 16 swordfish, 2 potions             62   >= 85        |       99.4      89 |       99.4      89              |              (as the column before)
+the same, +300 ms                                                       62   >= 65        |       81.3      93 |       81.3      93              |              (as the column before)
+the same, never moves                                                   62   <= 5         |        0.0       0 |        0.0       0              |              (as the column before)
+the same, no food                                                       62   information  |       82.5      89 |       82.5      89              |              (as the column before)
+melee 38, adamant, no prayer, 10 lobsters                               46   <= 15        |       10.4     127 |       10.4     127              |              (as the column before)
+at the door: melee 41, rune, Protect from Melee, 12 lobsters, 1 potion    51   information  |       96.3     101 |       96.3     101              |              (as the column before)
+ranged 50, magic bow, red hides, Protect from Melee, 16 swordfish       54   >= 85        |      100.0      45 |       99.6      80              |       99.6      70   +4
+magic 50, infinity, blood barrage, Protect from Melee                   54   >= 85        |      100.0      34 |      100.0      64              |              (as the column before)
 
 === The Kiln Warden (level 80, 2000 hitpoints, basic max hit 64 melee; 3 phases)
     Can you hold the band? The ring burns everything far, the vent everything near: only a strip 3 to 6 units out is safe through both.
-fighter                                                             combat   win%   bound        mean s (wins)  heavies dodged  damage taken per fight, by source
-melee 70, dragon, Protect from Melee, 20 sharks, 4 potions              86   96.7  >= 85              99             93%   basic 34, core_vent 16, hammer_arc 3
-the same, +300 ms                                                       86   95.6  >= 65             101             92%   basic 35, core_vent 23, hammer_arc 4
-the same, never moves                                                   86    0.0  <= 5                0             42%   basic 20, hammer_arc 35, core_vent 111
-the same, no prayer                                                     86   56.8  information       102             93%   basic 155, hammer_arc 15, core_vent 11
-melee 55, rune, no prayer, 12 lobsters                                  65    2.9  <= 15             168             96%   basic 116, hammer_arc 8, core_vent 2
-at the door: melee 58, rune, Protect from Melee, 16 sharks, 2 potions    72   77.3  information       157             94%   basic 57, hammer_arc 5, core_vent 26
-ranged 70, crossbow, black hides, Protect from Melee                    74   94.3  >= 85              63             89%   basic 25, hammer_arc 2, kiln_ring 14, core_vent 0
-the same, never moves                                                   74    0.0  <= 5                0              0%   basic 8, hammer_arc 10, kiln_ring 79
-magic 70, robes, blood barrage, Protect from Melee                      74   99.3  >= 85              58             87%   basic 24, kiln_ring 13, hammer_arc 2, core_vent 0
-the same, never moves                                                   74    0.0  <= 5                0              1%   basic 10, hammer_arc 12, kiln_ring 119
+fighter                                                             combat   bound        | today: win%  mean s | rebalanced, bronze arrows: win%  mean s | rebalanced, arrow of the level: win%  mean s  arrow
+melee 70, dragon, Protect from Melee, 20 sharks, 4 potions              86   >= 85        |       96.7      99 |       96.7      99              |              (as the column before)
+the same, +300 ms                                                       86   >= 65        |       95.6     101 |       95.6     101              |              (as the column before)
+the same, never moves                                                   86   <= 5         |        0.0       0 |        0.0       0              |              (as the column before)
+the same, no prayer                                                     86   information  |       56.8     102 |       56.8     102              |              (as the column before)
+melee 55, rune, no prayer, 12 lobsters                                  65   <= 15        |        2.9     168 |        2.9     168              |              (as the column before)
+at the door: melee 58, rune, Protect from Melee, 16 sharks, 2 potions    72   information  |       77.3     157 |       77.3     157              |              (as the column before)
+ranged 70, crossbow, black hides, Protect from Melee                    74   >= 85        |       94.3      63 |       87.3     116              |       89.1     102   +6
+the same, never moves                                                   74   <= 5         |        0.0       0 |        0.0       0              |        0.0       0   +6
+magic 70, robes, blood barrage, Protect from Melee                      74   >= 85        |       99.3      58 |       98.0     114              |              (as the column before)
+the same, never moves                                                   74   <= 5         |        0.0       0 |        0.0       0              |              (as the column before)
 
-EVERY BOUND HOLDS
+=== Ashmantle the Slag Wyrm, Stage 4's boss, row unchanged (level 110, 1400 hitpoints, basic max hit 72 magic)
+    Stage 4's proof rows and thresholds (its design 6.4).
+fighter                                                             combat   bound        | today: win%  mean s | rebalanced, bronze arrows: win%  mean s | rebalanced, arrow of the level: win%  mean s  arrow
+A melee, prepared, moves                                                86   >= 85        |       98.9     103 |       98.9     103              |              (as the column before)
+B melee, prepared, never moves                                          86   <= 5         |        0.0       0 |        0.0       0              |              (as the column before)
+C melee, prepared, +300 ms (trackpad)                                   86   >= 65        |       96.8     104 |       96.8     104              |              (as the column before)
+C2 melee, prepared, +500 ms                                             86   information  |       77.9     103 |       77.9     103              |              (as the column before)
+D melee, prepared, no food                                              86   information  |       72.1     101 |       72.1     101              |              (as the column before)
+E melee, level 60, dragon kit                                           74   information  |       94.5     113 |       94.5     113              |              (as the column before)
+F melee, level 50 rune, unprepared                                      60   <= 15        |        0.1     181 |        0.1     181              |              (as the column before)
+G melee, level 50, never moves                                          60   <= 5         |        0.0       0 |        0.0       0              |              (as the column before)
+R ranged, prepared, moves                                               74   >= 85        |       98.5      61 |       97.5     108              |       98.5      93   +6
+R ranged, +300 ms                                                       74   information  |       96.7      62 |       94.3     111              |       95.5      96   +6
+R ranged, never moves                                                   74   <= 5         |        0.0       0 |        0.0       0              |        0.0       0   +6
+M magic, prepared, moves                                                74   >= 85        |      100.0      47 |       99.6      93              |              (as the column before)
+M magic, +300 ms                                                        74   information  |       99.3      48 |       97.9      95              |              (as the column before)
+M magic, never moves                                                    74   <= 5         |        0.1      21 |        0.0       0              |              (as the column before)
+FR ranged, level 50, unprepared                                         51   <= 15        |        1.8     110 |        0.1     182              |        0.3     154   +4
+FM magic, level 50, unprepared                                          51   <= 15        |        9.2      67 |        0.9     132              |              (as the column before)
+
+EVERY BOUND HOLDS, WITH TODAY'S FORMULA AND WITH THE REBALANCE

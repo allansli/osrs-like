@@ -1,0 +1,41 @@
+=== 1. sightRadius(base, monster level, hero combat, keepsSight): minimum 3, reached 10 combat levels above the monster
+  hero combat minus monster level:      -5    0    1    2    4    5    6    8   10   15   40
+  melee camp (base 9)                  9.0  9.0  8.4  7.8  6.6  6.0  5.4  4.2  3.0  3.0  3.0
+  ranged or magic camp (base 12)      12.0 12.0 11.1 10.2  8.4  7.5  6.6  4.8  3.0  3.0  3.0
+  keeps its sight (sentries, bosses, dungeons)   9.0  9.0  9.0  9.0  9.0  9.0  9.0  9.0  9.0  9.0  9.0
+  the pacing model's count of a pack of 4 (aggro.ts, packAttackers), by hero combat minus monster level: 0:4 1:4 2:4 3:4 4:3 5:3 6:3 7:2 8:2 9:2 10:1 20:1
+
+=== 2. Stage 2's stepMonster with the rule patched in, on the cases of tests/monster-territory.test.ts
+  goblin (level 2), aggressive camp, how far it sees a hero (BEFORE -> AFTER; the function says):
+    hero -1: 9.00 -> 9.00   (9.00)
+    hero +0: 9.00 -> 9.00   (9.00)
+    hero +1: 0.00 -> 8.40   (8.40)
+    hero +2: 0.00 -> 7.80   (7.80)
+    hero +5: 0.00 -> 6.00   (6.00)
+    hero +9: 0.00 -> 3.60   (3.60)
+    hero +10: 0.00 -> 3.00   (3.00)
+    hero +30: 0.00 -> 3.00   (3.00)
+  the one Stage 2 case that changes (monster-territory.test.ts, "an aggressive camp ignores a player whose combat level is above the monster's"):
+    hero one level above, 2 units away, 50 steps: BEFORE ignored, AFTER attacked
+    hero 10 levels above, 3.5 units away: AFTER ignored; 2.9 units away: AFTER attacked
+
+=== 3. Stage 2's gate simulation (tests/gate-simulation.test.ts), 1,000 seeds on each of the three lines
+  hero                                                  combat | BEFORE survives (three lines)   fewest attacks by a sentry, mean attacks a crossing | AFTER the same
+  fresh character, 10 hitpoints, no prayer (the test)      3  | 4.4% 4.3% 4.3%           1    4.00 | 4.4% 4.3% 4.3%           1    4.00   identical, blow for blow
+  40 hitpoints and Protect from Melee (the test)          10  | 100.0% 100.0% 100.0%     1    4.00 | 100.0% 100.0% 100.0%     1    4.00   identical, blow for blow
+  every melee skill 70, dragon kit, no prayer             80  | 100.0% 100.0% 100.0%     0    0.00 | 100.0% 100.0% 100.0%     1    4.00
+  the same with Protect from Melee                        80  | 100.0% 100.0% 100.0%     0    0.00 | 100.0% 100.0% 100.0%     1    4.00
+  the sentries are level 68: under Stage 2's rule a hero of combat 69 or more walked through untouched; now the pass tests every hero, and a prepared one passes.
+
+=== 4. Resource nodes inside an aggressive camp: can a hero far above the camp still be attacked while gathering?
+  A monster wanders up to its wander radius (4.5; the sentries 1) from home and sees such a hero at 3. A gatherer stands about 2 from the node.
+    yew_tree     (-96, -24) in deep_woods_west: a moss_guardian can wander to within 0.0 of it: CAN be attacked there at any level
+    yew_tree     (-102, -27) in deep_woods_west: a moss_guardian can wander to within 0.0 of it: CAN be attacked there at any level
+    yew_tree     (-70, -53) in deep_woods_south: a moss_guardian can wander to within 0.9 of it: CAN be attacked there at any level
+    yew_tree     (-80, -53) in deep_woods_south: a moss_guardian can wander to within 0.0 of it: CAN be attacked there at any level
+    magic_tree   (-97, -36) in deep_woods_west: a moss_guardian can wander to within 0.0 of it: CAN be attacked there at any level
+    magic_tree   (-75, -61) in deep_woods_south: a moss_guardian can wander to within 0.0 of it: CAN be attacked there at any level
+    magic_tree   (-79, -59) in deep_woods_south: a moss_guardian can wander to within 0.6 of it: CAN be attacked there at any level
+  7 nodes stand inside aggressive camps; at 7 of them a hero of any level can now be attacked while gathering (under Stage 2's rule a hero above the camp's level never was).
+
+ALL AGGRESSION CHECKS PASS

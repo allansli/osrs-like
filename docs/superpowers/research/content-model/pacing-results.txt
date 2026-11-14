@@ -1,0 +1,261 @@
+Stage 3's tests/pacing.test.ts from origin/feat/start-pacing at fc5fe84, unedited, three models.
+
+=== 1. before: Stage 3's model as committed
+  PASS the starter chain earns the bronze kit: six quests, one kill, 29 actions, no coin spent on equipment
+  PASS every tier is a step, in order (A1, 1x)
+  PASS every tier is a step, in order (A3, 1x)
+  PASS shop only: the kit takes at least 25 further kills after the level, iron to adamant
+  PASS with bounties and drops it still comes after the level, iron to mithril
+  PASS a shop-only fighter is never more than three tiers behind
+  PASS negative control: today's economy hands over the kit with the level
+  PASS the booster speeds levels, not gear
+  PASS the forge makes bronze, iron, mithril and rune kits without coin
+  PASS the model is a pure function
+
+A1: tier | level kills | kit kills | further | behind | quests | earned at kit coins/gear/slayer/quests | spent | share at level | average at level / kit | kills at level | kills at kit
+bronze | 0 | 1 | 1 | 0 | 6 | 0/7/0/25 | 2 | 0% | 0 m / 9 m | {} | {"goblin":1}
+iron | 39 | 132 | 93 | 1 | 8 | 3680/7/400/1325 | 5352 | 48% | 15 m / 23 m | {"goblin":39} | {"goblin":112,"scorpion":20}
+steel | 112 | 354 | 242 | 2 | 8 | 19144/7/400/1325 | 20852 | 37% | 19 m / 42 m | {"goblin":112} | {"goblin":112,"scorpion":231,"hill_giant":11}
+black | 156 | 453 | 297 | 2 | 8 | 36543/7/400/1325 | 38152 | 44% | 25 m / 55 m | {"goblin":112,"scorpion":44} | {"goblin":112,"scorpion":231,"hill_giant":110}
+mithril | 228 | 540 | 312 | 1 | 8 | 51833/7/400/1325 | 53452 | 55% | 31 m / 64 m | {"goblin":112,"scorpion":116} | {"goblin":112,"scorpion":231,"hill_giant":197}
+adamant | 433 | 824 | 391 | 1 | 8 | 101746/7/400/1325 | 103452 | 70% | 52 m / 89 m | {"goblin":112,"scorpion":231,"hill_giant":90} | {"goblin":112,"scorpion":231,"hill_giant":481}
+rune | 816 | 1558 | 742 | 0 | 8 | 230747/7/400/1325 | 232452 | 79% | 88 m / 2.4 h | {"goblin":112,"scorpion":231,"hill_giant":473} | {"goblin":112,"scorpion":231,"hill_giant":1215}
+dragon | 4606 | 4606 | 0 | 0 | 8 | 766433/7/400/1325 | 612452 | 202% | 5.5 h / 5.5 h | {"goblin":112,"scorpion":231,"hill_giant":4263} | {"goblin":112,"scorpion":231,"hill_giant":4263}
+
+A3: tier | level kills | kit kills | further | behind | quests | earned at kit coins/gear/slayer/quests | spent | share at level | average at level / kit | kills at level | kills at kit
+bronze | 0 | 1 | 1 | 0 | 6 | 0/7/0/25 | 2 | 0% | 0 m / 9 m | {} | {"goblin":1}
+iron | 39 | 114 | 75 | 1 | 8 | 3249/12/3700/1325 | 8252 | 85% | 17 m / 24 m | {"goblin":39} | {"goblin":95,"scorpion":19}
+steel | 102 | 186 | 84 | 1 | 8 | 7866/53/3700/1325 | 11852 | 62% | 21 m / 30 m | {"goblin":95,"scorpion":7} | {"goblin":95,"scorpion":91}
+black | 146 | 378 | 232 | 1 | 8 | 27880/774/3700/1325 | 33552 | 65% | 26 m / 48 m | {"goblin":95,"scorpion":51} | {"goblin":95,"scorpion":214,"hill_giant":69}
+mithril | 218 | 410 | 192 | 0 | 8 | 33504/1035/3700/1325 | 33552 | 72% | 32 m / 51 m | {"goblin":95,"scorpion":123} | {"goblin":95,"scorpion":214,"hill_giant":101}
+adamant | 410 | 448 | 38 | 0 | 8 | 40182/2026/3700/1325 | 47052 | 79% | 51 m / 56 m | {"goblin":95,"scorpion":214,"hill_giant":101} | {"goblin":95,"scorpion":214,"hill_giant":139}
+rune | 792 | 1087 | 295 | 0 | 8 | 152487/18699/3700/1325 | 176052 | 90% | 83 m / 1.8 h | {"goblin":95,"scorpion":214,"hill_giant":483} | {"goblin":95,"scorpion":214,"hill_giant":778}
+dragon | 4583 | 4583 | 0 | 0 | 8 | 766909/109917/3700/1325 | 556052 | 232% | 5.4 h / 5.4 h | {"goblin":95,"scorpion":214,"hill_giant":4274} | {"goblin":95,"scorpion":214,"hill_giant":4274}
+
+A1 10x: tier | level kills | kit kills | further | behind | quests | earned at kit coins/gear/slayer/quests | spent | share at level | average at level / kit | kills at level | kills at kit
+bronze | 0 | 1 | 1 | 0 | 6 | 0/7/0/25 | 2 | 0% | 0 m / 9 m | {} | {"goblin":1}
+iron | 5 | 47 | 42 | 4 | 8 | 3667/7/400/1325 | 5352 | 27% | 12 m / 19 m | {"goblin":5} | {"goblin":13,"scorpion":23,"hill_giant":11}
+steel | 13 | 135 | 122 | 4 | 8 | 19133/7/400/1325 | 20852 | 18% | 13 m / 30 m | {"goblin":13} | {"goblin":13,"scorpion":23,"hill_giant":99}
+black | 18 | 234 | 216 | 3 | 8 | 36533/7/400/1325 | 38152 | 15% | 14 m / 39 m | {"goblin":13,"scorpion":5} | {"goblin":13,"scorpion":23,"hill_giant":198}
+mithril | 25 | 321 | 296 | 2 | 8 | 51823/7/400/1325 | 53452 | 13% | 15 m / 47 m | {"goblin":13,"scorpion":12} | {"goblin":13,"scorpion":23,"hill_giant":285}
+adamant | 45 | 559 | 514 | 2 | 8 | 102279/7/400/1325 | 103452 | 10% | 18 m / 67 m | {"goblin":13,"scorpion":23,"hill_giant":9} | {"goblin":13,"scorpion":23,"hill_giant":507,"lesser_demon":16}
+rune | 84 | 739 | 655 | 1 | 8 | 230979/7/400/1325 | 232452 | 9% | 23 m / 1.5 h | {"goblin":13,"scorpion":23,"hill_giant":48} | {"goblin":13,"scorpion":23,"hill_giant":507,"lesser_demon":196}
+dragon | 463 | 1271 | 808 | 0 | 8 | 611359/7/400/1325 | 612452 | 21% | 57 m / 2.6 h | {"goblin":13,"scorpion":23,"hill_giant":427} | {"goblin":13,"scorpion":23,"hill_giant":507,"lesser_demon":728}
+
+Forge route and income, per tier (best gathering and crafting GP/h at the tier level, A1 fighter GP/h from level to kit):
+iron: forge 122 actions, gathered {"copper_ore":42,"iron_ore":7}, crafted {"smelt_bronze":42,"smith_bronze_legs":21,"smelt_iron":7,"smith_iron_scim":1,"smith_iron_legs":1,"smith_iron_plate":1}; best gathering copper_rock 13009 GP/h; best crafting smith_bronze_legs 27320 GP/h; fighter 22418 GP/h
+steel: no forge recipe; best gathering iron_rock 43522 GP/h; best crafting smith_iron_legs 91075 GP/h; fighter 44052 GP/h
+black: no forge recipe; best gathering iron_rock 44862 GP/h; best crafting smith_iron_legs 93877 GP/h; fighter 62917 GP/h
+mithril: forge 415 actions, gathered {"copper_ore":42,"iron_ore":115,"mithril_ore":10}, crafted {"smelt_bronze":42,"smith_bronze_legs":21,"smelt_iron":115,"smith_iron_legs":57,"smelt_mithril":10,"smith_mith_scim":1,"smith_mith_legs":1,"smith_mith_plate":1}; best gathering iron_rock 45870 GP/h; best crafting smith_iron_legs 95987 GP/h; fighter 76296 GP/h
+adamant: no forge recipe; best gathering maple_tree 88138 GP/h; best crafting fletch_maple_bow 181552 GP/h; fighter 111322 GP/h
+rune: forge 1679 actions, gathered {"copper_ore":42,"iron_ore":115,"mithril_ore":122,"gold_ore":451,"runite_ore":45}, crafted {"smelt_bronze":42,"smith_bronze_legs":21,"smelt_iron":115,"smith_iron_legs":57,"smelt_mithril":122,"smith_mith_legs":40,"smelt_gold":451,"smelt_runite":45,"smith_rune_legs":9,"smith_rune_scim":1,"smith_rune_plate":1}; best gathering gold_rock 144000 GP/h; best crafting fletch_yew_bow 206905 GP/h; fighter 139247 GP/h
+  PASS prints the milestone table
+EVERY ASSERTION OF pacing.test.ts HOLDS
+
+=== 2. convention only: the pack is counted over camps that do not keep their sight; Stage 2's rule otherwise
+  PASS the starter chain earns the bronze kit: six quests, one kill, 29 actions, no coin spent on equipment
+  PASS every tier is a step, in order (A1, 1x)
+  PASS every tier is a step, in order (A3, 1x)
+  PASS shop only: the kit takes at least 25 further kills after the level, iron to adamant
+  PASS with bounties and drops it still comes after the level, iron to mithril
+  PASS a shop-only fighter is never more than three tiers behind
+  PASS negative control: today's economy hands over the kit with the level
+  PASS the booster speeds levels, not gear
+  PASS the forge makes bronze, iron, mithril and rune kits without coin
+  PASS the model is a pure function
+
+A1: tier | level kills | kit kills | further | behind | quests | earned at kit coins/gear/slayer/quests | spent | share at level | average at level / kit | kills at level | kills at kit
+bronze | 0 | 1 | 1 | 0 | 6 | 0/7/0/25 | 2 | 0% | 0 m / 9 m | {} | {"goblin":1}
+iron | 39 | 132 | 93 | 1 | 8 | 3680/7/400/1325 | 5352 | 48% | 15 m / 23 m | {"goblin":39} | {"goblin":112,"scorpion":20}
+steel | 112 | 354 | 242 | 2 | 8 | 19144/7/400/1325 | 20852 | 37% | 19 m / 42 m | {"goblin":112} | {"goblin":112,"scorpion":231,"hill_giant":11}
+black | 156 | 453 | 297 | 2 | 8 | 36543/7/400/1325 | 38152 | 44% | 25 m / 55 m | {"goblin":112,"scorpion":44} | {"goblin":112,"scorpion":231,"hill_giant":110}
+mithril | 228 | 540 | 312 | 1 | 8 | 51833/7/400/1325 | 53452 | 55% | 31 m / 64 m | {"goblin":112,"scorpion":116} | {"goblin":112,"scorpion":231,"hill_giant":197}
+adamant | 433 | 824 | 391 | 1 | 8 | 101746/7/400/1325 | 103452 | 70% | 52 m / 89 m | {"goblin":112,"scorpion":231,"hill_giant":90} | {"goblin":112,"scorpion":231,"hill_giant":481}
+rune | 816 | 1558 | 742 | 0 | 8 | 230747/7/400/1325 | 232452 | 79% | 88 m / 2.4 h | {"goblin":112,"scorpion":231,"hill_giant":473} | {"goblin":112,"scorpion":231,"hill_giant":1215}
+dragon | 4606 | 4606 | 0 | 0 | 8 | 766433/7/400/1325 | 612452 | 202% | 5.5 h / 5.5 h | {"goblin":112,"scorpion":231,"hill_giant":4263} | {"goblin":112,"scorpion":231,"hill_giant":4263}
+
+A3: tier | level kills | kit kills | further | behind | quests | earned at kit coins/gear/slayer/quests | spent | share at level | average at level / kit | kills at level | kills at kit
+bronze | 0 | 1 | 1 | 0 | 6 | 0/7/0/25 | 2 | 0% | 0 m / 9 m | {} | {"goblin":1}
+iron | 39 | 114 | 75 | 1 | 8 | 3249/12/3700/1325 | 8252 | 85% | 17 m / 24 m | {"goblin":39} | {"goblin":95,"scorpion":19}
+steel | 102 | 186 | 84 | 1 | 8 | 7866/53/3700/1325 | 11852 | 62% | 21 m / 30 m | {"goblin":95,"scorpion":7} | {"goblin":95,"scorpion":91}
+black | 146 | 378 | 232 | 1 | 8 | 27880/774/3700/1325 | 33552 | 65% | 26 m / 48 m | {"goblin":95,"scorpion":51} | {"goblin":95,"scorpion":214,"hill_giant":69}
+mithril | 218 | 410 | 192 | 0 | 8 | 33504/1035/3700/1325 | 33552 | 72% | 32 m / 51 m | {"goblin":95,"scorpion":123} | {"goblin":95,"scorpion":214,"hill_giant":101}
+adamant | 410 | 448 | 38 | 0 | 8 | 40182/2026/3700/1325 | 47052 | 79% | 51 m / 56 m | {"goblin":95,"scorpion":214,"hill_giant":101} | {"goblin":95,"scorpion":214,"hill_giant":139}
+rune | 792 | 1087 | 295 | 0 | 8 | 152487/18699/3700/1325 | 176052 | 90% | 83 m / 1.8 h | {"goblin":95,"scorpion":214,"hill_giant":483} | {"goblin":95,"scorpion":214,"hill_giant":778}
+dragon | 4583 | 4583 | 0 | 0 | 8 | 766909/109917/3700/1325 | 556052 | 232% | 5.4 h / 5.4 h | {"goblin":95,"scorpion":214,"hill_giant":4274} | {"goblin":95,"scorpion":214,"hill_giant":4274}
+
+A1 10x: tier | level kills | kit kills | further | behind | quests | earned at kit coins/gear/slayer/quests | spent | share at level | average at level / kit | kills at level | kills at kit
+bronze | 0 | 1 | 1 | 0 | 6 | 0/7/0/25 | 2 | 0% | 0 m / 9 m | {} | {"goblin":1}
+iron | 5 | 47 | 42 | 4 | 8 | 3667/7/400/1325 | 5352 | 27% | 12 m / 19 m | {"goblin":5} | {"goblin":13,"scorpion":23,"hill_giant":11}
+steel | 13 | 135 | 122 | 4 | 8 | 19133/7/400/1325 | 20852 | 18% | 13 m / 30 m | {"goblin":13} | {"goblin":13,"scorpion":23,"hill_giant":99}
+black | 18 | 234 | 216 | 3 | 8 | 36533/7/400/1325 | 38152 | 15% | 14 m / 39 m | {"goblin":13,"scorpion":5} | {"goblin":13,"scorpion":23,"hill_giant":198}
+mithril | 25 | 321 | 296 | 2 | 8 | 51823/7/400/1325 | 53452 | 13% | 15 m / 47 m | {"goblin":13,"scorpion":12} | {"goblin":13,"scorpion":23,"hill_giant":285}
+adamant | 45 | 559 | 514 | 2 | 8 | 102279/7/400/1325 | 103452 | 10% | 18 m / 67 m | {"goblin":13,"scorpion":23,"hill_giant":9} | {"goblin":13,"scorpion":23,"hill_giant":507,"lesser_demon":16}
+rune | 84 | 739 | 655 | 1 | 8 | 230979/7/400/1325 | 232452 | 9% | 23 m / 1.5 h | {"goblin":13,"scorpion":23,"hill_giant":48} | {"goblin":13,"scorpion":23,"hill_giant":507,"lesser_demon":196}
+dragon | 463 | 1271 | 808 | 0 | 8 | 611359/7/400/1325 | 612452 | 21% | 57 m / 2.6 h | {"goblin":13,"scorpion":23,"hill_giant":427} | {"goblin":13,"scorpion":23,"hill_giant":507,"lesser_demon":728}
+
+Forge route and income, per tier (best gathering and crafting GP/h at the tier level, A1 fighter GP/h from level to kit):
+iron: forge 122 actions, gathered {"copper_ore":42,"iron_ore":7}, crafted {"smelt_bronze":42,"smith_bronze_legs":21,"smelt_iron":7,"smith_iron_scim":1,"smith_iron_legs":1,"smith_iron_plate":1}; best gathering copper_rock 13009 GP/h; best crafting smith_bronze_legs 27320 GP/h; fighter 22418 GP/h
+steel: no forge recipe; best gathering iron_rock 43522 GP/h; best crafting smith_iron_legs 91075 GP/h; fighter 44052 GP/h
+black: no forge recipe; best gathering iron_rock 44862 GP/h; best crafting smith_iron_legs 93877 GP/h; fighter 62917 GP/h
+mithril: forge 415 actions, gathered {"copper_ore":42,"iron_ore":115,"mithril_ore":10}, crafted {"smelt_bronze":42,"smith_bronze_legs":21,"smelt_iron":115,"smith_iron_legs":57,"smelt_mithril":10,"smith_mith_scim":1,"smith_mith_legs":1,"smith_mith_plate":1}; best gathering iron_rock 45870 GP/h; best crafting smith_iron_legs 95987 GP/h; fighter 76296 GP/h
+adamant: no forge recipe; best gathering maple_tree 88138 GP/h; best crafting fletch_maple_bow 181552 GP/h; fighter 111322 GP/h
+rune: forge 1679 actions, gathered {"copper_ore":42,"iron_ore":115,"mithril_ore":122,"gold_ore":451,"runite_ore":45}, crafted {"smelt_bronze":42,"smith_bronze_legs":21,"smelt_iron":115,"smith_iron_legs":57,"smelt_mithril":122,"smith_mith_legs":40,"smelt_gold":451,"smelt_runite":45,"smith_rune_legs":9,"smith_rune_scim":1,"smith_rune_plate":1}; best gathering gold_rock 144000 GP/h; best crafting fletch_yew_bow 206905 GP/h; fighter 139247 GP/h
+  PASS prints the milestone table
+EVERY ASSERTION OF pacing.test.ts HOLDS
+
+=== 3. after: aggressive camps attack at every level, sight shrinking over 10 combat levels (aggro.ts)
+  PASS the starter chain earns the bronze kit: six quests, one kill, 29 actions, no coin spent on equipment
+  PASS every tier is a step, in order (A1, 1x)
+  PASS every tier is a step, in order (A3, 1x)
+  PASS shop only: the kit takes at least 25 further kills after the level, iron to adamant
+  PASS with bounties and drops it still comes after the level, iron to mithril
+  PASS a shop-only fighter is never more than three tiers behind
+  PASS negative control: today's economy hands over the kit with the level
+  PASS the booster speeds levels, not gear
+  PASS the forge makes bronze, iron, mithril and rune kits without coin
+  PASS the model is a pure function
+
+A1: tier | level kills | kit kills | further | behind | quests | earned at kit coins/gear/slayer/quests | spent | share at level | average at level / kit | kills at level | kills at kit
+bronze | 0 | 1 | 1 | 0 | 6 | 0/7/0/25 | 2 | 0% | 0 m / 9 m | {} | {"goblin":1}
+iron | 39 | 169 | 130 | 1 | 8 | 3629/7/400/1325 | 5352 | 48% | 15 m / 23 m | {"goblin":39} | {"goblin":169}
+steel | 112 | 434 | 322 | 2 | 8 | 19134/7/400/1325 | 20852 | 37% | 19 m / 44 m | {"goblin":112} | {"goblin":204,"scorpion":230}
+black | 215 | 637 | 422 | 2 | 8 | 36504/7/400/1325 | 38152 | 43% | 26 m / 60 m | {"goblin":204,"scorpion":11} | {"goblin":204,"scorpion":394,"hill_giant":39}
+mithril | 287 | 724 | 437 | 1 | 8 | 51795/7/400/1325 | 53452 | 54% | 32 m / 69 m | {"goblin":204,"scorpion":83} | {"goblin":204,"scorpion":394,"hill_giant":126}
+adamant | 598 | 1009 | 411 | 1 | 8 | 101883/7/400/1325 | 103452 | 63% | 54 m / 1.6 h | {"goblin":204,"scorpion":394} | {"goblin":204,"scorpion":394,"hill_giant":411}
+rune | 981 | 1743 | 762 | 0 | 8 | 230884/7/400/1325 | 232452 | 77% | 1.5 h / 2.5 h | {"goblin":204,"scorpion":394,"hill_giant":383} | {"goblin":204,"scorpion":394,"hill_giant":1145}
+dragon | 4771 | 4771 | 0 | 0 | 8 | 763055/7/400/1325 | 612452 | 201% | 5.6 h / 5.6 h | {"goblin":204,"scorpion":394,"hill_giant":4173} | {"goblin":204,"scorpion":394,"hill_giant":4173}
+
+A3: tier | level kills | kit kills | further | behind | quests | earned at kit coins/gear/slayer/quests | spent | share at level | average at level / kit | kills at level | kills at kit
+bronze | 0 | 1 | 1 | 0 | 6 | 0/7/0/25 | 2 | 0% | 0 m / 9 m | {} | {"goblin":1}
+iron | 39 | 126 | 87 | 1 | 8 | 2700/40/2800/1325 | 6052 | 85% | 17 m / 22 m | {"goblin":39} | {"goblin":126}
+steel | 112 | 223 | 111 | 1 | 8 | 8665/191/3100/1325 | 9652 | 59% | 21 m / 30 m | {"goblin":112} | {"goblin":132,"scorpion":91}
+black | 169 | 482 | 313 | 1 | 8 | 25273/1709/3100/1325 | 31352 | 61% | 26 m / 49 m | {"goblin":132,"scorpion":37} | {"goblin":132,"scorpion":350}
+mithril | 241 | 611 | 370 | 1 | 8 | 40131/2120/3100/1325 | 46652 | 69% | 32 m / 60 m | {"goblin":132,"scorpion":109} | {"goblin":132,"scorpion":420,"hill_giant":59}
+adamant | 552 | 682 | 130 | 0 | 8 | 52610/3137/3100/1325 | 60152 | 73% | 53 m / 67 m | {"goblin":132,"scorpion":420} | {"goblin":132,"scorpion":420,"hill_giant":130}
+rune | 935 | 1322 | 387 | 0 | 8 | 165090/19836/3100/1325 | 189152 | 86% | 87 m / 1.9 h | {"goblin":132,"scorpion":420,"hill_giant":383} | {"goblin":132,"scorpion":420,"hill_giant":770}
+dragon | 4725 | 4725 | 0 | 0 | 8 | 763167/108627/3100/1325 | 569152 | 231% | 5.4 h / 5.4 h | {"goblin":132,"scorpion":420,"hill_giant":4173} | {"goblin":132,"scorpion":420,"hill_giant":4173}
+
+A1 10x: tier | level kills | kit kills | further | behind | quests | earned at kit coins/gear/slayer/quests | spent | share at level | average at level / kit | kills at level | kills at kit
+bronze | 0 | 1 | 1 | 0 | 6 | 0/7/0/25 | 2 | 0% | 0 m / 9 m | {} | {"goblin":1}
+iron | 5 | 72 | 67 | 4 | 8 | 3660/7/400/1325 | 5352 | 27% | 12 m / 19 m | {"goblin":5} | {"goblin":22,"scorpion":50}
+steel | 13 | 165 | 152 | 4 | 8 | 19223/7/400/1325 | 20852 | 18% | 13 m / 30 m | {"goblin":13} | {"goblin":22,"scorpion":57,"hill_giant":86}
+black | 23 | 263 | 240 | 3 | 8 | 36447/7/400/1325 | 38152 | 14% | 14 m / 40 m | {"goblin":22,"scorpion":1} | {"goblin":22,"scorpion":57,"hill_giant":184}
+mithril | 30 | 350 | 320 | 2 | 8 | 51737/7/400/1325 | 53452 | 13% | 15 m / 47 m | {"goblin":22,"scorpion":8} | {"goblin":22,"scorpion":57,"hill_giant":271}
+adamant | 62 | 635 | 573 | 2 | 8 | 101826/7/400/1325 | 103452 | 10% | 18 m / 68 m | {"goblin":22,"scorpion":40} | {"goblin":22,"scorpion":57,"hill_giant":556}
+rune | 110 | 1105 | 995 | 1 | 8 | 230804/7/400/1325 | 232452 | 9% | 24 m / 1.7 h | {"goblin":22,"scorpion":57,"hill_giant":31} | {"goblin":22,"scorpion":57,"hill_giant":940,"lesser_demon":86}
+dragon | 489 | 1637 | 1148 | 0 | 8 | 611184/7/400/1325 | 612452 | 20% | 57 m / 2.8 h | {"goblin":22,"scorpion":57,"hill_giant":410} | {"goblin":22,"scorpion":57,"hill_giant":940,"lesser_demon":618}
+
+Forge route and income, per tier (best gathering and crafting GP/h at the tier level, A1 fighter GP/h from level to kit):
+iron: forge 122 actions, gathered {"copper_ore":42,"iron_ore":7}, crafted {"smelt_bronze":42,"smith_bronze_legs":21,"smelt_iron":7,"smith_iron_scim":1,"smith_iron_legs":1,"smith_iron_plate":1}; best gathering copper_rock 13009 GP/h; best crafting smith_bronze_legs 27320 GP/h; fighter 21227 GP/h
+steel: no forge recipe; best gathering iron_rock 43522 GP/h; best crafting smith_iron_legs 91075 GP/h; fighter 41431 GP/h
+black: no forge recipe; best gathering iron_rock 44862 GP/h; best crafting smith_iron_legs 93877 GP/h; fighter 55949 GP/h
+mithril: forge 415 actions, gathered {"copper_ore":42,"iron_ore":115,"mithril_ore":10}, crafted {"smelt_bronze":42,"smith_bronze_legs":21,"smelt_iron":115,"smith_iron_legs":57,"smelt_mithril":10,"smith_mith_scim":1,"smith_mith_legs":1,"smith_mith_plate":1}; best gathering iron_rock 45870 GP/h; best crafting smith_iron_legs 95987 GP/h; fighter 68584 GP/h
+adamant: no forge recipe; best gathering maple_tree 88138 GP/h; best crafting fletch_maple_bow 181552 GP/h; fighter 108483 GP/h
+rune: forge 1679 actions, gathered {"copper_ore":42,"iron_ore":115,"mithril_ore":122,"gold_ore":451,"runite_ore":45}, crafted {"smelt_bronze":42,"smith_bronze_legs":21,"smelt_iron":115,"smith_iron_legs":57,"smelt_mithril":122,"smith_mith_legs":40,"smelt_gold":451,"smelt_runite":45,"smith_rune_legs":9,"smith_rune_scim":1,"smith_rune_plate":1}; best gathering gold_rock 144000 GP/h; best crafting fletch_yew_bow 206905 GP/h; fighter 139390 GP/h
+  PASS prints the milestone table
+EVERY ASSERTION OF pacing.test.ts HOLDS
+
+=== 3. after: aggressive camps attack at every level, sight shrinking over 5 combat levels (aggro.ts)
+  PASS the starter chain earns the bronze kit: six quests, one kill, 29 actions, no coin spent on equipment
+  PASS every tier is a step, in order (A1, 1x)
+  PASS every tier is a step, in order (A3, 1x)
+  PASS shop only: the kit takes at least 25 further kills after the level, iron to adamant
+  PASS with bounties and drops it still comes after the level, iron to mithril
+  PASS a shop-only fighter is never more than three tiers behind
+  PASS negative control: today's economy hands over the kit with the level
+  PASS the booster speeds levels, not gear
+  PASS the forge makes bronze, iron, mithril and rune kits without coin
+  PASS the model is a pure function
+
+A1: tier | level kills | kit kills | further | behind | quests | earned at kit coins/gear/slayer/quests | spent | share at level | average at level / kit | kills at level | kills at kit
+bronze | 0 | 1 | 1 | 0 | 6 | 0/7/0/25 | 2 | 0% | 0 m / 9 m | {} | {"goblin":1}
+iron | 39 | 159 | 120 | 1 | 8 | 3625/7/400/1325 | 5352 | 48% | 15 m / 23 m | {"goblin":39} | {"goblin":154,"scorpion":5}
+steel | 112 | 401 | 289 | 2 | 8 | 19144/7/400/1325 | 20852 | 37% | 19 m / 43 m | {"goblin":112} | {"goblin":154,"scorpion":247}
+black | 183 | 548 | 365 | 2 | 8 | 36495/7/400/1325 | 38152 | 43% | 25 m / 57 m | {"goblin":154,"scorpion":29} | {"goblin":154,"scorpion":323,"hill_giant":71}
+mithril | 255 | 635 | 380 | 1 | 8 | 51786/7/400/1325 | 53452 | 55% | 31 m / 66 m | {"goblin":154,"scorpion":101} | {"goblin":154,"scorpion":323,"hill_giant":158}
+adamant | 518 | 920 | 402 | 1 | 8 | 101874/7/400/1325 | 103452 | 66% | 54 m / 1.5 h | {"goblin":154,"scorpion":323,"hill_giant":41} | {"goblin":154,"scorpion":323,"hill_giant":443}
+rune | 900 | 1654 | 754 | 0 | 8 | 230875/7/400/1325 | 232452 | 78% | 89 m / 2.4 h | {"goblin":154,"scorpion":323,"hill_giant":423} | {"goblin":154,"scorpion":323,"hill_giant":1177}
+dragon | 4691 | 4691 | 0 | 0 | 8 | 764628/7/400/1325 | 612452 | 202% | 5.5 h / 5.6 h | {"goblin":154,"scorpion":323,"hill_giant":4214} | {"goblin":154,"scorpion":323,"hill_giant":4214}
+
+A3: tier | level kills | kit kills | further | behind | quests | earned at kit coins/gear/slayer/quests | spent | share at level | average at level / kit | kills at level | kills at kit
+bronze | 0 | 1 | 1 | 0 | 6 | 0/7/0/25 | 2 | 0% | 0 m / 9 m | {} | {"goblin":1}
+iron | 39 | 126 | 87 | 1 | 8 | 2700/40/2800/1325 | 6052 | 85% | 17 m / 22 m | {"goblin":39} | {"goblin":126}
+steel | 112 | 223 | 111 | 1 | 8 | 8665/191/3100/1325 | 9652 | 59% | 21 m / 30 m | {"goblin":112} | {"goblin":132,"scorpion":91}
+black | 169 | 471 | 302 | 1 | 8 | 25461/1598/3100/1325 | 31352 | 61% | 25 m / 49 m | {"goblin":132,"scorpion":37} | {"goblin":132,"scorpion":331,"hill_giant":8}
+mithril | 241 | 554 | 313 | 1 | 8 | 40048/1598/3100/1325 | 38152 | 69% | 32 m / 58 m | {"goblin":132,"scorpion":109} | {"goblin":132,"scorpion":331,"hill_giant":91}
+adamant | 504 | 582 | 78 | 0 | 8 | 44969/2329/3100/1325 | 51652 | 75% | 52 m / 61 m | {"goblin":132,"scorpion":331,"hill_giant":41} | {"goblin":132,"scorpion":331,"hill_giant":119}
+rune | 886 | 1221 | 335 | 0 | 8 | 157273/19001/3100/1325 | 180652 | 88% | 85 m / 1.8 h | {"goblin":132,"scorpion":331,"hill_giant":423} | {"goblin":132,"scorpion":331,"hill_giant":758}
+dragon | 4677 | 4677 | 0 | 0 | 8 | 764665/109175/3100/1325 | 560652 | 231% | 5.4 h / 5.4 h | {"goblin":132,"scorpion":331,"hill_giant":4214} | {"goblin":132,"scorpion":331,"hill_giant":4214}
+
+A1 10x: tier | level kills | kit kills | further | behind | quests | earned at kit coins/gear/slayer/quests | spent | share at level | average at level / kit | kills at level | kills at kit
+bronze | 0 | 1 | 1 | 0 | 6 | 0/7/0/25 | 2 | 0% | 0 m / 9 m | {} | {"goblin":1}
+iron | 5 | 57 | 52 | 4 | 8 | 3692/7/400/1325 | 5352 | 27% | 12 m / 19 m | {"goblin":5} | {"goblin":17,"scorpion":33,"hill_giant":7}
+steel | 13 | 145 | 132 | 4 | 8 | 19158/7/400/1325 | 20852 | 18% | 13 m / 30 m | {"goblin":13} | {"goblin":17,"scorpion":33,"hill_giant":95}
+black | 20 | 244 | 224 | 3 | 8 | 36557/7/400/1325 | 38152 | 14% | 14 m / 40 m | {"goblin":17,"scorpion":3} | {"goblin":17,"scorpion":33,"hill_giant":194}
+mithril | 27 | 331 | 304 | 2 | 8 | 51847/7/400/1325 | 53452 | 13% | 15 m / 47 m | {"goblin":17,"scorpion":10} | {"goblin":17,"scorpion":33,"hill_giant":281}
+adamant | 54 | 615 | 561 | 2 | 8 | 101760/7/400/1325 | 103452 | 10% | 18 m / 67 m | {"goblin":17,"scorpion":33,"hill_giant":4} | {"goblin":17,"scorpion":33,"hill_giant":565}
+rune | 92 | 813 | 721 | 1 | 8 | 230928/7/400/1325 | 232452 | 9% | 23 m / 1.6 h | {"goblin":17,"scorpion":33,"hill_giant":42} | {"goblin":17,"scorpion":33,"hill_giant":588,"lesser_demon":175}
+dragon | 471 | 1345 | 874 | 0 | 8 | 611308/7/400/1325 | 612452 | 21% | 57 m / 2.6 h | {"goblin":17,"scorpion":33,"hill_giant":421} | {"goblin":17,"scorpion":33,"hill_giant":588,"lesser_demon":707}
+
+Forge route and income, per tier (best gathering and crafting GP/h at the tier level, A1 fighter GP/h from level to kit):
+iron: forge 122 actions, gathered {"copper_ore":42,"iron_ore":7}, crafted {"smelt_bronze":42,"smith_bronze_legs":21,"smelt_iron":7,"smith_iron_scim":1,"smith_iron_legs":1,"smith_iron_plate":1}; best gathering copper_rock 13009 GP/h; best crafting smith_bronze_legs 27320 GP/h; fighter 20524 GP/h
+steel: no forge recipe; best gathering iron_rock 43522 GP/h; best crafting smith_iron_legs 91075 GP/h; fighter 42762 GP/h
+black: no forge recipe; best gathering iron_rock 44862 GP/h; best crafting smith_iron_legs 93877 GP/h; fighter 58936 GP/h
+mithril: forge 415 actions, gathered {"copper_ore":42,"iron_ore":115,"mithril_ore":10}, crafted {"smelt_bronze":42,"smith_bronze_legs":21,"smelt_iron":115,"smith_iron_legs":57,"smelt_mithril":10,"smith_mith_scim":1,"smith_mith_legs":1,"smith_mith_plate":1}; best gathering iron_rock 45870 GP/h; best crafting smith_iron_legs 95987 GP/h; fighter 71926 GP/h
+adamant: no forge recipe; best gathering maple_tree 88138 GP/h; best crafting fletch_maple_bow 181552 GP/h; fighter 111651 GP/h
+rune: forge 1679 actions, gathered {"copper_ore":42,"iron_ore":115,"mithril_ore":122,"gold_ore":451,"runite_ore":45}, crafted {"smelt_bronze":42,"smith_bronze_legs":21,"smelt_iron":115,"smith_iron_legs":57,"smelt_mithril":122,"smith_mith_legs":40,"smelt_gold":451,"smelt_runite":45,"smith_rune_legs":9,"smith_rune_scim":1,"smith_rune_plate":1}; best gathering gold_rock 144000 GP/h; best crafting fletch_yew_bow 206905 GP/h; fighter 139323 GP/h
+  PASS prints the milestone table
+EVERY ASSERTION OF pacing.test.ts HOLDS
+
+=== 3. after: aggressive camps attack at every level, sight shrinking over 20 combat levels (aggro.ts)
+  PASS the starter chain earns the bronze kit: six quests, one kill, 29 actions, no coin spent on equipment
+  PASS every tier is a step, in order (A1, 1x)
+  PASS every tier is a step, in order (A3, 1x)
+  PASS shop only: the kit takes at least 25 further kills after the level, iron to adamant
+  PASS with bounties and drops it still comes after the level, iron to mithril
+  PASS a shop-only fighter is never more than three tiers behind
+  PASS negative control: today's economy hands over the kit with the level
+  PASS the booster speeds levels, not gear
+  PASS the forge makes bronze, iron, mithril and rune kits without coin
+  PASS the model is a pure function
+
+A1: tier | level kills | kit kills | further | behind | quests | earned at kit coins/gear/slayer/quests | spent | share at level | average at level / kit | kills at level | kills at kit
+bronze | 0 | 1 | 1 | 0 | 6 | 0/7/0/25 | 2 | 0% | 0 m / 9 m | {} | {"goblin":1}
+iron | 39 | 169 | 130 | 1 | 8 | 3629/7/400/1325 | 5352 | 48% | 15 m / 23 m | {"goblin":39} | {"goblin":169}
+steel | 112 | 434 | 322 | 2 | 8 | 19134/7/400/1325 | 20852 | 37% | 19 m / 44 m | {"goblin":112} | {"goblin":204,"scorpion":230}
+black | 215 | 704 | 489 | 2 | 8 | 36447/7/400/1325 | 38152 | 43% | 26 m / 61 m | {"goblin":204,"scorpion":11} | {"goblin":204,"scorpion":500}
+mithril | 287 | 943 | 656 | 1 | 8 | 51773/7/400/1325 | 53452 | 54% | 32 m / 75 m | {"goblin":204,"scorpion":83} | {"goblin":204,"scorpion":739}
+adamant | 598 | 1247 | 649 | 1 | 8 | 101826/7/400/1325 | 103452 | 63% | 54 m / 1.7 h | {"goblin":204,"scorpion":394} | {"goblin":204,"scorpion":739,"dark_wizard":49,"hill_giant":255}
+rune | 1186 | 1981 | 795 | 0 | 8 | 230827/7/400/1325 | 232452 | 72% | 1.6 h / 2.6 h | {"goblin":204,"scorpion":739,"dark_wizard":49,"hill_giant":194} | {"goblin":204,"scorpion":739,"dark_wizard":49,"hill_giant":989}
+dragon | 4976 | 4976 | 0 | 0 | 8 | 757198/7/400/1325 | 612452 | 200% | 5.7 h / 5.7 h | {"goblin":204,"scorpion":739,"dark_wizard":49,"hill_giant":3984} | {"goblin":204,"scorpion":739,"dark_wizard":49,"hill_giant":3984}
+
+A3: tier | level kills | kit kills | further | behind | quests | earned at kit coins/gear/slayer/quests | spent | share at level | average at level / kit | kills at level | kills at kit
+bronze | 0 | 1 | 1 | 0 | 6 | 0/7/0/25 | 2 | 0% | 0 m / 9 m | {} | {"goblin":1}
+iron | 39 | 126 | 87 | 1 | 8 | 2700/40/2800/1325 | 6052 | 85% | 17 m / 22 m | {"goblin":39} | {"goblin":126}
+steel | 112 | 223 | 111 | 1 | 8 | 8665/191/3100/1325 | 9652 | 59% | 21 m / 30 m | {"goblin":112} | {"goblin":132,"scorpion":91}
+black | 169 | 482 | 313 | 1 | 8 | 25273/1709/3100/1325 | 31352 | 61% | 26 m / 49 m | {"goblin":132,"scorpion":37} | {"goblin":132,"scorpion":350}
+mithril | 241 | 700 | 459 | 1 | 8 | 39253/2987/3100/1325 | 46652 | 69% | 32 m / 62 m | {"goblin":132,"scorpion":109} | {"goblin":132,"scorpion":568}
+adamant | 552 | 970 | 418 | 0 | 8 | 67194/4272/3500/1325 | 75652 | 73% | 53 m / 81 m | {"goblin":132,"scorpion":420} | {"goblin":132,"scorpion":736,"dark_wizard":11,"hill_giant":91}
+rune | 1110 | 1606 | 496 | 0 | 8 | 178971/20866/3500/1325 | 204652 | 81% | 1.5 h / 2.2 h | {"goblin":132,"scorpion":736,"dark_wizard":11,"hill_giant":231} | {"goblin":132,"scorpion":736,"dark_wizard":11,"hill_giant":727}
+dragon | 4900 | 4900 | 0 | 0 | 8 | 757892/106813/3500/1325 | 584652 | 229% | 5.5 h / 5.6 h | {"goblin":132,"scorpion":736,"dark_wizard":11,"hill_giant":4021} | {"goblin":132,"scorpion":736,"dark_wizard":11,"hill_giant":4021}
+
+A1 10x: tier | level kills | kit kills | further | behind | quests | earned at kit coins/gear/slayer/quests | spent | share at level | average at level / kit | kills at level | kills at kit
+bronze | 0 | 1 | 1 | 0 | 6 | 0/7/0/25 | 2 | 0% | 0 m / 9 m | {} | {"goblin":1}
+iron | 5 | 78 | 73 | 4 | 8 | 3662/7/400/1325 | 5352 | 27% | 12 m / 19 m | {"goblin":5} | {"goblin":31,"scorpion":47}
+steel | 13 | 191 | 178 | 4 | 8 | 19168/7/400/1325 | 20852 | 18% | 13 m / 31 m | {"goblin":13} | {"goblin":31,"scorpion":86,"hill_giant":74}
+black | 25 | 290 | 265 | 3 | 8 | 36568/7/400/1325 | 38152 | 14% | 14 m / 41 m | {"goblin":25} | {"goblin":31,"scorpion":86,"hill_giant":173}
+mithril | 36 | 377 | 341 | 2 | 8 | 51858/7/400/1325 | 53452 | 13% | 15 m / 48 m | {"goblin":31,"scorpion":5} | {"goblin":31,"scorpion":86,"hill_giant":260}
+adamant | 67 | 661 | 594 | 2 | 8 | 101771/7/400/1325 | 103452 | 9% | 18 m / 69 m | {"goblin":31,"scorpion":36} | {"goblin":31,"scorpion":86,"hill_giant":544}
+rune | 133 | 1395 | 1262 | 1 | 8 | 230771/7/400/1325 | 232452 | 8% | 24 m / 1.9 h | {"goblin":31,"scorpion":86,"hill_giant":16} | {"goblin":31,"scorpion":86,"hill_giant":1278}
+dragon | 512 | 2635 | 2123 | 0 | 8 | 611016/7/400/1325 | 612452 | 20% | 58 m / 3.3 h | {"goblin":31,"scorpion":86,"hill_giant":395} | {"goblin":31,"scorpion":86,"hill_giant":2217,"lesser_demon":301}
+
+Forge route and income, per tier (best gathering and crafting GP/h at the tier level, A1 fighter GP/h from level to kit):
+iron: forge 122 actions, gathered {"copper_ore":42,"iron_ore":7}, crafted {"smelt_bronze":42,"smith_bronze_legs":21,"smelt_iron":7,"smith_iron_scim":1,"smith_iron_legs":1,"smith_iron_plate":1}; best gathering copper_rock 13009 GP/h; best crafting smith_bronze_legs 27320 GP/h; fighter 21227 GP/h
+steel: no forge recipe; best gathering iron_rock 43522 GP/h; best crafting smith_iron_legs 91075 GP/h; fighter 41426 GP/h
+black: no forge recipe; best gathering iron_rock 44862 GP/h; best crafting smith_iron_legs 93877 GP/h; fighter 53481 GP/h
+mithril: forge 415 actions, gathered {"copper_ore":42,"iron_ore":115,"mithril_ore":10}, crafted {"smelt_bronze":42,"smith_bronze_legs":21,"smelt_iron":115,"smith_iron_legs":57,"smelt_mithril":10,"smith_mith_scim":1,"smith_mith_legs":1,"smith_mith_plate":1}; best gathering iron_rock 45870 GP/h; best crafting smith_iron_legs 95987 GP/h; fighter 58874 GP/h
+adamant: no forge recipe; best gathering maple_tree 88138 GP/h; best crafting fletch_maple_bow 181552 GP/h; fighter 91224 GP/h
+rune: forge 1679 actions, gathered {"copper_ore":42,"iron_ore":115,"mithril_ore":122,"gold_ore":451,"runite_ore":45}, crafted {"smelt_bronze":42,"smith_bronze_legs":21,"smelt_iron":115,"smith_iron_legs":57,"smelt_mithril":122,"smith_mith_legs":40,"smelt_gold":451,"smelt_runite":45,"smith_rune_legs":9,"smith_rune_scim":1,"smith_rune_plate":1}; best gathering gold_rock 144000 GP/h; best crafting fletch_yew_bow 206905 GP/h; fighter 139639 GP/h
+  PASS prints the milestone table
+EVERY ASSERTION OF pacing.test.ts HOLDS

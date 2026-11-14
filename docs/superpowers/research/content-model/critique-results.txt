@@ -9,12 +9,12 @@
    goblin 2.70, hill_giant 3.66, saltback_stalker 3.93, thornwatch_marksman 4.93, moss_guardian 4.49, cinder_adept 4.88, slag_brute 4.96, lesser_demon 5.72, marrowjaw 1.61
 
 === B. Dungeon run against the best open ground at the same level, goods counted on BOTH sides (bones excluded)
-  Saltfang Warren (hero 45): 104 s; as the model counts it (monster coins + chest) 34.7 GP/s = 0.53 of cinder_adept 65.5
-     + every monster's and the boss's goods: 41.2 GP/s = 0.49 of moss_guardian with goods 85.0; + one ore from each node (3 s each): 42.1 = 0.50
-     goods left out by model.ts: 682 GP a run, of which the boss 195
-  The Underkiln (hero 70): 128 s; as the model counts it (monster coins + chest) 84.9 GP/s = 0.71 of lesser_demon 119.0
-     + every monster's and the boss's goods: 106.3 GP/s = 0.60 of lesser_demon with goods 178.5; + one ore from each node (3 s each): 106.3 = 0.60
-     goods left out by model.ts: 2727 GP a run, of which the boss 1560
+  Saltfang Warren (hero 45): 104 s; as the model counts it (monster coins + chest) 36.2 GP/s = 0.55 of cinder_adept 65.5
+     + every monster's and the boss's goods: 44.4 GP/s = 0.52 of moss_guardian with goods 85.0; + one ore from each node (3 s each): 45.0 = 0.53
+     goods left out by model.ts: 857 GP a run, of which the boss 370
+  The Underkiln (hero 70): 128 s; as the model counts it (monster coins + chest) 75.4 GP/s = 0.63 of lesser_demon 119.0
+     + every monster's and the boss's goods: 89.1 GP/s = 0.50 of lesser_demon with goods 178.5; + one ore from each node (3 s each): 90.2 = 0.51
+     goods left out by model.ts: 1742 GP a run, of which the boss 575
 
 === C. Material drops at the sale value of what they make (best recipe), against the 25% bound measured raw
   chicken            coins   10: raw +39%, worked +39%
@@ -29,7 +29,7 @@
   slag_brute         coins  555: raw +16%, worked +41%
   a bone bound and sold instead of sold: big bones 29 -> 72, dragon bones 247 -> 514 (lesser demon coins 715: +37%)
 
-=== D. Kilnglass: first clear 8 + chest 4 (mean) + boss 2 = 14; the kit needs 13 ingots = 13 shards; ml_kiln takes 1 and pays 2 ingots
+=== D. Kilnglass: 2.2 a clear on average (chest and boss, an ingot counted as a shard), 1 guaranteed; the kit needs 13 ingots = 13 shards: about 5.9 clears by the mean, at most 13; ml_kiln takes 1 and pays 2 ingots
 
 === E. Boss kill time, by hand: hp / (damage per swing) x 0.6 s + 2 s per phase change (no dodging, no walking)
   Marrowjaw the Tollmaster: 8.27 a swing, 43 s with no time lost; the fight model's mean 61 s, so dodging and walking cost 30% of the fight
