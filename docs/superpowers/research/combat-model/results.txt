@@ -5,10 +5,10 @@ tail_lash        cone 4.5 x 40deg                 2.05     1128       1600      
 hex_circle       circle r2.5 at target            2.80     1193       1600         407      2         1700
 pinning_volley   circle r2.5 at target            2.80     1193       1600         407      2         1700
 overhead_slam    circle r3 at target              3.30     1237       1600         363      2         1700
-ground_quake     circle r4.5 at self              3.80     1280       1600         320      2         1700
-scorch_line      line 12 x 3                      1.80     1107       1600         493      2         1700
+ground_quake     circle r4.5 at self              4.80     1367       1700         333      2         1600
+scorch_line      line 12 x 2.4                    1.50     1080       1600         520      2         1700
 ember_cone       cone 12 x 32deg                  4.45     1337       1800         463      2         1500
-tail_sweep       circle r5 at self                4.30     1324       1700         376      2         1600
+tail_sweep       circle r5 at self                5.30     1411       1700         289      2         1600
 cinder_fall      circle r2.5 at target            2.80     1193       1500         307      1          150
 ashen_nova       ring 4..14                       9.80     1802       2400         598      2          900
    every row has at least 200 ms of margin: true
@@ -26,12 +26,12 @@ lesser_demon         2.623                    2.681                 1.624       
 == 3. Boss fight: Elvarg the Crag Dragon, proposed HP 1200 (today 260), 2000 seeded fights each
    food cooldown 1.8 s, eating delays the next swing by one 0.6 s tick, no hitpoint regeneration in combat
 fighter                           combat  swing(max, hit%)   win%   mean secs  food eaten  heavies dodged  damage taken
-A prepared, reacts                    86          45, 75%    93.0        110         1.4             94%            50
+A prepared, reacts                    86          45, 75%    93.0        111         1.5             94%            53
 B prepared, never moves               86          45, 75%     0.0         26         3.4              0%           168
-C prepared, slow (+300 ms)            86          45, 75%    79.9         93         2.6             83%            89
-D prepared, no food                   86          45, 75%    74.6        103         0.0             94%            47
-E level 60, dragon kit, reacts        74          42, 74%    80.9        116         1.4             94%            55
-F level 50 rune, no ward/prayer       60          29, 67%     6.5        111         7.4             94%           176
+C prepared, slow (+300 ms)            86          45, 75%    72.8         89         3.3             80%           109
+D prepared, no food                   86          45, 75%    71.3        103         0.0             93%            50
+E level 60, dragon kit, reacts        74          42, 74%    80.8        116         1.5             93%            57
+F level 50 rune, no ward/prayer       60          29, 67%     5.8        107         7.3             93%           175
 G level 50 rune, never moves          60          29, 67%     0.0          9         2.1              0%            92
    for scale: fighter A deals 28.2 damage per second when it only swings; today's 260 HP last 9 s
 
@@ -41,18 +41,18 @@ tail_lash               94.5%                93.1%                    89.2%
 hex_circle              94.1%                91.6%                    85.3%
 pinning_volley          94.1%                91.6%                    85.3%
 overhead_slam           93.8%                90.3%                    81.8%
-ground_quake            93.2%                88.6%                    77.3%
-scorch_line             94.6%                93.4%                    90.0%
+ground_quake            93.4%                89.2%                    78.8%
+scorch_line             94.7%                93.7%                    90.9%
 ember_cone              94.5%                92.9%                    88.8%
-tail_sweep              93.9%                90.8%                    82.9%
+tail_sweep              92.6%                86.9%                    73.2%
 cinder_fall             93.0%                87.9%                    75.7%
 ashen_nova              94.9%                94.3%                    92.8%
 
 == 5. Monster pathing on the Stage 2 walk grid (real buildWalkGrid and findPath)
    monsters: 36; home cells closed on the grid: 0
    findPath calls (to each home from 32 points at leash and leash + 11): 1013; no route: 0
-   expanded cells: mean 120, max 3686; calls over the proposed cap of 4000: 0
-   time: 0.924 ms per call as written today (each call allocates and fills four 55696-cell arrays)
+   expanded cells: mean 120, max 3686; calls over the cap of 6000: 0
+   time: 0.552 ms per call as written today (each call allocates and fills four 55696-cell arrays)
    lair (-102, 100) arena radius 10: 316 of 316 cells open; nearest camp slagfall_terrace, gap -1.0
    lair (-102, 100) arena radius 12: 448 of 448 cells open; nearest camp slagfall_terrace, gap -3.0
    lair (-102, 100) arena radius 14: 616 of 616 cells open; nearest camp slagfall_terrace, gap -5.0

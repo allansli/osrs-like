@@ -1,0 +1,13 @@
+boss HP 1200; 2000 fights per row; positions, re-engage click and walk back modelled
+fighter                             win%   mean s (wins)  deaths by one hit from >=70% HP  heavies dodged
+A prepared, moves                    99.5         79                   64% of deaths           91%
+A, auto-retaliation re-engages       99.5        106                   89% of deaths           93%
+B prepared, never moves               0.1         39                   90% of deaths            0%
+C prepared, +300 ms (trackpad)       98.0         91                   75% of deaths           86%
+C2 prepared, +500 ms                 88.5        101                   85% of deaths           75%
+D prepared, no food                  96.8         79                    8% of deaths           91%
+F level 50 rune, moves               41.5        144                   50% of deaths           94%
+G level 50 rune, never moves          0.0          0                   89% of deaths            0%
+A, heavy capped at 45% max HP       100.0         79                    0% of deaths           91%
+B, heavy capped at 45% max HP       100.0         51                    0% of deaths            8%
+C, heavy capped at 45% max HP       100.0         91                    0% of deaths           86%

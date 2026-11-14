@@ -47,7 +47,8 @@ const BODY = 0.3;
 /** Worst distance a target inside the shape must travel to leave it. */
 function escapeDistance(a: Attack): number {
   const s = a.shape;
-  if (s.type === 'circle') return (s.anchor === 'target' ? s.radius : Math.max(0, s.radius - 1)) + BODY;
+  // A self-anchored circle: the target can stand right against the monster (critique M4), so the worst case is the radius.
+  if (s.type === 'circle') return s.radius + BODY;
   if (s.type === 'line') return s.halfWidth + BODY;
   if (s.type === 'ring') return Math.max(0, Math.min(a.reach, s.outer) - s.inner) + BODY;
   // cone: sideways d*sin(theta), or forward out of the end, whichever is shorter; worst over d <= reach
@@ -66,8 +67,8 @@ const ATTACKS: Record<string, Attack> = {
   hex_circle:     { id: 'hex_circle',     shape: { type: 'circle', anchor: 'target', radius: 2.5 },      windupMs: 1600, slots: 2, style: 'own', reach: 11 },
   pinning_volley: { id: 'pinning_volley', shape: { type: 'circle', anchor: 'target', radius: 2.5 },      windupMs: 1600, slots: 2, style: 'own', reach: 11 },
   overhead_slam:  { id: 'overhead_slam',  shape: { type: 'circle', anchor: 'target', radius: 3.0 },      windupMs: 1600, slots: 2, style: 'own', reach: 2.9 },
-  ground_quake:   { id: 'ground_quake',   shape: { type: 'circle', anchor: 'self', radius: 4.5 },        windupMs: 1600, slots: 2, style: 'own', reach: 2.9 },
-  scorch_line:    { id: 'scorch_line',    shape: { type: 'line', length: 12, halfWidth: 1.5 },           windupMs: 1600, slots: 2, style: 'own', reach: 2.9 },
+  ground_quake:   { id: 'ground_quake',   shape: { type: 'circle', anchor: 'self', radius: 4.5 },        windupMs: 1700, slots: 2, style: 'own', reach: 2.9 },
+  scorch_line:    { id: 'scorch_line',    shape: { type: 'line', length: 12, halfWidth: 1.2 },           windupMs: 1600, slots: 2, style: 'own', reach: 2.9 },
   // the boss: sure damage when inside, by power; styles differ so that no single prayer covers the fight
   ember_cone:     { id: 'ember_cone',     shape: { type: 'cone', length: 12, halfAngleDeg: 32 },         windupMs: 1800, slots: 2, style: 'fire',  power: 50, reach: 11 },
   tail_sweep:     { id: 'tail_sweep',     shape: { type: 'circle', anchor: 'self', radius: 5.0 },        windupMs: 1700, slots: 2, style: 'melee', power: 46, reach: 5 },
@@ -281,7 +282,8 @@ for (const a of Object.values(ATTACKS)) {
 // ---------------------------------------------------------------- 7. pathing cost on the real walk grid
 p('\n== 5. Monster pathing on the Stage 2 walk grid (real buildWalkGrid and findPath)');
 const grid = buildWalkGrid();
-let closedHomes = 0, calls = 0, nulls = 0, maxExp = 0, sumExp = 0, over4000 = 0;
+const CAP = 6000; // design 6.1 search cap
+let closedHomes = 0, calls = 0, nulls = 0, maxExp = 0, sumExp = 0, overCap = 0;
 const t0 = performance.now();
 for (const camp of CAMPS) for (const mem of camp.members) {
   const gx = Math.floor(mem.x - grid.origin), gz = Math.floor(mem.z - grid.origin);
@@ -294,14 +296,14 @@ for (const camp of CAMPS) for (const mem of camp.members) {
     const stats = { expanded: 0 };
     const path = findPath(grid, from, [mem.x, mem.z], stats);
     calls++; sumExp += stats.expanded; maxExp = Math.max(maxExp, stats.expanded);
-    if (stats.expanded > 4000) over4000++;
+    if (stats.expanded > CAP) overCap++;
     if (!path) nulls++;
   }
 }
 const ms = performance.now() - t0;
 p(`   monsters: ${CAMPS.reduce((n, c) => n + c.members.length, 0)}; home cells closed on the grid: ${closedHomes}`);
 p(`   findPath calls (to each home from 32 points at leash and leash + 11): ${calls}; no route: ${nulls}`);
-p(`   expanded cells: mean ${(sumExp / calls).toFixed(0)}, max ${maxExp}; calls over the proposed cap of 4000: ${over4000}`);
+p(`   expanded cells: mean ${(sumExp / calls).toFixed(0)}, max ${maxExp}; calls over the cap of ${CAP}: ${overCap}`);
 p(`   time: ${(ms / calls).toFixed(3)} ms per call as written today (each call allocates and fills four ${grid.size * grid.size}-cell arrays)`);
 const lair = CAMPS.find((c) => c.id === 'dragon')!;
 for (const R of [10, 12, 14, 16]) {
