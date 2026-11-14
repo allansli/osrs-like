@@ -184,8 +184,7 @@ export function handleWorldHover(e: MouseEvent): void {
         label = `Attack <b style="color:#ff981f">${m.def.name}</b> (Lv-${m.def.level}) [${m.hp}/${m.maxHp} HP]`;
       } else if (ud.type === 'resource' && !ud.entity.depleted) {
         const r = ud.entity as ResourceNodeEntity;
-        const skillMeta = (SKILLS_META as Record<string, { name: string }>)[r.def.skill!];
-        label = `Gather <b style="color:#38bdf8">${r.def.name}</b> (Req Lv ${r.def.req} ${skillMeta ? skillMeta.name : ''})`;
+        label = `Gather <b style="color:#38bdf8">${r.def.name}</b> (Req Lv ${r.def.req} ${(SKILLS_META as Record<string, { name: string }>)[r.def.skill!].name})`;
       } else if (ud.type === 'interactive') {
         label = `Interact with <b style="color:#fde047">${ud.name}</b>`;
       }
