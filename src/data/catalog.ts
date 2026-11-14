@@ -414,19 +414,19 @@ export const FORGE_RECIPES = [
   { id: 'cook_trout',        name: 'Grill Trout',            skill: 'cooking',  req: 10, xp: 70,  input: { raw_trout: 1 },   output: 'trout' },
   { id: 'cook_lobster',      name: 'Roast Lobster',          skill: 'cooking',  req: 25, xp: 130, input: { raw_lobster: 1 }, output: 'lobster' },
   { id: 'cook_shark',        name: 'Cook Manta Shark',       skill: 'cooking',  req: 45, xp: 240, input: { raw_shark: 1 },   output: 'shark' },
-  { id: 'smith_bronze_legs', name: 'Forge Bronze Platelegs', skill: 'smithing', req: 1,  xp: 35,  input: { copper_ore: 2 },  output: 'bronze_legs' },
-  { id: 'smith_bronze_plate',name: 'Forge Bronze Platebody', skill: 'smithing', req: 2,  xp: 50,  input: { copper_ore: 3 },  output: 'bronze_plate' },
-  { id: 'smith_iron_scim',   name: 'Forge Iron Scimitar',    skill: 'smithing', req: 5,  xp: 65,  input: { iron_ore: 2 },    output: 'iron_scimitar' },
-  { id: 'smith_iron_legs',   name: 'Forge Iron Platelegs',   skill: 'smithing', req: 7,  xp: 80,  input: { iron_ore: 2 },    output: 'iron_legs' },
-  { id: 'smith_iron_plate',  name: 'Forge Iron Platebody',   skill: 'smithing', req: 9,  xp: 105, input: { iron_ore: 3 },    output: 'iron_plate' },
-  { id: 'smith_mith_scim',   name: 'Forge Mithril Scimitar', skill: 'smithing', req: 20, xp: 150, input: { mithril_ore: 2 }, output: 'mith_scimitar' },
-  { id: 'smith_mith_legs',   name: 'Forge Mithril Platelegs',skill: 'smithing', req: 22, xp: 175, input: { mithril_ore: 2 }, output: 'mith_legs' },
-  { id: 'smith_mith_plate',  name: 'Forge Mithril Platebody',skill: 'smithing', req: 24, xp: 210, input: { mithril_ore: 3 }, output: 'mith_plate' },
-  { id: 'smith_gilded_legs', name: 'Forge Gilded Platelegs', skill: 'smithing', req: 35, xp: 280, input: { gold_ore: 2 },    output: 'gilded_legs' },
-  { id: 'smith_gilded_plate',name: 'Forge Gilded Platebody', skill: 'smithing', req: 38, xp: 340, input: { gold_ore: 3 },    output: 'gilded_plate' },
-  { id: 'smith_rune_scim',   name: 'Forge Rune Scimitar',    skill: 'smithing', req: 40, xp: 380, input: { runite_ore: 2 },  output: 'rune_scimitar' },
-  { id: 'smith_rune_legs',   name: 'Forge Rune Platelegs',   skill: 'smithing', req: 42, xp: 440, input: { runite_ore: 2 },  output: 'rune_legs' },
-  { id: 'smith_rune_plate',  name: 'Forge Rune Platebody',   skill: 'smithing', req: 45, xp: 520, input: { runite_ore: 3 },  output: 'rune_plate' }
+  { id: 'smith_bronze_legs', name: 'Forge Bronze Platelegs', skill: 'smithing', req: 1,  xp: 35,  input: { bronze_bar: 2 },  output: 'bronze_legs' },
+  { id: 'smith_bronze_plate',name: 'Forge Bronze Platebody', skill: 'smithing', req: 2,  xp: 50,  input: { bronze_bar: 3 },  output: 'bronze_plate' },
+  { id: 'smith_iron_scim',   name: 'Forge Iron Scimitar',    skill: 'smithing', req: 5,  xp: 65,  input: { iron_bar: 2 },    output: 'iron_scimitar' },
+  { id: 'smith_iron_legs',   name: 'Forge Iron Platelegs',   skill: 'smithing', req: 7,  xp: 80,  input: { iron_bar: 2 },    output: 'iron_legs' },
+  { id: 'smith_iron_plate',  name: 'Forge Iron Platebody',   skill: 'smithing', req: 9,  xp: 105, input: { iron_bar: 3 },    output: 'iron_plate' },
+  { id: 'smith_mith_scim',   name: 'Forge Mithril Scimitar', skill: 'smithing', req: 20, xp: 150, input: { mithril_bar: 3 }, output: 'mith_scimitar' },
+  { id: 'smith_mith_legs',   name: 'Forge Mithril Platelegs',skill: 'smithing', req: 22, xp: 175, input: { mithril_bar: 3 }, output: 'mith_legs' },
+  { id: 'smith_mith_plate',  name: 'Forge Mithril Platebody',skill: 'smithing', req: 24, xp: 210, input: { mithril_bar: 4 }, output: 'mith_plate' },
+  { id: 'smith_gilded_legs', name: 'Forge Gilded Platelegs', skill: 'smithing', req: 46, xp: 280, input: { rune_legs: 1, gold_bar: 3 }, output: 'gilded_legs' },
+  { id: 'smith_gilded_plate',name: 'Forge Gilded Platebody', skill: 'smithing', req: 48, xp: 340, input: { rune_plate: 1, gold_bar: 3 }, output: 'gilded_plate' },
+  { id: 'smith_rune_scim',   name: 'Forge Rune Scimitar',    skill: 'smithing', req: 40, xp: 380, input: { runite_bar: 4 },  output: 'rune_scimitar' },
+  { id: 'smith_rune_legs',   name: 'Forge Rune Platelegs',   skill: 'smithing', req: 42, xp: 440, input: { runite_bar: 4 },  output: 'rune_legs' },
+  { id: 'smith_rune_plate',  name: 'Forge Rune Platebody',   skill: 'smithing', req: 45, xp: 520, input: { runite_bar: 5 },  output: 'rune_plate' }
 ];
 
 export const WORLD_REGIONS = [
