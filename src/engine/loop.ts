@@ -36,6 +36,7 @@ import {
   finishRespawn,
   performResourceGather
 } from './actions';
+import { planEntityWalk } from './input';
 import { disposeObject3D } from './dispose';
 import { PRAYERS } from '../data/magic';
 import { WORLD_REGIONS } from '../data/world';
@@ -45,10 +46,14 @@ import { moveWithCollision } from '../state/collision';
 import { isDown, stepMonster } from '../state/monsterAi';
 import { getTerrainHeight } from '../state/terrain';
 import { discoverShrines } from '../state/shrines';
+import { shouldRepath } from '../state/pathfind';
+import { CAMPS, isInSafeZone } from '../data/worldMap';
 import {
   addChatMessage,
   el,
+  getCombatLevel,
   updateAllUI,
+  updateTargetHud,
   updateVitalsBars,
   consumeUiRefreshRequest
 } from '../ui/hud';
@@ -128,7 +133,7 @@ export function updatePlayerIntent(f: FrameState): void {
   if (G.keysPressed['KeyE']) camState.manualOffset -= turnSpeed * f.dt;
 
   if (player.downed) {
-    player.targetPos = null;
+    player.waypoints.length = 0;
     player.targetEntity = null;
   }
 
@@ -149,7 +154,7 @@ export function updatePlayerIntent(f: FrameState): void {
 
   if (forwardInput !== 0) {
     hasMoveIntent = true;
-    player.targetPos = null;
+    player.waypoints.length = 0;
     player.targetEntity = null;
     const sign = forwardInput > 0 ? 1 : -0.75;
     moveDirX = Math.sin(player.yaw) * sign;
@@ -158,28 +163,30 @@ export function updatePlayerIntent(f: FrameState): void {
       camState.manualOffset *= Math.pow(0.15, f.dt);
     }
   } else if (player.targetEntity) {
-    const tType = player.targetEntity.type;
+    const target = player.targetEntity;
     let targetVec: THREE.Vector3 | null = null;
     let stopDist = 2.8;
 
-    if (tType === 'monster') {
-      const m = player.targetEntity.ref;
+    if (target.type === 'monster') {
+      const m = target.ref;
       if (isDown(m.logic)) {
         player.targetEntity = null;
+        player.waypoints.length = 0;
       } else {
         targetVec = m.pos;
         stopDist = (STATE.combatStyle === 'rapid' || STATE.combatStyle === 'ranged' || STATE.combatStyle === 'magic') ? 13.5 : 2.9;
       }
-    } else if (tType === 'resource') {
-      const r = player.targetEntity.ref;
+    } else if (target.type === 'resource') {
+      const r = target.ref;
       if (r.depleted) {
         player.targetEntity = null;
+        player.waypoints.length = 0;
       } else {
         targetVec = r.pos;
         stopDist = 3.1;
       }
-    } else if (tType === 'interactive') {
-      targetVec = player.targetEntity.pos ?? null;
+    } else if (target.type === 'interactive') {
+      targetVec = target.pos ?? null;
       stopDist = 3.5;
     }
 
@@ -190,14 +197,10 @@ export function updatePlayerIntent(f: FrameState): void {
       const desiredYaw = Math.atan2(dx, dz);
       player.yaw = lerpAngle(player.yaw, desiredYaw, Math.min(1, f.dt * 10));
 
-      if (dist > stopDist) {
-        hasMoveIntent = true;
-        moveDirX = dx / dist;
-        moveDirZ = dz / dist;
-        if (!camState.isDragging) camState.manualOffset *= Math.pow(0.25, f.dt);
-      } else {
-        if (tType === 'interactive') {
-          const ref = player.targetEntity!.ref as THREE.Object3D['userData'];
+      if (dist <= stopDist) {
+        player.waypoints.length = 0;
+        if (target.type === 'interactive') {
+          const ref = target.ref as THREE.Object3D['userData'];
           const act = ref.action;
           player.targetEntity = null;
           if (act === 'shop') openShopModal('all');
@@ -219,29 +222,78 @@ export function updatePlayerIntent(f: FrameState): void {
             updateAllUI();
           }
         } else if (player.actionCooldown <= 0) {
-          if (tType === 'monster') {
-            performPlayerAttack(player.targetEntity!.ref as MonsterEntity);
+          if (target.type === 'monster') {
+            performPlayerAttack(target.ref);
             player.actionCooldown = TICK_SEC;
-          } else if (tType === 'resource') {
-            performResourceGather(player.targetEntity!.ref as ResourceNodeEntity);
+          } else if (target.type === 'resource') {
+            performResourceGather(target.ref);
             player.actionCooldown = TICK_SEC;
           }
         }
+      } else {
+        if (target.type === 'monster') {
+          const m = target.ref;
+          const reachedLast = player.waypoints.length === 0;
+          const madeAt = target.madeAt;
+          if (shouldRepath(madeAt, [m.pos.x, m.pos.z], reachedLast)) {
+            const path = planEntityWalk([m.pos.x, m.pos.z], stopDist);
+            if (path) {
+              player.waypoints = path;
+              target.madeAt = [m.pos.x, m.pos.z];
+            }
+          }
+        }
+
+        while (player.waypoints.length > 0) {
+          const wp = player.waypoints[0];
+          const dWp = Math.hypot(wp[0] - player.pos.x, wp[1] - player.pos.z);
+          if (dWp <= 0.45) {
+            player.waypoints.shift();
+          } else {
+            break;
+          }
+        }
+
+        let aimX: number;
+        let aimZ: number;
+        if (player.waypoints.length > 1) {
+          aimX = player.waypoints[0][0];
+          aimZ = player.waypoints[0][1];
+        } else {
+          aimX = targetVec.x;
+          aimZ = targetVec.z;
+        }
+
+        const toAimX = aimX - player.pos.x;
+        const toAimZ = aimZ - player.pos.z;
+        const aimDist = Math.hypot(toAimX, toAimZ);
+        if (aimDist > 0.001) {
+          hasMoveIntent = true;
+          moveDirX = toAimX / aimDist;
+          moveDirZ = toAimZ / aimDist;
+          const moveYaw = Math.atan2(toAimX, toAimZ);
+          player.yaw = lerpAngle(player.yaw, moveYaw, Math.min(1, f.dt * 10));
+          if (!camState.isDragging) camState.manualOffset *= Math.pow(0.25, f.dt);
+        }
       }
     }
-  } else if (player.targetPos) {
-    const dx = player.targetPos.x - player.pos.x;
-    const dz = player.targetPos.z - player.pos.z;
-    const dist = Math.hypot(dx, dz);
-    if (dist > 0.45) {
-      hasMoveIntent = true;
-      const desiredYaw = Math.atan2(dx, dz);
-      player.yaw = lerpAngle(player.yaw, desiredYaw, Math.min(1, f.dt * 10));
-      moveDirX = dx / dist;
-      moveDirZ = dz / dist;
-      if (!camState.isDragging) camState.manualOffset *= Math.pow(0.25, f.dt);
-    } else {
-      player.targetPos = null;
+  } else if (player.waypoints.length > 0) {
+    while (player.waypoints.length > 0) {
+      const wp = player.waypoints[0];
+      const dx = wp[0] - player.pos.x;
+      const dz = wp[1] - player.pos.z;
+      const dist = Math.hypot(dx, dz);
+      if (dist > 0.45) {
+        hasMoveIntent = true;
+        const desiredYaw = Math.atan2(dx, dz);
+        player.yaw = lerpAngle(player.yaw, desiredYaw, Math.min(1, f.dt * 10));
+        moveDirX = dx / dist;
+        moveDirZ = dz / dist;
+        if (!camState.isDragging) camState.manualOffset *= Math.pow(0.25, f.dt);
+        break;
+      } else {
+        player.waypoints.shift();
+      }
     }
   }
 
@@ -506,13 +558,39 @@ export function updateCamera(f: FrameState): void {
 
 export function updateMonsters(f: FrameState): void {
   // Monsters Update: rules in stepMonster, mesh, pose and events here.
+  const playerCombat = getCombatLevel();
+  const playerSafe = isInSafeZone(player.pos.x, player.pos.z) || f.now < G.aggroGraceUntil;
+  const camps = CAMPS;
+
   G.monstersList.forEach((m: MonsterEntity) => {
     const L = m.logic;
     const prevState = L.state;
     const prevTimer = L.timer;
     const fromX = m.pos.x;
     const fromZ = m.pos.z;
-    const events = stepMonster(L, { playerX: player.pos.x, playerZ: player.pos.z, playerDown: !!player.downed, dt: f.dt, rand: Math.random });
+    const events = stepMonster(L, {
+      playerX: player.pos.x,
+      playerZ: player.pos.z,
+      playerDown: !!player.downed,
+      dt: f.dt,
+      rand: Math.random,
+      playerCombat,
+      playerSafe,
+      camps
+    });
+
+    if (events.some(e => e.kind === 'aggro')) {
+      addChatMessage(`<b>${m.def.name}</b> attacks!`, 'combat');
+    }
+
+    if (events.some(e => e.kind === 'reset')) {
+      const hpBar = m.labelEl.querySelector<HTMLElement>('.entity-hp-bar')!;
+      const hpFill = m.labelEl.querySelector<HTMLElement>('.entity-hp-fill')!;
+      hpBar.style.display = 'none';
+      hpFill.style.width = '100%';
+      m.labelEl.style.display = 'none';
+      updateTargetHud();
+    }
 
     if (prevState === 'dying') {
       const progress = Math.max(0, 1 - (prevTimer - f.dt) / 0.85);
@@ -555,7 +633,16 @@ export function updateMonsters(f: FrameState): void {
         poseMonsterLimbs(m, false, f.now, f.dt);
         if (events.some(e => e.kind === 'attack')) performMonsterRetaliation(m);
       }
-    } else if (prevState === 'idle') {
+    } else if (L.state === 'return') {
+      const dx = L.homeX - fromX;
+      const dz = L.homeZ - fromZ;
+      const targetHomeYaw = Math.atan2(dx, dz) + Math.PI;
+      m.rig.group.rotation.y = lerpAngle(m.rig.group.rotation.y, targetHomeYaw, Math.min(1, f.dt * 9));
+      m.pos.x = L.x;
+      m.pos.z = L.z;
+      m.pos.y = getTerrainHeight(m.pos.x, m.pos.z);
+      poseMonsterLimbs(m, true, f.now, f.dt);
+    } else if (L.state === 'idle') {
       const dx = L.wanderX - fromX;
       const dz = L.wanderZ - fromZ;
       const dist = Math.hypot(dx, dz);
@@ -567,6 +654,9 @@ export function updateMonsters(f: FrameState): void {
         m.pos.y = getTerrainHeight(m.pos.x, m.pos.z);
         poseMonsterLimbs(m, true, f.now, f.dt);
       } else {
+        m.pos.x = L.x;
+        m.pos.z = L.z;
+        m.pos.y = getTerrainHeight(m.pos.x, m.pos.z);
         poseMonsterLimbs(m, false, f.now, f.dt);
       }
     }

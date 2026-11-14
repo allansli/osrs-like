@@ -4,11 +4,12 @@ import type { ResourceNodeLike } from './blenderWorld';
 import type { BlenderHeroAnimator } from './blenderHero';
 import type { MonsterDef } from '../data/world';
 import type { MonsterLogic } from '../state/monsterAi';
+import type { WalkGrid } from '../state/pathfind';
 
 export const TICK_SEC = 0.6;
 
 export type PlayerTargetEntity =
-  | { type: 'monster'; ref: MonsterEntity; pos?: THREE.Vector3 }
+  | { type: 'monster'; ref: MonsterEntity; pos?: THREE.Vector3; madeAt: [number, number] }
   | { type: 'resource'; ref: ResourceNodeEntity; pos?: THREE.Vector3 }
   | { type: 'interactive'; ref: THREE.Object3D['userData']; pos?: THREE.Vector3 };
 
@@ -16,7 +17,7 @@ export interface PlayerState {
   pos: THREE.Vector3;
   vel: THREE.Vector3;
   yaw: number;
-  targetPos: THREE.Vector3 | null;
+  waypoints: [number, number][];
   targetEntity: PlayerTargetEntity | null;
   isMoving: boolean;
   isGrounded: boolean;
@@ -43,7 +44,7 @@ export const player: PlayerState = {
   pos: new THREE.Vector3(-4, 0, -3),
   vel: new THREE.Vector3(0, 0, 0),
   yaw: 0.48,
-  targetPos: null,
+  waypoints: [],
   targetEntity: null,
   isMoving: false,
   isGrounded: true,
@@ -210,6 +211,8 @@ export interface EngineContext {
   miniTick: number;
   lastLabelX: number;
   lastLabelZ: number;
+  aggroGraceUntil: number;
+  walkGrid: WalkGrid;
 }
 
 export const G: EngineContext = {
@@ -248,5 +251,7 @@ export const G: EngineContext = {
   labelTick: 0,
   miniTick: 1,
   lastLabelX: 999,
-  lastLabelZ: 999
+  lastLabelZ: 999,
+  aggroGraceUntil: 0,
+  walkGrid: null as unknown as WalkGrid
 };

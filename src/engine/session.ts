@@ -1,4 +1,4 @@
-import { player, camState } from './context';
+import { player, camState, G } from './context';
 import { SFX } from './audio';
 import { spawnLevelUpFireworks } from './vfx';
 import { STATE, applyState } from '../state/gameState';
@@ -35,6 +35,7 @@ export function saveGameState(): void {
 }
 
 export function loadGameState(): boolean {
+  G.aggroGraceUntil = performance.now() + 3000;
   try {
     const migrated = readSave(localStorage);
     if (!migrated) return false;

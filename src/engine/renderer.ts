@@ -7,6 +7,7 @@ import { buildPlayerCharacter } from './playerMesh';
 import { spawnAllResourcesAndMonsters } from './spawns';
 import { sealAlbedoUvs } from './textures';
 import { setupInputHandlers } from './input';
+import { buildWalkGrid } from '../state/pathfind';
 
 export type QualityTier = 'performance' | 'balanced' | 'high' | 'ultra';
 export let currentQuality: QualityTier = 'balanced';
@@ -152,6 +153,7 @@ export function init3DEngine(): void {
   G.scene.add(G.sunLight);
   G.scene.add(G.sunLight.target);
 
+  G.walkGrid = buildWalkGrid();
   buildSkyDomeShader();
   buildTerrainAndWater();
   buildAllCitiesAndLandmarks();

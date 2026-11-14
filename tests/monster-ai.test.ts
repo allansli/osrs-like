@@ -92,15 +92,30 @@ describe('monsterAi step function', () => {
     }
   });
 
-  it('combat drops beyond 26 with HP kept', () => {
+  it('returns home, cannot be damaged on the way, and is healed on arrival', () => {
+    // Planned replacement #3 (design 6.11, CALL-8): beyond 26 the monster goes home instead of stopping.
     const rand = seeded(5);
     const m = createMonsterLogic('goblin', 0, 0);
     onPlayerHit(m, 1);
     const hp = m.hp;
     expect(hp).toBeLessThan(m.maxHp);
-    stepOnce(m, 30, 0, 0.05, rand);
-    expect(m.state).toBe('idle');
+    for (let i = 0; i < 40; i++) stepOnce(m, 20, 0, 0.05, rand);
+    expect(m.x).toBeGreaterThan(5);
+    stepOnce(m, 40, 0, 0.05, rand);
+    const state: string = m.state;
+    expect(state).toBe('return');
+    const r = onPlayerHit(m, 1);
+    expect(r.applied).toBe(false);
     expect(m.hp).toBe(hp);
+    let home = false;
+    for (let i = 0; i < 200 && !home; i++) {
+      stepOnce(m, 40, 0, 0.05, rand);
+      home = m.state === 'idle';
+      if (!home) expect(m.hp).toBe(hp);
+    }
+    expect(home).toBe(true);
+    expect(Math.hypot(m.x - m.homeX, m.z - m.homeZ)).toBeLessThanOrEqual(1.0 + 5.2 * 0.05 + 1e-9);
+    expect(m.hp).toBe(m.maxHp);
   });
 
   it('hp 0 enters dying and emits died', () => {
