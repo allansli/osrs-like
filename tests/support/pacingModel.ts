@@ -382,7 +382,7 @@ export function gatherSeconds(nodeKey: string, level: number): number {
   if (chance <= 0) throw new Error(`${nodeKey} cannot be gathered at level ${level}.`);
   const depletion = node.kind === 'fish' ? FISH_DEPLETION : 1;
   const work = TICK_SEC / chance;
-  return Math.max(work + depletion * GATHER_STEP_SECS, (depletion * (node.respawn / 1000 + work)) / siteSize(nodeKey));
+  return Math.max(work + depletion * GATHER_STEP_SECS, (work + (depletion * node.respawn) / 1000) / siteSize(nodeKey));
 }
 
 /** The cooked value of a raw fish, or the item's own sale value. */
