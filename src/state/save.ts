@@ -19,6 +19,7 @@ export interface MigratedSave {
   pose: SavedPose | null;
   cam: SavedCam | null;
   migratedFrom: string | null;
+  corrupt: boolean;
 }
 
 function num(value: unknown, fallback = 0): number {
@@ -130,7 +131,7 @@ export function migrateLegacySave(raw: unknown, source: string | null = null): M
   }
 
   const migratedFrom = source && source !== SAVE_KEY ? source : (data.version && data.version < 4 ? source : null);
-  return { state, pose, cam, migratedFrom };
+  return { state, pose, cam, migratedFrom, corrupt: false };
 }
 
 export function serializeState(state: GameState, pose: SavedPose | null, cam: SavedCam | null): string {
@@ -170,9 +171,25 @@ export interface StorageLike {
   removeItem(key: string): void;
 }
 
+const CORRUPT_KEY = 'gielinor_hero_save_v1_corrupt';
+
 export function readSave(storage: StorageLike): MigratedSave | null {
-  const keys = [SAVE_KEY, ...LEGACY_SAVE_KEYS];
-  for (const key of keys) {
+  const mainRaw = storage.getItem(SAVE_KEY);
+  if (mainRaw) {
+    try {
+      const parsed = JSON.parse(mainRaw);
+      return migrateLegacySave(parsed, SAVE_KEY);
+    } catch {
+      if (!storage.getItem(CORRUPT_KEY)) {
+        storage.setItem(CORRUPT_KEY, mainRaw);
+      }
+      const corrupt = migrateLegacySave({});
+      corrupt.corrupt = true;
+      return corrupt;
+    }
+  }
+
+  for (const key of LEGACY_SAVE_KEYS) {
     const raw = storage.getItem(key);
     if (!raw) continue;
     try {
