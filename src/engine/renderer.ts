@@ -35,8 +35,6 @@ export function applyQualityTier(tier: QualityTier): void {
       G.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       if (G.sunLight) {
         G.sunLight.castShadow = true;
-        const res = tier === 'ultra' ? 2048 : (tier === 'high' ? 2048 : 1024);
-        G.sunLight.shadow.mapSize.set(res, res);
       }
     }
   }
