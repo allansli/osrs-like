@@ -121,7 +121,6 @@ export function stepMonster(m: MonsterLogic, world: StepWorld): MonsterEvent[] {
       m.state = 'idle';
       m.hp = m.maxHp;
       m.breathCount = 0;
-      m.attackCooldown = 0;
       m.x = m.homeX;
       m.z = m.homeZ;
       return [{ kind: 'respawned' }];
@@ -137,7 +136,6 @@ export function stepMonster(m: MonsterLogic, world: StepWorld): MonsterEvent[] {
       m.state = 'idle';
       m.hp = m.maxHp;
       m.breathCount = 0;
-      m.attackCooldown = 0;
       return [{ kind: 'reset' }];
     }
     const moveDist = Math.min(dist, CHASE_SPEED * dt);
