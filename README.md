@@ -126,6 +126,17 @@ npm run build
 
 ---
 
+## Credits
+
+The game uses third-party 3D assets from Blend Swap. Two are under Creative Commons Attribution 3.0 (CC-BY 3.0) and need credit:
+
+- "Dragon Rig And Textures" (the dragon) by yoji, CC-BY 3.0, http://www.blendswap.com/blends/view/21036
+- "Game Anime RPG Character" (Kai, the player character) by uchiha007, CC-BY 3.0, http://www.blendswap.com/blends/view/26667
+
+The guard is "Rigged Knight in Armor" by Xali, Blend Swap blend 28541, CC0. [CREDITS.md](./CREDITS.md) lists every third-party asset with its title, author, source and licence.
+
+---
+
 ## License
 
-Released under the [MIT License](./LICENSE).
+Released under the [MIT License](./LICENSE). The MIT License covers the code only; the third-party assets listed in [CREDITS.md](./CREDITS.md) keep their own licences.
