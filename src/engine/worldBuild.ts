@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { loadGltfOnce } from './gltf';
 import { G } from './context';
 import { WORLD_REGIONS, type RegionDef } from '../data/world';
 import { ITEMS, type ItemDef } from '../data/items';
@@ -524,26 +524,11 @@ export function createMerchantNPC(x: number, z: number, name: string, tunicColor
   });
 }
 
-export let cachedGuardPromise: Promise<GLTF | null> | null = null;
 export function loadBlenderGuardTemplate(): Promise<GLTF | null> {
   if (typeof window === 'undefined' || typeof document === 'undefined') {
     return Promise.resolve(null);
   }
-  if (!cachedGuardPromise) {
-    const loader = new GLTFLoader();
-    cachedGuardPromise = new Promise<GLTF | null>((resolve) => {
-      loader.load(
-        '/models/guard.glb',
-        (gltf: GLTF) => resolve(gltf),
-        undefined,
-        (err: unknown) => {
-          console.warn('[Guard] Failed to load guard.glb:', err);
-          resolve(null);
-        }
-      );
-    });
-  }
-  return cachedGuardPromise;
+  return loadGltfOnce('/models/guard.glb');
 }
 
 export function createCastleGuard(x: number, z: number, name: string, rotY = 0): void {

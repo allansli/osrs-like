@@ -1,29 +1,14 @@
 import * as THREE from 'three';
-import { GLTFLoader, type GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { loadGltfOnce } from './gltf';
 import { addCartoonOutline, facetMaterial } from './materials';
 import { albedoMaterial, offsetAlbedoPhase, sealAlbedoUvs, speciesAlbedo } from './textures';
-
-let cachedMonstersPromise: Promise<GLTF | null> | null = null;
 
 export function loadBlenderMonstersTemplate(url = '/models/monsters.glb?v=face_align_v2'): Promise<GLTF | null> {
   if (typeof window === 'undefined' || typeof document === 'undefined') {
     return Promise.resolve(null);
   }
-  if (!cachedMonstersPromise) {
-    const loader = new GLTFLoader();
-    cachedMonstersPromise = new Promise((resolve) => {
-      loader.load(
-        url,
-        (gltf) => resolve(gltf),
-        undefined,
-        (err) => {
-          console.warn('[BlenderMonsters] Failed to load monsters.glb, keeping procedural fallback:', err);
-          resolve(null);
-        }
-      );
-    });
-  }
-  return cachedMonstersPromise;
+  return loadGltfOnce(url);
 }
 
 export interface MonsterRigLike {
