@@ -23,7 +23,6 @@ import {
 import { cycleTimeOfDay } from '../engine/worldMesh';
 import { isDown } from '../state/monsterAi';
 import { player, type MonsterEntity, type ResourceNodeEntity } from '../engine/context';
-import { saveGameState } from '../engine/session';
 import {
   handleInventoryClick,
   showSellChooseMenu,
@@ -138,7 +137,21 @@ export function switchTab(tabName: string): void {
   content.classList.add('active');
 }
 
-export function updateAllUI(): void {
+let uiRefreshDirty = false;
+
+export function requestUiRefresh(): void {
+  uiRefreshDirty = true;
+}
+
+export function consumeUiRefreshRequest(): boolean {
+  if (uiRefreshDirty) {
+    uiRefreshDirty = false;
+    return true;
+  }
+  return false;
+}
+
+export function updateVitalsBars(): void {
   STATE.maxHp = STATE.skills.hitpoints.lvl;
   STATE.maxPrayerPts = STATE.skills.prayer.lvl;
   const hpPct = Math.max(0, Math.min(100, (STATE.hp / STATE.maxHp) * 100));
@@ -149,6 +162,11 @@ export function updateAllUI(): void {
   el('prayer-text').textContent = `${Math.ceil(STATE.prayerPts)} / ${STATE.maxPrayerPts}`;
   el('spec-fill').style.width = STATE.specEnergy + '%';
   el('spec-text').textContent = `Special ${Math.floor(STATE.specEnergy)}%`;
+}
+
+export function updateAllUI(): void {
+  uiRefreshDirty = false;
+  updateVitalsBars();
 
   el('combat-lvl-badge').textContent = `Combat Lv. ${getCombatLevel()}`;
   el('gp-amount').textContent = `${STATE.gp.toLocaleString()} GP`;
@@ -344,7 +362,6 @@ export function updateAllUI(): void {
     mGrid.appendChild(card);
   });
 
-  saveGameState();
   refreshCombatStyleLocks();
   syncSettingsButtons();
   const shopOpen = el('shop-modal');

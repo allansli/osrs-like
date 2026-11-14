@@ -24,6 +24,7 @@ import {
 import { addCartoonOutline, facetMaterial } from './materials';
 import { albedoForItem, applyAlbedo, sealAlbedoUvs } from './textures';
 import { getEquipmentBonuses } from '../state/combat';
+import { disposeObject3D } from './dispose';
 
 export function buildPlayerCharacter(): void {
   const rig = buildHumanoidRig(0x586436, 0x3e2b1e, 0x505c30, 1.06);
@@ -106,7 +107,9 @@ export function rebuildPlayerEquipmentMeshes(): void {
   ];
   gearKeys.forEach((key) => {
     const node = player.parts[key];
-    if (node && node.parent) node.parent.remove(node);
+    // Gear geometry is per-node (blender clones are geometry.clone()d) and materials are
+    // per-call; textures and the outline material are cached and the helper keeps them.
+    if (node) disposeObject3D(node);
     player.parts[key] = null;
   });
   player.parts.whipRig = null;

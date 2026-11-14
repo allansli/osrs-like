@@ -405,7 +405,7 @@ export function spawnSpellImpact(
     spawnVfx(sigil, 1.2, (v) => {
       const t = v.age / v.life;
       v.mesh.scale.setScalar(1 + t * 2.4);
-      v.mesh.rotation.z += 0.02;
+      v.mesh.rotation.z = v.age * 1.2;
       (sigil.material as THREE.MeshBasicMaterial).opacity = 0.95 * (1 - t);
     });
     spawnBurst(targetPos.clone().add(new THREE.Vector3(0, 1.3, 0)), 10, 0xfb7185, 0.7, 3.1);
@@ -721,18 +721,9 @@ export function spawnLevelUpFireworks(colorHex: THREE.ColorRepresentation = 0xfd
     );
     const ang = (i / 16) * Math.PI * 2;
     p.position.copy(player.pos).add(new THREE.Vector3(Math.cos(ang) * 0.8, 1.0, Math.sin(ang) * 0.8));
-    G.scene.add(p);
     const vel = new THREE.Vector3(Math.cos(ang) * 2.5, 3.5 + Math.random() * 2, Math.sin(ang) * 2.5);
-    const startT = performance.now();
-    const tick = (): void => {
-      const dt = (performance.now() - startT) / 1000;
-      if (dt > 0.9) {
-        G.scene.remove(p);
-        return;
-      }
-      p.position.addScaledVector(vel, 0.016);
-      requestAnimationFrame(tick);
-    };
-    requestAnimationFrame(tick);
+    spawnVfx(p, 0.9, (v, dt) => {
+      v.mesh.position.addScaledVector(vel, dt);
+    });
   }
 }

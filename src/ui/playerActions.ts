@@ -35,6 +35,7 @@ import {
   showLevelUpBanner,
   showBanner,
   updateAllUI,
+  requestUiRefresh,
   refreshCombatStyleLocks,
   hideItemTooltip
 } from './hud';
@@ -74,7 +75,7 @@ export function grantXp(skillKey: string, baseAmount: number): void {
     showLevelUpBanner(meta.name, s.lvl);
     spawnLevelUpFireworks();
   }
-  updateAllUI();
+  requestUiRefresh();
 }
 
 export function addItemToInventory(itemId: string, count: number = 1): boolean {
