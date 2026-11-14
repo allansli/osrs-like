@@ -18,6 +18,13 @@ export const PALETTE = {
 
 const outlineCache = new Map<string, THREE.ShaderMaterial>();
 
+export function isSharedOutlineMaterial(m: THREE.Material): boolean {
+  for (const mat of outlineCache.values()) {
+    if (mat === m) return true;
+  }
+  return false;
+}
+
 function outlineMaterial(thickness: number, color: number): THREE.ShaderMaterial {
   const key = `${thickness}:${color}`;
   const cached = outlineCache.get(key);
