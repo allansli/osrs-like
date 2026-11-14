@@ -28,7 +28,7 @@ import { SPELLS } from '../data/magic';
 import { AGGRO_GRACE_MS, isDown, onPlayerHit } from '../state/monsterAi';
 import { ITEMS } from '../data/items';
 import { SKILLS_META } from '../data/skills';
-import { addItemToInventory, grantXp } from '../ui/playerActions';
+import { addItemToInventory, announceUnlocksSince, grantXp, skillLevels } from '../ui/playerActions';
 import {
   applyRespawn,
   deathNotice,
@@ -253,6 +253,7 @@ export function handleMonsterDeath(monster: MonsterEntity): void {
   spawnBurst(monster.pos.clone().add(new THREE.Vector3(0, 0.8, 0)), 6, 0x64748b, 0.6, 1.4);
 
   addChatMessage(`Defeated <b>${monster.def.name}</b> (Lv-${monster.def.level}).`, 'combat');
+  const before = skillLevels();
   const kill = registerKill(STATE, monster.typeKey);
   if (kill.slayerKillXp > 0 && !kill.slayerCompleted) {
     addChatMessage(`Slayer progress: <b>${kill.remaining}</b> ${kill.taskName} remaining.`, 'skill');
@@ -262,6 +263,7 @@ export function handleMonsterDeath(monster: MonsterEntity): void {
     showBanner('Slayer Bounty', `${kill.taskName} complete`);
     spawnLevelUpFireworks(0xc084fc);
   }
+  announceUnlocksSince(before);
 
   let rareBeam = isBossLoot(monster.typeKey);
   const drops = rollDrops(monster.typeKey, Math.random);

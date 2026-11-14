@@ -17,7 +17,7 @@ import { tryCraft, isLogId } from '../data/recipes';
 import { noteBury, notePlate, notePrayerOffered } from '../state/quests';
 import { equippedWeapon, allowedStyles, canCastTeleport } from '../state/combat';
 import { weaponSpecial, claimQuest, assignSlayerTask } from '../state/adventure';
-import { unlocksAt, unlockLine } from '../state/unlocks';
+import { levelUnlockLines } from '../state/unlocks';
 import { PRAYERS, SPELLS } from '../data/magic';
 import { getSkillSvg } from './icons';
 import {
@@ -73,14 +73,24 @@ export function grantXp(skillKey: string, baseAmount: number): void {
     }
     const meta = metaMap[skillKey]!;
     addChatMessage(`Level Up! Your <b>${meta.name}</b> level is now <b>${s.lvl}</b>!`, 'lvlup');
-    for (let level = oldLvl + 1; level <= s.lvl; level++) {
-      const line = unlockLine(meta.name, level, unlocksAt(skillKey, level));
-      if (line) addChatMessage(line, 'skill');
-    }
+    printUnlocks(skillKey, oldLvl, s.lvl);
     showLevelUpBanner(meta.name, s.lvl);
     spawnLevelUpFireworks();
   }
   requestUiRefresh();
+}
+
+function printUnlocks(skillKey: string, fromLevel: number, toLevel: number): void {
+  for (const line of levelUnlockLines(skillKey, metaMap[skillKey]!.name, fromLevel, toLevel)) addChatMessage(line, 'skill');
+}
+
+export function skillLevels(): Record<string, number> {
+  return Object.fromEntries(Object.entries(STATE.skills).map(([key, skill]) => [key, skill.lvl]));
+}
+
+/** Unlock lines for levels raised outside grantXp (quest and Slayer experience). */
+export function announceUnlocksSince(before: Record<string, number>): void {
+  for (const [key, level] of Object.entries(before)) printUnlocks(key, level, STATE.skills[key]!.lvl);
 }
 
 export function addItemToInventory(itemId: string, count: number = 1): boolean {
@@ -461,6 +471,7 @@ export function locateQuestRegion(regionId: string): void {
 }
 
 export function claimQuestReward(questId: string): void {
+  const before = skillLevels();
   const result = claimQuest(STATE, questId);
   if (!result.ok) {
     addChatMessage(result.reason || 'You cannot claim that yet.', 'combat');
@@ -469,6 +480,7 @@ export function claimQuestReward(questId: string): void {
   SFX.coin();
   SFX.levelUp();
   addChatMessage(result.chat || 'Quest complete.', 'lvlup');
+  announceUnlocksSince(before);
   showBanner('Quest Reward', result.banner || 'Reward claimed');
   spawnLevelUpFireworks(0xfde047);
   updateAllUI();

@@ -90,3 +90,13 @@ export function unlockLine(
   const remaining = unlocks.length - 3;
   return `Level ${level} ${skillName} unlocks: ${shown} and ${remaining} more.`;
 }
+
+/** One unlock line per level from fromLevel + 1 to toLevel that unlocks anything. */
+export function levelUnlockLines(skill: string, skillName: string, fromLevel: number, toLevel: number): string[] {
+  const lines: string[] = [];
+  for (let level = fromLevel + 1; level <= toLevel; level++) {
+    const line = unlockLine(skillName, level, unlocksAt(skill, level));
+    if (line) lines.push(line);
+  }
+  return lines;
+}
