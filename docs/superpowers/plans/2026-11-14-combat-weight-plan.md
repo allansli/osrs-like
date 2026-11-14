@@ -1,8 +1,8 @@
 # Combat with weight: implementation plan
 
-Date: 2026-11-14. Branch: `feat/combat-weight`. Design: `docs/superpowers/specs/2026-11-14-combat-weight-design.md` (called "the design" below; section numbers refer to it). Model: `docs/superpowers/research/combat-model/` (`model.ts`, `run.sh`, `results.txt`). Source line numbers are at commit `54736ba` and are only hints: Stage 2's review fixes and all of Stage 3 land before this plan starts.
+Date: 2026-11-14. Branch: `feat/combat-weight`. Design: `docs/superpowers/specs/2026-11-14-combat-weight-design.md` (called "the design" below; section numbers refer to it). Models: `docs/superpowers/research/combat-model/` (`model.ts`, `fight.ts` with `check.ts`, `boss.ts`, `decisions.ts`, `run.sh` and the three committed outputs). Source line numbers are at commit `54736ba` and are only hints: Stage 2's review fixes and all of Stage 3 land before this plan starts.
 
-The design is still a proposal. Nothing in this plan starts before owner step **O-4.1** (section 0.5).
+The design is a proposal, partly decided. On 2026-11-14 the owner answered CALL-4.6 (what dying costs), CALL-4.4 (the dragon), CALL-4.5 (regeneration) and CALL-4.8 (two new monsters); this plan carries those answers (review log at the end). The rest is still open: nothing in this plan starts before owner step **O-4.1** (section 0.5).
 
 The critique of 2026-11-14 (`docs/superpowers/specs/2026-11-14-combat-weight-critique.md`) was applied to this plan; its changes are in the review log at the end.
 
@@ -18,7 +18,7 @@ These repeat the foundation plan's section 0 (`docs/superpowers/plans/2026-11-13
 - **[CLAUDE]**: tests that define acceptance, work the plan cannot fully specify (tuning data against a test, the boss simulation), and every verification. Tests for an [AGY] task are their own [CLAUDE] task and come first.
 - **[OWNER]** and **[HUMAN]**: a decision only the owner can make, or something a person has to see or hear in the running game.
 - Agents never merge, tag, push or open pull requests. The main session merges after verification. No commit carries an AI attribution trailer.
-- **Tier per kind of work in this plan** (owner's model rule): haiku runs commands and reports; sonnet writes tests from a table in the design and is the fallback implementer; opus writes the tests that define a rule (routes, patterns, phases, the boss simulation), tunes data and verifies. No fable stage: nothing here is a contract that later stages build on beyond what the design already fixed.
+- **Tier per kind of work in this plan** (owner's model rule): haiku runs commands and reports; sonnet writes tests from a table in the design and is the fallback implementer; opus writes the tests that define a rule (routes, patterns, phases, the boss simulation, the death loss and its saved flag), tunes data and verifies. No fable stage: nothing here is a contract that later stages build on beyond what the design already fixed.
 
 ### 0.2 Commands
 
@@ -30,7 +30,7 @@ Run every command from the worktree root through the repository's wrapper, which
 | ONE(file) | `scripts/capped.sh npx vitest run <file>` | as stated in the task |
 | TYPES | `scripts/capped.sh npx tsc --noEmit` | exit 0, no output |
 | BUILD | `scripts/capped.sh npm run build` | exit 0; the JS chunk size is reported |
-| MODEL | `bash docs/superpowers/research/combat-model/run.sh` | prints the five tables of `model.ts` and the positional boss table of `check.ts`; `results.txt` and `check-results.txt` are rewritten |
+| MODEL | `bash docs/superpowers/research/combat-model/run.sh` | prints the tables of `model.ts`, the boss fight of `check.ts` and the death, gate and arena tables of `decisions.ts`; `results.txt`, `check-results.txt` and `decisions-results.txt` are rewritten. It runs with an empty environment: the committed output is the default run. |
 
 **Standard gate (SG)**: SUITE, TYPES and BUILD all pass. Every task ends with SG unless it says otherwise. An OOM kill by the wrapper is a defect to fix. Never raise the cap. One BUILD at a time on the machine; at most 3 or 4 agents at a time.
 
@@ -38,10 +38,10 @@ Run every command from the worktree root through the repository's wrapper, which
 
 1. **Allowlist.** A task touches only the files listed for it. The opus verify rejects a diff with any other file in it.
 2. **Find symbols by name.** Line numbers are from `54736ba`.
-3. **Existing tests are frozen.** No edit to any file that exists under `tests/` or `src/__tests__/` when R0 runs, except the four replacements declared in design 9.3 (Stage 3's `content-freeze`, `world-data` line 162, `world-budget`'s monster count, `src/__tests__/blender-hero.test.ts`'s species test), all made in M3 and each named in its commit message. A new test goes in a new file under `tests/`.
+3. **Existing tests are frozen.** No edit to any file that exists under `tests/` or `src/__tests__/` when R0 runs, except the four replacements declared in design 9.3 (Stage 3's `content-freeze`, `world-data` line 162, `world-budget`'s monster count, `src/__tests__/blender-hero.test.ts`'s species test), all made in M3, once, with the final counts (42 monsters, 13 type keys, 10 model keys), and each named in its commit message. A new test goes in a new file under `tests/`. `src/data/catalog.ts` is in no task's allowlist: the existing dragon's row is not edited by anyone.
 4. **Test-first pairs.** A [CLAUDE] test task may leave SUITE red in its new files, and TYPES and BUILD red only for a module, export, field or union member that the paired task adds. The opus verify of the test task lists those errors; any other is a defect. The paired task's accept restores full SG. A branch reaches the main session only when green.
 5. **Purity.** No new file under `src/state` or `src/data` imports from `src/engine` or `src/ui`, or mentions `STATE`, `Math.random`, `Date.now`, `performance`, `document` or `window`. Time and randomness are parameters.
-6. **Timings are data.** No millisecond, radius, power or amplitude of design 6.2 to 6.7 is written outside `src/data/attacks.ts` and `src/data/feel.ts`.
+6. **Timings are data.** No millisecond, radius, power or amplitude of design 6.2 to 6.5 and 6.7 is written outside `src/data/attacks.ts` and `src/data/feel.ts`. The numbers of design 6.6 (the two cooldowns, the two regeneration rates, the rest timer, the death share, the level floor, the vow's price) are named constants in `src/state/sustain.ts` and nowhere else.
 7. **`any` budget** stays as the foundation plan set it: `Object3D.userData`, rig parts bags, GLTF traversal. Each task reports how many it added.
 8. **No new runtime dependency. No audio, image or model file.**
 9. **Commit messages**: `test(<task>): …`, `feat(<task>): …`, `fix(#14): …` for the audit finding, `data(<task>): …` for tuning. One task, one or more commits; never two tasks in one commit.
@@ -50,7 +50,7 @@ Run every command from the worktree root through the repository's wrapper, which
 ### 0.4 Branches, worktrees, clusters
 
 - The **spine** (lanes P, T, B, then W) runs on `feat/combat-weight` itself, one task after another: these tasks edit `src/state/monsterAi.ts`, `src/engine/loop.ts` and `src/engine/actions.ts`.
-- **Side clusters** S, F, A and M each run in their own worktree, `../osrs-like-wp/S4-<cluster>`, on a local branch `cw/<cluster>` cut from the spine head after R0 (cluster A after T2, because its plans read `ATTACKS`). They touch only new files and files no spine task before lane W touches (table in 1.1). They are merged into the spine before lane W, in the order S, F, A, M. `cw/` branches are never pushed.
+- **Side clusters** S, F, A and M each run in their own worktree, `../osrs-like-wp/S4-<cluster>`, on a local branch `cw/<cluster>` cut from the spine head after R0 (cluster A after T2, because its plans read `ATTACKS`). They touch only new files and files no spine task before lane W touches (table in 1.1). Cluster M is one task (M2) and is merged into the spine after CP-4, before M1: the new boss's row needs the model key. S, F and A are merged before lane W, in that order. `cw/` branches are never pushed.
 - Workflow scripts live in `docs/superpowers/workflows/` (as Stage 2's do), so a crash loses nothing.
 
 ### 0.5 Owner and human steps (where they block)
@@ -58,17 +58,17 @@ Run every command from the worktree root through the repository's wrapper, which
 | Step | What the owner decides or does | Blocks |
 |---|---|---|
 | O-4.1 | Approve the stage: CALL-4.1 (essence), CALL-4.2 (no new buttons), CALL-4.10 (ordinary monsters hit as hard on average), CALL-4.11 (synthesised sound), CALL-4.12 (deferrals), CALL-4.13 (no new model). | Everything |
-| O-4.2 | **CALL-4.6**: what dying costs (A nothing, B fee, C grave, D repair). | S1, S2, W1 |
-| O-4.3 | **CALL-4.4**: the dragon's fight (1,200 hitpoints, three phases, 120 s); **CALL-4.14**: whether a run of misses may kill from full health. | B1 to B4 |
-| O-4.4 | **CALL-4.5**: regeneration paused in fights; food cooldown. | S1, S2, W1 |
-| O-4.5 | **CALL-4.8**: ship two monsters, none, or four. | M1 to M3 |
+| O-4.2 | **CALL-4.6: decided 2026-11-14** (experience loss, with a blessing). Still to decide, **CALL-4.17**: the share (3%), which skills pay (every fighting skill), the vow's price (one coin per point guarded) and cover (one death, whole). | S1, S2, W1 |
+| O-4.3 | **CALL-4.4: decided 2026-11-14** (the existing dragon untouched; a separate new boss). Still to decide, **CALL-4.18**: the boss's name, place, rewards and unwarned bolt; **CALL-4.14**: whether a run of misses may kill from full health. | M3 (the boss's row), B1 to B4 |
+| O-4.4 | **CALL-4.5: decided 2026-11-14** (regeneration always on, faster out of combat). Still to decide, **CALL-4.19**: the two rates (0.25 and 1.0 HP/s) and the 6 s timer. | S1, S2, W1 |
+| O-4.5 | **CALL-4.8: decided 2026-11-14**: ship the two monsters. | (nothing left to decide) |
 | O-4.6 | **CALL-4.3** (no telegraphs in the start region) and **CALL-4.7** (auto-retaliation). | T2; S1, W1 |
-| O-4.7 | **CALL-4.9**: the names. [HUMAN] web search for each. **CALL-4.15**: rename the dragon's display name. | The merge; CALL-4.15 also B4 and M3 |
+| O-4.7 | **CALL-4.9**: the names, now with the boss, its title and the blessing. [HUMAN] web search for each. (CALL-4.15, renaming the existing dragon, is settled: not renamed.) | The merge |
 | O-4.9 | **CALL-4.16**: warnings for trackpad players (leave and test, longer for everyone, or an option). | G-8 |
-| CP-4 | [HUMAN] "Do the shapes read?" checkpoint after T5 (design 9.2, first two items). | Lane B |
+| CP-4 | [HUMAN] "Do the shapes read?" checkpoint after T5 (design 9.2, first two items). | M1, lane B |
 | O-4.8 | Accept Stage 4 (after G-7 and G-8). | The merge |
 
-If the owner takes an alternative, only the blocked task changes, as that task states: option A of CALL-4.6 removes the `deathCost` parts of S1, S2 and W1; "keep 260" in CALL-4.4 changes one number in B2 and the thresholds of B3 are re-derived by MODEL; "neither" in CALL-4.5 removes `regenRate` and the cooldown from S1, S2, W1; "ship none" in CALL-4.8 drops M1 and M3 and replacements 2 to 4, and leaves seven prepared slots; M2 stays (it changes nothing visible and is what a future reused-model monster needs), and with CALL-4.15 M3 still makes replacement 1 for the name alone. Options C and D of CALL-4.6 are not planned here: they need a design of their own. "Cap a single blow" in CALL-4.14 adds one clamp to `rollMonsterAttack` in B2 and a cap test in B1; B3 then re-derives B's threshold. "Rename" in CALL-4.15 changes the dragon's `name` in the world override (B2), the chat line in `actions.ts` that names it (B4) and the captured name in Stage 3's `content-freeze` (M3, replacement 1).
+If the owner takes an alternative on an open call, only the blocked task changes, as that task states. **CALL-4.17:** another share, price or floor changes constants in S2 and the expected values S1 computes from them, nothing else; "only the skill in use" changes `FIGHTING_SKILLS` to a function of the combat style in S2 and two tests in S1; "half the loss" or "several deaths" changes `applyDeathLoss` and the notice text in S2, and "several deaths" makes the saved flag a small whole number, which needs its own reader rule and tests before S2 starts. **CALL-4.18:** another name changes the row in M3 and the name test; a lower bolt changes one number in the boss's row and B3 then fails F, FR or FM by design, so B3's thresholds for those rows are re-stated by the owner, not by the task; a material reward is not planned here: it needs Stage 3's pricing. **CALL-4.19:** other rates change two constants in S2; a faster rate in fights is not planned here: the gate margin of design 6.6 does not allow it without re-tuning Stage 2. **CALL-4.14** "cap a single blow" adds one clamp to `rollMonsterAttack` in B2 and a cap test in B1; B3 then re-derives the never-moving rows, which the cap makes winners.
 
 ---
 
@@ -79,9 +79,9 @@ If the owner takes an alternative, only the blocked task changes, as that task s
 ### R0 Premise re-check [CLAUDE]
 - **Tier**: opus (judgment: decides whether the plan still fits the code).
 - **Depends**: O-4.1; Stage 2 and Stage 3 merged to `main`; `feat/combat-weight` rebased onto `main`.
-- **Files**: this plan and the design (edits recorded in the "Review log" section at the end of each); `docs/superpowers/research/combat-model/` (`model.ts`, `check.ts`, `results.txt`, `check-results.txt`).
-- **Change**: read, by name, and record what was found: `stepMonster`, `onPlayerHit`, `StepWorld`, `MonsterLogic` (`monsterAi.ts`); `findPath`, `findWalkPath`, `nearestOpenCell`, `entityGoal`, `shouldRepath`, `segmentWalkable` and the Stage 2 review additions `entityAim`, `walkSpent`, `stallTime`, `escapeStall` (`pathfind.ts`); Stage 3's `playerAttackProfile`, `playerHitChance`, `monsterHitChance`, `creditGp`, `HP_REGEN_PER_SEC`, `rollDrops` and its `tests/content-freeze.test.ts` and `tests/pacing.test.ts`; `handleInventoryClick`, `togglePrayer`, `setCombatStyle`, `toggleSpecialAttack`; `tone` in `audio.ts`; the four pins of design 9.3 (Stage 3's `content-freeze`; `world-data` line 162 and `world-budget`'s "CAMPS hold 36 monsters" at their merged line numbers; `src/__tests__/blender-hero.test.ts`'s species test) and any new test that counts monsters or iterates `MONSTER_TYPES`. Replace the hand-transcribed swing in `model.ts` and `check.ts` with Stage 3's functions, run MODEL, and compare with design 6.2 and 6.4. Run Stage 3's `tests/pacing.test.ts` once with the dragon's proposed hitpoints and respawn time patched in locally (not committed) and record whether any assertion moves (design 6.10). Run SG and record test count and JS chunk size as this stage's baseline.
-- **Accept**: a written list, one line per symbol: found, moved, or missing. If one is missing or MODEL's win rates leave the thresholds of B3, the plan is edited before any task starts and the edit is logged. SG passes.
+- **Files**: this plan and the design (edits recorded in the "Review log" section at the end of each); `docs/superpowers/research/combat-model/` (the scripts and their three outputs).
+- **Change**: read, by name, and record what was found: `stepMonster`, `onPlayerHit`, `StepWorld`, `MonsterLogic` (`monsterAi.ts`); `findPath`, `findWalkPath`, `nearestOpenCell`, `entityGoal`, `shouldRepath`, `segmentWalkable` and the Stage 2 review additions `entityAim`, `walkSpent`, `stallTime`, `escapeStall` (`pathfind.ts`); Stage 3's `playerAttackProfile`, `playerHitChance`, `monsterHitChance`, `creditGp`, `HP_REGEN_PER_SEC` (and that it lives under `src/state`, in `economy.ts`, as its plan says), `rollDrops` and its `tests/content-freeze.test.ts` and `tests/pacing.test.ts`; `handleInventoryClick`, `togglePrayer`, `setCombatStyle`, `toggleSpecialAttack`; `tone` in `audio.ts`; the four pins of design 9.3 (Stage 3's `content-freeze`; `world-data` line 162 and `world-budget`'s "CAMPS hold 36 monsters" at their merged line numbers; `src/__tests__/blender-hero.test.ts`'s species test) and any new test that counts monsters or iterates `MONSTER_TYPES`; `normalizeQuests`, `defaultQuests` and `QuestFlags`, and Stage 3's two save goldens (`tests/fixtures/s3/default-state.golden.json`, `save-v4-loaded.golden.json`) with its "same keys" assertion; the altar branch in `loop.ts` and the context-menu builder in `input.ts`; every comparison with the literal `elvarg_dragon` under `src/` (design 6.4 lists seven). Replace the hand-transcribed attack arithmetic in `fight.ts` with Stage 3's functions, run MODEL, and compare with design 6.2, 6.4 and 6.6. Run Stage 3's `tests/pacing.test.ts` twice with local patches that are not committed, and record whether any assertion moves (design 6.10): once with the new boss's row and camp added, once with its model's rest rate set to 1.0 HP/s. Run SG and record test count and JS chunk size as this stage's baseline.
+- **Accept**: a written list, one line per symbol: found, moved, or missing. If one is missing, or MODEL's win rates leave the thresholds of B3, or the gate rows of `decisions-results.txt` leave their bounds, the plan is edited before any task starts and the edit is logged. SG passes.
 - **Must not change**: anything under `src/` or `tests/`.
 
 ### 1.1 Lanes
@@ -90,14 +90,17 @@ If the owner takes an alternative, only the blocked task changes, as that task s
 |---|---|---|
 | P (routes), spine | P1 to P4 | `src/state/pathfind.ts`, `src/state/collision.ts`, `src/state/monsterAi.ts`, `src/engine/loop.ts` |
 | T (telegraphs), spine | T1 to T5 | `src/data/attacks.ts` (new), `src/state/telegraph.ts` (new), `src/data/world.ts`, `src/state/monsterAi.ts`, `src/state/combat.ts`, `src/engine/telegraphs.ts` (new), `src/engine/loop.ts`, `src/engine/actions.ts`, `src/engine/monsterMeshes.ts`, `src/engine/context.ts` |
-| B (boss), spine | B1 to B4 | `src/data/attacks.ts`, `src/data/worldMap.ts`, `src/state/monsterAi.ts`, `src/state/combat.ts`, `src/engine/loop.ts`, `src/engine/actions.ts`, `src/ui/hud.ts`, `src/ui/styles.css`, `index.html` |
-| S (sustain, commands), side | S1, S2 | `src/state/sustain.ts` (new), `src/state/commands.ts` (new), `src/state/adventure.ts` (`deathNotice` only) |
+| M (roster), spine part, after CP-4 | M1, M3 | `tests/new-monsters.test.ts`, `tests/names-combat.test.ts`, `tests/fixtures/existing-dragon.golden.json`, `src/data/world.ts`, `src/data/worldMap.ts`, `src/engine/monsterMeshes.ts`, `src/engine/overlay.ts`, the four declared test replacements |
+| B (boss), spine | B1 to B4 | `src/data/attacks.ts`, `src/data/worldMap.ts`, `src/data/world.ts` (the boss's row), `src/state/monsterAi.ts`, `src/state/combat.ts`, `src/state/adventure.ts` (`isBossLoot`, `registerKill`), `src/engine/loop.ts`, `src/engine/actions.ts`, `src/ui/hud.ts`, `src/ui/styles.css`, `index.html` |
+| S (sustain, commands), side | S1, S2 | `src/state/sustain.ts` (new), `src/state/commands.ts` (new), `src/state/adventure.ts` (`deathNotice` only), `src/state/quests.ts` and `src/state/types.ts` (`lanternVow` only) |
 | F (feel), side | F1, F2 | `src/data/feel.ts` (new), `src/engine/reactions.ts` (new) |
 | A (audio), side | A1, A2 | `src/state/soundPlan.ts` (new), `src/engine/audio.ts` |
-| M (new monsters), side | M2 (M1 and M3 run on the spine) | `src/engine/blenderMonsters.ts`, `src/engine/spawns.ts` |
-| W (wiring), spine, after the side merges | W1 to W3, M1, M3, W4 | `tests/new-monsters.test.ts`, `tests/names-combat.test.ts`, `src/engine/actions.ts`, `loop.ts`, `input.ts`, `context.ts`, `spawns.ts`, `playerMesh.ts`, `monsterMeshes.ts`, `src/ui/playerActions.ts`, `hud.ts`, `styles.css`, `index.html`, `src/data/world.ts`, `src/data/worldMap.ts`, the four declared test replacements, `README.md` |
+| M (roster), side part | M2 | `src/engine/blenderMonsters.ts`, `src/engine/spawns.ts` |
+| W (wiring), spine, after the S, F and A merges | W1 to W4 | `src/engine/actions.ts`, `loop.ts`, `input.ts`, `context.ts`, `spawns.ts`, `playerMesh.ts`, `monsterMeshes.ts`, `src/ui/playerActions.ts`, `hud.ts`, `styles.css`, `index.html`, `README.md` |
 
-What cannot run in parallel: every spine task with every other spine task. `src/data/world.ts` and `monsterMeshes.ts` are edited by T2/T5 on the spine, so lane M's edits to them (the `model` and `tint` fields and the two rows) are made in M3, on the spine. `spawns.ts` belongs to M2 until the side merges, so the monsters' stable `id` is assigned in W1, not T5. Side clusters never touch a spine file.
+What cannot run in parallel: every spine task with every other spine task. `src/data/world.ts` and `monsterMeshes.ts` are edited by T2/T5 on the spine, so lane M's edits to them (the `model`, `tint` and `modelScale` fields and the three rows) are made in M3, on the spine, after CP-4 and before lane B, because the boss is built from the dragon's mesh. `spawns.ts` belongs to M2 until its merge after CP-4, so the monsters' stable `id` is assigned in W1, not T5. Side clusters never touch a spine file.
+
+Spine order: R0; P1 to P4; T1 to T5; CP-4; merge M2; M1, M3; B1 to B4; merge S, F, A; W1 to W4; G-7.
 
 ---
 
@@ -164,7 +167,7 @@ What cannot run in parallel: every spine task with every other spine task. `src/
 - **Tier**: sonnet (tables and a stated rule).
 - **Depends**: P4, O-4.6.
 - **Files**: `tests/attack-data.test.ts`, `tests/telegraph.test.ts` (both new).
-- **Change**: the G4.2 and G4.3 rows of design 9.1 that concern data and geometry: `inShape` for circle (both anchors), cone, line and ring, at edge, inside, outside and rotated; `shapeOutline` closed and consistent with `inShape` on a 0.25 grid; `escapeDistance` equals the "Escape" column of design 6.3 within 0.05 (a circle around the monster counts its full radius); every row has `windupMs >= minWindupMs(row) + 200`, no wind-up under 1,100 ms, every slot time (`max(slots x cadence, windupMs + 150)`) leaves a recovery of at least 150 ms, and for every boss phase at that phase's cadence (the boss rows arrive in B2; the test iterates whatever `BOSSES` holds); every pattern starts with `basic` and names existing attacks; chicken, goblin and goblin archer have no pattern; the conservation rule within 5% over 10,000 simulated seconds for each ordinary pattern (seeded, the loop of `model.ts` section 2).
+- **Change**: the G4.2 and G4.3 rows of design 9.1 that concern data and geometry: `inShape` for circle (both anchors), cone, line and ring, at edge, inside, outside and rotated; `shapeOutline` closed and consistent with `inShape` on a 0.25 grid; `escapeDistance` equals the "Escape" column of design 6.3 within 0.05 (a circle around the monster counts its full radius); every row has `windupMs >= minWindupMs(row) + 200`, no wind-up under 1,100 ms, every slot time (`max(slots x cadence, windupMs + 150)`) leaves a recovery of at least 150 ms, and for every boss phase at that phase's cadence (the boss rows arrive in B2; the test iterates whatever `BOSSES` holds); every entry of `PATTERNS` starts with `basic`, and so does every boss's first phase (later phases may open with a heavy, design 6.4); every pattern names existing attacks; chicken, goblin, goblin archer and the existing dragon have no pattern; the conservation rule within 5% over 10,000 simulated seconds for each ordinary pattern (seeded, the loop of `model.ts` section 2).
 - **Accept**: red until T2.
 - **Must not change**: `src/`.
 
@@ -172,7 +175,7 @@ What cannot run in parallel: every spine task with every other spine task. `src/
 - **Tier**: sonnet (data transcription and four small functions).
 - **Depends**: T1.
 - **Files**: `src/data/attacks.ts` (new), `src/state/telegraph.ts` (new), `src/data/world.ts`.
-- **Change**: `attacks.ts` exports `CADENCE_SECS = 1.65`, `CAMP_WINDUP_GAP_SECS = 1.65`, `TELEGRAPH_TIME_SCALE = 1`, the types `Shape`, `AttackDef`, the six ordinary rows of `ATTACKS` and `PATTERNS` exactly as in design 6.2 and 6.3 (numbers from the 6.3 table, Rootquake 1,700 ms and Scorch Lane `halfWidth` 1.2; names from 6.9; no `cue` field, it is derived in A2). `telegraph.ts` exports `inShape(shape, originX, originZ, dirX, dirZ, x, z)`, `escapeDistance(attack)`, `minWindupMs(attack)` (700 + 160 + 90 + distance / 11.5 x 1000) and `shapeOutline(shape, segments)`. `world.ts`: `MonsterDef` gains `pattern?: string`; the type-level override sets it for scorpion, dark wizard, dark ranger, hill giant, moss guardian and lesser demon without editing `catalog.ts`.
+- **Change**: `attacks.ts` exports `CADENCE_SECS = 1.65`, `CAMP_WINDUP_GAP_SECS = 1.65`, `TELEGRAPH_TIME_SCALE = 1`, the types `Shape`, `AttackDef`, the six ordinary rows of `ATTACKS` and `PATTERNS` exactly as in design 6.2 and 6.3 (numbers from the 6.3 table, Rootquake 1,700 ms and Scorch Lane `halfWidth` 1.2; names from 6.9; no `cue` field, it is derived in A2). The existing dragon gets no pattern (design 6.4). `telegraph.ts` exports `inShape(shape, originX, originZ, dirX, dirZ, x, z)`, `escapeDistance(attack)`, `minWindupMs(attack)` (700 + 160 + 90 + distance / 11.5 x 1000) and `shapeOutline(shape, segments)`. `world.ts`: `MonsterDef` gains `pattern?: string`; the type-level override sets it for scorpion, dark wizard, dark ranger, hill giant, moss guardian and lesser demon without editing `catalog.ts`.
 - **Accept**: `ONE(tests/attack-data.test.ts)`, `ONE(tests/telegraph.test.ts)`, then SG.
 - **Must not change**: any existing monster stat or drop; `catalog.ts`.
 
@@ -201,43 +204,68 @@ What cannot run in parallel: every spine task with every other spine task. `src/
 - **Must not change**: `vfx.ts`; `performMonsterRetaliation`'s behaviour for basic attacks.
 
 ### CP-4 "Do the shapes read?" [HUMAN]
-Design 9.2, the first two items: each shape on four grounds and four tiers, by day and night, and one hill giant fight. Screenshots go in `docs/superpowers/baseline/cw/`. If a shape does not read, the fix is in `telegraphs.ts` (opacity, outline width, height offset) and is one more [AGY] task with the same allowlist. Lane B does not start before this passes.
+Design 9.2, the first two items: each shape on four grounds and four tiers, by day and night, and one hill giant fight. Screenshots go in `docs/superpowers/baseline/cw/`. If a shape does not read, the fix is in `telegraphs.ts` (opacity, outline width, height offset) and is one more [AGY] task with the same allowlist. M1 and lane B do not start before this passes.
 
 ---
 
-## 4. Lane B: the boss (design 6.4, G4.4, G4.5)
+## 4. The roster and the boss (design 6.4, 6.8, G4.4, G4.5, G4.9)
+
+### Before the boss: the three new rows
+
+Cluster M's one task, M2 (section 5), is merged into the spine here, after CP-4.
+
+### M1 Roster, boss-row and name tests [CLAUDE]
+- **Tier**: sonnet.
+- **Depends**: CP-4, O-4.3 (the boss's name); M2 merged.
+- **Files**: `tests/new-monsters.test.ts`, `tests/names-combat.test.ts`, `tests/fixtures/existing-dragon.golden.json` (all new).
+- **Change**: first, before M3 exists, write the golden with `UPDATE_GOLDEN=1` (the foundation plan's X05 pattern): `MONSTER_TYPES.elvarg_dragon` and the `dragon` camp of `CAMPS`, as JSON. Then the G4.9 row of design 9.1:
+  - `the existing dragon's row, drops and camp equal the golden` (name, level 95, 260 hitpoints, max hit 32, attack 88, defence 78, magic, its six drops, one member at (-102, 100), no `pattern`, no `model`, no `tint`). It passes today and must pass after every later task.
+  - for `saltback_stalker` and `thornwatch_marksman`: a camp, a pattern, stats between the giant's and the guardian's, the rows of design 6.8.
+  - for `ashmantle`: the row of design 6.4 (level 110, 1,400 hitpoints, max hit 72, attack 120, defence 78, magic), `model` `elvarg_dragon`, a `tint`, `modelScale` 1.2, an aggressive camp of one member.
+  - `every model names one of the 10 existing monster models`; `none of the three new types drops an item with a slot` (no equipment).
+  - The name test reuses the deny-list of `tests/names.test.ts` by importing nothing from it: the list is copied with a comment naming its source, and a third assertion fails if the two lists differ. It covers the three monster names, the attack and phase names that exist by then, and, from the design's table, "Ashbreaker" and "Lantern Vow".
+- **Accept**: the golden test passes today; the rest is red until M3.
+- **Must not change**: `src/`; `tests/names.test.ts`; the golden after this task.
+
+### M3 The three rows and their camps [CLAUDE]
+- **Tier**: opus (places camps against the world-data test; makes the declared test replacements).
+- **Depends**: M1.
+- **Files**: `src/data/world.ts`, `src/data/worldMap.ts`, `src/engine/monsterMeshes.ts`, `src/engine/overlay.ts`, and the four **declared replacements** of design 9.3, one commit each, each named in its message: Stage 3's `tests/content-freeze.test.ts` (three keys), `tests/world-data.test.ts` (36 to 42), `tests/world-budget.test.ts` (36 to 42), `src/__tests__/blender-hero.test.ts` (iterate the 10 model keys; 13 type keys; every type's model key is one of the 10).
+- **Change**: `MonsterDef` gains `model?`, `tint?` and `modelScale?`; `createMonsterMesh` and `poseMonsterLimbs` switch on `def.model ?? typeKey`; `overlay.ts`'s three comparisons with `'elvarg_dragon'` (minimap dot size and colour, label height) read the model key, and the label height is multiplied by `def.modelScale ?? 1`. Add `saltback_stalker` and `thornwatch_marksman` with the rows of design 6.8 (`modelScale` 1.4 and 1.1) and `ashmantle` with the row and the reward table of design 6.4 (`model: 'elvarg_dragon'`, `modelScale` 1.2; no `pattern`: its patterns arrive with `BOSSES` in B2). Add three aggressive camps: the stalkers' (3 members) and the marksmen's (2 members) at coordinates that pass `world-data` and `world-data-combat`, outside every safe zone, off every path, clear of every resource node and of every point-of-interest piece by 2 (Stage 2 review 8), the marksmen outside the `woods` region (Stage 5 plants trees there); and `ashmantle`, one member at (-102, 54), with the ranged aggression radius. Until B2 the boss is an ordinary magic monster with a camp leash; the branch is never merged in that state. Run `tests/pacing.test.ts`; if an assertion fails, stop and report (design 6.10): the owner has decided the two monsters ship, so the fix is a change to their rows agreed with Stage 3, or to the boss's reward table, never dropping a row silently.
+- **Accept**: `ONE(tests/new-monsters.test.ts)`, `ONE(tests/names-combat.test.ts)`, `ONE(tests/world-data.test.ts)`, `ONE(tests/world-budget.test.ts)`, `ONE(src/__tests__/blender-hero.test.ts)`, `ONE(tests/textures.test.ts)`, `ONE(tests/pacing.test.ts)`, then SG. The opus verify diffs each replaced test against `main` and accepts only the edits design 9.3 names, and confirms `git diff main -- src/data/catalog.ts` is empty.
+- **Must not change**: any existing monster row, drop, camp, bounty band or quest; `catalog.ts`; `tests/fixtures/existing-dragon.golden.json`.
 
 ### B1 Boss phase tests [CLAUDE]
 - **Tier**: opus.
-- **Depends**: CP-4, O-4.3.
+- **Depends**: M3, O-4.3.
 - **Files**: `tests/boss-phases.test.ts` (new).
-- **Change**: the G4.4 row of design 9.1, plus: `a boss heavy deals power x 0.75..1.0 when inside and 0 when outside`; `fire is cut to 25% by a ward, the quest flag or Protect from Magic, through resolveDragonfire`; `Tail Sweep is cut by Protect from Melee and not by Protect from Magic`; `Ashen Nova is cut by nothing`; `each heavy hit adds a mark up to four and resets one shared 12 s timer; every heavy hit while marks last is raised 25% per mark; all marks go when the timer runs out` (through `addMark`, `tickMarks` and `markMultiplier`, with time as a parameter); `unmarked, no boss heavy deals 60 or more before mitigation`; `a wind-up in progress is cancelled by a phase shift`; `the last phase's threshold is 0 and the boss can die`; `the boss never chases beyond arenaRadius`; `a boss pinned at its arena edge in chase does not stall home`; `reset and respawn restore phase I, the first pattern entry and full hitpoints`.
+- **Change**: the G4.4 row of design 9.1, plus: `a boss heavy deals power x 0.75..1.0 when inside and 0 when outside`; `Ember Cone is cut to 25% by a ward, the quest flag or Protect from Magic, through resolveDragonfire`; `Tail Sweep and Slagburst are cut by Protect from Melee and not by Protect from Magic`; `Slag Rain and Ashen Nova are cut by nothing`; `each heavy hit adds a mark up to four and resets one shared 12 s timer; every heavy hit while marks last is raised 25% per mark; all marks go when the timer runs out` (through `addMark`, `tickMarks` and `markMultiplier`, with time as a parameter); `unmarked, no boss heavy deals 60 or more before mitigation`; `a wind-up in progress is cancelled by a phase shift`; `phases II and III start with their first pattern entry, a heavy, one second after the shift`; `no standing distance from 0 to 13.5 is outside both Ashen Nova and Slagburst` (the pair of design 6.4, through `inShape`); `the last phase's threshold is 0 and the boss can die`; `the boss never chases beyond arenaRadius`; `a boss pinned at its arena edge in chase does not stall home`; `reset and respawn restore phase I, the first pattern entry and full hitpoints`; `the existing dragon has no BOSSES row: it respawns after 7.5 s dead, leashes and stalls as any monster, and rollMonsterHit gives it dragonfire when breathCount is a multiple of 3`; `rollMonsterHit never returns dragonfire for ashmantle, at any breathCount`; `isBossLoot is true for elvarg_dragon and for ashmantle and false for hill_giant`; `registerKill of ashmantle sets quests.title to the row's title and sets no quest flag`.
 - **Accept**: red until B2.
 - **Must not change**: `src/`.
 
 ### B2 Phases, gate, shift, arena, respawn [AGY]
 - **Tier**: sonnet.
 - **Depends**: B1.
-- **Files**: `src/data/attacks.ts`, `src/data/worldMap.ts`, `src/data/world.ts`, `src/state/monsterAi.ts`, `src/state/combat.ts`.
-- **Change**: `attacks.ts` gains the four boss rows and `BossDef`, `BOSSES` with the dragon's row exactly as design 6.4 (respawn 120, arena 12, mark step 0.25, max 4, 12 s; the three phases and their patterns; `shiftMs` 2,000; no hitpoints and no prayer hint in the row). `CampDef` gains `arenaRadius?`. `createMonsterLogic` takes the dead time from `BOSSES` when the type has a row (hitpoints come from `MONSTER_TYPES`, as today). `MonsterLogic` gains `phase` and `shiftLeft`. `onPlayerHit` clamps at the phase threshold and starts the shift; in a shift it returns `applied: false` with `reason: 'shift'`. `stepMonster` emits `{ kind: 'phase', index }`, uses the phase's pattern and `cadenceMult`, and applies the arena rule of 6.4 in place of the camp leash and the stall test for a boss. `reset` and respawn set `phase` 0, `patternIdx` 0 and `shiftLeft` 0. `rollMonsterAttack` handles `power`, the four styles and `marks`; `combat.ts` also gains the pure mark rule `addMark(marks, boss)`, `tickMarks(marks, dt)` and `markMultiplier(marks, boss)` on a `{ count, left }` value. `MonsterLogic` also gains `outsideFor`, the seconds the target has spent beyond `arenaRadius + 6`. The world override sets the dragon's `hp` to 1,200 (and, only with CALL-4.15, its new `name`): this is the one place the boss's hitpoints live.
-- **Accept**: `ONE(tests/boss-phases.test.ts)` and unchanged `monster-hit`, `monster-territory` pass, then SG.
-- **Must not change**: `rollMonsterHit`; `resolveDragonfire`; the dragon's level, name, drops, model.
+- **Files**: `src/data/attacks.ts`, `src/data/worldMap.ts`, `src/state/monsterAi.ts`, `src/state/combat.ts`, `src/state/adventure.ts` (`isBossLoot` and `registerKill` only).
+- **Change**: `attacks.ts` gains the five boss rows (Ember Cone, Tail Sweep, Slag Rain, Ashen Nova, Slagburst, numbers from the design 6.3 table and the 6.4 power table) and `BossDef`, `BOSSES` with one row, `ashmantle`, exactly as design 6.4 (respawn 120, arena 12, title "Ashbreaker", mark step 0.25, max 4, 12 s; the three phases and their patterns; `shiftMs` 2,000; no hitpoints in the row). `CampDef` gains `arenaRadius?`, set to 12 on the `ashmantle` camp. `createMonsterLogic` takes the dead time from `BOSSES` when the type has a row (hitpoints come from `MONSTER_TYPES`, as today). `MonsterLogic` gains `phase` and `shiftLeft`. `onPlayerHit` clamps at the phase threshold and starts the shift; in a shift it returns `applied: false` with `reason: 'shift'`. `stepMonster` emits `{ kind: 'phase', index }`, uses the phase's pattern and `cadenceMult`, and applies the arena rule of 6.4 in place of the camp leash and the stall test for a boss. `reset` and respawn set `phase` 0, `patternIdx` 0 and `shiftLeft` 0. `rollMonsterAttack` handles `power`, the styles `fire`, `melee`, `ranged`, `magic` and `pure`, and `marks`; `combat.ts` also gains the pure mark rule `addMark(marks, boss)`, `tickMarks(marks, dt)` and `markMultiplier(marks, boss)` on a `{ count, left }` value. `MonsterLogic` also gains `outsideFor`, the seconds the target has spent beyond `arenaRadius + 6`. `adventure.ts`: `isBossLoot(typeKey)` is true for `elvarg_dragon` as today and for any type with a `BOSSES` row; `registerKill` writes `BOSSES[typeKey].title` to `quests.title` when the row has one. Nothing is keyed on the literal `ashmantle` anywhere in code.
+- **Accept**: `ONE(tests/boss-phases.test.ts)`, `ONE(tests/new-monsters.test.ts)` and unchanged `monster-hit`, `monster-territory`, `phase2` pass, then SG.
+- **Must not change**: `rollMonsterHit`; `resolveDragonfire`; `catalog.ts`; the existing dragon's row, camp, drops, respawn and quest flag (its golden).
 
-### B3 Lair placement and the boss fight simulation [CLAUDE]
+### B3 Arena placement and the boss fight simulation [CLAUDE]
 - **Tier**: opus (tunes data against tests and proves G4.5).
 - **Depends**: B2.
-- **Files**: `tests/support/bossModel.ts`, `tests/boss-fight.test.ts` (both new); `src/data/worldMap.ts` (the dragon camp only); `src/data/attacks.ts` (boss powers, wind-ups and mark step only, inside the timing rule); `tests/world-data-combat.test.ts` (one added assertion for the lair).
-- **Change**: move the lair until `world-data-combat` and `world-data` pass with: the circle of `arenaRadius + 6` clear of every other camp's leash circle (radius + 4) and of every safe zone, every arena cell open, the home reachable (design 6.4 "Where the lair goes"; start near (-106, 66), not (-106, 106), which fails the leash test). Port the **positional** check, `docs/superpowers/research/combat-model/check.ts`, to `bossModel.ts`, calling `rollMonsterAttack`, `inShape` and Stage 3's attack functions, with the fighters A to G of design 6.4 plus a ranged and a magic fighter prepared as A (and each of them never moving). `boss-fight.test.ts` runs 500 seeds each and asserts: A at least 85%, C at least 65%, B and G at most 5%, F at most 15%, the ranged and magic fighters at least 85% and at most 5% when they never move; it prints the table. Expect F to fail first (41.5% in the critique's check): the lever is the share of damage that preparation cuts (the boss basic and the fire powers), not hitpoints.
-- **Accept**: `ONE(tests/boss-fight.test.ts)`, `ONE(tests/attack-data.test.ts)`, `ONE(tests/world-data.test.ts)` pass, then SG. If a threshold misses, change boss powers, hitpoints or the mark step and record the new values in the design's review log; never a threshold.
-- **Must not change**: any ordinary monster; any timing below its minimum.
+- **Files**: `tests/support/bossModel.ts`, `tests/boss-fight.test.ts` (both new); `src/data/worldMap.ts` (the `ashmantle` camp only); `src/data/world.ts` (the `ashmantle` row only: hitpoints, max hit, attack, defence); `src/data/attacks.ts` (boss powers, wind-ups, shapes and mark step only, inside the timing rule); `tests/world-data-combat.test.ts` (one added assertion for the arena).
+- **Change**: add the arena assertion, the criterion of design 6.4 "Where the arena goes" as `decisions.ts` computes it: the circle of `arenaRadius + 6` clear of every other camp's leash circle (radius + 4, the existing dragon's among them) and of every safe zone; the arena beyond every other camp's attack reach and outside every aggression circle; every arena cell open and inside the world's bound; no path or point-of-interest pad inside `arenaRadius + 6`; no resource node within `arenaRadius + 2`; the ground inside the arena no steeper than 0.8 per unit (`getTerrainHeight`, sampled every 0.5); the home reachable from the pass's west mouth. It must pass at (-102, 54); if Stage 3 or Stage 5 data moved something, move the camp to the nearest spot that passes and log it. Port the positional fight, `docs/superpowers/research/combat-model/fight.ts`, to `bossModel.ts`, calling `rollMonsterAttack`, `inShape`, `regenRate` and Stage 3's attack functions, with the fighters of design 6.4. `boss-fight.test.ts` runs 500 seeds each and asserts: A at least 85%; C at least 65%; B and G at most 5%; F at most 15%; the prepared ranged and magic fighters at least 85%, and at most 5% when they never move; the unprepared level-50 ranged and magic fighters at most 15%. It prints the table. The committed model holds every row with room at 2,000 seeds (design 6.4); the thinnest is the unprepared magic fighter, 9.2% against 15%.
+- **Accept**: `ONE(tests/boss-fight.test.ts)`, `ONE(tests/attack-data.test.ts)`, `ONE(tests/world-data.test.ts)`, `ONE(tests/world-data-combat.test.ts)`, `ONE(tests/new-monsters.test.ts)` pass, then SG. If a threshold misses, change the boss's row, powers, shapes or mark step and record the new values in the design's review log; never a threshold, never a fighter.
+- **Must not change**: any ordinary monster; the existing dragon; any timing below its minimum.
 
 ### B4 Boss in the engine: phase change, bar, marks [AGY]
 - **Tier**: sonnet.
 - **Depends**: B3.
 - **Files**: `src/engine/loop.ts`, `src/engine/actions.ts`, `src/ui/hud.ts`, `src/ui/styles.css`, `index.html`.
-- **Change**: for a type with a `BOSSES` row, `performMonsterRetaliation` calls `rollMonsterHit` with `breathCount` 1 and does not increment it (design 6.4: no dice dragonfire; 0 would be dragonfire). `phase` shows the banner (`showBanner` with the phase name), one expanding ring from the existing `spawnExpandingRing`, and marks the boss untouchable in the target HUD for `shiftMs`. With CALL-4.15, the dragonfire chat line in `actions.ts` prints `monster.def.name`, not a literal name. `applied: false` with reason `shift` prints "untouchable" once and keeps the target. A boss bar (one block in `index.html`, hidden by default): name, hitpoints, two phase pips at 66% and 33%, the hero's mark count. It shows while the boss is in combat. The hero's `{ count, left }` mark value is held on `player`; the engine only calls `tickMarks` each frame, `addMark` on a heavy hit and passes the value to `rollMonsterAttack`, and clears it on death. No mark arithmetic is written in the engine.
-- **Accept**: SG. `ONE(tests/globals.test.ts)` passes (no new inline handler). `ONE(tests/monster-hit.test.ts)` passes unchanged.
-- **Must not change**: the minimap, the tab bar, any existing HUD element's id; `rollMonsterHit`.
+- **Change**: `phase` shows the banner (`showBanner` with the boss's name and the phase name, both read from data), one expanding ring from the existing `spawnExpandingRing`, and marks the boss untouchable in the target HUD for `shiftMs`. `applied: false` with reason `shift` prints "untouchable" once and keeps the target. A boss bar (one block in `index.html`, hidden by default): name, hitpoints, two phase pips at 66% and 33%, the hero's mark count. It shows while a monster with a `BOSSES` row is in combat. The hero's `{ count, left }` mark value is held on `player`; the engine only calls `tickMarks` each frame, `addMark` on a heavy hit and passes the value to `rollMonsterAttack`, and clears it on death. No mark arithmetic is written in the engine. `performMonsterRetaliation` is not changed for the boss: `rollMonsterHit` breathes dragonfire only for the existing dragon's key, so the boss's basics need no rule, and the two chat lines that name the existing dragon stay as they are, because only it reaches them.
+- **Accept**: SG. `ONE(tests/globals.test.ts)` passes (no new inline handler). `ONE(tests/monster-hit.test.ts)` passes unchanged. `grep -c ashmantle src/engine/*.ts src/ui/*.ts` prints `0` for every file (the boss is data).
+- **Must not change**: the minimap, the tab bar, any existing HUD element's id; `rollMonsterHit`; `performMonsterRetaliation`'s behaviour for any existing monster.
 
 ---
 
@@ -246,20 +274,26 @@ Design 9.2, the first two items: each shape on four grounds and four tiers, by d
 ### Cluster S: sustain and commands (design 6.6, section 7)
 
 ### S1 Sustain and command tests [CLAUDE]
-- **Tier**: sonnet (rules given as a table).
+- **Tier**: opus (these tests define what a death takes and how a new saved value is read; the rest of the file is from tables).
 - **Depends**: R0, O-4.2, O-4.4, O-4.6.
 - **Files**: `tests/sustain.test.ts`, `tests/commands.test.ts` (both new).
-- **Change**: the G4.8 and G4.10 rows of design 9.1. `deathCost` for option B: `min(floor(gp * 0.1), combatLevel * 100)`, 0 below combat 15. `deathNotice(0)` deep-equals today's notice; `deathNotice(250)` names 250 coins, says banked coins are safe, no longer says "You keep your gear and coins", and matches `/Lumbridge/`. `shouldRetaliate` is false whenever `windupLive` is true. `applyCommand` refuses a meal inside the food cooldown without consuming it, and refuses a prayer below its level or with no points, with today's messages.
-- **Accept**: red until S2.
-- **Must not change**: `src/`; `tests/phase4-combat.test.ts`.
+- **Change**: the G4.8 and G4.10 rows of design 9.1, every clause. In full for the three new rules:
+  - **Regeneration.** `regenRate(0)` and `regenRate(5.99)` equal Stage 3's `HP_REGEN_PER_SEC` (0.25); `regenRate(6)` and beyond equal `HP_REGEN_RESTING_PER_SEC` (1.0); it is never 0. The gate crossing rebuilt from `CAMPS` and `stepMonster` (importing nothing from the frozen test), with hitpoints regenerating at `regenRate(0)` from the first blow: a fresh runner survives fewer than 5% of 1,000 seeds on each of the three lines, the runner with 40 hitpoints and Protect from Melee survives all, and no gap between two blows in any crossing reaches `COMBAT_REST_SECS`.
+  - **Death.** `deathLoss` is all zeros at combat level 14 and not at 15. For each fighting skill, each level 1 to 99 and experience at 0%, 1%, 50% and 100% of the level: the loss is a finite whole number, at least 0, at most the experience inside the level, at most `floor(DEATH_XP_SHARE x span)`, and `getLevelForXp(xp - loss)` equals the level; level 99 uses the span of 98 to 99. `applyDeathLoss` changes no skill outside `FIGHTING_SKILLS`, no item, no `gp`, no `maxHp`; with a vow it changes no experience, clears the vow and returns `vow`; with nothing to lose it returns `none` and keeps the vow; without a vow it returns `lost` with amounts that equal the change in each skill.
+  - **Vow.** `vowPrice` equals the summed `floor(share x span)` over the six skills, and 250 when that is less. `buyVow` refuses below combat 15, when a vow is held and when `gp` is below the price, and then changes nothing; when it accepts, `gp` falls by exactly the price and the vow is held.
+  - **Save.** The seven cases of design 6.6, "One new saved value", through `writeSave` and `readSave`.
+  - **Notice.** `deathNotice()` and `deathNotice({ kind: 'none' })` deep-equal today's notice; the `vow` text says no experience was lost and the vow is spent; the `lost` text contains the exact total and "no level was lost"; all three match `/Lumbridge/` and contain "You keep your gear and coins".
+  - `shouldRetaliate` is false whenever `windupLive` is true. `applyCommand` refuses a meal inside the food cooldown without consuming it, and refuses a prayer below its level or with no points, with today's messages.
+- **Accept**: red until S2, only for the missing module, exports and field.
+- **Must not change**: `src/`; `tests/phase4-combat.test.ts`; `tests/gate-simulation.test.ts`; Stage 3's goldens.
 
-### S2 `sustain.ts` and `commands.ts` [AGY]
+### S2 `sustain.ts`, `commands.ts` and the vow's flag [AGY]
 - **Tier**: sonnet.
 - **Depends**: S1.
-- **Files**: `src/state/sustain.ts`, `src/state/commands.ts` (both new); `src/state/adventure.ts` (`deathNotice` only).
-- **Change**: `sustain.ts`: `FOOD_CD_SECS = 1.8`, `POTION_CD_SECS = 1.8`, `COMBAT_REST_SECS = 6`; `canEat(clock, now)`, `eat(state, slot, clock, now)` and `drink(...)` (today's effects of `handleInventoryClick`, returning what was restored; the clock is a small object the caller owns); `regenRate(sinceCombatSecs)`; `deathCost(state)` and `applyDeathCost(state)` through `creditGp`; `shouldRetaliate({ hasTarget, walking, keyHeld, downed, windupLive })`. `adventure.ts`: `deathNotice(paid = 0)` (design 6.6). `commands.ts`: the `PlayerCommand` union of design section 7 and the pure `applyCommand(state, cmd, clocks, now)` for `eat`, `drink`, `prayer`, `style` and `special`, returning `{ ok, reason, restored? }`: eat and drink through `sustain.ts`, style through `canUseStyle`, prayer with the level and points checks and messages that `togglePrayer` has inline today (moved, not copied: W1 makes `togglePrayer` call it), special with `toggleSpecialAttack`'s energy check. `move` and `attack` are not applied here.
-- **Accept**: both tests pass, then SG.
-- **Must not change**: `applyRespawn`; the title of `deathNotice` and its body when nothing was paid.
+- **Files**: `src/state/sustain.ts`, `src/state/commands.ts` (both new); `src/state/adventure.ts` (`deathNotice` only); `src/state/quests.ts` and `src/state/types.ts` (`lanternVow` only).
+- **Change**: `sustain.ts`: the constants `FOOD_CD_SECS = 1.8`, `POTION_CD_SECS = 1.8`, `COMBAT_REST_SECS = 6`, `HP_REGEN_RESTING_PER_SEC = 1.0`, `DEATH_XP_SHARE = 0.03`, `DEATH_MIN_COMBAT = 15`, `VOW_COINS_PER_XP = 1`, `VOW_MIN_PRICE = 250`, `FIGHTING_SKILLS` (attack, strength, defence, hitpoints, ranged, magic); `canEat(clock, now)`, `eat(state, slot, clock, now)` and `drink(...)` (today's effects of `handleInventoryClick`, returning what was restored; the clock is a small object the caller owns); `regenRate(sinceCombatSecs)`, which returns Stage 3's `HP_REGEN_PER_SEC` below `COMBAT_REST_SECS` and the resting rate from it on (Stage 3's constant is imported from its `src/state/economy.ts`, not edited; if R0 finds it elsewhere, in the engine, this task stops, because `src/state` may not import the engine); `deathLoss(state)`, `applyDeathLoss(state)`, `vowPrice(state)` and `buyVow(state)` exactly as design 6.6 states them (the span of level 99 is that of 98 to 99; `applyDeathLoss` asserts that no level changed; `buyVow` pays through `creditGp`); `shouldRetaliate({ hasTarget, walking, keyHeld, downed, windupLive })`. `types.ts`: `QuestFlags` gains `lanternVow?: true`. `quests.ts`: `normalizeQuests` gains the one line `if (data.lanternVow === true) quests.lanternVow = true;`, outside the boolean `flags` list; `defaultQuests` is not edited. `adventure.ts`: `deathNotice(outcome?)` with the three bodies of design 6.6. `commands.ts`: the `PlayerCommand` union of design section 7 and the pure `applyCommand(state, cmd, clocks, now)` for `eat`, `drink`, `prayer`, `style` and `special`, returning `{ ok, reason, restored? }`: eat and drink through `sustain.ts`, style through `canUseStyle`, prayer with the level and points checks and messages that `togglePrayer` has inline today (moved, not copied: W1 makes `togglePrayer` call it), special with `toggleSpecialAttack`'s energy check. `move` and `attack` are not applied here; taking a vow is not a combat command and goes through `buyVow` directly.
+- **Accept**: both tests pass, then SG. Stage 3's save goldens and `tests/phase1.test.ts` pass unedited. `grep -c lanternVow src/state/save.ts src/state/gameState.ts` prints `0` for both.
+- **Must not change**: `applyRespawn`; `serializeState`; `defaultQuests`; `createDefaultState`; the title of `deathNotice` and its body when nothing was lost.
 
 ### Cluster F: feel (design 6.5)
 
@@ -293,39 +327,37 @@ Design 9.2, the first two items: each shape on four grounds and four tiers, by d
 - **Tier**: sonnet.
 - **Depends**: A1.
 - **Files**: `src/state/soundPlan.ts` (new), `src/engine/audio.ts`.
-- **Change**: `soundPlan.ts`: the `Voice` type, `cueFor(attack, monsterStyle)` (fire for style `fire`, else melee low, ranged mid, magic high) and one plan function per cue of the design 6.7 table (`windupPlan(attack, cue)`, which ends at `windupMs` and holds no impact voice; `resolvePlan(cue)`, the impact; `impactPlan(ratio)`, `heavyTakenPlan()`, `dodgedPlan()`, `phasePlan()`, `bossDownPlan()`, `heartbeatPlan()`, `foodReadyPlan()`). `audio.ts`: `tone` and a new `noise` take a start offset on `ctx.currentTime`; one master gain and `DynamicsCompressor`; a count of live voices capped at 12 (16 for wind-up and impact cues); `SFX.play(plan)`; `setMuted(muted)` ramps the master gain to 0 or back within 20 ms; the existing `SFX` methods keep their names and sounds, re-expressed as plans (no `setTimeout`); `armAudioOnGesture()` exported for W3: it **creates** the context inside the first pointer, key or touch event and stays armed while the context is not `running`; no other code path creates it; cues are dropped while it is not running; the empty `catch` becomes a one-time `console.warn` and sound off.
+- **Change**: `soundPlan.ts`: the `Voice` type, `cueFor(attack, monsterStyle)` (fire for style `fire`; the attack's own style when it is melee, ranged or magic; otherwise the monster's style; melee low, ranged mid, magic high) and one plan function per cue of the design 6.7 table (`windupPlan(attack, cue)`, which ends at `windupMs` and holds no impact voice; `resolvePlan(cue)`, the impact; `impactPlan(ratio)`, `heavyTakenPlan()`, `dodgedPlan()`, `phasePlan()`, `bossDownPlan()`, `heartbeatPlan()`, `foodReadyPlan()`). `audio.ts`: `tone` and a new `noise` take a start offset on `ctx.currentTime`; one master gain and `DynamicsCompressor`; a count of live voices capped at 12 (16 for wind-up and impact cues); `SFX.play(plan)`; `setMuted(muted)` ramps the master gain to 0 or back within 20 ms; the existing `SFX` methods keep their names and sounds, re-expressed as plans (no `setTimeout`); `armAudioOnGesture()` exported for W3: it **creates** the context inside the first pointer, key or touch event and stays armed while the context is not `running`; no other code path creates it; cues are dropped while it is not running; the empty `catch` becomes a one-time `console.warn` and sound off.
 - **Accept**: `ONE(tests/sound-plan.test.ts)`, then SG. `grep -c setTimeout src/engine/audio.ts` prints `0`; `grep -c audioEnabled src/engine/audio.ts` prints `1`.
 - **Must not change**: the `SoundEffects` method names existing callers use (Stage 3's two tones included).
 
 ### Cluster M: new monsters (design 6.8)
 
-### M1 Roster and name tests [CLAUDE]
-- **Tier**: sonnet.
-- **Depends**: W3, O-4.5; M2 merged. It runs on the spine, right before M3, so the side cluster stays green.
-- **Files**: `tests/new-monsters.test.ts`, `tests/names-combat.test.ts` (both new).
-- **Change**: the G4.9 row of design 9.1, for `saltback_stalker` and `thornwatch_marksman`. The name test reuses the deny-list of `tests/names.test.ts` by importing nothing from it: the list is copied with a comment naming its source, and a third assertion fails if the two lists differ.
-- **Accept**: red until M3.
-- **Must not change**: `src/`; `tests/names.test.ts`.
+M1 and M3 run on the spine and are in section 4.
 
 ### M2 Model key and tint in the loader [AGY]
 - **Tier**: sonnet.
-- **Depends**: R0, O-4.5. Behaviour-preserving; the frozen `src/__tests__/blender-hero.test.ts` and `textures.test.ts` are its guard, and its new tests (M1) come with the monsters in M3.
+- **Depends**: R0. Behaviour-preserving; the frozen `src/__tests__/blender-hero.test.ts` and `textures.test.ts` are its guard, and its new tests (M1) come with the three rows in M3. It is merged into the spine after CP-4.
 - **Files**: `src/engine/blenderMonsters.ts`, `src/engine/spawns.ts`.
 - **Change**: (No `roster.ts`: the slot table stays in the design and the README, design 6.8.) `MonsterEntityLike` gains an **optional** `modelKey` (default `typeKey`, because the frozen test builds the object without it), and reads optional `def.tint` and `def.modelScale`; `upgradeMonsterRigWithGltf` looks up `Monster_${modelKey}`, finds the pivots by `modelKey` (`findPivot` takes the type key today), chooses the albedo by `modelKey`, and multiplies `tint` into each non-emissive material colour. `spawnMonster` sets `modelKey = def.model ?? typeKey` and, after `createMonsterMesh`, multiplies `rig.group.scale` by `def.modelScale ?? 1` (the hitbox is a child of the group; the GLB upgrade keeps the group's scale).
-- **Accept**: SG. Every existing monster renders from the same node as before (the opus verify reads the lookup).
+- **Accept**: SG. Every existing monster renders from the same node as before (the opus verify reads the lookup), the existing dragon included: no tint and scale 1 leave its materials untouched.
 - **Must not change**: materials of existing monsters.
 
 ---
 
-## 6. Lane W: wiring (spine, after merging S, F, A, M in that order)
+## 6. Lane W: wiring (spine, after merging S, F, A in that order)
 
-### W1 Commands, sustain, death cost, retaliation [AGY]
+### W1 Commands, sustain, regeneration, death, the vow, retaliation [AGY]
 - **Tier**: sonnet.
-- **Depends**: B4; S2, F2, A2, M2 merged.
-- **Files**: `src/engine/actions.ts`, `src/engine/loop.ts`, `src/engine/input.ts`, `src/engine/context.ts`, `src/engine/spawns.ts`, `src/ui/playerActions.ts`, `src/ui/hud.ts`, `src/ui/styles.css`.
-- **Change**: `spawnMonster` gives each monster a stable `id`. `dispatchCommand(cmd)` in `actions.ts` applies the five state commands through `applyCommand` and the two others (`move`, `attack`) itself; `handleWorldClick`, the context menu's attack and walk entries, `handleInventoryClick` (food and potion branches only), `togglePrayer`, `setCombatStyle` and `toggleSpecialAttack` call it. Eating sets `player.actionCooldown` to at least one tick. Backpack food and potion slots show a cooldown overlay (a CSS class and a custom property). `updateVitalsAndRegen` uses `regenRate` with the time since the hero last dealt or took damage. `handlePlayerDeath` calls `applyDeathCost` once and the death overlay's body adds what was paid (the title and "Lumbridge" stay). On a monster `attack` or heavy that lands, `shouldRetaliate` may set the target; `windupLive` is true while any monster targeting the hero has `logic.windup` set. In `handleWorldClick`, a click on the monster the hero already targets, while the hero is within its stop distance, is handled as a ground click at the ray's terrain hit (design 6.4, "Running in with one click").
-- **Accept**: `ONE(tests/phase4-combat.test.ts)` unchanged, `ONE(tests/sustain.test.ts)`, then SG. A text scan in the opus verify: no write of `STATE.hp` from an item outside `sustain.ts`.
-- **Must not change**: shops, bank, forge, bones, logs; `applyRespawn`.
+- **Depends**: B4; S2, F2, A2 merged.
+- **Files**: `src/engine/actions.ts`, `src/engine/loop.ts`, `src/engine/input.ts`, `src/engine/context.ts`, `src/engine/spawns.ts`, `src/ui/playerActions.ts`, `src/ui/hud.ts`, `src/ui/styles.css`, `index.html`.
+- **Change**: `spawnMonster` gives each monster a stable `id`. `dispatchCommand(cmd)` in `actions.ts` applies the five state commands through `applyCommand` and the two others (`move`, `attack`) itself; `handleWorldClick`, the context menu's attack and walk entries, `handleInventoryClick` (food and potion branches only), `togglePrayer`, `setCombatStyle` and `toggleSpecialAttack` call it. Eating sets `player.actionCooldown` to at least one tick. Backpack food and potion slots show a cooldown overlay (a CSS class and a custom property).
+  **Regeneration:** `player.sinceCombat` (seconds, starts above `COMBAT_REST_SECS`, not saved) grows each frame and is set to 0 by every event of design 6.6: the hero's attack leaving its hand (hit or miss), a monster's `attack` event on the hero (hit, miss or absorbed), a `resolve` on the hero (hit or dodged), and each frame while any monster targeting the hero has `logic.windup` set. `updateVitalsAndRegen` adds `regenRate(player.sinceCombat) x dt`; the literal 0.25 in `loop.ts` goes.
+  **Death:** `handlePlayerDeath` calls `applyDeathLoss(STATE)` once and passes the outcome to `deathNotice`; the overlay shows that title and body (the title and "Lumbridge" stay); on `lost` the skills panel refreshes.
+  **The vow:** the context menu on an object whose action is `altar` gains "Take the Lantern Vow (N coins)" when `buyVow` could succeed, calling `buyVow` and printing its result; the existing left-click prayer is unchanged and, for a hero of combat 15 or more with no vow, adds one chat line with the price. A lantern mark (one element in `index.html`, hidden by default) beside the hitpoint bar shows while `STATE.quests.lanternVow` is set, with a tooltip.
+  **Retaliation:** on a monster `attack` or heavy that lands, `shouldRetaliate` may set the target; `windupLive` is true while any monster targeting the hero has `logic.windup` set. In `handleWorldClick`, a click on the monster the hero already targets, while the hero is within its stop distance, is handled as a ground click at the ray's terrain hit (design 6.4, "Running in with one click").
+- **Accept**: `ONE(tests/phase4-combat.test.ts)` unchanged, `ONE(tests/sustain.test.ts)`, `ONE(tests/globals.test.ts)`, then SG. Text scans in the opus verify: no write of `STATE.hp` from an item outside `sustain.ts`; no write of a skill's `xp` that lowers it outside `sustain.ts`; the regeneration line in `loop.ts` holds no numeric literal; the altar's left-click branch still restores hitpoints and prayer for nothing.
+- **Must not change**: shops, bank, forge, bones, logs; `applyRespawn`; the altar's free heal.
 
 ### W2 Hit reactions and the spin fix [AGY] (**audit finding 14**)
 - **Tier**: sonnet.
@@ -343,19 +375,13 @@ Design 9.2, the first two items: each shape on four grounds and four tiers, by d
 - **Accept**: SG.
 - **Must not change**: which existing action plays which existing sound.
 
-### M3 The two monsters and their camps [CLAUDE]
-- **Tier**: opus (places camps against the world-data test; makes a declared test replacement).
-- **Depends**: M1.
-- **Files**: `src/data/world.ts`, `src/data/worldMap.ts`, `src/engine/monsterMeshes.ts`, and the four **declared replacements** of design 9.3, one commit each, each named in its message: Stage 3's `tests/content-freeze.test.ts` (two keys; the dragon's name only with CALL-4.15), `tests/world-data.test.ts` (36 to 41), `tests/world-budget.test.ts` (36 to 41), `src/__tests__/blender-hero.test.ts` (iterate the 10 model keys, and every type's model key is one of them).
-- **Change**: `MonsterDef` gains `model?`, `tint?` and `modelScale?`; `createMonsterMesh` and `poseMonsterLimbs` switch on `def.model ?? typeKey`. Add `saltback_stalker` and `thornwatch_marksman` with the rows of design 6.8. Add two aggressive camps (3 and 2 members) at coordinates that pass `world-data` and `world-data-combat`: outside every safe zone, off every path, clear of every resource node and of every point-of-interest piece by 2 (Stage 2 review 8), and the marksmen outside the `woods` region (Stage 5 plants trees there). The two rows use `modelScale` 1.4 and 1.1. Run `tests/pacing.test.ts`; if an assertion fails, apply the fallbacks of design 6.10 in order and record which.
-- **Accept**: `ONE(tests/new-monsters.test.ts)`, `ONE(tests/names-combat.test.ts)`, `ONE(tests/world-data.test.ts)`, `ONE(tests/world-budget.test.ts)`, `ONE(src/__tests__/blender-hero.test.ts)`, `ONE(tests/textures.test.ts)`, `ONE(tests/pacing.test.ts)`, then SG. The opus verify diffs each replaced test against `main` and accepts only the edits design 9.3 names.
-- **Must not change**: any existing monster row, drop, bounty band or quest.
+
 
 ### W4 README [CLAUDE]
 - **Tier**: sonnet (doc sync to code).
-- **Depends**: M3.
+- **Depends**: W3.
 - **Files**: `README.md`.
-- **Change**: the combat section (telegraphs, the boss's phases, food cooldown, the cost of dying as chosen), the monster table (two rows, the dragon's hitpoints and, with CALL-4.15, name) and the prepared monster slots of design 6.8 as a short table.
+- **Change**: the combat section (telegraphs; the new boss and its three phases; the existing dragon, unchanged; food cooldown; regeneration in and out of combat; what a death costs and the Lantern Vow), the monster table (three new rows; the existing dragon's row is not edited) and the prepared monster slots of design 6.8 as a short table.
 - **Accept**: SG.
 - **Must not change**: anything but `README.md`; the credits and licence sections.
 
@@ -374,14 +400,14 @@ Design 9.2, the first two items: each shape on four grounds and four tiers, by d
   4. `git diff main --stat -- public CREDITS.md` is empty (no asset, no credit change).
   5. Every goal G4.1 to G4.12 maps to a passing test (table in section 8).
   6. Rule 0.3.5 and 0.3.6 by text scan: no forbidden word in new `src/state` and `src/data` files; no timing literal of design 6.2 to 6.7 outside the two data files.
-  7. `gate-simulation`, `monster-ai`, `monster-territory`, `monster-hit`, `phase4-combat`, `stage2-review-fixes` and Stage 3's `pacing` pass with no edit.
-  8. MODEL run against the final tables; its numbers replace `results.txt` and `check-results.txt` and the design's tables if they moved.
+  7. `gate-simulation`, `monster-ai`, `monster-territory`, `monster-hit`, `phase2`, `phase4-combat`, `stage2-review-fixes`, Stage 3's `pacing` and Stage 3's two save goldens pass with no edit. `git diff main -- src/data/catalog.ts src/state/save.ts` is empty, and the existing dragon's golden (M1) passes: the owner's decision that it stays as it is.
+  8. MODEL run against the final tables (`boss.ts` brought in line with `attacks.ts` and the boss's row first); its numbers replace `results.txt`, `check-results.txt` and `decisions-results.txt` and the design's tables if they moved.
   9. Finding 14 is closed by W2. Every row of design section 11 is done or carries its written deferral.
 - **Accept**: a written pass.
-- **Must not change**: anything except `docs/superpowers/research/combat-model/results.txt`, `check-results.txt` and, if numbers moved, the design's tables with a review-log line; the task is otherwise read-only.
+- **Must not change**: anything except `docs/superpowers/research/combat-model/` (`boss.ts` and the three outputs) and, if numbers moved, the design's tables with a review-log line; the task is otherwise read-only.
 
 ### G-8 Stage 4 human checks [HUMAN]
-Everything in design 9.2, each recorded with a screenshot or a sentence in `docs/superpowers/baseline/cw/`: the shapes on four grounds and four tiers; the hill giant fight; the boss as fighter A and as fighter F; sound by ear at full and throttled frame rate, on two browsers, muted, and on a fresh load; control during reactions; reduced motion; routes around the ridge, the castle and over the bridge; perf HUD at the pass and in phase II; the 6x CPU throttle; clicks under pressure with a mouse **and a trackpad** (design 9.2; the trackpad result answers CALL-4.16). Then the Stage 1 leak check again: `renderer.info.memory.geometries` returns to its first value after 30 telegraphed attacks and one boss fight.
+Everything in design 9.2, each recorded with a screenshot or a sentence in `docs/superpowers/baseline/cw/`: the shapes on four grounds and four tiers; the hill giant fight; the boss as fighter A, with a crossbow, with magic, and as fighter F; the existing dragon, unchanged; dying below combat 15, without a vow and with one, and a vow surviving a reload; regeneration starting 6 s after the last blow and not while being missed; sound by ear at full and throttled frame rate, on two browsers, muted, and on a fresh load; control during reactions; reduced motion; routes around the ridge, the castle and over the bridge; perf HUD at the pass and in phase II; the 6x CPU throttle; clicks under pressure with a mouse **and a trackpad** (design 9.2; the trackpad result answers CALL-4.16). Then the Stage 1 leak check again: `renderer.info.memory.geometries` returns to its first value after 30 telegraphed attacks and one boss fight.
 
 ### O-4.7 Name search [HUMAN]
 For each name in design 6.9, a person runs a web search and records "not a known name in a published game", or a replacement (which then goes through `names-combat`).
@@ -400,12 +426,12 @@ After G-7, G-8 and O-4.7. The main session opens the pull request and merges aft
 | G4.1 routes | P1 to P4 | `pathfind-budget`, `monster-routes`, `world-data-combat`; G-8 routes |
 | G4.2 telegraphs | T1 to T5 | `telegraph`, `monster-patterns`; CP-4 |
 | G4.3 reaction window | T1, T2 | `attack-data`; G-8 throttle |
-| G4.4 phases | B1, B2, B4 | `boss-phases`; G-8 boss |
+| G4.4 phases; the existing dragon unchanged | M1, B1, B2, B4 | `boss-phases`, the dragon's golden in `new-monsters`, unchanged `monster-hit`; G-8 boss and dragon |
 | G4.5 winnable and losable | B3 | `boss-fight`, unchanged `gate-simulation` |
 | G4.6 hit weight | F1, F2, W2 | `feel-data`; G-8 control and reduced motion |
 | G4.7 sound | A1, A2, W3 | `sound-plan`; G-8 sound |
-| G4.8 sustain | S1, S2, W1 | `sustain`, unchanged `phase4-combat` |
-| G4.9 roster | M1, M2, M3 | `new-monsters`, `names-combat`, the four declared replacements; O-4.7 |
+| G4.8 sustain: food, regeneration, death, the vow | S1, S2, W1 | `sustain`, unchanged `phase4-combat` and `gate-simulation`, Stage 3's save goldens; G-8 dying and regeneration |
+| G4.9 roster | M2, M1, M3, B3 | `new-monsters`, `names-combat`, `world-data-combat` (arena), the four declared replacements; O-4.7 |
 | G4.10 pure, tables, commands | S1, S2, W1; rule 0.3.5 | `commands`, `architecture`, G-7 item 6 |
 | G4.11 owed items | all | G-7 item 9 |
 | G4.12 budget and tiers | P1, F1 | `pathfind-budget`, `feel-data`; G-7 item 2; G-8 perf |
@@ -417,13 +443,13 @@ After G-7, G-8 and O-4.7. The main session opens the pull request and merges aft
 | Monster chase and return on the grid; the monster that cannot get home | P3, P4 |
 | Food's job; regeneration | S2, W1 |
 | The altar | none: kept, design 6.6 |
-| The cost of dying | O-4.2, S2, W1 |
-| The dragon's 8.35 s return | B2 |
+| The cost of dying; the recurring gold sink | O-4.2, S2, W1 |
+| The dragon's 8.35 s return | none: declined by the owner's decision on the dragon, design section 11 |
 | Audit finding 14 | W2 |
 | Auto-retaliation | S2, W1 |
 | Safespotting within a leash cycle | none: accepted, design section 11 |
 | Ranged and magic ladders | none: deferred to Stage 6 |
-| Roster gap | M1 to M3 |
+| Roster gap | M2, M1, M3 |
 
 ### 8.3 Files this plan shares with Stage 3 and Stage 5
 
@@ -433,20 +459,23 @@ After G-7, G-8 and O-4.7. The main session opens the pull request and merges aft
 | `src/engine/loop.ts` | yes | yes (render part) | P4, T5, B4, W1, W2, W3 |
 | `src/state/monsterAi.ts` | yes (exports three constants) | reads only | P4, T4, B2 |
 | `src/state/combat.ts` | yes | | T4, B2 |
+| `src/state/quests.ts`, `src/state/types.ts` | yes (starter quest ids) | | S2 (`lanternVow` only) |
+| `src/engine/overlay.ts` | | yes | M3 (model key for the dragon-sized dot and label) |
 | `src/engine/audio.ts` | yes (two tones) | | A2 |
-| `src/engine/spawns.ts` | yes | yes | M2, W2 |
-| `src/data/world.ts` | yes | | T2, B2, M3 |
+| `src/engine/spawns.ts` | yes | yes | M2, W1, W2 |
+| `src/data/world.ts` | yes | | T2, M3, B3 |
 | `src/ui/playerActions.ts` | yes | yes (`openModal`) | W1 |
-| `index.html` | yes | yes | B4, W2 |
+| `index.html` | yes | yes | B4, W1, W2 |
 | `README.md` | yes | | W4 |
 | `src/ui/hud.ts`, `src/ui/styles.css` | | yes | B4, W1, W2 |
 | `src/engine/monsterMeshes.ts`, `blenderMonsters.ts`, `playerMesh.ts`, `context.ts`, `input.ts` | | yes (materials, context fields) | T5, M2, M3, W1, W2 |
 | `src/state/pathfind.ts` | | reads only (its 6.11 says it does not touch it) | P2 |
 | `src/state/collision.ts` | | yes (trunk cells in `isWalkable`) | P4 (optional walk test only) |
-| `src/state/adventure.ts` | yes (quests, bounties, `creditGp`) | | S2 (`deathNotice` only) |
-| `src/data/worldMap.ts` | | yes (woods trees table) | B2, B3, M3. The two new camps stay outside the `woods` region, so Stage 5's clearings are unchanged; Stage 5's R0 still re-reads `CAMPS`. |
+| `src/state/adventure.ts` | yes (quests, bounties, `creditGp`) | | S2 (`deathNotice` only), B2 (`isBossLoot`, `registerKill`) |
+| `src/data/worldMap.ts` | | yes (woods trees table) | M3, B2, B3. The three new camps stay outside the `woods` region, so Stage 5's clearings are unchanged; the boss's arena is in the volcanic corner; Stage 5's R0 still re-reads `CAMPS`. |
 | `src/engine/vfx.ts` | | yes (shape swap table) | not touched: new effects are in `telegraphs.ts` and `reactions.ts` |
 | Stage 3's `tests/content-freeze.test.ts` | owns it | | M3, declared replacement 1 |
+| Stage 3's save goldens (`tests/fixtures/s3/`) | owns them | | none: they must pass unedited (design 6.6) |
 
 Stage 3 lands first, so its side of every shared file is already there when R0 runs. Stage 5 lands after; its task R0 re-reads these files.
 
@@ -455,3 +484,4 @@ Stage 3 lands first, so its side of every shared file is already there when R0 r
 ## Review log
 
 - 2026-11-14, critique (`docs/superpowers/specs/2026-11-14-combat-weight-critique.md`), applied with the design's changes in one commit. Rule 0.3.3 and G-7 now name four declared replacements, all in M3 (the first draft missed `world-budget` and `src/__tests__/blender-hero.test.ts`, and made `world-data` an "if"). P: `segmentWalkable` exported instead of a new `gridSegmentOpen`; `openStart` keeps an open point; `collision.ts` added for the walk test; rotation, route goal, `escapeStall` and grid-only rules specified and tested. T: camp wind-up gate in place of the start-index stagger; cancel on every T5 cause; band outline, no fog, not clickable; mesh faces the locked direction; Rootquake 1,700 ms and Scorch Lane 2.4 wide; no `cue` field. The stable `id` moved from T5 to W1 (`spawns.ts` belongs to M2 until the merge). B: no hitpoints or prayer hint in `BossDef`; boss basics with `breathCount` 1; reset restores phase I; no stall for a boss; lair placed against leash circles; B3 ports the positional check and adds ranged and magic fighters. S: `deathNotice(paid)` (adventure.ts added); `applyCommand` pure for five commands instead of `validateCommand`; retaliation guard. A: impact on the resolve event; mute ramp; context created on a gesture. M: no `roster.ts`; optional `modelKey`; pivots by model key; Thornwatch Marksman; camps outside the woods and clear of POI pieces. W1: run-in click rule. G-8: trackpad. New owner steps for CALL-4.14 to CALL-4.16.
+- 2026-11-14, owner decisions (CALL-4.6, 4.4, 4.5, 4.8), applied with the design's changes in one commit. 0.5: the four answered steps are marked decided, with what is still open under each (CALL-4.17, 4.18, 4.19); the alternatives paragraph rewritten for them; CALL-4.15 closed. Order: cluster M (M2) merges after CP-4, and M1 and M3 moved from lane W to the spine before lane B, because the boss is built from the dragon's mesh; the four declared replacements are still made once, in M3, now with 42 monsters, 13 type keys and 10 model keys. M1 gains a golden of the existing dragon's row, drops and camp; M3 gains the boss's row, its camp at (-102, 54) and `overlay.ts`; a pacing failure there stops and reports, since the two monsters are decided. B: the boss is the new type `ashmantle`, not the dragon; no world override of the dragon's hitpoints and no `breathCount` rule in the engine; five boss attacks with the re-tuned shapes; phases II and III open with a heavy (T1's "starts with basic" now covers `PATTERNS` and first phases only); `isBossLoot` and the title through `BOSSES`; B3 checks the arena by the extended criterion (the dragon's camp as a neighbour, node clearance, ground slope) and asserts unprepared ranged and magic rows too. S: `deathCost` and the fee are gone; S1 and S2 specify the two regeneration rates, the death loss, the vow and its optional saved flag (`quests.ts`, `types.ts` join the cluster; `save.ts` is not edited); the gate is re-run with regeneration in S1. W1: the combat timer, the death outcome, the altar's menu entry and the lantern mark. G-7 checks that `catalog.ts`, `save.ts` and the dragon's golden did not move. MODEL now runs three scripts.
