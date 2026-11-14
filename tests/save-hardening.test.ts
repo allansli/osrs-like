@@ -67,11 +67,10 @@ describe('save round trip', () => {
 describe('hostile saves', () => {
   it('hostile save: Infinity position becomes finite and walkable', () => {
     const { pose } = hostile();
-    if (pose) {
-      expect(Number.isFinite(pose.x)).toBe(true);
-      expect(Number.isFinite(pose.z)).toBe(true);
-      expect(isWalkable(pose.x, pose.z)).toBe(true);
-    }
+    expect(pose).not.toBeNull();
+    expect(Number.isFinite(pose!.x)).toBe(true);
+    expect(Number.isFinite(pose!.z)).toBe(true);
+    expect(isWalkable(pose!.x, pose!.z)).toBe(true);
   });
 
   it('position inside the castle keep is moved to walkable ground', () => {
