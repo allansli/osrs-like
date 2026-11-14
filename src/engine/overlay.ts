@@ -279,11 +279,11 @@ export function updateFloatingWorldLabels(): void {
     }
     const hovered = G.hoveredWorld && G.hoveredWorld.type === 'interactive' && G.hoveredWorld.name === n.name;
     const aimed = player.targetEntity && player.targetEntity.type === 'interactive' && player.targetEntity.ref && player.targetEntity.ref.name === n.name;
-    if (!hovered && !aimed) {
+    const dist = player.pos.distanceTo(n.pos);
+    if (!hovered && !aimed && !(n.showWithin !== undefined && dist <= n.showWithin)) {
       n.el.style.display = 'none';
       return;
     }
-    const dist = player.pos.distanceTo(n.pos);
     if (dist > 32) {
       n.el.style.display = 'none';
       return;

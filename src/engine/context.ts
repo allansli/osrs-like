@@ -141,6 +141,8 @@ export interface NpcLabel {
   name: string;
   color?: string;
   yOffset?: number;
+  /** Show the label whenever the player is within this many units, not only when hovered or aimed at. */
+  showWithin?: number;
   el?: HTMLElement;
 }
 
