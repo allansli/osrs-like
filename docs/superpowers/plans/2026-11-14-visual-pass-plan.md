@@ -83,7 +83,7 @@ Run every command from the worktree root, in a shell started with an allowlisted
 | OV-5 | **CALL-V10**: the weather set. | WX1 |
 | OV-6 | **CALL-V11, V12**: the type system and the interface identity. | UI1 |
 | OV-7 | Pick the two font families from UI1's report (QV4). | UI3 |
-| OV-8 | **CALL-V13 / QV2**: inline handlers and the full policy now, or Stage 7. | UI8a |
+| OV-8 | **CALL-V13 / QV2**: inline handlers and the full policy now, or Stage 7. **Decided 2026-11-14: now.** | UI8a |
 | OV-9 | **CALL-V15**: effects restyled in shape and colour only. | FX1 |
 | CP-LT, CP-AR, CP-GR, CP-WT, CP-WX, CP-UI, CP-FX | [OWNER] looks at the slice's before and after pictures and answers accept, change or hold. | the slice's merge is final only after it; the next slice may start |
 | OV-10 | Accept Stage 5 (after G-5 and G-6). | the pull request |

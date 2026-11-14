@@ -814,7 +814,7 @@ By the proofs in 8.1 and the pictures in 8.2. In particular: for shaders, the te
 Questions whose answer changes what is built:
 
 - **QV1.** CALL-V3: a running clock, or three fixed presets? **Decided 2026-11-14: the running clock.**
-- **QV2.** CALL-V13: remove the inline handlers and send the full policy now, or with Stage 7?
+- **QV2.** CALL-V13: remove the inline handlers and send the full policy now, or with Stage 7? **Decided 2026-11-14: now.** The owner answered "ok" to doing it in this stage after the trade-off was explained. CALL-V13 is taken, so every "if CALL-V13 is taken" condition in this design and in the plan applies, including the two extra declared test replacements.
 - **QV3.** CALL-V9: is a forest made of undergrowth plus a tall frame outside the walkable area enough for the woods, or do you want trees that block, accepting a change to walkability? **Decided 2026-11-14: trees that block** (6.11).
 - **QV4.** CALL-V11: the two font candidates, once the first interface task shows them in the HUD. **Agreed 2026-11-14:** the owner picks them when shown samples (plan OV-7).
 - **QV5.** Which GPU and display is the reference for "balanced must stay within 10%"? Without it, section 10's frame-time rows cannot be checked. **Agreed 2026-11-14:** the owner names the reference machine at the first timing (plan OV-2).
