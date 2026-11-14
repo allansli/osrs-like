@@ -1,13 +1,15 @@
-// @ts-nocheck
 import * as THREE from 'three';
 import { addCartoonOutline, facetMaterial } from './materials';
 import { albedoMaterial, speciesAlbedo } from './textures';
 import { getTerrainHeight } from '../state/terrain';
+import type { MonsterDef } from '../data/world';
+import type { MonsterEntity } from './context';
+import type { MonsterRigLike } from './blenderMonsters';
 // Bespoke OSRS × Zelda monster silhouettes. Each species owns its anatomy.
 // Walk / idle / attack still drive leftLegPivot, rightLegPivot, leftArmPivot, rightArmPivot.
 // Winged rigs also expose lWing / rWing for the flap in the monster update.
 
-export function monsterPart(parent, geometry, material, x = 0, y = 0, z = 0) {
+export function monsterPart<M extends THREE.Material = THREE.Material>(parent: THREE.Object3D, geometry: THREE.BufferGeometry, material: M, x = 0, y = 0, z = 0): THREE.Mesh<THREE.BufferGeometry, M> {
   const mesh = new THREE.Mesh(geometry, material);
   mesh.position.set(x, y, z);
   mesh.castShadow = true;
@@ -15,13 +17,13 @@ export function monsterPart(parent, geometry, material, x = 0, y = 0, z = 0) {
   return mesh;
 }
 
-export function monsterPivot(x, y, z) {
+export function monsterPivot(x: number, y: number, z: number): THREE.Group {
   const pivot = new THREE.Group();
   pivot.position.set(x, y, z);
   return pivot;
 }
 
-export function monsterHitbox(radius, height, y) {
+export function monsterHitbox(radius: number, height: number, y: number): THREE.Mesh {
   const hitbox = new THREE.Mesh(
     new THREE.CylinderGeometry(radius, radius, height, 8),
     new THREE.MeshBasicMaterial({ visible: false })
@@ -31,13 +33,13 @@ export function monsterHitbox(radius, height, y) {
   return hitbox;
 }
 
-export function finishMonster(group, hitbox, parts) {
+export function finishMonster(group: THREE.Group, hitbox: THREE.Mesh, parts: Record<string, any>): MonsterRigLike {
   group.add(hitbox);
   addCartoonOutline(group, 0.022);
   return { group, hitbox, ...parts };
 }
 
-export function glowEye(parent, x, y, z, color, radius = 0.045) {
+export function glowEye(parent: THREE.Object3D, x: number, y: number, z: number, color: THREE.ColorRepresentation, radius = 0.045): THREE.Mesh {
   const eye = monsterPart(
     parent,
     new THREE.SphereGeometry(radius, 10, 8),
@@ -48,11 +50,11 @@ export function glowEye(parent, x, y, z, color, radius = 0.045) {
   return eye;
 }
 
-export function paint(color, extra = {}, family = null) {
+export function paint(color: number, extra: Record<string, unknown> = {}, family: string | null = null): THREE.MeshLambertMaterial {
   return family ? albedoMaterial(color, family, extra) : facetMaterial({ color, ...extra });
 }
 
-export function addQuiver(parent, x, y, z, leatherHex, fletchHex) {
+export function addQuiver(parent: THREE.Object3D, x: number, y: number, z: number, leatherHex: number, fletchHex: number): THREE.Group {
   const quiver = new THREE.Group();
   quiver.position.set(x, y, z);
   quiver.rotation.x = -0.55;
@@ -72,7 +74,7 @@ export function addQuiver(parent, x, y, z, leatherHex, fletchHex) {
   return quiver;
 }
 
-export function addStrungBow(pivot, length, color, bend) {
+export function addStrungBow(pivot: THREE.Object3D, length: number, color: number, bend: number): THREE.Group {
   const bow = new THREE.Group();
   bow.position.set(0.04, -0.42, -0.18);
   const half = length * 0.5;
@@ -95,7 +97,7 @@ export function addStrungBow(pivot, length, color, bend) {
   return bow;
 }
 
-export function buildChickenMesh(def) {
+export function buildChickenMesh(def: MonsterDef): MonsterRigLike {
   const grp = new THREE.Group();
   const bodyMat = paint(def.bodyColor, {}, speciesAlbedo('chicken'));
   const redMat = paint(def.accentColor);
@@ -118,7 +120,7 @@ export function buildChickenMesh(def) {
     wing.rotation.z = side * -0.45;
   });
 
-  function chickenLeg(isLeft) {
+  function chickenLeg(isLeft: boolean): THREE.Group {
     const pivot = monsterPivot(isLeft ? -0.1 : 0.1, 0.24, 0.04);
     monsterPart(pivot, new THREE.CylinderGeometry(0.025, 0.03, 0.22, 8), beakMat, 0, -0.1, 0);
     const foot = monsterPart(pivot, new THREE.BoxGeometry(0.04, 0.02, 0.1), beakMat, 0, -0.21, -0.03);
@@ -132,7 +134,7 @@ export function buildChickenMesh(def) {
   return finishMonster(grp, monsterHitbox(0.8, 1.5, 0.75), { leftLegPivot, rightLegPivot });
 }
 
-export function buildGoblinMesh(def, role) {
+export function buildGoblinMesh(def: MonsterDef, role: string): MonsterRigLike {
   const group = new THREE.Group();
   group.scale.setScalar(def.scale || 0.9);
   const skin = paint(0x65a30d, {}, speciesAlbedo('goblin'));
@@ -182,7 +184,7 @@ export function buildGoblinMesh(def, role) {
   glowEye(headGroup, -0.09, 0.02, -0.24, 0xfacc15, 0.048);
   glowEye(headGroup, 0.09, 0.02, -0.24, 0xfacc15, 0.048);
 
-  function goblinArm(isLeft) {
+  function goblinArm(isLeft: boolean): THREE.Group {
     const pivot = monsterPivot(isLeft ? -0.46 : 0.46, 1.28, -0.08);
     const upper = monsterPart(pivot, new THREE.CylinderGeometry(0.075, 0.065, 0.34, 12), skin, 0, -0.18, 0);
     upper.rotation.x = 0.25;
@@ -195,7 +197,7 @@ export function buildGoblinMesh(def, role) {
   const rightArmPivot = goblinArm(false);
   group.add(leftArmPivot, rightArmPivot);
 
-  function goblinLeg(isLeft) {
+  function goblinLeg(isLeft: boolean): THREE.Group {
     const pivot = monsterPivot(isLeft ? -0.16 : 0.16, 0.7, 0);
     monsterPart(pivot, new THREE.CylinderGeometry(0.09, 0.07, 0.32, 12), skin, 0, -0.16, 0);
     monsterPart(pivot, new THREE.CylinderGeometry(0.065, 0.05, 0.28, 12), skin, 0, -0.4, 0.02);
@@ -237,7 +239,7 @@ export function buildGoblinMesh(def, role) {
   });
 }
 
-export function buildScorpionMesh() {
+export function buildScorpionMesh(): MonsterRigLike {
   const grp = new THREE.Group();
   grp.scale.setScalar(1.28);
   const shell = paint(0xb45309, {}, speciesAlbedo('scorpion'));
@@ -264,7 +266,7 @@ export function buildScorpionMesh() {
   barb.rotation.x = -2.35;
 
   const stations = [-0.5, -0.16, 0.18, 0.5];
-  function sideLegs(isLeft) {
+  function sideLegs(isLeft: boolean): THREE.Group {
     const pivot = monsterPivot(isLeft ? -0.22 : 0.22, 0.5, 0);
     const s = isLeft ? -1 : 1;
     stations.forEach((z) => {
@@ -283,7 +285,7 @@ export function buildScorpionMesh() {
   const rightLegPivot = sideLegs(false);
   grp.add(leftLegPivot, rightLegPivot);
 
-  function pincer(isLeft) {
+  function pincer(isLeft: boolean): THREE.Group {
     const s = isLeft ? -1 : 1;
     const pivot = monsterPivot(s * 0.28, 0.52, -0.82);
     const arm = monsterPart(pivot, new THREE.CylinderGeometry(0.055, 0.04, 0.42, 10), shell, s * 0.06, 0, -0.16);
@@ -304,7 +306,7 @@ export function buildScorpionMesh() {
   });
 }
 
-export function buildDarkWizard(def) {
+export function buildDarkWizard(def: MonsterDef): MonsterRigLike {
   const group = new THREE.Group();
   group.scale.setScalar(def.scale || 1);
   const robe = paint(0x1e1b4b, {}, 'cloth');
@@ -335,7 +337,7 @@ export function buildDarkWizard(def) {
   const cape = monsterPart(group, new THREE.PlaneGeometry(0.55, 0.9, 4, 6), trim, 0, 1.15, 0.28);
   cape.material.side = THREE.DoubleSide;
 
-  function sleeve(isLeft) {
+  function sleeve(isLeft: boolean): THREE.Group {
     const pivot = monsterPivot(isLeft ? -0.38 : 0.38, 1.5, 0);
     monsterPart(pivot, new THREE.CylinderGeometry(0.1, 0.14, 0.62, 12), robe, 0, -0.32, 0);
     monsterPart(pivot, new THREE.SphereGeometry(0.08, 10, 8), charcoal, 0, -0.64, -0.02);
@@ -345,7 +347,7 @@ export function buildDarkWizard(def) {
   const rightArmPivot = sleeve(false);
   group.add(leftArmPivot, rightArmPivot);
 
-  function boot(isLeft) {
+  function boot(isLeft: boolean): THREE.Group {
     const pivot = monsterPivot(isLeft ? -0.16 : 0.16, 0.22, 0.04);
     monsterPart(pivot, new THREE.SphereGeometry(0.1, 10, 8), charcoal, 0, -0.06, 0.02).scale.set(0.9, 0.55, 1.3);
     return pivot;
@@ -378,7 +380,7 @@ export function buildDarkWizard(def) {
   });
 }
 
-export function buildDarkRanger(def) {
+export function buildDarkRanger(def: MonsterDef): MonsterRigLike {
   const group = new THREE.Group();
   group.scale.setScalar(def.scale || 1);
   const cloth = paint(0x18181b, {}, 'cloth');
@@ -408,7 +410,7 @@ export function buildDarkRanger(def) {
 
   addQuiver(group, -0.02, 1.28, 0.32, 0x292524, 0x86efac);
 
-  function arm(isLeft) {
+  function arm(isLeft: boolean): THREE.Group {
     const pivot = monsterPivot(isLeft ? -0.42 : 0.42, 1.5, 0);
     monsterPart(pivot, new THREE.CylinderGeometry(0.08, 0.07, 0.55, 12), cloth, 0, -0.3, 0);
     monsterPart(pivot, new THREE.SphereGeometry(0.08, 10, 8), hide, 0, -0.6, -0.02);
@@ -419,7 +421,7 @@ export function buildDarkRanger(def) {
   group.add(leftArmPivot, rightArmPivot);
   addStrungBow(rightArmPivot, 1.2, 0x14532d, 0.28);
 
-  function leg(isLeft) {
+  function leg(isLeft: boolean): THREE.Group {
     const pivot = monsterPivot(isLeft ? -0.15 : 0.15, 0.78, 0);
     monsterPart(pivot, new THREE.CylinderGeometry(0.1, 0.09, 0.5, 12), cloth, 0, -0.26, 0);
     const boot = monsterPart(pivot, new THREE.SphereGeometry(0.11, 10, 8), paint(0x1c1917, {}, 'leather'), 0, -0.54, 0.02);
@@ -435,7 +437,7 @@ export function buildDarkRanger(def) {
   });
 }
 
-export function buildHillGiant(def) {
+export function buildHillGiant(def: MonsterDef): MonsterRigLike {
   const group = new THREE.Group();
   group.scale.setScalar(def.scale || 1.55);
   const skin = paint(0xd6a87c, {}, speciesAlbedo('hill_giant'));
@@ -471,7 +473,7 @@ export function buildHillGiant(def) {
     tuft.rotation.x = 0.25;
   });
 
-  function arm(isLeft) {
+  function arm(isLeft: boolean): THREE.Group {
     const pivot = monsterPivot(isLeft ? -0.58 : 0.58, 1.58, 0);
     monsterPart(pivot, new THREE.CylinderGeometry(0.14, 0.12, 0.48, 12), skin, 0, -0.26, 0);
     monsterPart(pivot, new THREE.CylinderGeometry(0.11, 0.1, 0.4, 12), skin, 0, -0.62, -0.04);
@@ -494,7 +496,7 @@ export function buildHillGiant(def) {
   }
   rightArmPivot.add(club);
 
-  function leg(isLeft) {
+  function leg(isLeft: boolean): THREE.Group {
     const pivot = monsterPivot(isLeft ? -0.22 : 0.22, 0.78, 0);
     monsterPart(pivot, new THREE.CylinderGeometry(0.16, 0.14, 0.42, 12), skin, 0, -0.22, 0);
     monsterPart(pivot, new THREE.CylinderGeometry(0.13, 0.12, 0.36, 12), skin, 0, -0.52, 0);
@@ -511,7 +513,7 @@ export function buildHillGiant(def) {
   });
 }
 
-export function buildMossGuardian(def) {
+export function buildMossGuardian(def: MonsterDef): MonsterRigLike {
   const group = new THREE.Group();
   group.scale.setScalar(def.scale || 1.72);
   const stone = paint(0x44403c, {}, speciesAlbedo('moss_guardian'));
@@ -556,7 +558,7 @@ export function buildMossGuardian(def) {
   cap.scale.set(1.2, 0.6, 1);
   group.add(leftArmPivot, rightArmPivot);
 
-  function rootLeg(isLeft) {
+  function rootLeg(isLeft: boolean): THREE.Group {
     const pivot = monsterPivot(isLeft ? -0.24 : 0.26, 0.78, 0);
     monsterPart(pivot, new THREE.CylinderGeometry(0.16, 0.2, 0.46, 8), bark, 0, -0.24, 0);
     monsterPart(pivot, new THREE.CylinderGeometry(0.12, 0.16, 0.36, 7), stone, 0, -0.55, 0.02);
@@ -575,7 +577,7 @@ export function buildMossGuardian(def) {
   });
 }
 
-export function buildLesserDemon(def) {
+export function buildLesserDemon(def: MonsterDef): MonsterRigLike {
   const group = new THREE.Group();
   group.scale.setScalar(def.scale || 1.8);
   const skin = paint(0xdc2626, {}, speciesAlbedo('lesser_demon'));
@@ -638,7 +640,7 @@ export function buildLesserDemon(def) {
   spade.scale.set(1.5, 1, 0.28);
   spade.rotation.x = 1.15;
 
-  function arm(isLeft) {
+  function arm(isLeft: boolean): THREE.Group {
     const pivot = monsterPivot(isLeft ? -0.46 : 0.46, 1.48, 0);
     monsterPart(pivot, new THREE.CylinderGeometry(0.09, 0.08, 0.46, 12), skin, 0, -0.24, 0);
     monsterPart(pivot, new THREE.CylinderGeometry(0.07, 0.06, 0.36, 12), skin, 0, -0.56, -0.04);
@@ -660,7 +662,7 @@ export function buildLesserDemon(def) {
   );
   blade.rotation.x = -0.7;
 
-  function hoofLeg(isLeft) {
+  function hoofLeg(isLeft: boolean): THREE.Group {
     const pivot = monsterPivot(isLeft ? -0.16 : 0.16, 0.78, 0);
     monsterPart(pivot, new THREE.CylinderGeometry(0.1, 0.09, 0.4, 12), skin, 0, -0.2, 0);
     monsterPart(pivot, new THREE.CylinderGeometry(0.08, 0.07, 0.32, 12), skin, 0, -0.48, 0);
@@ -679,7 +681,7 @@ export function buildLesserDemon(def) {
   });
 }
 
-export function buildElvargMesh(def) {
+export function buildElvargMesh(def: MonsterDef): MonsterRigLike {
   const grp = new THREE.Group();
   const scaleMat = paint(def.bodyColor, {}, speciesAlbedo('elvarg_dragon'));
   const goldMat = paint(def.accentColor);
@@ -701,7 +703,7 @@ export function buildElvargMesh(def) {
   ]);
   monsterPart(grp, new THREE.TubeGeometry(tailCurve, 16, 0.32, 10, false), scaleMat);
 
-  function spikesAlong(curve, count, length) {
+  function spikesAlong(curve: THREE.Curve<THREE.Vector3>, count: number, length: number): void {
     for (let i = 1; i < count; i++) {
       const p = curve.getPoint(i / count);
       const spike = monsterPart(grp, new THREE.ConeGeometry(0.08, length, 6), goldMat, p.x, p.y + length * 0.35, p.z);
@@ -745,7 +747,7 @@ export function buildElvargMesh(def) {
   rWing.castShadow = true;
   grp.add(lWing, rWing);
 
-  function dragonLeg(x, z) {
+  function dragonLeg(x: number, z: number): THREE.Group {
     const pivot = monsterPivot(x, 1.2, z);
     const s = Math.sign(x) || 1;
     const thigh = monsterPart(pivot, new THREE.CylinderGeometry(0.22, 0.15, 0.55, 12), scaleMat, s * 0.12, -0.28, 0);
@@ -770,7 +772,7 @@ export function buildElvargMesh(def) {
   });
 }
 
-export function createMonsterMesh(def, typeKey) {
+export function createMonsterMesh(def: MonsterDef, typeKey: string): MonsterRigLike {
   switch (typeKey) {
     case 'chicken': return buildChickenMesh(def);
     case 'goblin': return buildGoblinMesh(def, 'raider');
@@ -787,7 +789,7 @@ export function createMonsterMesh(def, typeKey) {
   }
 }
 
-export function poseMonsterLimbs(m, moving, now, dt) {
+export function poseMonsterLimbs(m: MonsterEntity, moving: boolean, now: number, dt: number): void {
   const rig = m.rig;
   if (!rig || m.isDying) return;
 
