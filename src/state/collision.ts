@@ -70,6 +70,26 @@ export function gapDistance(ridge: RidgeDef, qx: number, qz: number): number {
   return best;
 }
 
+/** The ridge crest as sub-paths sampled once per unit, split wherever the crest is inside a gap (for drawing). */
+export function ridgeSpans(ridge: RidgeDef): [number, number][][] {
+  const spans: [number, number][][] = [];
+  let cur: [number, number][] = [];
+  const add = (x: number, z: number) => {
+    if (gapDistance(ridge, x, z) <= 0) {
+      if (cur.length > 0) spans.push(cur);
+      cur = [];
+    } else cur.push([x, z]);
+  };
+  ridge.points.forEach(([bx, bz], i) => {
+    if (i === 0) return add(bx, bz);
+    const [ax, az] = ridge.points[i - 1];
+    const n = Math.max(1, Math.ceil(Math.hypot(bx - ax, bz - az)));
+    for (let k = 1; k <= n; k++) add(ax + ((bx - ax) * k) / n, az + ((bz - az) * k) / n);
+  });
+  if (cur.length > 0) spans.push(cur);
+  return spans;
+}
+
 /** Basin water is a disc of 0.6 x radius; terrain.ts puts the height below the water plane exactly there. */
 export const BASIN_WET_FRACTION = 0.6;
 
