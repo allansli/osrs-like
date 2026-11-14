@@ -72,7 +72,7 @@ export type SafeZoneDef = {
 // Design 6.3. Each path starts where its signpost stands (a town exit or a fork) and ends near its shrine.
 export const PATHS: PathDef[] = [
   { id: 'millrace_road', name: 'Millrace Road', halfWidth: 2, points: [[12, 2], [18, 0], [38, 0], [50, -6], [64, -16], [72, -22]] },
-  { id: 'saltwind_track', name: 'Saltwind Track', halfWidth: 1.8, points: [[40, 0], [50, 10], [62, 30], [68, 48], [68, 55]] },
+  { id: 'saltwind_track', name: 'Saltwind Track', halfWidth: 1.8, points: [[41, 3.5], [44, 12], [54, 24], [63, 36], [68, 48], [68, 55]] },
   { id: 'lanternway', name: 'Lanternway', halfWidth: 1.8, points: [[-14, -4], [-28, -10], [-44, -16], [-58, -26], [-68, -33]] },
   { id: 'cinder_stair', name: 'Cinder Stair', halfWidth: 1.8, points: [[-6, 12], [-12, 32], [-14, 55], [-46, 55], [-56, 58], [-64, 61]] }
 ];
@@ -100,12 +100,12 @@ export const POIS: PoiDef[] = [
   {
     id: 'three_kettle_camp', name: 'Three Kettle Camp', x: 13, z: 8, padRadius: 5,
     pieces: [
-      { builder: 'tent', dx: -2.5, dz: 2.5, rot: 0.4 },
-      { builder: 'tent', dx: 2.5, dz: 3, rot: -0.5 },
+      { builder: 'tent', dx: -2.8, dz: 2.2, rot: 0.4 },
+      { builder: 'tent', dx: 2.6, dz: 2.8, rot: -0.5 },
       { builder: 'fireRing', dx: 0, dz: 0 },
-      { node: 'World_crate', dx: 3.2, dz: -1.8, rot: 0.3 },
-      { node: 'World_barrel', dx: -3.2, dz: -1.6 },
-      { node: 'World_bag_grain', dx: 1, dz: -3.4, rot: 1.1 }
+      { node: 'World_crate', dx: 3.4, dz: -0.8, rot: 0.3 },
+      { node: 'World_barrel', dx: -3.4, dz: -1.2 },
+      { node: 'World_bag_grain', dx: 0.2, dz: 4.2, rot: 1.1 }
     ]
   },
   {

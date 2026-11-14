@@ -109,10 +109,6 @@ function pathBase(x: number, z: number): number {
   return Math.max(0.08, Math.sin(x * 0.032) * Math.cos(z * 0.032) * 1.85 * 0.55 + 0.85);
 }
 
-export function rawHills(x: number, z: number): number {
-  return Math.max(0.08, hills(x, z) + crag(x, z));
-}
-
 /** True within any path's own halfWidth of its centre line. */
 export function onPath(x: number, z: number): boolean {
   return PATHS.some((p) => nearestOnPolyline(p.points, x, z).d <= p.halfWidth);
