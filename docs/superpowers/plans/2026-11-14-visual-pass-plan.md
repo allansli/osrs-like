@@ -79,7 +79,7 @@ Run every command from the worktree root, in a shell started with an allowlisted
 | OV-2 | `look.bench` frame times on the owner's computer at poses P1, P3, P5 and P8 on each tier. At this first timing the owner names the reference machine, GPU and display (QV5, agreed 2026-11-14). Part of V2. Then, per CALL-V20 (decided 2026-11-14), the lead adjusts the budgets of design section 10 and the tier numbers once to what was measured; the result is written into design section 10 and frozen. | LT1 |
 | OV-3 | **CALL-V4**: the night floor. (CALL-V3 / QV1 decided 2026-11-14: the running clock.) | LT2 |
 | OV-4 | **CALL-V8**: no new model. (CALL-V9 / QV3 decided 2026-11-14: woods trees block walking, design 6.11.) | GR3 |
-| OV-4b | **CALL-V21 / QV9**: may a trunk stop a chasing monster (cover), or should monster chase use the walk grid? If the walk grid: the stage stops before TR2 and a Stage 2 monster-movement task is planned first, because `monsterAi.ts` is Stage 2 code. | TR2 |
+| OV-4b | **CALL-V21 / QV9**: may a trunk stop a chasing monster (cover), or should monster chase use the walk grid? If the walk grid: the stage stops before TR2 and a Stage 2 monster-movement task is planned first, because `monsterAi.ts` is Stage 2 code. **Decided 2026-11-14: the walk grid (option B).** It is a requirement on Stage 4; R0 checks that monsters path-find and stops the stage before TR2 if they do not. | TR2 |
 | OV-5 | **CALL-V10**: the weather set. | WX1 |
 | OV-6 | **CALL-V11, V12**: the type system and the interface identity. | UI1 |
 | OV-7 | Pick the two font families from UI1's report (QV4). | UI3 |

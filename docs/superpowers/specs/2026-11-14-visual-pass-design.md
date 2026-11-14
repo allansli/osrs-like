@@ -821,7 +821,7 @@ Questions whose answer changes what is built:
 - **QV6.** CALL-V18: rename the tiers to Low, Medium, High, Ultra? **Decided 2026-11-14: yes.**
 - **QV7.** CALL-V19: smooth or crisp texels up close? **Decided 2026-11-14: smooth.**
 - **QV8.** CALL-V20: keep the budgets as written, or adjust them once after the baseline is measured on your computer? **Decided 2026-11-14: adjust once after the first timing, then freeze.**
-- **QV9.** CALL-V21 (new): may a trunk stop a chasing monster (cover, as in old-school games), or should monster chase use the walk grid?
+- **QV9.** CALL-V21 (new): may a trunk stop a chasing monster (cover, as in old-school games), or should monster chase use the walk grid? **Decided 2026-11-14: option B, monster chase uses the walk grid.** The owner answered "b". Monster movement is combat code, so the change is a requirement on the Stage 4 design (monsters chase and return home along routes from the Stage 2 walk grid, for every monster, not only in the woods), which lands before this stage. TR2 depends on it. If Stage 4 has not delivered it when R0 runs, the stage stops before TR2 and the task is planned first.
 
 Not verified for this document:
 
