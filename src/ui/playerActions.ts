@@ -72,7 +72,7 @@ export function grantXp(skillKey: string, baseAmount: number): void {
       STATE.maxPrayerPts = s.lvl;
       STATE.prayerPts = STATE.maxPrayerPts;
     }
-    const meta = metaMap[skillKey] || { name: skillKey, desc: '' };
+    const meta = metaMap[skillKey]!;
     addChatMessage(`Level Up! Your <b>${meta.name}</b> level is now <b>${s.lvl}</b>!`, 'lvlup');
     showLevelUpBanner(meta.name, s.lvl);
     spawnLevelUpFireworks();
@@ -100,7 +100,7 @@ export function sellInventoryItem(index: number, qtyMode?: QtyMode): void {
   SFX.coin();
   noteSale(STATE);
   const name = item ? item.name : slot.id;
-  addChatMessage('Sold <b>' + result.moved + ' × ' + name + '</b> for <b style="color:#ffe642">' + (result.gp ?? 0).toLocaleString() + ' GP</b> (65%).', 'loot');
+  addChatMessage('Sold <b>' + result.moved + ' × ' + name + '</b> for <b style="color:#ffe642">' + result.gp!.toLocaleString() + ' GP</b> (65%).', 'loot');
   updateAllUI();
 }
 
@@ -183,16 +183,16 @@ export function handleInventoryClick(index: number): void {
     if (item.req) {
       for (const [reqSkill, reqLvl] of Object.entries(item.req)) {
         if (STATE.skills[reqSkill].lvl < reqLvl) {
-          const reqMeta = metaMap[reqSkill] || { name: reqSkill, desc: '' };
+          const reqMeta = metaMap[reqSkill]!;
           addChatMessage('You need <b>Level ' + reqLvl + ' ' + reqMeta.name + '</b> to equip ' + item.name + '.', 'combat');
           return;
         }
       }
     }
-    const prevEquipped = item.slot ? STATE.equipment[item.slot] : null;
+    const prevEquipped = STATE.equipment[item.slot!];
     removeItem(STATE, item.id, 1);
     if (prevEquipped && ITEMS[prevEquipped]) addItem(STATE, prevEquipped, 1);
-    if (item.slot) STATE.equipment[item.slot] = item.id;
+    STATE.equipment[item.slot!] = item.id;
     if (item.slot === 'body' && (item.id.includes('plate') || item.id.includes('chain'))) notePlate(STATE);
     SFX.coin();
     addChatMessage('Equipped <b>' + item.name + '</b> (' + item.slot + ').', 'skill');
