@@ -44,7 +44,7 @@ import { rebuildPlayerEquipmentMeshes } from '../engine/playerMesh';
 import { saveGameState } from '../engine/session';
 import { teleportToRegion } from '../engine/actions';
 import { openChooseMenu, hideContextMenu } from '../engine/input';
-import { syncGraphicsButtons } from '../engine/runtime';
+import { syncGraphicsButtons } from '../engine/renderer';
 
 type SkillMeta = { name: string; desc: string };
 const metaMap = SKILLS_META as Record<string, SkillMeta>;
