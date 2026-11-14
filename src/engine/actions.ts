@@ -44,7 +44,7 @@ import {
 export function teleportToRegion(regionId?: string): void {
   const reg = WORLD_REGIONS.find((r: RegionDef) => r.id === regionId);
   if (!reg) return;
-  G.aggroGraceUntil = (typeof performance !== 'undefined' ? performance.now() : 0) + 3000;
+  G.aggroGraceUntil = performance.now() + 3000;
   player.targetEntity = null;
   player.targetPos = null;
   player.pos.set(reg.x, getTerrainHeight(reg.x, reg.z + 4), reg.z + 4);
@@ -365,7 +365,7 @@ export function handlePlayerDeath(): void {
 }
 
 export function finishRespawn(): void {
-  G.aggroGraceUntil = (typeof performance !== 'undefined' ? performance.now() : 0) + 3000;
+  G.aggroGraceUntil = performance.now() + 3000;
   applyRespawn(STATE);
   player.downed = false;
   player.downedTimer = 0;

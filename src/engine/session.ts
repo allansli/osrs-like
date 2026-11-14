@@ -35,7 +35,7 @@ export function saveGameState(): void {
 }
 
 export function loadGameState(): boolean {
-  G.aggroGraceUntil = (typeof performance !== 'undefined' ? performance.now() : 0) + 3000;
+  G.aggroGraceUntil = performance.now() + 3000;
   try {
     const migrated = readSave(localStorage);
     if (!migrated) return false;

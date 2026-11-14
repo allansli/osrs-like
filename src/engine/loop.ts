@@ -535,10 +535,10 @@ export function updateMonsters(f: FrameState): void {
     }
 
     if (events.some(e => e.kind === 'reset')) {
-      const hpBar = m.labelEl.querySelector<HTMLElement>('.entity-hp-bar');
-      const hpFill = m.labelEl.querySelector<HTMLElement>('.entity-hp-fill');
-      if (hpBar) hpBar.style.display = 'none';
-      if (hpFill) hpFill.style.width = '100%';
+      const hpBar = m.labelEl.querySelector<HTMLElement>('.entity-hp-bar')!;
+      const hpFill = m.labelEl.querySelector<HTMLElement>('.entity-hp-fill')!;
+      hpBar.style.display = 'none';
+      hpFill.style.width = '100%';
       m.labelEl.style.display = 'none';
       updateTargetHud();
     }
