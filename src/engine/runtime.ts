@@ -7,6 +7,7 @@ export { worldToScreen };
 import {
   saveGameState,
   loadGameState,
+  startNewGame,
   manualSaveToast,
   resetGameSave,
   cheatSkillsPlus10,
@@ -166,6 +167,7 @@ export function boot(): void {
     wireBridge();
     initStaticSvgIcons();
     const hadSave = loadGameState();
+    if (!hadSave) startNewGame();
     init3DEngine();
     applyLoadedStateToHud();
     updateAllUI();
@@ -175,6 +177,7 @@ export function boot(): void {
       addChatMessage('Restored your saved progress & world state from <b>localStorage</b>.', 'skill');
     } else {
       addChatMessage('Use <b>WASD / Arrows</b> or <b>Click</b> anywhere to move, fight monsters, chop trees, mine ores, or fish.', 'skill');
+      addChatMessage('You arrive with nothing. The tracker under your health shows your first task: speak with the <b>task master</b> in the courtyard.', 'skill');
     }
     addChatMessage('The courtyard holds the <b>Bank booth</b>, the <b>General Store</b>, and the <b>Anvil</b>. Walk up to use them. Press <b>F1–F6</b> to switch panels and <b>Esc</b> to close a window.', 'loot');
     addChatMessage('Cheat codes: type <b>skills10</b> to raise every skill by 10, or <b>gold200k</b> for 200,000 GP. Both are also in Settings.', 'skill');

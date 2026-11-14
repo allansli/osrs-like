@@ -1,5 +1,5 @@
 import { getLevelForXp, SKILL_KEYS } from '../data/skills';
-import { copyQuests, defaultQuests } from './quests';
+import { copyQuests, defaultQuests, STARTER_ARRIVAL } from './quests';
 import type { GameState, QtyMode } from './types';
 
 export const BACKPACK_SIZE = 28;
@@ -84,6 +84,18 @@ export function createDefaultState(): GameState {
     shrines: { ...STARTER_SHRINES },
     quests: defaultQuests()
   };
+}
+
+export function createNewGameState(): GameState {
+  const state = createDefaultState();
+  state.gp = 0;
+  state.xpMultiplier = 1;
+  for (const slot of EQUIP_SLOTS) {
+    state.equipment[slot] = null;
+  }
+  state.inventory = [];
+  state.quests.claimed = [STARTER_ARRIVAL];
+  return state;
 }
 
 export const STATE = createDefaultState();

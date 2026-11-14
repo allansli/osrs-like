@@ -1,14 +1,18 @@
 import { player, camState, G } from './context';
 import { SFX } from './audio';
 import { spawnLevelUpFireworks } from './vfx';
-import { STATE, applyState } from '../state/gameState';
+import { STATE, applyState, createNewGameState } from '../state/gameState';
+import { STARTER_ARRIVAL } from '../state/quests';
 import { readSave, writeSave, SAVE_KEY, LEGACY_SAVE_KEYS, sanitizeCam } from '../state/save';
 import { matchCheat, applySkillsPlus10, applyGold200k } from '../state/cheats';
 import { AGGRO_GRACE_MS } from '../state/monsterAi';
 import { el, addChatMessage, showBanner, updateAllUI } from '../ui/hud';
 import { closeModals } from '../ui/playerActions';
 
+let resetting = false;
+
 export function saveGameState(): void {
+  if (resetting) return;
   try {
     const pose = (player && player.pos) ? {
       x: Number(player.pos.x.toFixed(2)),
@@ -57,16 +61,18 @@ export function loadGameState(): boolean {
     const OVERHAUL_FLAG = 'gielinor_anime_hero_v1';
     if (!localStorage.getItem(OVERHAUL_FLAG)) {
       try { localStorage.setItem(OVERHAUL_FLAG, '1'); } catch (e) {}
-      if (STATE.equipment.head === 'hylian_hood') STATE.equipment.head = null;
-      if (STATE.equipment.body === 'hylian_tunic') STATE.equipment.body = null;
-      if (STATE.equipment.cape === 'hylian_cape') STATE.equipment.cape = null;
-      if (STATE.equipment.legs === 'hylian_trousers') STATE.equipment.legs = null;
-      if (STATE.equipment.feet === 'leather_boots') STATE.equipment.feet = null;
-      if (STATE.equipment.hands === 'leather_gloves') STATE.equipment.hands = null;
-      if (camState) {
-        camState.manualOffset = 0.65;
-        camState.pitch = 0.18;
-        camState.distance = 5.2;
+      if (!STATE.quests.claimed.includes(STARTER_ARRIVAL)) {
+        if (STATE.equipment.head === 'hylian_hood') STATE.equipment.head = null;
+        if (STATE.equipment.body === 'hylian_tunic') STATE.equipment.body = null;
+        if (STATE.equipment.cape === 'hylian_cape') STATE.equipment.cape = null;
+        if (STATE.equipment.legs === 'hylian_trousers') STATE.equipment.legs = null;
+        if (STATE.equipment.feet === 'leather_boots') STATE.equipment.feet = null;
+        if (STATE.equipment.hands === 'leather_gloves') STATE.equipment.hands = null;
+        if (camState) {
+          camState.manualOffset = 0.65;
+          camState.pitch = 0.18;
+          camState.distance = 5.2;
+        }
       }
     }
     if (migrated.pose && player && player.pos) {
@@ -87,6 +93,10 @@ export function loadGameState(): boolean {
   }
 }
 
+export function startNewGame(): void {
+  applyState(STATE, createNewGameState());
+}
+
 export function manualSaveToast(): void {
   saveGameState();
   SFX.coin();
@@ -95,6 +105,7 @@ export function manualSaveToast(): void {
 
 export function resetGameSave(): void {
   if (!confirm('Reset your saved character progress in localStorage and start fresh?')) return;
+  resetting = true;
   try {
     localStorage.removeItem(SAVE_KEY);
     LEGACY_SAVE_KEYS.forEach(key => localStorage.removeItem(key));
