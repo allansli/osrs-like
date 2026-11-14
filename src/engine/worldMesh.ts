@@ -10,7 +10,7 @@ import {
   albedoMaterial,
   sealAlbedoUvs
 } from './textures';
-import { getTerrainHeight } from '../state/terrain';
+import { getTerrainHeight, onPath, slopeAt, TERRAIN_SEGMENTS } from '../state/terrain';
 import { isDeepWater } from '../state/collision';
 import { loadBlenderWorldTemplate, upgradeWorldPropWithGltf } from './blenderWorld';
 import { el } from '../ui/hud';
@@ -19,7 +19,8 @@ export function getBiomeColor(x: number, z: number, h: number): THREE.Color {
   const dirt = new THREE.Color(PALETTE.dirt);
   const grass = [PALETTE.sageShade, PALETTE.sage, PALETTE.sageLit].map((hex) => new THREE.Color(hex));
   if (h < -0.05) return dirt;
-  if (z > -22 && z < 8 && x > -8 && x < 82 && Math.abs(z - (-x * 0.22)) < 2.6) return dirt;
+  if (onPath(x, z)) return dirt;
+  if (slopeAt(x, z) > 0.55) return new THREE.Color(BIOME_COLORS.crag);
   if (Math.hypot(x - 78, z + 20) < 18) return dirt;
   if (x > 40 && z > 36) return new THREE.Color(BIOME_COLORS.sand);
   if (x < -40 && z > 36) return new THREE.Color(h > 3.1 ? BIOME_COLORS.lava : BIOME_COLORS.crag);
@@ -97,8 +98,7 @@ export function cycleTimeOfDay(): void {
 
 export function buildTerrainAndWater(): void {
   const size = 260;
-  const segs = 80;
-  const geo = new THREE.PlaneGeometry(size, size, segs, segs);
+  const geo = new THREE.PlaneGeometry(size, size, TERRAIN_SEGMENTS, TERRAIN_SEGMENTS);
   geo.rotateX(-Math.PI / 2);
 
   const posAttr = geo.attributes.position;
@@ -184,7 +184,7 @@ export function buildTerrainAndWater(): void {
     const gx = (Math.random() - 0.5) * 215;
     const gz = (Math.random() - 0.5) * 215;
     const gy = getTerrainHeight(gx, gz);
-    if (gy < 0.08 || isDeepWater(gx, gz) || (gx < -30 && gz > 25) || (gx > 32 && gz > 28)) continue;
+    if (gy < 0.08 || isDeepWater(gx, gz) || (gx < -30 && gz > 25) || (gx > 32 && gz > 28) || onPath(gx, gz) || slopeAt(gx, gz) > 0.55) continue;
     dummy.position.set(gx, gy, gz);
     dummy.rotation.set(0, Math.random() * Math.PI * 2, 0);
     const s = 0.7 + Math.random() * 0.85;
