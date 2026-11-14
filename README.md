@@ -59,7 +59,7 @@
 - **Pre-Purchase Requirement Badges**: Every shop and forge card displays the exact skill level required to equip or craft the item—color-coded **Green (`Can Equip`)** or **Red (`Your Lv: X`)**—plus a **Can Equip Now** shop filter.
 
 ### 4. Automatic `localStorage` Persistence
-- Progress is saved automatically on every action, every 2 seconds while exploring, and on page unload (`gielinor_hero_save_v1`). Older `runewilds_save_v3` and `runewilds_save_v2` saves migrate forward, stacking duplicate resources, runes, and bones.
+- Progress is saved every 2 seconds, when the tab is hidden, on exit and on manual save (`gielinor_hero_save_v1`). Older `runewilds_save_v3` and `runewilds_save_v2` saves migrate forward, stacking duplicate resources, runes, and bones.
   - All 12 skill levels & XP, GP pouch, 28-slot backpack, bank vault, and 10-slot worn equipment
   - Hitpoints, Prayer points, Special Attack energy, active Prayers, combat style, and selected spell
   - Exact 3D world position (`x, y, z`), character yaw, camera angle/zoom, and time-of-day preset
