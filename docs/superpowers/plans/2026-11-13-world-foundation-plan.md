@@ -185,7 +185,7 @@ Each of these tasks is one Move commit and then one Type commit for one module. 
   - `every node type has a RESOURCE_NODES_DEF entry`
   - `every monster point is walkable`
   - `every fishing point is within 6.8 of riverCenterX(z)` (planned replacement #2, see W5)
-  - `every fishing point is within 3.1 of a walkable point` (sample a circle of radius 3.1 in 16 steps)
+  - `every fishing point is within 3.1 of a walkable point` (sample a circle of radius 3.1 in 16 steps; skip the known exceptions (26, -8) and (28, -62), which are 3.28 and 3.97 from walkable ground at `1284a6e` because the deep-water band is 4.6 wide; Stage 2 fixes them, design 5.7)
   
   Exact counts are not asserted, because Stage 2 changes them. The opus verify of X15 checks "same 34 monsters, same nodes, same coordinates" against the arrays at `1284a6e` (design 5.7 lists the known dry and buried fishing spots, which these tests allow).
 - **Accept**: red until X15, then `ONE(tests/placements.test.ts)` passes.
