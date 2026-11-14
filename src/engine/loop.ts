@@ -549,13 +549,21 @@ export function updateCamera(f: FrameState): void {
   G.sunLight.target.updateMatrixWorld();
 }
 
+let monsterLoopOffset = 0;
+
 export function updateMonsters(f: FrameState): void {
   // Monsters Update: rules in stepMonster, mesh, pose and events here.
   const playerCombat = getCombatLevel();
   const playerSafe = isPlayerSafe(player.pos.x, player.pos.z, f.now, G.aggroGraceUntil);
   const camps = CAMPS;
+  const pathBudget = { left: 2 };
+  const grid = G.walkGrid;
+  const n = G.monstersList.length;
+  const startIdx = n > 0 ? monsterLoopOffset % n : 0;
+  monsterLoopOffset++;
 
-  G.monstersList.forEach((m: MonsterEntity) => {
+  for (let k = 0; k < n; k++) {
+    const m = G.monstersList[(startIdx + k) % n];
     const L = m.logic;
     const prevState = L.state;
     const prevTimer = L.timer;
@@ -569,7 +577,9 @@ export function updateMonsters(f: FrameState): void {
       rand: Math.random,
       playerCombat,
       playerSafe,
-      camps
+      camps,
+      grid,
+      pathBudget
     });
 
     if (events.some(e => e.kind === 'aggro')) {
@@ -654,7 +664,7 @@ export function updateMonsters(f: FrameState): void {
       }
     }
     // chase or attack that dropped to idle this step: nothing else, as before.
-  });
+  }
 }
 
 export function updateWorldTimers(f: FrameState): void {

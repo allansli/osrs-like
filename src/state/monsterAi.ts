@@ -5,6 +5,16 @@ import { MONSTER_TYPES } from '../data/world';
 import { isInSafeZone, type CampDef } from '../data/worldMap';
 import { monsterThreatColor } from './adventure';
 import { moveWithCollision } from './collision';
+import {
+  escapeStall,
+  entityGoal,
+  findPath,
+  openStart,
+  segmentWalkable,
+  shouldRepath,
+  STALL_SEC,
+  type WalkGrid
+} from './pathfind';
 
 export type MonsterState = 'idle' | 'chase' | 'attack' | 'return' | 'dying' | 'dead';
 
@@ -31,6 +41,12 @@ export type MonsterLogic = {
   stallTimer: number;
   stallX: number;
   stallZ: number;
+  path: [number, number][];
+  pathGoalX: number;
+  pathGoalZ: number;
+  repathIn: number;
+  returnLeft: number;
+  routeStall: number;
 };
 
 export type MonsterEvent = { kind: 'attack' | 'died' | 'respawned' | 'aggro' | 'reset' };
@@ -44,6 +60,8 @@ export type StepWorld = {
   playerCombat?: number;
   playerSafe?: boolean;
   camps?: CampDef[];
+  grid?: WalkGrid;
+  pathBudget?: { left: number };
 };
 
 const DROP_DIST = 26;
@@ -94,7 +112,13 @@ export function createMonsterLogic(
     campId: opts?.campId,
     stallTimer: 1.5,
     stallX: homeX,
-    stallZ: homeZ
+    stallZ: homeZ,
+    path: [],
+    pathGoalX: homeX,
+    pathGoalZ: homeZ,
+    repathIn: ((Math.abs(homeX) * 12.9898 + Math.abs(homeZ) * 78.233) % 1) * 0.5,
+    returnLeft: 0,
+    routeStall: 0
   };
 }
 
@@ -120,6 +144,36 @@ function stalled(m: MonsterLogic, dt: number): boolean {
   m.stallX = m.x;
   m.stallZ = m.z;
   return distMoved < 0.2;
+}
+
+function routeLength(from: [number, number], route: [number, number][]): number {
+  let len = 0;
+  let prev = from;
+  for (const p of route) {
+    len += Math.hypot(p[0] - prev[0], p[1] - prev[1]);
+    prev = p;
+  }
+  return len;
+}
+
+function enterReturn(m: MonsterLogic, world: StepWorld): void {
+  m.state = 'return';
+  m.stallTimer = 1.5;
+  m.stallX = m.x;
+  m.stallZ = m.z;
+  m.routeStall = 0;
+  if (world.grid) {
+    const start = openStart(world.grid, m.x, m.z);
+    const route = start ? findPath(world.grid, start, [m.homeX, m.homeZ], undefined, 6000) : null;
+    if (start && route) {
+      const fullRoute = Math.hypot(start[0] - m.x, start[1] - m.z) > 0.001 ? [start, ...route] : route;
+      m.path = fullRoute;
+      m.returnLeft = routeLength([m.x, m.z], fullRoute) / CHASE_SPEED + 3;
+    } else {
+      m.path = [];
+      m.returnLeft = 3;
+    }
+  }
 }
 
 export function stepMonster(m: MonsterLogic, world: StepWorld): MonsterEvent[] {
@@ -148,25 +202,73 @@ export function stepMonster(m: MonsterLogic, world: StepWorld): MonsterEvent[] {
   }
 
   if (m.state === 'return') {
-    const dx = m.homeX - m.x;
-    const dz = m.homeZ - m.z;
-    const dist = Math.hypot(dx, dz);
-    // Blocked on the way home (river, wall): the same stall test as chase puts it home.
-    const stuck = dist > 1.0 && stalled(m, dt);
-    if (dist <= 1.0 || stuck) {
-      if (stuck) {
+    if (!world.grid) {
+      const dx = m.homeX - m.x;
+      const dz = m.homeZ - m.z;
+      const dist = Math.hypot(dx, dz);
+      // Blocked on the way home (river, wall): the same stall test as chase puts it home.
+      const stuck = dist > 1.0 && stalled(m, dt);
+      if (dist <= 1.0 || stuck) {
+        if (stuck) {
+          m.x = m.homeX;
+          m.z = m.homeZ;
+        }
+        m.state = 'idle';
+        m.hp = m.maxHp;
+        m.breathCount = 0;
+        return [{ kind: 'reset' }];
+      }
+      const moveDist = Math.min(dist, CHASE_SPEED * dt);
+      const stepped = moveWithCollision(m.x, m.z, (dx / dist) * moveDist, (dz / dist) * moveDist);
+      m.x = stepped.x;
+      m.z = stepped.z;
+      return [];
+    }
+
+    m.returnLeft -= dt;
+    const distHome = Math.hypot(m.homeX - m.x, m.homeZ - m.z);
+    if (distHome <= 1.0 || m.returnLeft <= 0) {
+      if (m.returnLeft <= 0 && distHome > 1.0) {
         m.x = m.homeX;
         m.z = m.homeZ;
       }
       m.state = 'idle';
       m.hp = m.maxHp;
       m.breathCount = 0;
+      m.path = [];
       return [{ kind: 'reset' }];
     }
-    const moveDist = Math.min(dist, CHASE_SPEED * dt);
-    const stepped = moveWithCollision(m.x, m.z, (dx / dist) * moveDist, (dz / dist) * moveDist);
-    m.x = stepped.x;
-    m.z = stepped.z;
+
+    while (m.path.length > 0 && Math.hypot(m.path[0][0] - m.x, m.path[0][1] - m.z) <= 0.45) {
+      m.path.shift();
+    }
+
+    const targetX = m.path.length > 0 ? m.path[0][0] : m.homeX;
+    const targetZ = m.path.length > 0 ? m.path[0][1] : m.homeZ;
+    const dx = targetX - m.x;
+    const dz = targetZ - m.z;
+    const dist = Math.hypot(dx, dz);
+    if (dist > 0.0001) {
+      const moveDist = Math.min(dist, CHASE_SPEED * dt);
+      const stepped = moveWithCollision(
+        m.x,
+        m.z,
+        (dx / dist) * moveDist,
+        (dz / dist) * moveDist,
+        world.grid.walkable
+      );
+      if (stepped.x === m.x && stepped.z === m.z && m.path.length > 0) {
+        m.routeStall += dt;
+        if (m.routeStall >= STALL_SEC - 1e-9) {
+          escapeStall(world.grid, m.path, [m.x, m.z]);
+          m.routeStall = 0;
+        }
+      } else {
+        m.routeStall = 0;
+      }
+      m.x = stepped.x;
+      m.z = stepped.z;
+    }
     return [];
   }
 
@@ -183,10 +285,7 @@ export function stepMonster(m: MonsterLogic, world: StepWorld): MonsterEvent[] {
     const stallTriggered = m.state === 'chase' && stalled(m, dt);
 
     if (leashTriggered || playerTooFar || playerDown || safeInAggroCamp || stallTriggered) {
-      m.state = 'return';
-      m.stallTimer = 1.5;
-      m.stallX = m.x;
-      m.stallZ = m.z;
+      enterReturn(m, world);
       return [];
     }
 
@@ -196,16 +295,87 @@ export function stepMonster(m: MonsterLogic, world: StepWorld): MonsterEvent[] {
         m.stallTimer = 1.5;
         m.stallX = m.x;
         m.stallZ = m.z;
+        m.routeStall = 0;
       }
-      const dx = world.playerX - m.x;
-      const dz = world.playerZ - m.z;
-      const stepped = moveWithCollision(m.x, m.z, (dx / distToPlayer) * CHASE_SPEED * dt, (dz / distToPlayer) * CHASE_SPEED * dt);
-      m.x = stepped.x;
-      m.z = stepped.z;
+
+      if (!world.grid) {
+        const dx = world.playerX - m.x;
+        const dz = world.playerZ - m.z;
+        const stepped = moveWithCollision(m.x, m.z, (dx / distToPlayer) * CHASE_SPEED * dt, (dz / distToPlayer) * CHASE_SPEED * dt);
+        m.x = stepped.x;
+        m.z = stepped.z;
+        return [];
+      }
+
+      m.repathIn -= dt;
+
+      if (m.repathIn <= 0) {
+        const straightOpen = segmentWalkable(world.grid, [m.x, m.z], [world.playerX, world.playerZ]);
+        if (straightOpen) {
+          m.path = [];
+          m.repathIn = 0.5;
+        } else {
+          const reachedLast = m.path.length === 0;
+          const needRepath = shouldRepath([m.pathGoalX, m.pathGoalZ], [world.playerX, world.playerZ], reachedLast);
+          if (needRepath) {
+            const hasBudget = !world.pathBudget || world.pathBudget.left > 0;
+            if (hasBudget) {
+              if (world.pathBudget) world.pathBudget.left--;
+              const start = openStart(world.grid, m.x, m.z);
+              const goal = start ? entityGoal(world.grid, start, [world.playerX, world.playerZ], attackRange(m)) : null;
+              const route = (start && goal) ? findPath(world.grid, start, goal, undefined, 6000) : null;
+              if (!route || routeLength(start!, route) > 52) {
+                enterReturn(m, world);
+                return [];
+              }
+              const fullRoute = Math.hypot(start![0] - m.x, start![1] - m.z) > 0.001 ? [start!, ...route] : route;
+              m.path = fullRoute;
+              m.pathGoalX = world.playerX;
+              m.pathGoalZ = world.playerZ;
+              m.repathIn = 0.5;
+            }
+          } else {
+            m.repathIn = 0.5;
+          }
+        }
+      }
+
+      while (m.path.length > 0 && Math.hypot(m.path[0][0] - m.x, m.path[0][1] - m.z) <= 0.45) {
+        m.path.shift();
+      }
+
+      const targetX = m.path.length > 0 ? m.path[0][0] : world.playerX;
+      const targetZ = m.path.length > 0 ? m.path[0][1] : world.playerZ;
+      const dx = targetX - m.x;
+      const dz = targetZ - m.z;
+      const dist = Math.hypot(dx, dz);
+      if (dist > 0.0001) {
+        const moveDist = Math.min(dist, CHASE_SPEED * dt);
+        const stepped = moveWithCollision(
+          m.x,
+          m.z,
+          (dx / dist) * moveDist,
+          (dz / dist) * moveDist,
+          world.grid.walkable
+        );
+        if (stepped.x === m.x && stepped.z === m.z && m.path.length > 0) {
+          m.routeStall += dt;
+          if (m.routeStall >= STALL_SEC - 1e-9) {
+            escapeStall(world.grid, m.path, [m.x, m.z]);
+            m.routeStall = 0;
+          }
+        } else {
+          m.routeStall = 0;
+        }
+        m.x = stepped.x;
+        m.z = stepped.z;
+      }
       return [];
     }
 
     m.state = 'attack';
+    m.path = [];
+    m.routeStall = 0;
     m.attackCooldown -= dt;
     if (m.attackCooldown <= 0) {
       m.attackCooldown = ATTACK_INTERVAL;
@@ -233,9 +403,11 @@ export function stepMonster(m: MonsterLogic, world: StepWorld): MonsterEvent[] {
       m.stallTimer = 1.5;
       m.stallX = m.x;
       m.stallZ = m.z;
+      m.routeStall = 0;
       const events: MonsterEvent[] = [{ kind: 'aggro' }];
       if (distToPlayer <= attackRange(m)) {
         m.state = 'attack';
+        m.path = [];
         m.attackCooldown -= dt;
         if (m.attackCooldown <= 0) {
           m.attackCooldown = ATTACK_INTERVAL;
@@ -250,16 +422,55 @@ export function stepMonster(m: MonsterLogic, world: StepWorld): MonsterEvent[] {
   m.wanderTimer -= dt;
   if (m.wanderTimer <= 0) {
     m.wanderTimer = 2.5 + rand() * 4;
-    const ang = rand() * Math.PI * 2;
-    const rad = rand() * m.wanderRadius;
-    m.wanderX = m.homeX + Math.cos(ang) * rad;
-    m.wanderZ = m.homeZ + Math.sin(ang) * rad;
+    let chosenX = m.x;
+    let chosenZ = m.z;
+    let found = false;
+    const maxDraws = world.grid ? 3 : 1;
+    for (let draw = 0; draw < maxDraws; draw++) {
+      const ang = rand() * Math.PI * 2;
+      const rad = rand() * m.wanderRadius;
+      const wx = m.homeX + Math.cos(ang) * rad;
+      const wz = m.homeZ + Math.sin(ang) * rad;
+      if (!world.grid) {
+        chosenX = wx;
+        chosenZ = wz;
+        found = true;
+        break;
+      }
+      const gx = Math.floor(wx - world.grid.origin);
+      const gz = Math.floor(wz - world.grid.origin);
+      if (
+        gx >= 0 &&
+        gx < world.grid.size &&
+        gz >= 0 &&
+        gz < world.grid.size &&
+        world.grid.cells[gz * world.grid.size + gx] === 1
+      ) {
+        chosenX = wx;
+        chosenZ = wz;
+        found = true;
+        break;
+      }
+    }
+    if (found) {
+      m.wanderX = chosenX;
+      m.wanderZ = chosenZ;
+    } else {
+      m.wanderX = m.x;
+      m.wanderZ = m.z;
+    }
   }
   const dx = m.wanderX - m.x;
   const dz = m.wanderZ - m.z;
   const dist = Math.hypot(dx, dz);
   if (dist > 0.3) {
-    const stepped = moveWithCollision(m.x, m.z, (dx / dist) * WANDER_SPEED * dt, (dz / dist) * WANDER_SPEED * dt);
+    const stepped = moveWithCollision(
+      m.x,
+      m.z,
+      (dx / dist) * WANDER_SPEED * dt,
+      (dz / dist) * WANDER_SPEED * dt,
+      world.grid?.walkable
+    );
     m.x = stepped.x;
     m.z = stepped.z;
   }
