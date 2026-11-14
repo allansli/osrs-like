@@ -23,7 +23,7 @@ import {
 } from './playerGear';
 import { addCartoonOutline, facetMaterial } from './materials';
 import { albedoForItem, applyAlbedo, sealAlbedoUvs } from './textures';
-import { getEquipmentBonuses } from './runtime';
+import { getEquipmentBonuses } from '../state/combat';
 
 export function buildPlayerCharacter(): void {
   const rig = buildHumanoidRig(0x586436, 0x3e2b1e, 0x505c30, 1.06);
@@ -373,7 +373,7 @@ export function rebuildPlayerEquipmentMeshes(): void {
     mount(torso, cape, 'capeMesh');
   }
 
-  const currentBon = getEquipmentBonuses();
+  const currentBon = getEquipmentBonuses(STATE);
   if (currentBon.matchedSet && torso) {
     const isFull = currentBon.isFullKit;
     const cue = new THREE.Mesh(

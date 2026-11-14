@@ -50,7 +50,7 @@ import { WORLD_REGIONS } from '../data/world';
 import { STATE, applyState } from '../state/gameState';
 import { addItem, removeItem, countItem, canAddItem, sellItem, buyItem, sellInventoryMatch, isGatheredGood, isUnequippedGear } from '../state/inventory';
 import { readSave, writeSave, SAVE_KEY, LEGACY_SAVE_KEYS } from '../state/save';
-import { prepareAttack, allowedStyles, mitigateDamage, canCastTeleport, equippedWeapon } from '../state/combat';
+import { prepareAttack, allowedStyles, mitigateDamage, canCastTeleport, equippedWeapon, getEquipmentBonuses } from '../state/combat';
 import {
   assignSlayerTask,
   adventureTracker,
@@ -160,69 +160,6 @@ function getItemReqInfo(it) {
     return `<div style="font-size:10px; color:${col}; font-weight:800; margin-top:2px; background:rgba(0,0,0,0.35); padding:2px 5px; border-radius:4px; border-left:2px solid ${col};">Req: Lv ${p.reqLvl} ${p.skillName} (${status})</div>`;
   }).join('');
   return { canEquip: allMet, plain, badgeHtml };
-}
-
-export function getEquipmentBonuses() {
-  let atk = 0, str = 0, def = 0, rng = 0, mag = 0;
-  const setCounts = {};
-  for (const slot of Object.keys(STATE.equipment)) {
-    const itemId = STATE.equipment[slot];
-    if (itemId && ITEMS[itemId]) {
-      const it = ITEMS[itemId];
-      atk += (it.atk || 0);
-      str += (it.str || 0);
-      def += (it.def || 0);
-      rng += (it.rng || 0);
-      mag += (it.mag || 0);
-      if (it.setName) {
-        setCounts[it.setName] = (setCounts[it.setName] || 0) + 1;
-      }
-    }
-  }
-
-  const bodyIt = STATE.equipment.body ? ITEMS[STATE.equipment.body] : null;
-  const legsIt = STATE.equipment.legs ? ITEMS[STATE.equipment.legs] : null;
-
-  let dominantSetName = null;
-  let dominantCount = 0;
-  for (const [sName, count] of Object.entries(setCounts)) {
-    if (count > dominantCount) {
-      dominantSetName = sName;
-      dominantCount = count;
-    }
-  }
-
-  let matchedSet = null;
-  let isFullKit = false;
-
-  if (dominantSetName && dominantCount >= 4) {
-    // 4+ matching kit pieces = Full Kit Set Bonus (+20% combat bonuses)
-    matchedSet = `${dominantSetName} (${dominantCount} pcs)`;
-    isFullKit = true;
-    atk = Math.ceil(atk * 1.20);
-    str = Math.ceil(str * 1.20);
-    def = Math.ceil(def * 1.20);
-    rng = Math.ceil(rng * 1.20);
-    mag = Math.ceil(mag * 1.20);
-  } else if (dominantSetName && dominantCount >= 3) {
-    // 3 matching kit pieces = Tri-piece bonus (+15% combat bonuses)
-    matchedSet = `${dominantSetName} (${dominantCount} pcs)`;
-    atk = Math.ceil(atk * 1.15);
-    str = Math.ceil(str * 1.15);
-    def = Math.ceil(def * 1.15);
-    rng = Math.ceil(rng * 1.15);
-    mag = Math.ceil(mag * 1.15);
-  } else if (bodyIt && legsIt && bodyIt.pairId === legsIt.id) {
-    // Matched Top & Bottom pair = Pair bonus (+10% combat bonuses)
-    matchedSet = bodyIt.setName || `${bodyIt.name} & ${legsIt.name}`;
-    atk = Math.ceil(atk * 1.10);
-    str = Math.ceil(str * 1.10);
-    def = Math.ceil(def * 1.10);
-    rng = Math.ceil(rng * 1.10);
-    mag = Math.ceil(mag * 1.10);
-  }
-
-  return { atk, str, def, rng, mag, matchedSet, isFullKit, dominantCount, dominantSetName };
 }
 
 function grantXp(skillKey, baseAmount) {
@@ -680,7 +617,7 @@ function updateAllUI() {
     doll.appendChild(div);
   });
 
-  const bon = getEquipmentBonuses();
+  const bon = getEquipmentBonuses(STATE);
   let pairStatusHtml = '';
   if (bon.matchedSet) {
     if (bon.isFullKit) {
@@ -1604,7 +1541,7 @@ function performPlayerAttack(monster) {
     return;
   }
   prep.consume.forEach(cost => removeItem(STATE, cost.id, cost.qty));
-  const bon = getEquipmentBonuses();
+  const bon = getEquipmentBonuses(STATE);
   const s = STATE.skills;
   const style = STATE.combatStyle;
   let maxHit = 2;
@@ -1815,7 +1752,7 @@ function handleMonsterDeath(monster) {
 function performMonsterRetaliation(monster) {
   if (monster.dead || player.downed || STATE.hp <= 0) return;
   monster.attackAnim = 1;
-  const bon = getEquipmentBonuses();
+  const bon = getEquipmentBonuses(STATE);
   const defLvl = STATE.skills.defence.lvl + (STATE.combatStyle === 'defensive' ? 3 : 0);
   const prayDefMult = STATE.activePrayers.has('piety') ? 1.25 : (STATE.activePrayers.has('thick_skin') ? 1.15 : 1.0);
   const playerDefScore = (defLvl * 1.2 + bon.def) * prayDefMult + 10;
@@ -1990,9 +1927,9 @@ function gameLoop(now) {
     const count = document.getElementById('death-count');
     if (count) count.textContent = String(Math.max(0, Math.ceil(player.downedTimer)));
     if (player.downedTimer <= 0) finishRespawn();
-  } else if (getEquipmentBonuses().matchedSet) {
+  } else if (getEquipmentBonuses(STATE).matchedSet) {
     G.setBonusTimer += dt;
-    const bon = getEquipmentBonuses();
+    const bon = getEquipmentBonuses(STATE);
     const threshold = bon.isFullKit ? 1.25 : 1.7;
     if (G.setBonusTimer > threshold) {
       G.setBonusTimer = 0;
