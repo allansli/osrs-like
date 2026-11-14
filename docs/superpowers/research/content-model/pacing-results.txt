@@ -1,4 +1,4 @@
-Stage 3's tests/pacing.test.ts from origin/feat/start-pacing at fc5fe84, unedited, three models.
+Stage 3's tests/pacing.test.ts from origin/main at db15263, unedited, three models.
 
 === 1. before: Stage 3's model as committed
   PASS the starter chain earns the bronze kit: six quests, one kill, 29 actions, no coin spent on equipment

@@ -1,0 +1,116 @@
+Second-pass check against origin/main at db15263
+
+A. The style band at every level (times melee's damage per second; "spread" is the fastest over the slowest)
+  -- standard kit (best ordinary weapon, body, legs), arrow of the level
+    20 dark_wizard      ranged x1.90 -> x1.07  magic x2.46 -> x1.23  spread 1.23   mith_scimitar / willow_bow / fire_staff fire_bolt
+    28 hill_giant       ranged x1.96 -> x1.29  magic x2.85 -> x1.43  spread 1.43   mith_scimitar / maple_bow / fire_staff ice_burst
+    29 hill_giant       ranged x1.91 -> x1.27  magic x2.75 -> x1.35  spread 1.35   mith_scimitar / maple_bow / fire_staff ice_burst
+    30 hill_giant       ranged x1.67 -> x1.11  magic x2.68 -> x1.31  spread 1.31   addy_scimitar / maple_bow / mystic_staff ice_burst
+    40 saltback_stalker ranged x1.74 -> x1.11  magic x2.08 -> x1.02  spread 1.11   rune_scimitar / yew_bow / mystic_staff ice_burst
+    49 moss_guardian    ranged x1.85 -> x1.24  magic x1.95 -> x0.96  spread 1.29   rune_scimitar / rune_crossbow / mystic_staff ice_burst
+    50 moss_guardian    ranged x2.09 -> x1.29  magic x2.59 -> x1.28  spread 1.29   rune_scimitar / magic_bow / ancient_staff blood_barrage
+    60 slag_brute       ranged x1.78 -> x1.09  magic x2.27 -> x1.12  spread 1.12   dragon_scimitar / magic_bow / ancient_staff blood_barrage
+    70 lesser_demon     ranged x1.73 -> x1.14  magic x2.16 -> x1.07  spread 1.14   dragon_scimitar / magic_bow / ancient_staff blood_barrage
+    80 elvarg_dragon    ranged x1.74 -> x1.18  magic x2.10 -> x1.04  spread 1.18   dragon_scimitar / magic_bow / ancient_staff blood_barrage
+    90 elvarg_dragon    ranged x1.69 -> x1.16  magic x2.00 -> x0.99  spread 1.18   dragon_scimitar / magic_bow / ancient_staff blood_barrage
+    99 elvarg_dragon    ranged x1.66 -> x1.15  magic x1.91 -> x0.94  spread 1.22   dragon_scimitar / magic_bow / ancient_staff blood_barrage
+    every level 20 to 70: ranged x1.05 to x1.34, magic x0.96 to x1.43; largest spread 1.43 at level 28; levels above 1.4: 28
+    every level 71 to 99: largest spread 1.22 at level 99
+  -- standard kit, bronze arrows (what S1 asserts before arrow grades exist)
+    20 dark_wizard      ranged x1.90 -> x1.07  magic x2.46 -> x1.23  spread 1.23   mith_scimitar / willow_bow / fire_staff fire_bolt
+    28 hill_giant       ranged x1.96 -> x1.15  magic x2.85 -> x1.43  spread 1.43   mith_scimitar / maple_bow / fire_staff ice_burst
+    29 hill_giant       ranged x1.91 -> x1.15  magic x2.75 -> x1.35  spread 1.35   mith_scimitar / maple_bow / fire_staff ice_burst
+    30 hill_giant       ranged x1.67 -> x1.00  magic x2.68 -> x1.31  spread 1.31   addy_scimitar / maple_bow / mystic_staff ice_burst
+    40 saltback_stalker ranged x1.74 -> x1.02  magic x2.08 -> x1.02  spread 1.02   rune_scimitar / yew_bow / mystic_staff ice_burst
+    49 moss_guardian    ranged x1.85 -> x1.08  magic x1.95 -> x0.96  spread 1.13   rune_scimitar / rune_crossbow / mystic_staff ice_burst
+    50 moss_guardian    ranged x2.09 -> x1.14  magic x2.59 -> x1.28  spread 1.28   rune_scimitar / magic_bow / ancient_staff blood_barrage
+    60 slag_brute       ranged x1.78 -> x0.98  magic x2.27 -> x1.12  spread 1.15   dragon_scimitar / magic_bow / ancient_staff blood_barrage
+    70 lesser_demon     ranged x1.73 -> x0.98  magic x2.16 -> x1.07  spread 1.08   dragon_scimitar / magic_bow / ancient_staff blood_barrage
+    80 elvarg_dragon    ranged x1.74 -> x1.03  magic x2.10 -> x1.04  spread 1.04   dragon_scimitar / magic_bow / ancient_staff blood_barrage
+    90 elvarg_dragon    ranged x1.69 -> x1.03  magic x2.00 -> x0.99  spread 1.04   dragon_scimitar / magic_bow / ancient_staff blood_barrage
+    99 elvarg_dragon    ranged x1.66 -> x1.02  magic x1.91 -> x0.94  spread 1.08   dragon_scimitar / magic_bow / ancient_staff blood_barrage
+    every level 20 to 70: ranged x0.95 to x1.19, magic x0.96 to x1.43; largest spread 1.43 at level 28; levels above 1.4: 28
+    every level 71 to 99: largest spread 1.08 at level 99
+  -- every slot filled with ordinary gear, arrow of the level
+    20 dark_wizard      ranged x1.94 -> x0.92  magic x2.58 -> x1.27  spread 1.38   mith_scimitar / willow_bow / fire_staff fire_bolt
+    28 hill_giant       ranged x2.27 -> x1.16  magic x2.95 -> x1.48  spread 1.48   mith_scimitar / maple_bow / fire_staff ice_burst
+    29 hill_giant       ranged x2.17 -> x1.16  magic x2.82 -> x1.41  spread 1.41   mith_scimitar / maple_bow / fire_staff ice_burst
+    30 hill_giant       ranged x2.14 -> x1.09  magic x2.66 -> x1.31  spread 1.31   addy_scimitar / maple_bow / mystic_staff ice_burst
+    40 saltback_stalker ranged x2.03 -> x1.02  magic x2.27 -> x1.12  spread 1.12   rune_scimitar / yew_bow / mystic_staff ice_burst
+    49 moss_guardian    ranged x2.10 -> x1.13  magic x2.16 -> x1.07  spread 1.13   rune_scimitar / rune_crossbow / mystic_staff ice_burst
+    50 moss_guardian    ranged x2.09 -> x1.09  magic x2.60 -> x1.29  spread 1.29   rune_scimitar / magic_bow / ancient_staff blood_barrage
+    60 slag_brute       ranged x1.92 -> x0.98  magic x2.22 -> x1.11  spread 1.13   dragon_scimitar / magic_bow / ancient_staff blood_barrage
+    70 lesser_demon     ranged x1.90 -> x1.03  magic x2.15 -> x1.07  spread 1.07   dragon_scimitar / magic_bow / ancient_staff blood_barrage
+    80 elvarg_dragon    ranged x1.89 -> x1.07  magic x2.14 -> x1.06  spread 1.07   dragon_scimitar / magic_bow / ancient_staff blood_barrage
+    90 elvarg_dragon    ranged x1.83 -> x1.05  magic x2.02 -> x1.00  spread 1.05   dragon_scimitar / magic_bow / ancient_staff blood_barrage
+    99 elvarg_dragon    ranged x1.81 -> x1.06  magic x1.98 -> x0.98  spread 1.08   dragon_scimitar / magic_bow / ancient_staff blood_barrage
+    every level 20 to 70: ranged x0.92 to x1.19, magic x1.07 to x1.48; largest spread 1.48 at level 28; levels above 1.4: 28, 29
+    every level 71 to 99: largest spread 1.08 at level 99
+  -- special sets and uniques allowed, weapon body legs, arrow of the level
+    20 dark_wizard      ranged x1.90 -> x1.07  magic x2.46 -> x1.23  spread 1.23   mith_scimitar / willow_bow / fire_staff fire_bolt
+    28 hill_giant       ranged x1.96 -> x1.29  magic x2.85 -> x1.43  spread 1.43   mith_scimitar / maple_bow / fire_staff ice_burst
+    29 hill_giant       ranged x1.91 -> x1.27  magic x2.75 -> x1.35  spread 1.35   mith_scimitar / maple_bow / fire_staff ice_burst
+    30 hill_giant       ranged x1.67 -> x1.11  magic x2.68 -> x1.31  spread 1.31   addy_scimitar / maple_bow / mystic_staff ice_burst
+    40 saltback_stalker ranged x1.74 -> x1.11  magic x2.08 -> x1.02  spread 1.11   rune_scimitar / yew_bow / mystic_staff ice_burst
+    49 moss_guardian    ranged x1.72 -> x1.15  magic x2.06 -> x1.01  spread 1.15   gilded_scimitar / rune_crossbow / mystic_staff ice_burst
+    50 moss_guardian    ranged x1.94 -> x1.20  magic x2.66 -> x1.31  spread 1.31   gilded_scimitar / magic_bow / ancient_staff blood_barrage
+    60 slag_brute       ranged x1.98 -> x1.05  magic x2.27 -> x1.12  spread 1.12   dragon_scimitar / ancient_bow / ancient_staff blood_barrage
+    70 lesser_demon     ranged x2.00 -> x1.16  magic x2.10 -> x1.05  spread 1.16   dharok_greataxe / armadyl_crossbow / ahrim_staff blood_barrage
+    80 elvarg_dragon    ranged x1.57 -> x0.90  magic x1.73 -> x0.86  spread 1.17   deity_sword / armadyl_crossbow / kodai_wand blood_barrage
+    90 elvarg_dragon    ranged x1.65 -> x0.94  magic x1.75 -> x0.87  spread 1.15   deity_sword / twisted_bow / tumeken_shadow blood_barrage
+    99 elvarg_dragon    ranged x1.62 -> x0.94  magic x1.70 -> x0.84  spread 1.19   deity_sword / twisted_bow / tumeken_shadow blood_barrage
+    every level 20 to 70: ranged x0.98 to x1.33, magic x0.98 to x1.43; largest spread 1.43 at level 28; levels above 1.4: 28
+    every level 71 to 99: largest spread 1.19 at level 99
+
+B. A hero 10 or 30 combat levels above an aggressive camp fights one member for 60 s, standing still (patched rule).
+   Other members that join, per fight (mean, most), 200 seeds per member; the hero stands toward the camp centre.
+  +10 levels, 2 from the target: wizards (3) 0.03/1; rangers (2) 0.25/1; giants (4) 0.00/0; dune_nest_west (3) 0.07/1; dune_nest_east (2) 0.05/1; deep_woods_west (2) 0.33/1; deep_woods_south (2) 0.69/1; slagfall_terrace (2) 0.00/0
+  +10 levels, 7 from the target: wizards (3) 1.19/2; rangers (2) 0.92/1; giants (4) 0.56/2; dune_nest_west (3) 1.11/2; dune_nest_east (2) 0.85/1; deep_woods_west (2) 0.94/1; deep_woods_south (2) 0.97/1; slagfall_terrace (2) 0.51/1
+  +30 levels, 2 from the target: wizards (3) 0.03/1; rangers (2) 0.25/1; giants (4) 0.00/0; dune_nest_west (3) 0.07/1; dune_nest_east (2) 0.05/1; deep_woods_west (2) 0.33/1; deep_woods_south (2) 0.69/1; slagfall_terrace (2) 0.00/0
+  +30 levels, 7 from the target: wizards (3) 1.19/2; rangers (2) 0.92/1; giants (4) 0.56/2; dune_nest_west (3) 1.11/2; dune_nest_east (2) 0.85/1; deep_woods_west (2) 0.94/1; deep_woods_south (2) 0.97/1; slagfall_terrace (2) 0.51/1
+
+C. A combat-70 hero gathers at each yew and magic tree (8 directions x 50 seeds, 5 minutes a run). The engine walks a
+   gatherer to within 3.1 of the node (loop.ts stopDist), so it stands about 3.0 from the tree; 1.5 is shown as well.
+   Today (Stage 2) no guardian attacks it. On main nothing ends a gather when the hero is hit (only death or depletion
+   clear the target, loop.ts and actions.ts), and Stage 4's auto-retaliation leaves a gatherer alone, so this is how soon
+   a hero away from the keys starts losing health. "wander 0": the guardians never leave home (the first lever, tried).
+  -- stands 3.0 from the tree, wander as today
+    yew_tree   (-96, -24): nearest guardian home 3.6; attacked in 287 of 400 runs (6 of 8 spots), median 10 s
+    yew_tree   (-102, -27): nearest guardian home 3.2; attacked in 387 of 400 runs (8 of 8 spots), median 12 s
+    yew_tree   (-70, -53): nearest guardian home 5.4; attacked in 234 of 400 runs (6 of 8 spots), median 7 s
+    yew_tree   (-80, -53): nearest guardian home 2.2; attacked in 400 of 400 runs (8 of 8 spots), median 8 s
+    magic_tree (-97, -36): nearest guardian home 2.8; attacked in 300 of 400 runs (6 of 8 spots), median 1 s
+    magic_tree (-75, -61): nearest guardian home 4.2; attacked in 296 of 400 runs (7 of 8 spots), median 0 s
+    magic_tree (-79, -59): nearest guardian home 5.1; attacked in 275 of 400 runs (6 of 8 spots), median 11 s
+  -- stands 1.5 from the tree, wander as today
+    yew_tree   (-96, -24): nearest guardian home 3.6; attacked in 400 of 400 runs (8 of 8 spots), median 12 s
+    yew_tree   (-102, -27): nearest guardian home 3.2; attacked in 400 of 400 runs (8 of 8 spots), median 4 s
+    yew_tree   (-70, -53): nearest guardian home 5.4; attacked in 315 of 400 runs (8 of 8 spots), median 39 s
+    yew_tree   (-80, -53): nearest guardian home 2.2; attacked in 400 of 400 runs (8 of 8 spots), median 0 s
+    magic_tree (-97, -36): nearest guardian home 2.8; attacked in 400 of 400 runs (8 of 8 spots), median 3 s
+    magic_tree (-75, -61): nearest guardian home 4.2; attacked in 397 of 400 runs (8 of 8 spots), median 17 s
+    magic_tree (-79, -59): nearest guardian home 5.1; attacked in 361 of 400 runs (8 of 8 spots), median 29 s
+  -- stands 3.0 from the tree, wander 0
+    yew_tree   (-96, -24): nearest guardian home 3.6; attacked in 100 of 400 runs (2 of 8 spots), median 0 s
+    yew_tree   (-102, -27): nearest guardian home 3.2; attacked in 100 of 400 runs (2 of 8 spots), median 0 s
+    yew_tree   (-70, -53): nearest guardian home 5.4; attacked in 100 of 400 runs (2 of 8 spots), median 0 s
+    yew_tree   (-80, -53): nearest guardian home 2.2; attacked in 150 of 400 runs (3 of 8 spots), median 0 s
+    magic_tree (-97, -36): nearest guardian home 2.8; attacked in 150 of 400 runs (3 of 8 spots), median 0 s
+    magic_tree (-75, -61): nearest guardian home 4.2; attacked in 150 of 400 runs (3 of 8 spots), median 0 s
+    magic_tree (-79, -59): nearest guardian home 5.1; attacked in 50 of 400 runs (1 of 8 spots), median 0 s
+  -- stands 1.5 from the tree, wander 0
+    yew_tree   (-96, -24): nearest guardian home 3.6; attacked in 100 of 400 runs (2 of 8 spots), median 0 s
+    yew_tree   (-102, -27): nearest guardian home 3.2; attacked in 150 of 400 runs (3 of 8 spots), median 0 s
+    yew_tree   (-70, -53): nearest guardian home 5.4; attacked in 0 of 400 runs (0 of 8 spots), median -
+    yew_tree   (-80, -53): nearest guardian home 2.2; attacked in 200 of 400 runs (4 of 8 spots), median 0 s
+    magic_tree (-97, -36): nearest guardian home 2.8; attacked in 150 of 400 runs (3 of 8 spots), median 0 s
+    magic_tree (-75, -61): nearest guardian home 4.2; attacked in 50 of 400 runs (1 of 8 spots), median 0 s
+    magic_tree (-79, -59): nearest guardian home 5.1; attacked in 0 of 400 runs (0 of 8 spots), median -
+
+D. Kilnglass a clear (chest and Kiln Warden; a Wyrmsteel Ingot counts as one): clears needed, exact distribution
+  as proposed: 1 certain, 3 more at 20%, boss 1 at 50%, ingot 10%: 2.20 a clear, a clear with none 0%
+    one dragon scimitar (4): mean 2.26, half 2, nine in ten 3, 99 in 100 4, worst 4; the whole kit (13): mean 6.37, half 6, nine in ten 8, 99 in 100 10, worst 13
+  pure chance, same mean: 2 at 50%, 3 at 20%, boss 1 at 50%, ingot 10%: 2.20 a clear, a clear with none 18%
+    one dragon scimitar (4): mean 2.41, half 2, nine in ten 4, 99 in 100 6, worst no limit; the whole kit (13): mean 6.47, half 6, nine in ten 9, 99 in 100 12, worst no limit
+
+SECOND-PASS CHECKS PASS

@@ -7,7 +7,9 @@
 #                                  each row with today's attack formula and with the style rebalance
 #   aggro-check.ts -> aggro-results.txt  the aggression rule (aggro.ts): the radius function, Stage 2's stepMonster with
 #                                  the rule patched into a COPY of src/state/monsterAi.ts, and Stage 2's gate simulation
-# pacing-rerun.sh (its own script: it needs branch origin/feat/start-pacing) runs Stage 3's pacing test under the rule.
+# pacing-rerun.sh (its own script: it reads origin/main, where Stage 3 is merged) runs Stage 3's pacing test under the rule.
+# second-pass.sh (its own script, also on origin/main) is the second-pass check: the style band at every level, chain-pulls,
+# the high trees and the Kilnglass variants.
 # content.ts holds the proposal as data (and the Stage 3 and Stage 4 numbers this tree does not have yet).
 # fight.ts and boss.ts are copies from branch feat/combat-weight at 732cb8c (see the header of fight.ts).
 # Usage, from the repository root: bash docs/superpowers/research/content-model/run.sh

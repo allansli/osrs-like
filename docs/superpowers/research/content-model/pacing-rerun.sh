@@ -1,20 +1,22 @@
 #!/bin/bash
 # Stage 3's pacing proof under the aggression rule of design 7.13 (pacing-results.txt).
-# It runs Stage 3's own tests/pacing.test.ts, UNEDITED, from branch origin/feat/start-pacing (this tree does not have
-# Stage 3), bundled with a stand-in for vitest (vitest-stub.ts), three times:
+# It runs Stage 3's own tests/pacing.test.ts, UNEDITED, from origin/main (Stage 3 merged there; this tree is older;
+# PACE_REF overrides the ref), bundled with a stand-in for vitest (vitest-stub.ts), three times:
 #   1. before:      Stage 3's model as committed. Must reproduce the table in its baseline document.
 #   2. convention:  one modelling change alone: the pack of a type is counted over camps that do not keep their sight
 #                   (the pass sentries are a gate, not a training ground). Stage 2's rule otherwise. Shows what the
 #                   convention moves by itself.
 #   3. after:       the new rule: the pack attacks at every level, scaled by the sight radius (aggro.ts, packAttackers).
-# Only tests/support/pacingModel.ts is patched, at two anchors; the script stops if either is missing.
+#                   Only the `attackers` line is patched (declared replacement 9 of design 11.3): the second-pass check
+#                   found that the convention of block 2 changes no number here either, so it is not part of the rule.
+# Only tests/support/pacingModel.ts is patched; the script stops if an anchor is missing.
 # The test suite is not run: this is the model, under the same 1 GB cap as run.sh.
 # Usage, from the repository root: bash docs/superpowers/research/content-model/pacing-rerun.sh [gap ...]
 # With no argument it runs the chosen gap (10, aggro.ts SIGHT_GAP) and, for the owner to see the lever, 5 and 20.
 set -euo pipefail
 here="$(cd "$(dirname "$0")" && pwd)"
 root="$(cd "$here/../../../.." && pwd)"
-ref="origin/feat/start-pacing"
+ref="${PACE_REF:-origin/main}"
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 git -C "$root" archive "$ref" src tests/support tests/pacing.test.ts | tar -x -C "$tmp"
@@ -36,7 +38,7 @@ const fs = require('fs');
 const [file, mode] = process.argv.slice(2);
 let s = fs.readFileSync(file, 'utf8');
 const swap = (from, to) => { if (!s.includes(from)) { console.error('pacing-rerun: anchor not found: ' + from); process.exit(2); } s = s.replace(from, to); };
-swap("if (camp.aggressive) largestAggressive[type]", "if (camp.aggressive && !KEEPS_SIGHT.includes(camp.id)) largestAggressive[type]");
+if (mode === 'convention') swap("if (camp.aggressive) largestAggressive[type]", "if (camp.aggressive && !KEEPS_SIGHT.includes(camp.id)) largestAggressive[type]");
 if (mode === 'after') swap("const attackers = pack > 0 && monsterThreatColor(m.level, combatLevel(state)) !== 'green' ? pack : 1;",
   "const attackers = packAttackers(pack, m.level, m.style, combatLevel(state), __SIGHT_GAP__);");
 s = "import { KEEPS_SIGHT, packAttackers } from './aggro';\ndeclare const __SIGHT_GAP__: number;\n" + s;
