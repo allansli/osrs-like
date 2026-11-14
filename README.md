@@ -70,13 +70,32 @@
 
 | Region | Biome | Notable Landmarks & Resources | Monsters |
 | :--- | :--- | :--- | :--- |
-| **Lumbridge Haven** | Emerald River Valley | Lumbridge Castle, Sacred Altar, Blacksmith Forge & Range, Grand Emporium, River Lum Bridge, Normal/Oak/Willow Trees, Shrimp/Trout Fishing | Plump Chicken (Lv 1) x4, Goblin Raider (Lv 2) x5, Goblin Archer (Lv 5) x2 |
-| **Varrock Grand Plaza** | Royal Trade Capital | Cathedral Prayer Altar, Royal Blacksmith, Trade Master, Copper & Iron Quarry | Dark Wizard (Lv 18) x3, Dark Ranger (Lv 24) x2, Hill Giant (Lv 28) x4 |
-| **Al-Kharid Golden Dunes** | Sunscorched Oasis | Bazaar Merchant, Mithril & Gold Ore Quarry, Desert Shrine | King Scorpion (Lv 12) x5 |
-| **Whispering Korok Woods** | Sacred Forest Sanctuary | Sacred Blossom Yew Trees, Magic Korok Trees, Lobster & Mystic Shark Pools | Moss Guardian (Lv 45) x4 |
-| **Dragon's Peak Highlands** | Volcanic Obsidian Crag | Runite Ore Veins, Wilderness Shrine | Lesser Demon (Lv 68) x4, **Elvarg the Crag Dragon (Lv 95 Boss)** x1 |
+| **Lumbridge Haven** | Emerald River Valley | Lumbridge Castle, Sacred Altar, Blacksmith Forge & Range, Grand Emporium, River Lum Bridge, Normal/Oak/Willow Trees, Shrimp/Trout Fishing, Three Kettle Camp | Plump Chicken (Lv 1) x4, Goblin Raider (Lv 2) x5, Goblin Archer (Lv 5) x2 (both camps passive) |
+| **Varrock Grand Plaza** | Royal Trade Capital | Cathedral Prayer Altar, Royal Blacksmith, Trade Master, Copper & Iron Quarry; Millrace Road ends at its shrine | Dark Wizard (Lv 18) x3, Dark Ranger (Lv 24) x2, Hill Giant (Lv 28) x4 (all aggressive) |
+| **Al-Kharid Golden Dunes** | Sunscorched Oasis | Bazaar Merchant, Mithril & Gold Ore Quarry, Desert Shrine, Tamarisk Pool (fishing); Saltwind Track ends at its shrine | King Scorpion (Lv 12) x5 in two nests (aggressive) |
+| **Whispering Korok Woods** | Sacred Forest Sanctuary | Sacred Blossom Yew Trees and Magic Korok Trees (deep woods only), Lobster & Mystic Shark Pools, Reedglass Tarn (fishing), Lampwright's Hollow; Lanternway ends at its shrine | Moss Guardian (Lv 45) x4 in two deep-woods camps (aggressive) |
+| **Dragon's Peak Highlands** | Volcanic Obsidian Crag | Runite Ore Veins, Wilderness Shrine, Wardstone Cairn, Slagfall Terrace; Harrowback Ridge walls off the crag and Cinderstep Pass is its only gap; Cinder Stair ends at its shrine | Lesser Demon (Lv 68) x6 (four pass sentries, two at Slagfall Terrace), **Elvarg the Crag Dragon (Lv 95 Boss)** x1 (all aggressive) |
 
-The world spawns 34 monsters of 10 types; the number after each monster is how many spawn in that region.
+The world spawns 36 monsters of 10 types; the number after each monster is how many spawn in that region. Every camp is aggressive except the hen yard and Three Kettle Camp: aggressive monsters notice a player within 9 units (melee) or 12 units (ranged and magic).
+
+### New places
+
+Twelve names were added to the world.
+
+| Kind | Name | Where |
+| :--- | :--- | :--- |
+| Path | **Millrace Road** | Lumbridge to the Varrock shrine |
+| Path | **Saltwind Track** | Fork at the road to the Al-Kharid shrine |
+| Path | **Lanternway** | Lumbridge to the Korok Woods shrine |
+| Path | **Cinder Stair** | Lumbridge to the Wilderness shrine, through the pass |
+| Ridge | **Harrowback Ridge** | Closes the volcanic corner; one gap, Cinderstep Pass |
+| Pass | **Cinderstep Pass** | The only way through the ridge, held by four lesser demon sentries |
+| Water | **Reedglass Tarn** | Basin in the Korok Woods, with a trout spot |
+| Water | **Tamarisk Pool** | Basin in the dunes, with a shrimp spot |
+| Place | **Three Kettle Camp** | Goblin camp beside Lumbridge |
+| Place | **Wardstone Cairn** | Warning cairn before the pass |
+| Place | **Slagfall Terrace** | Lesser demon terrace in the crag |
+| Place | **Lampwright's Hollow** | Lantern clearing in the Korok Woods |
 
 ---
 
