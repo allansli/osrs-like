@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import { GLTFLoader, type GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { loadGltfOnce } from './gltf';
 import { LEAN_RIG, type HumanoidRig } from './humanoid';
 import { addCartoonOutline, facetMaterial } from './materials';
 import { albedoMaterial, creatureAlbedoId, sealAlbedoUvs } from './textures';
@@ -125,27 +126,11 @@ export class BlenderHeroAnimator {
   }
 }
 
-let cachedTemplatePromise: Promise<GLTF | null> | null = null;
-
 export function loadBlenderHeroTemplate(url = '/models/hero.glb?v=kai4503_v5'): Promise<GLTF | null> {
   if (typeof window === 'undefined' || typeof document === 'undefined') {
     return Promise.resolve(null);
   }
-  if (!cachedTemplatePromise) {
-    const loader = new GLTFLoader();
-    cachedTemplatePromise = new Promise((resolve) => {
-      loader.load(
-        url,
-        (gltf) => resolve(gltf),
-        undefined,
-        (err) => {
-          console.warn('[BlenderHero] Failed to load hero.glb, keeping procedural fallback:', err);
-          resolve(null);
-        }
-      );
-    });
-  }
-  return cachedTemplatePromise;
+  return loadGltfOnce(url);
 }
 
 export interface HeroUpgradeOptions {
