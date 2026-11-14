@@ -25,11 +25,14 @@ export interface MonsterRigLike {
 
 export interface MonsterEntityLike {
   typeKey: string;
+  modelKey?: string;
   def: {
     bodyColor?: number;
     accentColor?: number;
     weaponColor?: number;
     scale?: number;
+    tint?: number;
+    modelScale?: number;
   };
   rig: MonsterRigLike;
   pos: THREE.Vector3;
@@ -74,8 +77,8 @@ function findPivot(root: THREE.Object3D, prefix: string, suffix: string): THREE.
  * Upgrades a monster's Three.js rig in-place with the sculpted Blender model from `monsters.glb`.
  */
 export function upgradeMonsterRigWithGltf(mObj: MonsterEntityLike, gltf: GLTF): boolean {
-  const typeKey = mObj.typeKey;
-  const template = gltf.scene.getObjectByName(`Monster_${typeKey}`);
+  const modelKey = mObj.modelKey ?? mObj.typeKey;
+  const template = gltf.scene.getObjectByName(`Monster_${modelKey}`);
   if (!template) return false;
 
   const cloned = template.clone(true);
@@ -84,11 +87,12 @@ export function upgradeMonsterRigWithGltf(mObj: MonsterEntityLike, gltf: GLTF): 
   cloned.scale.set(1, 1, 1);
 
   const speciesKey =
-    typeKey === 'goblin_archer'
+    modelKey === 'goblin_archer'
       ? 'goblin'
-      : typeKey;
+      : modelKey;
   const bodyAlbedo = speciesAlbedo(speciesKey);
   const defaultBodyColor = mObj.def.bodyColor ?? 0x65a30d;
+  const tintColor = mObj.def.tint !== undefined ? new THREE.Color(mObj.def.tint) : null;
 
   cloned.traverse((obj) => {
     const mesh = obj as THREE.Mesh;
@@ -115,24 +119,29 @@ export function upgradeMonsterRigWithGltf(mObj: MonsterEntityLike, gltf: GLTF): 
           emissiveIntensity: 0.75
         });
       }
-    } else if (matName.includes('skin') || matName.includes('scale') || matName.includes('chitin') || matName.includes('feather')) {
-      mesh.material = bodyAlbedo ? albedoMaterial(colorHex, bodyAlbedo) : facetMaterial({ color: colorHex });
-    } else if (matName.includes('cloth') || matName.includes('robe')) {
-      mesh.material = albedoMaterial(colorHex, 'cloth', { side: THREE.DoubleSide });
-    } else if (matName.includes('leather') || matName.includes('fur') || matName.includes('wing') || matName.includes('hoof')) {
-      mesh.material = albedoMaterial(colorHex, 'leather', { side: THREE.DoubleSide });
-    } else if (matName.includes('wood')) {
-      mesh.material = albedoMaterial(colorHex, 'wood');
-    } else if (matName.includes('bark')) {
-      mesh.material = albedoMaterial(colorHex, 'bark');
-    } else if (matName.includes('moss') || matName.includes('grass') || matName.includes('leaf')) {
-      mesh.material = albedoMaterial(colorHex, 'grass');
-    } else if (matName.includes('stone')) {
-      mesh.material = albedoMaterial(colorHex, 'stone');
-    } else if (matName.includes('iron') || matName.includes('bronze') || matName.includes('steel')) {
-      mesh.material = albedoMaterial(colorHex, 'iron');
     } else {
-      mesh.material = facetMaterial({ color: colorHex });
+      if (matName.includes('skin') || matName.includes('scale') || matName.includes('chitin') || matName.includes('feather')) {
+        mesh.material = bodyAlbedo ? albedoMaterial(colorHex, bodyAlbedo) : facetMaterial({ color: colorHex });
+      } else if (matName.includes('cloth') || matName.includes('robe')) {
+        mesh.material = albedoMaterial(colorHex, 'cloth', { side: THREE.DoubleSide });
+      } else if (matName.includes('leather') || matName.includes('fur') || matName.includes('wing') || matName.includes('hoof')) {
+        mesh.material = albedoMaterial(colorHex, 'leather', { side: THREE.DoubleSide });
+      } else if (matName.includes('wood')) {
+        mesh.material = albedoMaterial(colorHex, 'wood');
+      } else if (matName.includes('bark')) {
+        mesh.material = albedoMaterial(colorHex, 'bark');
+      } else if (matName.includes('moss') || matName.includes('grass') || matName.includes('leaf')) {
+        mesh.material = albedoMaterial(colorHex, 'grass');
+      } else if (matName.includes('stone')) {
+        mesh.material = albedoMaterial(colorHex, 'stone');
+      } else if (matName.includes('iron') || matName.includes('bronze') || matName.includes('steel')) {
+        mesh.material = albedoMaterial(colorHex, 'iron');
+      } else {
+        mesh.material = facetMaterial({ color: colorHex });
+      }
+      if (tintColor) {
+        (mesh.material as THREE.MeshLambertMaterial).color.multiply(tintColor);
+      }
     }
   });
 
@@ -148,13 +157,13 @@ export function upgradeMonsterRigWithGltf(mObj: MonsterEntityLike, gltf: GLTF): 
     rig.group.add(ch);
   }
 
-  rig.headGroup = findPivot(rig.group, typeKey, 'HeadGroup');
-  rig.leftArmPivot = findPivot(rig.group, typeKey, 'LeftArmPivot');
-  rig.rightArmPivot = findPivot(rig.group, typeKey, 'RightArmPivot');
-  rig.leftLegPivot = findPivot(rig.group, typeKey, 'LeftLegPivot');
-  rig.rightLegPivot = findPivot(rig.group, typeKey, 'RightLegPivot');
-  rig.lWing = findPivot(rig.group, typeKey, 'LWing');
-  rig.rWing = findPivot(rig.group, typeKey, 'RWing');
+  rig.headGroup = findPivot(rig.group, modelKey, 'HeadGroup');
+  rig.leftArmPivot = findPivot(rig.group, modelKey, 'LeftArmPivot');
+  rig.rightArmPivot = findPivot(rig.group, modelKey, 'RightArmPivot');
+  rig.leftLegPivot = findPivot(rig.group, modelKey, 'LeftLegPivot');
+  rig.rightLegPivot = findPivot(rig.group, modelKey, 'RightLegPivot');
+  rig.lWing = findPivot(rig.group, modelKey, 'LWing');
+  rig.rWing = findPivot(rig.group, modelKey, 'RWing');
 
   rig.group.userData.isBlenderMonster = true;
   sealAlbedoUvs(rig.group);

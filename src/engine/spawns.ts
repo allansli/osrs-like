@@ -39,9 +39,11 @@ export function spawnMonster(
   z: number,
   opts?: { campId?: string; wander?: number }
 ): void {
-  const def: MonsterDef | undefined = MONSTER_TYPES[typeKey];
+  const def: (MonsterDef & { model?: string; tint?: number; modelScale?: number }) | undefined =
+    MONSTER_TYPES[typeKey];
   if (!def) return;
   const rig = createMonsterMesh(def, typeKey);
+  rig.group.scale.multiplyScalar(def.modelScale ?? 1);
   const phase = ((Math.abs(x) * 12.9898 + Math.abs(z) * 78.233) % 1);
   offsetAlbedoPhase(rig.group, phase, (phase * 1.618) % 1);
   const y = getTerrainHeight(x, z);
@@ -57,8 +59,10 @@ export function spawnMonster(
 
   const logic = createMonsterLogic(typeKey, x, z, opts);
   logic.wanderTimer = Math.random() * 3;
+  const modelKey = def.model ?? typeKey;
   const mObj: MonsterEntity = {
     typeKey,
+    modelKey,
     def,
     rig,
     pos: rig.group.position,
