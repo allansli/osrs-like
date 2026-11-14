@@ -103,8 +103,8 @@ describe('playerHitChance', () => {
     });
   }
 
-  it('goblin (def 2) at accuracy 25.75 is 25.75 / (25.75 + 6.15 * 0.75)', () => {
-    expect(playerHitChance(25.75, 2)).toBeCloseTo(25.75 / (25.75 + 4.6125), 12);
+  it('goblin (def 2) at accuracy 25.75 is 25.75 / (25.75 + 6.2 * 0.75)', () => {
+    expect(playerHitChance(25.75, 2)).toBeCloseTo(25.75 / (25.75 + 4.65), 12);
   });
   it('clamps at 0.94 above and 0.22 below', () => {
     expect(playerHitChance(1e6, 1)).toBe(0.94);
