@@ -1,5 +1,7 @@
 # Visual pass: design
 
+> **Approved by the owner on 2026-11-14** ("aprovo 5"), design and plan, after the independent critique and with every owner decision of section 13 answered. Code starts only after Stages 2, 3 and 4 have landed; task R0 re-checks the premises first.
+
 Date: 2026-11-14. Branch: `feat/visual-pass`. All line numbers refer to commit `a8cad85` (main, before Stages 2, 3 and 4). Symbols are named next to every line number, because the lines will move before this stage starts.
 
 Status: proposal, approved in part. On 2026-11-14 the owner answered CALL-V3, V9, V18, V19 and V20 and agreed how QV4 and QV5 will be answered; section 13 marks each one decided, with the answer. Every other **CALL-V** is still the lead's proposal and needs the owner's check. The owner chose trees that block walking in the woods against the lead's recommendation; section 6.11 is the design for it.
