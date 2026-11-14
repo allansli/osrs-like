@@ -36,6 +36,7 @@ import {
   finishRespawn,
   performResourceGather
 } from './actions';
+import { planEntityWalk } from './input';
 import { disposeObject3D } from './dispose';
 import { PRAYERS } from '../data/magic';
 import { WORLD_REGIONS } from '../data/world';
@@ -45,7 +46,7 @@ import { moveWithCollision } from '../state/collision';
 import { isDown, stepMonster } from '../state/monsterAi';
 import { getTerrainHeight } from '../state/terrain';
 import { discoverShrines } from '../state/shrines';
-import { entityGoal, findPath, shouldRepath } from '../state/pathfind';
+import { shouldRepath } from '../state/pathfind';
 import { CAMPS, isInSafeZone } from '../data/worldMap';
 import {
   addChatMessage,
@@ -163,7 +164,6 @@ export function updatePlayerIntent(f: FrameState): void {
     }
   } else if (player.targetEntity) {
     const target = player.targetEntity;
-    const tType = target.type;
     let targetVec: THREE.Vector3 | null = null;
     let stopDist = 2.8;
 
@@ -234,10 +234,9 @@ export function updatePlayerIntent(f: FrameState): void {
         if (target.type === 'monster') {
           const m = target.ref;
           const reachedLast = player.waypoints.length === 0;
-          const madeAt = target.madeAt ?? [m.pos.x, m.pos.z];
+          const madeAt = target.madeAt;
           if (shouldRepath(madeAt, [m.pos.x, m.pos.z], reachedLast)) {
-            const goal = entityGoal(G.walkGrid, [player.pos.x, player.pos.z], [m.pos.x, m.pos.z], stopDist);
-            const path = goal ? findPath(G.walkGrid, [player.pos.x, player.pos.z], goal) : null;
+            const path = planEntityWalk([m.pos.x, m.pos.z], stopDist);
             if (path) {
               player.waypoints = path;
               target.madeAt = [m.pos.x, m.pos.z];

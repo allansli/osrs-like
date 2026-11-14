@@ -9,7 +9,7 @@ import type { WalkGrid } from '../state/pathfind';
 export const TICK_SEC = 0.6;
 
 export type PlayerTargetEntity =
-  | { type: 'monster'; ref: MonsterEntity; pos?: THREE.Vector3; madeAt?: [number, number] }
+  | { type: 'monster'; ref: MonsterEntity; pos?: THREE.Vector3; madeAt: [number, number] }
   | { type: 'resource'; ref: ResourceNodeEntity; pos?: THREE.Vector3 }
   | { type: 'interactive'; ref: THREE.Object3D['userData']; pos?: THREE.Vector3 };
 

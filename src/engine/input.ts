@@ -15,6 +15,41 @@ import {
   monsterThreatColor
 } from '../state/adventure';
 
+// The player's own 1-unit cell can be blocked while the player stands on a walkable
+// position (wall edge, shoreline). Start paths from the nearest walkable cell centre.
+function pathStart(): [number, number] {
+  const g = G.walkGrid;
+  const { x, z } = player.pos;
+  const cgx = Math.floor(x - g.origin);
+  const cgz = Math.floor(z - g.origin);
+  const open = (gx: number, gz: number) => gx >= 0 && gx < g.size && gz >= 0 && gz < g.size && g.cells[gz * g.size + gx] === 1;
+  if (open(cgx, cgz)) return [x, z];
+  let best: [number, number] | null = null;
+  let bestD = Infinity;
+  for (let gz = cgz - 4; gz <= cgz + 4; gz++) {
+    for (let gx = cgx - 4; gx <= cgx + 4; gx++) {
+      if (!open(gx, gz)) continue;
+      const cx = g.origin + gx + 0.5;
+      const cz = g.origin + gz + 0.5;
+      const d = Math.hypot(cx - x, cz - z);
+      if (d < bestD) { bestD = d; best = [cx, cz]; }
+    }
+  }
+  return best ?? [x, z];
+}
+
+export function planWalk(to: [number, number]): [number, number][] | null {
+  return findPath(G.walkGrid, pathStart(), to);
+}
+
+// Empty list when already within stopDist (no path needed); null when unreachable.
+export function planEntityWalk(target: [number, number], stopDist: number): [number, number][] | null {
+  if (Math.hypot(target[0] - player.pos.x, target[1] - player.pos.z) <= stopDist) return [];
+  const start = pathStart();
+  const goal = entityGoal(G.walkGrid, start, target, stopDist);
+  return goal ? findPath(G.walkGrid, start, goal) : null;
+}
+
 export interface ChooseMenuOption {
   label: string;
   tone?: string;
@@ -136,7 +171,7 @@ export function setupInputHandlers(): void {
     const cos = Math.cos(camState.yaw);
     const wx = player.pos.x - (cx * cos - cy * sin) * scale;
     const wz = player.pos.z - (cx * sin + cy * cos) * scale;
-    const path = findPath(G.walkGrid, [player.pos.x, player.pos.z], [wx, wz]);
+    const path = planWalk([wx, wz]);
     if (!path) {
       addChatMessage('You cannot walk there.', 'combat');
       return;
@@ -244,8 +279,7 @@ export function onGameContextMenu(e: MouseEvent): void {
       run: () => {
         const m = ud.entity as MonsterEntity;
         const stopDist = (STATE.combatStyle === 'rapid' || STATE.combatStyle === 'ranged' || STATE.combatStyle === 'magic') ? 13.5 : 2.9;
-        const goal = entityGoal(G.walkGrid, [player.pos.x, player.pos.z], [m.pos.x, m.pos.z], stopDist);
-        const path = goal ? findPath(G.walkGrid, [player.pos.x, player.pos.z], goal) : null;
+        const path = planEntityWalk([m.pos.x, m.pos.z], stopDist);
         if (!path) {
           addChatMessage('You cannot walk there.', 'combat');
           return;
@@ -262,8 +296,7 @@ export function onGameContextMenu(e: MouseEvent): void {
       run: () => {
         const r = ud.entity as ResourceNodeEntity;
         const stopDist = 3.1;
-        const goal = entityGoal(G.walkGrid, [player.pos.x, player.pos.z], [r.pos.x, r.pos.z], stopDist);
-        const path = goal ? findPath(G.walkGrid, [player.pos.x, player.pos.z], goal) : null;
+        const path = planEntityWalk([r.pos.x, r.pos.z], stopDist);
         if (!path) {
           addChatMessage('You cannot walk there.', 'combat');
           return;
@@ -285,8 +318,7 @@ export function onGameContextMenu(e: MouseEvent): void {
       label,
       run: () => {
         const stopDist = 3.5;
-        const goal = entityGoal(G.walkGrid, [player.pos.x, player.pos.z], [anchor.x, anchor.z], stopDist);
-        const path = goal ? findPath(G.walkGrid, [player.pos.x, player.pos.z], goal) : null;
+        const path = planEntityWalk([anchor.x, anchor.z], stopDist);
         if (!path) {
           addChatMessage('You cannot walk there.', 'combat');
           return;
@@ -312,7 +344,7 @@ export function onGameContextMenu(e: MouseEvent): void {
     options.push({
       label: 'Walk here',
       run: () => {
-        const path = findPath(G.walkGrid, [player.pos.x, player.pos.z], [pt.x, pt.z]);
+        const path = planWalk([pt.x, pt.z]);
         if (!path) {
           addChatMessage('You cannot walk there.', 'combat');
           return;
@@ -365,7 +397,7 @@ export function handleWorldClick(e: MouseEvent): void {
 
   if (!ud || ud.type === 'ground') {
     const pt = chosen.point;
-    const path = findPath(G.walkGrid, [player.pos.x, player.pos.z], [pt.x, pt.z]);
+    const path = planWalk([pt.x, pt.z]);
     if (!path) {
       addChatMessage('You cannot walk there.', 'combat');
       return;
@@ -381,8 +413,7 @@ export function handleWorldClick(e: MouseEvent): void {
     if (isDown(ud.entity.logic)) return;
     const m = ud.entity as MonsterEntity;
     const stopDist = (STATE.combatStyle === 'rapid' || STATE.combatStyle === 'ranged' || STATE.combatStyle === 'magic') ? 13.5 : 2.9;
-    const goal = entityGoal(G.walkGrid, [player.pos.x, player.pos.z], [m.pos.x, m.pos.z], stopDist);
-    const path = goal ? findPath(G.walkGrid, [player.pos.x, player.pos.z], goal) : null;
+    const path = planEntityWalk([m.pos.x, m.pos.z], stopDist);
     if (!path) {
       addChatMessage('You cannot walk there.', 'combat');
       return;
@@ -398,8 +429,7 @@ export function handleWorldClick(e: MouseEvent): void {
     }
     const r = ud.entity as ResourceNodeEntity;
     const stopDist = 3.1;
-    const goal = entityGoal(G.walkGrid, [player.pos.x, player.pos.z], [r.pos.x, r.pos.z], stopDist);
-    const path = goal ? findPath(G.walkGrid, [player.pos.x, player.pos.z], goal) : null;
+    const path = planEntityWalk([r.pos.x, r.pos.z], stopDist);
     if (!path) {
       addChatMessage('You cannot walk there.', 'combat');
       return;
@@ -411,8 +441,7 @@ export function handleWorldClick(e: MouseEvent): void {
   } else if (ud.type === 'interactive') {
     const anchor = chosen.object.getWorldPosition(new THREE.Vector3());
     const stopDist = 3.5;
-    const goal = entityGoal(G.walkGrid, [player.pos.x, player.pos.z], [anchor.x, anchor.z], stopDist);
-    const path = goal ? findPath(G.walkGrid, [player.pos.x, player.pos.z], goal) : null;
+    const path = planEntityWalk([anchor.x, anchor.z], stopDist);
     if (!path) {
       addChatMessage('You cannot walk there.', 'combat');
       return;
