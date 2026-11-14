@@ -1,8 +1,7 @@
-// @ts-nocheck
 import { WORLD_REGIONS, type RegionDef } from '../data/world';
 import { riverCenterX } from './collision';
 
-export function getTerrainHeight(x, z) {
+export function getTerrainHeight(x: number, z: number): number {
   for (const reg of WORLD_REGIONS) {
     const dx = x - reg.x;
     const dz = z - reg.z;
@@ -14,7 +13,7 @@ export function getTerrainHeight(x, z) {
       return rawHills(x, z) * smoothT;
     }
   }
-  const riverCenter = 28 + Math.sin(z * 0.05) * 8;
+  const riverCenter = riverCenterX(z);
   const riverDist = Math.abs(x - riverCenter);
   if (riverDist < 6.8) {
     return -1.45 * Math.cos((riverDist / 6.8) * (Math.PI / 2));
@@ -22,7 +21,7 @@ export function getTerrainHeight(x, z) {
   return rawHills(x, z);
 }
 
-export function rawHills(x, z) {
+export function rawHills(x: number, z: number): number {
   const h1 = Math.sin(x * 0.032) * Math.cos(z * 0.032) * 1.85;
   const h2 = Math.sin(x * 0.085 + z * 0.065) * 0.55;
   let crag = 0;
