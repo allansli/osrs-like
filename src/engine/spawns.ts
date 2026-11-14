@@ -1,7 +1,7 @@
-// @ts-nocheck
 import * as THREE from 'three';
-import { G } from './context';
-import { MONSTER_TYPES, RESOURCE_NODES_DEF } from '../data/world';
+import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { G, type MonsterEntity, type ResourceNodeEntity } from './context';
+import { MONSTER_TYPES, RESOURCE_NODES_DEF, type MonsterDef } from '../data/world';
 import { MONSTER_PLACEMENTS, NODE_PLACEMENTS } from '../data/placements';
 import { getTerrainHeight } from '../state/terrain';
 import {
@@ -15,9 +15,24 @@ import { addCartoonOutline, facetMaterial } from './materials';
 import { createMonsterMesh } from './monsterMeshes';
 import { loadBlenderMonstersTemplate, upgradeMonsterRigWithGltf } from './blenderMonsters';
 import { loadBlenderWorldTemplate, upgradeResourceNodeWithGltf } from './blenderWorld';
+import { el } from '../ui/hud';
 
-export function spawnMonster(typeKey, x, z) {
-  const def = MONSTER_TYPES[typeKey];
+interface ResourceNodeDef {
+  name?: string;
+  skill?: string;
+  req?: number;
+  xp?: number;
+  item?: string;
+  respawn?: number;
+  kind: string;
+  foliageColor?: number;
+  trunkColor?: number;
+  oreColor?: number;
+  scale?: number;
+}
+
+export function spawnMonster(typeKey: string, x: number, z: number): void {
+  const def: MonsterDef | undefined = MONSTER_TYPES[typeKey];
   if (!def) return;
   const rig = createMonsterMesh(def, typeKey);
   const phase = ((Math.abs(x) * 12.9898 + Math.abs(z) * 78.233) % 1);
@@ -31,9 +46,9 @@ export function spawnMonster(typeKey, x, z) {
     <div class="label-text">${def.name} (Lv-${def.level})</div>
     <div class="entity-hp-bar" style="display:none;"><div class="entity-hp-fill" style="width:100%"></div></div>
   `;
-  document.getElementById('world-labels').appendChild(labelEl);
+  el('world-labels').appendChild(labelEl);
 
-  const mObj = {
+  const mObj: MonsterEntity = {
     typeKey,
     def,
     rig,
@@ -61,21 +76,22 @@ export function spawnMonster(typeKey, x, z) {
   G.worldInteractiveObjects.push(rig.hitbox);
   G.scene.add(rig.group);
   G.monstersList.push(mObj);
-  loadBlenderMonstersTemplate().then((gltf) => {
+  loadBlenderMonstersTemplate().then((gltf: GLTF | null) => {
     if (!gltf) return;
     upgradeMonsterRigWithGltf(mObj, gltf);
   });
 }
 
 // Smooth Organic Branching Trees & Sculpted Weathered Ore Boulders
-export function spawnResourceNode(nodeKey, x, z) {
-  const def = RESOURCE_NODES_DEF[nodeKey];
+export function spawnResourceNode(nodeKey: string, x: number, z: number): void {
+  const def = (RESOURCE_NODES_DEF as Record<string, ResourceNodeDef | undefined>)[nodeKey];
   if (!def) return;
   const grp = new THREE.Group();
   const y = def.kind === 'fish' ? -0.30 : getTerrainHeight(x, z);
   grp.position.set(x, y, z);
 
-  let visualMesh, depletedMesh;
+  let visualMesh: THREE.Object3D;
+  let depletedMesh: THREE.Object3D;
 
   if (def.kind === 'tree') {
     const s = def.scale || 1.0;
@@ -88,16 +104,17 @@ export function spawnResourceNode(nodeKey, x, z) {
     trunk.castShadow = true;
     visualMesh.add(trunk);
 
-    const foliageHex = {
+    const foliageHexMap: Record<string, number> = {
       normal_tree: 0x334835,
       oak_tree: 0x3e4f38,
       willow_tree: 0x48523c,
       maple_tree: 0x5c4228,
       yew_tree: 0x223628,
       magic_tree: 0x35545b
-    }[nodeKey] || def.foliageColor || 0x334835;
+    };
+    const foliageHex = foliageHexMap[nodeKey] || def.foliageColor || 0x334835;
     const fMat = albedoMaterial(foliageHex, 'grass');
-    const puffs = [
+    const puffs: [number, number, number, number][] = [
       [0, 2.55, 0, 1.25],
       [0.72, 2.15, 0.28, 0.82],
       [-0.62, 2.2, -0.32, 0.78]
@@ -128,7 +145,11 @@ export function spawnResourceNode(nodeKey, x, z) {
     sideRock.scale.set(1.1, 0.8, 0.95);
     visualMesh.add(baseRock, sideRock);
     const oreMat = facetMaterial({ color: def.oreColor, emissive: def.oreColor, emissiveIntensity: 0.2, flatShading: true });
-    [[0.15, 0.95, 0.72], [-0.35, 0.7, -0.55]].forEach(([ox, oy, oz]) => {
+    const veins: [number, number, number][] = [
+      [0.15, 0.95, 0.72],
+      [-0.35, 0.7, -0.55]
+    ];
+    veins.forEach(([ox, oy, oz]) => {
       const vein = new THREE.Mesh(new THREE.OctahedronGeometry(0.28, 0), oreMat);
       vein.position.set(ox, oy, oz);
       visualMesh.add(vein);
@@ -169,7 +190,7 @@ export function spawnResourceNode(nodeKey, x, z) {
   sealAlbedoUvs(grp);
   addCartoonOutline(grp, 0.038);
 
-  const rObj = {
+  const rObj: ResourceNodeEntity = {
     nodeKey,
     def,
     group: grp,
@@ -186,13 +207,13 @@ export function spawnResourceNode(nodeKey, x, z) {
   G.worldInteractiveObjects.push(hitbox);
   G.scene.add(grp);
   G.resourceNodesList.push(rObj);
-  loadBlenderWorldTemplate().then((gltf) => {
+  loadBlenderWorldTemplate().then((gltf: GLTF | null) => {
     if (!gltf) return;
     upgradeResourceNodeWithGltf(rObj, gltf);
   });
 }
 
-export function spawnAllResourcesAndMonsters() {
+export function spawnAllResourcesAndMonsters(): void {
   for (const m of MONSTER_PLACEMENTS) {
     spawnMonster(m.type, m.x, m.z);
   }
