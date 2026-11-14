@@ -1,5 +1,5 @@
-// @ts-nocheck
 import * as THREE from 'three';
+import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { G } from './context';
 import { STATE } from '../state/gameState';
 import { PALETTE, addCartoonOutline, grassMaterial } from './materials';
@@ -13,8 +13,9 @@ import {
 import { getTerrainHeight } from '../state/terrain';
 import { isDeepWater } from '../state/collision';
 import { loadBlenderWorldTemplate, upgradeWorldPropWithGltf } from './blenderWorld';
+import { el } from '../ui/hud';
 
-export function getBiomeColor(x, z, h) {
+export function getBiomeColor(x: number, z: number, h: number): THREE.Color {
   const dirt = new THREE.Color(PALETTE.dirt);
   const grass = [PALETTE.sageShade, PALETTE.sage, PALETTE.sageLit].map((hex) => new THREE.Color(hex));
   if (h < -0.05) return dirt;
@@ -28,7 +29,7 @@ export function getBiomeColor(x, z, h) {
 }
 
 // Custom GLSL Atmospheric Sky Dome with Volumetric Clouds & Sun Disc
-export function buildSkyDomeShader() {
+export function buildSkyDomeShader(): void {
   G.skyUniforms = {
     uTime: { value: 0 },
     uTopColor: { value: new THREE.Color(PALETTE.skyZenith) },
@@ -66,41 +67,42 @@ export function buildSkyDomeShader() {
   G.scene.add(G.skyDomeMesh);
 }
 
-export function cycleTimeOfDay() {
+export function cycleTimeOfDay(): void {
   STATE.timeOfDay = (STATE.timeOfDay + 1) % 3;
-  const btn = document.getElementById('time-of-day-btn');
+  const btn = el('time-of-day-btn');
+  const fog = G.scene.fog as THREE.FogExp2;
   if (STATE.timeOfDay === 0) {
     G.skyUniforms.uTopColor.value.setHex(0x253545);
     G.skyUniforms.uMidColor.value.setHex(0x5a6875);
     G.skyUniforms.uHorizonColor.value.setHex(0x8a8a92);
-    G.scene.fog.color.setHex(0x8a8a92);
-    G.scene.fog.density = 0.0030;
-    if (btn) btn.textContent = 'Golden Hour';
+    fog.color.setHex(0x8a8a92);
+    fog.density = 0.0030;
+    btn.textContent = 'Golden Hour';
   } else if (STATE.timeOfDay === 1) {
     G.skyUniforms.uTopColor.value.setHex(0x2e4359);
     G.skyUniforms.uMidColor.value.setHex(0x5f788e);
     G.skyUniforms.uHorizonColor.value.setHex(0x9ab0c2);
-    G.scene.fog.color.setHex(0x9ab0c2);
-    G.scene.fog.density = 0.0028;
-    if (btn) btn.textContent = 'High Noon';
+    fog.color.setHex(0x9ab0c2);
+    fog.density = 0.0028;
+    btn.textContent = 'High Noon';
   } else {
     G.skyUniforms.uTopColor.value.setHex(0x090e14);
     G.skyUniforms.uMidColor.value.setHex(0x141d27);
     G.skyUniforms.uHorizonColor.value.setHex(0x1e2936);
-    G.scene.fog.color.setHex(0x1e2936);
-    G.scene.fog.density = 0.0042;
-    if (btn) btn.textContent = 'Starry Night';
+    fog.color.setHex(0x1e2936);
+    fog.density = 0.0042;
+    btn.textContent = 'Starry Night';
   }
 }
 
-export function buildTerrainAndWater() {
+export function buildTerrainAndWater(): void {
   const size = 260;
   const segs = 80;
   const geo = new THREE.PlaneGeometry(size, size, segs, segs);
   geo.rotateX(-Math.PI / 2);
 
   const posAttr = geo.attributes.position;
-  const colors = [];
+  const colors: number[] = [];
   for (let i = 0; i < posAttr.count; i++) {
     const vx = posAttr.getX(i);
     const vz = posAttr.getZ(i);
@@ -194,7 +196,7 @@ export function buildTerrainAndWater() {
   G.scene.add(G.grassInstanced);
 }
 
-export function buildRiverBridge(bx, bz) {
+export function buildRiverBridge(bx: number, bz: number): void {
   const grp = new THREE.Group();
   grp.position.set(bx, 0, bz);
   const woodMat = albedoMaterial(0x42352a, 'wood');
@@ -210,7 +212,7 @@ export function buildRiverBridge(bx, bz) {
     plank.receiveShadow = true;
     grp.add(plank);
   }
-  [-1.8, 1.8].forEach(oz => {
+  [-1.8, 1.8].forEach((oz: number) => {
     const curve = new THREE.CatmullRomCurve3([
       new THREE.Vector3(-7.2, 0.8, oz),
       new THREE.Vector3(0, 2.05, oz),
@@ -223,7 +225,7 @@ export function buildRiverBridge(bx, bz) {
   sealAlbedoUvs(grp);
   G.scene.add(grp);
   addCartoonOutline(grp, 0.038);
-  loadBlenderWorldTemplate().then((gltf) => {
+  loadBlenderWorldTemplate().then((gltf: GLTF | null) => {
     if (!gltf) return;
     upgradeWorldPropWithGltf(grp, 'World_river_bridge', gltf, { outlineThickness: 0.035 });
   });
