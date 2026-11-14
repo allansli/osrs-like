@@ -52,7 +52,7 @@ export function migrateLegacySave(raw: unknown, source: string | null = null): M
     for (const key of Object.keys(state.equipment)) {
       const value = data.equipment[key];
       if (value === null) state.equipment[key] = null;
-      else if (typeof value === 'string' && ITEMS[value]) state.equipment[key] = value;
+      else if (typeof value === 'string' && Object.hasOwn(ITEMS, value)) state.equipment[key] = value;
     }
   }
   if (source && source.startsWith('runewilds')) {
