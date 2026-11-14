@@ -7,11 +7,10 @@ import type { MonsterLogic } from '../state/monsterAi';
 
 export const TICK_SEC = 0.6;
 
-export interface PlayerTargetEntity {
-  type: string;
-  ref?: any;
-  pos?: THREE.Vector3;
-}
+export type PlayerTargetEntity =
+  | { type: 'monster'; ref: MonsterEntity; pos?: THREE.Vector3 }
+  | { type: 'resource'; ref: ResourceNodeEntity; pos?: THREE.Vector3 }
+  | { type: 'interactive'; ref: THREE.Object3D['userData']; pos?: THREE.Vector3 };
 
 export interface PlayerState {
   pos: THREE.Vector3;
