@@ -1,14 +1,13 @@
-// @ts-nocheck
 import { player, camState } from './context';
 import { SFX } from './audio';
 import { spawnLevelUpFireworks } from './vfx';
 import { STATE, applyState } from '../state/gameState';
 import { readSave, writeSave, SAVE_KEY, LEGACY_SAVE_KEYS } from '../state/save';
 import { matchCheat, applySkillsPlus10, applyGold200k } from '../state/cheats';
-import { addChatMessage, showBanner, updateAllUI } from '../ui/hud';
+import { el, addChatMessage, showBanner, updateAllUI } from '../ui/hud';
 import { closeModals } from '../ui/playerActions';
 
-export function saveGameState() {
+export function saveGameState(): void {
   try {
     const pose = (player && player.pos) ? {
       x: Number(player.pos.x.toFixed(2)),
@@ -23,18 +22,16 @@ export function saveGameState() {
       distance: Number((camState.distance || 11).toFixed(2))
     } : null;
     writeSave(localStorage, STATE, pose, cam);
-    const saveBtn = document.getElementById('save-status-btn');
-    if (saveBtn) {
-      const t = new Date();
-      const hh = String(t.getHours()).padStart(2, '0');
-      const mm = String(t.getMinutes()).padStart(2, '0');
-      const ss = String(t.getSeconds()).padStart(2, '0');
-      saveBtn.textContent = 'Saved (' + hh + ':' + mm + ':' + ss + ')';
-    }
+    const saveBtn = el('save-status-btn');
+    const t = new Date();
+    const hh = String(t.getHours()).padStart(2, '0');
+    const mm = String(t.getMinutes()).padStart(2, '0');
+    const ss = String(t.getSeconds()).padStart(2, '0');
+    saveBtn.textContent = 'Saved (' + hh + ':' + mm + ':' + ss + ')';
   } catch (e) {}
 }
 
-export function loadGameState() {
+export function loadGameState(): boolean {
   try {
     const migrated = readSave(localStorage);
     if (!migrated) return false;
@@ -75,13 +72,13 @@ export function loadGameState() {
   }
 }
 
-export function manualSaveToast() {
+export function manualSaveToast(): void {
   saveGameState();
   SFX.coin();
   addChatMessage('Progress & state saved to <b>localStorage</b> (Skills, XP, GP, Inventory, 10-Slot Equipment, Vitals, Prayers & World Coordinates).', 'lvlup');
 }
 
-export function resetGameSave() {
+export function resetGameSave(): void {
   if (!confirm('Reset your saved character progress in localStorage and start fresh?')) return;
   try {
     localStorage.removeItem(SAVE_KEY);
@@ -90,9 +87,9 @@ export function resetGameSave() {
   window.location.reload();
 }
 
-let cheatBuffer = '';
+let cheatBuffer: string = '';
 
-export function noteCheatKey(e) {
+export function noteCheatKey(e: KeyboardEvent): void {
   const tag = document.activeElement && document.activeElement.tagName;
   if (tag === 'INPUT' || tag === 'TEXTAREA') return;
   if (!e.key || e.key.length !== 1) return;
@@ -104,7 +101,7 @@ export function noteCheatKey(e) {
   else cheatGold200k();
 }
 
-export function cheatSkillsPlus10() {
+export function cheatSkillsPlus10(): void {
   applySkillsPlus10(STATE);
   SFX.levelUp();
   spawnLevelUpFireworks();
@@ -114,7 +111,7 @@ export function cheatSkillsPlus10() {
   saveGameState();
 }
 
-export function cheatGold200k() {
+export function cheatGold200k(): void {
   applyGold200k(STATE);
   SFX.coin();
   showBanner('Cheat Activated', '+200,000 GP added to your coin pouch!');
@@ -123,9 +120,8 @@ export function cheatGold200k() {
   saveGameState();
 }
 
-export function applyTypedCheat() {
-  const input = document.getElementById('cheat-code-input');
-  if (!input) return;
+export function applyTypedCheat(): void {
+  const input = el<HTMLInputElement>('cheat-code-input');
   const kind = matchCheat(input.value);
   input.value = '';
   if (kind === 'skills') cheatSkillsPlus10();
@@ -135,21 +131,21 @@ export function applyTypedCheat() {
 
 export const INTRO_KEY = 'gielinor_hero_intro_v1';
 
-export function dismissOnboarding() {
-  const board = document.getElementById('onboarding');
-  if (board) board.hidden = true;
+export function dismissOnboarding(): void {
+  const board = el('onboarding');
+  board.hidden = true;
   try { localStorage.setItem(INTRO_KEY, '1'); } catch (e) {}
 }
 
-export function replayOnboarding() {
+export function replayOnboarding(): void {
   closeModals();
-  const board = document.getElementById('onboarding');
-  if (board) board.hidden = false;
+  const board = el('onboarding');
+  board.hidden = false;
 }
 
-export function maybeShowOnboarding() {
+export function maybeShowOnboarding(): void {
   let seen = false;
   try { seen = localStorage.getItem(INTRO_KEY) === '1'; } catch (e) {}
-  const board = document.getElementById('onboarding');
-  if (board) board.hidden = seen;
+  const board = el('onboarding');
+  board.hidden = seen;
 }
