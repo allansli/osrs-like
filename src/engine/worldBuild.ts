@@ -1,9 +1,9 @@
-// @ts-nocheck
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { G } from './context';
-import { WORLD_REGIONS } from '../data/world';
-import { ITEMS } from '../data/items';
+import { WORLD_REGIONS, type RegionDef } from '../data/world';
+import { ITEMS, type ItemDef } from '../data/items';
 import { getTerrainHeight } from '../state/terrain';
 import { albedoMaterial, biomeAlbedoId, sealAlbedoUvs } from './textures';
 import { addCartoonOutline, facetMaterial } from './materials';
@@ -13,7 +13,7 @@ import { loadBlenderHeroTemplate, upgradeHumanoidRigWithGltf } from './blenderHe
 import { loadBlenderGearTemplate } from './blenderGear';
 import { buildCapeVisual, buildHeadVisual, buildWeaponVisual } from './playerGear';
 
-export function buildBiomeLandmarks() {
+export function buildBiomeLandmarks(): void {
   const sand = albedoMaterial(0xe7c07a, biomeAlbedoId('alkharid-sand'));
   const palm = albedoMaterial(0x4ade80, 'grass');
   const bark = albedoMaterial(0x92400e, 'bark');
@@ -23,21 +23,21 @@ export function buildBiomeLandmarks() {
   const obsidian = albedoMaterial(0xa8a29e, biomeAlbedoId('peak-volcanic'));
   const lava = facetMaterial({ color: 0xf97316, emissive: 0xea580c, emissiveIntensity: 0.85 });
 
-  function place(builder, x, z, worldAssetName, overrides = {}) {
+  function place(builder: () => THREE.Group, x: number, z: number, worldAssetName?: string, overrides: Record<string, unknown> = {}): void {
     const grp = builder();
     grp.position.set(x, getTerrainHeight(x, z), z);
     sealAlbedoUvs(grp);
     addCartoonOutline(grp, 0.038);
     G.scene.add(grp);
     if (worldAssetName) {
-      loadBlenderWorldTemplate().then((gltf) => {
+      loadBlenderWorldTemplate().then((gltf: GLTF | null) => {
         if (!gltf) return;
         upgradeWorldPropWithGltf(grp, worldAssetName, gltf, { overrides, outlineThickness: 0.035 });
       });
     }
   }
 
-  function sandstoneArch() {
+  function sandstoneArch(): THREE.Group {
     const grp = new THREE.Group();
     const left = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.62, 4.2, 12), sand);
     left.position.set(-1.6, 2.1, 0);
@@ -47,11 +47,11 @@ export function buildBiomeLandmarks() {
     lintel.position.y = 4.3;
     const cap = new THREE.Mesh(new THREE.SphereGeometry(0.55, 14, 10), gold);
     cap.position.y = 4.9;
-    [left, right, lintel, cap].forEach((mesh) => { mesh.castShadow = true; grp.add(mesh); });
+    [left, right, lintel, cap].forEach((mesh: THREE.Mesh) => { mesh.castShadow = true; grp.add(mesh); });
     return grp;
   }
 
-  function palmTree() {
+  function palmTree(): THREE.Group {
     const grp = new THREE.Group();
     const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.28, 3.4, 10), bark);
     trunk.position.y = 1.7;
@@ -71,7 +71,7 @@ export function buildBiomeLandmarks() {
     return grp;
   }
 
-  function plazaPillar() {
+  function plazaPillar(): THREE.Group {
     const grp = new THREE.Group();
     const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.55, 5.2, 14), stone);
     shaft.position.y = 2.6;
@@ -79,11 +79,11 @@ export function buildBiomeLandmarks() {
     foot.position.y = 0.2;
     const crown = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.35, 1.15), gold);
     crown.position.y = 5.35;
-    [shaft, foot, crown].forEach((mesh) => { mesh.castShadow = true; grp.add(mesh); });
+    [shaft, foot, crown].forEach((mesh: THREE.Mesh) => { mesh.castShadow = true; grp.add(mesh); });
     return grp;
   }
 
-  function mysticMushroom(color) {
+  function mysticMushroom(color: number): THREE.Group {
     const grp = new THREE.Group();
     const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.32, 1.3, 12), facetMaterial({ color: 0xf8fafc }));
     stem.position.y = 0.65;
@@ -96,7 +96,7 @@ export function buildBiomeLandmarks() {
     return grp;
   }
 
-  function woodsLantern() {
+  function woodsLantern(): THREE.Group {
     const grp = new THREE.Group();
     const post = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.1, 2.2, 8), moss);
     post.position.y = 1.1;
@@ -109,7 +109,7 @@ export function buildBiomeLandmarks() {
     return grp;
   }
 
-  function obsidianSpire() {
+  function obsidianSpire(): THREE.Group {
     const grp = new THREE.Group();
     const spire = new THREE.Mesh(new THREE.ConeGeometry(0.85, 6.4, 7), obsidian);
     spire.position.y = 3.2;
@@ -119,7 +119,7 @@ export function buildBiomeLandmarks() {
     return grp;
   }
 
-  function lavaFissure() {
+  function lavaFissure(): THREE.Group {
     const grp = new THREE.Group();
     const crack = new THREE.Mesh(new THREE.BoxGeometry(3.4, 0.08, 0.35), lava);
     crack.position.y = 0.08;
@@ -146,8 +146,8 @@ export function buildBiomeLandmarks() {
   place(lavaFissure, -74, 70, 'World_lava_fissure');
 }
 
-export function buildAllCitiesAndLandmarks() {
-  WORLD_REGIONS.forEach(reg => {
+export function buildAllCitiesAndLandmarks(): void {
+  WORLD_REGIONS.forEach((reg: RegionDef) => {
     const sx = reg.x;
     const sz = reg.z - 6;
     const sy = getTerrainHeight(sx, sz);
@@ -168,7 +168,7 @@ export function buildAllCitiesAndLandmarks() {
       facetMaterial({ color: 0x5d8096, emissive: 0x2d4857, emissiveIntensity: 0.45, flatShading: true })
     );
     rune.position.y = 3.15;
-    [stepA, stepB, pillar, cap, rune].forEach((mesh) => {
+    [stepA, stepB, pillar, cap, rune].forEach((mesh: THREE.Mesh) => {
       mesh.castShadow = true;
       shrineGroup.add(mesh);
     });
@@ -185,7 +185,7 @@ export function buildAllCitiesAndLandmarks() {
     G.worldInteractiveObjects.push(pillar, rune);
     addCartoonOutline(shrineGroup, 0.038);
     G.scene.add(shrineGroup);
-    loadBlenderWorldTemplate().then((gltf) => {
+    loadBlenderWorldTemplate().then((gltf: GLTF | null) => {
       if (!gltf) return;
       upgradeWorldPropWithGltf(shrineGroup, 'World_shrine', gltf, {
         interactiveObjectsList: G.worldInteractiveObjects,
@@ -232,7 +232,7 @@ export function buildAllCitiesAndLandmarks() {
   buildBiomeLandmarks();
 }
 
-export function createCastleStructure(cx, cz) {
+export function createCastleStructure(cx: number, cz: number): void {
   const grp = new THREE.Group();
   const y = getTerrainHeight(cx, cz);
   grp.position.set(cx, y, cz);
@@ -240,7 +240,7 @@ export function createCastleStructure(cx, cz) {
   const roofMat = albedoMaterial(0x2d333b, 'slate');
   const goldMat = facetMaterial({ color: 0x8f7d4e });
   const timberMat = albedoMaterial(0x42352a, 'wood');
-  function box(w, h, d, mat, x, yy, z) {
+  function box(w: number, h: number, d: number, mat: THREE.Material, x: number, yy: number, z: number): THREE.Mesh {
     const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
     mesh.position.set(x, yy, z);
     mesh.castShadow = true;
@@ -248,7 +248,7 @@ export function createCastleStructure(cx, cz) {
     grp.add(mesh);
     return mesh;
   }
-  function crenelate(x0, z0, x1, z1, yTop) {
+  function crenelate(x0: number, z0: number, x1: number, z1: number, yTop: number): void {
     const len = Math.hypot(x1 - x0, z1 - z0);
     const n = Math.max(2, Math.floor(len / 1.15));
     for (let i = 0; i < n; i++) {
@@ -273,7 +273,7 @@ export function createCastleStructure(cx, cz) {
   box(1.4, 5.2, 17, stoneMat, 9, 2.6, -0.5);
   crenelate(-9, -9, -9, 8, 5.4);
   crenelate(9, -9, 9, 8, 5.4);
-  [[-9, -9], [9, -9], [-9, 8], [9, 8]].forEach(([tx, tz]) => {
+  ([[-9, -9], [9, -9], [-9, 8], [9, 8]] as const).forEach(([tx, tz]) => {
     box(3.2, 8.4, 3.2, stoneMat, tx, 4.2, tz);
     const spire = new THREE.Mesh(new THREE.ConeGeometry(2.1, 3.4, 4), roofMat);
     spire.position.set(tx, 10.0, tz);
@@ -288,13 +288,13 @@ export function createCastleStructure(cx, cz) {
   sealAlbedoUvs(grp);
   addCartoonOutline(grp, 0.03);
   G.scene.add(grp);
-  loadBlenderWorldTemplate().then((gltf) => {
+  loadBlenderWorldTemplate().then((gltf: GLTF | null) => {
     if (!gltf) return;
     upgradeWorldPropWithGltf(grp, 'World_castle', gltf, { outlineThickness: 0.03 });
   });
 }
 
-export function createPrayerAltar(x, z, name) {
+export function createPrayerAltar(x: number, z: number, name: string): void {
   const y = getTerrainHeight(x, z);
   const grp = new THREE.Group();
   grp.position.set(x, y, z);
@@ -326,7 +326,7 @@ export function createPrayerAltar(x, z, name) {
   addCartoonOutline(grp, 0.038);
   G.scene.add(grp);
   G.npcList.push({ pos: grp.position, name, color: '#38bdf8', yOffset: 3.4 });
-  loadBlenderWorldTemplate().then((gltf) => {
+  loadBlenderWorldTemplate().then((gltf: GLTF | null) => {
     if (!gltf) return;
     upgradeWorldPropWithGltf(grp, 'World_altar', gltf, {
       interactiveObjectsList: G.worldInteractiveObjects,
@@ -335,7 +335,7 @@ export function createPrayerAltar(x, z, name) {
   });
 }
 
-export function createForgeStation(x, z, name) {
+export function createForgeStation(x: number, z: number, name: string): void {
   const y = getTerrainHeight(x, z);
   const grp = new THREE.Group();
   grp.position.set(x, y, z);
@@ -382,7 +382,7 @@ export function createForgeStation(x, z, name) {
   addCartoonOutline(grp, 0.038);
   G.scene.add(grp);
   G.npcList.push({ pos: grp.position, name, color: '#ff981f', yOffset: 3.5 });
-  loadBlenderWorldTemplate().then((gltf) => {
+  loadBlenderWorldTemplate().then((gltf: GLTF | null) => {
     if (!gltf) return;
     upgradeWorldPropWithGltf(grp, 'World_forge', gltf, {
       interactiveObjectsList: G.worldInteractiveObjects,
@@ -391,7 +391,7 @@ export function createForgeStation(x, z, name) {
   });
 }
 
-export function createBankBooth(x, z) {
+export function createBankBooth(x: number, z: number): void {
   const y = getTerrainHeight(x, z);
   const grp = new THREE.Group();
   grp.position.set(x, y, z);
@@ -407,7 +407,7 @@ export function createBankBooth(x, z) {
   const canvas = document.createElement('canvas');
   canvas.width = 256;
   canvas.height = 64;
-  const ctx2d = canvas.getContext('2d');
+  const ctx2d = canvas.getContext('2d')!;
   ctx2d.fillStyle = '#1d1812';
   ctx2d.fillRect(0, 0, 256, 64);
   ctx2d.fillStyle = '#fde047';
@@ -432,31 +432,31 @@ export function createBankBooth(x, z) {
   addCartoonOutline(lintel, 0.038);
   G.scene.add(grp);
   G.npcList.push({ pos: grp.position, name: 'Lumbridge Bank', color: '#fde047', yOffset: 2.6 });
-  loadBlenderHeroTemplate().then((gltf) => {
+  loadBlenderHeroTemplate().then((gltf: GLTF | null) => {
     if (!gltf) return;
     const anim = upgradeHumanoidRigWithGltf(rig, gltf, 0x1e3a8a, 0xfacc15, 0x334155, { isPlayer: false });
     if (anim) G.npcAnimatorsList.push(anim);
   });
-  loadBlenderWorldTemplate().then((gltf) => {
+  loadBlenderWorldTemplate().then((gltf: GLTF | null) => {
     if (!gltf) return;
     upgradeWorldPropWithGltf(grp, 'World_bank_booth', gltf, {
-      keepChildren: (ch) => ch === sign || ch === rig.group,
+      keepChildren: (ch: THREE.Object3D) => ch === sign || ch === rig.group,
       interactiveObjectsList: G.worldInteractiveObjects,
       outlineThickness: 0.035
     });
   });
 }
 
-export function createSlayerMaster(x, z) {
+export function createSlayerMaster(x: number, z: number): void {
   const y = getTerrainHeight(x, z);
   const rig = buildHumanoidRig(0x4c1d95, 0x1c1917, 0x111827, 1.05);
   rig.group.position.set(x, y, z);
-  let vannakaWep = null;
-  let vannakaCape = null;
-  const attachVannakaGear = () => {
+  let vannakaWep: THREE.Group | null = null;
+  let vannakaCape: THREE.Group | null = null;
+  const attachVannakaGear = (): void => {
     if (vannakaWep && vannakaWep.parent) vannakaWep.parent.remove(vannakaWep);
     if (vannakaCape && vannakaCape.parent) vannakaCape.parent.remove(vannakaCape);
-    const wepVis = buildWeaponVisual(ITEMS.godsword || ITEMS.rune_2h || { id: 'godsword', iconKind: 'greatsword', slot: 'weapon', color: 0xfacc15, trim: 0xfde047 });
+    const wepVis = buildWeaponVisual(ITEMS.godsword || ITEMS.rune_2h || ({ id: 'godsword', iconKind: 'greatsword', slot: 'weapon', color: 0xfacc15, trim: 0xfde047 } as unknown as ItemDef));
     if (rig.rightElbowPivot) {
       wepVis.group.position.set(0.19, -0.32, 0.08);
       wepVis.group.rotation.set(-0.2, 0.0, 0.1);
@@ -468,7 +468,7 @@ export function createSlayerMaster(x, z) {
     vannakaWep = wepVis.group;
     addCartoonOutline(vannakaWep, 0.02);
 
-    const capeVis = buildCapeVisual({ id: 'slayer_cape', slot: 'cape', color: 0x4c1d95, trim: 0xfacc15 });
+    const capeVis = buildCapeVisual({ id: 'slayer_cape', slot: 'cape', color: 0x4c1d95, trim: 0xfacc15 } as unknown as ItemDef);
     if (rig.group.userData.isBlenderHero || rig.leftElbowPivot) {
       capeVis.position.set(0, 0.22, 0.02);
     } else {
@@ -494,7 +494,7 @@ export function createSlayerMaster(x, z) {
   });
 }
 
-export function createMerchantNPC(x, z, name, tunicColor) {
+export function createMerchantNPC(x: number, z: number, name: string, tunicColor: number): void {
   const y = getTerrainHeight(x, z);
   const rig = buildHumanoidRig(tunicColor, 0xfacc15, 0x334155, 1.02);
   rig.group.position.set(x, y, z);
@@ -509,11 +509,11 @@ export function createMerchantNPC(x, z, name, tunicColor) {
       const anim = upgradeHumanoidRigWithGltf(rig, heroGltf, tunicColor, 0xfacc15, 0x334155, { isPlayer: false });
       if (anim) G.npcAnimatorsList.push(anim);
     }
-    const hatItem = name.includes('Varrock')
+    const hatItem = (name.includes('Varrock')
       ? { id: 'wizard_hat', slot: 'head', iconKind: 'hat', color: tunicColor, trim: 0xfacc15 }
       : name.includes('Al-Kharid')
       ? { id: 'hood', slot: 'head', iconKind: 'hood', color: tunicColor, trim: 0xfacc15 }
-      : { id: 'circlet', slot: 'head', iconKind: 'circlet', color: 0x38bdf8, trim: 0xfacc15 };
+      : { id: 'circlet', slot: 'head', iconKind: 'circlet', color: 0x38bdf8, trim: 0xfacc15 }) as unknown as ItemDef;
     const hat = buildHeadVisual(hatItem);
     if (rig.leftElbowPivot || rig.group.userData.isBlenderHero) {
       hat.scale.set(0.74, 0.74, 0.74);
@@ -531,12 +531,12 @@ export function loadBlenderGuardTemplate(): Promise<GLTF | null> {
   }
   if (!cachedGuardPromise) {
     const loader = new GLTFLoader();
-    cachedGuardPromise = new Promise((resolve) => {
+    cachedGuardPromise = new Promise<GLTF | null>((resolve) => {
       loader.load(
         '/models/guard.glb',
-        (gltf) => resolve(gltf),
+        (gltf: GLTF) => resolve(gltf),
         undefined,
-        (err) => {
+        (err: unknown) => {
           console.warn('[Guard] Failed to load guard.glb:', err);
           resolve(null);
         }
@@ -546,7 +546,7 @@ export function loadBlenderGuardTemplate(): Promise<GLTF | null> {
   return cachedGuardPromise;
 }
 
-export function createCastleGuard(x: number, z: number, name: string, rotY = 0) {
+export function createCastleGuard(x: number, z: number, name: string, rotY = 0): void {
   const y = getTerrainHeight(x, z);
   const grp = new THREE.Group();
   grp.position.set(x, y, z);
@@ -572,11 +572,11 @@ export function createCastleGuard(x: number, z: number, name: string, rotY = 0) 
   G.scene.add(grp);
   G.npcList.push({ pos: grp.position, name, color: '#94a3b8', yOffset: 2.5 });
 
-  loadBlenderGuardTemplate().then((gltf) => {
+  loadBlenderGuardTemplate().then((gltf: GLTF | null) => {
     if (!gltf) return;
     const cloned = gltf.scene.clone(true);
     cloned.position.set(0, 0, 0);
-    cloned.traverse((obj) => {
+    cloned.traverse((obj: THREE.Object3D) => {
       const m = obj as THREE.Mesh;
       if (m.isMesh) {
         m.castShadow = true;
@@ -589,7 +589,7 @@ export function createCastleGuard(x: number, z: number, name: string, rotY = 0) 
   });
 }
 
-export function spawnWorldProp(assetName: string, x: number, z: number, rotY = 0, scale = 1.0) {
+export function spawnWorldProp(assetName: string, x: number, z: number, rotY = 0, scale = 1.0): void {
   const y = getTerrainHeight(x, z);
   const grp = new THREE.Group();
   grp.position.set(x, y, z);
@@ -597,13 +597,13 @@ export function spawnWorldProp(assetName: string, x: number, z: number, rotY = 0
   if (scale !== 1.0) grp.scale.set(scale, scale, scale);
   G.scene.add(grp);
 
-  loadBlenderWorldTemplate().then((gltf) => {
+  loadBlenderWorldTemplate().then((gltf: GLTF | null) => {
     if (!gltf) return;
     const node = gltf.scene.getObjectByName(assetName);
     if (!node) return;
     const cloned = node.clone(true);
     cloned.position.set(0, 0, 0);
-    cloned.traverse((obj) => {
+    cloned.traverse((obj: THREE.Object3D) => {
       const m = obj as THREE.Mesh;
       if (m.isMesh) {
         m.castShadow = true;
