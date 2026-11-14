@@ -280,8 +280,6 @@ export function updatePlayerMotion(f: FrameState): void {
   player.meshGroup!.rotation.y = lerpAngle(player.meshGroup!.rotation.y, targetMeshYaw, Math.min(1, f.dt * 12));
 
   let turnDelta = (player.meshGroup!.rotation.y - lastMeshYaw) / Math.max(0.001, f.dt);
-  if (turnDelta > Math.PI) turnDelta -= Math.PI * 2;
-  if (turnDelta < -Math.PI) turnDelta += Math.PI * 2;
   player.yawVelocity = (player.yawVelocity ?? 0) * 0.8 + turnDelta * 0.2;
 
   // Dynamic Bank Roll (lean subtly into turns while running)
