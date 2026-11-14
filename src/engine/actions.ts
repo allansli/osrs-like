@@ -24,6 +24,7 @@ import { STATE } from '../state/gameState';
 import { prepareAttack, getEquipmentBonuses, mitigateDamage } from '../state/combat';
 import { addItem, removeItem, canAddItem } from '../state/inventory';
 import { SPELLS } from '../data/magic';
+import { isDown, onPlayerHit } from '../state/monsterAi';
 import { ITEMS } from '../data/items';
 import { SKILLS_META } from '../data/skills';
 import { addItemToInventory, grantXp } from '../ui/playerActions';
@@ -80,7 +81,7 @@ export function triggerRegionBanner(reg: RegionDef): void {
 }
 
 export function performPlayerAttack(monster: MonsterEntity): void {
-  if (monster.dead || player.downed) return;
+  if (isDown(monster.logic) || player.downed) return;
   const prep = prepareAttack(STATE);
   if (!prep.ok) {
     addChatMessage(prep.reason, 'combat');
@@ -175,13 +176,12 @@ export function performPlayerAttack(monster: MonsterEntity): void {
   const dmg = didHit ? Math.max(1, Math.floor(Math.random() * (maxHit + 1))) : 0;
 
   const applyDamage = (): void => {
-    if (monster.dead) return;
-    monster.inCombatWithPlayer = true;
+    const hit = onPlayerHit(monster.logic, dmg);
+    if (!hit.applied) return;
     if (dmg > 0) {
       SFX.hit();
       monster.flinch = 1.0;
       monster.flashTimer = 0.12;
-      monster.hp = Math.max(0, monster.hp - dmg);
       spawnHitSplatWorld(monster.pos, dmg, isSpec ? 'maxhit' : hitSplatKind(dmg, maxHit));
 
       if (isSpec || wepKind === 'greataxe' || wepKind === 'greatsword' || dmg >= maxHit * 0.75) {
@@ -214,7 +214,7 @@ export function performPlayerAttack(monster: MonsterEntity): void {
         grantXp('magic', dmg * 3 + sp.xp * 0.4);
       }
 
-      if (monster.hp <= 0) {
+      if (hit.events.some(e => e.kind === 'died')) {
         handleMonsterDeath(monster);
       }
     } else {
@@ -252,11 +252,6 @@ function wpKindIsChop(kind: string): boolean {
 }
 
 export function handleMonsterDeath(monster: MonsterEntity): void {
-  monster.isDying = true;
-  monster.dyingTimer = 0.85;
-  monster.dead = true;
-  monster.inCombatWithPlayer = false;
-  monster.respawnTimer = 7.5;
   if (player.targetEntity && player.targetEntity.ref === monster) {
     player.targetEntity = null;
   }
@@ -297,7 +292,7 @@ export function handleMonsterDeath(monster: MonsterEntity): void {
 }
 
 export function performMonsterRetaliation(monster: MonsterEntity): void {
-  if (monster.dead || player.downed || STATE.hp <= 0) return;
+  if (isDown(monster.logic) || player.downed || STATE.hp <= 0) return;
   monster.attackAnim = 1;
   const bon = getEquipmentBonuses(STATE);
   const defLvl = STATE.skills.defence.lvl + (STATE.combatStyle === 'defensive' ? 3 : 0);
@@ -306,8 +301,8 @@ export function performMonsterRetaliation(monster: MonsterEntity): void {
   const monAtkScore = monster.def.atk * 1.25 + 8;
 
   const hitChance = Math.min(0.82, Math.max(0.12, monAtkScore / (monAtkScore + playerDefScore)));
-  monster.breathCount = (monster.breathCount || 0) + 1;
-  const dragonfire = monster.typeKey === 'elvarg_dragon' && monster.breathCount % 3 === 0;
+  monster.logic.breathCount = (monster.logic.breathCount || 0) + 1;
+  const dragonfire = monster.typeKey === 'elvarg_dragon' && monster.logic.breathCount % 3 === 0;
 
   let dmg = 0;
   let absorbedBreath = false;
@@ -371,7 +366,6 @@ export function handlePlayerDeath(): void {
   player.targetPos = null;
   STATE.hp = 0;
   STATE.activePrayers.clear();
-  G.monstersList.forEach(m => { m.inCombatWithPlayer = false; });
   const notice = deathNotice();
   const overlay = el('death-overlay');
   overlay.hidden = false;

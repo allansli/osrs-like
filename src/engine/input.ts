@@ -6,6 +6,7 @@ import { toggleSpecialAttack, closeModals, hideHoverTooltip } from '../ui/player
 import { switchTab, addChatMessage, updateTargetHud, getCombatLevel, el } from '../ui/hud';
 import { isWalkable } from '../state/collision';
 import { getTerrainHeight } from '../state/terrain';
+import { isDown } from '../state/monsterAi';
 import { SKILLS_META } from '../data/skills';
 import {
   attackOptionLabel,
@@ -179,9 +180,9 @@ export function handleWorldHover(e: MouseEvent): void {
     const ud = hits[0].object.userData;
     if (ud && ud.type !== 'ground') {
       let label = '';
-      if (ud.type === 'monster' && !ud.entity.dead) {
+      if (ud.type === 'monster' && !isDown(ud.entity.logic)) {
         const m = ud.entity as MonsterEntity;
-        label = `Attack <b style="color:#ff981f">${m.def.name}</b> (Lv-${m.def.level}) [${m.hp}/${m.maxHp} HP]`;
+        label = `Attack <b style="color:#ff981f">${m.def.name}</b> (Lv-${m.def.level}) [${m.logic.hp}/${m.logic.maxHp} HP]`;
       } else if (ud.type === 'resource' && !ud.entity.depleted) {
         const r = ud.entity as ResourceNodeEntity;
         label = `Gather <b style="color:#38bdf8">${r.def.name}</b> (Req Lv ${r.def.req} ${(SKILLS_META as Record<string, { name: string }>)[r.def.skill!].name})`;
@@ -228,7 +229,7 @@ export function onGameContextMenu(e: MouseEvent): void {
   const options: ChooseMenuOption[] = [];
   const ud = picked.entityHit ? picked.entityHit.object.userData : null;
 
-  if (ud && ud.type === 'monster' && ud.entity && !ud.entity.dead) {
+  if (ud && ud.type === 'monster' && ud.entity && !isDown(ud.entity.logic)) {
     const tone = monsterThreatColor(ud.entity.def.level, getCombatLevel());
     options.push({
       label: attackOptionLabel(ud.entity.def.name, ud.entity.def.level),
@@ -345,7 +346,7 @@ export function handleWorldClick(e: MouseEvent): void {
   }
 
   if (ud.type === 'monster') {
-    if (ud.entity.dead) return;
+    if (isDown(ud.entity.logic)) return;
     player.targetEntity = { type: 'monster', ref: ud.entity };
     player.targetPos = null;
     showClickMarker(ud.entity.pos.x, ud.entity.pos.z, 0xef4444);

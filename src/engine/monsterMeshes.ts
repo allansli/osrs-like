@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { addCartoonOutline, facetMaterial } from './materials';
 import { albedoMaterial, speciesAlbedo } from './textures';
 import { getTerrainHeight } from '../state/terrain';
+import { inCombat } from '../state/monsterAi';
 import type { MonsterDef } from '../data/world';
 import type { MonsterEntity } from './context';
 import type { MonsterRigLike } from './blenderMonsters';
@@ -791,7 +792,7 @@ export function createMonsterMesh(def: MonsterDef, typeKey: string): MonsterRigL
 
 export function poseMonsterLimbs(m: MonsterEntity, moving: boolean, now: number, dt: number): void {
   const rig = m.rig;
-  if (!rig || m.isDying) return;
+  if (!rig || m.logic.state === 'dying') return;
 
   const groundY = getTerrainHeight(m.pos.x, m.pos.z);
 
@@ -843,7 +844,7 @@ export function poseMonsterLimbs(m: MonsterEntity, moving: boolean, now: number,
 
   // Locomotion Walk Poses
   if (moving && rig.leftLegPivot && rig.rightLegPivot) {
-    const s = Math.sin(now * (m.inCombatWithPlayer ? 0.01 : 0.007)) * (m.inCombatWithPlayer ? 0.52 : 0.38);
+    const s = Math.sin(now * (inCombat(m.logic) ? 0.01 : 0.007)) * (inCombat(m.logic) ? 0.52 : 0.38);
     rig.leftLegPivot.rotation.x = s;
     rig.rightLegPivot.rotation.x = -s;
     if (rig.leftArmPivot) rig.leftArmPivot.rotation.x = -s * 0.75;

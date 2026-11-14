@@ -4,6 +4,7 @@ import { G, type MonsterEntity, type ResourceNodeEntity } from './context';
 import { MONSTER_TYPES, RESOURCE_NODES_DEF, type MonsterDef } from '../data/world';
 import { MONSTER_PLACEMENTS, NODE_PLACEMENTS } from '../data/placements';
 import { getTerrainHeight } from '../state/terrain';
+import { createMonsterLogic } from '../state/monsterAi';
 import {
   albedoMaterial,
   biomeAlbedoId,
@@ -48,25 +49,17 @@ export function spawnMonster(typeKey: string, x: number, z: number): void {
   `;
   el('world-labels').appendChild(labelEl);
 
+  const logic = createMonsterLogic(typeKey, x, z);
+  logic.wanderTimer = Math.random() * 3;
   const mObj: MonsterEntity = {
     typeKey,
     def,
     rig,
     pos: rig.group.position,
-    spawnPos: new THREE.Vector3(x, y, z),
-    hp: def.hp,
-    maxHp: def.hp,
-    dead: false,
-    isDying: false,
-    dyingTimer: 0,
+    logic,
     flinch: 0,
     flashTimer: 0,
-    respawnTimer: 0,
-    wanderTimer: Math.random() * 3,
-    attackCooldown: 0,
     attackAnim: 0,
-    breathCount: 0,
-    inCombatWithPlayer: false,
     labelEl
   };
 

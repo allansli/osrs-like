@@ -3,6 +3,7 @@ import type { MonsterEntityLike } from './blenderMonsters';
 import type { ResourceNodeLike } from './blenderWorld';
 import type { BlenderHeroAnimator } from './blenderHero';
 import type { MonsterDef } from '../data/world';
+import type { MonsterLogic } from '../state/monsterAi';
 
 export const TICK_SEC = 0.6;
 
@@ -113,22 +114,11 @@ export interface MonsterEntity extends MonsterEntityLike {
   def: Omit<MonsterDef, 'drops'> & MonsterEntityLike['def'] & {
     drops: Array<{ id?: string; chance: number; gp?: [number, number]; qty?: number }>;
   };
-  spawnPos: THREE.Vector3;
-  hp: number;
-  maxHp: number;
-  dead: boolean;
-  isDying: boolean;
-  dyingTimer: number;
+  logic: MonsterLogic;
   flinch: number;
   flashTimer: number;
-  respawnTimer: number;
-  wanderTimer: number;
-  attackCooldown: number;
   attackAnim: number;
-  breathCount: number;
-  inCombatWithPlayer: boolean;
   labelEl: HTMLElement;
-  wanderTarget?: THREE.Vector3;
 }
 
 export interface ResourceNodeEntity extends ResourceNodeLike {

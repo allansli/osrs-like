@@ -14,6 +14,7 @@ import { STATE } from '../state/gameState';
 import { getTerrainHeight } from '../state/terrain';
 import { riverCenterX } from '../state/collision';
 import { monsterThreatColor } from '../state/adventure';
+import { inCombat, isDown } from '../state/monsterAi';
 import { getPrayerSvg } from '../ui/icons';
 import { el, getCombatLevel } from '../ui/hud';
 
@@ -80,7 +81,7 @@ export function renderMinimap(): void {
 
   // Live Monsters (Nordic Blood Crimson)
   G.monstersList.forEach((m: MonsterEntity) => {
-    if (m.dead) return;
+    if (isDown(m.logic)) return;
     const px = (m.pos.x - player.pos.x) * scale;
     const pz = (m.pos.z - player.pos.z) * scale;
     ctx.beginPath();
@@ -201,7 +202,7 @@ export function updateFloatingWorldLabels(): void {
   G.monstersList.forEach((m: MonsterEntity) => {
     const aimed = player.targetEntity && player.targetEntity.type === 'monster' && player.targetEntity.ref === m;
     const hovered = G.hoveredWorld && G.hoveredWorld.type === 'monster' && G.hoveredWorld.entity === m;
-    if (m.dead || (!aimed && !hovered && !m.inCombatWithPlayer)) {
+    if (isDown(m.logic) || (!aimed && !hovered && !inCombat(m.logic))) {
       m.labelEl.style.display = 'none';
       return;
     }
@@ -228,9 +229,9 @@ export function updateFloatingWorldLabels(): void {
 
     const hpBar = m.labelEl.querySelector<HTMLElement>('.entity-hp-bar')!;
     const hpFill = m.labelEl.querySelector<HTMLElement>('.entity-hp-fill')!;
-    if (m.hp < m.maxHp || m.inCombatWithPlayer) {
+    if (m.logic.hp < m.logic.maxHp || inCombat(m.logic)) {
       hpBar.style.display = 'block';
-      hpFill.style.width = Math.max(0, (m.hp / m.maxHp) * 100) + '%';
+      hpFill.style.width = Math.max(0, (m.logic.hp / m.logic.maxHp) * 100) + '%';
     } else {
       hpBar.style.display = 'none';
     }

@@ -21,6 +21,7 @@ import {
   syncSettingsButtons
 } from './stations';
 import { cycleTimeOfDay } from '../engine/worldMesh';
+import { isDown } from '../state/monsterAi';
 import { player, type MonsterEntity, type ResourceNodeEntity } from '../engine/context';
 import { saveGameState } from '../engine/session';
 import {
@@ -360,14 +361,14 @@ export function updateAllUI(): void {
 
 export function updateTargetHud(): void {
   const hud = el('target-hud');
-  if (player.targetEntity && player.targetEntity.type === 'monster' && !player.targetEntity.ref.dead) {
+  if (player.targetEntity && player.targetEntity.type === 'monster' && !isDown(player.targetEntity.ref.logic)) {
     const m: MonsterEntity = player.targetEntity.ref;
     hud.classList.add('visible');
     el('target-name').textContent = m.def.name;
     el('target-lvl-tag').textContent = `Lv ${m.def.level}`;
-    const pct = Math.max(0, Math.min(100, (m.hp / m.maxHp) * 100));
+    const pct = Math.max(0, Math.min(100, (m.logic.hp / m.logic.maxHp) * 100));
     el('target-hp-fill').style.width = pct + '%';
-    el('target-hp-text').textContent = `${Math.ceil(m.hp)} / ${m.maxHp}`;
+    el('target-hp-text').textContent = `${Math.ceil(m.logic.hp)} / ${m.logic.maxHp}`;
   } else if (player.targetEntity && player.targetEntity.type === 'resource' && !player.targetEntity.ref.depleted) {
     const r: ResourceNodeEntity = player.targetEntity.ref;
     hud.classList.add('visible');

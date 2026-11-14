@@ -56,6 +56,7 @@ import { WORLD_REGIONS } from '../data/world';
 import { STATE } from '../state/gameState';
 import { getEquipmentBonuses } from '../state/combat';
 import { moveWithCollision } from '../state/collision';
+import { isDown, stepMonster } from '../state/monsterAi';
 import { getTerrainHeight } from '../state/terrain';
 import { discoverShrines } from '../state/shrines';
 import { addCartoonOutline, facetMaterial, grassMaterial, PALETTE } from './materials';
@@ -231,7 +232,7 @@ function gameLoop(now) {
 
     if (tType === 'monster') {
       const m = player.targetEntity.ref;
-      if (m.dead) {
+      if (isDown(m.logic)) {
         player.targetEntity = null;
       } else {
         targetVec = m.pos;
@@ -556,33 +557,30 @@ function gameLoop(now) {
   G.sunLight.target.position.copy(player.pos);
   G.sunLight.target.updateMatrixWorld();
 
-  // Monsters Update
+  // Monsters Update: rules in stepMonster, mesh, pose and events here.
   G.monstersList.forEach(m => {
-    if (m.isDying) {
-      m.dyingTimer -= dt;
-      const progress = Math.max(0, 1 - m.dyingTimer / 0.85);
+    const L = m.logic;
+    const prevState = L.state;
+    const prevTimer = L.timer;
+    const fromX = m.pos.x;
+    const fromZ = m.pos.z;
+    const events = stepMonster(L, { playerX: player.pos.x, playerZ: player.pos.z, playerDown: !!player.downed, dt, rand: Math.random });
+
+    if (prevState === 'dying') {
+      const progress = Math.max(0, 1 - (prevTimer - dt) / 0.85);
       m.rig.group.rotation.x = progress * (Math.PI / 2.3);
       m.rig.group.position.y = getTerrainHeight(m.pos.x, m.pos.z) - progress * 0.45;
-      if (m.dyingTimer <= 0) {
-        m.isDying = false;
+      if (L.state === 'dead') {
         m.rig.group.visible = false;
         m.rig.group.rotation.x = 0;
       }
       return;
     }
 
-    if (m.dead) {
-      m.respawnTimer -= dt;
-      if (m.respawnTimer <= 0) {
-        m.dead = false;
-        m.isDying = false;
-        m.hp = m.maxHp;
-        m.breathCount = 0;
+    if (prevState === 'dead') {
+      if (events.some(e => e.kind === 'respawned')) {
         m.flinch = 0;
-        m.inCombatWithPlayer = false;
-        m.pos.copy(m.spawnPos);
-        m.rig.group.position.copy(m.spawnPos);
-        m.rig.group.position.y = getTerrainHeight(m.spawnPos.x, m.spawnPos.z);
+        m.pos.set(L.x, getTerrainHeight(L.x, L.z), L.z);
         m.rig.group.rotation.set(0, 0, 0);
         m.rig.group.visible = true;
       }
@@ -595,58 +593,36 @@ function gameLoop(now) {
       m.rig.rWing.rotation.z = -0.22 - flap;
     }
 
-    if (m.inCombatWithPlayer) {
-      const dx = player.pos.x - m.pos.x;
-      const dz = player.pos.z - m.pos.z;
-      const dist = Math.hypot(dx, dz);
-      if (dist > 26) {
-        m.inCombatWithPlayer = false;
+    if (L.state === 'chase' || L.state === 'attack') {
+      const dx = player.pos.x - fromX;
+      const dz = player.pos.z - fromZ;
+      const targetMonYaw = Math.atan2(dx, dz) + Math.PI;
+      m.rig.group.rotation.y = lerpAngle(m.rig.group.rotation.y, targetMonYaw, Math.min(1, dt * 9));
+      if (L.state === 'chase') {
+        m.pos.x = L.x;
+        m.pos.z = L.z;
+        m.pos.y = getTerrainHeight(m.pos.x, m.pos.z);
+        poseMonsterLimbs(m, true, now, dt);
       } else {
-        const targetMonYaw = Math.atan2(dx, dz) + Math.PI;
-        m.rig.group.rotation.y = lerpAngle(m.rig.group.rotation.y, targetMonYaw, Math.min(1, dt * 9));
-        const atkRange = (m.def.style === 'magic' || m.def.style === 'ranged') ? 11.0 : 2.9;
-        if (dist > atkRange) {
-          const stepped = moveWithCollision(m.pos.x, m.pos.z, (dx / dist) * 5.2 * dt, (dz / dist) * 5.2 * dt);
-          m.pos.x = stepped.x;
-          m.pos.z = stepped.z;
-          m.pos.y = getTerrainHeight(m.pos.x, m.pos.z);
-          poseMonsterLimbs(m, true, now, dt);
-        } else {
-          poseMonsterLimbs(m, false, now, dt);
-          m.attackCooldown -= dt;
-          if (m.attackCooldown <= 0) {
-            performMonsterRetaliation(m);
-            m.attackCooldown = 1.65;
-          }
-        }
+        poseMonsterLimbs(m, false, now, dt);
+        if (events.some(e => e.kind === 'attack')) performMonsterRetaliation(m);
       }
-    } else {
-      m.wanderTimer -= dt;
-      if (m.wanderTimer <= 0) {
-        m.wanderTimer = 2.5 + Math.random() * 4;
-        const ang = Math.random() * Math.PI * 2;
-        const rad = Math.random() * 4.5;
-        m.wanderTarget = new THREE.Vector3(m.spawnPos.x + Math.cos(ang) * rad, 0, m.spawnPos.z + Math.sin(ang) * rad);
-      }
-      if (m.wanderTarget) {
-        const dx = m.wanderTarget.x - m.pos.x;
-        const dz = m.wanderTarget.z - m.pos.z;
-        const dist = Math.hypot(dx, dz);
-        if (dist > 0.3) {
-          const targetWanderYaw = Math.atan2(dx, dz) + Math.PI;
-          m.rig.group.rotation.y = lerpAngle(m.rig.group.rotation.y, targetWanderYaw, Math.min(1, dt * 7));
-          const stepped = moveWithCollision(m.pos.x, m.pos.z, (dx / dist) * 1.8 * dt, (dz / dist) * 1.8 * dt);
-          m.pos.x = stepped.x;
-          m.pos.z = stepped.z;
-          m.pos.y = getTerrainHeight(m.pos.x, m.pos.z);
-          poseMonsterLimbs(m, true, now, dt);
-        } else {
-          poseMonsterLimbs(m, false, now, dt);
-        }
+    } else if (prevState === 'idle') {
+      const dx = L.wanderX - fromX;
+      const dz = L.wanderZ - fromZ;
+      const dist = Math.hypot(dx, dz);
+      if (dist > 0.3) {
+        const targetWanderYaw = Math.atan2(dx, dz) + Math.PI;
+        m.rig.group.rotation.y = lerpAngle(m.rig.group.rotation.y, targetWanderYaw, Math.min(1, dt * 7));
+        m.pos.x = L.x;
+        m.pos.z = L.z;
+        m.pos.y = getTerrainHeight(m.pos.x, m.pos.z);
+        poseMonsterLimbs(m, true, now, dt);
       } else {
         poseMonsterLimbs(m, false, now, dt);
       }
     }
+    // chase or attack that dropped to idle this step: nothing else, as before.
   });
 
   G.resourceNodesList.forEach(r => {
