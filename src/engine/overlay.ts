@@ -102,6 +102,7 @@ export function renderMinimap(): void {
 
   // NPCs, Altars & Forges (Nordic Muted Brass)
   G.npcList.forEach((n: NpcLabel) => {
+    if (n.showWithin !== undefined) return; // place labels are not NPCs
     const px = (n.pos.x - player.pos.x) * scale;
     const pz = (n.pos.z - player.pos.z) * scale;
     ctx.beginPath();
