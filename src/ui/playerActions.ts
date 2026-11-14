@@ -43,11 +43,8 @@ import { spawnLevelUpFireworks, spawnHitSplatOnPlayer } from '../engine/vfx';
 import { rebuildPlayerEquipmentMeshes } from '../engine/playerMesh';
 import { saveGameState } from '../engine/session';
 import { teleportToRegion } from '../engine/actions';
-import {
-  openChooseMenu,
-  hideContextMenu,
-  syncGraphicsButtons
-} from '../engine/runtime';
+import { openChooseMenu, hideContextMenu } from '../engine/input';
+import { syncGraphicsButtons } from '../engine/runtime';
 
 type SkillMeta = { name: string; desc: string };
 const metaMap = SKILLS_META as Record<string, SkillMeta>;
