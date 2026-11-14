@@ -446,37 +446,37 @@ export const MONSTER_TYPES = {
   goblin: {
     name: 'Goblin Raider', level: 2, hp: 8, maxHit: 2, atk: 3, def: 2, scale: 0.9,
     style: 'melee', bodyColor: 0x65a30d, accentColor: 0x78350f, kind: 'goblin', weaponColor: 0xb87333,
-    drops: [{ id: 'bones', chance: 1.0 }, { gp: [12, 36], chance: 0.9 }, { id: 'iron_plate', chance: 0.16 }, { id: 'iron_legs', chance: 0.16 }, { id: 'shrimp', chance: 0.35 }]
+    drops: [{ id: 'bones', chance: 1.0 }, { gp: [12, 36], chance: 0.9 }, { id: 'iron_plate', chance: 0.008 }, { id: 'iron_legs', chance: 0.008 }, { id: 'shrimp', chance: 0.35 }]
   },
   scorpion: {
     name: 'King Scorpion', level: 12, hp: 22, maxHit: 5, atk: 12, def: 10, scale: 1.05,
     style: 'melee', bodyColor: 0xb45309, accentColor: 0x451a03, kind: 'scorpion',
-    drops: [{ id: 'bones', chance: 1.0 }, { gp: [40, 95], chance: 0.95 }, { id: 'steel_plate', chance: 0.22 }, { id: 'steel_legs', chance: 0.22 }, { id: 'trout', chance: 0.4 }]
+    drops: [{ id: 'bones', chance: 1.0 }, { gp: [40, 95], chance: 0.95 }, { id: 'steel_plate', chance: 0.011 }, { id: 'steel_legs', chance: 0.011 }, { id: 'trout', chance: 0.4 }]
   },
   dark_wizard: {
     name: 'Dark Wizard', level: 18, hp: 30, maxHit: 7, atk: 18, def: 14, scale: 1.02,
     style: 'magic', bodyColor: 0x1e1b4b, accentColor: 0x9333ea, kind: 'wizard', weaponColor: 0xa855f7,
-    drops: [{ id: 'bones', chance: 1.0 }, { gp: [65, 160], chance: 0.95 }, { id: 'mystic_top', chance: 0.20 }, { id: 'mystic_bottom', chance: 0.20 }, { id: 'mith_scimitar', chance: 0.18 }]
+    drops: [{ id: 'bones', chance: 1.0 }, { gp: [65, 160], chance: 0.95 }, { id: 'mystic_top', chance: 0.010 }, { id: 'mystic_bottom', chance: 0.010 }, { id: 'mith_scimitar', chance: 0.009 }]
   },
   hill_giant: {
     name: 'Hill Giant', level: 28, hp: 48, maxHit: 10, atk: 26, def: 22, scale: 1.55,
     style: 'melee', bodyColor: 0xd6a87c, accentColor: 0x57534e, kind: 'giant', weaponColor: 0x78350f,
-    drops: [{ id: 'big_bones', chance: 1.0 }, { gp: [110, 260], chance: 0.95 }, { id: 'addy_plate', chance: 0.22 }, { id: 'addy_legs', chance: 0.22 }, { id: 'lobster', chance: 0.45 }]
+    drops: [{ id: 'big_bones', chance: 1.0 }, { gp: [110, 260], chance: 0.95 }, { id: 'addy_plate', chance: 0.011 }, { id: 'addy_legs', chance: 0.011 }, { id: 'lobster', chance: 0.45 }]
   },
   moss_guardian: {
     name: 'Moss Guardian', level: 45, hp: 78, maxHit: 15, atk: 42, def: 38, scale: 1.72,
     style: 'melee', bodyColor: 0x44403c, accentColor: 0x16a34a, kind: 'guardian', weaponColor: 0x3f6212,
-    drops: [{ id: 'big_bones', chance: 1.0 }, { gp: [200, 500], chance: 1.0 }, { id: 'rune_plate', chance: 0.22 }, { id: 'rune_legs', chance: 0.22 }, { id: 'green_dhide_body', chance: 0.24 }, { id: 'green_dhide_chaps', chance: 0.24 }]
+    drops: [{ id: 'big_bones', chance: 1.0 }, { gp: [200, 500], chance: 1.0 }, { id: 'rune_plate', chance: 0.011 }, { id: 'rune_legs', chance: 0.011 }, { id: 'green_dhide_body', chance: 0.012 }, { id: 'green_dhide_chaps', chance: 0.012 }]
   },
   lesser_demon: {
     name: 'Lesser Demon', level: 68, hp: 125, maxHit: 22, atk: 64, def: 55, scale: 1.8,
     style: 'melee', bodyColor: 0xdc2626, accentColor: 0x111827, kind: 'demon', weaponColor: 0xf97316,
-    drops: [{ id: 'dragon_bones', chance: 1.0 }, { gp: [450, 980], chance: 1.0 }, { id: 'dragon_chain', chance: 0.20 }, { id: 'dragon_legs', chance: 0.20 }, { id: 'dragon_scimitar', chance: 0.18 }, { id: 'shark', chance: 0.65 }]
+    drops: [{ id: 'dragon_bones', chance: 1.0 }, { gp: [450, 980], chance: 1.0 }, { id: 'dragon_chain', chance: 0.010 }, { id: 'dragon_legs', chance: 0.010 }, { id: 'dragon_scimitar', chance: 0.009 }, { id: 'shark', chance: 0.65 }]
   },
   elvarg_dragon: {
     name: 'Elvarg the Crag Dragon', level: 95, hp: 260, maxHit: 32, atk: 88, def: 78, scale: 2.35,
     style: 'magic', bodyColor: 0x15803d, accentColor: 0xfacc15, kind: 'dragon',
-    drops: [{ id: 'dragon_bones', chance: 1.0 }, { gp: [1800, 3800], chance: 1.0 }, { id: 'bandos_chest', chance: 0.35 }, { id: 'bandos_tassets', chance: 0.35 }, { id: 'champion_tunic', chance: 0.35 }, { id: 'champion_leggings', chance: 0.35 }]
+    drops: [{ id: 'dragon_bones', chance: 1.0 }, { gp: [1800, 3800], chance: 1.0 }, { id: 'bandos_chest', chance: 0.05 }, { id: 'bandos_tassets', chance: 0.05 }, { id: 'champion_tunic', chance: 0.05 }, { id: 'champion_leggings', chance: 0.05 }]
   }
 };
 

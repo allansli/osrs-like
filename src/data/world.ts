@@ -52,7 +52,7 @@ export const MONSTER_TYPES: Record<string, MonsterDef> = {
       { id: 'bones', chance: 1 },
       { gp: [8, 24], chance: 0.8 },
       { id: 'bronze_arrow', chance: 0.7 },
-      { id: 'shortbow', chance: 0.08 }
+      { id: 'shortbow', chance: 0.004 }
     ]
   },
   dark_ranger: {
@@ -72,8 +72,8 @@ export const MONSTER_TYPES: Record<string, MonsterDef> = {
       { id: 'bones', chance: 1 },
       { gp: [40, 120], chance: 0.95 },
       { id: 'bronze_arrow', chance: 1 },
-      { id: 'willow_bow', chance: 0.16 },
-      { id: 'green_dhide_body', chance: 0.08 }
+      { id: 'willow_bow', chance: 0.008 },
+      { id: 'green_dhide_body', chance: 0.004 }
     ]
   }
 };

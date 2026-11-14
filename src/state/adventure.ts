@@ -23,11 +23,11 @@ export interface SlayerBand {
 
 export const SLAYER_BANDS: SlayerBand[] = [
   { monster: 'goblin', name: 'Goblin Raider', count: 6, minCombat: 3, maxCombat: 15, bountyGp: 400, bountyXp: 80, killXp: 12 },
-  { monster: 'scorpion', name: 'King Scorpion', count: 5, minCombat: 10, maxCombat: 22, bountyGp: 900, bountyXp: 160, killXp: 20 },
-  { monster: 'dark_wizard', name: 'Dark Wizard', count: 5, minCombat: 16, maxCombat: 30, bountyGp: 1200, bountyXp: 220, killXp: 28 },
-  { monster: 'hill_giant', name: 'Hill Giant', count: 5, minCombat: 24, maxCombat: 42, bountyGp: 1800, bountyXp: 320, killXp: 36 },
-  { monster: 'moss_guardian', name: 'Moss Guardian', count: 4, minCombat: 40, maxCombat: 60, bountyGp: 3200, bountyXp: 480, killXp: 48 },
-  { monster: 'lesser_demon', name: 'Lesser Demon', count: 4, minCombat: 55, maxCombat: 99, bountyGp: 5500, bountyXp: 700, killXp: 64 }
+  { monster: 'scorpion', name: 'King Scorpion', count: 5, minCombat: 10, maxCombat: 22, bountyGp: 300, bountyXp: 160, killXp: 20 },
+  { monster: 'dark_wizard', name: 'Dark Wizard', count: 5, minCombat: 16, maxCombat: 30, bountyGp: 400, bountyXp: 220, killXp: 28 },
+  { monster: 'hill_giant', name: 'Hill Giant', count: 5, minCombat: 24, maxCombat: 42, bountyGp: 600, bountyXp: 320, killXp: 36 },
+  { monster: 'moss_guardian', name: 'Moss Guardian', count: 4, minCombat: 40, maxCombat: 60, bountyGp: 1100, bountyXp: 480, killXp: 48 },
+  { monster: 'lesser_demon', name: 'Lesser Demon', count: 4, minCombat: 55, maxCombat: 99, bountyGp: 1800, bountyXp: 700, killXp: 64 }
 ];
 
 export interface QuestStep {
