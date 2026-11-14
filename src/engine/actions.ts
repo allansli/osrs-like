@@ -82,6 +82,12 @@ export function triggerRegionBanner(reg: RegionDef): void {
 
 export function performPlayerAttack(monster: MonsterEntity): void {
   if (isDown(monster.logic) || player.downed) return;
+  if (monster.logic.state === 'return') {
+    // Immune on the way home (design 6.5): spend nothing, say it once, drop the target.
+    addChatMessage(`The ${monster.def.name} has lost interest.`, 'combat');
+    player.targetEntity = null;
+    return;
+  }
   const prep = prepareAttack(STATE);
   if (!prep.ok) {
     addChatMessage(prep.reason, 'combat');
@@ -180,7 +186,12 @@ export function performPlayerAttack(monster: MonsterEntity): void {
     if (!hit.applied) {
       SFX.miss();
       spawnHitSplatWorld(monster.pos, 0, 'miss');
-      addChatMessage(`The ${monster.def.name} has lost interest.`, 'combat');
+      // A projectile that lands after the monster turned home. If the player still targets it,
+      // this is the one message and the target goes; otherwise the guard above already said it.
+      if (player.targetEntity?.ref === monster) {
+        addChatMessage(`The ${monster.def.name} has lost interest.`, 'combat');
+        player.targetEntity = null;
+      }
       return;
     }
     if (dmg > 0) {
