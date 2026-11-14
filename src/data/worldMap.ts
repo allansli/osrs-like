@@ -150,7 +150,9 @@ export const POIS: PoiDef[] = [
   }
 ];
 
-function makeCamp(id: string, members: CampMember[]): CampDef {
+// Camp circle: members' centroid, radius = farthest member + 4.5, rounded up (design 6.4).
+// Aggressive camps notice a player within aggroRadius: 9 for melee, 12 for ranged and magic.
+function makeCamp(id: string, members: CampMember[], aggroRadius?: number): CampDef {
   const count = members.length;
   const cx = members.reduce((s, m) => s + m.x, 0) / count;
   const cz = members.reduce((s, m) => s + m.z, 0) / count;
@@ -160,10 +162,14 @@ function makeCamp(id: string, members: CampMember[]): CampDef {
     x: cx,
     z: cz,
     radius: Math.ceil(maxDist + 4.5),
-    aggressive: false,
+    aggressive: aggroRadius !== undefined,
+    aggroRadius,
     members
   };
 }
+
+const MELEE_AGGRO = 9;
+const RANGED_AGGRO = 12;
 
 export const CAMPS: CampDef[] = [
   makeCamp('hen_yard', [
@@ -182,42 +188,50 @@ export const CAMPS: CampDef[] = [
     { type: 'goblin_archer', x: 27, z: 19 }
   ]),
   makeCamp('wizards', [
-    { type: 'dark_wizard', x: 62, z: -6 },
-    { type: 'dark_wizard', x: 68, z: -2 },
-    { type: 'dark_wizard', x: 58, z: -14 }
-  ]),
+    { type: 'dark_wizard', x: 45, z: -24 },
+    { type: 'dark_wizard', x: 51, z: -30 },
+    { type: 'dark_wizard', x: 41, z: -32 }
+  ], RANGED_AGGRO),
   makeCamp('rangers', [
-    { type: 'dark_ranger', x: 74, z: -10 },
-    { type: 'dark_ranger', x: 80, z: -4 }
-  ]),
+    { type: 'dark_ranger', x: 76, z: -52 },
+    { type: 'dark_ranger', x: 84, z: -50 }
+  ], RANGED_AGGRO),
   makeCamp('giants', [
-    { type: 'hill_giant', x: 88, z: -36 },
-    { type: 'hill_giant', x: 96, z: -28 },
-    { type: 'hill_giant', x: 82, z: -42 },
-    { type: 'hill_giant', x: 95, z: -40 }
-  ]),
-  makeCamp('scorpions', [
-    { type: 'scorpion', x: 52, z: 54 },
-    { type: 'scorpion', x: 60, z: 76 },
-    { type: 'scorpion', x: 76, z: 58 },
-    { type: 'scorpion', x: 82, z: 72 },
-    { type: 'scorpion', x: 68, z: 84 }
-  ]),
-  makeCamp('guardians', [
-    { type: 'moss_guardian', x: -64, z: -18 },
-    { type: 'moss_guardian', x: -82, z: -22 },
-    { type: 'moss_guardian', x: -70, z: -44 },
-    { type: 'moss_guardian', x: -86, z: -38 }
-  ]),
-  makeCamp('demons', [
-    { type: 'lesser_demon', x: -56, z: 56 },
-    { type: 'lesser_demon', x: -64, z: 78 },
-    { type: 'lesser_demon', x: -82, z: 58 },
-    { type: 'lesser_demon', x: -58, z: 84 }
-  ]),
+    { type: 'hill_giant', x: 74, z: 14 },
+    { type: 'hill_giant', x: 82, z: 18 },
+    { type: 'hill_giant', x: 72, z: 24 },
+    { type: 'hill_giant', x: 82, z: 28 }
+  ], MELEE_AGGRO),
+  makeCamp('dune_nest_west', [
+    { type: 'scorpion', x: 44, z: 42 },
+    { type: 'scorpion', x: 52, z: 40 },
+    { type: 'scorpion', x: 48, z: 50 }
+  ], MELEE_AGGRO),
+  makeCamp('dune_nest_east', [
+    { type: 'scorpion', x: 88, z: 36 },
+    { type: 'scorpion', x: 96, z: 40 }
+  ], MELEE_AGGRO),
+  makeCamp('deep_woods_west', [
+    { type: 'moss_guardian', x: -99, z: -26 },
+    { type: 'moss_guardian', x: -99, z: -34 }
+  ], MELEE_AGGRO),
+  makeCamp('deep_woods_south', [
+    { type: 'moss_guardian', x: -72, z: -58 },
+    { type: 'moss_guardian', x: -78, z: -54 }
+  ], MELEE_AGGRO),
+  makeCamp('pass_sentries', [
+    { type: 'lesser_demon', x: -42, z: 55, wander: 1 },
+    { type: 'lesser_demon', x: -37, z: 55, wander: 1 },
+    { type: 'lesser_demon', x: -27, z: 55, wander: 1 },
+    { type: 'lesser_demon', x: -22, z: 55, wander: 1 }
+  ], MELEE_AGGRO),
+  makeCamp('slagfall_terrace', [
+    { type: 'lesser_demon', x: -86, z: 96 },
+    { type: 'lesser_demon', x: -78, z: 104 }
+  ], MELEE_AGGRO),
   makeCamp('dragon', [
-    { type: 'elvarg_dragon', x: -82, z: 82 }
-  ])
+    { type: 'elvarg_dragon', x: -102, z: 100 }
+  ], RANGED_AGGRO)
 ];
 
 export const SAFE_ZONES: SafeZoneDef[] = WORLD_REGIONS.map((reg) => ({
