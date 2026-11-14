@@ -2,7 +2,7 @@
 
 Date: 2026-11-14. Branch: `feat/models-pass`. Design: `docs/superpowers/specs/2026-11-14-models-pass-design.md` (called "the design" below; section numbers refer to it). Source line numbers are at commit `5caa597`.
 
-The design is a proposal. Nothing in this plan starts before owner step **OM-0** (section 0.5), and nothing starts before Stages 4 and 5 are merged to `main` (task R0).
+The owner answered the design's decisions on 2026-11-14 (design 13.1): **every figure is a skinned mesh on a skeleton**, the dragon is a new model, monsters are rebuilt where needed, motion is smooth. This plan was re-cut for those answers (review log at the end). Nothing starts before owner step **OM-0** (section 0.5: the four new decisions N-1 to N-4), and nothing starts before Stages 4 and 5 are merged to `main` (task R0).
 
 ---
 
@@ -18,7 +18,7 @@ As in the foundation plan (`docs/superpowers/plans/2026-11-13-world-foundation-p
 - **[OWNER]** and **[HUMAN]**: a decision, or a look at the running game on a real GPU.
 - **[CLAUDE, main session]**: a promote task. Subagents never promote a model, merge, tag, push or open pull requests; the main session runs the promotion (0.3 rule 2) with a sonnet step for the commands and an opus read of the compare report and the sheets. No commit carries an AI attribution trailer.
 
-Model tiers used: haiku for [RUN]; sonnet for pipeline scripts, wiring and tests from a clear spec; opus for art builders, every verify and every judgement of a sheet. **One fable stage: M2**, the pattern figure that eight more follow (owner model rules: "the design that every later stage builds on"); its verify stays opus. Escalate H3a to fable only if its first opus attempt is rejected at the owner step.
+Model tiers used: haiku for [RUN]; sonnet for pipeline scripts, wiring and tests from a clear spec; opus for art builders, every verify and every judgement of a sheet. **Two fable stages, each with its reason:** **S2**, the pilot figure, whose rig, body route and weight rules every later figure follows (owner model rules: "the design that every later stage builds on"); and **D2**, the new dragon, the hardest shape to build by script and the figure that defines the dragon skeleton for two bosses. Both verifies stay opus. Escalate H3a to fable only if its first opus attempt is rejected at the owner step.
 
 ### 0.2 Commands
 
@@ -33,8 +33,8 @@ Run from the worktree root, in a shell started with an allowlisted environment: 
 | TYPES | `CAP env TEST_CONCURRENCY=4 npx tsc --noEmit` | exit 0, no output |
 | BUILD | `CAP env TEST_CONCURRENCY=4 npm run build` | exit 0 |
 | BLEND(mode) | `CAP timeout 600 env BLENDER_PATH=/usr/bin/blender node scripts/run-blender.mjs <mode> --out scratch/models-build` | exit 0; files only under `scratch/models-build/` |
-| COMPARE(name) | `node scripts/models-compare.mjs scratch/models-build/<name>.glb public/models/<name>.glb` | exit 0 = Contract (built file against `tests/fixtures/model-contract/<name>.json`) and Budget pass; Drift (built against shipped) is reported, never fails; the report is printed and written to `scratch/models-build/<name>.report.md` |
-| CAPTURE(name) | In a throw-away worktree of the task's head: copy `scratch/models-build/<name>.glb` over `public/models/<name>.glb`, take the slice's in-engine poses as V4 does, delete the worktree | JPEGs under the task's sheet directory; nothing promoted |
+| COMPARE(name) | `node scripts/models-compare.mjs scratch/models-build/<name>.glb public/models/<name>.glb` | exit 0 = Contract (built file against `tests/fixtures/model-contract/pending/<name>.json` if it exists, else `tests/fixtures/model-contract/<name>.json`) and Budget pass; Drift (built against shipped) is reported, never fails; the report is printed and written to `scratch/models-build/<name>.report.md` |
+| CAPTURE(name) | In a throw-away worktree of the task's head: copy `scratch/models-build/<name>.glb` over `public/models/<name>.glb` and any pending manifest over its live one, take the slice's in-engine poses as V4 does, delete the worktree. Every "in a throw-away worktree" test run in this plan is set up the same way | JPEGs under the task's sheet directory; nothing promoted |
 | SHEETS(glb, dir) | `CAP timeout 600 /usr/bin/blender --background --factory-startup --disable-autoexec --python-exit-code 1 --python scripts/blender/review_render.py -- <glb> <dir>` | exit 0; JPEG sheets in `<dir>` |
 | UNTOUCHED | `git status --short public/models blender` | prints nothing |
 
@@ -46,32 +46,33 @@ Machine rules: one Blender process at a time, machine-wide. One BUILD at a time.
 
 1. **Allowlist.** A task touches only the files listed for it.
 2. **Builds never write shipped files.** Only `scripts/models-promote.mjs`, run by the main session in a task whose title starts with "Promote", changes anything under `public/models/` or `blender/*.blend`. Every other task ends with UNTOUCHED. A promote task changes exactly the files it names.
-3. **Existing tests are frozen.** No edit to any file that exists under `tests/` or `src/__tests__/` when the stage starts. The one declared replacement is in task H5 (design 8.3). New tests go in new files under `tests/`.
+3. **Existing tests are frozen.** No edit to any file that exists under `tests/` or `src/__tests__/` when the stage starts. The **two** declared replacements, both in `src/__tests__/blender-hero.test.ts`, are made in task H5 and nowhere else (design 8.3): lines 39-42 (exactly ten clip names) and lines 56-57 (local heights of `rig.torso` and `rig.headGroup`). Every other assertion of that file must pass as written against every built hero. New tests go in new files under `tests/`.
 4. **Test-first pairs.** A [CLAUDE] test task may leave SUITE, TYPES and BUILD red only in its own new files and only because the paired task's export or file does not exist yet.
-5. **Contracts change only with the manifest.** A task that adds a node, pivot, clip or `extras` key edits its file's manifest, `tests/fixtures/model-contract/<file>.json`, in the same commit and says so. No task removes or renames a manifest entry, except slice 3 removing the guard file.
+5. **Contracts change only with the manifest.** A task that adds a node, pivot, bone, clip or `extras` key edits its file's manifest in the same commit and says so. Because `tests/model-contract.test.ts` checks the **shipped** files against `tests/fixtures/model-contract/<file>.json` on every run, a task that changes a contract before its file is promoted writes the change to `tests/fixtures/model-contract/pending/<file>.json` (a full copy with the change); COMPARE checks the built file against the pending manifest when one exists, and the promote task moves it over the live one in the same commit as the GLB. SUITE therefore stays green between an art task and its promotion. "Manifest" in a task's file list means the pending one until that promotion. No task removes or renames a manifest entry, except: slice 3 removing the guard file; a task that replaces a figure by its skinned build, which replaces that figure's manifest entry whole (pivots become bones of the same names) and says so; and H3a, which declares the hero's hierarchy and head-joint change (design 8.1).
 6. **Evidence, not opinion.** An agent reports numbers and paths. "Looks better" is said only by the owner. Every art task ends with before and after sheets committed.
 7. **No new runtime dependency. No new dev dependency** either: the tools are node built-ins and Blender's own Python (numpy included).
 8. **Line numbers go stale.** Find symbols by name.
-9. **No rule, name or save change** (design 12). The opus verify rejects any diff under `src/state/`, and any diff under `src/data/` other than the two look tables (G1, M1b), the optional `kit` field on `MonsterDef` (D1b) and its value on Stage 4's three rows (K3). No `model` value changes (critique C4).
+9. **No rule, name or save change** (design 12). The opus verify rejects any diff under `src/state/`, and any diff under `src/data/` other than the motion table (M1b), the optional `kit` and `body` look fields on `MonsterDef` (B1) and their values on Stage 4's three rows (D5, K3). No `model` value changes (critique C4).
 10. **Commit format**: `<kind>(models-<slice>): <what>`, kinds `feat`, `fix`, `test`, `tool`, `asset`, `docs`. Promotions are `asset(models-<slice>): promote <file> <8-hex hash>`. Review sheets are `docs(models-<slice>): before/after sheets`.
 
 ### 0.4 Branches and clusters
 
-- Slice 0 runs serially on `feat/models-pass`, including H6 and H6b (the engine's vertex-colour flag touches `blenderHero.ts`, `blenderMonsters.ts` and `blenderGear.ts`, so it lands before the clusters fork).
-- After slice 0, three clusters touch different build scripts, engine files and manifest files, and may run in separate worktrees `../osrs-like-wt/mp-<cluster>` on local branches `mp/<cluster>`, never pushed: **hero** (slice 1: `build_hero.py`, `blenderHero.ts`, `actions.ts`, `model-contract/hero.json`), **gear** (slice 2: `build_gear.py`, `playerGear.ts`, `src/data/gearBands.ts`, `model-contract/gear.json`), **monsters** (slices 0b, 5, 4a to 4c, 6: `build_monsters.py`, `monsterMeshes.ts`, `blenderMonsters.ts`, `src/data/monsterPoses.ts`, `model-contract/monsters.json`). They merge one at a time, each promotion rebuilt on the merged head. Inside the monster cluster every task writes `monsters.glb` and runs **serially**.
-- Slice 3 touches `src/` (`worldBuild.ts`, `playerMesh.ts`) and deletes the guard files; it waits for G2b. `blenderGear.ts` is touched only by H6b (slice 0) and G6 (the `?v=` key). Slice 7 comes last.
+- Slice 0, slice 0b and the pilot (slice 1) run serially on `feat/models-pass`: the pilot adds the engine's skinned path (`skinned.ts`, `materials.ts`, `dispose.ts`, `blenderMonsters.ts`), which everything after it uses.
+- After OM-P, two clusters touch different build scripts, engine files and manifest files, and may run in separate worktrees `../osrs-like-wt/mp-<cluster>` on local branches `mp/<cluster>`, never pushed: **hero** (slices 2 and 3: `build_hero.py`, `build_gear.py`, `blenderHero.ts`, `playerMesh.ts`, `worldBuild.ts`, `actions.ts`, `model-contract/hero.json`, `gear.json`) and **monsters** (slices 4 to 7: `build_monsters.py`, `monsterMeshes.ts`, `blenderMonsters.ts`, `loop.ts`, `src/data/monsterPoses.ts`, `model-contract/monsters.json`). The monster cluster's first task (M1) needs the promoted hero (the biped clip library), so in practice the clusters overlap only from slice 4 on. They merge one at a time, each promotion rebuilt on the merged head. Inside the monster cluster every task writes `monsters.glb` and runs **serially**.
+- Slice 8 comes last.
 
 ### 0.5 Owner and human steps
 
 | Step | What the owner decides or does | Blocks |
 |---|---|---|
-| OM-0 | Approve the design's scope and answer the critique's D-1 (cut or skin the dragon, Ashmantle and demon), D-2 (dragon first), D-3 (knight `.blend`), D-5 (merge-only pass), D-6 (cut studies), then CALL-M2 (guards), M3 (rigid figures), M4 (keep the hero), M5 (future monsters as studies), M7 (dragon), M6 (two hero clips), M8, M9, M9b, M10, M11, M13. D-4 (motion style) is answered at OM-H4a. | Everything |
-| OM-H4a | Look at the one-clip spike in the game, stepped and interpolated; answer D-4. | H4b |
-| OM-1 | Look at the baseline sheets (task V3) and the in-engine "before" captures (V4). Confirm or change the art direction (CALL-M1, M12). | Slices 1 to 7 |
-| OM-S1 to OM-S6 | After each slice: look at the after sheets and at the game on a real GPU. Accept, or name what is wrong. | The next promotion of the same file; the slice's merge |
+| OM-0 | Answer the four new decisions of design 13.2: **N-1** (the pilot figure; recommended: the goblin raider), **N-2** (move gear bands and bending gear to a follow-up stage; recommended: yes), **N-3** (the 8-bit attribute step; recommended: yes), **N-4** (one or up to three draw calls per monster; recommended: decide on the pilot). Overturn any lead's call of design 13.3. The ten decisions of design 13.1 are already made. | Everything |
+| OM-1 | Look at the baseline sheets (task V3) and the in-engine "before" captures (V4). Confirm or change the art direction (CALL-M1, M12). | Slices 0b to 8 |
+| OM-S0b | Play at the goblin camp before and after the merge-only promotion; read the draw-call counter and the frame rate. | Nothing; it is evidence for 6.4 |
+| **OM-P** | **The pilot.** Play beside the skinned goblin on a real GPU: walk round it, fight it, turn the outline on, watch it at the screen edge, at noon and at dusk. Choose the body route (a or b) and answer N-4. **Accept the approach, or stop it here.** | Slices 2 to 8 |
+| OM-S2 to OM-S7 | After each slice: look at the after sheets and at the game on a real GPU. Accept, or name what is wrong. | The next promotion of the same file; the slice's merge |
 | OM-F | Accept the stage after X3. | The pull request |
 
-If CALL-M2 is answered "keep the knight", slice 3 becomes task N-alt. If CALL-M6 is "no", H5 and H5b are dropped and H4b adds no clip; "Death only" drops just the `Hurt` parts. If CALL-M11 is "no", H6, H6b and every "bake" step are dropped and the palette rules carry the look alone. If D-5 is "no", M0 and M0p are dropped. If D-6 is "cut", X1 is dropped. If D-2 is "no", slice 5 runs after M4c as first drawn. No other task changes. A "no" on CALL-M3 (rigid figures), M4 (keep the hero) or M7 (dress the existing dragon), or "skin" on D-1, is a different stage: the design and this plan are redrawn before anything starts.
+If N-1 is answered "the hero" or "the dragon", S2 builds that figure instead and S1b's engine task covers that figure's loader; the order of slices 2 and 4 does not change. If N-2 is "keep gear in this stage", the gear tasks of the earlier draft (band table, gear to budget, band shapes, band lookup; plan history at `7b2e701`) are re-added after G6, re-checked against the skinned hero. If N-3 is "no", Q1 is dropped and every ceiling reads the "as exported" column of design 9. If OM-P rejects the approach, the stage stops: M0p's merged monsters and slice 0's pipeline stay, S4 is not run, and the design is redrawn.
 
 ### 0.6 Goals and proofs
 
@@ -80,12 +81,14 @@ If CALL-M2 is answered "keep the knight", slice 3 becomes task N-alt. If CALL-M6
 | GM1 A build cannot change a shipped file | `tests/model-pipeline.test.ts` (P1); UNTOUCHED after P5's full rebuild |
 | GM2 Every engine contract is written down and checked | `tests/model-contract.test.ts` green on every run (P4) |
 | GM3 Every figure can be looked at, before and after | Sheets committed per slice (V3, each slice's last task) |
-| GM4 The hero moves with weight and has no open joints | `tests/hero-model.test.ts` (H1); motion strips (H4a, H4b, H7); owner steps OM-H4a, OM-S1 |
-| GM4b The dragon, Ashmantle and the demon move | `tests/monster-motion.test.ts` (D2a): every contract pivot of every monster holds at least one mesh; owner step OM-S5 |
-| GM5 Gear bands read from the outline | Silhouette sheet of one body in three bands (G6); `tests/gear-bands.test.ts` |
-| GM6 No two species share a silhouette | Roster silhouette sheet at 85 px (M5c, K4) |
-| GM7 Monsters cost fewer draw calls (guards cost slightly more, design 9.1) | Manifest mesh budgets (design 9.1) in `model-contract.test.ts`; start-pose and goblin-camp draw calls captured before and after M0p |
-| GM8 The download shrinks by about 0.9 MB | Brotli quality 3 total at most 2,850,000 in `model-contract.test.ts` (X2); `curl` of the preview deployment (X3) |
+| GM3b Every figure is a skinned mesh on one of three skeletons | Manifest skin rules in `tests/model-contract.test.ts`; after X0 no `Monster_` node and no hero mesh is rigid except the hair and eyes on the head bone |
+| GM4 The hero bends and moves with weight | `tests/hero-model.test.ts` (H1); worst-pose and motion strips (H3a, H4); owner step OM-S2 |
+| GM4b The dragon, Ashmantle and the demon move | `tests/monster-motion.test.ts` (M1): every bone a motion row names carries weight; owner step OM-S4 |
+| GM4c One clip library per skeleton is really shared | `tests/monster-motion.test.ts`: a goblin plays the hero file's `Walk` and `Slash` and keeps its own bone lengths; Ashmantle plays the dragon's clips |
+| GM5 Gear still fits and hides what it hid | `tests/gear-mount.test.ts` (H1): every mounted piece within 0.01 of a snapshot of today's hero |
+| GM6 No two species share a silhouette | Roster silhouette sheet at 85 px (M4a, K4, M4c) |
+| GM7 Monsters cost far fewer draw calls | Manifest mesh budgets (design 9.1: at most 4 skinned meshes per monster); goblin-camp draw calls captured at M0p, S3 and X3 |
+| GM8 The download shrinks | Brotli quality 3 total at most 3,180,000 as exported, or 2,600,000 with N-3, in `model-contract.test.ts` (X2); `curl` of the preview deployment (X3) |
 | GM9 Nothing about rules, names or saves changes | Rule 0.3.9 in every verify; SUITE untouched |
 | GM10 Licences are complete | `tests/credits.test.ts` plus `tests/model-licences.test.ts` (P4) |
 
@@ -97,7 +100,7 @@ If CALL-M2 is answered "keep the knight", slice 3 becomes task N-alt. If CALL-M6
 - **Tier**: opus.
 - **Depends**: OM-0; Stages 4 and 5 merged to `main`; `feat/models-pass` rebased on it by the main session.
 - **Files**: the two models-pass documents only.
-- **Change**: confirm, citing file and line, or amend the design and this plan where reality differs: (1) `MonsterDef` has `model`, `tint`, `modelScale`, and the node lookup, pose and albedo read the model key; (2) `facetMaterial` still accepts extra parameters and what it does with `vertexColors`; (3) whether Stage 5's run-time merge touches figures or gear; (4) the debug pose hooks in `photo.ts` and how a capture is taken; (5) what Stage 4 did to `blender-hero.test.ts` line 136 and what `tests/new-monsters.test.ts` asserts about model keys (the critique's C4 expects "ten distinct model keys" and "the boss uses the dragon's model key"; the `kit` route must leave both green); (6) the five GLBs still hash as in design 3 (if not, re-measure section 4); (7) the dragon's and the demon's pivots are still empty (critique C1) and Stage 4 did not cut them; (8) every assertion in `tests/textures.test.ts` and `tests/dispose.test.ts` that touches a figure material or outline; (9) every file path in this plan still exists, and every name and offset contract of design 8.1 (`playerMesh.ts`) is where the design says.
+- **Change**: confirm, citing file and line, or amend the design and this plan where reality differs: (1) `MonsterDef` has `model`, `tint`, `modelScale`, and the node lookup, pose and albedo read the model key; (2) `facetMaterial` still accepts extra parameters and what it does with `vertexColors`; (3) whether Stage 5's run-time merge touches figures or gear; (4) the debug pose hooks in `photo.ts` and how a capture is taken; (5) what Stage 4 did to `blender-hero.test.ts` line 136 and what `tests/new-monsters.test.ts` asserts about model keys (the critique's C4 expects "ten distinct model keys" and "the boss uses the dragon's model key"; the `kit` route must leave both green); (6) the five GLBs still hash as in design 3 (if not, re-measure section 4); (7) the dragon's and the demon's pivots are still empty (critique C1) and Stage 4 did not cut them; (8) every assertion in `tests/textures.test.ts` and `tests/dispose.test.ts` that touches a figure material or outline, as they stand after Stage 5; (9) every file path in this plan still exists, and every name and offset contract of design 8.1 (`playerMesh.ts`) is where the design says; **for skinning (design 6.1.3):** (10) the vertex shader `facetMaterial` produces after Stage 5: whether any custom normal varying is still written before `skinnormal_vertex` (today's is, and gives bind-pose bands on a bent limb, design 3.5 S7); (11) how Stage 4 applies the hero's torso lean, knock-back and hit stop while the mixer runs, and where a monster's flinch and wind-up pose are written, so the "after `mixer.update`" rule has a named place; (12) how long a monster's dying state lasts and what is drawn during it; (13) every use of `rig.chest`, `rig.belt`, `rig.neck`, `rig.head` and `rig.hairCap` outside `blenderHero.ts`; (14) whether Stage 5's `mergeByMaterial` or its leak test touches figures; (15) the lines of `src/__tests__/blender-hero.test.ts` named in design 8.3 are still at those numbers after Stage 4's edit of the same file.
 - **Accept**: a "Review log" entry at the end of both documents listing each premise as confirmed or amended. No source change.
 - **Must not change**: anything outside `docs/superpowers/`.
 
@@ -114,7 +117,7 @@ If CALL-M2 is answered "keep the knight", slice 3 becomes task N-alt. If CALL-M6
   - `every --background spawn carries --factory-startup` (the GUI `open` spawn is unchanged);
   - `all still spawns exactly four builds` and `guard is a mode`;
   - `export passes --out and the target name`;
-  - compare (Contract is built against manifest, Drift is built against shipped): `a file equal to its manifest passes`; `a missing node fails Contract`; `a pivot 0.001 from its manifest position fails Contract`; `a pivot moved in both the file and its manifest passes Contract and shows as Drift`; `a renamed material fails Contract`; `a missing clip fails Contract`; `a merged mesh that swallowed a toggled name (TorsoCoat, Hair, _04_) fails Contract`; `COLOR_0 on some meshes of a file but not all fails Contract`; `one more triangle than the budget fails Budget`; `a different generator string is Drift only`; `a truncated file is refused before any check`;
+  - compare (Contract is built against manifest, Drift is built against shipped): `a file equal to its manifest passes`; `a missing node fails Contract`; `a pivot 0.001 from its manifest position fails Contract`; `a pivot moved in both the file and its manifest passes Contract and shows as Drift`; `a renamed material fails Contract`; `a missing clip fails Contract`; `a merged mesh that swallowed a toggled name (TorsoCoat, Hair, _04_) fails Contract`; `COLOR_0 on some meshes of a file but not all fails Contract`; skin cases on a tiny skinned fixture: `a missing bone fails Contract`; `a bone whose rest rotation is not identity fails Contract`; `a vertex whose weights sum to 0.9 fails Contract`; `a joint index outside the skin fails Contract`; `a shared clip with a position track on a bone other than Hips fails Contract`; `a limb more than 20 degrees from the skeleton's reference pose fails Contract`; `one more triangle than the budget fails Budget`; `a pending manifest, when present, is the one compared against, and promote moves it over the live one`; `a different generator string is Drift only`; `a truncated file is refused before any check`;
   - promote: `refuses without --yes`; `refuses when compare fails`; `copies exactly the named file`; `refuses a name not in the manifest`.
 - **Accept**: red until P2 and P3.
 - **Must not change**: `tests/run-blender.test.ts`.
@@ -143,7 +146,7 @@ If CALL-M2 is answered "keep the knight", slice 3 becomes task N-alt. If CALL-M6
 - **Tier**: sonnet; opus verify reads the manifest against design 8.1 line by line.
 - **Depends**: P3.
 - **Files**: `tests/fixtures/model-contract/hero.json`, `gear.json`, `monsters.json`, `guard.json`, `world.json` and `totals.json` (new; one per GLB so parallel slices never edit the same file), `tests/model-contract.test.ts` (new), `tests/model-licences.test.ts` (new), `scripts/models-manifest.mjs` (new, writes a first manifest from the shipped files).
-- **Change**: the manifest holds, per file: every contract node of design 8.1 with parent, translation and scale; pivot names per figure; material names; mesh name classes; **the toggled mesh names of design 8.1** (`Hair*`, `TorsoCoat`, `InnerCollar` and the coat prefixes; gear `_NN_` ordinals); **the centres of the hero's `Hand_L`, `Hand_R`, `Boot_L`, `Boot_R` and `Head` meshes in their pivot's space** (mount offsets of `playerMesh.ts`, tolerance 0.01); `extras` keys; whether `COLOR_0` is present (all or none); clip names and which pivots each must move; per-figure budgets (triangles, meshes, materials, Brotli quality 3 bytes of the figure's buffers: **today's measured values** as the first ceiling, lowered by each slice); raw and Brotli quality 3 ceilings per file, and the total in `totals.json` (today's values plus 1%). Tests: shipped files satisfy the manifest; no GLB JSON chunk contains `/home/`, `/Users/`, `C:\\` or `\\Users\\`; every entry under `blender/examples/` (directory or zip) is named in `CREDITS.md`, every directory holds a licence file, and every zip's bytes include a member name containing `LICENSE` (central-directory names are stored uncompressed; `Buffer.includes` is enough); each loader's `?v=` key (where one exists) is noted, to be tied to the hash from the first promotion on.
+- **Change**: the manifest holds, per file: every contract node of design 8.1 with parent, translation and scale; pivot names per figure; material names; mesh name classes; **the toggled mesh names of design 8.1** (`Hair*`, `TorsoCoat`, `InnerCollar` and the coat prefixes; gear `_NN_` ordinals); **the centres of the hero's `Hand_L`, `Hand_R`, `Boot_L`, `Boot_R` and `Head` meshes in their pivot's space** (mount offsets of `playerMesh.ts`, tolerance 0.01); `extras` keys; whether `COLOR_0` is present (all or none); clip names and which pivots each must move; **for a skinned figure** (none exists yet; the schema and its checks are written now and exercised by P1's fixture): the skeleton it stands on, its bone list with parents and rest translations, the identity-rotation rule, the weight rules of design 7.2, which clips are shared and each attack clip's anticipation time; per-figure budgets (triangles, meshes, materials, Brotli quality 3 bytes of the figure's buffers: **today's measured values** as the first ceiling, lowered by each slice); raw and Brotli quality 3 ceilings per file, and the total in `totals.json` (today's values plus 1%). Tests: shipped files satisfy the manifest; no GLB JSON chunk contains `/home/`, `/Users/`, `C:\\` or `\\Users\\`; every entry under `blender/examples/` (directory or zip) is named in `CREDITS.md`, every directory holds a licence file, and every zip's bytes include a member name containing `LICENSE` (central-directory names are stored uncompressed; `Buffer.includes` is enough); each loader's `?v=` key (where one exists) is noted, to be tied to the hash from the first promotion on.
 - **Accept**: both tests pass on today's files; SG.
 - **Must not change**: `src/`, the GLBs.
 
@@ -159,7 +162,7 @@ If CALL-M2 is answered "keep the knight", slice 3 becomes task N-alt. If CALL-M6
 - **Tier**: sonnet.
 - **Depends**: P2.
 - **Files**: `scripts/blender/review_render.py` (new), `scripts/blender/review_scales.json` (new: figure name to in-game scale, from design 4.2).
-- **Change**: arguments `<glb> <out dir> [--only a,b] [--against <other.glb>] [--clips] [--engine-palette]`. Cycles, CPU, 24 samples, one sun and one fill, grey world. Cameras face the figure's front (glTF +Z; the critique's strips came out from the back). For each root with meshes, the five sheets of design 7.3: turnaround (three views, 512 px), silhouette (same views, emission-black override on white), play distance (1080-line frame, 50 degree vertical field of view, distances 5.4, 8.5 and 26 with pitch 0.18, 0.24, 0.24, cropped to the figure, in-game scale applied, pixel height drawn in the corner), motion with `--clips` (per clip: **set every object's `animation_data.action` to `None`**, then mute every NLA track but that clip's, six evenly spaced frames; print each pivot's rotation range in the clip; without clearing the action the importer's `Idle` overrides every clip, critique C2), and side-by-side with `--against`. `--engine-palette` colours the hero by `extras.part` with the colours of `blenderHero.ts` 182-197. One roster silhouette sheet with every figure at its 26-distance size. Tiles are assembled with numpy and saved as JPEG quality 88 through `bpy.data.images`. Prints one line per sheet with path, seconds and pixel height.
+- **Change**: arguments `<glb> <out dir> [--only a,b] [--against <other.glb>] [--clips] [--engine-palette]`. Cycles, CPU, 24 samples, one sun and one fill, grey world. Cameras face the figure's front (glTF +Z; the critique's strips came out from the back). For each root with meshes, the five sheets of design 7.3: turnaround (three views, 512 px), silhouette (same views, emission-black override on white), play distance (1080-line frame, 50 degree vertical field of view, distances 5.4, 8.5 and 26 with pitch 0.18, 0.24, 0.24, cropped to the figure, in-game scale applied, pixel height drawn in the corner), motion with `--clips` (per clip: **set every object's `animation_data.action` to `None`**, then mute every NLA track but that clip's, six evenly spaced frames; print each pivot's rotation range in the clip; without clearing the action the importer's `Idle` overrides every clip, critique C2; for a skinned figure the same on its armature), a **worst-pose sheet** for any figure with an armature (`--worst`: deep crouch, one arm overhead, full torso twist, head turned, tail or wings at their limits where those bones exist), and side-by-side with `--against`. `--engine-palette` colours the hero by `extras.part` with the colours of `blenderHero.ts` 182-197. One roster silhouette sheet with every figure at its 26-distance size. Tiles are assembled with numpy and saved as JPEG quality 88 through `bpy.data.images`. Prints one line per sheet with path, seconds and pixel height.
 - **Accept**: SHEETS on `public/models/hero.glb` with `--clips` and on `public/models/monsters.glb` exit 0 inside the timeout; every sheet is a JPEG under 400 kB; UNTOUCHED; SG.
 - **Must not change**: build scripts.
 
@@ -187,7 +190,7 @@ If CALL-M2 is answered "keep the knight", slice 3 becomes task N-alt. If CALL-M6
 - **Accept**: SG; eight JPEGs; the README.
 - **Must not change**: any pose Stage 5 defined.
 
-### H6 Vertex-colour test [CLAUDE] (only if CALL-M11; moved into slice 0 by the critique)
+### H6 Vertex-colour test [CLAUDE] (CALL-M11 decided 2026-11-14)
 - **Tier**: sonnet.
 - **Depends**: R0.
 - **Files**: `tests/model-vertex-colour.test.ts` (new), `tests/fixtures/models/` (a tiny GLB with `COLOR_0` on every mesh, written by the test's helper).
@@ -195,7 +198,7 @@ If CALL-M2 is answered "keep the knight", slice 3 becomes task N-alt. If CALL-M6
 - **Accept**: red until H6b.
 - **Must not change**: `src/`.
 
-### H6b Vertex colour in the engine [AGY] (only if CALL-M11)
+### H6b Vertex colour in the engine [AGY]
 - **Tier**: sonnet.
 - **Depends**: H6.
 - **Files**: `src/engine/blenderHero.ts`, `src/engine/blenderMonsters.ts`, `src/engine/blenderGear.ts`.
@@ -203,113 +206,172 @@ If CALL-M2 is answered "keep the knight", slice 3 becomes task N-alt. If CALL-M6
 - **Accept**: `ONE(tests/model-vertex-colour.test.ts)` passes; SG.
 - **Must not change**: material choice by name; outline shells; `materials.ts`; `textures.ts`.
 
+### F1 Figure kit, part 1: merge, paint, export [AGY]
+- **Tier**: sonnet.
+- **Depends**: P2.
+- **Files**: `scripts/blender/figkit.py` (new), `scripts/blender/figkit_selftest.py` (new, asserts on a generated two-part figure and exits non-zero on failure).
+- **Change**: `merge_parts(root, keep=TOGGLED)`: joins meshes sharing parent, material, `noOutline` and name class (`eye`, `glow`, `gem`, `orb`, `string`, other), keeps a name in the class, keeps `extras`; **never merges a mesh whose name matches `TOGGLED`** (`^Hair`, `^CrownSpike_`, `^BackSpike_`, `^Sideburn_`, `^TorsoCoat$`, `^OuterCoat_`, `^CoatTrim_`, `^CoatTail_`, `^CoatTailTrim_`, `^InnerCollar$`, `_leg[LR]_04_`) and keeps the `_NN_` ordinals of those leg meshes unchanged; other gear `_04_` meshes merge freely. `bake_paint(root, ao=0.35, gradient=0.15, warm_cool=0.05)`: Cycles CPU vertex bake of ambient occlusion into a colour attribute named `Col` on the **`POINT` domain**, multiplied by a height gradient and a front-to-back tint; with `--fast-paint` a crease-angle term replaces the ray-traced one. `export_glb(path)` with `export_vertex_color='ACTIVE'`, `export_texcoords=False` (no figure reads GLB UVs, design K2), `export_extras=True`, `export_yup=True`.
+- **Accept**: the self-test exits 0 inside 60 s under CAP; the two-part figure exports with `COLOR_0`, no `TEXCOORD_0` and half the meshes; a mesh named `TorsoCoat` survives a merge alone; the hero built with `export_texcoords=False` passes `ONE(src/__tests__/blender-hero.test.ts)` in a throw-away worktree (proves the engine needs no GLB UVs); SG; UNTOUCHED.
+- **Must not change**: the four build scripts.
+
 ### OM-1 [OWNER]
 Look at V3 and V4 and, if possible, the same places in the game on the owner's machine. Confirm the art direction or change it. The design's section 5 is amended before slice 1 if anything changes.
 
 ---
 
-## Slice 0b: merge-only pass over the monsters (only if D-5)
+## Slice 0b: merge-only pass over the monsters
+
+Kept from the critique (M10) as the cheapest test of whether draw calls hold the frame rate (design 6.4). No shape, no engine change.
 
 ### M0 Merge every monster builder's output [AGY]
 - **Tier**: sonnet.
-- **Depends**: H2, OM-1. (The fixture is computed by the same rule G2 uses for gear; the two tests are written independently.)
+- **Depends**: F1, OM-1.
 - **Files**: `scripts/blender/build_monsters.py` (one `figkit.merge_parts` call per `Monster_*` root before export), `tests/monster-merge.test.ts` (new, written and committed first by a [CLAUDE] sonnet step: triangles per engine material family per figure equal a fixture computed from today's file by the rule of `blenderMonsters.ts` 103-136; every pivot keeps its meshes' families; meshes per figure at most half today's), `tests/fixtures/monster-families.json` (new), `tests/fixtures/model-contract/monsters.json` (mesh ceilings).
 - **Change**: merge only; no geometry, name, pivot or colour change.
 - **Accept**: BG for monsters; `monster-merge.test.ts` green against the built file (throw-away worktree); mesh count reported (399 today; the goblin alone went 59 to 29 in design 3.3); CAPTURE(monsters) of the goblin camp beside V4's before.
 - **Must not change**: everything but mesh grouping.
 
 ### M0p Promote monsters, merge only [CLAUDE, main session] + OM-S0b
-- As M4a; the captures include the perf HUD's draw calls at the start pose and the goblin camp, before and after. **Depends**: M0.
+- **Tier**: sonnet runs the commands; opus reads the compare report.
+- **Depends**: M0.
+- **Files**: `public/models/monsters.glb`, `blender/monsters.blend`, `src/engine/blenderMonsters.ts` (the `?v=` key only), `tests/fixtures/model-contract/monsters.json`, `tests/model-cache-key.test.ts` (new: key equals hash prefix for every loader that has one), `docs/superpowers/baseline/models/s0b/`.
+- **Change**: BLEND(monsters), COMPARE, promote, set the key. Captures of the start pose and the goblin camp with the perf HUD's draw calls and frame time, before and after.
+- **Accept**: SG; the two captures and their numbers committed. Then **OM-S0b**: the owner reads the same two numbers on the real machine. The result is written into the design's review log, whichever way it goes.
+- **Must not change**: any other shipped file.
 
 ---
 
-## Slice 1: hero
+## Slice 1: the pilot (one skinned figure, in the game, end to end)
+
+Nothing after this slice starts until **OM-P** accepts the approach.
+
+### S0 Skinned-path tests [CLAUDE]
+- **Tier**: sonnet.
+- **Depends**: R0, P4.
+- **Files**: `tests/skinned-figure.test.ts` (new), `tests/fixtures/models/skinned-pair.glb` (new, under 8 kB, written by the test's own helper: one skinned figure of two bones named `probe_Torso` and `probe_LeftArmPivot` and one rigid figure, in one file).
+- **Change**: the cases of design 8.3: `two instances cloned from one template pose independently and the template stays at rest`; `bone names lose the node key's prefix on the clone`; `every pivot field the upgrade fills is a Bone`; `the outline shell of a skinned mesh is a SkinnedMesh on the same skeleton and uses the skinned outline material`; `a plain mesh still gets today's shell and today's outline material`; `the skinned outline material is shared and never disposed`; `each skinned mesh has a fixed boundingSphere of at least 1.5 times its rest radius, unchanged after a pose`; `disposeObject3D calls dispose on each skeleton once`; `the rigid figure in the same file takes the rigid path and is unchanged`; `writing rotation.x on a bone moves a vertex weighted to it` (read with `getVertexPosition`).
+- **Accept**: red until S1b.
+- **Must not change**: `src/`, any existing test.
+
+### S1 Figure kit, part 2: rigs, bodies, weights, clips [AGY]
+- **Tier**: sonnet.
+- **Depends**: F1.
+- **Files**: `scripts/blender/figkit.py`, `scripts/blender/figkit_selftest.py`, `scripts/blender/rigs.py` (new: the three skeleton tables of design 6.1.2 as data: bone, parent, optional flag, and each skeleton's **reference pose** as a unit direction from each bone to its child).
+- **Change**: `make_rig(name, table, joints, prefix)`: an armature whose every bone points straight up with roll 0, heads at the given joint positions, named `<prefix>_<Bone>` when a prefix is given; it refuses joints whose limb directions are more than 20 degrees from the skeleton's reference pose (design 6.1.1 rule 3). `repose(body, rig_spread, joints_bind)`: deforms a body weighted in a spread pose to the bind pose and applies it. `organic_body(graph, radii, voxel, triangles)`: stick graph, skin modifier, voxel remesh, smooth, decimate, `validate()`. `auto_weights(body, rig, spread_pose)`: builds a limb-aligned twin of the rig with the same names, runs Blender's automatic weights against it, re-binds the body to the world-aligned rig, limits to 4 influences and normalises; if any vertex is unweighted it calls `segment_weights` (distance to each limb segment over the limb's radius, blended across the two nearest) and prints that it did. `hard_weights(part, bone)`: weight 1 on one bone. `fold_weights(mesh, mapping)`: sums a source's vertex groups onto the rig's bones and normalises. `merge_by_family(root, keep=TOGGLED)`: one skinned mesh per engine material family and outline flag (the family rule of `blenderMonsters.ts` 103-136, written once in `figkit.py` and mirrored by `tests/monster-merge.test.ts`'s fixture rule). `make_clip(rig, name, frames, pose_table)`: samples a pose table per frame onto pose bones (`rotation_euler`, mode `XYZ`), one NLA track per clip, clears the active action. `export_glb` gains `export_skins=True`, `export_animation_mode='NLA_TRACKS'`, `export_optimize_animation_keep_anim_armature=False` (rotation-only clips, design 3.5 S3).
+- **Accept**: the self-test builds a two-limb skinned figure with one clip and asserts, on the exported file read back in Blender: every joint has identity rotation; no unweighted vertex; at most 4 influences; the clip has rotation channels only; a part given `hard_weights` has weight 1 on its bone; exits 0 inside 60 s under CAP. SG; UNTOUCHED.
+- **Must not change**: the four build scripts; `merge_parts` and `bake_paint`.
+
+### S1b The skinned path in the engine [AGY]
+- **Tier**: sonnet; opus verify reads the shader text against design 6.1.3 and R0 item 10.
+- **Depends**: S0.
+- **Files**: `src/engine/skinned.ts` (new, under 120 lines: `hasSkin(node)`, `cloneFigure(node)` using `SkeletonUtils.clone` from `three/examples/jsm/utils/SkeletonUtils.js`, `stripBonePrefix(root, key)` where `key` is the key of the `Monster_<key>` node that was cloned (the `body` key when a def has one), `fixCullSpheres(root, factor = 1.5)`), `src/engine/materials.ts` (`addCartoonOutline`: for a `SkinnedMesh`, a `SkinnedMesh` shell bound with `shell.bind(mesh.skeleton, mesh.bindMatrix)` and a skinned variant of the outline material, cached under its own key, whose vertex shader includes `skinning_pars_vertex`, `beginnormal_vertex`, `skinbase_vertex`, `skinnormal_vertex`, `begin_vertex`, `skinning_vertex` and uses `transformed` and `objectNormal`; `facetMaterial`: only if R0 item 10 found a normal written before the skin, move it after `skinnormal_vertex`), `src/engine/dispose.ts` (dispose each `SkinnedMesh`'s skeleton once), `src/engine/blenderMonsters.ts` (`upgradeMonsterRigWithGltf`: if `hasSkin(template)`, `cloneFigure`, `stripBonePrefix`, the same material rules, `fixCullSpheres`; otherwise today's path, untouched).
+- **Change**: as design 6.1.3. No list of skinned figures anywhere: the file decides.
+- **Accept**: `ONE(tests/skinned-figure.test.ts)` passes; `ONE(tests/textures.test.ts)`, `ONE(tests/dispose.test.ts)`, `ONE(src/__tests__/lean-rig.test.ts)` and `ONE(src/__tests__/blender-hero.test.ts)` pass untouched; SG (the JS chunk grows by the clone utility; BUILD reports it against Stage 5's cap).
+- **Must not change**: the rigid path; the plain outline material and its uniforms; material choice by name; `poseMonsterLimbs`.
+
+### S2 The pilot figure: goblin raider, rebuilt and skinned [CLAUDE]
+- **Tier**: **fable** (the rig, body route and weight rules eight more figures follow); opus verifies.
+- **Depends**: S1, M0p.
+- **Files**: `scripts/blender/build_monsters.py` (the goblin raider's builder only), `tests/fixtures/model-contract/monsters.json` (the goblin's entry replaced whole: biped skeleton, bones `goblin_<Bone>`, skinned-mesh and wire ceilings).
+- **Change**: to design section 5 and 4.6: hunched line of action, big ears and jaw, one tapered torso, the spear and shield outside the outline and hard-weighted to `WeaponPivot` and `OffhandPivot`, olive at 30 to 45% value with a bone and rust accent, optional `Jaw`. Modelled and weighted in a spread pose, then bound with every bone at identity in a pose within 20 degrees per limb of the biped reference (design 6.1.1 rule 3): the hunch and the arms held a little out are the goblin's stance, and they will carry through the shared clips at M1b. 5,000 triangles. **Built two ways** (design 6.2): (a) `organic_body` from a stick graph; (b) today's primitives fused by a voxel remesh; the same head, gear, palette and rig on both. **Each built in two material variants** for decision N-4: up to three families, and one material with the colours in the paint layer. `bake_paint` on all.
+- **Accept**: BG for each build; `tests/monster-merge.test.ts`'s goblin fixture replaced by this task (declared: the figure is new); turnaround, silhouette, play-distance and **worst-pose** sheets of both routes `--against` shipped under `docs/superpowers/baseline/models/s1/`; **measured Brotli bytes of the figure for each build, and the per-figure wire ceilings of design 9.1 reset from them**; a short written pattern (what was done, in order, with the kit calls and the weight rules that were needed) appended to `docs/superpowers/baseline/models/README.md`.
+- **Must not change**: `Monster_goblin`; the names `goblin_HeadGroup`, `goblin_LeftArmPivot`, `goblin_RightArmPivot`, `goblin_LeftLegPivot`, `goblin_RightLegPivot` and their positions within 0.05; material name substrings; in-game height within 5%; every other builder (their Drift is zero).
+
+### S3 The pilot in the game [CLAUDE, main session]
+- **Tier**: sonnet runs; opus reads.
+- **Depends**: S1b, S2.
+- **Files**: `docs/superpowers/baseline/models/s1/ingame/` (new), `docs/superpowers/baseline/models/s1/README.md`.
+- **Change**: CAPTURE(monsters) for each of the four builds at the goblin camp, with the skinned raider beside the still-rigid archers: standing, walking, mid-attack, mid-flinch and holding Stage 4's wind-up pose (all driven by today's `poseMonsterLimbs` on bones); the outline turned on; noon and dusk (a bent arm in light and in shadow, the check of design 6.1.3's banded-light row); the figure at the screen edge and half off it (culling); its shadow on the ground; after 30 kills and respawns, `renderer.info.memory` beside the value before (the leak check). The perf HUD's draw calls and frame time at the camp, beside M0p's.
+- **Accept**: the captures and numbers committed; any fault found is fixed by a follow-up task before OM-P.
+- **Must not change**: anything shipped.
+
+### OM-P [OWNER]
+Play beside the pilot on a real GPU. Choose route (a) or (b); answer N-4 (one material or up to three). **Accept the approach or stop it.** This sets the pattern for every figure; a change here is cheap, later it is not.
+
+### S4 Promote monsters with the pilot [CLAUDE, main session]
+- As M0p (same tier, files, accept and must-not-change), sheets under `s1/`. **Depends**: OM-P. From here on the shipped game has one skinned monster among rigid ones.
+
+### Q1 Eight-bit attributes in the promote step [CLAUDE] test, then [AGY] (only if N-3)
+- **Tier**: sonnet for both.
+- **Depends**: S4, P3.
+- **Files**: `tests/model-pack.test.ts` (new, first), `scripts/lib/glb-pack.mjs` (new, plain node, no dependency), `scripts/models-promote.mjs`.
+- **Change**: test: `normals become normalised signed bytes and the file lists KHR_mesh_quantization as used and required`; `weights and colours become normalised unsigned bytes and each vertex's weights still sum to 255`; `positions, joints, indices and animation data are byte-identical`; `the bare GLTFLoader parses the packed file`; `every posed vertex of the packed fixture is within 0.001 of the unpacked one`; `a file with no skin and no colour only has its normals packed`; `packing twice changes nothing`. Then the script (the method of design 3.5 S10) and its call inside promote for `hero` and `monsters` only; Contract and Budget are checked on the packed file.
+- **Accept**: `ONE(tests/model-pack.test.ts)` passes; the pilot promoted again shows about 30% fewer wire bytes for the goblin; `ONE(src/__tests__/blender-hero.test.ts)` passes untouched against a packed `monsters.glb`; SG.
+- **Must not change**: `gear.glb`, `world.glb` (the engine reads their positions in metres and their merge path was not measured); the build scripts.
+
+---
+
+## Slice 2: hero
 
 ### H1 Hero acceptance tests [CLAUDE]
 - **Tier**: sonnet.
-- **Depends**: OM-1.
-- **Files**: `tests/hero-model.test.ts` (new).
-- **Change**: against `public/models/hero.glb` (rotation range = largest angle between two keys of one channel, as the critique's E4 measured it): `every attack clip turns Torso by at least 0.3 rad` (today: `Slash` 0.90, `SpinSlash` 3.14, `Chop` 0.44, `Mine` 0.49, `Ranged` 0.55 pass; `Lunge` 0.24 and `Cast` 0.12 fail); `Idle turns Torso or HeadGroup by at least 0.08 rad` (today 0.03); `Walk turns Torso by at least 0.08 rad` (today 0.04); `Fish turns an arm by at least 0.3 rad` (today 0.10); `in Slash, Lunge, Chop and Mine the right arm's x rotation first moves against the strike before it strikes` (measured per key: `Slash` 0.11 to -0.62 then 0.95, `Chop` to -1.31 then 1.21, `Mine` to -1.34 then 1.19 pass; `Lunge` rises 0.10 to 1.15 with no wind-back and fails; `SpinSlash` holds the arm out while the torso spins and is excluded); `every limb pivot's child meshes overlap the parent's bounds at the joint by at least 0.02` (no gap at rest); `the worst pose of every clip keeps that overlap above 0` (sampled at 12 frames per clip); `the hand, foot and head centres stay within 0.01 of the manifest` (mount offsets); `the toggled names of design 8.1 exist as their own meshes`; `triangles at most 6,000, meshes at most 20`; `meshes carry COLOR_0` (skipped with a named reason if CALL-M11 is "no"); and the two frozen samples restated so they fail here first: `0.2 s into Walk a leg pivot's x rotation exceeds 0.01` and `0.15 s into Slash at time scale 1.2 the right arm's x rotation exceeds 0.05`.
-- **Accept**: on today's file the cases marked "fail" above and `COLOR_0` are red; the overlap cases were not measured by the critique and are expected red (the knee band); the task runs the file once on today's GLB and **records the actual red list in the test file's header**, and any case that is green today but meant to drive work is reported to the verify; all green at H7.
+- **Depends**: OM-P.
+- **Files**: `tests/hero-model.test.ts` (new), `tests/gear-mount.test.ts` (new), `tests/fixtures/hero-mounts.json` (new: for a full ten-slot loadout mounted on **today's** hero by today's `rebuildPlayerEquipmentMeshes` logic, every mounted piece's position, rotation and scale **in its mount pivot's local space**, the helm's position relative to the head mesh's centre, the centres of the hand, foot and head meshes in their mount pivot's local space, and which meshes are hidden; written by a helper in this task, before anything changes. Local space, because the shipped file's rest pose is a frame of `Idle`, not a neutral pose, so nothing in the figure's space can be compared across files).
+- **Change**: `hero-model`: rotation range per clip as the critique's E4 measured it: `every attack clip turns Torso by at least 0.3 rad` (today `Lunge` 0.24 and `Cast` 0.12 fail); `Idle turns Torso or HeadGroup by at least 0.08 rad` (today 0.03); `Walk turns Torso by at least 0.08 rad` (today 0.04); `Fish turns an arm by at least 0.3 rad` (today 0.10); `in Slash, Lunge, Chop and Mine the right arm's x rotation first moves against the strike` (`Lunge` fails today); `Walk bends each knee bone by at least 0.3 rad and Slash bends the right elbow by at least 0.3 rad` (new with skinning); `the hero is skinned on the biped skeleton with the bone list of design 6.1.2`; `Hair, TorsoCoat and InnerCollar exist as their own meshes`; `shared clips have rotation tracks only, plus Hips position`; `triangles at most 6,000, meshes at most 11`; `meshes carry COLOR_0`; and the two frozen samples restated so they fail here first: `0.2 s into Walk a leg bone's x rotation exceeds 0.01` and `0.15 s into Slash at time scale 1.2 the right arm's x rotation exceeds 0.05`. `gear-mount`: `every mounted piece's local transform under its mount bone equals the fixture` (the helm: its position relative to the head mesh's centre); `the hand, foot and head centres in their mount bone's local space, at the bind pose, are within 0.01 of the fixture`; `a helm hides every Hair* mesh; body armour hides TorsoCoat and InnerCollar`; `armour recolours the role materials on the meshes that carry them`.
+- **Accept**: `gear-mount` passes on today's hero; `hero-model` is red in the cases named and in every skin case; the task records the actual red list in the test file's header.
 - **Must not change**: `src/`, any existing test.
 
-### H2 Figure kit [AGY]
+### H2 One mounting function [AGY]
 - **Tier**: sonnet.
-- **Depends**: P2.
-- **Files**: `scripts/blender/figkit.py` (new), `scripts/blender/figkit_selftest.py` (new, asserts on a generated two-part figure and exits non-zero on failure).
-- **Change**: `joint_cap(part, pivot, radius)`: adds a half-sphere of the part's material at the pivot so a rotated child never shows a hole. `merge_parts(root, keep=TOGGLED)`: joins meshes sharing parent, material, `noOutline` and name class (`eye`, `glow`, `gem`, `orb`, `string`, other), keeps a name in the class, keeps `extras`; **never merges a mesh whose name matches `TOGGLED`** (`^Hair`, `^CrownSpike_`, `^BackSpike_`, `^Sideburn_`, `^TorsoCoat$`, `^OuterCoat_`, `^CoatTrim_`, `^CoatTail_`, `^CoatTailTrim_`, `^InnerCollar$`, `_leg[LR]_04_`: today only `Gear_dhide-chaps_legL/R_04_` and `Gear_trousers_legL/R_04_`) and keeps the `_NN_` ordinals of those leg meshes unchanged; other gear `_04_` meshes (50 of 54) merge freely. `decimate_to(obj, triangles)`. `cut_by_weights(body, armature, bone_to_pivot)`: assigns each face to the bone with the largest summed vertex weight, separates per bone group, parents each part to the named pivot at its bone head, keeps world positions, caps each cut with `joint_cap`. `bake_paint(root, ao=0.35, gradient=0.15, warm_cool=0.05)`: Cycles CPU vertex bake of ambient occlusion (`bpy.ops.object.bake(type='AO', target='VERTEX_COLORS')`) into a colour attribute named `Col` on the **`POINT` domain** (measured: no vertex added against a colour-free export of the same goblin, 15,976 both), multiplied by a height gradient and a front-to-back tint; with `--fast-paint` a crease-angle term replaces the ray-traced one. The exporter writes it as 16-bit `COLOR_0` whatever the attribute type (critique E5). `pose_rest(parts, table)` and `pose_armature(armature, table)`. `export_glb(path)` with `export_vertex_color='ACTIVE'`, `export_texcoords=False` (no figure reads GLB UVs, design K2; saves 8 bytes per vertex raw, which is parse time and memory; on the wire it saved only 3% on the goblin, 121,155 to 117,629, because box UVs compress well), `export_extras=True`, `export_yup=True`.
-- **Accept**: the self-test exits 0 inside 60 s under CAP; the two-part figure exports with `COLOR_0`, no `TEXCOORD_0` and half the meshes; a mesh named `TorsoCoat` survives a merge alone; a cube weighted to two bones is cut into two parts under two pivots; the hero built with `export_texcoords=False` passes `ONE(src/__tests__/blender-hero.test.ts)` in a throw-away worktree (proves the engine needs no GLB UVs); SG; UNTOUCHED.
-- **Must not change**: the four build scripts.
+- **Depends**: H1.
+- **Files**: `src/engine/playerMesh.ts`, `src/engine/worldBuild.ts` (the merchants' hat).
+- **Change**: the mounting part of `rebuildPlayerEquipmentMeshes` (offsets, hide loops, recolouring) moves, unchanged, into an exported `mountLoadout(rig, items)`; the player calls it; the merchant's hat is mounted through it instead of its own copy of the helm offset (`worldBuild.ts`, `createMerchantNPC`).
+- **Accept**: `ONE(tests/gear-mount.test.ts)` passes; `ONE(src/__tests__/blender-hero.test.ts)` passes untouched; SG.
+- **Must not change**: any offset, any hide rule, any colour.
 
-### H3a Hero joints [CLAUDE]
-- **Tier**: opus.
-- **Depends**: H1, H2.
-- **Files**: `scripts/blender/build_hero.py`, `tests/fixtures/model-contract/hero.json` (hero budgets only).
-- **Change**: to design 6.1: joint caps at shoulders, elbows, hips, knees and neck; the sleeve, thigh and shin cuts moved so each child overlaps its parent (today a light band shows at both knees). Nothing else.
-- **Accept**: BG for hero; the H1 overlap cases green against the built file; `ONE(src/__tests__/blender-hero.test.ts)` green against the built file in a throw-away worktree where the built file is copied over the shipped one; worst-pose strips of `Walk`, `Lunge` and `Chop` `--against` the shipped file under `docs/superpowers/baseline/models/s1/`; CAPTURE(hero) of the two hero poses.
-- **Must not change**: the ten pivot names and their `LEAN_RIG` positions; every `extras.part` value and mesh name the engine reads or toggles (design 8.1); hand, foot and head centres beyond 0.01; clip names; the body's bounds beyond 3% per axis.
+### H3a Hero skin: author's weights on the biped rig, clips on bones [CLAUDE]
+- **Tier**: opus (fable if rejected once at the owner step).
+- **Depends**: H1, S1.
+- **Files**: `scripts/blender/build_hero.py`, `tests/fixtures/model-contract/hero.json` (the hero's entry replaced whole and **declared**: the flat pivot layout becomes the chain `Root`, `Hips`, `Torso`, `HeadGroup` and arms, legs under `Hips`; `HeadGroup` moves from 1.86 to the source's neck joint; design 8.1).
+- **Change**: keep the source's `Armature` instead of deleting it (`build_hero.py` 439-443 today removes it); `fold_weights` its 59 groups onto the 16 biped bones (the mapping of design 3.5 S13); pose the source armature to arms down, legs straight, and apply it to the meshes so that pose is the bind pose; scale and place as today (1.85 tall, soles at 0); `make_rig` with joints at the builder's own constants, which are `LEAN_RIG`'s (`build_hero.py` 560-574: shoulders ±0.28 at 1.50, elbows 0.26 below, hips ±0.11 at 0.90, knees 0.38 below, `Torso` at 1.24), **not** the shipped file's rest values (1.47 and 0.86 there are a frame of `Idle`); the bind pose is the biped reference pose; meshes joined by engine role into at most 11 (design 6.1.4), with `Hair` and the eyes left rigid on the head bone and `TorsoCoat` and `InnerCollar` as their own skinned meshes; `extras.part` kept on each. The ten clips come from today's sample functions through `make_clip`, **converted for the chain** (design 6.1.5): for `HeadGroup` and the arm bones, local rotation = inverse of the torso's rotation of that frame times today's rotation; elbows, knees and legs unchanged; the torso's position keys move to `Hips`; the follow-the-torso position keys on the head and arms are dropped. Timing unchanged. No clip is improved here.
+- **Accept**: BG for hero; **a mechanical clip check written in this task** (`scripts/models-clipcheck.mjs`, plain node): for each of the ten clips at twelve evenly spaced times, the orientation in the figure's space of `Torso`, `HeadGroup`, both arm, elbow, leg and knee bones of the built file equals the same pivot's in the shipped file within 0.02 rad, and the report lists the largest difference per clip; in a throw-away worktree with the built file and H5 and H5b applied, `ONE(src/__tests__/blender-hero.test.ts)` is green; the skin cases of `hero-model` are green against the built file; turnaround `--engine-palette`, **worst-pose** and motion strips of `Walk`, `Slash` and `Chop` `--against` the shipped file under `docs/superpowers/baseline/models/s2/`, with every seam between two skinned meshes shown in a bend; CAPTURE(hero) of the two hero poses, undressed and in the plate set. If the arms-down re-pose damages the weights (design 14), the fallback is recorded and used: bind in the source pose and add the arm-down rotation to every clip.
+- **Must not change**: shoulder, elbow, hip and knee joint positions; every `extras.part` value and mesh name the engine reads or toggles (design 8.1); hand, foot and head centres beyond 0.01; clip names and lengths; the body's bounds beyond 3% per axis; the CC-BY source and its credit.
 
 ### H3b Hero face, hands, hair, paint [CLAUDE]
-- **Tier**: opus (fable if H3a was rejected once).
+- **Tier**: opus.
 - **Depends**: H3a.
 - **Files**: `scripts/blender/build_hero.py`, `tests/fixtures/model-contract/hero.json`.
-- **Change**: to design 5.2 to 5.4: hands 15% larger **about their own centre** (the mount offsets hold); the face given planes that read at 260 px (brow, nose, jaw; eyes kept as their own meshes); hair as three or four large locks, still named `Hair*`; `merge_parts` with the toggled names kept; `bake_paint`.
-- **Accept**: BG; turnaround and silhouette sheets `--engine-palette --against` the shipped file under `s1/`; **a turnaround of the built body wearing today's plate set** (full helm, plate body, plate legs, gloves, boots from the shipped `gear.glb`, mounted with the offsets of `playerMesh.ts`) showing no hand, hair or limb poking through and no floating glove or boot; CAPTURE(hero).
+- **Change**: to design 5.2 to 5.4: hands 15% larger **about their own centre** (the mount offsets hold); the face given planes that read at 260 px (brow, nose, jaw; eyes kept as their own meshes); hair as three or four large locks, still named `Hair*`; `bake_paint`.
+- **Accept**: BG; turnaround and silhouette sheets `--engine-palette --against` the shipped file under `s2/`; `ONE(tests/gear-mount.test.ts)` green against the built file; a turnaround of the built body wearing today's plate set showing no hand, hair or limb poking through and no floating glove or boot, at rest and in the worst pose; CAPTURE(hero).
 - **Must not change**: as H3a.
 
-### H4a Motion spike: one attack and Idle [CLAUDE] + OM-H4a
+### H4 Hero motion: the biped library [CLAUDE]
 - **Tier**: opus.
 - **Depends**: H3a.
-- **Files**: `scripts/blender/build_hero.py`, `tests/fixtures/model-contract/hero.json`.
-- **Change**: replace the sample functions of `Slash` and `Idle` only with pose tables (pose, frame on a 12-a-second grid, easing) sampled by one function. `Slash` keeps its wind-back and adds hip and chest lead and a settle; `Idle` gains a weight shift, breath and a look. Built twice: interpolated (`LINEAR`, sampled at 24 a second) and held (`STEP` at 12 a second).
-- **Accept**: BG for both builds; H1's `Idle` case and the two frozen samples green on both; motion strips (corrected method) under `s1/`; CAPTURE(hero) of both builds, and **the owner plays both on a real GPU** (OM-H4a answers D-4). If neither beats today's `Slash` for the owner, today's attack clips stay and H4b re-authors only the clips H1 marks weak.
-- **Must not change**: as H4b.
+- **Files**: `scripts/blender/build_hero.py`, `tests/fixtures/model-contract/hero.json` (clips: the two frozen samples, each attack clip's anticipation time, `Death` and `Hurt`).
+- **Change**: design 6.5, smooth only: sample functions become pose tables on a twelve-a-second grid sampled per frame; elbow and knee bends added to every clip; the clips H1 marks weak improved (`Idle`, `Walk` torso counter-rotation and a level head, `Fish`, `Lunge` wind-back, `Cast` torso lead); attack clips otherwise kept, since they already have three beats (critique C2); `Death` (1.1 s, ends lying, last pose held) and `Hurt` (0.35 s) added. Clip lengths within 10% of today's.
+- **Accept**: BG; every `hero-model` motion case green against the built file, including the two frozen samples; motion strips for all twelve clips under `s2/`; the opus verify names the frame of each of the three beats in every attack strip; CAPTURE(hero) walking, striking and falling.
+- **Must not change**: the ten clip names; the two frozen samples; clip lengths beyond 10%; rotation-only tracks except `Hips`.
 
-### H4b Hero motion, the rest [CLAUDE]
-- **Tier**: opus.
-- **Depends**: OM-H4a.
-- **Files**: `scripts/blender/build_hero.py`, `tests/fixtures/model-contract/hero.json` (hero clips: the two frozen samples for every promotion; `Hurt` and `Death` only if CALL-M6).
-- **Change**: in the style D-4 chose, the clips H1 marks weak (`Walk` torso counter-rotation and a level head, `Fish`, `Lunge`, `Cast` torso lead), and attack clips only where the corrected strip shows no body lead. Clip lengths stay within 10% of today's so `playAction` time scales still fit (`blenderHero.ts` 91-103). If CALL-M6: add `Death` (1.1 s, ends lying, last pose held) and, if taken, `Hurt` (0.35 s).
-- **Accept**: BG; every H1 motion case green against the built file, **including the two frozen samples**; motion strips for all clips under `s1/`; the opus verify names the frame of each of the three beats in every attack strip; CAPTURE(hero).
-- **Must not change**: the ten clip names; `Walk` turning a leg pivot past 0.01 rad by 0.2 s; `Slash` turning the right arm past 0.05 rad on x by 0.15 s at time scale 1.2; clip lengths beyond 10%.
+### H5 Declared replacements and clip tests [CLAUDE]
+- **Tier**: sonnet; opus verify compares the diff of the frozen file with design 8.3 word for word.
+- **Depends**: H3a (so the replaced assertions can be run against a built file).
+- **Files**: `src/__tests__/blender-hero.test.ts` (**the two declared replacements and nothing else**: lines 39-42 become "the ten names are all present, and the full sorted list equals the manifest's hero clips"; lines 56-57 become "the height of `rig.torso` in the rig group's space is `LEAN_RIG.torsoY` to two decimals, and the height of `rig.headGroup` in the same space equals the manifest's neck height to two decimals"), `tests/hero-clips.test.ts` (new).
+- **Change**: `hero-clips`: `Death plays once and clamps on the last pose`; `finishRespawn returns to Idle`; `Hurt plays only when no one-shot is active`; `a running attack is never interrupted by Hurt`; `Stage 4's torso lean and knock-back offsets are still applied while a clip plays` (read from the rig after one update); `two hero instances (the player and a merchant) pose independently`.
+- **Accept**: the frozen file's diff is exactly those two hunks; with today's shipped hero the replaced clip-list assertion and the two height assertions pass (the manifest still lists ten clips and the flat heights until H7); `hero-clips` is red until H5b.
+- **Must not change**: every other line of `blender-hero.test.ts`, including 58-61, 66 and 70.
 
-### H5 Clip wiring test [CLAUDE] (only if CALL-M6)
+### H5b The hero on the skinned path [AGY]
 - **Tier**: sonnet.
-- **Depends**: H4b; Stage 4's event names from R0.
-- **Files**: `tests/hero-clips.test.ts` (new); the **declared replacement** of `src/__tests__/blender-hero.test.ts` lines 39-42 (design 8.3): the ten names are all present, and the full list equals the manifest's hero clips.
-- **Change**: tests: `Death plays once and clamps on the last pose`; `Hurt plays only when no one-shot is active`; `a running attack is never interrupted by Hurt`; `Stage 4's torso lean and knock-back offsets are still applied while Hurt plays` (the offsets are read from the rig after one update).
-- **Accept**: red until H5b.
-- **Must not change**: every other assertion in `blender-hero.test.ts`.
+- **Depends**: H5, H2, S1b.
+- **Files**: `src/engine/blenderHero.ts` (`upgradeHumanoidRigWithGltf`: `cloneFigure` when the file has a skin; material assignment by `extras.part` and mesh name unchanged; `HeroClipName` gains `Death` and `Hurt`), `src/engine/playerMesh.ts` (`mountLoadout`: the two hide loops search `rig.group`; the helm and hat offset reads the head joint's height so today's rigid hero and the skinned one both place the helm where the fixture says), `src/engine/actions.ts` (`handlePlayerDeath` plays `Death`; `finishRespawn` returns to `Idle`), the engine file where Stage 4 handles a heavy hit taken (named by R0: requests `Hurt`, dropped if a one-shot is active).
+- **Change**: as design 6.1.3 and 6.1.4. The loader takes the skinned path only when the file has a skin, so this lands before the hero file is promoted.
+- **Accept**: `ONE(tests/hero-clips.test.ts)`, `ONE(tests/gear-mount.test.ts)` and `ONE(src/__tests__/blender-hero.test.ts)` pass against today's file **and**, in a throw-away worktree, against the built one; SG.
+- **Must not change**: Stage 4's timings in `feel.ts`; respawn timing; the death overlay; any mount offset other than the helm's and hat's.
 
-### H5b Wire the clips [AGY] (only if CALL-M6)
-- **Tier**: sonnet.
-- **Depends**: H5.
-- **Files**: `src/engine/blenderHero.ts`, the engine file where Stage 4 handles a heavy hit taken and `handlePlayerDeath` in `src/engine/actions.ts`.
-- **Change**: `HeroClipName` gains `Death` (and `Hurt`). `handlePlayerDeath` plays `Death`; `finishRespawn` returns to `Idle`. `Hurt` is requested on a heavy hit taken and dropped if a one-shot is active.
-- **Accept**: `ONE(tests/hero-clips.test.ts)` passes; SG.
-- **Must not change**: Stage 4's timings in `feel.ts`; respawn timing; the death overlay.
-
-(H6 and H6b moved to slice 0 by the critique.)
-
-### H7 Promote hero [CLAUDE, main session] + OM-S1
+### H7 Promote hero [CLAUDE, main session] + OM-S2
 - **Tier**: sonnet runs the commands; opus reads the compare report and the sheets.
-- **Depends**: H3b, H4b, H5b, H6b.
-- **Files**: `public/models/hero.glb`, `blender/hero.blend` (CALL-M10), `src/engine/blenderHero.ts` (the `?v=` key only), `tests/fixtures/model-contract/hero.json` (hero ceilings lowered to the built values plus 2%), `tests/model-cache-key.test.ts` (new), `docs/superpowers/baseline/models/s1/`.
-- **Change**: BLEND(hero), COMPARE, promote, set the key to the hash prefix, add the cache-key test (key equals hash prefix for every loader that has one), SHEETS `--against` the old file, in-engine captures of the two hero poses.
-- **Accept**: SG; `ONE(tests/hero-model.test.ts)` green; wire size of `hero.glb` at most 200,000; sheets at most 2 MB. Then **OM-S1**.
+- **Depends**: H3b, H4, H5b, H6b.
+- **Files**: `public/models/hero.glb`, `blender/hero.blend` (CALL-M10), `src/engine/blenderHero.ts` (the `?v=` key only), `tests/fixtures/model-contract/hero.json` (ceilings lowered to the built values plus 2%), `docs/superpowers/baseline/models/s2/`.
+- **Change**: BLEND(hero), COMPARE, promote (packed if N-3), set the key, SHEETS `--against` the old file, in-engine captures of the two hero poses, of a merchant, and of the hero in a full plate set mid-swing.
+- **Accept**: SG; `ONE(tests/hero-model.test.ts)` fully green; wire size of `hero.glb` at most 200,000 (150,000 if N-3); sheets at most 2 MB. Then **OM-S2**.
 - **Must not change**: any other file under `public/models/` or `blender/`.
 
 ---
 
-## Slice 2: gear
+## Slice 3: gear merge and guards
 
-### G1 Band table and tests [CLAUDE]
-- **Tier**: sonnet (the rule is mechanical: level requirement in three even groups); the opus verify reads the printed table for items that land oddly.
-- **Depends**: OM-1.
-- **Files**: `src/data/gearBands.ts` (new, pure), `tests/gear-bands.test.ts` (new).
-- **Change**: `gearBand(item): 1 | 2 | 3`, from a table keyed by item id for every equippable item whose silhouette is one of the shared ones (found by running `gearSilhouette` over `ITEMS`; expected: `helm`, `plate-body`, `platelegs`, `kiteshield`, `scimitar`, `sword`; the test prints the real list). Bands follow the item's level requirement in three even groups; named unique pieces are not in the table. Tests: every such item has a band; bands never decrease as the requirement rises within one slot; no import of `three`.
-- **Accept**: `ONE(tests/gear-bands.test.ts)` passes; SG.
-- **Must not change**: `ITEMS`, any stat or name.
+Gear bands, gear to budget and bending gear moved to the follow-up stage (decision N-2).
 
 ### G2 Merge test [CLAUDE]
 - **Tier**: sonnet.
@@ -321,274 +383,217 @@ Look at V3 and V4 and, if possible, the same places in the game on the owner's m
 
 ### G2b Merge gear meshes [AGY]
 - **Tier**: sonnet.
-- **Depends**: G2, H2.
+- **Depends**: G2, F1.
 - **Files**: `scripts/blender/build_gear.py` (one call per root before export).
-- **Change**: call `figkit.merge_parts` on every `Gear_*` root (toggled names and `_04_` ordinals kept, H2).
-- **Accept**: BG for gear; `gear-merge.test.ts` green against the built file (throw-away worktree); `ONE(src/__tests__/blender-hero.test.ts)` green there too; mesh count reported (506 today); CAPTURE(gear) of the hero in a full plate set and in the bandos set (projected albedo tiles shift on merged parts, critique M2).
+- **Change**: call `figkit.merge_parts` on every `Gear_*` root (toggled names and `_04_` ordinals kept, F1). Gear stays rigid.
+- **Accept**: BG for gear; `gear-merge.test.ts` green against the built file (throw-away worktree); `ONE(src/__tests__/blender-hero.test.ts)` and `ONE(tests/gear-mount.test.ts)` green there too; mesh count reported (506 today); CAPTURE(gear) of the hero in a full plate set and in the bandos set (projected albedo tiles shift on merged parts, critique M2).
 - **Must not change**: geometry, node names, materials, mount space.
 
-### G3 Gear to budget [CLAUDE]
-- **Tier**: opus.
-- **Depends**: G2b.
-- **Files**: `scripts/blender/build_gear.py`, manifest (gear budgets).
-- **Change**: bring every piece inside design 9.1: fewer segments on lathes and tubes where the outline does not change at 260 px; the three third-party blades and the shield get clean rebuilt edges; nothing thinner than 0.044; `bake_paint`.
-- **Accept**: BG; no piece over its budget; turnaround sheets `--against` shipped for the fifteen heaviest pieces under `s2/`.
-- **Must not change**: node names, materials, bounds beyond 5% per axis (the pieces must still fit the body).
-
-### G4 Band shapes [CLAUDE]
-- **Tier**: opus.
-- **Depends**: G1, G3.
-- **Files**: `scripts/blender/build_gear.py`, manifest (new nodes).
-- **Change**: for each shared silhouette, new nodes with `_b2` and `_b3` appended after any part suffix (`Gear_helm_b2`, `Gear_plate-body_torso_b3`, `Gear_platelegs_legL_b2`), to design 5.5: band 2 adds one forged form, band 3 a crest, wings or horns that break the outline, plus trim and one glow gem. The base node is band 1 and is simplified toward "plain".
-- **Accept**: BG; a silhouette sheet of the hero body wearing each band under `s2/`, where the three outlines differ at the 85 px size.
-- **Must not change**: band 1 node names and mount space; the eight material names.
-
-### G5 Band lookup test [CLAUDE]
-- **Tier**: sonnet.
-- **Depends**: G1, G4.
-- **Files**: `tests/gear-band-nodes.test.ts` (new), `tests/fixtures/models/gear-bands.glb` (new, tiny: one base node, one `_b3` node).
-- **Change**: `a band 3 item clones the _b3 node`; `a band 2 item with no _b2 node falls back to the base node`; `a named unique piece is unchanged`; `gearSilhouette returns what it returned before for every item` (snapshot taken in this test from today's function).
-- **Accept**: red until G5b.
-- **Must not change**: `src/`.
-
-### G5b Pick the band in the engine [AGY]
-- **Tier**: sonnet.
-- **Depends**: G5.
-- **Files**: `src/engine/playerGear.ts`.
-- **Change**: where a `Gear_<silhouette>…` node name is formed, try the name with the band suffix first when `gearBand(item) > 1`, then the base name. Nothing else.
-- **Accept**: `ONE(tests/gear-band-nodes.test.ts)` passes; SG.
-- **Must not change**: `gearSilhouette`'s return values; the procedural fallbacks; `blenderGear.ts`.
-
-### G6 Promote gear [CLAUDE, main session] + OM-S2
-- **Tier**: sonnet runs; opus reads the report and the sheets.
-- **Depends**: G2b, G3, G4, G5b, H7.
-- **Files**: `public/models/gear.glb`, `blender/gear.blend`, `src/engine/blenderGear.ts` (the `?v=` key only), manifest (gear ceilings), `docs/superpowers/baseline/models/s2/`.
-- **Change**: as H7; captures of the hero poses in a band 1, a band 2 and a band 3 set.
-- **Accept**: SG; wire size of `gear.glb` at most 900,000; `gear-merge.test.ts` fully green. Then **OM-S2**.
-- **Must not change**: any other shipped file.
-
----
-
-## Slice 3: guards
+### G6 Promote gear, merge only [CLAUDE, main session]
+- As H7 for `gear.glb` (`src/engine/blenderGear.ts`, the `?v=` key only); wire size at most 690,000; `gear-merge.test.ts` fully green. **Depends**: G2b, H7.
 
 ### N1 Guard tests [CLAUDE]
 - **Tier**: sonnet.
-- **Depends**: R0, G2b (the gear merge; without it a guard costs 62 draw calls instead of the knight's 27).
+- **Depends**: G6.
 - **Files**: `tests/guards.test.ts` (new).
-- **Change**: `createCastleGuard` produces, for both guards: the same position, the same `npcList` label and dialogue text, a hitbox of the same size, `userData` keys unchanged (values read from today's code and written into the test), a rig flagged `isBlenderHero` once the hero template resolves, and no request for `guard.glb` (the loader stub records URLs); `mountLoadout` given the player's equipment mounts the same nodes at the same positions as today's `rebuildPlayerEquipmentMeshes` (snapshot taken in this test from today's function before N2); meshes per guard at most 35.
+- **Change**: `createCastleGuard` produces, for both guards: the same position, the same `npcList` label and dialogue text, a hitbox of the same size, `userData` keys unchanged (values read from today's code and written into the test), a rig flagged `isBlenderHero` once the hero template resolves, its own skeleton (posing one guard does not move the other or the player), and no request for `guard.glb` (the loader stub records URLs); meshes per guard at most 35.
 - **Accept**: red until N2.
 - **Must not change**: `src/`.
 
 ### N2 Guards from the hero and gear [AGY]
 - **Tier**: sonnet.
-- **Depends**: N1, CALL-M2 answered (a).
-- **Files**: `src/engine/worldBuild.ts`, `src/engine/playerMesh.ts` (the mounting part of `rebuildPlayerEquipmentMeshes` moved, unchanged, into an exported `mountLoadout(rig, items)`; the player calls it), `public/models/guard.glb` (delete), `scripts/blender/export_guard.py` (delete), `scripts/run-blender.mjs` and `package.json` (remove the guard mode), `tests/fixtures/model-contract/guard.json` (delete) and `totals.json`, `tests/model-pipeline.test.ts` (the one `guard is a mode` case, created by this plan, removed).
-- **Change**: design 10.3. `loadBlenderGuardTemplate` is deleted. The guard is built the way the merchant is (`createMerchantNPC`, `worldBuild.ts` 504), dressed through `mountLoadout` with the full helm, plate body, plate legs, kite shield and sword visuals in guard steel `0x80898f` with gold trim, and plays `Idle`. No mount offset is copied.
+- **Depends**: N1.
+- **Files**: `src/engine/worldBuild.ts`, `public/models/guard.glb` (delete), `scripts/blender/export_guard.py` (delete), `scripts/run-blender.mjs` and `package.json` (remove the guard mode), `tests/fixtures/model-contract/guard.json` (delete) and `totals.json`, `tests/model-pipeline.test.ts` (the one `guard is a mode` case, created by this plan, removed).
+- **Change**: design 10.3. `loadBlenderGuardTemplate` is deleted. The guard is built the way the merchant is, dressed through `mountLoadout` with the full helm, plate body, plate legs, kite shield and sword visuals in guard steel `0x80898f` with gold trim, and plays `Idle`. No mount offset is copied.
 - **Accept**: `ONE(tests/guards.test.ts)` passes; `test ! -e public/models/guard.glb`; `ONE(tests/credits.test.ts)` green untouched; SG.
-- **Must not change**: guard positions, dialogue, hitbox, labels; the player's mounted offsets; `blender/examples/knight_28541/`.
+- **Must not change**: guard positions, dialogue, hitbox, labels; the player's mounted offsets.
 
-### N3 Credits and capture [CLAUDE]
+### N3 Credits, the knight's source, capture [CLAUDE] + OM-S3
 - **Tier**: sonnet.
 - **Depends**: N2.
-- **Files**: `CREDITS.md`, `docs/superpowers/baseline/models/s3/`; if D-3 is "delete", also `blender/examples/knight_28541/knight.blend` (delete; `LICENSE.txt` stays, its "Used by" lines updated).
-- **Change**: move the knight's row to a "kept in the repository, not shipped" part (or, with D-3, "source removed; credit kept"), keeping the words `tests/credits.test.ts` reads. In-engine capture of `model-guards`, with the perf HUD's draw calls at the gate before and after.
+- **Files**: `CREDITS.md`, `blender/examples/knight_28541/knight.blend` (**delete**; owner decision D-3 of 2026-11-14), `blender/examples/knight_28541/LICENSE.txt` (its "Used by" lines updated; the file stays), `docs/superpowers/baseline/models/s3/`.
+- **Change**: move the knight's row to a "source removed; credit kept" part, keeping the words `tests/credits.test.ts` reads. In-engine capture of `model-guards`, with the perf HUD's draw calls at the gate before and after.
 - **Accept**: `ONE(tests/credits.test.ts)` and `ONE(tests/model-licences.test.ts)` pass; SG. Then **OM-S3**.
-- **Must not change**: every other credit row; the licence files.
-
-### N-alt Keep the knight, reduced [AGY] (only if CALL-M2 is (b); replaces N1 to N3)
-- **Tier**: sonnet.
-- **Depends**: H2, P5.
-- **Files**: `scripts/blender/export_guard.py`, manifest (guard budgets); promotion by the main session as H7 (`public/models/guard.glb`, a `?v=` key added in `worldBuild.ts`).
-- **Change**: join by material, `decimate_to` 6,000 in total, pose the arms down and the sword at rest.
-- **Accept**: BG with the guard at 6,000 triangles, 2 meshes and at most 300,000 wire bytes; sheets `--against` shipped; SG.
-- **Must not change**: the node name `CastleGuard`, the two material names, the height 1.85.
+- **Must not change**: every other credit row; the other licence files.
 
 ---
 
-## Slice 4: monsters
+## Slice 4: monsters on clips; dragon, Ashmantle, demon
 
-### M1 Pose table test [CLAUDE]
+### M1 Motion tests [CLAUDE]
 - **Tier**: sonnet.
-- **Depends**: R0.
-- **Files**: `tests/monster-poses.test.ts` (new).
-- **Change**: `every model key has a row`; `for each key, the pivot rotations and body lift at progress 0, 0.5 and 1 equal the old branch's` (the old numbers of `monsterMeshes.ts` 813-843 written into the test); `a rig with no optional pivots poses without error`; `the table imports nothing from three`.
+- **Depends**: H7 (the biped library), R0 items 11 and 12.
+- **Files**: `tests/monster-motion.test.ts` (new).
+- **Change**: `every model key has a motion row`; `a row without clips reproduces the old branch's pivot rotations and body lift at progress 0, 0.5 and 1` (the numbers of `monsterMeshes.ts` 813-843 written into the test); `every bone a row names exists on that model's skeleton and has weight on at least one vertex` (skipped by name for models that are still rigid); `the goblin plays the hero file's Walk and Slash: a leg bone turns, and every bone keeps its own rest translation`; `the Hips position track is scaled by the model's hip height over the hero's`; `while winding up, the attack clip's time is progress times its anticipation time and it does not advance on its own`; `on release it plays to the end`; `Stage 4's lean, flinch and knock-back offsets are present on the bones after the animator's update`; `hit stop: the animator does not advance during the frozen time`; `a model whose row names Death plays it within the dying state's length` (R0 item 12); `the table imports nothing from three`.
 - **Accept**: red until M1b.
 - **Must not change**: `src/`.
 
-### M1b Pose table [AGY]
-- **Tier**: sonnet.
+### M1b Motion table and the monster animator [AGY]
+- **Tier**: sonnet; opus verify.
 - **Depends**: M1.
-- **Files**: `src/data/monsterPoses.ts` (new, pure), `src/engine/monsterMeshes.ts`, `src/engine/blenderMonsters.ts` (optional pivot lookup only).
-- **Change**: the attack branch of `poseMonsterLimbs` and Stage 4's wind-up pose read a row per model key: which pivots turn, on which axis, by how much at full progress, and the body lift. The rows reproduce today's numbers exactly. Optional pivots `Jaw`, `TailPivot`, `TailPivot2`, `WeaponPivot`, `LeftElbowPivot`, `RightElbowPivot` are found by `findPivot` and skipped when absent. M1 and M1b run before slice 5 (the dragon's new pivots need rows).
-- **Accept**: `ONE(tests/monster-poses.test.ts)` passes; SG.
-- **Must not change**: flinch, walk and idle numbers; Stage 4's reaction timings; the seven existing pivot fields.
+- **Files**: `src/data/monsterPoses.ts` (new, pure: per model key either today's code-pose numbers or the names of the clips for idle, walk, attack, hurt and death, the skeleton it stands on and an optional arm-swing scale), `src/engine/monsterMeshes.ts` (`poseMonsterLimbs` reads the table; for a row with clips it drives an animator instead), `src/engine/blenderMonsters.ts` (on upgrade, a model whose row names clips gets a `BlenderHeroAnimator` over the library of its skeleton: the hero file's clips for bipeds, `monsters.glb`'s for the others; the `Hips` track scaled once per model key and cached), `src/engine/loop.ts` (the animator's update, after which Stage 4's offsets are applied at the place R0 item 11 names).
+- **Change**: design 6.1.3 and 6.5. The goblin raider's row names `Idle`, `Walk`, `Slash`, `Hurt`, `Death`; every other row keeps today's numbers until its figure is rebuilt.
+- **Accept**: `ONE(tests/monster-motion.test.ts)` passes; SG; CAPTURE at the goblin camp of the raider walking, winding up, striking and dying with the hero's clips, beside the still-rigid archers. **This is the first time a shared clip is seen on a figure with another stance** (design 15): if the goblin over-reaches or loses its hunch, its row gets an arm-swing scale or a stance offset here, before any other biped follows. This capture goes to the owner with OM-S4, and earlier on request: it is where reuse first shows.
+- **Must not change**: flinch, walk and idle numbers of code-posed rows; Stage 4's reaction timings; the seven existing pivot fields of the rig; any rule (`src/state/`).
 
-### M2 One pattern figure: the goblin raider [CLAUDE]
-- **Tier**: **fable** (the pattern eight more figures follow); opus verifies.
-- **Depends**: H2, H7 (the paint layer judged on the hero first), M1b, D5 if D-2 is accepted.
-- **Files**: `scripts/blender/build_monsters.py` (the goblin base and raider), `tests/fixtures/model-contract/monsters.json` (goblin budgets, optional pivots, the per-figure wire ceiling).
-- **Change**: rebuild to design section 5: hunched line of action, big ears and jaw, one tapered torso, joint caps, the spear and shield outside the outline, olive at 30 to 45% value with a bone and rust accent, five materials, optional `Jaw` and `WeaponPivot`, `merge_parts`, `bake_paint`. Budget: 5,000 triangles, 14 meshes. **Built two ways** (design 6.2): (a) primitives with joint caps; (b) a skin modifier over a stick graph, voxel remesh, smooth, `decimate_to` 5,000, cut at the pivots; the same head, gear and palette on both.
-- **Accept**: BG for each; all five sheets of both `--against` shipped under `s4a/`; CAPTURE(monsters) of both at the goblin camp; the figure's measured Brotli bytes for each, and **the per-figure wire ceiling for every later monster set from the chosen one** (critique H5); a short written pattern (what was done, in order, with the kit calls) appended to `docs/superpowers/baseline/models/README.md`. The owner picks (a) or (b) at OM-S4-pattern.
-- **Must not change**: `Monster_goblin`, its seven pivot names and positions within 0.05, material name substrings, in-game height within 5%; every other builder.
-
-### OM-S4-pattern [OWNER]
-Look at the goblin sheets and an in-engine capture taken from a throw-away worktree. This sets the pattern for eight more figures; a change here is cheap, later it is not.
-
-### M3a Chicken and goblin archer [CLAUDE]
-- **Tier**: opus.
-- **Depends**: OM-S4-pattern.
-- **Files**: `build_monsters.py` (those two builders), manifest.
-- **Change**: the archer gets its own outline against the raider: ears through the hood, a lighter value, the bow held out to the side, a tall quiver. The chicken keeps its shape and loses meshes (2,500 triangles, 8 meshes).
-- **Accept**: BG; sheets under `s4a/`; the roster silhouette sheet shows raider and archer told apart at 85 px.
-- **Must not change**: the two node names, their pivot names and positions within 0.05, material name substrings, in-game height within 5%; every other builder.
-
-### M4a Promote monsters, slice 4a [CLAUDE, main session] + OM-S4a
-- **Tier**: sonnet runs; opus reads the report and the sheets.
-- **Depends**: M2, M3a.
-- **Files**: `public/models/monsters.glb`, `blender/monsters.blend`, `src/engine/blenderMonsters.ts` (the `?v=` key only), manifest (ceilings), `docs/superpowers/baseline/models/s4a/`.
-- **Change**: as H7; in-engine capture of the goblin camp.
-- **Accept**: SG; the seven untouched figures show zero Drift in the compare report. Then **OM-S4a**.
-- **Must not change**: any other shipped file.
-
-### M3b Scorpion, dark wizard, dark ranger [CLAUDE]
-- **Tier**: opus.
-- **Depends**: M4a.
-- **Files**: `build_monsters.py` (those three), manifest.
-- **Change**: scorpion: legs at least 0.044 thick, a `TailPivot` chain of two, ochre and bone values, 5,000 triangles. Wizard: hat and sleeves exaggerated, the staff held away from the body on a `WeaponPivot`. Ranger: a cloak that makes a triangle outline, bow out, a value clearly lighter than the wizard's.
-- **Accept**: BG; sheets under `s4b/`; the three told apart from each other and from the goblins on the roster sheet.
-- **Must not change**: as M3a, for these three.
-
-### M4b Promote monsters, slice 4b [CLAUDE, main session] + OM-S4b
-- As M4a (same tier, files, accept and must-not-change), sheets under `s4b/`, capture of the dunes camp. **Depends**: M3b.
-
-### M3c Hill giant, moss guardian [CLAUDE]
-- **Tier**: opus.
-- **Depends**: M4b.
-- **Files**: `build_monsters.py` (those two), manifest.
-- **Change**: giant: shoulders and hands exaggerated, the club carried at the side on a `WeaponPivot`. Guardian: stone and bark separated in value by 20 points, the core kept as the one glow.
-- **Accept**: BG; sheets under `s4c/`; CAPTURE(monsters).
-- **Must not change**: as M3a, for these two.
-
-### M3d Lesser demon: cut by its armature, out of the T-pose [CLAUDE]
-- **Tier**: opus.
-- **Depends**: M3c, D2a (the cut method proven on the dragon).
-- **Files**: `build_monsters.py` (the demon builder), manifest.
-- **Change**: `pose_armature` on `RedDevil-Ex.blend`'s `Armature` (arms down and forward, a hunch), then `cut_by_weights` onto `HeadGroup`, both arm and both leg pivots (today all but the right arm are empty, critique C1), joint caps; body `decimate_to` 5,000; wings centred on the back; 7,000 triangles in total.
-- **Accept**: BG; `tests/monster-motion.test.ts` (D2a) green for the demon against the built file; turnaround, worst-pose and silhouette sheets under `s4c/`; CAPTURE(monsters) at the pass; the roster silhouette sheet shows all ten told apart (GM6).
-- **Must not change**: as M3a; the demon's CC0 source file and its credit row.
-
-### M4c Promote monsters, slice 4c [CLAUDE, main session] + OM-S4c
-- As M4a, sheets under `s4c/`, capture of the pass. **Depends**: M3d.
-
----
-
-## Slice 5: dragons (runs before slice 4a if D-2 is accepted)
-
-(D1 was cut: the critique's E6 measured that linked mesh data exports once, and kits no longer need it.)
-
-### D1b Kit over a base model [CLAUDE] test, then [AGY]
+### B1 Look fields `kit` and `body` [CLAUDE] test, then [AGY]
 - **Tier**: sonnet for both.
-- **Depends**: R0, M1b.
-- **Files**: `tests/monster-kits.test.ts` (new, written and committed first), then `src/engine/blenderMonsters.ts`, the file holding `MonsterDef` (named by R0; one optional look field `kit?: string`), the engine call site that passes the def (named by R0).
-- **Change**: test: `a def with kit clones its model's Monster_ node, then adds the children of Kit_<kit> under the base pivots of the same name (a child named after no pivot goes under the root)`; `pivots resolve from the base`; `a def without kit is unchanged`; `the model key is unchanged, so Stage 4's tests over model keys still see ten`. Then the implementation, in `upgradeMonsterRigWithGltf` only.
-- **Accept**: `ONE(tests/monster-kits.test.ts)` passes; Stage 4's amended `blender-hero.test.ts` and `new-monsters.test.ts` pass untouched; SG.
+- **Depends**: R0, S1b.
+- **Files**: `tests/monster-kits.test.ts`, `tests/monster-body.test.ts` (new, written and committed first), then `src/engine/blenderMonsters.ts`, the file holding `MonsterDef` (named by R0; two optional look fields), the engine call site that passes the def (named by R0).
+- **Change**: tests: `a def with kit clones its model's Monster_ node, then adds the children of Kit_<kit> under the bones of the same name (a child named after no bone goes under the root)`; `a def with body clones Monster_<body> instead of Monster_<model key>, strips the body key's prefix from its bones, and its skeleton, motion row, albedo and minimap entry still come from the model key`; `a def with neither is unchanged`; `the model keys of every row equal a snapshot, so Stage 4's tests over model keys still see ten`. Then the implementation, in `upgradeMonsterRigWithGltf` only.
+- **Accept**: both tests pass; Stage 4's amended `blender-hero.test.ts` and `new-monsters.test.ts` pass untouched; SG.
 - **Must not change**: material rules; Stage 4's `tint`, `modelScale` and `model`.
 
-### D2a Dragon cut by its armature [CLAUDE]
-- **Tier**: opus.
-- **Depends**: H2, M1b; M0p if D-5.
-- **Files**: `build_monsters.py` (the dragon builder; `build_monsters.py` 190-200 today forces the rest pose and drops the rig), `tests/monster-motion.test.ts` (new, written first in this task: `every contract pivot of every Monster_ figure in the file holds at least one mesh`, `the dragon's Jaw and TailPivot exist and hold meshes`; red on today's file for the dragon and the demon), manifest (new pivots), `src/data/monsterPoses.ts` (the dragon's row gains `Jaw` and tail turns).
-- **Change**: keep `Dragon-low-rig.blend`'s `Armature.001`; `pose_armature` to a crouched rest pose; `cut_by_weights` onto `HeadGroup` (head and neck), `Jaw`, the four leg pivots, `LWing`, `RWing`, `TailPivot`, `TailPivot2`; joint caps. No reduction yet.
-- **Declared**: M1's case "the pivot rotations equal the old branch's" holds for every row except the dragon's, whose numbers were never seen on a mesh (its pivots were empty); this task may retune that row, and the M1 test's dragon row is replaced in the same commit. M3d may do the same for the demon's row.
-- **Accept**: BG; `monster-motion.test.ts` green for the dragon against the built file; worst-pose strips of the attack, walk and Stage 4 wind-up poses under `s5/`; CAPTURE(monsters) at the dragon's lair with the dragon attacking.
-- **Must not change**: `Monster_elvarg_dragon`, its seven pivot names, its in-game size; the CC-BY source file and its credit row.
+### D2 The new dragon [CLAUDE]
+- **Tier**: **fable** (the hardest shape here, and it defines the dragon skeleton); opus verifies.
+- **Depends**: S4, B1.
+- **Files**: `build_monsters.py` (the dragon builder, rewritten; the old one and its use of `Dragon-low-rig.blend` removed), `tests/fixtures/model-contract/monsters.json` (the dragon's entry replaced whole: the dragon skeleton of design 6.1.2, bones `elvarg_dragon_<Bone>`).
+- **Change**: an original dragon to design section 5 (design K7: no replica of any game's dragon): a low, heavy-shouldered body with a clear line of action, a long neck in two bones, a wedge head with a jaw, horns swept back, four legs outside the body outline, wings whose membrane is its own material, a tail in three bones. Hide, belly, membrane and horn at different values; one glow (the mouth). `organic_body` for trunk, neck, legs and tail; wings and horns built and hard- or blend-weighted by rule; `auto_weights` in a spread pose. 14,000 triangles, at most 4 skinned meshes. Not painted before OM-S2 has accepted the paint layer on the hero.
+- **Accept**: BG; turnaround, silhouette, play-distance and worst-pose sheets (neck curled, wings raised and folded, jaw open, tail swept) `--against` shipped under `s4/`; wire bytes of the figure reported against 320 kB (220 kB if N-3); CAPTURE(monsters) at the dragon's lair. If two attempts fail the opus verify's reading of the sheets, the task stops and goes to the owner with the fallback of design 6.2 item 3 (a CC0 or CC-BY rigged base, or the old mesh with its own armature folded onto the dragon rig).
+- **Must not change**: `Monster_elvarg_dragon`; the names `elvarg_dragon_HeadGroup`, `_LeftArmPivot`, `_RightArmPivot`, `_LeftLegPivot`, `_RightLegPivot`, `_LWing`, `_RWing`; its in-game size within 5%; the old dragon's source file and licence note under `blender/examples/` (its credit row moves to "not shipped" at D5).
 
-### D2b Dragon to budget, dressed [CLAUDE]
+### D2b The dragon library [CLAUDE]
 - **Tier**: opus.
-- **Depends**: D2a.
-- **Files**: `build_monsters.py` (the dragon builder), manifest.
-- **Change**: body parts `decimate_to` 9,000 in total (25,182 today); the two teeth meshes (8,928 triangles) replaced by two procedural rows of at most 400 triangles in total; eyes kept (640, reduced to 200); belly, back and wing membrane as separate named materials at different values; `bake_paint` **only once OM-S1 has accepted the paint layer on the hero** (if D-2 puts this task first, the dragon ships unpainted at D5 and is painted in the next monster promotion). 14,000 triangles, 20 meshes.
-- **Accept**: BG; the five sheets `--against` shipped under `s5/`; wire bytes of the figure reported (target at most 420,000); CAPTURE(monsters).
-- **Must not change**: as D2a.
+- **Depends**: D2, M1b.
+- **Files**: `build_monsters.py` (clips on the dragon's armature), `src/data/monsterPoses.ts` (the dragon's row names its clips; **declared**: this replaces the dragon row of M1's "reproduces the old branch" case, whose numbers were never seen on a mesh because the old pivots were empty, critique C1), `tests/monster-motion.test.ts` (that one row), manifest (clips, anticipation times).
+- **Change**: `Idle`, `Walk`, `Bite`, `WingBuffet`, `Hurt`, `Death`, as pose tables, rotation-only plus `Hips`.
+- **Accept**: BG; `monster-motion.test.ts` green for the dragon against the built file; motion strips under `s4/`; CAPTURE(monsters) of the dragon walking, winding up `WingBuffet` under Stage 4's telegraph, biting and dying.
+- **Must not change**: as D2; Stage 4's attack rows and timings.
 
-### D3 Ashmantle kit [CLAUDE]
+### D3 Ashmantle, its own body [CLAUDE]
 - **Tier**: opus.
-- **Depends**: D1b, D2b.
-- **Files**: `build_monsters.py`, manifest (node `Kit_ashmantle`).
-- **Change**: design 5.6: a slag crown, back plates with emissive seams (the `glow` material), a clubbed tail end, each a child of `Kit_ashmantle` named after the dragon pivot it rides on; at most 3,000 kit triangles. Value and size stay Stage 4's `tint` and `modelScale`.
-- **Accept**: BG; silhouette sheet of dragon and Ashmantle (base plus kit, at `modelScale` 1.2) side by side at 85 px: different outlines.
-- **Must not change**: the dragon's own node; every other builder.
+- **Depends**: D2b.
+- **Files**: `build_monsters.py` (a new builder), manifest (node `Monster_ashmantle` on the dragon skeleton, bones `ashmantle_<Bone>`, no clips of its own).
+- **Change**: design 5.6: heavier chest, a slag crown fused to the skull, back plates with emissive seams (the `glow` material), a clubbed tail end; ash and ember values at least 15 points from the dragon's. 12,000 triangles, at most 4 skinned meshes. Value and size stay Stage 4's `tint` and `modelScale`.
+- **Accept**: BG; silhouette sheet of dragon and Ashmantle side by side (Ashmantle at `modelScale` 1.2) at 85 px: different outlines; worst-pose sheet; `monster-motion.test.ts`: Ashmantle plays the dragon's `Walk` and `Bite`; wire bytes against 275 kB (190 kB if N-3); CAPTURE(monsters) at Ashmantle's arena.
+- **Must not change**: the dragon's node; every other builder.
 
-### D4 Model and kit test [CLAUDE]
+### M3d Lesser demon, rebuilt [CLAUDE]
+- **Tier**: opus.
+- **Depends**: D3 (same file, serial).
+- **Files**: `build_monsters.py` (the demon builder, rewritten; the old one and its use of `RedDevil-Ex.blend` removed), manifest (entry replaced whole: biped skeleton with `LWing`, `RWing`, `TailPivot`, `TailPivot2`), `src/data/monsterPoses.ts` (the demon's row names biped clips).
+- **Change**: an original demon on the biped rig: a forward hunch, horns and wings exaggerated, wings centred on the back, the cleaver hard-weighted to `WeaponPivot`, slate and ember values. 7,000 triangles.
+- **Accept**: BG; `monster-motion.test.ts` green for the demon; turnaround, worst-pose and silhouette sheets under `s4/`; CAPTURE(monsters) at the pass. Fallback as design 4.6: the CC0 body kept, with its author's weights folded onto the biped rig.
+- **Must not change**: `Monster_lesser_demon`, its seven pivot names as bones, in-game height within 5%; the source file and its licence note.
+
+### D4 Model, body and kit test [CLAUDE]
 - **Tier**: sonnet.
 - **Depends**: D3.
 - **Files**: `tests/monster-models.test.ts` (new).
-- **Change**: `every MONSTER_TYPES row's model key (or type key) has a Monster_ node with both leg pivots`; `every row's kit, if any, has a Kit_ node whose children name pivots of that model`; `no row's stats or model key differ from a snapshot taken in this test` (name, level, hitpoints, max hit, attack, defence, drops, model).
-- **Accept**: red for the three kits until K3 and the promotions.
+- **Change**: `every MONSTER_TYPES row's model key (or type key) has a Monster_ node with both leg bones or pivots`; `every row's body, if any, has a Monster_ node on the same skeleton as its model`; `every row's kit, if any, has a Kit_ node whose children name bones of that model`; `no row's stats or model key differ from a snapshot taken in this test` (name, level, hitpoints, max hit, attack, defence, drops, model).
+- **Accept**: red for the body until D5, for the two kits until K3.
 - **Must not change**: `src/`.
 
-### D5 Promote monsters, slice 5 [CLAUDE, main session] + OM-S5
-- As M4a, sheets under `s5/`, captures of both lairs. **Depends**: D2b, D3.
+### D5 Give the boss its body; promote [AGY], then [CLAUDE, main session] + OM-S4
+- **Tier**: sonnet; opus reads the report and the sheets.
+- **Depends**: D2b, D3, M3d, D4.
+- **Files**: the file holding Stage 4's Ashmantle row (named by R0): `body: 'ashmantle'` and nothing else; then as M0p for `monsters.glb`; `CREDITS.md` (the old dragon's and the Red Devil's rows move to "kept in the repository, not shipped"); sheets under `s4/`.
+- **Accept**: TYPES; D4's body case green; Stage 4's tests pass untouched; SG; captures of both lairs and the pass; `ONE(tests/credits.test.ts)` and `ONE(tests/model-licences.test.ts)` green. Then **OM-S4**.
+- **Must not change**: every other field, including `model`, `tint` and `modelScale`; every other row; any other shipped file.
 
 ---
 
-## Slice 6: variants
+## Slice 5: start region
+
+### M3a Goblin archer rebuilt, chicken re-rigged [CLAUDE]
+- **Tier**: opus.
+- **Depends**: D5.
+- **Files**: `build_monsters.py` (those two builders), manifest, `src/data/monsterPoses.ts` (rows name biped clips; the archer attacks with `Ranged`).
+- **Change**: archer: the raider's rig and proportions with its own head (ears through the hood), a lighter value, the bow hard-weighted to `OffhandPivot` and held out to the side, a tall quiver. Chicken: today's shape kept, its parts fused into at most 3 skinned meshes on the biped rig (wings on the arm bones, hard weights on beak and comb), 2,500 triangles.
+- **Accept**: BG; sheets under `s5/`; the roster silhouette sheet shows raider and archer told apart at 85 px; `monster-motion.test.ts` green for both; CAPTURE(monsters) at the goblin camp and the chicken yard.
+- **Must not change**: the two node names, their pivot names as bones and positions within 0.05, material name substrings, in-game height within 5%; every other builder.
+
+### M4a Promote monsters, slice 5 [CLAUDE, main session] + OM-S5
+- As M0p, sheets under `s5/`; the untouched figures show zero Drift. **Depends**: M3a.
+
+---
+
+## Slice 6: mid game and variants
+
+### M3b Scorpion on the crawler rig, with its library [CLAUDE]
+- **Tier**: opus.
+- **Depends**: M4a.
+- **Files**: `build_monsters.py` (the scorpion builder), manifest (crawler skeleton, clips), `src/data/monsterPoses.ts` (the scorpion's row; **declared** as D2b: it replaces that row of M1's old-numbers case).
+- **Change**: today's design kept: plates hard-weighted to their bones, legs at least 0.044 thick with per-leg bones, a tail of three bones, ochre and bone values, 5,000 triangles, at most 3 skinned meshes. Library: `Idle`, `Walk`, `Strike`, `Hurt`, `Death`.
+- **Accept**: BG; sheets and motion strips under `s6/`; `monster-motion.test.ts` green; CAPTURE(monsters) at the dunes.
+- **Must not change**: as M3a, for the scorpion.
+
+### M3e Dark wizard and dark ranger, rebuilt [CLAUDE]
+- **Tier**: opus.
+- **Depends**: M3b (same file, serial).
+- **Files**: `build_monsters.py` (those two), manifest, `src/data/monsterPoses.ts`.
+- **Change**: wizard: hat and sleeves exaggerated, a robe skirt weighted by rule to `Hips` and the leg bones so it swings without clinging, the staff hard-weighted to `WeaponPivot` and held away from the body; attacks with `Cast`. Ranger: a cloak that makes a triangle outline, weighted to `Torso` and `Hips`, bow out, a value clearly lighter than the wizard's; attacks with `Ranged`.
+- **Accept**: BG; sheets under `s6/`, the worst-pose sheet showing the skirt and cloak in a stride and a strike; the three told apart from each other and from the goblins on the roster sheet; CAPTURE(monsters).
+- **Must not change**: as M3a, for these two.
 
 ### K1 Saltback Stalker kit [CLAUDE]
 - **Tier**: opus.
-- **Depends**: D1b, M4b.
+- **Depends**: B1, M3b.
 - **Files**: `build_monsters.py`, manifest (node `Kit_saltback_stalker`).
-- **Change**: design 5.6: salt-crusted back plates, a forked double sting, heavier claws; at most 1,200 kit triangles; values 15 points from the scorpion's.
+- **Change**: design 5.6: salt-crusted back plates, a forked double sting, heavier claws, each a rigid child named after the scorpion bone it rides on; at most 1,200 kit triangles; values 15 points from the scorpion's.
 - **Accept**: BG; scorpion and stalker side by side at 85 px: different outlines.
 - **Must not change**: `Monster_scorpion`; every other builder.
 
 ### K2 Thornwatch Marksman kit [CLAUDE]
 - **Tier**: opus.
-- **Depends**: K1 (same file, serial).
+- **Depends**: K1, M3e.
 - **Files**: `build_monsters.py`, manifest (node `Kit_thornwatch_marksman`).
 - **Change**: a thorn-wreathed hood, a tall bramble quiver, a longer bow; at most 1,200 kit triangles.
 - **Accept**: BG; ranger and marksman side by side at 85 px: different outlines.
 - **Must not change**: `Monster_dark_ranger`; every other builder.
 
-### K3 Give the three rows their kits [AGY]
+### K3 Give the two rows their kits [AGY]
 - **Tier**: sonnet.
 - **Depends**: K2, D4.
-- **Files**: the file(s) holding Stage 4's three `MONSTER_TYPES` rows (named by R0).
-- **Change**: `kit` becomes `ashmantle`, `saltback_stalker` and `thornwatch_marksman`. Nothing else (D4b merged here).
+- **Files**: the file(s) holding Stage 4's two variant rows (named by R0).
+- **Change**: `kit` becomes `saltback_stalker` and `thornwatch_marksman`. Nothing else.
 - **Accept**: TYPES passes; the snapshot of D4 passes (stats and model keys unchanged); Stage 4's tests pass untouched.
 - **Must not change**: every other field, including `model`, `tint` and `modelScale`; every other row.
 
 ### K4 Promote monsters, slice 6 [CLAUDE, main session] + OM-S6
-- As M4a, sheets under `s6/`. The roster silhouette sheet now holds thirteen figures, all told apart (GM6). **Depends**: K3.
+- As M0p, sheets under `s6/`. **Depends**: K3.
 
 ---
 
-## Slice 7: budgets, hand-off
+## Slice 7: late game
 
-(L1 and L1b, the detail layer, were cut by the critique, M7.)
-
-### X1 Shape studies for the three future monsters [CLAUDE] (only if D-6 keeps them)
+### M3c Hill giant and moss guardian, re-rigged [CLAUDE]
 - **Tier**: opus.
+- **Depends**: K4.
+- **Files**: `build_monsters.py` (those two), manifest, `src/data/monsterPoses.ts`.
+- **Change**: giant: today's parts fused into one skin (the stacked-ball joints go), shoulders and hands exaggerated, the club hard-weighted to `WeaponPivot` and carried at the side; its row may scale the arm swing so the arms clear the belly. Guardian: stone and bark blocks hard-weighted (stone does not bend), separated in value by 20 points, the core kept as the one glow.
+- **Accept**: BG; sheets under `s7/`; `monster-motion.test.ts` green; CAPTURE(monsters).
+- **Must not change**: as M3a, for these two.
+
+### M4c Promote monsters, slice 7 [CLAUDE, main session] + OM-S7
+- As M0p, sheets under `s7/`; the roster silhouette sheet holds every figure, all told apart (GM6). **Depends**: M3c.
+
+---
+
+## Slice 8: one path, budgets, hand-off
+
+### X0 Remove the rigid monster path [AGY]
+- **Tier**: sonnet.
 - **Depends**: M4c.
-- **Files**: `scripts/blender/studies.py` (new; writes only to the output directory, never part of `all`), `docs/superpowers/baseline/models/studies/` (new), the design's hand-off section.
-- **Change**: block-outs from kit primitives, no paint: a camp captain that reads as a leader beside a hill giant (banner or crest above the head line, one heavy asymmetric shoulder); a swarm creature under 60 px tall at play distance with a fast low outline; a dungeon boss that is not a dragon (upright, wide, a silhouette no existing figure has). Silhouette and play-distance sheets, each beside the figures it must be told apart from. A size, budget class and pivot list per study.
-- **Accept**: three sheets; UNTOUCHED.
-- **Must not change**: anything under `public/`, `src/`, the manifest.
+- **Files**: `src/engine/blenderMonsters.ts`, `src/data/monsterPoses.ts` (rows without clips removed), `src/engine/monsterMeshes.ts` (the code-pose branch of `poseMonsterLimbs` stays only for the procedural placeholder rigs), `tests/skinned-figure.test.ts` (the rigid-in-the-same-file case, created by this plan, now asserts a rigid `Monster_` node is refused with a console warning), `tests/monster-motion.test.ts` (the old-numbers case, created by this plan, removed).
+- **Change**: `upgradeMonsterRigWithGltf` requires a skin. The hero's loader keeps both branches (rigid hair and eyes are children of a bone, not a path).
+- **Accept**: SG; `grep -n "clone(true)" src/engine/blenderMonsters.ts` prints nothing.
+- **Must not change**: the procedural placeholder builders; `lean-rig.test.ts`.
 
 ### X2 Final budgets [CLAUDE]
 - **Tier**: sonnet.
 - **Depends**: all promotes.
 - **Files**: `tests/fixtures/model-contract/*.json`.
-- **Change**: set every ceiling to design 9.1 and 9.2: per-figure triangles and meshes, per-file wire bytes, total at most 2,850,000.
+- **Change**: set every ceiling to design 9.1 and 9.2 as reset at S2: per-figure triangles, skinned meshes and wire bytes; per-file wire bytes; total at most 3,180,000 (2,600,000 if N-3).
 - **Accept**: `ONE(tests/model-contract.test.ts)` passes; SG. If a ceiling does not hold, the figure is fixed, not the ceiling; a ceiling is raised only by an owner decision recorded in the design's review log.
-- **Must not change**: contract entries (names, pivots, clips); any GLB.
+- **Must not change**: contract entries (names, bones, clips); any GLB.
 
 ### X3 Final check [CLAUDE] + [HUMAN] + OM-F
 - **Tier**: opus.
-- **Depends**: X2 (and X1 if kept).
+- **Depends**: X0, X2.
 - **Files**: `docs/superpowers/baseline/models/final.md` (new), `README.md` (model and credits lines only).
-- **Change**: SG; P5 repeated (a full rebuild compares clean against what is now shipped); the after sheets and captures indexed beside the before ones; per-file `curl -H 'Accept-Encoding: br'` sizes from the preview deployment [HUMAN]; Stage 5's start-pose draw calls and triangles re-captured and set against its budget; the owner plays ten minutes on a real GPU and walks the four camps.
-- **Accept**: wire total at most 2.85 MB measured on the preview; Stage 5's budgets still hold; **OM-F**.
+- **Change**: SG; P5 repeated (a full rebuild compares clean against what is now shipped); the after sheets and captures indexed beside the before ones; per-file `curl -H 'Accept-Encoding: br'` sizes from the preview deployment [HUMAN]; Stage 5's start-pose draw calls and triangles and its leak check (GPU resources after 200 attacks and 20 gear swaps) re-captured and set against its budget; the hand-off list of design section 10 written out for Stage 6 and for the follow-up gear stage; the owner plays ten minutes on a real GPU and walks the camps.
+- **Accept**: wire total within the X2 ceiling, measured on the preview; Stage 5's budgets still hold; **OM-F**.
 - **Must not change**: `src/`, any GLB, any test.
 
 ---
@@ -596,31 +601,35 @@ Look at the goblin sheets and an in-engine capture taken from a throw-away workt
 ## Order and parallelism
 
 ```
-OM-0 -> R0 -> P1 -> (P2 | P3) -> P4 -> P5 -> V1 -> V2 -> V3, V4 -> (H6 -> H6b) -> OM-1
-hero cluster:     OM-1 -> H1, H2 -> H3a -> H4a -> OM-H4a -> H4b ; H3a -> H3b ; (H4b -> H5 -> H5b) -> H7 -> OM-S1
-gear cluster:     OM-1 -> G1 ; H2 -> G2 -> G2b -> G3 -> G4 -> G5 -> G5b -> G6 -> OM-S2
-guards:           G2b -> N1 -> N2 -> N3 -> OM-S3
-monster cluster:  OM-1 -> M1 -> M1b ; H2 -> M0 -> M0p -> OM-S0b
-                  -> D1b -> D2a -> D2b -> D3 -> D4 -> D5 -> OM-S5                      (first, if D-2)
-                  -> H7 -> M2 -> OM-S4-pattern -> M3a -> M4a -> M3b -> M4b -> M3c -> M3d -> M4c
-                  -> K1 -> K2 -> K3 -> K4
-close:            all -> (X1 if D-6 keeps it) -> X2 -> X3 -> OM-F
+OM-0 -> R0 -> P1 -> (P2 | P3) -> P4 -> P5 -> V1 -> V2 -> V3, V4 -> (H6 -> H6b) -> F1 -> OM-1
+merge-only:  OM-1 -> M0 -> M0p -> OM-S0b
+pilot:       (P4 -> S0 -> S1b) | (F1 -> S1) ; M0p, S1 -> S2 ; S1b, S2 -> S3 -> OM-P -> S4 -> (Q1 if N-3)
+hero:        OM-P -> H1 -> H2 ; H1, S1 -> H3a -> H3b ; H3a -> H4 ; H3a -> H5 -> H5b -> H7 -> OM-S2
+gear, guards: G2 -> G2b -> G6 -> N1 -> N2 -> N3 -> OM-S3
+monsters:    H7 -> M1 -> M1b ; S1b -> B1
+             S4, B1 -> D2 -> D2b -> D3 -> M3d ; D3 -> D4 ; -> D5 -> OM-S4
+             -> M3a -> M4a -> OM-S5 -> M3b -> M3e -> K1 -> K2 -> K3 -> K4 -> OM-S6 -> M3c -> M4c -> OM-S7
+close:       all -> X0 -> X2 -> X3 -> OM-F
 ```
 
-About 56 tasks: 11 in slice 0 (with H6, H6b), 2 in slice 0b, 11 hero, 8 gear, 3 guards, 9 monsters, 6 dragons, 4 variants, 3 closing, plus R0. The art tasks (H3a, H3b, H4a, H4b, G3, G4, M3a to M3d, D2a, D2b, D3, K1, K2, X1) are opus, and M2 is fable with an opus verify; pipeline, wiring and merging are agy with a sonnet fallback; runs are haiku.
+About 58 tasks: 12 in slice 0 (with H6, H6b, F1), 2 in slice 0b, 6 in the pilot (7 with Q1), 8 hero, 6 gear and guards, 9 in slice 4, 2 in slice 5, 6 in slice 6, 2 in slice 7, 3 closing, plus R0. The art tasks (H3a, H3b, H4, D2b, D3, M3a to M3e, K1, K2) are opus; S2 and D2 are fable with an opus verify; pipeline, engine wiring and merging are agy with a sonnet fallback; runs are haiku.
 
 ## Risks to the plan
 
 | Risk | Answer |
 |---|---|
-| The paint layer fails in engine at H7. | H6b's flag stays harmless; every `bake_paint` call is dropped (0.5); budgets get easier (the layer costs about 26% of a figure's wire bytes), nothing else moves. |
-| The goblin pattern is rejected at OM-S4-pattern. | Only M2 is redone; that is why one figure goes first. |
-| `monsters.glb` is promoted six or seven times (with M0p) and the repository grows by about 25 MB of history. | Accepted; fewer promotions would mean larger, harder reviews. |
+| The owner rejects the skinned approach at OM-P. | That is what the pilot is for. Slice 0 and the merge-only promotion stay; one figure and one engine branch are reverted; the design is redrawn. Nothing else has started. |
+| The pilot's look is rejected but the approach is accepted. | Only S2 is redone; that is why one figure goes first. |
+| The paint layer fails in the game at the pilot or at H7. | H6b's flag stays harmless; every `bake_paint` call is dropped; budgets get easier; nothing else moves. |
+| The new dragon cannot be reached by script (D2). | The task stops after two attempts and goes to the owner with design 6.2's fallback. Slice 4 can promote Ashmantle and the demon later; the old dragon stays shipped until then, because the loader takes both kinds. |
+| The hero's weights break when re-posed to arms down (H3a). | The recorded fallback: bind in the source pose and add the arm-down rotation to every clip; the mount test decides whether gear still fits. |
+| `monsters.glb` is promoted seven times and the repository grows by about 30 MB of history. | Accepted; fewer promotions would mean larger, harder reviews. |
 | An art task runs long because a look cannot be reached by script. | The task stops at its sheets and goes to the owner with the fallback of CALL-M8. |
 | A slice's worktree promotes against a stale manifest. | Rule 0.4: promotions happen on the merged head, one at a time, by the main session. |
-| Cutting a third-party body by bone weights leaves ragged seams or a part under the wrong pivot (D2a, M3d). | `monster-motion.test.ts` catches empty pivots; worst-pose strips and the capture catch seams; fallback is D-1's skinned route, a stage of its own. |
-| The merge shifts the look of the engine's projected albedo tiles (critique M2). | Every merge promotion (M0p, G6) is judged on an in-engine capture; the material-family tests do not judge the look. |
-| Stage 4's model-key tests break. | Model keys never change; kits are a separate field (D1b, K3), and D1b's accept runs Stage 4's tests untouched. |
+| Two load paths live side by side and the rigid one rots, or the skinned one is silently skipped. | `tests/skinned-figure.test.ts` exercises both from one file; `tests/model-contract.test.ts` knows which figures must be skinned at each promotion; X0 removes the rigid monster path. |
+| The merge shifts the look of the engine's projected albedo tiles (critique M2). | Every merge promotion (M0p, G6) and every skinned figure is judged on an in-engine capture; the material-family tests do not judge the look. |
+| Stage 4's model-key tests break. | Model keys never change; `kit` and `body` are separate look fields (B1, D5, K3), and B1's accept runs Stage 4's tests untouched. |
+| Stage 4's reactions fight the mixer on clip-driven monsters. | R0 item 11 names where they are applied; M1 asserts they are present after the animator's update; the capture of M1b shows a flinch during a walk. |
 
 ---
 
@@ -648,3 +657,25 @@ Review of 2026-11-14 by an independent critic: `docs/superpowers/specs/2026-11-1
 | D-3, D-6 | N3 can delete `knight.blend`; X1 is conditional | Owner decisions |
 | H9 | D2b paints only after OM-S1; D2a and M3d may retune the dragon and demon pose rows (declared) | Paint judged on the hero first; those numbers were never seen on a mesh |
 | Scope | `--factory-startup` only on background spawns; the `_04_` merge exception only on `_leg[LR]_` nodes; H1 records its own red list | `open` is a GUI spawn; 50 of 54 `_04_` meshes are not hidden by anything; overlap cases were not measured |
+
+### Revision of 2026-11-14: owner decisions
+
+The owner answered the design's decisions (design 13.1); the plan was re-cut for them. The design's review log says what changed there.
+
+| Area | Change to this plan | Why |
+|---|---|---|
+| Gate | OM-0 now asks only the four new decisions N-1 to N-4; the ten answered ones are recorded in the design | They are decided |
+| Pilot | New slice 1: S0 (skinned-path tests), S1 (figure kit: rigs, bodies, weights, clips), S1b (the engine's skinned path), S2 (the goblin raider rebuilt and skinned, two body routes, two material variants), S3 (in the game), **OM-P**, S4 (promotion) | One figure goes through the whole chain before anything else commits; it replaces the old pattern task M2 |
+| Figure kit | Old H2 split into F1 (merge, paint, export; slice 0) and S1; `joint_cap`, `cut_by_weights`, `decimate_to`, `pose_rest` and `pose_armature` dropped; `make_rig`, `organic_body`, `auto_weights`, `hard_weights`, `fold_weights`, `merge_by_family`, `make_clip` added | Skinned figures; no rigid joints to cap; no third-party body to cut |
+| Hero | H3a is now the skin (author's weights folded onto the biped rig) with the ten clips keyed on bones; H2 moves gear mounting into one function before anything changes; H4a (the stepped against smooth spike) and OM-H4a dropped; H4 authors the twelve-clip biped library; H5 carries the **two** declared replacements; H5b puts the hero on the skinned path | Answers 1, 3, 4 and 8 |
+| Tests | `tests/skinned-figure.test.ts`, `tests/gear-mount.test.ts`, `tests/monster-motion.test.ts`, `tests/monster-body.test.ts`, `tests/model-pack.test.ts` added; P1 and P4 gain skin cases; rule 0.3.3 names both replacements | Design 8.3 |
+| Gear | G1, G3, G4, G5, G5b (bands, gear to budget, band shapes and lookup) moved to the follow-up stage; G2, G2b, G6 (merge only) stay | Decision N-2; the guards need the merge |
+| Guards | N-alt (keep the knight) removed; N3 deletes `knight.blend` | Answers 5 and 9 |
+| Monster motion | M1 and M1b become the motion table **and** the monster animator over shared clip libraries, with Stage 4's wind-up as the attack clip's anticipation | Answer 1: reuse |
+| Dragons | D2a and D2b (cut the old dragon by its armature, reduce and dress it) replaced by D2 (a new dragon, fable) and D2b (the dragon library); D3 is Ashmantle's own body, not a kit; D1b becomes B1 with a second look field `body`; D5 sets `body` on the boss row | Answer 2 |
+| Monsters | M2 replaced by the pilot; M3d rebuilds the demon instead of cutting it; M3a to M3e follow design 4.6 (rebuilt or kept, re-rigged); slice order: dragons and demon first among the monsters | Answers 2 and 7 |
+| Closing | X0 removes the rigid monster path; X1 (shape studies) removed; X2's total is 3,180,000, or 2,600,000 with N-3 | Migration ends in one path; budget redone from measurement |
+| Compression | Q1 (8-bit normals, weights and colour in the promote step) added, conditional on N-3 | Design 9.2 |
+| Kept from the critique | P1 to P5, V1 to V4, H6, H6b, the manifest per file, CAPTURE at every art task, the merge-only pass M0 and M0p, model keys never changing | Still apply |
+| Tiers | Fable stages are S2 and D2, each with its reason in 0.1; verifies stay opus | Owner model rules |
+| Self-review before the commit | H3a converts the clips for the bone chain and proves it with a mechanical orientation check; rigs carry a reference pose and a 20-degree bind bound; the mount fixture is in the mount bone's local space; a pending manifest keeps the suite green between an art task and its promotion; the bone prefix is the node's key | The hero's pivots are siblings today; the probe did not vary the bind pose; the shipped rest pose is not neutral |
