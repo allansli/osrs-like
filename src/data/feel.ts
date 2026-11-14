@@ -20,6 +20,7 @@ export const FLASH = {
 export const FLINCH = {
   heroMs: 180,
   monsterMs: 260,
+  heroLeanRad: 0.18,
 } as const;
 
 export const KNOCK_BACK = {
@@ -32,6 +33,7 @@ export const CAMERA = {
   kickMax: 0.18,
   kickMs: 140,
   rumbleMs: 600,
+  rumbleAmp: 0.08,
 } as const;
 
 export const LOW_HEALTH = {

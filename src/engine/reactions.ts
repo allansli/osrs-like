@@ -3,6 +3,7 @@
 
 import * as THREE from 'three';
 import { G, player } from './context';
+import type { MonsterEntity } from './context';
 import {
   CAMERA,
   FLASH,
@@ -12,23 +13,27 @@ import {
   springOffset,
 } from '../data/feel';
 
+type Entity = MonsterEntity | typeof player;
+
+// Reduced motion turns off only the camera kick and rumble and steadies the vignette (design 6.5, section 10).
 export function prefersReducedMotion(): boolean {
-  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
-    return false;
-  }
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
-const hitStoppedEntities = new Map<any, number>();
+function meshRoot(entity: Entity): THREE.Object3D {
+  return entity === player ? player.meshGroup! : (entity as MonsterEntity).rig.group;
+}
 
-export function hitStop(entity: any, ms: number): void {
-  if (!entity || ms <= 0 || prefersReducedMotion()) return;
-  const current = hitStoppedEntities.get(entity) ?? 0;
+const hitStoppedEntities = new Map<Entity, number>();
+
+export function hitStop(entity: Entity, ms: number): void {
+  if (ms <= 0) return;
+  const current = hitStoppedEntities.has(entity) ? hitStoppedEntities.get(entity)! : 0;
   hitStoppedEntities.set(entity, Math.max(current, ms));
 }
 
-export function isHitStopped(entity: any): boolean {
-  return (hitStoppedEntities.get(entity) ?? 0) > 0;
+export function isHitStopped(entity: Entity): boolean {
+  return hitStoppedEntities.has(entity);
 }
 
 interface FlashState {
@@ -37,9 +42,9 @@ interface FlashState {
   elapsedMs: number;
 }
 
-const entityFlashes = new Map<any, FlashState>();
-const entityLastFlashTime = new Map<any, number>();
-const entityMaterialsCache = new WeakMap<any, THREE.Material[]>();
+const entityFlashes = new Map<Entity, FlashState>();
+const entityLastFlashTime = new Map<Entity, number>();
+const entityMaterialsCache = new WeakMap<Entity, THREE.Material[]>();
 let reactionTimeMs = 0;
 const _whiteColor = new THREE.Color(0xffffff);
 const _tempColor = new THREE.Color();
@@ -59,8 +64,7 @@ function collectMaterials(root: THREE.Object3D): THREE.Material[] {
   return materials;
 }
 
-export function flash(entity: any): void {
-  if (!entity || prefersReducedMotion()) return;
+export function flash(entity: Entity): void {
   const lastTime = entityLastFlashTime.get(entity);
   if (lastTime !== undefined && reactionTimeMs - lastTime < FLASH.minGapMs) {
     return;
@@ -69,15 +73,14 @@ export function flash(entity: any): void {
 
   let materials = entityMaterialsCache.get(entity);
   if (!materials) {
-    const root = entity.rig?.group ?? entity.meshGroup ?? (entity.isObject3D ? entity : null);
-    materials = root ? collectMaterials(root) : [];
+    materials = collectMaterials(meshRoot(entity));
     entityMaterialsCache.set(entity, materials);
   }
 
   const originalColors: number[] = [];
   for (const mat of materials) {
     const std = mat as THREE.MeshStandardMaterial;
-    originalColors.push(std.color ? std.color.getHex() : 0xffffff);
+    originalColors.push(std.color.getHex());
   }
 
   entityFlashes.set(entity, {
@@ -97,7 +100,6 @@ interface HeroFlinchState {
 let activeHeroFlinch: HeroFlinchState | null = null;
 
 export function flinchHero(dirX: number, dirZ: number): void {
-  if (prefersReducedMotion()) return;
   const len = Math.hypot(dirX, dirZ);
   if (len === 0) return;
   activeHeroFlinch = {
@@ -109,46 +111,57 @@ export function flinchHero(dirX: number, dirZ: number): void {
 }
 
 interface KnockBackState {
-  mesh: THREE.Object3D;
+  // Visual targets with their resting positions: the hero group (base = player.pos, rewritten each frame by
+  // the loop) or the monster's mesh children (never the group, whose position is the rules position m.pos).
+  targets: { obj: THREE.Object3D; base: THREE.Vector3 }[];
+  isHero: boolean;
   dirX: number;
   dirZ: number;
   amount: number;
   durationMs: number;
   elapsedMs: number;
-  lastOffset: number;
 }
 
-const activeKnockBacks = new Map<any, KnockBackState>();
+const activeKnockBacks = new Map<Entity, KnockBackState>();
 
-export function knockBack(entity: any, dirX: number, dirZ: number, amount?: number): void {
-  if (!entity || prefersReducedMotion()) return;
+function applyKnockBack(kb: KnockBackState, offset: number): void {
+  if (kb.isHero) {
+    // The loop copies player.pos into the group every frame: write the absolute position after that copy.
+    const g = player.meshGroup!;
+    g.position.copy(player.pos);
+    g.position.x += kb.dirX * offset;
+    g.position.z += kb.dirZ * offset;
+    return;
+  }
+  for (const t of kb.targets) {
+    t.obj.position.set(t.base.x + kb.dirX * offset, t.base.y, t.base.z + kb.dirZ * offset);
+  }
+}
+
+export function knockBack(entity: Entity, dirX: number, dirZ: number, amount: number): void {
   const len = Math.hypot(dirX, dirZ);
   if (len === 0) return;
-  const mesh: THREE.Object3D | null =
-    entity === player
-      ? player.meshGroup
-      : (entity.rig?.group ?? entity.meshGroup ?? (entity.isObject3D ? entity : null));
-  if (!mesh) return;
-
   const isHero = entity === player;
-  const defaultAmount = isHero ? KNOCK_BACK.heroHeavy.amount : KNOCK_BACK.monsterHit.amount;
   const durationMs = isHero ? KNOCK_BACK.heroHeavy.ms : KNOCK_BACK.monsterHit.ms;
-  const effectiveAmount = amount ?? defaultAmount;
 
   const existing = activeKnockBacks.get(entity);
-  if (existing) {
-    mesh.position.x -= existing.dirX * existing.lastOffset;
-    mesh.position.z -= existing.dirZ * existing.lastOffset;
-  }
+  if (existing) applyKnockBack(existing, 0);
+
+  const rig = isHero ? null : (entity as MonsterEntity).rig;
+  const targets = isHero
+    ? []
+    : rig!.group.children
+        .filter((c) => c !== rig!.hitbox)
+        .map((obj) => ({ obj, base: obj.position.clone() }));
 
   activeKnockBacks.set(entity, {
-    mesh,
+    targets,
+    isHero,
     dirX: dirX / len,
     dirZ: dirZ / len,
-    amount: effectiveAmount,
+    amount,
     durationMs,
     elapsedMs: 0,
-    lastOffset: 0,
   });
 }
 
@@ -163,14 +176,14 @@ interface CameraKickState {
 
 let activeCameraKick: CameraKickState | null = null;
 
-export function cameraKick(dirX: number, dirZ: number, amount?: number): void {
+export function cameraKick(dirX: number, dirZ: number, amount: number): void {
   if (prefersReducedMotion()) return;
   const len = Math.hypot(dirX, dirZ);
   if (len === 0) return;
-  const cappedAmount = Math.min(amount ?? CAMERA.kickMax, CAMERA.kickMax);
+  const cappedAmount = Math.min(amount, CAMERA.kickMax);
   if (cappedAmount <= 0) return;
 
-  if (activeCameraKick && G.camera) {
+  if (activeCameraKick) {
     G.camera.position.x -= activeCameraKick.dirX * activeCameraKick.lastOffset;
     G.camera.position.z -= activeCameraKick.dirZ * activeCameraKick.lastOffset;
   }
@@ -196,7 +209,7 @@ let activeCameraRumble: CameraRumbleState | null = null;
 
 export function cameraRumble(ms: number = CAMERA.rumbleMs): void {
   if (prefersReducedMotion()) return;
-  if (activeCameraRumble && G.camera) {
+  if (activeCameraRumble) {
     G.camera.position.x -= activeCameraRumble.lastOffsetX;
     G.camera.position.y -= activeCameraRumble.lastOffsetY;
   }
@@ -216,22 +229,9 @@ export function isLowHealth(): boolean {
 
 export function setLowHealth(on: boolean): void {
   lowHealthActive = on;
-  if (typeof document === 'undefined') return;
-  const vignette =
-    document.getElementById('low-health-vignette') ||
-    document.querySelector('.low-health-vignette');
-  if (vignette) {
-    if (on) {
-      vignette.classList.add('active');
-      if (prefersReducedMotion()) {
-        vignette.classList.add('steady');
-      } else {
-        vignette.classList.remove('steady');
-      }
-    } else {
-      vignette.classList.remove('active', 'steady');
-    }
-  }
+  const vignette = document.getElementById('low-health-vignette')!;
+  vignette.classList.toggle('active', on);
+  vignette.classList.toggle('steady', on && prefersReducedMotion());
 }
 
 export function updateReactions(dt: number): void {
@@ -252,63 +252,48 @@ export function updateReactions(dt: number): void {
     if (state.elapsedMs >= FLASH.ms) {
       for (let i = 0; i < state.materials.length; i++) {
         const mat = state.materials[i] as THREE.MeshStandardMaterial;
-        if (mat.color && typeof mat.color.setHex === 'function') {
-          mat.color.setHex(state.originalColors[i]);
-        }
+        mat.color.setHex(state.originalColors[i]);
       }
       entityFlashes.delete(entity);
     } else {
       const amount = flashAmount(state.elapsedMs);
       for (let i = 0; i < state.materials.length; i++) {
         const mat = state.materials[i] as THREE.MeshStandardMaterial;
-        if (mat.color && typeof mat.color.setHex === 'function') {
-          _tempColor.setHex(state.originalColors[i]);
-          _tempColor.lerp(_whiteColor, amount);
-          mat.color.copy(_tempColor);
-        }
+        _tempColor.setHex(state.originalColors[i]);
+        _tempColor.lerp(_whiteColor, amount);
+        mat.color.copy(_tempColor);
       }
     }
   }
 
   if (activeHeroFlinch) {
     activeHeroFlinch.elapsedMs += dtMs;
-    const torso = player.parts?.torso as THREE.Group | undefined;
+    const torso = player.parts.torso as THREE.Group;
     if (activeHeroFlinch.elapsedMs >= activeHeroFlinch.durationMs) {
-      if (torso) {
-        torso.rotation.x = 0;
-        torso.rotation.z = 0;
-      }
+      torso.rotation.x = 0;
+      torso.rotation.z = 0;
       activeHeroFlinch = null;
     } else {
       const progress = activeHeroFlinch.elapsedMs / activeHeroFlinch.durationMs;
-      const lean = Math.sin(progress * Math.PI) * 0.18;
-      if (torso) {
-        torso.rotation.z = -activeHeroFlinch.dirX * lean;
-        torso.rotation.x = activeHeroFlinch.dirZ * lean;
-      }
+      const lean = Math.sin(progress * Math.PI) * FLINCH.heroLeanRad;
+      torso.rotation.z = -activeHeroFlinch.dirX * lean;
+      torso.rotation.x = activeHeroFlinch.dirZ * lean;
     }
   }
 
   for (const [entity, kb] of activeKnockBacks) {
-    kb.mesh.position.x -= kb.dirX * kb.lastOffset;
-    kb.mesh.position.z -= kb.dirZ * kb.lastOffset;
-
     kb.elapsedMs += dtMs;
     if (kb.elapsedMs >= kb.durationMs) {
+      applyKnockBack(kb, 0);
       activeKnockBacks.delete(entity);
     } else {
-      const curOffset = springOffset(kb.elapsedMs, kb.amount, kb.durationMs);
-      kb.mesh.position.x += kb.dirX * curOffset;
-      kb.mesh.position.z += kb.dirZ * curOffset;
-      kb.lastOffset = curOffset;
+      applyKnockBack(kb, springOffset(kb.elapsedMs, kb.amount, kb.durationMs));
     }
   }
 
   if (activeCameraKick) {
-    if (G.camera) {
-      G.camera.position.x -= activeCameraKick.dirX * activeCameraKick.lastOffset;
-      G.camera.position.z -= activeCameraKick.dirZ * activeCameraKick.lastOffset;
-    }
+    G.camera.position.x -= activeCameraKick.dirX * activeCameraKick.lastOffset;
+    G.camera.position.z -= activeCameraKick.dirZ * activeCameraKick.lastOffset;
     activeCameraKick.elapsedMs += dtMs;
     if (activeCameraKick.elapsedMs >= activeCameraKick.durationMs) {
       activeCameraKick = null;
@@ -318,31 +303,25 @@ export function updateReactions(dt: number): void {
         activeCameraKick.amount,
         activeCameraKick.durationMs
       );
-      if (G.camera) {
-        G.camera.position.x += activeCameraKick.dirX * curOffset;
-        G.camera.position.z += activeCameraKick.dirZ * curOffset;
-      }
+      G.camera.position.x += activeCameraKick.dirX * curOffset;
+      G.camera.position.z += activeCameraKick.dirZ * curOffset;
       activeCameraKick.lastOffset = curOffset;
     }
   }
 
   if (activeCameraRumble) {
-    if (G.camera) {
-      G.camera.position.x -= activeCameraRumble.lastOffsetX;
-      G.camera.position.y -= activeCameraRumble.lastOffsetY;
-    }
+    G.camera.position.x -= activeCameraRumble.lastOffsetX;
+    G.camera.position.y -= activeCameraRumble.lastOffsetY;
     activeCameraRumble.elapsedMs += dtMs;
     if (activeCameraRumble.elapsedMs >= activeCameraRumble.durationMs) {
       activeCameraRumble = null;
     } else {
       const remaining = 1 - activeCameraRumble.elapsedMs / activeCameraRumble.durationMs;
-      const amp = 0.08 * remaining;
+      const amp = CAMERA.rumbleAmp * remaining;
       const ox = (Math.random() - 0.5) * amp;
       const oy = (Math.random() - 0.5) * amp;
-      if (G.camera) {
-        G.camera.position.x += ox;
-        G.camera.position.y += oy;
-      }
+      G.camera.position.x += ox;
+      G.camera.position.y += oy;
       activeCameraRumble.lastOffsetX = ox;
       activeCameraRumble.lastOffsetY = oy;
     }
