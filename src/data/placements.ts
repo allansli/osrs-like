@@ -1,54 +1,14 @@
+import { CAMPS } from './worldMap';
+
 export interface Placement {
   type: string;
   x: number;
   z: number;
 }
 
-export const MONSTER_PLACEMENTS: Placement[] = [
-  // 1. LUMBRIDGE HAVEN
-  { type: 'chicken', x: -13, z: 4 },
-  { type: 'chicken', x: -16, z: 10 },
-  { type: 'chicken', x: -11, z: 14 },
-  { type: 'chicken', x: -17, z: 17 },
-  { type: 'goblin', x: 12, z: 4 },
-  { type: 'goblin', x: 15, z: 11 },
-  { type: 'goblin', x: 18, z: 17 },
-  { type: 'goblin', x: 10, z: 19 },
-  { type: 'goblin', x: 20, z: 8 },
-  { type: 'goblin_archer', x: 24, z: 13 },
-  { type: 'goblin_archer', x: 27, z: 19 },
-
-  // 2. VARROCK GRAND PLAZA
-  { type: 'dark_wizard', x: 62, z: -6 },
-  { type: 'dark_wizard', x: 68, z: -2 },
-  { type: 'dark_wizard', x: 58, z: -14 },
-  { type: 'dark_ranger', x: 74, z: -10 },
-  { type: 'dark_ranger', x: 80, z: -4 },
-  { type: 'hill_giant', x: 88, z: -36 },
-  { type: 'hill_giant', x: 96, z: -28 },
-  { type: 'hill_giant', x: 82, z: -42 },
-  { type: 'hill_giant', x: 95, z: -40 },
-
-  // 3. AL-KHARID GOLDEN DUNES
-  { type: 'scorpion', x: 52, z: 54 },
-  { type: 'scorpion', x: 60, z: 76 },
-  { type: 'scorpion', x: 76, z: 58 },
-  { type: 'scorpion', x: 82, z: 72 },
-  { type: 'scorpion', x: 68, z: 84 },
-
-  // 4. WHISPERING KOROK WOODS
-  { type: 'moss_guardian', x: -64, z: -18 },
-  { type: 'moss_guardian', x: -82, z: -22 },
-  { type: 'moss_guardian', x: -70, z: -44 },
-  { type: 'moss_guardian', x: -86, z: -38 },
-
-  // 5. DRAGON'S PEAK WILDERNESS
-  { type: 'lesser_demon', x: -56, z: 56 },
-  { type: 'lesser_demon', x: -64, z: 78 },
-  { type: 'lesser_demon', x: -82, z: 58 },
-  { type: 'lesser_demon', x: -58, z: 84 },
-  { type: 'elvarg_dragon', x: -82, z: 82 }
-];
+export const MONSTER_PLACEMENTS: Placement[] = CAMPS.flatMap((camp) =>
+  camp.members.map((m) => ({ type: m.type, x: m.x, z: m.z }))
+);
 
 export const NODE_PLACEMENTS: Placement[] = [
   // 1. LUMBRIDGE HAVEN
