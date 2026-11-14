@@ -1,8 +1,7 @@
-// @ts-nocheck
 import * as THREE from 'three';
-import { WORLD_REGIONS } from '../data/world';
+import { WORLD_REGIONS, type RegionDef } from '../data/world';
 import { regionAt, getTerrainHeight } from '../state/terrain';
-import { player, camState, G } from './context';
+import { player, camState, G, type MonsterEntity, type ResourceNodeEntity } from './context';
 import { SFX } from './audio';
 import {
   spawnLevelUpFireworks,
@@ -20,7 +19,7 @@ import {
   spawnExpandingRing,
   spawnProjectile
 } from './vfx';
-import { addChatMessage, showBanner, updateTargetHud, updateAllUI } from '../ui/hud';
+import { addChatMessage, showBanner, updateTargetHud, updateAllUI, el } from '../ui/hud';
 import { STATE } from '../state/gameState';
 import { prepareAttack, getEquipmentBonuses, mitigateDamage } from '../state/combat';
 import { addItem, removeItem, canAddItem } from '../state/inventory';
@@ -42,8 +41,8 @@ import {
   weaponSpecial
 } from '../state/adventure';
 
-export function teleportToRegion(regionId) {
-  const reg = WORLD_REGIONS.find(r => r.id === regionId);
+export function teleportToRegion(regionId?: string): void {
+  const reg = WORLD_REGIONS.find((r: RegionDef) => r.id === regionId);
   if (!reg) return;
   player.targetEntity = null;
   player.targetPos = null;
@@ -57,30 +56,30 @@ export function teleportToRegion(regionId) {
   triggerRegionBanner(reg);
 }
 
-let lastBannerRegion = '';
-export function checkRegionChange() {
+let lastBannerRegion: string = '';
+export function checkRegionChange(): void {
   const reg = regionAt(player.pos.x, player.pos.z);
   if (!reg) return;
   if (STATE.currentRegion !== reg.id) {
     STATE.currentRegion = reg.id;
-    document.getElementById('current-zone-footer').textContent = reg.name;
+    el('current-zone-footer').textContent = reg.name;
     triggerRegionBanner(reg);
   }
 }
 
-let bannerTimer = null;
-export function triggerRegionBanner(reg) {
+let bannerTimer: ReturnType<typeof setTimeout> | null = null;
+export function triggerRegionBanner(reg: RegionDef): void {
   if (lastBannerRegion === reg.id) return;
   lastBannerRegion = reg.id;
-  const b = document.getElementById('region-banner');
-  document.getElementById('region-sub-text').textContent = reg.sub;
-  document.getElementById('region-title-text').textContent = reg.name;
+  const b = el('region-banner');
+  el('region-sub-text').textContent = reg.sub;
+  el('region-title-text').textContent = reg.name;
   b.classList.add('visible');
   if (bannerTimer) clearTimeout(bannerTimer);
   bannerTimer = setTimeout(() => b.classList.remove('visible'), 3600);
 }
 
-export function performPlayerAttack(monster) {
+export function performPlayerAttack(monster: MonsterEntity): void {
   if (monster.dead || player.downed) return;
   const prep = prepareAttack(STATE);
   if (!prep.ok) {
@@ -104,7 +103,7 @@ export function performPlayerAttack(monster) {
     accuracyScore = s.ranged.lvl * 1.4 + bon.rng + 12;
   } else if (style === 'magic') {
     const sp = SPELLS.find(x => x.id === STATE.activeSpell) || SPELLS[0];
-    maxHit = Math.max(3, Math.floor((sp.maxHit + s.magic.lvl * 0.22 + bon.mag * 0.18) * prayMagMult));
+    maxHit = Math.max(3, Math.floor((sp.maxHit! + s.magic.lvl * 0.22 + bon.mag * 0.18) * prayMagMult));
     accuracyScore = s.magic.lvl * 1.5 + bon.mag + 16;
   } else {
     const styleStrBonus = style === 'aggressive' ? 2 : (style === 'controlled' ? 1 : 0);
@@ -175,7 +174,7 @@ export function performPlayerAttack(monster) {
   const didHit = Math.random() < hitChance;
   const dmg = didHit ? Math.max(1, Math.floor(Math.random() * (maxHit + 1))) : 0;
 
-  const applyDamage = () => {
+  const applyDamage = (): void => {
     if (monster.dead) return;
     monster.inCombatWithPlayer = true;
     if (dmg > 0) {
@@ -229,7 +228,7 @@ export function performPlayerAttack(monster) {
   if ((style === 'rapid' || style === 'ranged')) {
     if (wepKind === 'crossbow') SFX.crossbow();
     else SFX.bow();
-    const wep = ITEMS[STATE.equipment.weapon];
+    const wep = ITEMS[STATE.equipment.weapon!];
     if (isSpec && (wep?.id === 'ancient_bow' || wep?.id === 'armadyl_crossbow')) {
       spawnPiercingBeam(player.pos, monster.pos, wep.id === 'armadyl_crossbow' ? 0xfde047 : 0x22d3ee);
     }
@@ -243,16 +242,16 @@ export function performPlayerAttack(monster) {
     else if (wepKind === 'mace') SFX.crush();
     else if (wepKind === 'whip') SFX.whipCrack();
     else SFX.slash();
-    spawnMeleeSlashEffect(ITEMS[STATE.equipment.weapon], player.pos, player.yaw, monster.pos, isSpec);
+    spawnMeleeSlashEffect(ITEMS[STATE.equipment.weapon!], player.pos, player.yaw, monster.pos, isSpec);
     applyDamage();
   }
 }
 
-function wpKindIsChop(kind) {
+function wpKindIsChop(kind: string): boolean {
   return kind === 'greataxe' || kind === 'mace';
 }
 
-export function handleMonsterDeath(monster) {
+export function handleMonsterDeath(monster: MonsterEntity): void {
   monster.isDying = true;
   monster.dyingTimer = 0.85;
   monster.dead = true;
@@ -297,7 +296,7 @@ export function handleMonsterDeath(monster) {
   updateAllUI();
 }
 
-export function performMonsterRetaliation(monster) {
+export function performMonsterRetaliation(monster: MonsterEntity): void {
   if (monster.dead || player.downed || STATE.hp <= 0) return;
   monster.attackAnim = 1;
   const bon = getEquipmentBonuses(STATE);
@@ -324,7 +323,7 @@ export function performMonsterRetaliation(monster) {
     }
   }
 
-  const applyHit = () => {
+  const applyHit = (): void => {
     if (absorbedBreath) {
       addChatMessage("Your shield / prayer absorbs most of Elvarg's dragonfire!", 'skill');
     }
@@ -364,7 +363,7 @@ export function performMonsterRetaliation(monster) {
   }
 }
 
-export function handlePlayerDeath() {
+export function handlePlayerDeath(): void {
   if (player.downed) return;
   player.downed = true;
   player.downedTimer = RESPAWN_SECONDS;
@@ -374,26 +373,20 @@ export function handlePlayerDeath() {
   STATE.activePrayers.clear();
   G.monstersList.forEach(m => { m.inCombatWithPlayer = false; });
   const notice = deathNotice();
-  const overlay = document.getElementById('death-overlay');
-  if (overlay) {
-    overlay.hidden = false;
-    const title = document.getElementById('death-title');
-    const body = document.getElementById('death-body');
-    if (title) title.textContent = notice.title;
-    if (body) body.textContent = notice.body;
-  }
-  const count = document.getElementById('death-count');
-  if (count) count.textContent = String(Math.ceil(RESPAWN_SECONDS));
+  const overlay = el('death-overlay');
+  overlay.hidden = false;
+  el('death-title').textContent = notice.title;
+  el('death-body').textContent = notice.body;
+  el('death-count').textContent = String(Math.ceil(RESPAWN_SECONDS));
   updateAllUI();
 }
 
-export function finishRespawn() {
+export function finishRespawn(): void {
   applyRespawn(STATE);
   player.downed = false;
   player.downedTimer = 0;
-  const overlay = document.getElementById('death-overlay');
-  if (overlay) overlay.hidden = true;
-  const reg = WORLD_REGIONS.find(r => r.id === 'lumbridge');
+  el('death-overlay').hidden = true;
+  const reg = WORLD_REGIONS.find((r: RegionDef) => r.id === 'lumbridge');
   if (reg) {
     player.pos.set(reg.x, getTerrainHeight(reg.x, reg.z + 4), reg.z + 4);
     player.yaw = Math.PI;
@@ -405,17 +398,18 @@ export function finishRespawn() {
   updateAllUI();
 }
 
-export function performResourceGather(node) {
+export function performResourceGather(node: ResourceNodeEntity): void {
   if (node.depleted) return;
   const def = node.def;
-  const skillLvl = STATE.skills[def.skill].lvl;
-  if (skillLvl < def.req) {
-    addChatMessage(`You need <b>Level ${def.req} ${SKILLS_META[def.skill].name}</b> to gather from ${def.name}.`, 'combat');
+  const skillMeta = (SKILLS_META as Record<string, { name: string }>)[def.skill!];
+  const skillLvl = STATE.skills[def.skill!].lvl;
+  if (skillLvl < def.req!) {
+    addChatMessage(`You need <b>Level ${def.req} ${skillMeta.name}</b> to gather from ${def.name}.`, 'combat');
     player.targetEntity = null;
     updateTargetHud();
     return;
   }
-  if (!canAddItem(STATE, def.item, 1)) {
+  if (!canAddItem(STATE, def.item!, 1)) {
     addChatMessage('Your backpack is full. The resource stays where it is.', 'combat');
     player.targetEntity = null;
     updateTargetHud();
@@ -434,16 +428,16 @@ export function performResourceGather(node) {
     if (player.blenderAnimator) player.blenderAnimator.playAction('Fish', 1.15);
   }
 
-  const successChance = Math.min(0.92, 0.50 + (skillLvl - def.req) * 0.02);
+  const successChance = Math.min(0.92, 0.50 + (skillLvl - def.req!) * 0.02);
   if (Math.random() <= successChance) {
-    addItemToInventory(def.item, 1);
-    noteGather(STATE, def.item);
-    grantXp(def.skill, def.xp);
-    addChatMessage(`Gathered <b>${ITEMS[def.item].name}</b>.`, 'skill');
+    addItemToInventory(def.item!, 1);
+    noteGather(STATE, def.item!);
+    grantXp(def.skill!, def.xp!);
+    addChatMessage(`Gathered <b>${ITEMS[def.item!].name}</b>.`, 'skill');
 
     if (def.kind !== 'fish' || Math.random() < 0.35) {
       node.depleted = true;
-      node.respawnTimer = def.respawn / 1000;
+      node.respawnTimer = def.respawn! / 1000;
       node.visualMesh.visible = false;
       node.depletedMesh.visible = true;
       player.targetEntity = null;

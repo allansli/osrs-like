@@ -110,7 +110,9 @@ export const telemetryInfo: TelemetryInfo = {
 };
 
 export interface MonsterEntity extends MonsterEntityLike {
-  def: MonsterDef & MonsterEntityLike['def'];
+  def: Omit<MonsterDef, 'drops'> & MonsterEntityLike['def'] & {
+    drops?: Array<{ id?: string; chance: number; gp?: [number, number]; qty?: number }>;
+  };
   spawnPos: THREE.Vector3;
   hp: number;
   maxHp: number;
