@@ -34,6 +34,7 @@ import {
   finishRespawn,
   performResourceGather
 } from './actions';
+import { disposeObject3D } from './dispose';
 import { PRAYERS } from '../data/magic';
 import { WORLD_REGIONS } from '../data/world';
 import { STATE } from '../state/gameState';
@@ -579,8 +580,8 @@ export function updateWorldTimers(f: FrameState): void {
     const p: ProjectileEntry = G.projectilesList[i];
     p.progress += p.speed * f.dt;
     if (p.progress >= 1.0) {
-      G.scene.remove(p.mesh);
       if (p.onImpact) p.onImpact();
+      disposeObject3D(p.mesh);
       G.projectilesList.splice(i, 1);
     } else {
       const arc = p.arc == null ? 1.4 : p.arc;
@@ -604,7 +605,7 @@ export function updateWorldTimers(f: FrameState): void {
     v.age += f.dt;
     if (v.onTick) v.onTick(v, f.dt);
     if (v.age >= v.life) {
-      G.scene.remove(v.mesh);
+      disposeObject3D(v.mesh);
       G.vfxList.splice(i, 1);
     }
   }
