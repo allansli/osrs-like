@@ -109,6 +109,7 @@ export function resetGameSave(): void {
   try {
     localStorage.removeItem(SAVE_KEY);
     LEGACY_SAVE_KEYS.forEach(key => localStorage.removeItem(key));
+    localStorage.removeItem(INTRO_KEY);
   } catch (e) {}
   window.location.reload();
 }
