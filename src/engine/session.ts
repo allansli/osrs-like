@@ -2,7 +2,7 @@ import { player, camState } from './context';
 import { SFX } from './audio';
 import { spawnLevelUpFireworks } from './vfx';
 import { STATE, applyState } from '../state/gameState';
-import { readSave, writeSave, SAVE_KEY, LEGACY_SAVE_KEYS } from '../state/save';
+import { readSave, writeSave, SAVE_KEY, LEGACY_SAVE_KEYS, sanitizePose, sanitizeCam } from '../state/save';
 import { matchCheat, applySkillsPlus10, applyGold200k } from '../state/cheats';
 import { el, addChatMessage, showBanner, updateAllUI } from '../ui/hud';
 import { closeModals } from '../ui/playerActions';
@@ -56,15 +56,17 @@ export function loadGameState(): boolean {
       }
     }
     if (migrated.pose && player && player.pos) {
-      player.pos.x = migrated.pose.x;
-      player.pos.z = migrated.pose.z;
-      if (typeof migrated.pose.yaw === 'number') player.yaw = migrated.pose.yaw;
+      const pose = sanitizePose(migrated.pose);
+      player.pos.x = pose.x;
+      player.pos.z = pose.z;
+      if (typeof pose.yaw === 'number') player.yaw = pose.yaw;
     }
     if (migrated.cam && camState) {
-      camState.yaw = migrated.cam.yaw;
-      camState.manualOffset = migrated.cam.manualOffset;
-      camState.pitch = Math.min(migrated.cam.pitch, 0.42);
-      camState.distance = Math.min(migrated.cam.distance, 9.5);
+      const cam = sanitizeCam(migrated.cam);
+      camState.yaw = cam.yaw;
+      camState.manualOffset = cam.manualOffset;
+      camState.pitch = cam.pitch;
+      camState.distance = cam.distance;
     }
     return true;
   } catch (e) {

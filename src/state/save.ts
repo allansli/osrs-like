@@ -164,3 +164,22 @@ export function readSave(storage: StorageLike): MigratedSave | null {
 export function writeSave(storage: StorageLike, state: GameState, pose: SavedPose | null, cam: SavedCam | null): void {
   storage.setItem(SAVE_KEY, serializeState(state, pose, cam));
 }
+
+export function sanitizePose(p: SavedPose): SavedPose {
+  return {
+    x: p.x,
+    y: p.y,
+    z: p.z,
+    yaw: p.yaw
+  };
+}
+
+export function sanitizeCam(c: SavedCam): SavedCam {
+  return {
+    yaw: c.yaw,
+    manualOffset: c.manualOffset,
+    pitch: Math.min(c.pitch, 0.42),
+    distance: Math.min(c.distance, 9.5)
+  };
+}
+
