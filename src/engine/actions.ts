@@ -404,13 +404,11 @@ export function performResourceGather(node: ResourceNodeEntity): void {
     grantXp(def.skill!, def.xp!);
     addChatMessage(`Gathered <b>${ITEMS[def.item!].name}</b>.`, 'skill');
 
-    if (def.kind !== 'fish' || Math.random() < 0.35) {
-      node.depleted = true;
-      node.respawnTimer = def.respawn! / 1000;
-      node.visualMesh.visible = false;
-      node.depletedMesh.visible = true;
-      player.targetEntity = null;
-      updateTargetHud();
-    }
+    node.depleted = true;
+    node.respawnTimer = def.respawn! / 1000;
+    node.visualMesh.visible = false;
+    node.depletedMesh.visible = true;
+    player.targetEntity = null;
+    updateTargetHud();
   }
 }

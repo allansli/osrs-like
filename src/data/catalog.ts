@@ -493,8 +493,8 @@ export const RESOURCE_NODES_DEF = {
   gold_rock:   { name: 'Gold Ore Vein',       skill: 'mining',      req: 35, xp: 175, item: 'gold_ore',    respawn: 8000,  kind: 'rock', oreColor: 0xfacc15 },
   runite_rock: { name: 'Runite Ore Vein',     skill: 'mining',      req: 50, xp: 320, item: 'runite_ore',  respawn: 11000, kind: 'rock', oreColor: 0x06b6d4 },
 
-  fish_shrimp: { name: 'Net Fishing Spot',    skill: 'fishing',     req: 1,  xp: 30,  item: 'raw_shrimp',  respawn: 2000,  kind: 'fish' },
-  fish_trout:  { name: 'River Lure Spot',     skill: 'fishing',     req: 12, xp: 68,  item: 'raw_trout',   respawn: 2000,  kind: 'fish' },
-  fish_lobster:{ name: 'Cage Lobster Spot',   skill: 'fishing',     req: 28, xp: 135, item: 'raw_lobster', respawn: 2500,  kind: 'fish' },
-  fish_shark:  { name: 'Mystic Shark Pool',   skill: 'fishing',     req: 45, xp: 245, item: 'raw_shark',   respawn: 3000,  kind: 'fish' }
+  fish_shrimp: { name: 'Net Fishing Spot',    skill: 'fishing',     req: 1,  xp: 30,  item: 'raw_shrimp',  respawn: 6000,  kind: 'fish' },
+  fish_trout:  { name: 'River Lure Spot',     skill: 'fishing',     req: 12, xp: 68,  item: 'raw_trout',   respawn: 3000,  kind: 'fish' },
+  fish_lobster:{ name: 'Cage Lobster Spot',   skill: 'fishing',     req: 28, xp: 135, item: 'raw_lobster', respawn: 7000,  kind: 'fish' },
+  fish_shark:  { name: 'Mystic Shark Pool',   skill: 'fishing',     req: 45, xp: 245, item: 'raw_shark',   respawn: 8000,  kind: 'fish' }
 };
