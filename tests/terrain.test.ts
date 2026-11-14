@@ -34,10 +34,7 @@ describe('terrain invariants', () => {
 
   it('regionAt returns each region at its centre', () => {
     for (const r of WORLD_REGIONS) {
-      // overlapping regions: first match wins, so the centre may belong to an earlier one
-      const first = WORLD_REGIONS.find((o) => Math.hypot(r.x - o.x, r.z - o.z) < o.radius);
-      expect(regionAt(r.x, r.z)).toBe(first);
-      expect(first).toBeDefined();
+      expect(regionAt(r.x, r.z)).toBe(r);
     }
   });
 
