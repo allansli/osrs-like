@@ -151,3 +151,79 @@ The ones with a real trade-off come first.
 5. **Q3.8: cheat codes in the first chat lines of a new game.** *Recommendation:* stop printing them in a new game; they stay in Settings.
 6. **Q3.9: magic in the first half hour.** A new character cannot cast until it has 3,200 GP for the only staff. *Recommendation:* accept it and say so in the README.
 7. Q3.2 (10x button placement), Q3.3 (bronze scimitar or nothing) and Q3.4 (5 to 8 hours to dragon) stand as the design wrote them.
+
+---
+
+## Second pass
+
+Date: 2026-11-14. Scope: only what commit `17300ac` changed (`git diff 2ef6da1 17300ac`), checked against the code at `a8cad85`, Stage 2 at `feat/world-place` `b6f38da`, and the owner's answers. No test suite, type check, build or dev server was run. One standalone script was run (below).
+
+### Verdict: READY-WITH-FIXES (fixes applied)
+
+The revision holds up. The starter chain reads only flags and values the game already records, cannot be claimed out of order, and has no soft lock. The second quest table keeps the frozen ten-quest test true. Existing saves cannot see the chain. The task-count bounds are not circular, and they reproduce exactly in an independent model built on the game's own tables. Two defects were found and fixed: a one-time load migration that deletes the Traveler Boots of a new game, and a fishing test that pins values the tuning task is allowed to change.
+
+### Kill counts, recomputed
+
+A third model, written for this pass in TypeScript, imports `MONSTER_TYPES`, `ITEMS`, `getEquipmentBonuses`, `combatLevel`, `pickSlayerBand`, `createDefaultState` and `getLevelForXp` from `src/` and follows design 4.2 as written. Camps are those of `feat/world-place` `b6f38da` (attackers: the largest aggressive camp of the type, so 3 scorpions, 2 guardians, 4 demons). It is a scratch script and is not committed (this pass may change three documents only).
+
+| Run | Level, iron to adamant | Kit, iron to adamant | Further kills | Tiers behind, iron to rune |
+|---|---|---|---|---|
+| A1, 1x, markup 10 | 38 / 111 / 155 / 227 / 432 | 131 / 353 / 452 / 539 / 823 | 93 / 242 / 297 / 312 / 391 | 1 / 2 / 2 / 1 / 1 / 0 |
+| A1, markups 8, 9, 11, 12 | same | | iron 76, 84, 101, 109 | at most 2 |
+| A3, 1x, markup 10 | 38 / 101 / 145 / 217 / 409 | 113 / 185 / 377 / 409 / 447 | 75 / 84 / 232 / 192 / 38 | 1 / 1 / 1 / 0 / 0 / 0 |
+| A3, drops doubled | | | 25 / 39 / 201 / 192 / 28 | |
+| Control, with and without Slayer | | kit on the level | 0 at every tier | 0 |
+| A3 with the tenfold price but today's drops and bounties | | | 0 / 0 / 28 / 40 / 0 | |
+| A1, 10x | 4 / 12 / 17 / 24 / 44 | 46 / 134 / 233 / 320 / 558 | 42 / 122 / 216 / 296 / 514 | 4 / 4 / 3 / 2 / 2 / 1 |
+
+**Agreement:** every count in design tables 4.3 (A1, A3, C, A1 at 10x) and 5.2, and every row of the markup sweep in 6.1, matched to the kill. The current Stage 2 camp split (3 + 2 scorpions, 2 + 2 guardians) changes nothing.
+
+**Where they disagree:** only on a point design 4.2 left open. If the hero wears the helm, kiteshield and boots the chain pays, iron's level comes at kill 35 instead of 38, and on A3 the iron wait falls from 75 to 41 (33 with drops doubled; the lowest A3 value over markups 8 to 12 and drops at half to double is 21). A1 stays at 78 or more. No bound is crossed. Design 4.2 now pins that the model keeps them in the backpack, as M1's chain helper does, and states the effect.
+
+**Are the bounds meaningful?** Yes, with one property now written in design 5.4: A1 has no drops and no bounty after the chain's, so its floor of 25 tests the shop price alone (markup 1 gives 0). The drop and bounty changes are caught only by A3's floor of 1, which the tenfold price with today's drops and bounties fails at iron, steel and adamant. So the M1 accept ("the A3 half of test 3 is red until D3") is right. The floor and the three-tier bound sit far from every measured value and the control fails both, so they are not fitted to the output. **Pure function of data in `src/`?** Yes: every input is a table or a pure function under `src/data` or `src/state`, plus `CAMPS` from Stage 2's `worldMap.ts`. The only engine import is `TICK_SEC` (`src/engine/context.ts`, which imports three.js); it affects only the printed averages, and node tests already import engine modules, so it is left as is. Both models implement the same rule text, so a misreading of 4.2 shared by both would not show; M1 against the live functions is still the real check.
+
+### Findings
+
+#### High
+
+**S-H1. A new game loses its worn Traveler Boots on its first reload.** `loadGameState` (`session.ts` 52-63) runs a one-time migration on the first save it loads on a browser profile that lacks the key `gielinor_anime_hero_v1`. It sets the key and empties the `head`, `body`, `cape`, `legs`, `feet` and `hands` slots that hold the old starter outfit, `feet` when it holds `leather_boots`. It nulls the slot and does not return the item. On a fresh profile the first boot has no save, so `loadGameState` returns at line 40 and never sets the key. A player who plays the six quests in one sitting and wears the reward of quest 6, `leather_boots` (Traveler Boots), loses them on the next reload, and the quest cannot be claimed again.
+*Fix (applied):* design 7.1 item 1, section 8 and R20; plan N2 wraps the slot and camera lines in `if (!STATE.quests.claimed.includes(STARTER_ARRIVAL))`, the key is still set, and states without `arrival` (every existing save) migrate as today. Human check added to design 9.2 and G-6.
+
+**S-H2. A fishing test pins values the tuning task must be free to change.** F0 asserted the respawns exactly (6000, 3000, 7000, 8000). T1 may tune those four values between 2000 and 10000 when the fishing bound fails, and T1 may not edit a test. As written, T1 could only pass by editing a frozen [CLAUDE] test. The exact assertion is also a duration, against the spirit of rule 0.3.10.
+*Fix (applied):* F0 now asserts each respawn is above today's value and at most 10000; rule 0.3.10 says data durations may be checked against a range and never pinned where T1 tunes them.
+
+#### Medium
+
+- **S-M1.** The design and plan said the extended model was "not committed". Commit `b68e2d2` committed it (`tasks.py`, `check.py`, `check2.py`). *Fixed* in the design header, section 14 and plan section 6.
+- **S-M2.** Design 4.2 did not say whether the model wears the chain's helm, shield and boots. *Fixed* as above, with the measured effect.
+- **S-M3.** Design 4.2 described Stage 2's camps as "5 scorpions, 4 guardians, 4 demons". On `b6f38da` the camps are aggressive and split. *Fixed*; counts unchanged.
+- **S-M4.** With one catch per click the target clears on every fish (`actions.ts` 432-439), and every click on an empty spot prints "… is depleted. Wait a moment for it to replenish." (`input.ts` 359-360). The three cues of F1 do not touch that line, and a trout spot (one spot, 3 s) will print it often. *Not fixed in code* (F1 must not change chat lines). The human check of design 9.2 now counts those lines; see decision 3 below.
+
+#### Low
+
+- **S-L1.** Design 5.6 said the chain ends at Smithing 2. Five smelts (90 XP) and two forgings (85 XP) give 175 XP at 1x, which is Smithing 3 (174). *Fixed.*
+- **S-L2.** N1's `everything else is the default` compared two serialised states, which differ in `savedAt`. *Fixed*: it uses P1's `stable()`.
+- **S-L3.** M1's list of functions the model must call lacked `pickSlayerBand`, which the Slayer rule needs. *Fixed.*
+- **S-L4.** Quest texts and the first chat line say "the task master". The game labels him "Slayer Master Vannaka" (`worldBuild.ts` 485, `input.ts` 260); he stands at (5.5, 8.5), in the courtyard as the text says. A new player can match "master" to the label. Left as written: naming him in new text would repeat a RuneScape name.
+
+### Checks that passed
+
+- **Every chain step reads existing state.** `quests.slayer`/`slayerTasksCompleted` (`adventure.ts` 579-594; `registerKill` leaves the task object in place at 0, so the step stays true), `killedGoblin` (471, also set by goblin archers), `skills.mining.xp`/`woodcutting.xp` (`actions.ts` 429), `caughtFish` (`quests.ts` 101), `cookedMeal` and `smeltedBar` (`recipes.ts` 151-152), `worePlate` (`playerActions.ts` 194) or `plateWorn`, `openedBank` (492), `soldWares` (99), `boughtWares` (352, 372). All are booleans or counters that never reset. No new saved field.
+- **Order and soft locks.** The weapon comes before the fight; a bare-handed hero can fight anyway. The goblin camp `three_kettle` is not aggressive on `b6f38da`, and goblins (level 2) are below a new hero's combat level 3. Five copper ore, five smelts and the anvil, cooking range and copper rocks are all in the start town; no step needs gold. 25 GP (quest 2) plus the sale of a log buys the cheapest item (arrow shafts, 2 GP). Death keeps everything. Selling a reward blocks nothing: no step needs an item still held, and `worePlate` stays set. A full backpack refuses only the claim (`canHoldRewards`), and the bank is the next quest's own subject. Claims out of order are refused by `starterOpen`.
+- **Reward items.** `bronze_scimitar`, `shrimp` (Cooked Shrimp), `bronze_helm` (Bronze Full Helm), `wooden_shield` (Wooden Kiteshield), `air_rune`, `mind_rune`, `leather_boots` (Traveler Boots) exist; `hazel_staff` is the one specified addition.
+- **Two quest tables.** `phase3-content` pins `QUEST_DEFS` to ten ids and `questView` to ten cards; neither is edited. Its tracker case starts from the default state, which never claims `arrival`, so only line 41 changes, to `"Cook's Errand"` (region `lumbridge`, discovered). No other existing test calls `adventureTracker`.
+- **New game against existing save.** Told apart by `arrival` in `quests.claimed`, which only `createNewGameState` writes and `claimQuest` refuses. A version-4 save never holds it, and `migrateLegacySave` drops unknown ids (`save.ts` 88-89) until K2 widens the set. A new-game save round-trips: `inventory: []` stays empty (`save.ts` 76), `null` slots stay null (68), `gp: 0` and `xpMultiplier: 1` are kept (34-35). Reset reaches the new start once N2's guard stops the reload from writing the old character back. A save made half-way through the chain reloads with its claims, flags and task.
+- **The typed word.** Keys reach `noteCheatKey` only from the window `keydown` listener, which returns early when the target is an input or textarea (`input.ts` 51-54); `noteCheatKey` checks the focused element again (`session.ts` 105-107). Typing in the bank search or the cheat box can neither trigger nor block the reveal. Hiding the cheat box does not remove typed cheats: the keyboard buffer still matches them. "backroom" contains no key that triggers an action (F is the special attack). No stylesheet gives `#hidden-tools` a `display`, so `hidden` hides it. Touch devices have no way in, as the design accepts.
+- **The Hazel Staff.** The row has the shape of its neighbours (`catalog.ts` 65-71). `gearSilhouette` returns `staff` for every staff but `ancient_staff`, `ahrim_staff` and `tumeken_shadow` (`playerGear.ts` 84-89), and `buildWeaponVisual` clones `Gear_staff` with `glowHex: item.color` (516-527), so the tint reuse holds, as it does for the Mystic Water Staff and the Trident. Wind Strike at Magic 1: max hit floor(6 + 0.22 + 4 × 0.18) = 6, accuracy 21.5, 2.58 a cast against a goblin; Staff of Fire 10 and 41.5. Shop 600, sale 39. Air and Mind runes are type `rune`, bought at list price (6 and 5 GP).
+- **Plan hygiene.** New tasks I1, K1, N1, N3, F0 are [CLAUDE] tests before I2, K2, N2, N4, F1/D4 [AGY]; tiers fit; allowlists do not collide (lane N edits `cheats.ts` before C2; lane U touches no spine file). The one test replacement is quoted exactly in rule 0.3.3, K1 and G-5 step 1. G-5 step 11 enforces "no test asserts a time".
+
+### New names
+
+Quests: "A Name in the Ledger", "First Quarrel", "Stone, Timber, Tide", "Fire and Hammer", "Left in Keeping", "Fair Coin", and the hidden entry "Arrival" (never shown: `starterView` and the tracker skip it). Item: "Hazel Staff". Reveal word: `backroom`. Ids: `arrival`, `sq_ledger`, `sq_quarrel`, `sq_gather`, `sq_forge`, `sq_keeping`, `sq_coin`, `hazel_staff`. As far as this reviewer knows, none is the name of a RuneScape or Zelda quest, item or place, and none imitates one. The nearest is the RuneScape gnome "Hazelmere", which shares only a common word for a tree. This rests on memory, not a search. The texts reuse names the game already has ("Traveler Boots", "the haven", "the hen yard"); those predate Stage 3.
+
+### Owner decisions still open
+
+1. **Q3.10, the two numbers in the task assertions** (at least 25 further kills on the shop-only route, never more than three tiers behind). Recommendation: accept. Every measured value is at least three times the floor and two tiers is the worst case, so the numbers catch a broken economy without pinning the feel.
+2. **Q3.11, telling a 10x save it runs at 10x.** Recommendation: one chat line on load, only for such a save. Without it the player sees ten-times experience with no explanation and no visible switch.
+3. **The "depleted" chat line at fishing spots (new, S-M4).** Recommendation: decide after the G-6 fishing check. If the line shows up more than once or twice per ten fish, silence it for fishing spots only, where the still ring and the return tone already say the same thing. It is one condition in `input.ts`, outside every Stage 3 allowlist today, so it would be a small added task.
+4. **The new names** (O-13). Recommendation: approve the list above.
