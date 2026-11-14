@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { isWalkable, moveWithCollision } from '../src/state/collision';
 import { WORLD_REGIONS } from '../src/data/world';
 import { isInSafeZone } from '../src/data/worldMap';
@@ -18,7 +18,17 @@ import {
   type WalkGrid
 } from '../src/state/pathfind';
 import { MONSTER_PLACEMENTS, NODE_PLACEMENTS } from '../src/data/placements';
+import { STATE } from '../src/state/gameState';
+import { prepareAttack } from '../src/state/combat';
+import { addItem } from '../src/state/inventory';
+import { player, type MonsterEntity } from '../src/engine/context';
+import { performPlayerAttack } from '../src/engine/actions';
 
+const chat = vi.hoisted(() => [] as string[]);
+vi.mock('../src/ui/hud', async (orig) => ({
+  ...(await orig<typeof import('../src/ui/hud')>()),
+  addChatMessage: (msg: string) => { chat.push(msg); }
+}));
 
 // Confirmed Stage 2 review findings (docs/superpowers/baseline/stage2-review-findings.json).
 
@@ -115,6 +125,25 @@ describe('review 1: an entity walk never runs in place against water or a wall',
   it('reaches every still monster from every side, melee and ranged', () => {
     expect(stuckApproaches(grid, MONSTER_PLACEMENTS, 2.9, true)).toEqual([]);
     expect(stuckApproaches(grid, MONSTER_PLACEMENTS, 13.5, true)).toEqual([]);
+  });
+});
+
+describe('review 2: attacking a returning monster', () => {
+  it('spends no runes, says lost interest once and drops the target', () => {
+    const m = { def: { name: 'Goblin' }, logic: createMonsterLogic('goblin', 12, 4) } as unknown as MonsterEntity;
+    m.logic.state = 'return';
+    STATE.combatStyle = 'magic';
+    STATE.equipment.weapon = 'fire_staff';
+    STATE.activeSpell = 'wind_strike';
+    expect(addItem(STATE, 'air_rune', 5).ok && addItem(STATE, 'mind_rune', 5).ok).toBe(true);
+    expect(prepareAttack(STATE).consume.length, 'the attack would spend runes').toBe(2);
+    const before = JSON.stringify(STATE.inventory);
+    player.targetEntity = { type: 'monster', ref: m, madeAt: [12, 4] };
+    chat.length = 0;
+    performPlayerAttack(m);
+    expect(chat).toEqual(['The Goblin has lost interest.']);
+    expect(player.targetEntity).toBeNull();
+    expect(JSON.stringify(STATE.inventory), 'no rune spent').toBe(before);
   });
 });
 
