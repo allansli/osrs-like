@@ -138,8 +138,12 @@ export function tryCraft(state: GameState, recipeId: string): CraftResult {
     }
   }
   const outQty = recipe.outputQty || (recipe.output ? 1 : 0);
-  if (recipe.output && !canAddItem(state, recipe.output, outQty)) {
-    return { ok: false, reason: 'Your backpack is full.' };
+  if (recipe.output) {
+    const scratch = { ...state, inventory: state.inventory.map((slot) => ({ ...slot })) };
+    for (const [id, qty] of Object.entries(recipe.input)) removeItem(scratch, id, qty);
+    if (!canAddItem(scratch, recipe.output, outQty)) {
+      return { ok: false, reason: 'Your backpack is full.' };
+    }
   }
   for (const [id, qty] of Object.entries(recipe.input)) removeItem(state, id, qty);
   if (recipe.output) addItem(state, recipe.output, outQty);
