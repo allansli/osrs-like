@@ -115,3 +115,13 @@ describe('review 2: no shop price for goods the store does not sell', () => {
     expect(buyPrice(ITEMS.iron_scimitar)).toBe(shopPrice(ITEMS.iron_scimitar));
   });
 });
+
+describe('review 6: the fishing depletion rule is a value, not source text', () => {
+  it('a catch always empties the spot, and the pacing model reads the same value', async () => {
+    const { FISH_DEPLETION_CHANCE, fishDepletes } = await import('../src/state/economy');
+    const { FISH_DEPLETION } = await import('./support/pacingModel');
+    expect(FISH_DEPLETION_CHANCE).toBe(1);
+    expect(FISH_DEPLETION).toBe(FISH_DEPLETION_CHANCE);
+    for (const draw of [0, 0.35, 0.5, 0.999999]) expect(fishDepletes(draw)).toBe(true);
+  });
+});

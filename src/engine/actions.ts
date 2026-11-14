@@ -22,7 +22,7 @@ import {
 import { addChatMessage, showBanner, updateTargetHud, updateAllUI, requestUiRefresh, el } from '../ui/hud';
 import { STATE } from '../state/gameState';
 import { prepareAttack, playerAttackProfile, playerHitChance, rollMonsterHit } from '../state/combat';
-import { creditGp, gatherChance, rollDrops } from '../state/economy';
+import { creditGp, fishDepletes, gatherChance, rollDrops } from '../state/economy';
 import { addItem, removeItem, canAddItem } from '../state/inventory';
 import { SPELLS } from '../data/magic';
 import { AGGRO_GRACE_MS, isDown, onPlayerHit } from '../state/monsterAi';
@@ -406,12 +406,14 @@ export function performResourceGather(node: ResourceNodeEntity): void {
     grantXp(def.skill!, def.xp!);
     addChatMessage(`Gathered <b>${ITEMS[def.item!].name}</b>.`, 'skill');
 
-    node.depleted = true;
-    node.respawnTimer = def.respawn! / 1000;
-    node.visualMesh.visible = false;
-    node.depletedMesh.visible = true;
-    if (def.kind === 'fish') SFX.spotEmpty();
-    player.targetEntity = null;
-    updateTargetHud();
+    if (def.kind !== 'fish' || fishDepletes(Math.random())) {
+      node.depleted = true;
+      node.respawnTimer = def.respawn! / 1000;
+      node.visualMesh.visible = false;
+      node.depletedMesh.visible = true;
+      if (def.kind === 'fish') SFX.spotEmpty();
+      player.targetEntity = null;
+      updateTargetHud();
+    }
   }
 }

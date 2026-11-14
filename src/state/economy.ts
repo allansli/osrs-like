@@ -18,6 +18,13 @@ export type DropResult =
 
 export const HP_REGEN_PER_SEC = 0.25;
 
+/** Share of successful catches that empty a fishing spot (design D4: every catch). */
+export const FISH_DEPLETION_CHANCE = 1;
+
+export function fishDepletes(rand: number): boolean {
+  return rand < FISH_DEPLETION_CHANCE;
+}
+
 export function rollDrops(typeKey: string, rand: () => number): DropResult[] {
   const def = MONSTER_TYPES[typeKey];
   if (!def.drops) return [];

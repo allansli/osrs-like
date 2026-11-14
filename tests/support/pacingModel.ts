@@ -2,7 +2,6 @@
 // Expected values, no dice, no clock: a pure function of its options and the game's tables.
 // It holds no hit, drop or gather formula of its own; the one expression it writes is the mean of
 // the damage roll `max(1, floor(rand * (M + 1)))` shared by `performPlayerAttack` and `rollMonsterHit`.
-import { readFileSync } from 'node:fs';
 import { ITEMS, unitSellPrice, type ItemDef } from '../../src/data/items';
 import { FORGE_RECIPES, recipeById, type RecipeDef } from '../../src/data/recipes';
 import { getLevelForXp } from '../../src/data/skills';
@@ -21,7 +20,7 @@ import {
 } from '../../src/state/adventure';
 // getEquipmentBonuses acts through playerAttackProfile and monsterHitChance.
 import { monsterHitChance, playerAttackProfile, playerHitChance } from '../../src/state/combat';
-import { gatherChance, HP_REGEN_PER_SEC } from '../../src/state/economy';
+import { FISH_DEPLETION_CHANCE, gatherChance, HP_REGEN_PER_SEC } from '../../src/state/economy';
 import { createNewGameState } from '../../src/state/gameState';
 import { countItem, deposit } from '../../src/state/inventory';
 import { ATTACK_INTERVAL, DEAD_SECS, DYING_SECS } from '../../src/state/monsterAi';
@@ -363,17 +362,8 @@ export function siteSize(nodeKey: string): number {
   return largest;
 }
 
-/**
- * Share of successful catches that empty a fishing spot, read from `performResourceGather`.
- * The rule lives inline in the engine, so it is read from the source rather than copied here.
- */
-export const FISH_DEPLETION = (() => {
-  const source = readFileSync(new URL('../../src/engine/actions.ts', import.meta.url), 'utf8');
-  const rule = source.match(/def\.kind !== 'fish' \|\| Math\.random\(\) < ([0-9.]+)/);
-  if (rule) return Number(rule[1]);
-  if (source.includes("kind !== 'fish'")) throw new Error('Unknown fishing depletion rule in actions.ts.');
-  return 1;
-})();
+/** Share of successful catches that empty a fishing spot: the value the engine rolls against. */
+export const FISH_DEPLETION = FISH_DEPLETION_CHANCE;
 
 /** Seconds per item at a site, design 4.2. A gather that does not empty the node needs no step. */
 export function gatherSeconds(nodeKey: string, level: number): number {
