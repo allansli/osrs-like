@@ -46,7 +46,7 @@ import { moveWithCollision } from '../state/collision';
 import { isDown, isPlayerSafe, stepMonster } from '../state/monsterAi';
 import { getTerrainHeight } from '../state/terrain';
 import { discoverShrines } from '../state/shrines';
-import { shouldRepath } from '../state/pathfind';
+import { entityAim, escapeStall, shouldRepath, STALL_SEC, stallTime, walkSpent } from '../state/pathfind';
 import { CAMPS } from '../data/worldMap';
 import {
   addChatMessage,
@@ -126,6 +126,10 @@ export function updateVitalsAndRegen(f: FrameState): void {
   }
 }
 
+// Where the hero stood on the last entity-walk frame, and for how long it has not moved.
+let walkPrev: [number, number] | null = null;
+let walkStall = 0;
+
 export function updatePlayerIntent(f: FrameState): void {
   const turnSpeed = 2.6;
 
@@ -199,6 +203,7 @@ export function updatePlayerIntent(f: FrameState): void {
 
       if (dist <= stopDist) {
         player.waypoints.length = 0;
+        walkPrev = null;
         if (target.type === 'interactive') {
           const ref = target.ref as THREE.Object3D['userData'];
           const act = ref.action;
@@ -231,11 +236,12 @@ export function updatePlayerIntent(f: FrameState): void {
           }
         }
       } else {
+        const pos: [number, number] = [player.pos.x, player.pos.z];
+        walkStall = stallTime(walkStall, walkPrev, pos, f.dt);
+        walkPrev = pos;
         if (target.type === 'monster') {
           const m = target.ref;
-          const reachedLast = player.waypoints.length === 0;
-          const madeAt = target.madeAt;
-          if (shouldRepath(madeAt, [m.pos.x, m.pos.z], reachedLast)) {
+          if (shouldRepath(target.madeAt, [m.pos.x, m.pos.z], walkSpent(player.waypoints, pos))) {
             const path = planEntityWalk([m.pos.x, m.pos.z], stopDist);
             if (path) {
               player.waypoints = path;
@@ -243,30 +249,12 @@ export function updatePlayerIntent(f: FrameState): void {
             }
           }
         }
-
-        // Only a monster target aims at the entity on the last segment (design 6.7). Resources and
-        // stations keep the goal cell, which is within stop distance, so the hero never pushes into
-        // the water or wall between the goal and the entity.
-        const keepGoal = target.type === 'monster' ? 0 : 1;
-        while (player.waypoints.length > keepGoal) {
-          const wp = player.waypoints[0];
-          const dWp = Math.hypot(wp[0] - player.pos.x, wp[1] - player.pos.z);
-          if (dWp <= 0.45) {
-            player.waypoints.shift();
-          } else {
-            break;
-          }
+        if (walkStall > STALL_SEC) {
+          escapeStall(G.walkGrid, player.waypoints, pos);
+          walkStall = 0;
         }
 
-        let aimX: number;
-        let aimZ: number;
-        if (player.waypoints.length > 1 - keepGoal) {
-          aimX = player.waypoints[0][0];
-          aimZ = player.waypoints[0][1];
-        } else {
-          aimX = targetVec.x;
-          aimZ = targetVec.z;
-        }
+        const [aimX, aimZ] = entityAim(G.walkGrid, player.waypoints, pos, [targetVec.x, targetVec.z], target.type === 'monster');
 
         const toAimX = aimX - player.pos.x;
         const toAimZ = aimZ - player.pos.z;

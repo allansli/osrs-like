@@ -24,9 +24,9 @@ export function buildWalkGrid(walkable: (x: number, z: number) => boolean = isWa
   return { size, origin, cells, walkable };
 }
 
-function segmentWalkable(grid: WalkGrid, a: [number, number], b: [number, number]): boolean {
+function segmentWalkable(grid: WalkGrid, a: [number, number], b: [number, number], step = 0.25): boolean {
   const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
-  const steps = Math.max(1, Math.ceil(len / 0.25));
+  const steps = Math.max(1, Math.ceil(len / step));
   for (let i = 0; i <= steps; i++) {
     const t = i / steps;
     if (!grid.walkable(a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t)) return false;
@@ -313,4 +313,48 @@ export function shouldRepath(
 ): boolean {
   if (reachedLast) return true;
   return Math.hypot(target[0] - goal[0], target[1] - goal[1]) > 2;
+}
+
+/** The planned walk is used up: no waypoint left, or the hero stands on the last one. */
+export function walkSpent(waypoints: [number, number][], pos: [number, number]): boolean {
+  if (waypoints.length === 0) return true;
+  return waypoints.length === 1 && Math.hypot(waypoints[0][0] - pos[0], waypoints[0][1] - pos[1]) <= 0.45;
+}
+
+/**
+ * Where the hero steers on a walk to an entity (design 6.7); drops the waypoints it has reached.
+ * A monster walk aims at the monster on the last segment while the straight line to it is walkable.
+ * Otherwise, and always for a resource or station, the goal cell is kept and walked onto: it is
+ * within stop distance, so the hero never runs in place against the water or wall in between.
+ */
+export function entityAim(
+  grid: WalkGrid,
+  waypoints: [number, number][],
+  pos: [number, number],
+  target: [number, number],
+  monster: boolean
+): [number, number] {
+  const keepGoal = monster && segmentWalkable(grid, pos, target) ? 0 : 1;
+  while (waypoints.length > keepGoal && Math.hypot(waypoints[0][0] - pos[0], waypoints[0][1] - pos[1]) <= 0.45) {
+    waypoints.shift();
+  }
+  return waypoints.length > 1 - keepGoal ? waypoints[0] : target;
+}
+
+/** Seconds without progress after which an entity walk takes an escape cell (escapeStall). */
+export const STALL_SEC = 0.3;
+
+/** Time the hero has stood still on a walk: grows while the position repeats, else resets. */
+export function stallTime(t: number, prev: [number, number] | null, pos: [number, number], dt: number): number {
+  return prev !== null && prev[0] === pos[0] && prev[1] === pos[1] ? t + dt : 0;
+}
+
+/**
+ * Unsticks a walk whose straight leg clips a corner finer than the path smoothing samples: the next
+ * waypoint becomes the nearest open cell centre, beyond arrival distance, that the hero reaches in a
+ * straight line checked at a fine step.
+ */
+export function escapeStall(grid: WalkGrid, waypoints: [number, number][], pos: [number, number]): void {
+  const cell = nearestOpenCell(grid, pos[0], pos[1], (c) => Math.hypot(c[0] - pos[0], c[1] - pos[1]) > 0.45 && segmentWalkable(grid, pos, c, 0.02));
+  if (cell) waypoints.unshift(cell);
 }

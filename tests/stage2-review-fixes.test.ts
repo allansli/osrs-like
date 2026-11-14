@@ -1,9 +1,24 @@
 import { describe, expect, it } from 'vitest';
-import { isWalkable } from '../src/state/collision';
+import { isWalkable, moveWithCollision } from '../src/state/collision';
 import { WORLD_REGIONS } from '../src/data/world';
 import { isInSafeZone } from '../src/data/worldMap';
 import { AGGRO_GRACE_MS, createMonsterLogic, isPlayerSafe, stepMonster } from '../src/state/monsterAi';
-import { buildWalkGrid, findPath, findWalkPath } from '../src/state/pathfind';
+import {
+  buildWalkGrid,
+  entityAim,
+  entityGoal,
+  escapeStall,
+  findPath,
+  findWalkPath,
+  nearestOpenCell,
+  shouldRepath,
+  STALL_SEC,
+  stallTime,
+  walkSpent,
+  type WalkGrid
+} from '../src/state/pathfind';
+import { MONSTER_PLACEMENTS, NODE_PLACEMENTS } from '../src/data/placements';
+
 
 // Confirmed Stage 2 review findings (docs/superpowers/baseline/stage2-review-findings.json).
 
@@ -28,6 +43,78 @@ describe('review 0: a returning monster that cannot reach home', () => {
     expect(m.z).toBe(m.homeZ);
     expect(m.hp).toBe(m.maxHp);
     expect(m.breathCount).toBe(0);
+  });
+});
+
+// The entity walk of updatePlayerIntent (src/engine/loop.ts) at 60 fps and run speed, with the same
+// planning as planEntityWalk (src/engine/input.ts). True when the hero gets within stopDist.
+function approach(grid: WalkGrid, start: [number, number], target: [number, number], stopDist: number, monster: boolean): boolean | null {
+  const plan = (p: [number, number]): [number, number][] | null => {
+    const cell = Math.floor(p[1] - grid.origin) * grid.size + Math.floor(p[0] - grid.origin);
+    const from = grid.cells[cell] === 1 ? p : nearestOpenCell(grid, p[0], p[1]) ?? p;
+    const goal = entityGoal(grid, from, target, stopDist);
+    return goal ? findPath(grid, from, goal) : null;
+  };
+  const pos: [number, number] = [...start];
+  let waypoints = plan(pos);
+  if (!waypoints) return null;
+  const madeAt = target;
+  const dt = 1 / 60;
+  let prev: [number, number] | null = null;
+  let stall = 0;
+  for (let frame = 0; frame < 60 * 30; frame++) {
+    if (Math.hypot(target[0] - pos[0], target[1] - pos[1]) <= stopDist) return true;
+    stall = stallTime(stall, prev, pos, dt);
+    prev = [pos[0], pos[1]];
+    if (monster && shouldRepath(madeAt, target, walkSpent(waypoints, pos))) waypoints = plan(pos) ?? waypoints;
+    if (stall > STALL_SEC) {
+      escapeStall(grid, waypoints, pos);
+      stall = 0;
+    }
+    const aim = entityAim(grid, waypoints, pos, target, monster);
+    const d = Math.hypot(aim[0] - pos[0], aim[1] - pos[1]);
+    if (d <= 0.001) continue;
+    const step = Math.min(d, 5 * dt);
+    const next = moveWithCollision(pos[0], pos[1], ((aim[0] - pos[0]) / d) * step, ((aim[1] - pos[1]) / d) * step);
+    pos[0] = next.x;
+    pos[1] = next.z;
+  }
+  return false;
+}
+
+function stuckApproaches(grid: WalkGrid, targets: { x: number; z: number }[], stopDist: number, monster: boolean): string[] {
+  const stuck: string[] = [];
+  for (const t of targets) {
+    for (const r of [stopDist + 3, stopDist + 9]) {
+      for (let k = 0; k < 16; k++) {
+        const a = (k / 16) * Math.PI * 2;
+        const s: [number, number] = [t.x + Math.cos(a) * r, t.z + Math.sin(a) * r];
+        if (!isWalkable(s[0], s[1])) continue;
+        if (approach(grid, s, [t.x, t.z], stopDist, monster) === false) stuck.push(`(${t.x},${t.z}) from (${s[0].toFixed(1)},${s[1].toFixed(1)})`);
+      }
+    }
+  }
+  return stuck;
+}
+
+describe('review 1: an entity walk never runs in place against water or a wall', () => {
+  const grid = buildWalkGrid();
+
+  it('reaches the north shrimp spot from the north', () => {
+    expect(approach(grid, [27, 11], [27, 5], 3.1, false)).toBe(true);
+  });
+
+  it('reaches a still goblin across the river at ranged stop distance', () => {
+    expect(approach(grid, [34.8, 1.9], [20, 8], 13.5, true)).toBe(true);
+  });
+
+  it('reaches every resource node from every side', () => {
+    expect(stuckApproaches(grid, NODE_PLACEMENTS, 3.1, false)).toEqual([]);
+  });
+
+  it('reaches every still monster from every side, melee and ranged', () => {
+    expect(stuckApproaches(grid, MONSTER_PLACEMENTS, 2.9, true)).toEqual([]);
+    expect(stuckApproaches(grid, MONSTER_PLACEMENTS, 13.5, true)).toEqual([]);
   });
 });
 
