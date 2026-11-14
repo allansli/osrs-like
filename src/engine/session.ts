@@ -2,7 +2,7 @@ import { player, camState } from './context';
 import { SFX } from './audio';
 import { spawnLevelUpFireworks } from './vfx';
 import { STATE, applyState } from '../state/gameState';
-import { readSave, writeSave, SAVE_KEY, LEGACY_SAVE_KEYS, sanitizePose, sanitizeCam } from '../state/save';
+import { readSave, writeSave, SAVE_KEY, LEGACY_SAVE_KEYS, sanitizeCam } from '../state/save';
 import { matchCheat, applySkillsPlus10, applyGold200k } from '../state/cheats';
 import { el, addChatMessage, showBanner, updateAllUI } from '../ui/hud';
 import { closeModals } from '../ui/playerActions';
@@ -28,14 +28,26 @@ export function saveGameState(): void {
     const mm = String(t.getMinutes()).padStart(2, '0');
     const ss = String(t.getSeconds()).padStart(2, '0');
     saveBtn.textContent = 'Saved (' + hh + ':' + mm + ':' + ss + ')';
-  } catch (e) {}
+  } catch (e) {
+    console.error('autosave failed', e);
+    el('save-status-btn').textContent = 'Save failed';
+  }
 }
 
 export function loadGameState(): boolean {
   try {
     const migrated = readSave(localStorage);
     if (!migrated) return false;
-    applyState(STATE, migrated.state);
+    if (migrated.corrupt) {
+      addChatMessage('Save file was corrupt; backed up to <b>gielinor_hero_save_v1_corrupt</b>.', 'combat');
+      return false;
+    }
+    try {
+      applyState(STATE, migrated.state);
+    } catch (e) {
+      console.error(e);
+      return false;
+    }
 
     // One-time automatic migration for existing saves:
     // If the saved character was wearing the starter outfit (hood, tunic, trousers, cape) that covers
@@ -56,10 +68,9 @@ export function loadGameState(): boolean {
       }
     }
     if (migrated.pose && player && player.pos) {
-      const pose = sanitizePose(migrated.pose);
-      player.pos.x = pose.x;
-      player.pos.z = pose.z;
-      if (typeof pose.yaw === 'number') player.yaw = pose.yaw;
+      player.pos.x = migrated.pose.x;
+      player.pos.z = migrated.pose.z;
+      if (typeof migrated.pose.yaw === 'number') player.yaw = migrated.pose.yaw;
     }
     if (migrated.cam && camState) {
       const cam = sanitizeCam(migrated.cam);
