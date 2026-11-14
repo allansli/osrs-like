@@ -8,12 +8,12 @@
 *OldSchool RuneScape mechanics and progression in a Breath of the Wild gouache world*
 
 [![Play on Vercel](https://img.shields.io/badge/Play_Live-gielinor--hero.vercel.app-000000?style=for-the-badge&logo=vercel)](https://gielinor-hero.vercel.app/)
-[![Live Demo](https://img.shields.io/badge/Mirror-GitHub_Pages-2ea44f?style=for-the-badge&logo=github)](https://allansli.github.io/osrs-like/)
+[![Live Demo](https://img.shields.io/badge/Live_Demo-Vercel-2ea44f?style=for-the-badge&logo=vercel)](https://gielinor-hero.vercel.app/)
 [![Three.js](https://img.shields.io/badge/3D_Engine-Three.js_+_GLSL-000000?style=for-the-badge&logo=threedotjs)](https://threejs.org/)
 [![Items](https://img.shields.io/badge/Custom_SVG_Items-201_Items_(33_Armor_Sets)-f59e0b?style=for-the-badge)](#item--equipment-progression-201-items--33-matched-sets)
 [![License: MIT](https://img.shields.io/badge/License-MIT-38bdf8?style=for-the-badge)](./LICENSE)
 
-[**Play Live in Browser**](https://allansli.github.io/osrs-like/) • [**Features**](#key-features) • [**World Regions**](#world-regions--monsters) • [**Controls**](#controls--quick-start) • [**Architecture**](#engine-architecture)
+[**Play Live in Browser**](https://gielinor-hero.vercel.app/) • [**Features**](#key-features) • [**World Regions**](#world-regions--monsters) • [**Controls**](#controls--quick-start) • [**Architecture**](#engine-architecture)
 
 </div>
 
