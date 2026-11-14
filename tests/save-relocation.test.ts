@@ -15,10 +15,12 @@ function loadAt(x: number, z: number) {
   return migrateLegacySave(raw, SAVE_KEY);
 }
 
-function expectLoadsWalkable(x: number, z: number, label: string): void {
+// Review 10: a fallback to the start town (0, 4) is walkable too, so a relocation must also stay near the saved point.
+function expectLoadsWalkable(x: number, z: number, label: string, maxMove: number): void {
   const pose = loadAt(x, z).pose;
   expect(pose, label).not.toBeNull();
   expect(isWalkable(pose!.x, pose!.z), `${label}: loaded to (${pose!.x}, ${pose!.z})`).toBe(true);
+  expect(Math.hypot(pose!.x - x, pose!.z - z), `${label}: loaded to (${pose!.x}, ${pose!.z})`).toBeLessThanOrEqual(maxMove);
 }
 
 // Monster spawn points at 1284a6e outside the start town: rangers, giants, scorpions, moss guardians,
@@ -59,20 +61,20 @@ describe('save relocation', () => {
     expect(crest, 'a crest point inside the map').toBeDefined();
     const [x, z] = crest!;
     expect(isWalkable(x, z), `ridge crest (${x}, ${z}) is blocked`).toBe(false);
-    expectLoadsWalkable(x, z, `${ridge.name} (${x}, ${z})`);
+    expectLoadsWalkable(x, z, `${ridge.name} (${x}, ${z})`, ridge.coreHalfWidth + 1);
   });
 
   it('a position in each basin loads to a walkable point', () => {
     expect(BASINS).toHaveLength(2);
     for (const b of BASINS) {
       expect(isWalkable(b.x, b.z), `${b.name} centre is water`).toBe(false);
-      expectLoadsWalkable(b.x, b.z, b.name);
+      expectLoadsWalkable(b.x, b.z, b.name, b.radius);
     }
   });
 
   it('the 20 listed old spawn points load to walkable points', () => {
     expect(OLD_SPAWNS).toHaveLength(20);
-    for (const [type, x, z] of OLD_SPAWNS) expectLoadsWalkable(x, z, `${type} (${x}, ${z})`);
+    for (const [type, x, z] of OLD_SPAWNS) expectLoadsWalkable(x, z, `${type} (${x}, ${z})`, 12);
   });
 
   it('serializeState writes the same keys as before Stage 2', () => {
