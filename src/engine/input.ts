@@ -72,10 +72,6 @@ export function setupInputHandlers(): void {
   });
 
   window.addEventListener('keyup', (e: KeyboardEvent) => {
-    const t = e.target as HTMLElement;
-    if (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable) {
-      return;
-    }
     G.keysPressed[e.code] = false;
   });
 
