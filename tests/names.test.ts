@@ -6,7 +6,7 @@ import { BASINS, PATHS, POIS, RIDGES } from '../src/data/worldMap';
 const DENY = [
   // regions and their subtitles
   'lumbridge', 'misthalin', 'varrock', 'kharid', 'korok', 'whispering', 'wilderness', 'gielinor',
-  'haven', 'plaza', 'dunes', 'oasis', 'sanctuary', 'highlands', 'obsidian', 'volcanic', 'crag', 'peak',
+  'haven', 'plaza', 'dunes', 'oasis', 'sunscorched', 'sanctuary', 'highlands', 'obsidian', 'volcanic', 'crag', 'peak',
   'emporium', 'bazaar', 'cathedral', 'river lum',
   // monsters and NPCs
   'chicken', 'goblin', 'raider', 'scorpion', 'wizard', 'ranger', 'archer', 'giant', 'guardian', 'demon',
