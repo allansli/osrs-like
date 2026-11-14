@@ -608,7 +608,7 @@ export function spawnWorldProp(assetName: string, x: number, z: number, rotY = 0
   });
 }
 
-export function buildTent(x = 0, z = 0, rotY = 0, scale = 1.0): THREE.Group {
+export function buildTent(x: number, z: number, rotY = 0, scale = 1.0): THREE.Group {
   const y = getTerrainHeight(x, z);
   const grp = new THREE.Group();
   grp.position.set(x, y, z);
@@ -640,7 +640,7 @@ export function buildTent(x = 0, z = 0, rotY = 0, scale = 1.0): THREE.Group {
   return grp;
 }
 
-export function buildFireRing(x = 0, z = 0, rotY = 0, scale = 1.0): THREE.Group {
+export function buildFireRing(x: number, z: number, rotY = 0, scale = 1.0): THREE.Group {
   const y = getTerrainHeight(x, z);
   const grp = new THREE.Group();
   grp.position.set(x, y, z);
@@ -689,7 +689,7 @@ export function buildFireRing(x = 0, z = 0, rotY = 0, scale = 1.0): THREE.Group 
   return grp;
 }
 
-export function buildCairn(x = 0, z = 0, rotY = 0, scale = 1.0): THREE.Group {
+export function buildCairn(x: number, z: number, rotY = 0, scale = 1.0): THREE.Group {
   const y = getTerrainHeight(x, z);
   const grp = new THREE.Group();
   grp.position.set(x, y, z);
@@ -731,7 +731,7 @@ export function buildCairn(x = 0, z = 0, rotY = 0, scale = 1.0): THREE.Group {
   return grp;
 }
 
-export function buildSignpost(x = 0, z = 0, rotY = 0, scale = 1.0): THREE.Group {
+export function buildSignpost(x: number, z: number, rotY = 0, scale = 1.0): THREE.Group {
   const y = getTerrainHeight(x, z);
   const grp = new THREE.Group();
   grp.position.set(x, y, z);
@@ -765,17 +765,15 @@ export function buildPointsOfInterest(): void {
     for (const piece of poi.pieces) {
       const px = poi.x + piece.dx;
       const pz = poi.z + piece.dz;
-      const rot = piece.rot ?? 0;
-      const scale = piece.scale ?? 1.0;
       if (piece.node) {
-        spawnWorldProp(piece.node, px, pz, rot, scale);
+        spawnWorldProp(piece.node, px, pz, piece.rot, piece.scale);
       } else if (piece.builder === 'tent') {
-        buildTent(px, pz, rot, scale);
+        buildTent(px, pz, piece.rot, piece.scale);
       } else if (piece.builder === 'fireRing') {
-        buildFireRing(px, pz, rot, scale);
+        buildFireRing(px, pz, piece.rot, piece.scale);
       } else if (piece.builder === 'cairn') {
-        const cairnGrp = buildCairn(px, pz, rot, scale);
-        if (poi.id === 'wardstone_cairn' && poi.sign) {
+        const cairnGrp = buildCairn(px, pz, piece.rot, piece.scale);
+        if (poi.id === 'wardstone_cairn') {
           const uData = {
             type: 'interactive',
             action: 'dialogue',
@@ -794,7 +792,7 @@ export function buildPointsOfInterest(): void {
           G.worldInteractiveObjects.push(hitbox);
         }
       } else if (piece.builder === 'signpost') {
-        buildSignpost(px, pz, rot, scale);
+        buildSignpost(px, pz, piece.rot, piece.scale);
       }
     }
   }
