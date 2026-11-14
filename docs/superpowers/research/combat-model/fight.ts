@@ -6,7 +6,7 @@
 import { MONSTER_TYPES } from '../../../../src/data/world';
 import { ITEMS } from '../../../../src/data/items';
 import { SPELLS } from '../../../../src/data/catalog';
-import { getEquipmentBonuses, rollMonsterHit } from '../../../../src/state/combat';
+import { playerAttackProfile, playerHitChance, rollMonsterHit } from '../../../../src/state/combat';
 import { resolveDragonfire } from '../../../../src/state/adventure';
 import { createDefaultState } from '../../../../src/state/gameState';
 import type { GameState } from '../../../../src/state/types';
@@ -88,24 +88,12 @@ export function profile(style: Style, lvl: number, hp: number, prayer: number, g
   s.activePrayers = new Set(prayers);
   return s;
 }
-/** One attack of the hero, transcribed from performPlayerAttack (actions.ts 104-121, 179-182). [damage, heal]. */
+/** One attack of the hero, through Stage 3's own functions (playerAttackProfile, playerHitChance; R0 replaced the
+ *  hand transcription of actions.ts). The damage roll and the Blood Barrage heal are actions.ts's. [damage, heal]. */
 function swing(s: GameState, typeKey: string, r: () => number): [number, number] {
-  const bon = getEquipmentBonuses(s);
-  let maxHit: number, acc: number, healRatio = 0;
-  if (s.combatStyle === 'ranged') {
-    maxHit = Math.max(2, Math.floor(2 + s.skills.ranged.lvl * 0.35 + bon.rng * 0.22));
-    acc = s.skills.ranged.lvl * 1.4 + bon.rng + 12;
-  } else if (s.combatStyle === 'magic') {
-    const sp = SPELLS.find((x: { id: string }) => x.id === s.activeSpell) as { maxHit: number; healRatio?: number };
-    maxHit = Math.max(3, Math.floor(sp.maxHit + s.skills.magic.lvl * 0.22 + bon.mag * 0.18));
-    acc = s.skills.magic.lvl * 1.5 + bon.mag + 16;
-    healRatio = sp.healRatio || 0;
-  } else {
-    maxHit = Math.max(2, Math.floor(1.5 + (s.skills.strength.lvl + 1) * 0.32 + bon.str * 0.22));
-    acc = (s.skills.attack.lvl + 2) * 1.35 + bon.atk + 12;
-  }
-  const defRoll = MONSTER_TYPES[typeKey].def * 1.1 + 4;
-  const hc = Math.min(0.94, Math.max(0.22, acc / (acc + defRoll * 0.75)));
+  const { maxHit, accuracy } = playerAttackProfile(s);
+  const healRatio = s.combatStyle === 'magic' ? ((SPELLS.find((x: { id: string }) => x.id === s.activeSpell) as { healRatio?: number }).healRatio || 0) : 0;
+  const hc = playerHitChance(accuracy, MONSTER_TYPES[typeKey].def);
   const dmg = r() < hc ? Math.max(1, Math.floor(r() * (maxHit + 1))) : 0;
   return [dmg, dmg > 0 && healRatio ? Math.max(1, Math.floor(dmg * healRatio)) : 0];
 }
