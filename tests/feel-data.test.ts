@@ -77,7 +77,7 @@ describe('finding 14: the spin is a function of spinAnim alone', () => {
   };
 
   it('is equal at steps of 1/30, 1/60 and 1/144 for the same elapsed time', () => {
-    for (const seconds of [0.1, 0.2, 0.3]) {
+    for (const seconds of [1 / 6, 1 / 3, 1 / 2]) {
       const offs = [1 / 30, 1 / 60, 1 / 144].map((dt) => feel.spinOffset(reach(dt, seconds)));
       expect(offs[1]).toBeCloseTo(offs[0], 6);
       expect(offs[2]).toBeCloseTo(offs[0], 6);
