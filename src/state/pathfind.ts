@@ -24,7 +24,7 @@ export function buildWalkGrid(walkable: (x: number, z: number) => boolean = isWa
   return { size, origin, cells, walkable };
 }
 
-function segmentWalkable(grid: WalkGrid, a: [number, number], b: [number, number], step = 0.25): boolean {
+export function segmentWalkable(grid: WalkGrid, a: [number, number], b: [number, number], step = 0.25): boolean {
   const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
   const steps = Math.max(1, Math.ceil(len / step));
   for (let i = 0; i <= steps; i++) {
@@ -106,11 +106,47 @@ function octileDist(dx: number, dz: number): number {
   return maxD + (Math.SQRT2 - 1) * minD;
 }
 
+interface PathScratch {
+  gScore: Float64Array;
+  fScore: Float64Array;
+  parent: Int32Array;
+  stamp: Uint32Array;
+  version: number;
+}
+
+const scratchMap = new Map<number, PathScratch>();
+
+function getScratch(size: number): PathScratch {
+  let scratch = scratchMap.get(size);
+  if (!scratch) {
+    const totalCells = size * size;
+    scratch = {
+      gScore: new Float64Array(totalCells),
+      fScore: new Float64Array(totalCells),
+      parent: new Int32Array(totalCells),
+      stamp: new Uint32Array(totalCells),
+      version: 1,
+    };
+    scratchMap.set(size, scratch);
+  }
+  return scratch;
+}
+
+export function openStart(grid: WalkGrid, x: number, z: number): [number, number] | null {
+  const gx = Math.floor(x - grid.origin);
+  const gz = Math.floor(z - grid.origin);
+  if (gx >= 0 && gx < grid.size && gz >= 0 && gz < grid.size && grid.cells[gz * grid.size + gx] === 1) {
+    return [x, z];
+  }
+  return nearestOpenCell(grid, x, z);
+}
+
 export function findPath(
   grid: WalkGrid,
   from: [number, number],
   to: [number, number],
-  stats?: { expanded: number }
+  stats?: { expanded: number },
+  maxExpanded?: number
 ): [number, number][] | null {
   const size = grid.size;
   const origin = grid.origin;
@@ -123,7 +159,6 @@ export function findPath(
   if (startGx < 0 || startGx >= size || startGz < 0 || startGz >= size) return null;
   if (targetGx < 0 || targetGx >= size || targetGz < 0 || targetGz >= size) return null;
 
-  const totalCells = size * size;
   const startId = startGz * size + startGx;
   const targetId = targetGz * size + targetGx;
 
@@ -133,31 +168,43 @@ export function findPath(
     return [[origin + targetGx + 0.5, origin + targetGz + 0.5]];
   }
 
-  const gScore = new Float64Array(totalCells);
-  gScore.fill(Infinity);
-  const fScore = new Float64Array(totalCells);
-  fScore.fill(Infinity);
-  const closed = new Uint8Array(totalCells);
-  const parent = new Int32Array(totalCells);
-  parent.fill(-1);
+  const scratch = getScratch(size);
+  if (scratch.version >= 0xfffffffe) {
+    scratch.stamp.fill(0);
+    scratch.version = 1;
+  }
+  const gen = scratch.version;
+  scratch.version += 2;
+
+  const { gScore, fScore, parent, stamp } = scratch;
 
   gScore[startId] = 0;
   fScore[startId] = octileDist(Math.abs(targetGx - startGx), Math.abs(targetGz - startGz));
+  parent[startId] = -1;
+  stamp[startId] = gen;
 
   const open = new MinHeap(fScore);
   open.push(startId);
 
   let found = false;
+  let expanded = stats ? stats.expanded : 0;
 
   const D1 = 1;
   const D2 = Math.SQRT2;
 
   while (open.size() > 0) {
     const currentId = open.pop()!;
-    if (closed[currentId]) continue;
-    closed[currentId] = 1;
+    if (stamp[currentId] === gen + 1) continue;
+
+    const currentExpanded = stats ? stats.expanded : expanded;
+    if (maxExpanded !== undefined && currentExpanded >= maxExpanded) {
+      return null;
+    }
+
+    stamp[currentId] = gen + 1;
 
     if (stats) stats.expanded++;
+    expanded++;
 
     if (currentId === targetId) {
       found = true;
@@ -179,7 +226,7 @@ export function findPath(
         if (nx < 0 || nx >= size) continue;
 
         const neighborId = nRowOffset + nx;
-        if (closed[neighborId] || grid.cells[neighborId] === 0) continue;
+        if (stamp[neighborId] === gen + 1 || grid.cells[neighborId] === 0) continue;
 
         // No corner cutting
         if (dx !== 0 && dz !== 0) {
@@ -191,11 +238,13 @@ export function findPath(
         const stepCost = dx !== 0 && dz !== 0 ? D2 : D1;
         const tentativeG = curG + stepCost;
 
-        if (tentativeG < gScore[neighborId]) {
+        const neighborG = stamp[neighborId] === gen ? gScore[neighborId] : Infinity;
+        if (tentativeG < neighborG) {
           parent[neighborId] = currentId;
           gScore[neighborId] = tentativeG;
           const h = octileDist(Math.abs(targetGx - nx), Math.abs(targetGz - nz));
           fScore[neighborId] = tentativeG + h;
+          stamp[neighborId] = gen;
           open.push(neighborId);
         }
       }
