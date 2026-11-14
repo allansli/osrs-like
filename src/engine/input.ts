@@ -1,10 +1,9 @@
-// @ts-nocheck
 import * as THREE from 'three';
-import { G, player, camState } from './context';
+import { G, player, camState, type MonsterEntity, type ResourceNodeEntity } from './context';
 import { noteCheatKey } from './session';
 import { SFX } from './audio';
 import { toggleSpecialAttack, closeModals, hideHoverTooltip } from '../ui/playerActions';
-import { switchTab, addChatMessage, updateTargetHud, getCombatLevel } from '../ui/hud';
+import { switchTab, addChatMessage, updateTargetHud, getCombatLevel, el } from '../ui/hud';
 import { isWalkable } from '../state/collision';
 import { getTerrainHeight } from '../state/terrain';
 import { SKILLS_META } from '../data/skills';
@@ -14,7 +13,18 @@ import {
   monsterThreatColor
 } from '../state/adventure';
 
-export function setupInputHandlers() {
+export interface ChooseMenuOption {
+  label: string;
+  tone?: string;
+  run: () => void;
+}
+
+export interface PickResult {
+  entityHit: THREE.Intersection | undefined;
+  ground: THREE.Intersection | null;
+}
+
+export function setupInputHandlers(): void {
   G.clickMarkerMesh = new THREE.Group();
   G.clickMarkerMesh.userData.life = 0;
   const crossMat = () => new THREE.MeshBasicMaterial({ color: 0xfde047, transparent: true, opacity: 0, depthWrite: false });
@@ -32,7 +42,7 @@ export function setupInputHandlers() {
   G.hoverTile.visible = false;
   G.scene.add(G.hoverTile);
 
-  window.addEventListener('keydown', e => {
+  window.addEventListener('keydown', (e: KeyboardEvent) => {
     G.keysPressed[e.code] = true;
     noteCheatKey(e);
     if (e.code === 'Space' && player.isGrounded && !player.downed) {
@@ -46,7 +56,7 @@ export function setupInputHandlers() {
     if (e.code === 'Escape') {
       closeModals();
     }
-    const tabByKey = { F1: 'combat', F2: 'skills', F3: 'inventory', F4: 'equipment', F5: 'prayer', F6: 'magic' };
+    const tabByKey: Record<string, string> = { F1: 'combat', F2: 'skills', F3: 'inventory', F4: 'equipment', F5: 'prayer', F6: 'magic' };
     if (tabByKey[e.code]) {
       const tag = document.activeElement && document.activeElement.tagName;
       if (tag !== 'INPUT' && tag !== 'TEXTAREA') {
@@ -56,23 +66,23 @@ export function setupInputHandlers() {
     }
   });
 
-  window.addEventListener('keyup', e => {
+  window.addEventListener('keyup', (e: KeyboardEvent) => {
     G.keysPressed[e.code] = false;
   });
 
-  document.addEventListener('mousedown', (e) => {
-    const menu = document.getElementById('context-menu');
-    if (!menu || !menu.classList.contains('open')) return;
-    if (menu.contains(e.target)) return;
+  document.addEventListener('mousedown', (e: MouseEvent) => {
+    const menu = el('context-menu');
+    if (!menu.classList.contains('open')) return;
+    if (e.target && menu.contains(e.target as Node)) return;
     hideContextMenu();
   });
 
   const canvas = G.renderer.domElement;
-  canvas.addEventListener('contextmenu', e => e.preventDefault());
-  const canvasHost = document.getElementById('game-canvas-container');
-  if (canvasHost) canvasHost.addEventListener('contextmenu', onGameContextMenu);
+  canvas.addEventListener('contextmenu', (e: MouseEvent) => e.preventDefault());
+  const canvasHost = el('game-canvas-container');
+  canvasHost.addEventListener('contextmenu', onGameContextMenu);
 
-  canvas.addEventListener('mousedown', e => {
+  canvas.addEventListener('mousedown', (e: MouseEvent) => {
     if (e.button === 2 || e.button === 1) {
       camState.isDragging = true;
       camState.lastMouseX = e.clientX;
@@ -88,7 +98,7 @@ export function setupInputHandlers() {
     }
   });
 
-  window.addEventListener('mousemove', e => {
+  window.addEventListener('mousemove', (e: MouseEvent) => {
     if (camState.isDragging) {
       const dx = e.clientX - camState.lastMouseX;
       const dy = e.clientY - camState.lastMouseY;
@@ -106,12 +116,12 @@ export function setupInputHandlers() {
     camState.isDragging = false;
   });
 
-  canvas.addEventListener('wheel', e => {
+  canvas.addEventListener('wheel', (e: WheelEvent) => {
     camState.distance = Math.max(3.6, Math.min(26, camState.distance + e.deltaY * 0.01));
   }, { passive: true });
 
-  const mmCanvas = document.getElementById('minimap-canvas');
-  mmCanvas.addEventListener('click', e => {
+  const mmCanvas = el<HTMLCanvasElement>('minimap-canvas');
+  mmCanvas.addEventListener('click', (e: MouseEvent) => {
     const rect = mmCanvas.getBoundingClientRect();
     const cx = e.clientX - rect.left - rect.width / 2;
     const cy = e.clientY - rect.top - rect.height / 2;
@@ -130,27 +140,28 @@ export function setupInputHandlers() {
   });
 }
 
-export function resetCameraBehindPlayer() {
+export function resetCameraBehindPlayer(): void {
   camState.manualOffset = 0;
   camState.pitch = 0.24;
   camState.distance = 8.5;
 }
 
-export function showClickMarker(x, z, hexColor) {
+export function showClickMarker(x: number, z: number, hexColor: number): void {
   if (!G.clickMarkerMesh) return;
   G.clickMarkerMesh.position.set(x, getTerrainHeight(x, z) + 0.16, z);
   G.clickMarkerMesh.userData.life = 1;
   G.clickMarkerMesh.scale.set(1, 1, 1);
-  G.clickMarkerMesh.traverse(obj => {
-    if (obj.material && obj.material.color) {
-      obj.material.color.setHex(hexColor);
-      obj.material.opacity = 1;
+  G.clickMarkerMesh.traverse((obj: THREE.Object3D) => {
+    const mesh = obj as THREE.Mesh;
+    if (mesh.material && (mesh.material as THREE.MeshBasicMaterial).color) {
+      (mesh.material as THREE.MeshBasicMaterial).color.setHex(hexColor);
+      (mesh.material as THREE.MeshBasicMaterial).opacity = 1;
     }
   });
 }
 
-export function handleWorldHover(e) {
-  const onCanvas = !!(e.target && e.target.id === 'game-canvas');
+export function handleWorldHover(e: MouseEvent): void {
+  const onCanvas = !!(e.target && (e.target as HTMLElement).id === 'game-canvas');
   const modalOpen = !!document.querySelector('.modal-backdrop.open');
   if (!onCanvas || modalOpen) {
     G.hoveredWorld = null;
@@ -159,7 +170,7 @@ export function handleWorldHover(e) {
     return;
   }
   updateHoverTile(e);
-  const tooltip = document.getElementById('hover-tooltip');
+  const tooltip = el('hover-tooltip');
   G.mouseVec.x = (e.clientX / window.innerWidth) * 2 - 1;
   G.mouseVec.y = -(e.clientY / window.innerHeight) * 2 + 1;
   G.raycaster.setFromCamera(G.mouseVec, G.camera);
@@ -169,11 +180,12 @@ export function handleWorldHover(e) {
     if (ud && ud.type !== 'ground') {
       let label = '';
       if (ud.type === 'monster' && !ud.entity.dead) {
-        const m = ud.entity;
+        const m = ud.entity as MonsterEntity;
         label = `Attack <b style="color:#ff981f">${m.def.name}</b> (Lv-${m.def.level}) [${m.hp}/${m.maxHp} HP]`;
       } else if (ud.type === 'resource' && !ud.entity.depleted) {
-        const r = ud.entity;
-        label = `Gather <b style="color:#38bdf8">${r.def.name}</b> (Req Lv ${r.def.req} ${SKILLS_META[r.def.skill].name})`;
+        const r = ud.entity as ResourceNodeEntity;
+        const skillMeta = (SKILLS_META as Record<string, { name: string }>)[r.def.skill!];
+        label = `Gather <b style="color:#38bdf8">${r.def.name}</b> (Req Lv ${r.def.req} ${skillMeta ? skillMeta.name : ''})`;
       } else if (ud.type === 'interactive') {
         label = `Interact with <b style="color:#fde047">${ud.name}</b>`;
       }
@@ -193,14 +205,13 @@ export function handleWorldHover(e) {
   document.body.style.cursor = 'default';
 }
 
-export function hideContextMenu() {
-  const menu = document.getElementById('context-menu');
-  if (!menu) return;
+export function hideContextMenu(): void {
+  const menu = el('context-menu');
   menu.classList.remove('open');
   menu.setAttribute('aria-hidden', 'true');
 }
 
-export function pointerToWorld(clientX, clientY) {
+export function pointerToWorld(clientX: number, clientY: number): PickResult {
   G.mouseVec.x = (clientX / window.innerWidth) * 2 - 1;
   G.mouseVec.y = -(clientY / window.innerHeight) * 2 + 1;
   G.raycaster.setFromCamera(G.mouseVec, G.camera);
@@ -210,12 +221,12 @@ export function pointerToWorld(clientX, clientY) {
   return { entityHit, ground: groundHits[0] || null };
 }
 
-export function onGameContextMenu(e) {
+export function onGameContextMenu(e: MouseEvent): void {
   e.preventDefault();
   if (G.rightPress.dist > 6) return;
   if (document.querySelector('.modal-backdrop.open')) return;
   const picked = pointerToWorld(e.clientX, e.clientY);
-  const options = [];
+  const options: ChooseMenuOption[] = [];
   const ud = picked.entityHit ? picked.entityHit.object.userData : null;
 
   if (ud && ud.type === 'monster' && ud.entity && !ud.entity.dead) {
@@ -246,7 +257,7 @@ export function onGameContextMenu(e) {
     else if (ud.action === 'bank') label = 'Bank';
     else if (ud.action === 'shop') label = 'Trade';
     else if (ud.action === 'dialogue') label = `Talk-to ${ud.name}`;
-    const anchor = picked.entityHit.object.getWorldPosition(new THREE.Vector3());
+    const anchor = picked.entityHit!.object.getWorldPosition(new THREE.Vector3());
     options.push({
       label,
       run: () => {
@@ -286,17 +297,16 @@ export function onGameContextMenu(e) {
   openChooseMenu(e.clientX, e.clientY, options);
 }
 
-export function openChooseMenu(clientX, clientY, options) {
-  const menu = document.getElementById('context-menu');
-  const list = document.getElementById('context-menu-list');
-  if (!menu || !list) return;
+export function openChooseMenu(clientX: number, clientY: number, options: ChooseMenuOption[]): void {
+  const menu = el('context-menu');
+  const list = el('context-menu-list');
   list.innerHTML = '';
   options.forEach((opt) => {
     const row = document.createElement('div');
     row.className = 'osrs-menu-item' + (opt.tone ? ` threat-${opt.tone}` : '');
     row.setAttribute('role', 'menuitem');
     row.textContent = opt.label;
-    row.addEventListener('click', (ev) => {
+    row.addEventListener('click', (ev: MouseEvent) => {
       ev.stopPropagation();
       hideContextMenu();
       opt.run();
@@ -311,7 +321,7 @@ export function openChooseMenu(clientX, clientY, options) {
   menu.setAttribute('aria-hidden', 'false');
 }
 
-export function handleWorldClick(e) {
+export function handleWorldClick(e: MouseEvent): void {
   G.mouseVec.x = (e.clientX / window.innerWidth) * 2 - 1;
   G.mouseVec.y = -(e.clientY / window.innerHeight) * 2 + 1;
   G.raycaster.setFromCamera(G.mouseVec, G.camera);
@@ -319,7 +329,7 @@ export function handleWorldClick(e) {
   const hits = G.raycaster.intersectObjects(G.worldInteractiveObjects, false);
   if (hits.length === 0) return;
 
-  let chosen = hits.find(h => h.object.userData && h.object.userData.type !== 'ground') || hits[0];
+  const chosen = hits.find(h => h.object.userData && h.object.userData.type !== 'ground') || hits[0];
   const ud = chosen.object.userData;
 
   if (!ud || ud.type === 'ground') {
@@ -353,11 +363,11 @@ export function handleWorldClick(e) {
   } else if (ud.type === 'interactive') {
     player.targetEntity = { type: 'interactive', ref: ud, pos: chosen.object.getWorldPosition(new THREE.Vector3()) };
     player.targetPos = null;
-    showClickMarker(player.targetEntity.pos.x, player.targetEntity.pos.z, 0xef4444);
+    showClickMarker(player.targetEntity.pos!.x, player.targetEntity.pos!.z, 0xef4444);
   }
 }
 
-export function updateHoverTile(e) {
+export function updateHoverTile(e: MouseEvent): void {
   if (!G.hoverTile || !G.terrainMesh || !G.camera) return;
   G.mouseVec.x = (e.clientX / window.innerWidth) * 2 - 1;
   G.mouseVec.y = -(e.clientY / window.innerHeight) * 2 + 1;
