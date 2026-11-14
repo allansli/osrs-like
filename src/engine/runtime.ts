@@ -33,6 +33,7 @@ import {
 } from '../state/adventure';
 import { noteBury, notePlate, notePrayerOffered, notePurchase, noteSale } from '../state/quests';
 import { moveWithCollision, isWalkable, isDeepWater } from '../state/collision';
+import { getTerrainHeight, regionAt } from '../state/terrain';
 import { discoverShrines } from '../state/shrines';
 import { applyGold200k, applySkillsPlus10, matchCheat } from '../state/cheats';
 import { addCartoonOutline, facetMaterial, grassMaterial, PALETTE } from './materials';
@@ -1105,35 +1106,6 @@ const camState = {
   lastMouseY: 0
 };
 
-function getTerrainHeight(x, z) {
-  for (const reg of WORLD_REGIONS) {
-    const dx = x - reg.x;
-    const dz = z - reg.z;
-    const d = Math.sqrt(dx * dx + dz * dz);
-    if (d < 16) return 0;
-    if (d < 28) {
-      const t = (d - 16) / 12;
-      const smoothT = t * t * (3 - 2 * t);
-      return rawHills(x, z) * smoothT;
-    }
-  }
-  const riverCenter = 28 + Math.sin(z * 0.05) * 8;
-  const riverDist = Math.abs(x - riverCenter);
-  if (riverDist < 6.8) {
-    return -1.45 * Math.cos((riverDist / 6.8) * (Math.PI / 2));
-  }
-  return rawHills(x, z);
-}
-
-function rawHills(x, z) {
-  const h1 = Math.sin(x * 0.032) * Math.cos(z * 0.032) * 1.85;
-  const h2 = Math.sin(x * 0.085 + z * 0.065) * 0.55;
-  let crag = 0;
-  if (x < -35 && z > 30) {
-    crag = Math.min(6.4, ((-35 - x) + (z - 30)) * 0.06) * (0.6 + 0.4 * Math.sin(x * 0.13) * Math.cos(z * 0.13));
-  }
-  return Math.max(0.08, (h1 + h2) * 0.55 + 0.85 + crag);
-}
 
 function getBiomeColor(x, z, h) {
   const dirt = new THREE.Color(PALETTE.dirt);
@@ -3971,16 +3943,12 @@ function teleportToRegion(regionId) {
 
 let lastBannerRegion = '';
 function checkRegionChange() {
-  for (const reg of WORLD_REGIONS) {
-    const d = Math.hypot(player.pos.x - reg.x, player.pos.z - reg.z);
-    if (d < reg.radius) {
-      if (STATE.currentRegion !== reg.id) {
-        STATE.currentRegion = reg.id;
-        document.getElementById('current-zone-footer').textContent = reg.name;
-        triggerRegionBanner(reg);
-      }
-      return;
-    }
+  const reg = regionAt(player.pos.x, player.pos.z);
+  if (!reg) return;
+  if (STATE.currentRegion !== reg.id) {
+    STATE.currentRegion = reg.id;
+    document.getElementById('current-zone-footer').textContent = reg.name;
+    triggerRegionBanner(reg);
   }
 }
 
