@@ -15,15 +15,7 @@ export function loadGltfOnce(
     return existing;
   }
 
-  let loadPromise: Promise<GLTF>;
-  try {
-    loadPromise = load(url);
-  } catch (err) {
-    console.warn(`[GLTF] Failed to load ${url}:`, err);
-    return Promise.resolve(null);
-  }
-
-  const promise = loadPromise.catch((err) => {
+  const promise = load(url).catch((err) => {
     cache.delete(url);
     console.warn(`[GLTF] Failed to load ${url}:`, err);
     return null;

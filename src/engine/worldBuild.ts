@@ -524,11 +524,11 @@ export function createMerchantNPC(x: number, z: number, name: string, tunicColor
   });
 }
 
-export function loadBlenderGuardTemplate(url = '/models/guard.glb'): Promise<GLTF | null> {
+export function loadBlenderGuardTemplate(): Promise<GLTF | null> {
   if (typeof window === 'undefined' || typeof document === 'undefined') {
     return Promise.resolve(null);
   }
-  return loadGltfOnce(url);
+  return loadGltfOnce('/models/guard.glb');
 }
 
 export function createCastleGuard(x: number, z: number, name: string, rotY = 0): void {
