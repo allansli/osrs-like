@@ -6,6 +6,7 @@ import { compactSlots } from './inventory';
 import { normalizeStyle } from './combat';
 import { normalizeQuests } from './quests';
 import { initialShrines } from './shrines';
+import { SLAYER_BANDS } from './adventure';
 import type { GameState, SavedCam, SavedPose } from './types';
 
 export const SAVE_KEY = 'gielinor_hero_save_v1';
@@ -71,6 +72,14 @@ export function migrateLegacySave(raw: unknown, source: string | null = null): M
   state.shrines.lumbridge = true;
 
   state.quests = normalizeQuests(data.quests);
+  if (state.quests.slayer) {
+    const band = SLAYER_BANDS.find((b) => b.monster === state.quests.slayer?.monster);
+    if (band) {
+      state.quests.slayer.name = band.name;
+    } else {
+      state.quests.slayer = null;
+    }
+  }
 
   state.maxHp = state.skills.hitpoints.lvl;
   state.hp = typeof data.hp === 'number' ? Math.max(1, Math.min(state.maxHp, data.hp)) : state.maxHp;
