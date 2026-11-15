@@ -1,6 +1,10 @@
 export const CADENCE_SECS = 1.65;
 export const CAMP_WINDUP_GAP_SECS = 1.65;
 export const TELEGRAPH_TIME_SCALE = 1;
+/** Boss rules of design 6.4: seconds the target may stay beyond the arena margin, that margin, and the pause before the first pattern entry. */
+export const BOSS_OUTSIDE_SECS = 5;
+export const BOSS_ARENA_MARGIN = 6;
+export const BOSS_FIRST_ENTRY_SECS = 1.0;
 
 export type Shape =
   | { type: 'circle'; anchor: 'target' | 'self'; radius: number }

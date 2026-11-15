@@ -1,4 +1,4 @@
-import { BOSSES, type AttackDef } from '../data/attacks';
+import { BOSSES, type AttackDef, type BossDef } from '../data/attacks';
 import { ammoForWeapon, ITEMS, type ItemDef } from '../data/items';
 import { SPELLS } from '../data/magic';
 import { MONSTER_TYPES, WORLD_REGIONS } from '../data/world';
@@ -283,22 +283,14 @@ export function rollMonsterHit(
 
 export type Marks = { count: number; left: number };
 
-export function addMark(marks: Marks, boss?: { mark?: { step?: number; max?: number; secs?: number } }): Marks {
-  const max = boss?.mark?.max ?? 4;
-  const secs = boss?.mark?.secs ?? 12;
-  marks.count = Math.min(max, (marks.count ?? 0) + 1);
-  marks.left = secs;
+export function addMark(marks: Marks, boss: BossDef): Marks {
+  marks.count = Math.min(boss.mark.max, marks.count + 1);
+  marks.left = boss.mark.secs;
   return marks;
 }
 
 export function tickMarks(marks: Marks, dt: number): Marks {
-  if (!marks || marks.count === 0 || marks.left <= 0) {
-    if (marks) {
-      marks.count = 0;
-      marks.left = 0;
-    }
-    return marks ?? { count: 0, left: 0 };
-  }
+  if (marks.count === 0) return marks;
   marks.left -= dt;
   if (marks.left <= 0) {
     marks.count = 0;
@@ -307,17 +299,15 @@ export function tickMarks(marks: Marks, dt: number): Marks {
   return marks;
 }
 
-export function markMultiplier(marks: { count: number }, boss?: { mark?: { step?: number } }): number {
-  if (!marks || marks.count <= 0) return 1;
-  const step = boss?.mark?.step ?? 0.25;
-  return 1 + marks.count * step;
+export function markMultiplier(marks: Pick<Marks, 'count'>, boss: BossDef): number {
+  return 1 + marks.count * boss.mark.step;
 }
 
 export function rollMonsterAttack(
   typeKey: string,
   attack: AttackDef,
   state: GameState,
-  marks: { count: number; left?: number },
+  marks: Pick<Marks, 'count'>,
   rand: () => number
 ): { dmg: number } {
   const def = MONSTER_TYPES[typeKey];
@@ -332,8 +322,7 @@ export function rollMonsterAttack(
       mitigated = mitigateDamage(raw, style, state.activePrayers);
     }
     const boss = BOSSES[typeKey];
-    const mult = markMultiplier(marks, boss);
-    dmg = Math.floor(mitigated * mult);
+    dmg = Math.floor(boss ? mitigated * markMultiplier(marks, boss) : mitigated);
   } else {
     const hitChance = monsterHitChance(typeKey, state);
     if (rand() < hitChance) {
