@@ -36,6 +36,7 @@ function isInside(p, dir) {
 function figureStats(doc, rootIdx) {
   const nodes = doc.json.nodes || [];
   const stack = [rootIdx];
+  const seen = new Set();
   const stats = { triangles: 0, meshes: 0 };
   const materials = new Set();
   const views = new Set();
@@ -45,7 +46,10 @@ function figureStats(doc, rootIdx) {
   };
   while (stack.length) {
     const i = stack.pop();
+    if (seen.has(i)) throw new Error(`Node ${i} is reached twice under figure root ${rootIdx} (a cycle or a shared child)`);
+    seen.add(i);
     const node = nodes[i];
+    if (!node) throw new Error(`Node index ${i} under figure root ${rootIdx} does not exist`);
     stack.push(...(node.children || []));
     if (node.skin !== undefined) addAccessor(doc.json.skins[node.skin].inverseBindMatrices);
     if (node.mesh === undefined) continue;

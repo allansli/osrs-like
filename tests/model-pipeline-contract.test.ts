@@ -218,3 +218,20 @@ describe('compare report and Drift wording', () => {
     }
   });
 });
+
+describe('compare Budget per figure, skinned and malformed', () => {
+  it('a skinned figure counts its skin inverse bind matrices in its bytes', () => {
+    // POSITION 36 + indices 6 + JOINTS_0 12 + WEIGHTS_0 48 + 7 inverse bind matrices 448 = 550
+    const at = { triangles: 1, meshes: 1, materials: 1, rawBytes: 550 };
+    expect(compare(buildTinySkin(), { ...tinySkinManifest(), figures: { Monster_tiny: at } }).status).toBe(0);
+    const r = compare(buildTinySkin(), { ...tinySkinManifest(), figures: { Monster_tiny: { ...at, rawBytes: 549 } } });
+    expect(r.status).toBe(2);
+    expect(r.out).toContain("'rawBytes' of figure 'Monster_tiny'");
+  });
+
+  it('a node cycle under a figure root refuses the file (exit 3)', () => {
+    const doc = buildTiny();
+    (nodeOf(doc, 'HeadGroup').children ??= []).push(doc.json.nodes.findIndex((n) => n.name === 'Torso'));
+    expect(compare(doc, { ...tinyManifest(), figures: { HeroRoot: { triangles: 9 } } }).status).toBe(3);
+  });
+});
