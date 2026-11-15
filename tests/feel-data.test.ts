@@ -94,10 +94,12 @@ describe('finding 14: the spin is a function of spinAnim alone', () => {
 });
 
 describe('G4.6 text scan: reactions never write rules positions', () => {
-  it('reactions.ts does not write logic.x, logic.z or player.pos', () => {
-    const src = readFileSync('src/engine/reactions.ts', 'utf8');
-    expect(src).not.toMatch(/logic\.[xz]\s*(=|\+=|-=)(?!=)/);
-    expect(src).not.toMatch(/player\.pos(\.[xyz])?\s*(=|\+=|-=)(?!=)/);
+  it('reactions.ts and telegraphs.ts do not write logic.x, logic.z or player.pos', () => {
+    for (const f of ['src/engine/reactions.ts', 'src/engine/telegraphs.ts']) {
+      const src = readFileSync(f, 'utf8');
+      expect(src, f).not.toMatch(/logic\.[xz]\s*(=|\+=|-=)(?!=)/);
+      expect(src, f).not.toMatch(/player\.pos(\.[xyz])?\s*(=|\+=|-=)(?!=)/);
+    }
   });
 });
 
