@@ -309,7 +309,7 @@ export function performPlayerAttack(monster: MonsterEntity): void {
         cameraKick(
           monster.pos.x - player.pos.x,
           monster.pos.z - player.pos.z,
-          Math.min(CAMERA.kickMax, CAMERA.kickBase + (dmg / maxHit) * CAMERA.kickSlope)
+          Math.min(CAMERA.kickMax, 0.04 + (dmg / maxHit) * 0.06)
         );
       }
 
