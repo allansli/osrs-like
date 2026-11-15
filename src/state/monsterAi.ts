@@ -1,7 +1,7 @@
 // Monster rules (design 5.4, Stage 1 shape; Stage 2 territory and aggression):
 // a pure step function and the hit entry point.
 // The engine owns meshes, sounds and the HUD; it applies the events returned here.
-import { ATTACKS, CADENCE_SECS, CAMP_WINDUP_GAP_SECS, PATTERNS, TELEGRAPH_TIME_SCALE } from '../data/attacks';
+import { PATTERNS } from '../data/attacks';
 import { MONSTER_TYPES } from '../data/world';
 import { isInSafeZone, type CampDef } from '../data/worldMap';
 import { monsterThreatColor } from './adventure';
@@ -16,7 +16,7 @@ import {
   STALL_SEC,
   type WalkGrid
 } from './pathfind';
-import { inShape } from './telegraph';
+import { patternAttack, stepWindupAndRecovery } from './monsterPattern';
 
 export type MonsterState = 'idle' | 'chase' | 'attack' | 'return' | 'dying' | 'dead';
 
@@ -110,16 +110,38 @@ export function createMonsterLogic(
   const def = MONSTER_TYPES[typeKey];
   if (!def) throw new Error(`createMonsterLogic: unknown monster type "${typeKey}"`);
   return {
-    typeKey, level: def.level, style: def.style, maxHp: def.hp, hp: def.hp,
-    x: homeX, z: homeZ, homeX, homeZ,
-    state: 'idle', attackCooldown: 0,
-    wanderTimer: 2.5, wanderRadius: opts?.wander ?? 4.5, wanderX: homeX, wanderZ: homeZ,
-    timer: 0, breathCount: 0, campId: opts?.campId,
-    stallTimer: 1.5, stallX: homeX, stallZ: homeZ,
-    path: [], pathGoalX: homeX, pathGoalZ: homeZ,
+    typeKey,
+    level: def.level,
+    style: def.style,
+    maxHp: def.hp,
+    hp: def.hp,
+    x: homeX,
+    z: homeZ,
+    homeX,
+    homeZ,
+    state: 'idle',
+    attackCooldown: 0,
+    // The shortest wander interval. spawnMonster replaces it with today's random 0-3 s stagger.
+    wanderTimer: 2.5,
+    wanderRadius: opts?.wander ?? 4.5,
+    // A wander target at home is the same as no target: the monster starts there and stands still.
+    wanderX: homeX,
+    wanderZ: homeZ,
+    timer: 0,
+    breathCount: 0,
+    campId: opts?.campId,
+    stallTimer: 1.5,
+    stallX: homeX,
+    stallZ: homeZ,
+    path: [],
+    pathGoalX: homeX,
+    pathGoalZ: homeZ,
     repathIn: ((Math.abs(homeX) * 12.9898 + Math.abs(homeZ) * 78.233) % 1) * 0.5,
-    returnLeft: 0, routeStall: 0,
-    patternIdx: 0, windup: null, recoverLeft: 0
+    returnLeft: 0,
+    routeStall: 0,
+    patternIdx: 0,
+    windup: null,
+    recoverLeft: 0
   };
 }
 
@@ -301,27 +323,9 @@ export function stepMonster(m: MonsterLogic, world: StepWorld): MonsterEvent[] {
       return [];
     }
 
-    if (m.windup) {
-      m.windup.left -= dt;
-      if (m.windup.left <= 0) {
-        const attack = ATTACKS[m.windup.attackId];
-        const hit = inShape(attack.shape, m.windup.ox, m.windup.oz, m.windup.dx, m.windup.dz, world.playerX, world.playerZ);
-        const windSecs = (attack.windupMs * TELEGRAPH_TIME_SCALE) / 1000;
-        const slotSecs = Math.max(attack.slots * CADENCE_SECS, windSecs + 0.15);
-        m.recoverLeft = (slotSecs - windSecs) + m.windup.left;
-        const ev: MonsterEvent = { kind: 'resolve', attackId: m.windup.attackId, hit };
-        m.windup = null;
-        return [ev];
-      }
-      return [];
-    }
-
-    if (m.recoverLeft > 0) {
-      m.recoverLeft -= dt;
-      if (m.recoverLeft > 0) {
-        return [];
-      }
-      m.recoverLeft = 0;
+    const pending = stepWindupAndRecovery(m, world);
+    if (pending) {
+      return pending;
     }
 
     if (distToPlayer > attackRange(m)) {
@@ -427,44 +431,7 @@ export function stepMonster(m: MonsterLogic, world: StepWorld): MonsterEvent[] {
       return [];
     }
 
-    m.attackCooldown -= dt;
-    if (m.attackCooldown > 0) {
-      return [];
-    }
-
-    const attackId = pattern[m.patternIdx % pattern.length];
-    if (attackId === 'basic') {
-      m.attackCooldown = ATTACK_INTERVAL;
-      m.patternIdx = (m.patternIdx + 1) % pattern.length;
-      return [{ kind: 'attack' }];
-    }
-
-    const gateTime = (m.campId && world.windupGate) ? (world.windupGate[m.campId] ?? 0) : 0;
-    const isGateShut = (world.windupGate !== undefined && m.campId !== undefined) && gateTime > 0;
-
-    if (isGateShut) {
-      m.attackCooldown = ATTACK_INTERVAL;
-      return [{ kind: 'attack' }];
-    }
-
-    const attack = ATTACKS[attackId];
-    const windSecs = (attack.windupMs * TELEGRAPH_TIME_SCALE) / 1000;
-    if (world.windupGate && m.campId) {
-      world.windupGate[m.campId] = windSecs + CAMP_WINDUP_GAP_SECS;
-    }
-
-    m.patternIdx = (m.patternIdx + 1) % pattern.length;
-
-    const atTarget = attack.shape.type === 'circle' && attack.shape.anchor === 'target';
-    const ox = atTarget ? world.playerX : m.x, oz = atTarget ? world.playerZ : m.z;
-    const dirX = world.playerX - m.x, dirZ = world.playerZ - m.z;
-    const dirDist = Math.hypot(dirX, dirZ);
-    const dx = dirDist > 0.0001 ? dirX / dirDist : 1, dz = dirDist > 0.0001 ? dirZ / dirDist : 0;
-    const ms = attack.windupMs * TELEGRAPH_TIME_SCALE;
-
-    m.windup = { attackId, left: windSecs, total: windSecs, ox, oz, dx, dz };
-    m.attackCooldown = 0;
-    return [{ kind: 'windup', attackId, ox, oz, dx, dz, ms }];
+    return patternAttack(m, world, pattern, ATTACK_INTERVAL);
   }
 
   // idle: check T2 (camp aggro)
