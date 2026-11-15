@@ -80,7 +80,7 @@ function profile(style: Style, lvl: number, hp: number, prayer: number, gear: Re
 /** One attack of the hero through Stage 3's functions; the damage roll and the spell's heal are actions.ts's. */
 function swing(s: GameState, r: () => number): [number, number] {
   const { maxHit, accuracy } = playerAttackProfile(s);
-  const healRatio = s.combatStyle === 'magic' ? ((SPELLS.find((x: { id: string }) => x.id === s.activeSpell) as { healRatio?: number }).healRatio || 0) : 0;
+  const healRatio = s.combatStyle === 'magic' ? ((SPELLS.find((x: { id: string }) => x.id === s.activeSpell) as { healRatio?: number }).healRatio) : 0;
   const hc = playerHitChance(accuracy, MONSTER_TYPES[BOSS_KEY].def);
   const dmg = r() < hc ? Math.max(1, Math.floor(r() * (maxHit + 1))) : 0;
   return [dmg, dmg > 0 && healRatio ? Math.max(1, Math.floor(dmg * healRatio)) : 0];
