@@ -11,11 +11,10 @@ import { STATE } from '../state/gameState';
 import { SKILLS_META } from '../data/skills';
 import {
   attackOptionLabel,
-  combatLevel,
   gatherVerb,
   monsterThreatColor
 } from '../state/adventure';
-import { DEATH_MIN_COMBAT, vowPrice } from '../state/sustain';
+import { vowPrice, vowRefusal } from '../state/sustain';
 import { dispatchCommand } from './actions';
 
 // The player's own 1-unit cell can be blocked while the player stands on a walkable
@@ -312,7 +311,7 @@ export function onGameContextMenu(e: MouseEvent): void {
         showClickMarker(anchor.x, anchor.z, 0xfde047);
       }
     });
-    if (ud.action === 'altar' && combatLevel(STATE) >= DEATH_MIN_COMBAT && !STATE.quests.lanternVow && STATE.gp >= vowPrice(STATE)) {
+    if (ud.action === 'altar' && vowRefusal(STATE) === null) {
       options.push({
         label: `Take the Lantern Vow (${vowPrice(STATE)} coins)`,
         run: () => {

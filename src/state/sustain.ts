@@ -139,7 +139,7 @@ export function deathLoss(state: GameState): Record<FightingSkill, number> {
   return loss;
 }
 
-function guardable(state: GameState): number {
+export function guardable(state: GameState): number {
   let sum = 0;
   for (const k of FIGHTING_SKILLS) {
     const lvl = state.skills[k].lvl;
@@ -180,18 +180,26 @@ export function applyDeathLoss(state: GameState): DeathOutcome {
   return { kind: 'lost', amounts: loss };
 }
 
-export function buyVow(state: GameState): { ok: boolean; reason: string } {
-  if (combatLevel(state) < DEATH_MIN_COMBAT) {
-    return { ok: false, reason: 'You risk nothing yet.' };
+/** Why the hero cannot take the vow now, or null when it can. */
+export function vowRefusal(state: GameState): string | null {
+  if (combatLevel(state) < DEATH_MIN_COMBAT || guardable(state) === 0) {
+    return 'You risk nothing yet.';
   }
   if (state.quests.lanternVow === true) {
-    return { ok: false, reason: 'You already hold a Lantern Vow.' };
+    return 'You already hold a Lantern Vow.';
   }
-  const price = vowPrice(state);
-  if (state.gp < price) {
-    return { ok: false, reason: 'You do not have enough coins.' };
+  if (state.gp < vowPrice(state)) {
+    return 'You do not have enough coins.';
   }
-  creditGp(state, -price);
+  return null;
+}
+
+export function buyVow(state: GameState): { ok: boolean; reason: string } {
+  const refusal = vowRefusal(state);
+  if (refusal !== null) {
+    return { ok: false, reason: refusal };
+  }
+  creditGp(state, -vowPrice(state));
   state.quests.lanternVow = true;
   return { ok: true, reason: '' };
 }

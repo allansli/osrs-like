@@ -26,7 +26,8 @@ import {
   shouldRetaliate,
   VOW_COINS_PER_XP,
   VOW_MIN_PRICE,
-  vowPrice
+  vowPrice,
+  vowRefusal
 } from '../src/state/sustain';
 import type { GameState } from '../src/state/types';
 
@@ -569,6 +570,24 @@ describe('the Lantern Vow', () => {
       expect(Number.isFinite(s.gp) && s.gp >= 0).toBe(true);
       expect(s.quests.lanternVow).toBe(true);
     }
+  });
+
+  it('buyVow refuses a hero with every fighting skill at 99, whom the vow guards nothing, and changes nothing (review finding 2)', () => {
+    const maxed = createDefaultState();
+    for (const k of FIGHTING_SKILLS) setSkill(maxed, k, 99, T[99]);
+    maxed.hp = maxed.maxHp;
+    maxed.gp = 1_000_000;
+    expect(combatLevel(maxed)).toBeGreaterThanOrEqual(DEATH_MIN_COMBAT);
+    expect(guardable(maxed)).toBe(0);
+    const before = snapshot(maxed);
+    const res = buyVow(maxed);
+    expect(res.ok).toBe(false);
+    expect(res.reason).toBe('You risk nothing yet.');
+    expect(snapshot(maxed)).toBe(before);
+    expect(vowRefusal(maxed)).toBe('You risk nothing yet.');
+    const ready = hero(50);
+    ready.gp = vowPrice(ready);
+    expect(vowRefusal(ready)).toBeNull();
   });
 });
 
