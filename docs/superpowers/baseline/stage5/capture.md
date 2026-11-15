@@ -15,6 +15,7 @@ Poses and times: `poses.json` (same folder). Presets: 0 = golden, 1 = noon, 2 = 
 3. **Dismiss onboarding.** `await page.evaluate(() => { const b = document.getElementById('onboarding'); if (b && !b.hidden) b.hidden = true; })` (element id `onboarding`; the page's own button calls `dismissOnboarding()`).
 4. **Wait for ready.** `await page.waitForFunction(() => window.__DEBUG && window.__DEBUG.look && window.__DEBUG.look.ready(), null, {timeout: 60000})`. A timeout is a failed run; do not capture.
 5. **For each tier id, pose row and time** (tiers: `performance`, `balanced`, `high`, `ultra`):
+   - **Hide the hover tile.** The game draws a pale ground quad (`G.hoverTile`, `src/engine/input.ts` `updateHoverTile`) under the mouse; it is not a shadow and must not appear in a picture. It is updated only by `window` `mousemove`, and a move whose target is not `#game-canvas` hides it. So, with the HUD shown: `await page.evaluate(() => __DEBUG.look.hud(true))`; `const b = await page.locator('#top-left-hud').boundingBox()`; `await page.mouse.move(b.x+b.width/2, b.y+b.height/2)`. Confirm: `page.evaluate(([x,y]) => !!document.elementFromPoint(x,y)?.closest('#top-left-hud'), [cx,cy])` is `true`; if it is `false` the run fails, do not capture. The mouse then stays still, so no later event can show the tile. Never click or move the mouse on the canvas during a run.
    - `page.evaluate` of `look.tier(id); look.pose({place,yaw,pitch,distance}); look.preset(n) /* or look.phase(time) */; look.weather(w) /* only if the row has weather */; look.hud(false)`.
    - `await page.waitForTimeout(2000)`.
    - `await page.screenshot({path: '<abs worktree>/docs/superpowers/baseline/stage5/<slice>/<pose>-<time>-<tier>.jpg', type: 'jpeg', quality: 80})`.
@@ -27,7 +28,9 @@ P1 at noon, `proof/P1-noon-performance.jpg` and `proof/P1-noon-balanced.jpg`, 12
 
 | tier | HUD |
 |---|---|
-| performance | 1516 calls • 263k tris |
-| balanced | 3213 calls • 594k tris |
+| performance | 1499 calls • 261k tris |
+| balanced | 3247 calls • 601k tris |
 
-The pictures differ: balanced has the shadow pass (the ground shadow patch moves and the call count roughly doubles). Monsters move between frames, so pictures are not byte-stable even with the seeded generator; compare by eye or by the HUD numbers.
+Captured with the hover-tile step of step 5 (mouse on `#top-left-hud`, confirmed by `elementFromPoint`); no hover tile shows in either picture.
+
+The evidence of the shadow pass is the HUD count: balanced draws about twice the calls and triangles of performance, and since V1b that count includes the shadow pass. No shadow is visible in either picture: before the LT slice no facet surface receives a shadow (design section 1 item 2), so the two pictures differ only in animated monsters and the water strip. Monsters move between frames, so pictures are not byte-stable even with the seeded generator; compare by eye or by the HUD numbers.
