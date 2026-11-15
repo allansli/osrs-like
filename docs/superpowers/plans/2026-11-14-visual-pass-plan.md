@@ -82,7 +82,7 @@ Run every command from the worktree root, in a shell started with an allowlisted
 | OV-4b | **CALL-V21 / QV9**: may a trunk stop a chasing monster (cover), or should monster chase use the walk grid? If the walk grid: the stage stops before TR2 and a Stage 2 monster-movement task is planned first, because `monsterAi.ts` is Stage 2 code. **Decided 2026-11-14: the walk grid (option B).** It is a requirement on Stage 4; R0 checks that monsters path-find and stops the stage before TR2 if they do not. | TR2 |
 | OV-5 | **CALL-V10**: the weather set. | WX1 |
 | OV-6 | **CALL-V11, V12**: the type system and the interface identity. | UI1 |
-| OV-7 | Pick the two font families from UI1's report (QV4). | UI3 |
+| OV-7 | Pick the two font families from UI1's report (QV4). **Decided 2026-11-14: Grenze 600/700 (display), Open Sans 400/600 (text).** | UI3 |
 | OV-8 | **CALL-V13 / QV2**: inline handlers and the full policy now, or Stage 7. **Decided 2026-11-14: now.** | UI8a |
 | OV-9 | **CALL-V15**: effects restyled in shape and colour only. | FX1 |
 | CP-LT, CP-AR, CP-GR, CP-WT, CP-WX, CP-UI, CP-FX | [OWNER] looks at the slice's before and after pictures and answers accept, change or hold. | the slice's merge is final only after it; the next slice may start |
