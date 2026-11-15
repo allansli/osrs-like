@@ -102,7 +102,7 @@ export function createLookHooks(): LookHooks {
 
     hud(on: boolean): void {
       for (const id of HUD_ROOT_IDS) {
-        el(id).hidden = !on;
+        el(id).style.display = on ? '' : 'none';
       }
     },
 
