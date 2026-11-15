@@ -1,5 +1,5 @@
 import { STATE } from '../state/gameState';
-import type { Voice } from '../state/soundPlan';
+import { tone, type Voice } from '../state/soundPlan';
 import { AUDIO } from '../data/feel';
 
 // ============================================================================
@@ -44,6 +44,13 @@ let nodeWarned = false;
 
 const FADE_S = AUDIO.muteRampSecs;
 
+function warnOnce(what: string, err: unknown): void {
+  if (!nodeWarned) {
+    nodeWarned = true;
+    console.warn(what, err);
+  }
+}
+
 function fadeOut(c: AudioContext, src: AudioScheduledSourceNode, gain: GainNode): VoiceStop {
   return () => {
     try {
@@ -53,10 +60,7 @@ function fadeOut(c: AudioContext, src: AudioScheduledSourceNode, gain: GainNode)
       gain.gain.linearRampToValueAtTime(0, now + FADE_S);
       src.stop(now + FADE_S);
     } catch (err) {
-      if (!nodeWarned) {
-        nodeWarned = true;
-        console.warn('Voice stop failed', err);
-      }
+      warnOnce('Voice stop failed', err);
     }
   };
 }
@@ -81,121 +85,59 @@ function getNoiseBuffer(c: AudioContext): AudioBuffer {
   return noiseBuffer;
 }
 
-function tone(
-  offset: number,
-  freq: number,
-  type: OscillatorType,
-  duration: number,
-  vol = 0.12,
-  slideTo?: number,
-  cap: number = AUDIO.voiceCap
-): VoiceStop | null {
-  if (!ctx || ctx.state !== 'running' || !masterGain) return null;
-  if (liveVoices >= cap) return null;
-
+// One voice: an oscillator, or looped noise through a bandpass, faded from vol to silence over dur.
+// play() has checked that the context runs and the master chain exists.
+function voice(c: AudioContext, out: GainNode, v: Voice): VoiceStop | null {
   try {
-    const startTime = ctx.currentTime + offset;
-    const stopTime = startTime + duration;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
+    const startTime = c.currentTime + v.at;
+    const stopTime = startTime + v.dur;
+    const gain = c.createGain();
     // Silent until its start, so a stop before the start never blips.
     gain.gain.value = 0;
-
-    osc.type = type;
-    osc.frequency.setValueAtTime(freq, startTime);
-    if (slideTo !== undefined) {
-      osc.frequency.exponentialRampToValueAtTime(slideTo, stopTime);
-    }
-
-    gain.gain.setValueAtTime(vol, startTime);
+    gain.gain.setValueAtTime(v.vol, startTime);
     gain.gain.exponentialRampToValueAtTime(0.001, stopTime);
 
-    osc.connect(gain);
-    gain.connect(masterGain);
+    let src: AudioScheduledSourceNode;
+    let nodes: AudioNode[];
+    if (v.kind === 'tone') {
+      const osc = c.createOscillator();
+      osc.type = v.type;
+      osc.frequency.setValueAtTime(v.freq, startTime);
+      if (v.slideTo !== undefined) osc.frequency.exponentialRampToValueAtTime(v.slideTo, stopTime);
+      osc.connect(gain);
+      src = osc;
+      nodes = [osc, gain];
+    } else {
+      const source = c.createBufferSource();
+      source.buffer = getNoiseBuffer(c);
+      source.loop = true;
+      const filter = c.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.setValueAtTime(v.freq, startTime);
+      if (v.slideTo !== undefined) filter.frequency.linearRampToValueAtTime(v.slideTo, stopTime);
+      filter.Q.setValueAtTime(1, startTime);
+      source.connect(filter);
+      filter.connect(gain);
+      src = source;
+      nodes = [source, filter, gain];
+    }
+    gain.connect(out);
 
     liveVoices++;
-    osc.onended = () => {
+    src.onended = () => {
       liveVoices = liveVoices - 1;
       try {
-        osc.disconnect();
-        gain.disconnect();
+        for (const n of nodes) n.disconnect();
       } catch (err) {
-        if (!nodeWarned) {
-          nodeWarned = true;
-          console.warn('Oscillator disconnect failed', err);
-        }
+        warnOnce(`${v.kind} disconnect failed`, err);
       }
     };
 
-    osc.start(startTime);
-    osc.stop(stopTime);
-    return fadeOut(ctx, osc, gain);
+    src.start(startTime);
+    src.stop(stopTime);
+    return fadeOut(c, src, gain);
   } catch (err) {
-    if (!nodeWarned) {
-      nodeWarned = true;
-      console.warn('Tone playback failed', err);
-    }
-    return null;
-  }
-}
-
-function noise(
-  offset: number,
-  freq: number,
-  duration: number,
-  vol = 0.12,
-  cap: number = AUDIO.voiceCap,
-  slideTo?: number
-): VoiceStop | null {
-  if (!ctx || ctx.state !== 'running' || !masterGain) return null;
-  if (liveVoices >= cap) return null;
-
-  try {
-    const startTime = ctx.currentTime + offset;
-    const stopTime = startTime + duration;
-    const buffer = getNoiseBuffer(ctx);
-    const source = ctx.createBufferSource();
-    source.buffer = buffer;
-    source.loop = true;
-
-    const filter = ctx.createBiquadFilter();
-    filter.type = 'bandpass';
-    filter.frequency.setValueAtTime(freq, startTime);
-    if (slideTo !== undefined) filter.frequency.linearRampToValueAtTime(slideTo, stopTime);
-    filter.Q.setValueAtTime(1, startTime);
-
-    const gain = ctx.createGain();
-    gain.gain.value = 0;
-    gain.gain.setValueAtTime(vol, startTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, stopTime);
-
-    source.connect(filter);
-    filter.connect(gain);
-    gain.connect(masterGain);
-
-    liveVoices++;
-    source.onended = () => {
-      liveVoices = liveVoices - 1;
-      try {
-        source.disconnect();
-        filter.disconnect();
-        gain.disconnect();
-      } catch (err) {
-        if (!nodeWarned) {
-          nodeWarned = true;
-          console.warn('Noise disconnect failed', err);
-        }
-      }
-    };
-
-    source.start(startTime);
-    source.stop(stopTime);
-    return fadeOut(ctx, source, gain);
-  } catch (err) {
-    if (!nodeWarned) {
-      nodeWarned = true;
-      console.warn('Noise playback failed', err);
-    }
+    warnOnce(`${v.kind} playback failed`, err);
     return null;
   }
 }
@@ -210,10 +152,8 @@ function play(plan: Voice[], wide: boolean): VoiceStop[] {
   const cap = wide ? AUDIO.wideVoiceCap : AUDIO.voiceCap;
 
   for (const v of plan) {
-    const stop =
-      v.kind === 'tone'
-        ? tone(v.at, v.freq, v.type, v.dur, v.vol, v.slideTo, cap)
-        : noise(v.at, v.freq, v.dur, v.vol, cap, v.slideTo);
+    if (liveVoices >= cap) continue;
+    const stop = voice(ctx, masterGain, v);
     if (stop) stops.push(stop);
   }
   return stops;
@@ -227,10 +167,7 @@ export function setMuted(muted: boolean): void {
     masterGain.gain.setValueAtTime(masterGain.gain.value, now);
     masterGain.gain.linearRampToValueAtTime(muted ? 0 : 1, now + FADE_S);
   } catch (err) {
-    if (!nodeWarned) {
-      nodeWarned = true;
-      console.warn('setMuted failed', err);
-    }
+    warnOnce('setMuted failed', err);
   }
 }
 
@@ -255,12 +192,7 @@ export function armAudioOnGesture(): void {
       }
     }
     if (ctx && ctx.state !== 'running') {
-      ctx.resume().catch((err) => {
-        if (!nodeWarned) {
-          nodeWarned = true;
-          console.warn('AudioContext resume failed', err);
-        }
-      });
+      ctx.resume().catch((err) => warnOnce('AudioContext resume failed', err));
     }
   };
 
@@ -269,99 +201,32 @@ export function armAudioOnGesture(): void {
   window.addEventListener('touchstart', handler);
 }
 
+// A fixed effect: one plan, played under the normal voice cap.
+const fx = (...plan: Voice[]) => (): void => {
+  play(plan, false);
+};
+
 export const SFX: SoundEffects = {
-  play: (plan, wide) => play(plan, wide),
-  setMuted: (muted) => setMuted(muted),
-  hit: () => {
-    play([
-      { at: 0, kind: 'tone', freq: 165, type: 'sawtooth', dur: 0.12, vol: 0.15, slideTo: 55 },
-      { at: 0, kind: 'tone', freq: 95, type: 'square', dur: 0.09, vol: 0.11, slideTo: 42 }
-    ], false);
-  },
-  miss: () => {
-    play([{ at: 0, kind: 'tone', freq: 310, type: 'sine', dur: 0.11, vol: 0.07, slideTo: 175 }], false);
-  },
-  slash: () => {
-    play([{ at: 0, kind: 'tone', freq: 420, type: 'triangle', dur: 0.08, vol: 0.12, slideTo: 180 }], false);
-  },
-  heavyChop: () => {
-    play([
-      { at: 0, kind: 'tone', freq: 120, type: 'sawtooth', dur: 0.16, vol: 0.18, slideTo: 40 },
-      { at: 0, kind: 'tone', freq: 65, type: 'square', dur: 0.12, vol: 0.15, slideTo: 30 }
-    ], false);
-  },
-  crush: () => {
-    play([
-      { at: 0, kind: 'tone', freq: 180, type: 'square', dur: 0.11, vol: 0.16, slideTo: 50 },
-      { at: 0, kind: 'tone', freq: 90, type: 'sine', dur: 0.14, vol: 0.14, slideTo: 40 }
-    ], false);
-  },
-  whipCrack: () => {
-    play([
-      { at: 0, kind: 'tone', freq: 880, type: 'sawtooth', dur: 0.04, vol: 0.18, slideTo: 220 },
-      { at: 0.025, kind: 'tone', freq: 140, type: 'triangle', dur: 0.09, vol: 0.15, slideTo: 60 }
-    ], false);
-  },
-  crossbow: () => {
-    play([
-      { at: 0, kind: 'tone', freq: 720, type: 'square', dur: 0.06, vol: 0.12, slideTo: 280 },
-      { at: 0.03, kind: 'tone', freq: 420, type: 'sine', dur: 0.09, vol: 0.10, slideTo: 160 }
-    ], false);
-  },
-  flinch: () => {
-    play([{ at: 0, kind: 'tone', freq: 140, type: 'sine', dur: 0.10, vol: 0.11, slideTo: 80 }], false);
-  },
-  bow: () => {
-    play([{ at: 0, kind: 'tone', freq: 540, type: 'triangle', dur: 0.14, vol: 0.10, slideTo: 185 }], false);
-  },
-  magic: () => {
-    play([
-      { at: 0, kind: 'tone', freq: 440, type: 'sine', dur: 0.28, vol: 0.13, slideTo: 880 },
-      { at: 0.06, kind: 'tone', freq: 660, type: 'triangle', dur: 0.22, vol: 0.09, slideTo: 1120 }
-    ], false);
-  },
-  chop: () => {
-    play([{ at: 0, kind: 'tone', freq: 135, type: 'triangle', dur: 0.09, vol: 0.14, slideTo: 70 }], false);
-  },
-  mine: () => {
-    play([
-      { at: 0, kind: 'tone', freq: 980, type: 'square', dur: 0.07, vol: 0.09, slideTo: 1420 },
-      { at: 0.03, kind: 'tone', freq: 1320, type: 'sine', dur: 0.08, vol: 0.08 }
-    ], false);
-  },
-  fish: () => {
-    play([{ at: 0, kind: 'tone', freq: 360, type: 'sine', dur: 0.15, vol: 0.09, slideTo: 540 }], false);
-  },
-  spotEmpty: () => {
-    play([{ at: 0, kind: 'tone', freq: 420, type: 'sine', dur: 0.16, vol: 0.08, slideTo: 210 }], false);
-  },
-  spotReturn: () => {
-    play([{ at: 0, kind: 'tone', freq: 300, type: 'sine', dur: 0.14, vol: 0.07, slideTo: 520 }], false);
-  },
-  eat: () => {
-    play([
-      { at: 0, kind: 'tone', freq: 240, type: 'sine', dur: 0.09, vol: 0.12, slideTo: 330 },
-      { at: 0.08, kind: 'tone', freq: 310, type: 'sine', dur: 0.10, vol: 0.12, slideTo: 410 }
-    ], false);
-  },
-  coin: () => {
-    play([
-      { at: 0, kind: 'tone', freq: 1200, type: 'sine', dur: 0.09, vol: 0.11, slideTo: 1600 },
-      { at: 0.065, kind: 'tone', freq: 1650, type: 'sine', dur: 0.14, vol: 0.11 }
-    ], false);
-  },
-  prayer: () => {
-    play([{ at: 0, kind: 'tone', freq: 528, type: 'sine', dur: 0.25, vol: 0.12, slideTo: 792 }], false);
-  },
-  jump: () => {
-    play([{ at: 0, kind: 'tone', freq: 210, type: 'sine', dur: 0.18, vol: 0.10, slideTo: 460 }], false);
-  },
-  levelUp: () => {
-    play([
-      { at: 0, kind: 'tone', freq: 523.25, type: 'triangle', dur: 0.26, vol: 0.15 },
-      { at: 0.11, kind: 'tone', freq: 659.25, type: 'triangle', dur: 0.26, vol: 0.15 },
-      { at: 0.22, kind: 'tone', freq: 783.99, type: 'triangle', dur: 0.26, vol: 0.15 },
-      { at: 0.33, kind: 'tone', freq: 1046.5, type: 'triangle', dur: 0.26, vol: 0.15 }
-    ], false);
-  }
+  play,
+  setMuted,
+  hit: fx(tone(0, 'sawtooth', 165, 0.12, 0.15, 55), tone(0, 'square', 95, 0.09, 0.11, 42)),
+  miss: fx(tone(0, 'sine', 310, 0.11, 0.07, 175)),
+  slash: fx(tone(0, 'triangle', 420, 0.08, 0.12, 180)),
+  heavyChop: fx(tone(0, 'sawtooth', 120, 0.16, 0.18, 40), tone(0, 'square', 65, 0.12, 0.15, 30)),
+  crush: fx(tone(0, 'square', 180, 0.11, 0.16, 50), tone(0, 'sine', 90, 0.14, 0.14, 40)),
+  whipCrack: fx(tone(0, 'sawtooth', 880, 0.04, 0.18, 220), tone(0.025, 'triangle', 140, 0.09, 0.15, 60)),
+  crossbow: fx(tone(0, 'square', 720, 0.06, 0.12, 280), tone(0.03, 'sine', 420, 0.09, 0.10, 160)),
+  flinch: fx(tone(0, 'sine', 140, 0.10, 0.11, 80)),
+  bow: fx(tone(0, 'triangle', 540, 0.14, 0.10, 185)),
+  magic: fx(tone(0, 'sine', 440, 0.28, 0.13, 880), tone(0.06, 'triangle', 660, 0.22, 0.09, 1120)),
+  chop: fx(tone(0, 'triangle', 135, 0.09, 0.14, 70)),
+  mine: fx(tone(0, 'square', 980, 0.07, 0.09, 1420), tone(0.03, 'sine', 1320, 0.08, 0.08)),
+  fish: fx(tone(0, 'sine', 360, 0.15, 0.09, 540)),
+  spotEmpty: fx(tone(0, 'sine', 420, 0.16, 0.08, 210)),
+  spotReturn: fx(tone(0, 'sine', 300, 0.14, 0.07, 520)),
+  eat: fx(tone(0, 'sine', 240, 0.09, 0.12, 330), tone(0.08, 'sine', 310, 0.10, 0.12, 410)),
+  coin: fx(tone(0, 'sine', 1200, 0.09, 0.11, 1600), tone(0.065, 'sine', 1650, 0.14, 0.11)),
+  prayer: fx(tone(0, 'sine', 528, 0.25, 0.12, 792)),
+  jump: fx(tone(0, 'sine', 210, 0.18, 0.10, 460)),
+  levelUp: fx(tone(0, 'triangle', 523.25, 0.26, 0.15), tone(0.11, 'triangle', 659.25, 0.26, 0.15), tone(0.22, 'triangle', 783.99, 0.26, 0.15), tone(0.33, 'triangle', 1046.5, 0.26, 0.15))
 };
