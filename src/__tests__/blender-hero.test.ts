@@ -132,8 +132,16 @@ describe('Blender 5.2 Complete Asset & Composition Pipeline (hero.glb, gear.glb,
 
   it('monsters.glb exports all 10 monster species and upgrades monster rigs with articulated pivots', async () => {
     const monstersGltf = await parseGlb('../../public/models/monsters.glb');
-    const speciesKeys = Object.keys(MONSTER_TYPES);
+    // Stage 4 (design 9.3, item 4): three types reuse a model, so the 10 species are the distinct model keys.
+    const modelOf = (key: string) => (MONSTER_TYPES[key] as { model?: string }).model ?? key;
+    const typeKeys = Object.keys(MONSTER_TYPES);
+    expect(typeKeys.length).toBe(13);
+    const speciesKeys = [...new Set(typeKeys.map(modelOf))];
     expect(speciesKeys.length).toBe(10);
+    for (const typeKey of typeKeys) {
+      expect(modelOf(modelOf(typeKey)), `${typeKey}'s model ${modelOf(typeKey)} is one of the 10`).toBe(modelOf(typeKey));
+      expect(Object.hasOwn(MONSTER_TYPES, modelOf(typeKey)), `${typeKey}'s model is a type`).toBe(true);
+    }
 
     for (const typeKey of speciesKeys) {
       const node = monstersGltf.scene.getObjectByName(`Monster_${typeKey}`);
