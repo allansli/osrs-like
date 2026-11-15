@@ -60,8 +60,7 @@ import { moveWithCollision } from '../state/collision';
 import { inCombat, isDown, isPlayerSafe, stepMonster, tickWindupGates } from '../state/monsterAi';
 import { getTerrainHeight } from '../state/terrain';
 import { discoverShrines } from '../state/shrines';
-import { combatLevel } from '../state/adventure';
-import { regenRate, buyVow, vowPrice, guardable, DEATH_MIN_COMBAT } from '../state/sustain';
+import { regenRate, buyVow, altarVowLine } from '../state/sustain';
 import { entityAim, escapeStall, shouldRepath, STALL_SEC, stallTime, walkSpent } from '../state/pathfind';
 import { CAMPS } from '../data/worldMap';
 import { LOW_HEALTH, spinOffset } from '../data/feel';
@@ -296,10 +295,8 @@ export function updatePlayerIntent(f: FrameState): void {
               SFX.prayer();
               spawnLevelUpFireworks(0x38bdf8);
               addChatMessage('You pray at the sacred Altar. Your Prayer points and Hitpoints are fully restored!', 'skill');
-              if (combatLevel(STATE) >= DEATH_MIN_COMBAT && guardable(STATE) > 0 && !STATE.quests.lanternVow) {
-                const price = vowPrice(STATE);
-                addChatMessage(`A Lantern Vow costs ${price} coins. Right-click the Altar to take the vow.`, 'skill');
-              }
+              const vowLine = altarVowLine(STATE);
+              if (vowLine !== null) addChatMessage(vowLine, 'skill');
               updateAllUI();
             }
           }

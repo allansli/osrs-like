@@ -194,6 +194,16 @@ export function vowRefusal(state: GameState): string | null {
   return null;
 }
 
+/** The altar's word on the vow after a prayer; null when the hero already holds one. */
+export function altarVowLine(state: GameState): string | null {
+  const refusal = vowRefusal(state);
+  if (refusal === 'You already hold a Lantern Vow.') return null;
+  if (refusal === 'You risk nothing yet.') return refusal;
+  const price = vowPrice(state);
+  if (refusal !== null) return `A Lantern Vow costs ${price} coins. You need ${price - state.gp} more coins.`;
+  return `A Lantern Vow costs ${price} coins. Right-click the Altar to take the vow.`;
+}
+
 export function buyVow(state: GameState): { ok: boolean; reason: string } {
   const refusal = vowRefusal(state);
   if (refusal !== null) {

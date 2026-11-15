@@ -9,6 +9,7 @@ import { createDefaultState } from '../src/state/gameState';
 import { createMonsterLogic, stepMonster } from '../src/state/monsterAi';
 import { readSave, SAVE_KEY, serializeState, writeSave, type StorageLike } from '../src/state/save';
 import {
+  altarVowLine,
   applyDeathLoss,
   buyVow,
   canEat,
@@ -588,6 +589,27 @@ describe('the Lantern Vow', () => {
     const ready = hero(50);
     ready.gp = vowPrice(ready);
     expect(vowRefusal(ready)).toBeNull();
+  });
+
+  it('the altar line after a prayer matches what the right-click menu offers (review finding 3)', () => {
+    const young = hero(13, 0.5, { ranged: 1, magic: 1 });
+    young.gp = 1_000_000;
+    expect(altarVowLine(young)).toBe('You risk nothing yet.');
+
+    const holding = hero(50);
+    holding.quests.lanternVow = true;
+    expect(altarVowLine(holding)).toBeNull();
+
+    const poor = hero(50);
+    const price = vowPrice(poor);
+    poor.gp = 100;
+    expect(vowRefusal(poor)).not.toBeNull();
+    expect(altarVowLine(poor)).toBe(`A Lantern Vow costs ${price} coins. You need ${price - 100} more coins.`);
+
+    const ready = hero(50);
+    ready.gp = price;
+    expect(vowRefusal(ready)).toBeNull();
+    expect(altarVowLine(ready)).toBe(`A Lantern Vow costs ${price} coins. Right-click the Altar to take the vow.`);
   });
 });
 
