@@ -1,0 +1,59 @@
+{
+ "monster": {
+  "name": "Elvarg the Crag Dragon",
+  "level": 95,
+  "hp": 260,
+  "maxHit": 32,
+  "atk": 88,
+  "def": 78,
+  "scale": 2.35,
+  "style": "magic",
+  "bodyColor": 1409085,
+  "accentColor": 16436245,
+  "kind": "dragon",
+  "drops": [
+   {
+    "id": "dragon_bones",
+    "chance": 1
+   },
+   {
+    "gp": [
+     1800,
+     3800
+    ],
+    "chance": 1
+   },
+   {
+    "id": "bandos_chest",
+    "chance": 0.05
+   },
+   {
+    "id": "bandos_tassets",
+    "chance": 0.05
+   },
+   {
+    "id": "champion_tunic",
+    "chance": 0.05
+   },
+   {
+    "id": "champion_leggings",
+    "chance": 0.05
+   }
+  ]
+ },
+ "camp": {
+  "id": "dragon",
+  "x": -102,
+  "z": 100,
+  "radius": 5,
+  "aggressive": true,
+  "aggroRadius": 12,
+  "members": [
+   {
+    "type": "elvarg_dragon",
+    "x": -102,
+    "z": 100
+   }
+  ]
+ }
+}
