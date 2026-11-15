@@ -5,7 +5,7 @@ import type { Voice } from '../state/soundPlan';
 // 1. PROCEDURAL WEB AUDIO SYNTHESIZER
 // ============================================================================
 export interface SoundEffects {
-  play(plan: Voice[], priority?: boolean): void;
+  play(plan: Voice[], wide: boolean): void;
   setMuted(muted: boolean): void;
   hit(): void;
   miss(): void;
@@ -34,15 +34,16 @@ let masterGain: GainNode | null = null;
 let compressor: DynamicsCompressorNode | null = null;
 let noiseBuffer: AudioBuffer | null = null;
 let liveVoices = 0;
-let initWarned = false;
+let creationFailed = false;
+let creationWarned = false;
+let nodeWarned = false;
 
 function setupMasterChain(): void {
-  if (!ctx) return;
-  masterGain = ctx.createGain();
-  masterGain.gain.setValueAtTime(1, ctx.currentTime);
-  compressor = ctx.createDynamicsCompressor();
+  masterGain = ctx!.createGain();
+  masterGain.gain.setValueAtTime(1, ctx!.currentTime);
+  compressor = ctx!.createDynamicsCompressor();
   masterGain.connect(compressor);
-  compressor.connect(ctx.destination);
+  compressor.connect(ctx!.destination);
 }
 
 function getNoiseBuffer(c: AudioContext): AudioBuffer {
@@ -89,13 +90,13 @@ function tone(
 
     liveVoices++;
     osc.onended = () => {
-      liveVoices = Math.max(0, liveVoices - 1);
+      liveVoices = liveVoices - 1;
       try {
         osc.disconnect();
         gain.disconnect();
       } catch (err) {
-        if (!initWarned) {
-          initWarned = true;
+        if (!nodeWarned) {
+          nodeWarned = true;
           console.warn('Oscillator disconnect failed', err);
         }
       }
@@ -104,8 +105,8 @@ function tone(
     osc.start(startTime);
     osc.stop(stopTime);
   } catch (err) {
-    if (!initWarned) {
-      initWarned = true;
+    if (!nodeWarned) {
+      nodeWarned = true;
       console.warn('Tone playback failed', err);
     }
   }
@@ -144,14 +145,14 @@ function noise(
 
     liveVoices++;
     source.onended = () => {
-      liveVoices = Math.max(0, liveVoices - 1);
+      liveVoices = liveVoices - 1;
       try {
         source.disconnect();
         filter.disconnect();
         gain.disconnect();
       } catch (err) {
-        if (!initWarned) {
-          initWarned = true;
+        if (!nodeWarned) {
+          nodeWarned = true;
           console.warn('Noise disconnect failed', err);
         }
       }
@@ -160,23 +161,23 @@ function noise(
     source.start(startTime);
     source.stop(stopTime);
   } catch (err) {
-    if (!initWarned) {
-      initWarned = true;
+    if (!nodeWarned) {
+      nodeWarned = true;
       console.warn('Noise playback failed', err);
     }
   }
 }
 
-function play(plan: Voice[], priority?: boolean): void {
+// wide: wind-up and impact cues may use up to 16 voices (design 6.7); all others 12.
+function play(plan: Voice[], wide: boolean): void {
   if (!STATE.audioEnabled) return;
   if (!ctx || ctx.state !== 'running' || !masterGain) return;
 
-  const isPri = priority ?? plan.some((v) => v.dur >= 1.0);
-  const cap = isPri ? 16 : 12;
+  const cap = wide ? 16 : 12;
 
   for (const v of plan) {
     if (v.kind === 'tone') {
-      tone(v.at, v.freq, v.type ?? 'sine', v.dur, v.vol, v.slideTo ?? null, cap);
+      tone(v.at, v.freq, v.type, v.dur, v.vol, v.slideTo ?? null, cap);
     } else if (v.kind === 'noise') {
       noise(v.at, v.freq, v.dur, v.vol, cap);
     }
@@ -191,17 +192,16 @@ export function setMuted(muted: boolean): void {
     masterGain.gain.setValueAtTime(masterGain.gain.value, now);
     masterGain.gain.linearRampToValueAtTime(muted ? 0 : 1, now + 0.02);
   } catch (err) {
-    if (!initWarned) {
-      initWarned = true;
+    if (!nodeWarned) {
+      nodeWarned = true;
       console.warn('setMuted failed', err);
     }
   }
 }
 
 export function armAudioOnGesture(): void {
-  if (typeof window === 'undefined') return;
-
   const handler = () => {
+    if (creationFailed) return;
     if (!ctx) {
       try {
         const Ctor =
@@ -212,17 +212,18 @@ export function armAudioOnGesture(): void {
           setupMasterChain();
         }
       } catch (err) {
-        if (!initWarned) {
-          initWarned = true;
-          console.warn('AudioContext creation failed', err);
+        creationFailed = true;
+        if (!creationWarned) {
+          creationWarned = true;
+          console.warn('AudioContext creation failed, sound is off', err);
         }
         return;
       }
     }
     if (ctx && ctx.state === 'suspended') {
       ctx.resume().catch((err) => {
-        if (!initWarned) {
-          initWarned = true;
+        if (!nodeWarned) {
+          nodeWarned = true;
           console.warn('AudioContext resume failed', err);
         }
       });
@@ -235,91 +236,91 @@ export function armAudioOnGesture(): void {
 }
 
 export const SFX: SoundEffects = {
-  play: (plan, priority) => play(plan, priority),
+  play: (plan, wide) => play(plan, wide),
   setMuted: (muted) => setMuted(muted),
   hit: () => {
     play([
       { at: 0, kind: 'tone', freq: 165, type: 'sawtooth', dur: 0.12, vol: 0.15, slideTo: 55 },
       { at: 0, kind: 'tone', freq: 95, type: 'square', dur: 0.09, vol: 0.11, slideTo: 42 }
-    ]);
+    ], false);
   },
   miss: () => {
-    play([{ at: 0, kind: 'tone', freq: 310, type: 'sine', dur: 0.11, vol: 0.07, slideTo: 175 }]);
+    play([{ at: 0, kind: 'tone', freq: 310, type: 'sine', dur: 0.11, vol: 0.07, slideTo: 175 }], false);
   },
   slash: () => {
-    play([{ at: 0, kind: 'tone', freq: 420, type: 'triangle', dur: 0.08, vol: 0.12, slideTo: 180 }]);
+    play([{ at: 0, kind: 'tone', freq: 420, type: 'triangle', dur: 0.08, vol: 0.12, slideTo: 180 }], false);
   },
   heavyChop: () => {
     play([
       { at: 0, kind: 'tone', freq: 120, type: 'sawtooth', dur: 0.16, vol: 0.18, slideTo: 40 },
       { at: 0, kind: 'tone', freq: 65, type: 'square', dur: 0.12, vol: 0.15, slideTo: 30 }
-    ]);
+    ], false);
   },
   crush: () => {
     play([
       { at: 0, kind: 'tone', freq: 180, type: 'square', dur: 0.11, vol: 0.16, slideTo: 50 },
       { at: 0, kind: 'tone', freq: 90, type: 'sine', dur: 0.14, vol: 0.14, slideTo: 40 }
-    ]);
+    ], false);
   },
   whipCrack: () => {
     play([
       { at: 0, kind: 'tone', freq: 880, type: 'sawtooth', dur: 0.04, vol: 0.18, slideTo: 220 },
       { at: 0.025, kind: 'tone', freq: 140, type: 'triangle', dur: 0.09, vol: 0.15, slideTo: 60 }
-    ]);
+    ], false);
   },
   crossbow: () => {
     play([
       { at: 0, kind: 'tone', freq: 720, type: 'square', dur: 0.06, vol: 0.12, slideTo: 280 },
       { at: 0.03, kind: 'tone', freq: 420, type: 'sine', dur: 0.09, vol: 0.10, slideTo: 160 }
-    ]);
+    ], false);
   },
   flinch: () => {
-    play([{ at: 0, kind: 'tone', freq: 140, type: 'sine', dur: 0.10, vol: 0.11, slideTo: 80 }]);
+    play([{ at: 0, kind: 'tone', freq: 140, type: 'sine', dur: 0.10, vol: 0.11, slideTo: 80 }], false);
   },
   bow: () => {
-    play([{ at: 0, kind: 'tone', freq: 540, type: 'triangle', dur: 0.14, vol: 0.10, slideTo: 185 }]);
+    play([{ at: 0, kind: 'tone', freq: 540, type: 'triangle', dur: 0.14, vol: 0.10, slideTo: 185 }], false);
   },
   magic: () => {
     play([
       { at: 0, kind: 'tone', freq: 440, type: 'sine', dur: 0.28, vol: 0.13, slideTo: 880 },
       { at: 0.06, kind: 'tone', freq: 660, type: 'triangle', dur: 0.22, vol: 0.09, slideTo: 1120 }
-    ]);
+    ], false);
   },
   chop: () => {
-    play([{ at: 0, kind: 'tone', freq: 135, type: 'triangle', dur: 0.09, vol: 0.14, slideTo: 70 }]);
+    play([{ at: 0, kind: 'tone', freq: 135, type: 'triangle', dur: 0.09, vol: 0.14, slideTo: 70 }], false);
   },
   mine: () => {
     play([
       { at: 0, kind: 'tone', freq: 980, type: 'square', dur: 0.07, vol: 0.09, slideTo: 1420 },
       { at: 0.03, kind: 'tone', freq: 1320, type: 'sine', dur: 0.08, vol: 0.08 }
-    ]);
+    ], false);
   },
   fish: () => {
-    play([{ at: 0, kind: 'tone', freq: 360, type: 'sine', dur: 0.15, vol: 0.09, slideTo: 540 }]);
+    play([{ at: 0, kind: 'tone', freq: 360, type: 'sine', dur: 0.15, vol: 0.09, slideTo: 540 }], false);
   },
   spotEmpty: () => {
-    play([{ at: 0, kind: 'tone', freq: 420, type: 'sine', dur: 0.16, vol: 0.08, slideTo: 210 }]);
+    play([{ at: 0, kind: 'tone', freq: 420, type: 'sine', dur: 0.16, vol: 0.08, slideTo: 210 }], false);
   },
   spotReturn: () => {
-    play([{ at: 0, kind: 'tone', freq: 300, type: 'sine', dur: 0.14, vol: 0.07, slideTo: 520 }]);
+    play([{ at: 0, kind: 'tone', freq: 300, type: 'sine', dur: 0.14, vol: 0.07, slideTo: 520 }], false);
   },
   eat: () => {
     play([
       { at: 0, kind: 'tone', freq: 240, type: 'sine', dur: 0.09, vol: 0.12, slideTo: 330 },
       { at: 0.08, kind: 'tone', freq: 310, type: 'sine', dur: 0.10, vol: 0.12, slideTo: 410 }
-    ]);
+    ], false);
   },
   coin: () => {
     play([
       { at: 0, kind: 'tone', freq: 1200, type: 'sine', dur: 0.09, vol: 0.11, slideTo: 1600 },
       { at: 0.065, kind: 'tone', freq: 1650, type: 'sine', dur: 0.14, vol: 0.11 }
-    ]);
+    ], false);
   },
   prayer: () => {
-    play([{ at: 0, kind: 'tone', freq: 528, type: 'sine', dur: 0.25, vol: 0.12, slideTo: 792 }]);
+    play([{ at: 0, kind: 'tone', freq: 528, type: 'sine', dur: 0.25, vol: 0.12, slideTo: 792 }], false);
   },
   jump: () => {
-    play([{ at: 0, kind: 'tone', freq: 210, type: 'sine', dur: 0.18, vol: 0.10, slideTo: 460 }]);
+    play([{ at: 0, kind: 'tone', freq: 210, type: 'sine', dur: 0.18, vol: 0.10, slideTo: 460 }], false);
   },
   levelUp: () => {
     play([
@@ -327,6 +328,6 @@ export const SFX: SoundEffects = {
       { at: 0.11, kind: 'tone', freq: 659.25, type: 'triangle', dur: 0.26, vol: 0.15 },
       { at: 0.22, kind: 'tone', freq: 783.99, type: 'triangle', dur: 0.26, vol: 0.15 },
       { at: 0.33, kind: 'tone', freq: 1046.5, type: 'triangle', dur: 0.26, vol: 0.15 }
-    ]);
+    ], false);
   }
 };

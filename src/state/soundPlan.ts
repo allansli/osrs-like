@@ -1,75 +1,9 @@
-import { ATTACKS, type AttackDef } from '../data/attacks';
-
-export type Voice = {
-  at: number;
-  kind: 'tone' | 'noise';
-  freq: number;
-  slideTo?: number;
-  type?: OscillatorType;
-  dur: number;
-  vol: number;
-};
+type VoiceBase = { at: number; freq: number; slideTo?: number; dur: number; vol: number };
+export type Voice =
+  | (VoiceBase & { kind: 'tone'; type: OscillatorType })
+  | (VoiceBase & { kind: 'noise' });
 
 export type Cue = 'low' | 'mid' | 'high' | 'fire';
-
-const BOSS_ATTACKS: Record<string, AttackDef> = {
-  ember_cone: {
-    id: 'ember_cone',
-    name: 'Ember Cone',
-    shape: { type: 'cone', length: 16, halfAngleDeg: 45 },
-    windupMs: 1800,
-    slots: 2,
-    style: 'fire',
-    power: 50,
-    reach: 11
-  },
-  tail_sweep: {
-    id: 'tail_sweep',
-    name: 'Tail Sweep',
-    shape: { type: 'circle', anchor: 'self', radius: 5 },
-    windupMs: 1700,
-    slots: 2,
-    style: 'melee',
-    power: 46,
-    reach: 2.9
-  },
-  slag_rain: {
-    id: 'slag_rain',
-    name: 'Slag Rain',
-    shape: { type: 'circle', anchor: 'target', radius: 2.5 },
-    windupMs: 1500,
-    slots: 1,
-    style: 'pure',
-    power: 30,
-    reach: 11
-  },
-  ashen_nova: {
-    id: 'ashen_nova',
-    name: 'Ashen Nova',
-    shape: { type: 'ring', inner: 8, outer: 20 },
-    windupMs: 2000,
-    slots: 2,
-    style: 'pure',
-    power: 60,
-    reach: 13.5
-  },
-  slagburst: {
-    id: 'slagburst',
-    name: 'Slagburst',
-    shape: { type: 'circle', anchor: 'self', radius: 8 },
-    windupMs: 2000,
-    slots: 2,
-    style: 'melee',
-    power: 52,
-    reach: 2.9
-  }
-};
-
-for (const [k, v] of Object.entries(BOSS_ATTACKS)) {
-  if (!(k in ATTACKS)) {
-    ATTACKS[k] = v;
-  }
-}
 
 export function cueFor(attack: { style: string }, monsterStyle: string): Cue {
   const s =
@@ -138,9 +72,8 @@ export function resolvePlan(cue: Cue): Voice[] {
 }
 
 export function impactPlan(ratio: number): Voice[] {
-  const r = Math.max(0, Math.min(1, ratio));
-  const leadFreq = 200 - 80 * r;
-  const subFreq = 120 - 50 * r;
+  const leadFreq = 200 - 80 * ratio;
+  const subFreq = 120 - 50 * ratio;
   return [
     { at: 0, kind: 'tone', type: 'sawtooth', freq: leadFreq, slideTo: leadFreq * 0.35, dur: 0.12, vol: 0.15 },
     { at: 0, kind: 'tone', type: 'square', freq: subFreq, slideTo: subFreq * 0.4, dur: 0.09, vol: 0.11 },
