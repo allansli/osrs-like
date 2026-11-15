@@ -402,7 +402,7 @@ export function updateTargetHud(): void {
   }
 }
 
-export function updateBossBar(monster: MonsterEntity | null, markCount = 0): void {
+export function updateBossBar(monster: MonsterEntity | null, markCount: number): void {
   const bar = el('boss-bar');
   if (!monster) {
     bar.hidden = true;
