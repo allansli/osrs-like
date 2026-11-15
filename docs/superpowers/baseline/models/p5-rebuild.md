@@ -1,56 +1,53 @@
 # P5: full rebuild into scratch
 
-Date: 2026-11-14. Branch `feat/models-pass`. Plan task P5. This is the fifth run, at head `a3cb54f`, against the plan as amended in `3088e29` (the BLEND row of section 0.2 names a 5.2 Blender; the `CastleGuard` Brotli ceiling in `tests/fixtures/model-contract/guard.json` is 1,174,334 and the NORMAL tolerance of the three guard meshes is 0.000222).
+Date: 2026-11-14. Branch `feat/models-pass`. Plan task P5. This is the sixth run, at head `e22fc78`, against P5's Accept as amended on 2026-11-15 in `57a2029`: the project builds with the installed Blender 5.0.1 (owner decision "C"); compares judge Contract and Budget; per-figure Brotli ceilings are the shipped value plus 2% (`scripts/models-manifest.mjs`); whole-file and buffer-order Drift is reported and accepted; the three guard meshes may drift by up to 1.2e-7 in POSITION and 0.000222 in NORMAL; a second build of the same file is byte-identical to the first.
 
-Earlier runs: one to three (`29ee250`, `267ffca`, `61657b6`) used Blender 5.0.1, whose exporter (v5.0.21) orders nodes and buffer views differently from the shipped files (v5.2.41). Run four (`296f8f8`) used 5.2.4 and failed only on the guard's per-figure Brotli ceiling, 18 bytes under every rebuild, which the amendment closed.
+Earlier runs: one to three (`29ee250`, `267ffca`, `61657b6`) used 5.0.1 against the unamended Accept, and failed on drift and per-figure Brotli. Runs four and five (`296f8f8`, `b24c824`) used a downloaded 5.2.4, which the owner has since had deleted. It was not used or downloaded again in this run.
 
-**Verdict: Accept is met.** Five builds exit 0, five compares exit 0, zero Contract differences, hero, gear, monsters and world rebuild byte-identical, the guard drifts only in the three meshes design 3.2 found (NORMAL at most 0.000222, POSITION at most 1.2e-7), the hash lists are equal, UNTOUCHED prints nothing, and a second BLEND(hero) is byte-identical. Nothing shipped changed. Nothing was promoted.
+**Verdict: the amended Accept is met.** Five builds exit 0 on 5.0.1, five compares exit 0 with zero Contract and zero Budget failures, the guard's three meshes are within the amended tolerances, the hash lists are equal, UNTOUCHED prints nothing, and a second BLEND(hero) is byte-identical to the first. Nothing shipped changed. Nothing was promoted.
 
 ## Environment
 
-- Blender used: `Blender 5.2.4 LTS`, build date 2026-11-10, at the git-ignored `scratch/blender52/blender-5.2.4-linux-x64/blender`. It came from `download.blender.org/release/Blender5.2/`; the tarball's SHA-256 `2fd14c50987426897ba60237ee996edf2b4151f4b1a72a460ca20be58c1d2d86` was checked against the published value in run three. The tarball is no longer on disk; the extracted executable's SHA-256 in this run is `9c12ad1b09401dcd3a8a5336279bca91455f15023aa0e5e4cb5cdb7b116a09f1`. Nothing was downloaded in this run.
-- The BLEND command is the plan's, with `BLENDER_PATH` set to that binary.
-- Every built file carries generator `Khronos glTF Blender I/O v5.2.41`, the same as the shipped files.
-- Every command ran through `scripts/capped.sh` (allowlisted environment, 3 GB cap), the Blender ones with `timeout 600`, one Blender process at a time. `scratch/models-build/` was deleted and recreated first.
+- Blender: `/usr/bin/blender`, `Blender 5.0.1`, the installed one, as the BLEND row of plan 0.2 names it.
+- Every built file carries generator `Khronos glTF Blender I/O v5.0.21`. The shipped files carry `v5.2.41`.
+- Every command ran through `scripts/capped.sh` (allowlisted environment, 3 GB cap). The Blender commands also ran under `timeout 600`, one Blender process at a time. `scratch/models-build/` was deleted and recreated first.
 
 ## Commands and results
-
-`B=scratch/blender52/blender-5.2.4-linux-x64/blender` (absolute path in the run).
 
 | Step | Command | Exit | Wall time |
 |---|---|---|---|
 | hashes before | `sha256sum public/models/*.glb blender/*.blend` | 0 | - |
-| BLEND(all) | `scripts/capped.sh timeout 600 env BLENDER_PATH=$B node scripts/run-blender.mjs all --out scratch/models-build` | 0 | 10 s |
+| BLEND(all) | `scripts/capped.sh timeout 600 env BLENDER_PATH=/usr/bin/blender node scripts/run-blender.mjs all --out scratch/models-build` | 0 | 10 s |
 | BLEND(guard) | same, mode `guard` | 0 | 2 s |
 | COMPARE(hero) | `node scripts/models-compare.mjs scratch/models-build/hero.glb public/models/hero.glb` | 0 | - |
 | COMPARE(gear) | same pattern | 0 | - |
 | COMPARE(monsters) | same pattern | 0 | - |
 | COMPARE(guard) | same pattern | 0 | - |
 | COMPARE(world) | same pattern | 0 | - |
-| BLEND(hero), second run | same, mode `hero` | 0 | 2 s |
+| BLEND(hero), second run | same, mode `hero` | 0 | 3 s |
 | hashes after | same `sha256sum` | 0 | - |
 | UNTOUCHED | `git status --short public/models blender` | 0, prints nothing | - |
-| SUITE | `scripts/capped.sh npx vitest run` | 0 (62 files, 550 tests) | 22 s |
+| SUITE | `scripts/capped.sh npx vitest run` | 0 (62 files, 550 tests) | 25 s |
 | TYPES | `scripts/capped.sh npx tsc --noEmit` | 0, no output | - |
-| BUILD | `scripts/capped.sh npm run build` | 0 | 6 s |
+| BUILD | `scripts/capped.sh npm run build` | 0 | 9 s |
 
-Built sizes: `hero.glb` 216,844 bytes, `gear.glb` 2,331,560, `monsters.glb` 4,879,168, `world.glb` 2,776,656, `guard.glb` 1,705,360.
+Built sizes: `hero.glb` 216,844 bytes, `gear.glb` 2,331,672, `monsters.glb` 4,879,064, `world.glb` 2,776,568, `guard.glb` 1,705,360.
 
-`cmp` of built against shipped prints nothing for `hero.glb`, `gear.glb`, `monsters.glb` and `world.glb`: all four are byte-identical to the shipped files. `guard.glb` first differs at byte 7376 (geometry of the three meshes below).
+All five built files differ from the shipped ones. `hero.glb` first differs at byte 72, which is the generator string (the size is the same). The other four also differ in buffer-view order, as the amended Accept expects.
 
 ## Compare reports (summaries)
 
 | File | Exit | Contract | Budget | Drift |
 |---|---|---|---|---|
-| hero | 0 | pass | pass | zero |
-| gear | 0 | pass | pass | zero |
-| monsters | 0 | pass | pass | zero |
-| guard | 0 | pass | pass (`CastleGuard` 1,174,334 = amended ceiling) | geometry bytes of `Plane.032`, `Circle.038`, `Circle.034`; file brotliBytes 1,174,350 -> 1,174,329 |
-| world | 0 | pass | pass | zero |
+| hero | 0 | pass | pass | generator only |
+| gear | 0 | pass | pass | generator; rawBytes 2,331,560 -> 2,331,672; brotliBytes 668,121 -> 654,482 |
+| monsters | 0 | pass | pass | generator; rawBytes 4,879,168 -> 4,879,064; brotliBytes 1,266,221 -> 1,273,402 |
+| guard | 0 | pass | pass | generator; geometry bytes of `Plane.032`, `Circle.038`, `Circle.034`; brotliBytes 1,174,350 -> 1,174,329 |
+| world | 0 | pass | pass | generator; rawBytes 2,776,656 -> 2,776,568; brotliBytes 489,842 -> 493,474 |
 
-## Guard drift, measured
+## Attribute drift, measured
 
-Largest absolute difference per attribute, built against shipped, over every primitive (every other attribute of every mesh is equal):
+Every mesh was matched by name, built against shipped, and the largest absolute difference was taken for each attribute of each primitive. No mesh was missing. In hero (18 meshes), gear (506), monsters (399) and world (433), every attribute value is equal: the bytes are only reordered. In the guard (27 meshes), only these differ:
 
 | Mesh | POSITION | NORMAL |
 |---|---|---|
@@ -58,15 +55,15 @@ Largest absolute difference per attribute, built against shipped, over every pri
 | `Circle.038` | 2.98e-8 | 0.000112 |
 | `Circle.034` | 5.96e-8 | 0.000222 (0.00022214651) |
 
-All within the amended tolerance of 0.000222. This is the drift design 3.2 found; it is deterministic and does not depend on the Blender version (runs one to four measured the same).
+All are within the amended tolerances (1.2e-7 and 0.000222) at the precision the plan states. `Circle.034`'s NORMAL, 0.00022214651, rounds to 0.000222. Read as an exact bound, it is 1.5e-7 over. No script checks this tolerance; it was measured with a throw-away script under `scratch/`. This is the drift design 3.2 found. It matches runs one to five, so it does not depend on the Blender version.
 
 ## Determinism
 
-Second BLEND(hero): `cmp` against the first `hero.glb` prints nothing; the whole file, and so its binary chunk, is byte-identical (and equals the shipped file).
+`cmp` of the second BLEND(hero) against the first `hero.glb` prints nothing, so the whole file is byte-identical.
 
 ## Hash lists
 
-The before and after lists are equal (`diff` prints nothing), and equal to the earlier runs' lists:
+The before and after lists are equal (`diff` prints nothing), and they equal the earlier runs' lists:
 
 ```
 92e8eb785b0b86bbcbc22d11462c53d493ef380e4946abc0f4f4567517cd678a  public/models/gear.glb
@@ -80,16 +77,13 @@ c6d962b9cb8e7a1f6960c691aef24de288654b8a6a40f4e18bfc6f5c2e065295  blender/hero.b
 0a2cba253036642b1b5043dbc138b60efe364984b8470b7c2963404d11eb31b2  blender/world.blend
 ```
 
-## Accept, item by item
+## Accept (amended 2026-11-15), item by item
 
 | Item | Result |
 |---|---|
-| five builds exit 0 | met (BLEND(all) and BLEND(guard)) |
-| five compares exit 0 | met |
-| zero Contract differences | met (all five) |
-| zero Drift apart from generator and the three guard meshes (within 0.000222, amended) | met: hero, gear, monsters and world byte-identical, generator equal; guard drifts only in the three meshes and the file Brotli size they move |
-| the two hash lists are equal | met |
-| UNTOUCHED | met |
-| second BLEND(hero) byte-identical binary chunk | met (whole file identical) |
-
-Later slices that build with Blender should set `BLENDER_PATH` to a 5.2 binary. A 5.0.1 build reorders gear, monsters and world against the shipped files.
+| five builds exit 0 on 5.0.1 | met (BLEND(all) and BLEND(guard)) |
+| five compares exit 0 on Contract and Budget, per-figure Brotli at shipped plus 2% | met (all five) |
+| whole-file and buffer-order Drift reported and accepted | reported: generator on all five; buffer order and Brotli size on gear, monsters, world |
+| three guard meshes within 1.2e-7 POSITION and 0.000222 NORMAL | met (largest 1.19e-7 and 0.00022215) |
+| a second build of the same file is byte-identical | met (hero) |
+| the two hash lists are equal; UNTOUCHED | met |
