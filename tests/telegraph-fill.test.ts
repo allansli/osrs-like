@@ -1,10 +1,30 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import * as THREE from 'three';
 import { ATTACKS } from '../src/data/attacks';
 import { G } from '../src/engine/context';
 import type { MonsterEntity } from '../src/engine/context';
 import { clearTelegraph, showTelegraph, updateTelegraphs } from '../src/engine/telegraphs';
 import { fillScale } from '../src/state/telegraph';
+import { getTerrainHeight, TERRAIN_SEGMENTS, TERRAIN_SIZE } from '../src/state/terrain';
+
+vi.mock('../src/state/terrain', async (importOriginal) => {
+  const real = await importOriginal<typeof import('../src/state/terrain')>();
+  return { ...real, getTerrainHeight: vi.fn(real.getTerrainHeight) };
+});
+const heightCalls = (): number => vi.mocked(getTerrainHeight).mock.calls.length;
+
+// Built as worldMesh.buildTerrainAndWater builds the ground.
+let terrain: THREE.Mesh | null = null;
+function terrainMesh(): THREE.Mesh {
+  if (terrain) return terrain;
+  const geo = new THREE.PlaneGeometry(TERRAIN_SIZE, TERRAIN_SIZE, TERRAIN_SEGMENTS, TERRAIN_SEGMENTS);
+  geo.rotateX(-Math.PI / 2);
+  const pos = geo.attributes.position;
+  for (let i = 0; i < pos.count; i++) pos.setY(i, getTerrainHeight(pos.getX(i), pos.getZ(i)));
+  terrain = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }));
+  terrain.updateMatrixWorld();
+  return terrain;
+}
 
 function show(attackId: string, ox = 0, oz = 0): MonsterEntity {
   G.scene = new THREE.Scene();
@@ -59,5 +79,41 @@ describe('telegraph fill (review 6): the ring fill grows outward from the inner 
     }
     expect(maxR).toBeCloseTo(nova.inner + 0.25 * (nova.outer - nova.inner), 2);
     clearTelegraph(m);
+  });
+});
+
+describe('telegraph fill (review 7): terrain is sampled when the shape is built, never per frame', () => {
+  for (const id of Object.keys(ATTACKS)) {
+    it(`${id}: updateTelegraphs samples no terrain and the fill still sits on the ground`, () => {
+      // A slope near the world centre, so a flat cache would be caught.
+      const m = show(id, 37, -21);
+      const before = heightCalls();
+      for (let i = 0; i < 5; i++) updateTelegraphs((0.2 * ATTACKS[id].windupMs) / 1000);
+      expect(heightCalls()).toBe(before);
+      // The fill must sit 0.06 above the terrain as the mesh draws it: raycast the real terrain mesh.
+      const arr = m.telegraph!.fillMesh.geometry.attributes.position.array as Float32Array;
+      const ray = new THREE.Raycaster();
+      for (let i = 0; i < arr.length; i += 3) {
+        ray.set(new THREE.Vector3(arr[i], 500, arr[i + 2]), new THREE.Vector3(0, -1, 0));
+        const hit = ray.intersectObject(terrainMesh())[0];
+        expect(Math.abs(arr[i + 1] - (hit.point.y + 0.06))).toBeLessThan(1e-3);
+      }
+      clearTelegraph(m);
+    });
+  }
+});
+
+describe('telegraph fill (review 7): lattice', () => {
+  const triangles = (id: string): number => {
+    const m = show(id);
+    const n = m.telegraph!.fillMesh.geometry.index!.count / 3;
+    clearTelegraph(m);
+    return n;
+  };
+  it('every fill but the Ashen Nova ring is under the 400-triangle budget (design 8)', () => {
+    for (const id of Object.keys(ATTACKS)) if (id !== 'ashen_nova') expect(triangles(id)).toBeLessThan(400);
+  });
+  it('ashen_nova is coarsened to the 1.5-unit spacing: 1,056 square units cannot fit 400 triangles at that spacing', () => {
+    expect(triangles('ashen_nova')).toBeLessThan(1400);
   });
 });

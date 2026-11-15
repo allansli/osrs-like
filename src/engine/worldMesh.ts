@@ -10,7 +10,7 @@ import {
   albedoMaterial,
   sealAlbedoUvs
 } from './textures';
-import { getTerrainHeight, onPath, slopeAt, TERRAIN_SEGMENTS } from '../state/terrain';
+import { getTerrainHeight, onPath, slopeAt, TERRAIN_SEGMENTS, TERRAIN_SIZE } from '../state/terrain';
 import { isDeepWater } from '../state/collision';
 import { loadBlenderWorldTemplate, upgradeWorldPropWithGltf } from './blenderWorld';
 import { el } from '../ui/hud';
@@ -97,7 +97,7 @@ export function cycleTimeOfDay(): void {
 }
 
 export function buildTerrainAndWater(): void {
-  const size = 260;
+  const size = TERRAIN_SIZE;
   const geo = new THREE.PlaneGeometry(size, size, TERRAIN_SEGMENTS, TERRAIN_SEGMENTS);
   geo.rotateX(-Math.PI / 2);
 

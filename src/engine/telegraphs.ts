@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { ATTACKS } from '../data/attacks';
 import type { Shape } from '../data/attacks';
 import { fillScale, shapeOutline } from '../state/telegraph';
-import { getTerrainHeight } from '../state/terrain';
+import { getTerrainHeight, TERRAIN_SEGMENTS, TERRAIN_SIZE } from '../state/terrain';
 import { disposeObject3D } from './dispose';
 import { G } from './context';
 import type { MonsterEntity } from './context';
@@ -21,6 +21,7 @@ export interface TelegraphInstance {
   dx: number;
   dz: number;
   baseCoords: number[];
+  heights: HeightGrid;
 }
 
 const activeTelegraphs = new Set<TelegraphInstance>();
@@ -55,11 +56,14 @@ function subdivideLocalLoop(loop: Array<[number, number]>, maxLen = 1.0): Array<
   return result;
 }
 
+// Fill lattice spacing: the terrain's own vertex spacing (design 6.5), so the ground cannot poke through on a slope.
+const FILL_STEP = 1.5;
+
 function buildCircleFillData(radius: number): { baseCoords: number[]; indices: number[] } {
   const baseCoords: number[] = [0, 0];
   const indices: number[] = [];
-  const nr = Math.max(2, Math.ceil(radius / 1.0));
-  const nTheta = Math.max(12, Math.ceil((2 * Math.PI * radius) / 1.0));
+  const nr = Math.max(2, Math.ceil(radius / FILL_STEP));
+  const nTheta = Math.max(12, Math.ceil((2 * Math.PI * radius) / FILL_STEP));
 
   for (let rIdx = 1; rIdx <= nr; rIdx++) {
     const r = (rIdx / nr) * radius;
@@ -94,9 +98,9 @@ function buildConeFillData(length: number, halfAngleDeg: number): { baseCoords: 
   const baseCoords: number[] = [0, 0];
   const indices: number[] = [];
   const halfRad = (halfAngleDeg * Math.PI) / 180;
-  const nr = Math.max(2, Math.ceil(length / 1.0));
+  const nr = Math.max(2, Math.ceil(length / FILL_STEP));
   const arcLen = 2 * halfRad * length;
-  const nTheta = Math.max(4, Math.ceil(arcLen / 1.0));
+  const nTheta = Math.max(4, Math.ceil(arcLen / FILL_STEP));
   const cols = nTheta + 1;
 
   for (let rIdx = 1; rIdx <= nr; rIdx++) {
@@ -129,8 +133,8 @@ function buildConeFillData(length: number, halfAngleDeg: number): { baseCoords: 
 function buildLineFillData(length: number, halfWidth: number): { baseCoords: number[]; indices: number[] } {
   const baseCoords: number[] = [];
   const indices: number[] = [];
-  const nx = Math.max(2, Math.ceil((2 * halfWidth) / 1.0));
-  const nz = Math.max(2, Math.ceil(length / 1.0));
+  const nx = Math.max(2, Math.ceil((2 * halfWidth) / FILL_STEP));
+  const nz = Math.max(2, Math.ceil(length / FILL_STEP));
   const cols = nx + 1;
 
   for (let iz = 0; iz <= nz; iz++) {
@@ -159,8 +163,8 @@ function buildLineFillData(length: number, halfWidth: number): { baseCoords: num
 function buildRingFillData(inner: number, outer: number): { baseCoords: number[]; indices: number[] } {
   const baseCoords: number[] = [];
   const indices: number[] = [];
-  const nr = Math.max(2, Math.ceil((outer - inner) / 1.0));
-  const nTheta = Math.max(16, Math.ceil((2 * Math.PI * outer) / 1.0));
+  const nr = Math.max(2, Math.ceil((outer - inner) / FILL_STEP));
+  const nTheta = Math.max(16, Math.ceil((2 * Math.PI * outer) / FILL_STEP));
 
   for (let rIdx = 0; rIdx <= nr; rIdx++) {
     const r = inner + (rIdx / nr) * (outer - inner);
@@ -199,10 +203,65 @@ function buildFillData(shape: Shape): { baseCoords: number[]; indices: number[] 
   }
 }
 
+// Terrain heights at the terrain mesh's own vertices under the shape, sampled once when the shape is built.
+// gridHeight interpolates them with the mesh's triangulation, so the fill lies on the ground as drawn.
+interface HeightGrid {
+  ix0: number;
+  iz0: number;
+  nx: number;
+  nz: number;
+  h: Float32Array;
+}
+
+const TERRAIN_STEP = TERRAIN_SIZE / TERRAIN_SEGMENTS;
+const TERRAIN_HALF = TERRAIN_SIZE / 2;
+
+function buildHeightGrid(baseCoords: number[], ox: number, oz: number, dx: number, dz: number): HeightGrid {
+  let minX = Infinity;
+  let maxX = -Infinity;
+  let minZ = Infinity;
+  let maxZ = -Infinity;
+  for (let i = 0; i < baseCoords.length; i += 2) {
+    const [wx, wz] = localToWorld(ox, oz, dx, dz, baseCoords[i], baseCoords[i + 1]);
+    minX = Math.min(minX, wx);
+    maxX = Math.max(maxX, wx);
+    minZ = Math.min(minZ, wz);
+    maxZ = Math.max(maxZ, wz);
+  }
+  const cell = (w: number) => Math.min(TERRAIN_SEGMENTS, Math.max(0, (w + TERRAIN_HALF) / TERRAIN_STEP));
+  const ix0 = Math.min(TERRAIN_SEGMENTS - 1, Math.floor(cell(minX)));
+  const iz0 = Math.min(TERRAIN_SEGMENTS - 1, Math.floor(cell(minZ)));
+  const nx = Math.max(ix0 + 1, Math.ceil(cell(maxX))) - ix0 + 1;
+  const nz = Math.max(iz0 + 1, Math.ceil(cell(maxZ))) - iz0 + 1;
+  const h = new Float32Array(nx * nz);
+  for (let j = 0; j < nz; j++) {
+    for (let i = 0; i < nx; i++) {
+      h[j * nx + i] = getTerrainHeight((ix0 + i) * TERRAIN_STEP - TERRAIN_HALF, (iz0 + j) * TERRAIN_STEP - TERRAIN_HALF);
+    }
+  }
+  return { ix0, iz0, nx, nz, h };
+}
+
+// PlaneGeometry splits each cell along the diagonal from (x0, z1) to (x1, z0).
+function gridHeight(g: HeightGrid, wx: number, wz: number): number {
+  const fx = (wx + TERRAIN_HALF) / TERRAIN_STEP - g.ix0;
+  const fz = (wz + TERRAIN_HALF) / TERRAIN_STEP - g.iz0;
+  const i = Math.min(g.nx - 2, Math.max(0, Math.floor(fx)));
+  const j = Math.min(g.nz - 2, Math.max(0, Math.floor(fz)));
+  const tx = fx - i;
+  const tz = fz - j;
+  const h00 = g.h[j * g.nx + i];
+  const h10 = g.h[j * g.nx + i + 1];
+  const h01 = g.h[(j + 1) * g.nx + i];
+  const h11 = g.h[(j + 1) * g.nx + i + 1];
+  if (tx + tz <= 1) return h00 + (h10 - h00) * tx + (h01 - h00) * tz;
+  return h11 + (h01 - h11) * (1 - tx) + (h10 - h11) * (1 - tz);
+}
+
 function updateTelegraphProgress(t: TelegraphInstance, p: number): void {
   const posAttr = t.fillMesh.geometry.attributes.position;
   const arr = posAttr.array as Float32Array;
-  const { ox, oz, dx, dz, baseCoords, shape } = t;
+  const { ox, oz, dx, dz, baseCoords, shape, heights } = t;
 
   for (let i = 0; i < baseCoords.length; i += 2) {
     const k = fillScale(shape, Math.hypot(baseCoords[i], baseCoords[i + 1]), p);
@@ -210,10 +269,9 @@ function updateTelegraphProgress(t: TelegraphInstance, p: number): void {
     const lz = k * baseCoords[i + 1];
     const wx = ox + lx * dz + lz * dx;
     const wz = oz - lx * dx + lz * dz;
-    const wy = getTerrainHeight(wx, wz) + 0.06;
     const idx = (i / 2) * 3;
     arr[idx] = wx;
-    arr[idx + 1] = wy;
+    arr[idx + 1] = gridHeight(heights, wx, wz) + 0.06;
     arr[idx + 2] = wz;
   }
   posAttr.needsUpdate = true;
@@ -381,7 +439,8 @@ export function showTelegraph(
     oz: event.oz,
     dx: event.dx,
     dz: event.dz,
-    baseCoords: fillData.baseCoords
+    baseCoords: fillData.baseCoords,
+    heights: buildHeightGrid(fillData.baseCoords, event.ox, event.oz, event.dx, event.dz)
   };
 
   monster.telegraph = instance;
