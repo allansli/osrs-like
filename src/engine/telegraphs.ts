@@ -199,7 +199,6 @@ function buildFillData(shape: Shape): { baseCoords: number[]; indices: number[] 
 
 function updateTelegraphProgress(t: TelegraphInstance, p: number): void {
   const posAttr = t.fillMesh.geometry.attributes.position;
-  if (!posAttr) return;
   const arr = posAttr.array as Float32Array;
   const { ox, oz, dx, dz, baseCoords } = t;
 
@@ -227,7 +226,6 @@ export function showTelegraph(
   }
 
   const attack = ATTACKS[event.attackId];
-  if (!attack) return;
 
   const shape = attack.shape;
   const rawLoops = shapeOutline(shape, 64);
@@ -252,13 +250,13 @@ export function showTelegraph(
 
       const inX = cur[0] - prev[0];
       const inZ = cur[1] - prev[1];
-      const inLen = Math.hypot(inX, inZ) || 1;
+      const inLen = Math.hypot(inX, inZ);
       const n1X = -inZ / inLen;
       const n1Z = inX / inLen;
 
       const outX = next[0] - cur[0];
       const outZ = next[1] - cur[1];
-      const outLen = Math.hypot(outX, outZ) || 1;
+      const outLen = Math.hypot(outX, outZ);
       const n2X = -outZ / outLen;
       const n2Z = outX / outLen;
 
@@ -344,11 +342,9 @@ export function showTelegraph(
   group.add(outlineMesh);
   group.add(fillMesh);
 
-  if (G.scene) {
-    G.scene.add(group);
-  }
+  G.scene.add(group);
 
-  const durationSecs = event.ms > 0 ? event.ms / 1000 : 1;
+  const durationSecs = event.ms / 1000;
   const instance: TelegraphInstance = {
     monster,
     group,
@@ -370,11 +366,7 @@ export function showTelegraph(
 
 export function updateTelegraphs(dt: number): void {
   for (const t of activeTelegraphs) {
-    if (t.durationSecs > 0) {
-      t.progress = Math.min(1, t.progress + dt / t.durationSecs);
-    } else {
-      t.progress = 1;
-    }
+    t.progress = Math.min(1, t.progress + dt / t.durationSecs);
     updateTelegraphProgress(t, t.progress);
   }
 }

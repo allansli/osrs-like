@@ -811,8 +811,7 @@ export function poseMonsterLimbs(m: MonsterEntity, moving: boolean, now: number,
 
   // Wind-up Pose while winding up
   if (m.logic.windup) {
-    const total = m.logic.windup.total > 0 ? m.logic.windup.total : 1;
-    const progress = Math.min(1, Math.max(0, 1 - m.logic.windup.left / total));
+    const progress = Math.min(1, Math.max(0, 1 - m.logic.windup.left / m.logic.windup.total));
     if (rig.rightArmPivot) rig.rightArmPivot.rotation.x = -1.8 * progress;
     if (rig.leftArmPivot) rig.leftArmPivot.rotation.x = -1.8 * progress;
     if (rig.headGroup) rig.headGroup.rotation.x = -0.35 * progress;
@@ -823,6 +822,8 @@ export function poseMonsterLimbs(m: MonsterEntity, moving: boolean, now: number,
     rig.group.position.y = groundY + progress * 0.15;
     return;
   }
+
+  if (rig.headGroup) rig.headGroup.rotation.x = 0;
 
   // Distinct Attack Animations
   if (m.attackAnim > 0) {

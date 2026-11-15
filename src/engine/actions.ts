@@ -340,7 +340,6 @@ export function performMonsterRetaliation(monster: MonsterEntity): void {
 export function performMonsterHeavy(monster: MonsterEntity, attackId: string): void {
   if (isDown(monster.logic) || player.downed || STATE.hp <= 0) return;
   const attack = ATTACKS[attackId];
-  if (!attack) return;
   const { dmg } = rollMonsterAttack(monster.typeKey, attack, STATE, { count: 0 }, Math.random);
   monster.attackAnim = 1;
 
