@@ -16,3 +16,17 @@ Also seen: a shape under a tree canopy is hidden by the canopy (cw-01, top centr
 **Result: does not pass.** As the plan allows, one fix task is added (T6, `telegraphs.ts` only): a dark halo band
 outside the coloured band so the edge reads on any ground, a wider coloured band, and the outline and halo drawn
 over foliage. Re-captured after T6 on the same three grounds.
+
+## After T6 (2026-11-15)
+
+Same poses, all eleven attack shapes (the six ordinary ones and the boss's five) placed in the ring at once, so they
+overlap far more than in a fight.
+
+| File | Ground | Verdict |
+|---|---|---|
+| cw-t6-01-grass.jpg | grass | Reads; the bands now draw over the tree canopies |
+| cw-t6-02-sand.jpg | dunes | Reads: the dark halo carries the edge on sand |
+| cw-t6-03-volcanic.jpg | volcanic | **Reads now**: red band with a dark edge stands out on lava |
+
+**Result: CP-4 passes after T6.** Night remains unjudged here (the software renderer did not change the image); it is
+on the owner's play list for Stage 4.
