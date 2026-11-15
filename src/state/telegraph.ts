@@ -109,3 +109,10 @@ export function shapeOutline(shape: Shape, segments: number): Array<Array<[numbe
     }
   }
 }
+
+// The growing fill at progress p: a point of the full fill at distance r from the origin is drawn at r * fillScale.
+// Circle, cone and line grow from the origin. A ring grows outward from its inner edge, so it never covers the safe centre.
+export function fillScale(shape: Shape, r: number, p: number): number {
+  if (shape.type !== 'ring' || r === 0) return p;
+  return (shape.inner + (r - shape.inner) * p) / r;
+}

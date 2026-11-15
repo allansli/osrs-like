@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { ATTACKS } from '../data/attacks';
 import type { Shape } from '../data/attacks';
-import { shapeOutline } from '../state/telegraph';
+import { fillScale, shapeOutline } from '../state/telegraph';
 import { getTerrainHeight } from '../state/terrain';
 import { disposeObject3D } from './dispose';
 import { G } from './context';
@@ -9,6 +9,7 @@ import type { MonsterEntity } from './context';
 
 export interface TelegraphInstance {
   monster: MonsterEntity;
+  shape: Shape;
   group: THREE.Group;
   haloMesh: THREE.Mesh;
   outlineMesh: THREE.Mesh;
@@ -201,11 +202,12 @@ function buildFillData(shape: Shape): { baseCoords: number[]; indices: number[] 
 function updateTelegraphProgress(t: TelegraphInstance, p: number): void {
   const posAttr = t.fillMesh.geometry.attributes.position;
   const arr = posAttr.array as Float32Array;
-  const { ox, oz, dx, dz, baseCoords } = t;
+  const { ox, oz, dx, dz, baseCoords, shape } = t;
 
   for (let i = 0; i < baseCoords.length; i += 2) {
-    const lx = p * baseCoords[i];
-    const lz = p * baseCoords[i + 1];
+    const k = fillScale(shape, Math.hypot(baseCoords[i], baseCoords[i + 1]), p);
+    const lx = k * baseCoords[i];
+    const lz = k * baseCoords[i + 1];
     const wx = ox + lx * dz + lz * dx;
     const wz = oz - lx * dx + lz * dz;
     const wy = getTerrainHeight(wx, wz) + 0.06;
@@ -368,6 +370,7 @@ export function showTelegraph(
   const durationSecs = event.ms / 1000;
   const instance: TelegraphInstance = {
     monster,
+    shape,
     group,
     haloMesh,
     outlineMesh,
