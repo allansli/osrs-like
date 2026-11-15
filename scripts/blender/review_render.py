@@ -12,6 +12,7 @@ Usage:
 import json
 import math
 import os
+import re
 import sys
 import time
 
@@ -183,10 +184,10 @@ class ReviewRenderer:
 
         # Load scales
         scales_path = os.path.join(os.path.dirname(__file__), "review_scales.json")
-        self.scales = {}
-        if os.path.exists(scales_path):
-            with open(scales_path, "r", encoding="utf-8") as f:
-                self.scales = json.load(f)
+        if not os.path.isfile(scales_path):
+            raise FileNotFoundError(f"review scales table missing: {scales_path}")
+        with open(scales_path, "r", encoding="utf-8") as f:
+            self.scales = json.load(f)
 
         # Temporary files directory for still renders
         self.temp_render_path = paths.checked_write(
@@ -196,7 +197,13 @@ class ReviewRenderer:
         self._setup_scene()
 
     def get_scale(self, clean_name: str, root_name: str) -> float:
-        return self.scales.get(clean_name, self.scales.get(root_name, 1.0))
+        for key in (clean_name, root_name):
+            if key in self.scales:
+                return self.scales[key]
+        raise KeyError(
+            f"no in-game scale for figure '{clean_name}' (root '{root_name}') "
+            f"in scripts/blender/review_scales.json; add its entry"
+        )
 
     def _setup_scene(self):
         bpy.ops.wm.read_factory_settings(use_empty=True)
@@ -209,6 +216,11 @@ class ReviewRenderer:
         self.scene.view_settings.view_transform = 'Standard'
         self.scene.view_settings.look = 'None'
         self.scene.render.image_settings.file_format = 'PNG'
+        self.scene.render.image_settings.color_mode = 'RGBA'
+        # Transparent film: the alpha channel is the figure's silhouette, used to
+        # measure pixel heights; render_tile composites it over the world colour.
+        self.scene.render.film_transparent = True
+        self.bg_display = 0.7  # sRGB display value of the 0.45 grey world
 
         # Grey world (0.45, 0.45, 0.45)
         self.world = bpy.data.worlds.new('ReviewWorld')
@@ -256,11 +268,13 @@ class ReviewRenderer:
     def set_silhouette_mode(self, enabled: bool):
         if enabled:
             self.world_bg.inputs['Color'].default_value = (1.0, 1.0, 1.0, 1.0)
+            self.bg_display = 1.0
             bpy.context.view_layer.material_override = self.silhouette_mat
             self.sun_key.hide_render = True
             self.sun_fill.hide_render = True
         else:
             self.world_bg.inputs['Color'].default_value = (0.45, 0.45, 0.45, 1.0)
+            self.bg_display = 0.7
             bpy.context.view_layer.material_override = None
             self.sun_key.hide_render = False
             self.sun_fill.hide_render = False
@@ -269,6 +283,9 @@ class ReviewRenderer:
         roots = []
         for o in self.scene.objects:
             if o.parent is None and o not in (self.sun_key, self.sun_fill, self.cam):
+                # skip the importer's bone-shape helper objects
+                if all(c.name.startswith('glTF_not_exported') for c in o.users_collection):
+                    continue
                 meshes = [ch for ch in [o] + list(o.children_recursive) if ch.type == 'MESH']
                 if meshes:
                     roots.append(o)
@@ -321,14 +338,24 @@ class ReviewRenderer:
         self.scene.render.resolution_x = w
         self.scene.render.resolution_y = h
         self.scene.render.image_settings.file_format = 'PNG'
+        self.scene.render.image_settings.color_mode = 'RGBA'  # save_jpeg leaves RGB behind
         self.scene.render.filepath = self.temp_render_path
         bpy.ops.render.render(write_still=True)
         img = bpy.data.images.load(self.temp_render_path)
         # Blender pixels are bottom-to-top RGBA float32 in [0, 1]
         pix = np.array(img.pixels[:], dtype=np.float32).reshape((h, w, 4))
         bpy.data.images.remove(img)
-        # Flip to top-to-bottom
-        return np.flipud(pix)
+        # Flip to top-to-bottom; composite over the world colour, keep alpha in channel 3
+        pix = np.flipud(pix)
+        a = pix[:, :, 3:4]
+        pix[:, :, :3] = pix[:, :, :3] * a + self.bg_display * (1.0 - a)
+        return pix
+
+    @staticmethod
+    def mask_height(tile: np.ndarray) -> int:
+        """Pixel height of the rendered figure: rows holding any alpha > 0.5, clipped to the tile."""
+        rows = np.where((tile[:, :, 3] > 0.5).any(axis=1))[0]
+        return int(rows[-1] - rows[0] + 1) if rows.size else 0
 
     def save_jpeg(self, img_rgb: np.ndarray, path: str):
         paths.checked_write(path)
@@ -364,6 +391,7 @@ class ReviewRenderer:
         # Azimuth angle 0 is +Y.
         angles = [math.radians(45), math.radians(90), math.radians(135)]
         tiles = []
+        height = 0
 
         for ang in angles:
             cam_x = cx + dist * math.sin(ang)
@@ -375,13 +403,14 @@ class ReviewRenderer:
             bpy.context.view_layer.update()
 
             tile = self.render_tile(512, 512)
+            height = max(height, self.mask_height(tile))
             tiles.append(tile[:, :, :3])
 
         self.set_silhouette_mode(False)
 
         # Assemble side-by-side horizontally
         sheet = np.concatenate(tiles, axis=1)
-        return sheet, dims.z
+        return sheet, height
 
     def render_play_distance(self, root, scale: float) -> tuple[np.ndarray, list[int]]:
         # Apply in-game scale
@@ -401,14 +430,6 @@ class ReviewRenderer:
         params = [(5.4, 0.18), (8.5, 0.24), (26.0, 0.24)]
         crops = []
         measured_heights = []
-
-        # Find figure bounds
-        meshes = [o for o in [root] + list(root.children_recursive) if o.type == 'MESH']
-        corners = []
-        for m in meshes:
-            for c in m.bound_box:
-                corners.append(m.matrix_world @ Vector(c))
-
         for dist, pitch in params:
             horiz = dist * math.cos(pitch)
             vert = dist * math.sin(pitch)
@@ -417,25 +438,18 @@ class ReviewRenderer:
             self.cam.rotation_euler = direction.to_track_quat('-Z', 'Y').to_euler()
             bpy.context.view_layer.update()
 
-            # Measure projected screen bounds
-            projs = [world_to_camera_view(self.scene, self.cam, c) for c in corners]
-            min_px_x = int(math.floor(min(p.x for p in projs) * 1920))
-            max_px_x = int(math.ceil(max(p.x for p in projs) * 1920))
-            min_px_y = int(math.floor(min(p.y for p in projs) * 1080))
-            max_px_y = int(math.ceil(max(p.y for p in projs) * 1080))
-
-            px_h = max(1, max_px_y - min_px_y)
+            # Render frame (row 0 is top) and measure the figure from its alpha mask
+            frame = self.render_tile(1920, 1080)
+            ys, xs = np.where(frame[:, :, 3] > 0.5)
+            if ys.size == 0:
+                raise RuntimeError(f"play distance {dist}: figure '{root.name}' not visible in frame")
+            px_h = int(ys.max() - ys.min() + 1)  # clipped to the 1080-line frame
             measured_heights.append(px_h)
 
-            # Render frame
-            frame = self.render_tile(1920, 1080)  # top is row 0
-
-            # In top-to-bottom coordinates:
-            # y=0 is top in frame array; in Blender world_to_camera_view y=0 is bottom
-            top_y = max(0, 1080 - max_px_y - 16)
-            bot_y = min(1080, 1080 - min_px_y + 16)
-            left_x = max(0, min_px_x - 16)
-            right_x = min(1920, max_px_x + 16)
+            top_y = max(0, int(ys.min()) - 16)
+            bot_y = min(1080, int(ys.max()) + 17)
+            left_x = max(0, int(xs.min()) - 16)
+            right_x = min(1920, int(xs.max()) + 17)
 
             crop = frame[top_y:bot_y, left_x:right_x, :3].copy()
 
@@ -542,10 +556,12 @@ class ReviewRenderer:
                 start_frame + i * (end_frame - start_frame) / 5.0 for i in range(6)
             ]
             tiles = []
+            px_h = 0
             for f in frames:
                 self.scene.frame_set(int(round(f)))
                 bpy.context.view_layer.update()
                 tile = self.render_tile(256, 384)
+                px_h = max(px_h, self.mask_height(tile))
                 tiles.append(tile[:, :, :3])
 
             strip = np.concatenate(tiles, axis=1)
@@ -553,49 +569,85 @@ class ReviewRenderer:
             self.save_jpeg(strip, strip_path)
 
             elapsed = time.time() - t0
-            px_h = int(round(dims.z * 214.45))
-            print(f"{strip_path} {elapsed:.2f}s height: {px_h}px")
+            print(f"{strip_path} {elapsed:.2f}s height: {px_h}px (measured, 384-line tile)")
 
     def render_worst_pose(self, root, clean_name: str):
         armatures = [
             o for o in [root] + list(root.children_recursive) if o.type == 'ARMATURE'
         ]
-        if not armatures and not self.opts.get('worst'):
+        if not armatures:
+            if self.opts.get('worst'):
+                print(f"{clean_name}: no armature, worst-pose sheet skipped")
             return
 
         t0 = time.time()
-        # Apply worst pose
+        # Hold what the pose touches so it can be restored: animation, NLA mutes, pose bones.
+        saved = []
         for arm in armatures:
-            if not arm.pose:
-                continue
+            ad = arm.animation_data
+            anim = (ad.action, [tr.mute for tr in ad.nla_tracks]) if ad else None
+            bones = [
+                (b, b.rotation_mode, b.location.copy(), b.rotation_quaternion.copy(),
+                 b.rotation_euler.copy(), b.scale.copy())
+                for b in arm.pose.bones
+            ]
+            saved.append((arm, anim, bones))
+            if ad:  # animation would overwrite the pose at render time
+                ad.action = None
+                for tr in ad.nla_tracks:
+                    tr.mute = True
             for b in arm.pose.bones:
-                bname = b.name.lower()
-                if 'hip' in bname or 'root' in bname:
-                    b.location.z -= 0.3
-                elif 'rightarm' in bname or 'rightshoulder' in bname:
-                    b.rotation_euler = Euler((2.4, 0.2, -0.4))
-                elif 'torso' in bname or 'spine' in bname:
-                    b.rotation_euler = Euler((0.3, 0.0, 0.8))
-                elif 'head' in bname:
-                    b.rotation_euler = Euler((0.0, 0.0, 0.8))
-                elif 'wing' in bname:
-                    b.rotation_euler = Euler((1.2, 0.5, 0.0))
-                elif 'tail' in bname:
-                    b.rotation_euler = Euler((0.8, 0.6, 0.0))
+                b.rotation_mode = 'QUATERNION'
+                b.location = (0.0, 0.0, 0.0)
+                b.rotation_quaternion = Quaternion((1.0, 0.0, 0.0, 0.0))
+                b.scale = (1.0, 1.0, 1.0)
 
-        bpy.context.view_layer.update()
-        sheet, _ = self.render_turnaround_or_silhouette(root, is_silhouette=False)
-        out_path = os.path.join(self.out_dir, f"{clean_name}-worst-pose.jpg")
-        self.save_jpeg(sheet, out_path)
-        elapsed = time.time() - t0
-        print(f"{out_path} {elapsed:.2f}s height: 512px")
+        try:
+            for arm in armatures:
+                for b in arm.pose.bones:
+                    bname = b.name.lower()
+                    if b.parent is None:
+                        # Crouch: drop 0.3 m along armature Z, expressed in the bone's rest space
+                        # (bones run along Y, so a plain location.z would not lower the figure).
+                        down = b.bone.matrix_local.to_3x3().inverted() @ Vector((0.0, 0.0, -0.3))
+                        b.location = down
+                    elif 'rightarm' in bname or 'rightshoulder' in bname:
+                        b.rotation_quaternion = Euler((2.4, 0.2, -0.4)).to_quaternion()
+                    elif 'torso' in bname or 'spine' in bname:
+                        b.rotation_quaternion = Euler((0.3, 0.0, 0.8)).to_quaternion()
+                    elif 'head' in bname:
+                        b.rotation_quaternion = Euler((0.0, 0.0, 0.8)).to_quaternion()
+                    elif 'wing' in bname:
+                        b.rotation_quaternion = Euler((1.2, 0.5, 0.0)).to_quaternion()
+                    elif 'tail' in bname:
+                        b.rotation_quaternion = Euler((0.8, 0.6, 0.0)).to_quaternion()
+
+            bpy.context.view_layer.update()
+            sheet, px_h = self.render_turnaround_or_silhouette(root, is_silhouette=False)
+            out_path = os.path.join(self.out_dir, f"{clean_name}-worst-pose.jpg")
+            self.save_jpeg(sheet, out_path)
+            print(f"{out_path} {time.time()-t0:.2f}s height: {px_h}px (measured)")
+        finally:
+            for arm, anim, bones in saved:
+                for b, mode, loc, quat, eul, scl in bones:
+                    b.rotation_mode = mode
+                    b.location = loc
+                    b.rotation_quaternion = quat
+                    b.rotation_euler = eul
+                    b.scale = scl
+                if anim:
+                    arm.animation_data.action = anim[0]
+                    for tr, m in zip(arm.animation_data.nla_tracks, anim[1]):
+                        tr.mute = m
+            bpy.context.view_layer.update()
 
     def render_against(self, root, clean_name: str, against_path: str):
-        if not against_path or not os.path.exists(against_path):
-            return
+        against_path = os.path.abspath(against_path)
+        if not os.path.isfile(against_path):
+            raise FileNotFoundError(f"--against file not found: {against_path}")
 
         t0 = time.time()
-        # Render front view of current figure
+        # One camera for both tiles, framed on the current figure.
         _, _, center, dims = self.get_figure_bounds(root)
         cx, cy, cz = center.x, center.y, center.z
         max_dim = max(dims.z, dims.x, dims.y * 0.8)
@@ -606,15 +658,49 @@ class ReviewRenderer:
         direction = Vector((cx, cy, cz)) - self.cam.location
         self.cam.rotation_euler = direction.to_track_quat('-Z', 'Y').to_euler()
         bpy.context.view_layer.update()
-        tile_current = self.render_tile(512, 512)[:, :, :3]
+        tile_current = self.render_tile(512, 512)
 
-        # Load other file in a separate scene or pass
-        # For simplicity, assemble tile side-by-side with label
-        sheet = np.concatenate([tile_current, tile_current], axis=1)
+        # Import the other file, find the root that matches this figure, render it alone.
+        before_objs = set(self.scene.objects)
+        before_actions = set(bpy.data.actions)
+        bpy.ops.import_scene.gltf(filepath=against_path)
+        new_objs = [o for o in self.scene.objects if o not in before_objs]
+        new_roots = [
+            o for o in new_objs
+            if o.parent is None
+            and any(c.type == 'MESH' for c in [o] + list(o.children_recursive))
+        ]
+        match = [
+            r for r in new_roots
+            if get_clean_name(re.sub(r"\.\d{3}$", "", r.name)) == clean_name
+        ]
+        try:
+            if len(match) != 1:
+                raise RuntimeError(
+                    f"--against {against_path}: expected one root for '{clean_name}', "
+                    f"found {[r.name for r in new_roots]}"
+                )
+            self.isolate_figure(match[0])
+            bpy.context.view_layer.update()
+            # Same camera relative to the figure: a figure placed elsewhere in its file
+            # (unskinned monsters sit at their own spots) is framed the same way.
+            _, _, center_other, _ = self.get_figure_bounds(match[0])
+            self.cam.location = self.cam.location + (center_other - center)
+            bpy.context.view_layer.update()
+            tile_other = self.render_tile(512, 512)
+        finally:
+            for o in new_objs:
+                bpy.data.objects.remove(o, do_unlink=True)
+            for a in [a for a in bpy.data.actions if a not in before_actions]:
+                bpy.data.actions.remove(a)
+            self.isolate_figure(root)
+
+        # Left is the against file (before), right is the current file (after).
+        sheet = np.concatenate([tile_other[:, :, :3], tile_current[:, :, :3]], axis=1)
+        px_h = max(self.mask_height(tile_other), self.mask_height(tile_current))
         out_path = os.path.join(self.out_dir, f"{clean_name}-against.jpg")
         self.save_jpeg(sheet, out_path)
-        elapsed = time.time() - t0
-        print(f"{out_path} {elapsed:.2f}s height: 512px")
+        print(f"{out_path} {time.time()-t0:.2f}s height: {px_h}px (measured, left=against, right=current)")
 
     def render_roster_silhouette(self, roots):
         if not roots:
@@ -628,6 +714,7 @@ class ReviewRenderer:
         self.cam_data.angle_y = math.radians(50.0)
 
         cutouts = []
+        measured = []
         for root in roots:
             self.isolate_figure(root)
             clean = get_clean_name(root.name)
@@ -671,6 +758,7 @@ class ReviewRenderer:
 
             cutout = frame[top_y:bot_y, left_x:right_x, :3]
             cutouts.append(cutout)
+            measured.append(int(max_y - min_y + 1))
 
         self.set_silhouette_mode(False)
 
@@ -699,7 +787,7 @@ class ReviewRenderer:
         out_path = os.path.join(self.out_dir, "roster-silhouette.jpg")
         self.save_jpeg(roster_sheet, out_path)
         elapsed = time.time() - t0
-        print(f"{out_path} {elapsed:.2f}s height: {max_h}px")
+        print(f"{out_path} {elapsed:.2f}s height: {max(measured)}px (measured)")
 
     def run(self):
         roots = self.find_roots()
@@ -718,17 +806,17 @@ class ReviewRenderer:
 
             # 1. Turnaround
             t0 = time.time()
-            turnaround_sheet, _ = self.render_turnaround_or_silhouette(root, is_silhouette=False)
+            turnaround_sheet, th = self.render_turnaround_or_silhouette(root, is_silhouette=False)
             t_path = os.path.join(self.out_dir, f"{clean}-turnaround.jpg")
             self.save_jpeg(turnaround_sheet, t_path)
-            print(f"{t_path} {time.time()-t0:.2f}s height: 512px")
+            print(f"{t_path} {time.time()-t0:.2f}s height: {th}px (measured, 512 tile)")
 
             # 2. Silhouette
             t0 = time.time()
-            sil_sheet, _ = self.render_turnaround_or_silhouette(root, is_silhouette=True)
+            sil_sheet, sh = self.render_turnaround_or_silhouette(root, is_silhouette=True)
             s_path = os.path.join(self.out_dir, f"{clean}-silhouette.jpg")
             self.save_jpeg(sil_sheet, s_path)
-            print(f"{s_path} {time.time()-t0:.2f}s height: 512px")
+            print(f"{s_path} {time.time()-t0:.2f}s height: {sh}px (measured, 512 tile)")
 
             # 3. Play distance
             t0 = time.time()
@@ -736,7 +824,7 @@ class ReviewRenderer:
             p_path = os.path.join(self.out_dir, f"{clean}-play-distance.jpg")
             self.save_jpeg(play_sheet, p_path)
             h_str = ", ".join(f"{h}px" for h in heights)
-            print(f"{p_path} {time.time()-t0:.2f}s heights: {h_str}")
+            print(f"{p_path} {time.time()-t0:.2f}s heights (measured, 1080 frame): {h_str}")
 
             # 4. Clips (if --clips)
             if self.opts.get('clips'):
