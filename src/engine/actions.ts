@@ -137,15 +137,11 @@ export function dispatchCommand(cmd: PlayerCommand): CommandResult {
   const now = performance.now() / 1000;
   const item =
     cmd.kind === 'eat' || cmd.kind === 'drink'
-      ? STATE.inventory[cmd.slot]
-        ? ITEMS[STATE.inventory[cmd.slot].id]
-        : null
+      ? ITEMS[STATE.inventory[cmd.slot].id]
       : null;
   const res = applyCommand(STATE, cmd, commandClocks, now);
   if (!res.ok) {
-    if (res.reason) {
-      addChatMessage(res.reason, 'combat');
-    }
+    addChatMessage(res.reason, 'combat');
     if (cmd.kind === 'style') {
       refreshCombatStyleLocks();
     }

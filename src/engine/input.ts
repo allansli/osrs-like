@@ -401,8 +401,7 @@ export function handleWorldClick(e: MouseEvent): void {
     const dist = Math.hypot(dx, dz);
     if (player.targetEntity && player.targetEntity.type === 'monster' && player.targetEntity.ref === m && dist <= stopDist) {
       const groundHit = hits.find((h) => h.object === G.terrainMesh);
-      const pt = groundHit ? groundHit.point : chosen.point;
-      dispatchCommand({ kind: 'move', x: pt.x, z: pt.z });
+      if (groundHit) dispatchCommand({ kind: 'move', x: groundHit.point.x, z: groundHit.point.z });
       return;
     }
     dispatchCommand({ kind: 'attack', targetId: m.id });
