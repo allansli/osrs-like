@@ -155,18 +155,19 @@ export function dispatchCommand(cmd: PlayerCommand): CommandResult {
   if (cmd.kind === 'eat') {
     player.actionCooldown = Math.max(player.actionCooldown, TICK_SEC);
     SFX.eat();
-    const itemName = item ? item.name : 'food';
-    const healed = res.restored ?? 1;
-    addChatMessage(`You eat the <b>${itemName}</b> and restore ${healed} Hitpoints.`, 'skill');
+    const healed = res.restored!;
+    addChatMessage(`You eat the <b>${item!.name}</b> and restore ${healed} Hitpoints.`, 'skill');
     spawnHitSplatOnPlayer(healed, 'heal');
     updateAllUI();
   } else if (cmd.kind === 'drink') {
     SFX.prayer();
-    const itemName = item ? item.name : 'potion';
-    addChatMessage(`You drink the <b>${itemName}</b> and restore your Prayer energy.`, 'skill');
+    addChatMessage(`You drink the <b>${item!.name}</b> and restore your Prayer energy.`, 'skill');
     updateAllUI();
   } else if (cmd.kind === 'style') {
     refreshCombatStyleLocks();
+    updateAllUI();
+  } else if (cmd.kind === 'prayer') {
+    if (STATE.activePrayers.has(cmd.id)) SFX.prayer();
     updateAllUI();
   } else {
     updateAllUI();

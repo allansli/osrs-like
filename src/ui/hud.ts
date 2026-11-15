@@ -163,40 +163,28 @@ export function updateVitalsBars(): void {
   el('prayer-text').textContent = `${Math.ceil(STATE.prayerPts)} / ${STATE.maxPrayerPts}`;
   el('spec-fill').style.width = STATE.specEnergy + '%';
   el('spec-text').textContent = `Special ${Math.floor(STATE.specEnergy)}%`;
-  const lanternEl = document.getElementById('lantern-mark');
-  if (lanternEl) {
-    lanternEl.hidden = !STATE.quests.lanternVow;
-  }
+  el('lantern-mark').hidden = !STATE.quests.lanternVow;
   updateCooldownOverlays();
 }
 
 export function updateCooldownOverlays(): void {
-  const now = typeof performance !== 'undefined' ? performance.now() / 1000 : 0;
+  const now = performance.now() / 1000;
   const foodRatio = Math.max(0, Math.min(1, (commandClocks.food.readyAt - now) / FOOD_CD_SECS));
   const potionRatio = Math.max(0, Math.min(1, (commandClocks.potion.readyAt - now) / POTION_CD_SECS));
 
-  const invGrid = document.getElementById('inventory-grid');
-  if (!invGrid) return;
-  const slotDivs = invGrid.querySelectorAll<HTMLElement>('.inv-slot');
+  const slotDivs = el('inventory-grid').querySelectorAll<HTMLElement>('.inv-slot');
   slotDivs.forEach((slotDiv, i) => {
     const entry = STATE.inventory[i];
     if (!entry) return;
     const it = (ITEMS as Record<string, ItemDef>)[entry.id];
-    if (!it) return;
     if (it.type === 'food') {
       slotDiv.classList.toggle('cooldown', foodRatio > 0);
       slotDiv.style.setProperty('--cd', String(foodRatio));
-      const overlay = slotDiv.querySelector<HTMLElement>('.cooldown-overlay');
-      if (overlay) {
-        overlay.style.setProperty('--cd', String(foodRatio));
-      }
+      slotDiv.querySelector<HTMLElement>('.cooldown-overlay')!.style.setProperty('--cd', String(foodRatio));
     } else if (it.type === 'potion') {
       slotDiv.classList.toggle('cooldown', potionRatio > 0);
       slotDiv.style.setProperty('--cd', String(potionRatio));
-      const overlay = slotDiv.querySelector<HTMLElement>('.cooldown-overlay');
-      if (overlay) {
-        overlay.style.setProperty('--cd', String(potionRatio));
-      }
+      slotDiv.querySelector<HTMLElement>('.cooldown-overlay')!.style.setProperty('--cd', String(potionRatio));
     }
   });
 }
@@ -285,7 +273,7 @@ export function updateAllUI(): void {
         slotDiv.innerHTML += `<span class="item-tier-dot" style="background:${(TIER_COLORS as Record<string, string>)[it.tier]}"></span>`;
       }
       if (it.type === 'food' || it.type === 'potion') {
-        const now = typeof performance !== 'undefined' ? performance.now() / 1000 : 0;
+        const now = performance.now() / 1000;
         const cd = it.type === 'food' ? commandClocks.food.readyAt - now : commandClocks.potion.readyAt - now;
         const maxCd = it.type === 'food' ? FOOD_CD_SECS : POTION_CD_SECS;
         const ratio = Math.max(0, Math.min(1, cd / maxCd));
