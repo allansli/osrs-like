@@ -355,6 +355,8 @@ export function showTelegraph(
 
   const fillMesh = new THREE.Mesh(fillGeom, fillMat);
   fillMesh.visible = false;
+  // The fill grows from a point: three computes a mesh's culling sphere once, on its first tiny frame.
+  fillMesh.frustumCulled = false;
 
   const group = new THREE.Group();
   group.add(haloMesh);
