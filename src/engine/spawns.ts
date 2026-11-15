@@ -17,6 +17,7 @@ import { addCartoonOutline, facetMaterial } from './materials';
 import { createMonsterMesh } from './monsterMeshes';
 import { loadBlenderMonstersTemplate, upgradeMonsterRigWithGltf } from './blenderMonsters';
 import { loadBlenderWorldTemplate, upgradeResourceNodeWithGltf } from './blenderWorld';
+import { collectFlashMaterials } from './reactions';
 import { el } from '../ui/hud';
 
 interface ResourceNodeDef {
@@ -83,9 +84,11 @@ export function spawnMonster(
   G.worldInteractiveObjects.push(rig.hitbox);
   G.scene.add(rig.group);
   G.monstersList.push(mObj);
+  collectFlashMaterials(mObj);
   loadBlenderMonstersTemplate().then((gltf: GLTF | null) => {
     if (!gltf) return;
     upgradeMonsterRigWithGltf(mObj, gltf);
+    collectFlashMaterials(mObj);
   });
 }
 

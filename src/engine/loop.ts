@@ -54,7 +54,8 @@ import { combatLevel } from '../state/adventure';
 import { regenRate, buyVow, vowPrice, DEATH_MIN_COMBAT } from '../state/sustain';
 import { entityAim, escapeStall, shouldRepath, STALL_SEC, stallTime, walkSpent } from '../state/pathfind';
 import { CAMPS } from '../data/worldMap';
-import { spinOffset } from '../data/feel';
+import { LOW_HEALTH, spinOffset } from '../data/feel';
+import { isHitStopped, isLowHealth, setLowHealth, updateReactions } from './reactions';
 import {
   addChatMessage,
   el,
@@ -139,6 +140,11 @@ export function updateVitalsAndRegen(f: FrameState): void {
       addChatMessage('You have run out of Prayer points! Your prayers have deactivated.', 'combat');
       updateAllUI();
     }
+  }
+
+  const isLow = STATE.hp > 0 && !player.downed && (STATE.hp / STATE.maxHp < LOW_HEALTH.thresholdRatio);
+  if (isLow !== isLowHealth()) {
+    setLowHealth(isLow);
   }
 }
 
@@ -377,6 +383,7 @@ export function updatePlayerMotion(f: FrameState): void {
 }
 
 export function updatePlayerAnimation(f: FrameState): void {
+  const animDt = isHitStopped(player) ? 0 : f.dt;
   // Dynamic cape physics: realistic cloth aerodynamics in Three.js coordinates
   // Note: with Y-up & -Z forward, negative rotation.x swings cape BACKWARD (+Z away from body).
   const updateCapePhysics = (isMoving: boolean, animTime: number): void => {
@@ -434,18 +441,18 @@ export function updatePlayerAnimation(f: FrameState): void {
   };
 
   if (player.blenderAnimator) {
-    player.animTime += f.dt * (player.isMoving ? 4.5 : 2.0);
+    player.animTime += animDt * (player.isMoving ? 4.5 : 2.0);
     player.blenderAnimator.setMoving(player.isMoving);
     player.blenderAnimator.setWalkSpeed(player.currentSpeed / f.moveSpeed);
-    player.blenderAnimator.update(f.dt);
+    player.blenderAnimator.update(animDt);
     updateCapePhysics(player.isMoving, player.animTime);
 
     if (player.attackAnim > 0) {
-      player.attackAnim = Math.max(0, player.attackAnim - f.dt * 3.6);
+      player.attackAnim = Math.max(0, player.attackAnim - animDt * 3.6);
     }
   } else {
     if (player.isMoving) {
-      player.animTime += f.dt * (player.currentSpeed / f.moveSpeed * 10);
+      player.animTime += animDt * (player.currentSpeed / f.moveSpeed * 10);
       const phase = player.animTime;
       const swing = Math.sin(phase) * 0.62;
       const bob = Math.cos(phase * 2) * 0.03;
@@ -868,6 +875,7 @@ export function gameLoop(now: number): void {
   updatePlayerAnimation(f);
   updateCamera(f);
   updateMonsters(f);
+  updateReactions(f.dt);
   updateWorldTimers(f);
   updateOverlay(f);
   renderFrame(f);

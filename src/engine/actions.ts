@@ -31,6 +31,8 @@ import { SPELLS } from '../data/magic';
 import { AGGRO_GRACE_MS, isDown, onPlayerHit } from '../state/monsterAi';
 import { ITEMS } from '../data/items';
 import { ATTACKS, BOSSES } from '../data/attacks';
+import { CAMERA, HIT_STOP_MS, KNOCK_BACK } from '../data/feel';
+import { cameraKick, cameraRumble, flash, flinchHero, hitStop, knockBack } from './reactions';
 import { clearTelegraph } from './telegraphs';
 import { SKILLS_META } from '../data/skills';
 import { addItemToInventory, announceUnlocksSince, grantXp, skillLevels } from '../ui/playerActions';
@@ -96,6 +98,7 @@ export function handleBossPhase(monster: MonsterEntity, phaseIndex: number): voi
     addChatMessage('Its bolts are magic.', 'combat');
   }
   spawnExpandingRing(monster.pos, 0xfde047);
+  cameraRumble(CAMERA.rumbleMs);
   updateTargetHud();
 }
 
@@ -285,9 +288,26 @@ export function performPlayerAttack(monster: MonsterEntity): void {
       monster.flinch = 1.0;
       monster.flashTimer = 0.12;
       spawnHitSplatWorld(monster.pos, dmg, isSpec ? 'maxhit' : hitSplatKind(dmg, maxHit));
+      flash(monster);
+
+      const isKilled = hit.events.some((ev) => ev.kind === 'died');
+      if (isKilled) {
+        hitStop(monster, HIT_STOP_MS.monsterKill);
+      } else if (isSpec || dmg >= maxHit) {
+        hitStop(monster, HIT_STOP_MS.monsterMaxHit);
+      } else {
+        hitStop(monster, HIT_STOP_MS.monsterHit);
+      }
+
+      const kbAmount = isSpec || dmg >= maxHit ? KNOCK_BACK.monsterMaxHit.amount : KNOCK_BACK.monsterHit.amount;
+      knockBack(monster, monster.pos.x - player.pos.x, monster.pos.z - player.pos.z, kbAmount);
 
       if (isSpec || wepKind === 'greataxe' || wepKind === 'greatsword' || dmg >= maxHit * 0.75) {
-        camState.shake = Math.min(0.12, 0.04 + (dmg / maxHit) * 0.06);
+        cameraKick(
+          monster.pos.x - player.pos.x,
+          monster.pos.z - player.pos.z,
+          Math.min(CAMERA.kickMax, 0.04 + (dmg / maxHit) * 0.08)
+        );
       }
 
       if (style === 'magic' && STATE.activeSpell === 'blood_barrage') {
@@ -369,6 +389,7 @@ function wpKindIsChop(kind: string): boolean {
 }
 
 export function handleMonsterDeath(monster: MonsterEntity): void {
+  hitStop(monster, HIT_STOP_MS.monsterKill);
   clearTelegraph(monster);
   if (player.targetEntity && player.targetEntity.ref === monster) {
     player.targetEntity = null;
@@ -439,16 +460,21 @@ export function performMonsterRetaliation(monster: MonsterEntity): void {
     if (absorbedBreath) {
       addChatMessage("Your shield / prayer absorbs most of Elvarg's dragonfire!", 'skill');
     }
+    const isMitigated = absorbedBreath ||
+      (monster.def.style === 'melee' && STATE.activePrayers.has('prot_melee')) ||
+      (monster.def.style === 'magic' && STATE.activePrayers.has('prot_magic')) ||
+      ((monster.def.style === 'ranged' || monster.def.style === 'rapid') && STATE.activePrayers.has('prot_ranged'));
     if (dmg > 0) {
       STATE.hp = Math.max(0, STATE.hp - dmg);
-      spawnHitSplatOnPlayer(dmg, hitSplatKind(dmg, monster.def.maxHit));
+      flash(player);
+      spawnHitSplatOnPlayer(dmg, isMitigated ? 'blocked' : hitSplatKind(dmg, monster.def.maxHit));
       if (STATE.hp <= 0) {
         handlePlayerDeath();
       } else {
         maybeRetaliate(monster);
       }
     } else {
-      spawnHitSplatOnPlayer(0, 'miss');
+      spawnHitSplatOnPlayer(0, isMitigated ? 'blocked' : 'miss');
       if (absorbedBreath) {
         maybeRetaliate(monster);
       }
@@ -494,6 +520,11 @@ export function performMonsterHeavy(monster: MonsterEntity, attackId: string): v
       addMark(marks, boss);
     }
     STATE.hp = Math.max(0, STATE.hp - dmg);
+    flash(player);
+    hitStop(player, HIT_STOP_MS.heroHeavy);
+    flinchHero(player.pos.x - monster.pos.x, player.pos.z - monster.pos.z);
+    knockBack(player, player.pos.x - monster.pos.x, player.pos.z - monster.pos.z, KNOCK_BACK.heroHeavy.amount);
+    cameraKick(player.pos.x - monster.pos.x, player.pos.z - monster.pos.z, CAMERA.kickMax);
     spawnHitSplatOnPlayer(dmg, 'heavy');
     if (STATE.hp <= 0) {
       handlePlayerDeath();

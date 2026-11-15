@@ -25,6 +25,7 @@ import { addCartoonOutline, facetMaterial } from './materials';
 import { albedoForItem, applyAlbedo, sealAlbedoUvs } from './textures';
 import { getEquipmentBonuses } from '../state/combat';
 import { disposeObject3D } from './dispose';
+import { collectFlashMaterials } from './reactions';
 
 export function buildPlayerCharacter(): void {
   const rig = buildHumanoidRig(0x586436, 0x3e2b1e, 0x505c30, 1.06);
@@ -398,5 +399,6 @@ export function rebuildPlayerEquipmentMeshes(): void {
   if (player.meshGroup) {
     addCartoonOutline(player.meshGroup, LEAN_RIG.outline);
     sealAlbedoUvs(player.meshGroup);
+    collectFlashMaterials(player);
   }
 }

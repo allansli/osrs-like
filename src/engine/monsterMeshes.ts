@@ -3,6 +3,7 @@ import { addCartoonOutline, facetMaterial } from './materials';
 import { albedoMaterial, speciesAlbedo } from './textures';
 import { getTerrainHeight } from '../state/terrain';
 import { inCombat } from '../state/monsterAi';
+import { isHitStopped } from './reactions';
 import type { MonsterDef } from '../data/world';
 import type { MonsterEntity } from './context';
 import type { MonsterRigLike } from './blenderMonsters';
@@ -830,8 +831,9 @@ export function poseMonsterLimbs(m: MonsterEntity, moving: boolean, now: number,
   if (windupPosed.delete(m) && rig.headGroup) rig.headGroup.rotation.x = 0;
 
   // Distinct Attack Animations
+  const animDt = isHitStopped(m) ? 0 : dt;
   if (m.attackAnim > 0) {
-    m.attackAnim = Math.max(0, m.attackAnim - dt * 3.2);
+    m.attackAnim = Math.max(0, m.attackAnim - animDt * 3.2);
     const progress = Math.sin(m.attackAnim * Math.PI);
     const model = m.def.model ?? m.typeKey;
     if (model === 'elvarg_dragon') {

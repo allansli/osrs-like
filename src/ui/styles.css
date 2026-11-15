@@ -37,6 +37,31 @@
     color: var(--botw-cream);
   }
 
+  #low-health-vignette {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 15;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    box-shadow: inset 0 0 80px 20px rgba(185, 28, 28, 0.55);
+  }
+
+  #low-health-vignette.active {
+    opacity: 1;
+    animation: lowHealthPulse 1.4s ease-in-out infinite alternate;
+  }
+
+  #low-health-vignette.active.steady {
+    animation: none;
+    opacity: 0.7;
+  }
+
+  @keyframes lowHealthPulse {
+    0% { opacity: 0.45; }
+    100% { opacity: 0.85; }
+  }
+
   #death-overlay {
     position: absolute;
     inset: 0;
@@ -223,6 +248,10 @@
   }
 
   .hitsplat.hit::before { background: #d31313; }
+  .hitsplat.heavy { font-size: 17px; }
+  .hitsplat.heavy::before { background: #b91c1c; }
+  .hitsplat.blocked { font-size: 13px; transform: translate(-50%, -50%) scale(0.85); }
+  .hitsplat.blocked::before { background: #475569; }
   .hitsplat.maxhit { font-size: 18px; }
   .hitsplat.maxhit::before { background: #9a3412; }
   .hitsplat.miss::before { background: #1d4ed8; }
