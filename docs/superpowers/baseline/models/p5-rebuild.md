@@ -1,76 +1,67 @@
 # P5: full rebuild into scratch
 
-Date: 2026-11-14. Branch `feat/models-pass`. Plan task P5. This is the third run, and a repair. The first run was at head `256522d` (record in `29ee250`). The second run was at `99b9d01`, which gave the per-figure `brotliBytes` ceilings 2% headroom. That commit changed `scripts/models-manifest.mjs` and three manifests, which are outside P5's allowlist (rule 0.3.1). It also went against P4, which says the first ceiling is today's measured value. So `f1ef3fa` reverts it: every ceiling is back at exactly what P4 measured. This run is at `f1ef3fa`.
+Date: 2026-11-14. Branch `feat/models-pass`. Plan task P5. This is the fourth run, and a repair, at head `61657b6`. Runs one to three (`29ee250`, `267ffca`, `61657b6`) used Blender 5.0.1, whose exporter (v5.0.21) orders nodes and buffer views differently from the shipped files (v5.2.41); that caused the whole-file Drift on gear, monsters and world and the per-figure Brotli failures on five monsters. The 2% headroom of `99b9d01` was reverted in `f1ef3fa`; every ceiling is P4's measured value. This run uses Blender 5.2.4, whose exporter matches the shipped generator.
 
-**Verdict: Accept is NOT met.** On Blender 5.0.1, the only Blender this run was allowed to run, two compares exit 2 (Budget, on per-figure Brotli bytes), and gear, monsters and world drift in whole-file bytes. Contract passes everywhere. Nothing shipped changed. The hero build is deterministic. Nothing was promoted, and nothing in this record amends the plan.
+**Verdict: Accept is met except for one item.** Hero, gear, monsters and world rebuild byte-identical to the shipped files. COMPARE(guard) exits 2: the `CastleGuard` Brotli size is 18 bytes over its P4 ceiling, and the cause is the three-mesh guard Drift that P5 Accept itself allows (design 3.2). That residual needs an owner or plan amendment (below); it cannot be fixed inside P5's allowlist. Nothing shipped changed. Nothing was promoted.
 
 ## Environment
 
-- Blender used: `Blender 5.0.1` (`/usr/bin/blender`, the plan's BLEND command). Built files carry generator `Khronos glTF Blender I/O v5.0.21`. Shipped files carry `v5.2.41`.
-- A Blender 5.2 build was tried and blocked. `blender-5.2.4-linux-x64.tar.xz` was downloaded from `download.blender.org/release/Blender5.2/`. It matched the published SHA-256 `2fd14c50987426897ba60237ee996edf2b4151f4b1a72a460ca20be58c1d2d86` and was extracted under the git-ignored `scratch/blender52/`. Its glTF exporter is version `(5, 2, 41)`, the same as the shipped files. Only `--version` ran (`Blender 5.2.4 LTS`). The session's permission system then refused to run it as a build, so no 5.2 build exists.
-- Every command ran through `scripts/capped.sh` (allowlisted environment, 3 GB cap) with `timeout 600`, one Blender process at a time. `scratch/models-build/` was emptied first.
+- Blender used: `Blender 5.2.4 LTS` (hash `cd5dc428cce1`, built 2026-11-10), at the git-ignored `scratch/blender52/blender-5.2.4-linux-x64/blender`. Downloaded from `download.blender.org/release/Blender5.2/`, SHA-256 `2fd14c50987426897ba60237ee996edf2b4151f4b1a72a460ca20be58c1d2d86` checked against the published value in run three.
+- The BLEND command is the plan's, with `BLENDER_PATH` set to that binary instead of `/usr/bin/blender` (5.0.1).
+- Every built file carries generator `Khronos glTF Blender I/O v5.2.41`, the same as the shipped files.
+- Every command ran through `scripts/capped.sh` (allowlisted environment, 3 GB cap) with `timeout 600`, one Blender process at a time. `scratch/models-build/` was deleted and recreated first.
 
 ## Commands and results
+
+`B=scratch/blender52/blender-5.2.4-linux-x64/blender` (absolute path in the run).
 
 | Step | Command | Exit | Wall time |
 |---|---|---|---|
 | hashes before | `sha256sum public/models/*.glb blender/*.blend` | 0 | - |
-| BLEND(all) | `scripts/capped.sh timeout 600 env BLENDER_PATH=/usr/bin/blender node scripts/run-blender.mjs all --out scratch/models-build` | 0 | 10 s |
-| BLEND(guard) | same, mode `guard` | 0 | 1 s |
+| BLEND(all) | `scripts/capped.sh timeout 600 env BLENDER_PATH=$B node scripts/run-blender.mjs all --out scratch/models-build` | 0 | 15 s |
+| BLEND(guard) | same, mode `guard` | 0 | 2 s |
 | COMPARE(hero) | `node scripts/models-compare.mjs scratch/models-build/hero.glb public/models/hero.glb` | 0 | - |
 | COMPARE(gear) | same pattern | 0 | - |
-| COMPARE(monsters) | same pattern | **2** | - |
+| COMPARE(monsters) | same pattern | 0 | - |
 | COMPARE(guard) | same pattern | **2** | - |
 | COMPARE(world) | same pattern | 0 | - |
 | BLEND(hero), second run | same, mode `hero` | 0 | 2 s |
+| BLEND(guard), second run | same, mode `guard` | 0 | 2 s |
 | hashes after | same `sha256sum` | 0 | - |
 | UNTOUCHED | `git status --short public/models blender` | 0, prints nothing | - |
-| SUITE | `scripts/capped.sh npx vitest run` | 0 (62 files, 550 tests) | 23 s |
+| SUITE | `scripts/capped.sh npx vitest run` | 0 (62 files, 550 tests) | 22 s |
 | TYPES | `scripts/capped.sh npx tsc --noEmit` | 0, no output | - |
-| BUILD | `scripts/capped.sh npm run build` | 0 | 3 s |
+| BUILD | `scripts/capped.sh npm run build` | 0 | - |
 
-Built sizes: `hero.glb` 216,844 bytes, `gear.glb` 2,331,672, `monsters.glb` 4,879,064, `world.glb` 2,776,568, `guard.glb` 1,705,360.
+Built sizes: `hero.glb` 216,844 bytes, `gear.glb` 2,331,560, `monsters.glb` 4,879,168, `world.glb` 2,776,656, `guard.glb` 1,705,360.
+
+`cmp` of built against shipped prints nothing for `hero.glb`, `gear.glb`, `monsters.glb` and `world.glb`: all four are byte-identical to the shipped files.
 
 ## Compare reports (summaries)
 
 | File | Exit | Contract | Budget | Drift |
 |---|---|---|---|---|
-| hero | 0 | pass | pass | generator only |
-| gear | 0 | pass | pass | generator; rawBytes 2,331,560 -> 2,331,672; brotliBytes 668,121 -> 654,482 |
-| monsters | 2 | pass | **fail** (below) | generator; rawBytes 4,879,168 -> 4,879,064; brotliBytes 1,266,221 -> 1,273,402 |
-| guard | 2 | pass | **fail** (below) | generator; geometry bytes of `Plane.032`, `Circle.038`, `Circle.034`; brotliBytes 1,174,350 -> 1,174,329 |
-| world | 0 | pass | pass | generator; rawBytes 2,776,656 -> 2,776,568; brotliBytes 489,842 -> 493,474 |
+| hero | 0 | pass | pass | zero |
+| gear | 0 | pass | pass | zero |
+| monsters | 0 | pass | pass | zero |
+| guard | 2 | pass | **fail**: `CastleGuard` brotliBytes 1,174,334 > ceiling 1,174,316 | geometry bytes of `Plane.032`, `Circle.038`, `Circle.034`; file brotliBytes 1,174,350 -> 1,174,329 |
+| world | 0 | pass | pass | zero |
 
-Budget failures, built Brotli bytes against the P4 ceiling:
+## The guard residual
 
-- `Monster_goblin` 75,463 > 74,168
-- `Monster_goblin_archer` 63,884 > 63,774
-- `Monster_hill_giant` 64,922 > 64,905
-- `Monster_moss_guardian` 58,552 > 58,523
-- `Monster_scorpion` 84,340 > 84,031
-- `CastleGuard` 1,174,334 > 1,174,316
-
-## Why it differs (from the first two runs, sizes unchanged here)
-
-- **hero**: the binary chunk is byte-identical to the shipped one. The JSON differs only in `asset.generator`.
-- **gear, monsters, world**: every mesh's attribute and index bytes equal those of the shipped mesh with the same name (0 differences over 506, 399 and 433 meshes). The node, mesh and material sets are equal, but in a different order (exporter 5.0.21 against 5.2.41). That reorder moves the JSON length (rawBytes), and through buffer-view order it moves each file's and each figure's Brotli size.
-- **guard**: the order equals the shipped file. Three meshes differ in content: POSITION by at most 1.2e-7 and NORMAL by at most 0.000222, which is the Drift design 3.2 found. The `CastleGuard` Brotli size moves 18 bytes past its ceiling as a result.
-- Builds are deterministic run to run (see below). The difference comes from the exporter version.
-
-## What closes the task (needs someone with authority; not granted here)
-
-Either:
-
-1. **Build on Blender 5.2.** Allow the verified 5.2.4 binary at `scratch/blender52/blender-5.2.4-linux-x64/blender` to run, then rerun P5 with that path as `BLENDER_PATH`. Its exporter matches the shipped generator. Or:
-2. **An owner or plan amendment** to P5 Accept, and to the P4 ceilings, that accepts export-order Drift and Brotli movement for Blender 5.0.1 builds against the 5.2.41 shipped files.
+- The guard drift is the one design 3.2 found and P5 Accept allows: three meshes, POSITION by at most 1.2e-7 and NORMAL by at most 0.000222 (measured in run one; the 5.2 guard file differs from the 5.0.1 one only in the generator string, from byte 72).
+- It does not depend on the Blender version: 5.0.1 and 5.2.4 both give `CastleGuard` 1,174,334 Brotli bytes. It is deterministic: a second BLEND(guard) is byte-identical to the first.
+- P4 set the per-figure ceiling to the shipped file's measured value, 1,174,316. Any rebuild carries the allowed drift and lands 18 bytes over. So P5 Accept ("five compares exit 0" together with "Drift in the three guard meshes is allowed") and P4's ceiling cannot both hold for guard.
+- Closing it needs an owner or plan amendment, outside P5's allowlist (`tests/fixtures/model-contract/guard.json` is P4's file): either raise the `CastleGuard` brotliBytes ceiling to at least 1,174,334, or let P5 accept a guard Budget fail of this cause. Slice 3 removes the guard file, so the ceiling only matters until then.
 
 ## Determinism
 
-Second BLEND(hero): `cmp` of the first and second `hero.glb` prints nothing, so the whole file is byte-identical.
+- Second BLEND(hero): `cmp` against the first `hero.glb` prints nothing; the whole file is byte-identical (and equals the shipped file).
+- Second BLEND(guard): byte-identical to the first.
 
 ## Hash lists
 
-The before and after lists are equal (`diff` prints nothing). They also equal the earlier runs' lists:
+The before and after lists are equal (`diff` prints nothing), and equal to the earlier runs' lists:
 
 ```
 92e8eb785b0b86bbcbc22d11462c53d493ef380e4946abc0f4f4567517cd678a  public/models/gear.glb
@@ -88,12 +79,12 @@ c6d962b9cb8e7a1f6960c691aef24de288654b8a6a40f4e18bfc6f5c2e065295  blender/hero.b
 
 | Item | Result |
 |---|---|
-| five builds exit 0 | met |
-| five compares exit 0 | **not met**: monsters and guard exit 2 (Budget) |
+| five builds exit 0 | met (BLEND(all) and BLEND(guard)) |
+| five compares exit 0 | **four of five**: guard exits 2 (Budget, the residual above) |
 | zero Contract differences | met (all five) |
-| zero Drift apart from generator and the three guard meshes (within 0.00022) | **not met**: gear, monsters and world drift in whole-file rawBytes and brotliBytes. Guard's file brotliBytes also moves |
+| zero Drift apart from generator and the three guard meshes (within 0.00022) | met: hero, gear, monsters and world have zero Drift and are byte-identical; guard drifts only in the three meshes and the file Brotli size they move |
 | the two hash lists are equal | met |
 | UNTOUCHED | met |
 | second BLEND(hero) byte-identical binary chunk | met (whole file identical) |
 
-If a later slice promotes a `monsters.glb`, `gear.glb` or `world.glb` built on 5.0.1, it also reorders the shipped file. Nobody has checked whether the engine depends on node order.
+Later slices that build with Blender should set `BLENDER_PATH` to a 5.2 binary. A 5.0.1 build reorders gear, monsters and world against the shipped files.
