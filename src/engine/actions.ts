@@ -24,7 +24,7 @@ import {
 } from './vfx';
 import { addChatMessage, showBanner, updateTargetHud, updateAllUI, updateSkillsPanel, refreshCombatStyleLocks, requestUiRefresh, el } from '../ui/hud';
 import { STATE } from '../state/gameState';
-import { prepareAttack, playerAttackProfile, playerHitChance, rollMonsterHit, rollMonsterAttack, addMark } from '../state/combat';
+import { prepareAttack, playerAttackProfile, playerHitChance, rollMonsterHit, rollMonsterAttack, addMark, mitigateDamage } from '../state/combat';
 import { creditGp, fishDepletes, gatherChance, rollDrops } from '../state/economy';
 import { addItem, removeItem, canAddItem } from '../state/inventory';
 import { SPELLS } from '../data/magic';
@@ -293,10 +293,13 @@ export function performPlayerAttack(monster: MonsterEntity): void {
       const isKilled = hit.events.some((ev) => ev.kind === 'died');
       if (isKilled) {
         hitStop(monster, HIT_STOP_MS.monsterKill);
+        hitStop(player, HIT_STOP_MS.monsterKill);
       } else if (isSpec || dmg >= maxHit) {
         hitStop(monster, HIT_STOP_MS.monsterMaxHit);
+        hitStop(player, HIT_STOP_MS.monsterMaxHit);
       } else {
         hitStop(monster, HIT_STOP_MS.monsterHit);
+        hitStop(player, HIT_STOP_MS.monsterHit);
       }
 
       const kbAmount = isSpec || dmg >= maxHit ? KNOCK_BACK.monsterMaxHit.amount : KNOCK_BACK.monsterHit.amount;
@@ -306,7 +309,7 @@ export function performPlayerAttack(monster: MonsterEntity): void {
         cameraKick(
           monster.pos.x - player.pos.x,
           monster.pos.z - player.pos.z,
-          Math.min(CAMERA.kickMax, 0.04 + (dmg / maxHit) * 0.08)
+          Math.min(CAMERA.kickMax, CAMERA.kickBase + (dmg / maxHit) * CAMERA.kickSlope)
         );
       }
 
@@ -461,9 +464,7 @@ export function performMonsterRetaliation(monster: MonsterEntity): void {
       addChatMessage("Your shield / prayer absorbs most of Elvarg's dragonfire!", 'skill');
     }
     const isMitigated = absorbedBreath ||
-      (monster.def.style === 'melee' && STATE.activePrayers.has('prot_melee')) ||
-      (monster.def.style === 'magic' && STATE.activePrayers.has('prot_magic')) ||
-      ((monster.def.style === 'ranged' || monster.def.style === 'rapid') && STATE.activePrayers.has('prot_ranged'));
+      mitigateDamage(monster.def.maxHit, monster.def.style, STATE.activePrayers) < monster.def.maxHit;
     if (dmg > 0) {
       STATE.hp = Math.max(0, STATE.hp - dmg);
       flash(player);
@@ -474,7 +475,7 @@ export function performMonsterRetaliation(monster: MonsterEntity): void {
         maybeRetaliate(monster);
       }
     } else {
-      spawnHitSplatOnPlayer(0, isMitigated ? 'blocked' : 'miss');
+      spawnHitSplatOnPlayer(0, absorbedBreath ? 'blocked' : 'miss');
       if (absorbedBreath) {
         maybeRetaliate(monster);
       }
@@ -522,6 +523,7 @@ export function performMonsterHeavy(monster: MonsterEntity, attackId: string): v
     STATE.hp = Math.max(0, STATE.hp - dmg);
     flash(player);
     hitStop(player, HIT_STOP_MS.heroHeavy);
+    hitStop(monster, HIT_STOP_MS.heroHeavy);
     flinchHero(player.pos.x - monster.pos.x, player.pos.z - monster.pos.z);
     knockBack(player, player.pos.x - monster.pos.x, player.pos.z - monster.pos.z, KNOCK_BACK.heroHeavy.amount);
     cameraKick(player.pos.x - monster.pos.x, player.pos.z - monster.pos.z, CAMERA.kickMax);

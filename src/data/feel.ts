@@ -31,6 +31,8 @@ export const KNOCK_BACK = {
 
 export const CAMERA = {
   kickMax: 0.18,
+  kickBase: 0.04,
+  kickSlope: 0.06,
   kickMs: 140,
   rumbleMs: 600,
   rumbleAmp: 0.08,
