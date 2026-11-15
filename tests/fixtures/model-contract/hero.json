@@ -1,0 +1,387 @@
+{
+  "nodes": {
+    "HeadGroup": {
+      "parent": "HeroRoot",
+      "translation": [
+        0,
+        1.86,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "LeftElbowPivot": {
+      "parent": "LeftArmPivot",
+      "translation": [
+        0,
+        -0.26,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "LeftArmPivot": {
+      "parent": "HeroRoot",
+      "translation": [
+        -0.28,
+        1.465,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "LeftKneePivot": {
+      "parent": "LeftLegPivot",
+      "translation": [
+        0,
+        -0.38,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "LeftLegPivot": {
+      "parent": "HeroRoot",
+      "translation": [
+        -0.11,
+        0.865,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "RightElbowPivot": {
+      "parent": "RightArmPivot",
+      "translation": [
+        0,
+        -0.26,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "RightArmPivot": {
+      "parent": "HeroRoot",
+      "translation": [
+        0.28,
+        1.465,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "RightKneePivot": {
+      "parent": "RightLegPivot",
+      "translation": [
+        0,
+        -0.38,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "RightLegPivot": {
+      "parent": "HeroRoot",
+      "translation": [
+        0.11,
+        0.865,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Torso": {
+      "parent": "HeroRoot",
+      "translation": [
+        0,
+        1.24,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "HeroRoot": {
+      "parent": null,
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    }
+  },
+  "materials": [
+    "Mat_Belt",
+    "Mat_Boot_L",
+    "Mat_Boot_R",
+    "Mat_Bracer_L",
+    "Mat_Bracer_R",
+    "Mat_Eyes",
+    "Mat_Hair",
+    "Mat_Hand_L",
+    "Mat_Hand_R",
+    "Mat_Head",
+    "Mat_InnerChest",
+    "Mat_Shin_L",
+    "Mat_Shin_R",
+    "Mat_Sleeve_L",
+    "Mat_Sleeve_R",
+    "Mat_Thigh_L",
+    "Mat_Thigh_R",
+    "Mat_TorsoCoat"
+  ],
+  "toggled": [
+    "Hair",
+    "TorsoCoat"
+  ],
+  "meshClasses": [
+    "^Cube\\.-?\\d+$",
+    "^Plane\\.-?\\d+$"
+  ],
+  "extras": {
+    "Eyes": [
+      "noOutline",
+      "part"
+    ],
+    "Hair": [
+      "noOutline",
+      "part"
+    ],
+    "Head": [
+      "noOutline",
+      "part"
+    ],
+    "Bracer_L": [
+      "noOutline",
+      "part"
+    ],
+    "Hand_L": [
+      "noOutline",
+      "part"
+    ],
+    "Sleeve_L": [
+      "part"
+    ],
+    "Boot_L": [
+      "part"
+    ],
+    "Shin_L": [
+      "part"
+    ],
+    "Thigh_L": [
+      "part"
+    ],
+    "Bracer_R": [
+      "noOutline",
+      "part"
+    ],
+    "Hand_R": [
+      "noOutline",
+      "part"
+    ],
+    "Sleeve_R": [
+      "part"
+    ],
+    "Boot_R": [
+      "part"
+    ],
+    "Shin_R": [
+      "part"
+    ],
+    "Thigh_R": [
+      "part"
+    ],
+    "Belt": [
+      "part"
+    ],
+    "InnerChest": [
+      "part"
+    ],
+    "TorsoCoat": [
+      "part"
+    ]
+  },
+  "centres": {
+    "Hand_L": [
+      -0.199724,
+      -0.315326,
+      0.080748
+    ],
+    "Hand_R": [
+      0.192422,
+      -0.314007,
+      0.084586
+    ],
+    "Boot_L": [
+      -0.111998,
+      -0.295218,
+      -0.045476
+    ],
+    "Boot_R": [
+      0.08508,
+      -0.295218,
+      -0.045496
+    ],
+    "Head": [
+      -0.009584,
+      -0.180774,
+      -0.045434
+    ]
+  },
+  "vertexColor": "none",
+  "clips": {
+    "Idle": {
+      "moves": [
+        "HeadGroup",
+        "LeftArmPivot",
+        "LeftElbowPivot",
+        "LeftLegPivot",
+        "RightArmPivot",
+        "RightElbowPivot",
+        "RightLegPivot",
+        "Torso"
+      ]
+    },
+    "Walk": {
+      "moves": [
+        "HeadGroup",
+        "LeftArmPivot",
+        "LeftElbowPivot",
+        "LeftKneePivot",
+        "LeftLegPivot",
+        "RightArmPivot",
+        "RightElbowPivot",
+        "RightKneePivot",
+        "RightLegPivot",
+        "Torso"
+      ]
+    },
+    "Slash": {
+      "moves": [
+        "HeadGroup",
+        "RightArmPivot",
+        "RightElbowPivot",
+        "Torso"
+      ]
+    },
+    "Lunge": {
+      "moves": [
+        "HeadGroup",
+        "LeftArmPivot",
+        "LeftKneePivot",
+        "LeftLegPivot",
+        "RightArmPivot",
+        "RightElbowPivot",
+        "RightKneePivot",
+        "RightLegPivot",
+        "Torso"
+      ]
+    },
+    "Ranged": {
+      "moves": [
+        "HeadGroup",
+        "LeftArmPivot",
+        "LeftElbowPivot",
+        "LeftKneePivot",
+        "LeftLegPivot",
+        "RightArmPivot",
+        "RightElbowPivot",
+        "RightKneePivot",
+        "RightLegPivot",
+        "Torso"
+      ]
+    },
+    "Cast": {
+      "moves": [
+        "HeadGroup",
+        "LeftArmPivot",
+        "LeftElbowPivot",
+        "LeftLegPivot",
+        "RightArmPivot",
+        "RightElbowPivot",
+        "RightLegPivot",
+        "Torso"
+      ]
+    },
+    "Chop": {
+      "moves": [
+        "HeadGroup",
+        "LeftArmPivot",
+        "RightArmPivot",
+        "Torso"
+      ]
+    },
+    "Mine": {
+      "moves": [
+        "HeadGroup",
+        "RightArmPivot",
+        "Torso"
+      ]
+    },
+    "SpinSlash": {
+      "moves": [
+        "HeadGroup",
+        "LeftArmPivot",
+        "RightArmPivot",
+        "Torso"
+      ]
+    },
+    "Fish": {
+      "moves": [
+        "LeftArmPivot",
+        "RightArmPivot",
+        "Torso"
+      ]
+    }
+  },
+  "budget": {
+    "triangles": 5304,
+    "meshes": 18,
+    "materials": 18,
+    "rawBytes": 219013,
+    "brotliBytes": 139293
+  },
+  "figures": {
+    "HeroRoot": {
+      "triangles": 5304,
+      "meshes": 18,
+      "materials": 18,
+      "rawBytes": 140112,
+      "brotliBytes": 111831
+    }
+  }
+}

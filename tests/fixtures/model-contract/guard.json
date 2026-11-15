@@ -1,0 +1,48 @@
+{
+  "nodes": {
+    "CastleGuard": {
+      "parent": null,
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    }
+  },
+  "materials": [
+    "mat_guard_leather",
+    "mat_guard_steel"
+  ],
+  "toggled": [],
+  "meshClasses": [
+    "^Circle\\.-?\\d+$",
+    "^Cylinder$",
+    "^Cylinder\\.-?\\d+$",
+    "^Mesh\\.-?\\d+$",
+    "^Plane\\.-?\\d+$"
+  ],
+  "extras": {},
+  "vertexColor": "none",
+  "clips": {},
+  "budget": {
+    "triangles": 53598,
+    "meshes": 27,
+    "materials": 2,
+    "rawBytes": 1722414,
+    "brotliBytes": 1186094
+  },
+  "figures": {
+    "CastleGuard": {
+      "triangles": 53598,
+      "meshes": 27,
+      "materials": 2,
+      "rawBytes": 1682420,
+      "brotliBytes": 1174316
+    }
+  }
+}

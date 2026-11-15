@@ -7,7 +7,7 @@ import { readGlb, readAccessor, brotli3Bytes } from './lib/glb.mjs';
 const ROOT = fs.realpathSync(path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'));
 const BUDGET_KEYS = ['triangles', 'meshes', 'materials', 'rawBytes', 'brotliBytes'];
 const MANIFEST_KEYS = ['nodes', 'materials', 'toggled', 'meshClasses', 'extras', 'centres', 'vertexColor', 'clips', 'skin', 'budget', 'figures'];
-const SKIN_KEYS = ['skeleton', 'bones', 'skinnedRoots', 'sharedClips', 'limbs', 'maxLimbDegrees'];
+const SKIN_KEYS = ['skeleton', 'bones', 'skinnedRoots', 'sharedClips', 'limbs', 'maxLimbDegrees', 'attackClips'];
 
 /** A key compare does not read would pass unchecked, so it refuses the manifest (exit 3). */
 function refuseUnknownKeys(obj, allowed, where) {
@@ -33,7 +33,7 @@ function isInside(p, dir) {
 }
 
 /** Triangles, meshes, materials, raw and Brotli quality 3 bytes of the meshes in the subtree of one root node. */
-function figureStats(doc, rootIdx) {
+export function figureStats(doc, rootIdx) {
   const nodes = doc.json.nodes || [];
   const stack = [rootIdx];
   const seen = new Set();
@@ -530,6 +530,24 @@ function run() {
       }
     }
 
+    // 6d2. Attack clips: { <clip>: anticipation seconds }. The clip must exist, the time must lie strictly inside it
+    // and fall on one of its keyframes (the wind-up scrub stops there, so a time between keys would stop between poses).
+    for (const [clipName, time] of Object.entries(skinDef.attackClips ?? {})) {
+      if (!Number.isFinite(time) || time <= 0) throw new Error(`Manifest attack clip '${clipName}' needs a positive numeric anticipation time`);
+      const anim = (built.json.animations || []).find((a) => a.name === clipName);
+      if (!anim) {
+        contractErrors.push(`Attack clip '${clipName}' is missing`);
+        continue;
+      }
+      const inputs = (anim.samplers || []).map((smp) => readAccessor(built, smp.input));
+      const duration = Math.max(0, ...inputs.map((t) => (t.length ? t[t.length - 1] : 0)));
+      if (time >= duration) {
+        contractErrors.push(`Attack clip '${clipName}' anticipation ${time} s is not before its end at ${duration} s`);
+      } else if (!inputs.some((t) => Array.from(t).some((k) => Math.abs(k - time) <= 0.001))) {
+        contractErrors.push(`Attack clip '${clipName}' has no keyframe at its anticipation time ${time} s`);
+      }
+    }
+
     // 6e. Limbs angle check
     if (skinDef.limbs) {
       const maxDeg = skinDef.maxLimbDegrees;
@@ -720,6 +738,7 @@ function run() {
 }
 
 function main() {
+  if (process.argv[1] !== fileURLToPath(import.meta.url)) return; // imported for figureStats, not run
   try {
     run();
   } catch (err) {

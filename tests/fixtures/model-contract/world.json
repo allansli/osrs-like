@@ -1,0 +1,742 @@
+{
+  "nodes": {
+    "World_altar": {
+      "parent": null,
+      "translation": [
+        -7.6,
+        0,
+        6.2
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "World_bag_closed": {
+      "parent": null,
+      "translation": [
+        10,
+        0,
+        16.5
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "World_bag_grain": {
+      "parent": null,
+      "translation": [
+        6,
+        0,
+        16.5
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "World_bank_booth": {
+      "parent": null,
+      "translation": [
+        4,
+        0,
+        6.2
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "World_barrel": {
+      "parent": null,
+      "translation": [
+        -10,
+        0,
+        16.5
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "World_box_apples": {
+      "parent": null,
+      "translation": [
+        2,
+        0,
+        16.5
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "World_box_cabbage": {
+      "parent": null,
+      "translation": [
+        -2,
+        0,
+        16.5
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "World_castle": {
+      "parent": null,
+      "translation": [
+        0,
+        0,
+        -21
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "World_crate": {
+      "parent": null,
+      "translation": [
+        -6,
+        0,
+        16.5
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "World_fishing_spot": {
+      "parent": null,
+      "translation": [
+        4.6,
+        0,
+        11.8
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "World_forge": {
+      "parent": null,
+      "translation": [
+        -1.8,
+        0,
+        6.2
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "World_lava_fissure": {
+      "parent": null,
+      "translation": [
+        9.2,
+        0,
+        11.8
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "World_magic_tree": {
+      "parent": null,
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "World_maple_tree": {
+      "parent": null,
+      "translation": [
+        9.6,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "World_mystic_mushroom": {
+      "parent": null,
+      "translation": [
+        13.2,
+        0,
+        6.2
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "World_normal_tree": {
+      "parent": null,
+      "translation": [
+        -14.4,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "World_oak_tree": {
+      "parent": null,
+      "translation": [
+        -9.6,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "World_obsidian_spire": {
+      "parent": null,
+      "translation": [
+        -14.5,
+        0,
+        -15
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "World_ore_rock": {
+      "parent": null,
+      "translation": [
+        -4.6,
+        0,
+        11.8
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "World_palm_tree": {
+      "parent": null,
+      "translation": [
+        14.4,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "World_plaza_pillar": {
+      "parent": null,
+      "translation": [
+        -18.5,
+        0,
+        -9.5
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "World_river_bridge": {
+      "parent": null,
+      "translation": [
+        0,
+        0,
+        -7.2
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "World_rock_depleted": {
+      "parent": null,
+      "translation": [
+        0,
+        0,
+        11.8
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "World_sandstone_arch": {
+      "parent": null,
+      "translation": [
+        14.5,
+        0,
+        -15
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "World_shrine": {
+      "parent": null,
+      "translation": [
+        -12.8,
+        0,
+        6.2
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "World_tree_stump": {
+      "parent": null,
+      "translation": [
+        -9.2,
+        0,
+        11.8
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "World_willow_tree": {
+      "parent": null,
+      "translation": [
+        -4.8,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "World_woods_lantern": {
+      "parent": null,
+      "translation": [
+        8.8,
+        0,
+        6.2
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "World_yew_tree": {
+      "parent": null,
+      "translation": [
+        4.8,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    }
+  },
+  "materials": [
+    "mat_bark",
+    "mat_cloth",
+    "mat_crystal",
+    "mat_foliage",
+    "mat_gold",
+    "mat_iron",
+    "mat_lava",
+    "mat_mushroom_cap",
+    "mat_obsidian",
+    "mat_ore_vein",
+    "mat_sandstone",
+    "mat_slate",
+    "mat_stone",
+    "mat_water",
+    "mat_wood"
+  ],
+  "toggled": [],
+  "meshClasses": [
+    "^Altar_CandleFlame_-?\\d+$",
+    "^Altar_CandleWax_-?\\d+$",
+    "^Altar_Candlestick_-?\\d+$",
+    "^Altar_CelestialHalo$",
+    "^Altar_Chalice$",
+    "^Altar_ClothBackDrop$",
+    "^Altar_ClothFrontDrop$",
+    "^Altar_ClothTop$",
+    "^Altar_Col_-?\\d+\\.-?\\d+_-?\\d+\\.-?\\d+$",
+    "^Altar_GoldCrossBar$",
+    "^Altar_GoldCrossFront$",
+    "^Altar_GoldFriezeBack$",
+    "^Altar_GoldFriezeFront$",
+    "^Altar_MainBase$",
+    "^Altar_MensaSlab$",
+    "^Altar_PlatformStepA$",
+    "^Altar_PlatformStepB$",
+    "^Altar_PrayerCrystal$",
+    "^Bank_CoinStack_-?\\d+$",
+    "^Bank_Column_-?\\d+\\.-?\\d+$",
+    "^Bank_CounterBody$",
+    "^Bank_CounterTopSlab$",
+    "^Bank_FrontPanel_-?\\d+\\.-?\\d+$",
+    "^Bank_GoldLintel$",
+    "^Bank_GrilleBar_-?\\d+\\.-?\\d+$",
+    "^Bank_GrilleTransom$",
+    "^Bank_LedgerScroll$",
+    "^Bank_RoofCornice$",
+    "^Bank_SignBoardBacking$",
+    "^Bank_StonePlinth$",
+    "^Bridge_Abutment_-?\\d+\\.-?\\d+$",
+    "^Bridge_Handrail_-?\\d+\\.-?\\d+$",
+    "^Bridge_Plank_-?\\d+$",
+    "^Bridge_PostCap_-?\\d+\\.-?\\d+_-?\\d+$",
+    "^Bridge_Post_-?\\d+\\.-?\\d+_-?\\d+$",
+    "^Bridge_Stringer_-?\\d+\\.-?\\d+$",
+    "^Castle_Finial_NE$",
+    "^Castle_Finial_NW$",
+    "^Castle_Finial_SE$",
+    "^Castle_Finial_SW$",
+    "^Castle_GatehouseHeader$",
+    "^Castle_GatehouseHoarding$",
+    "^Castle_KeepBody$",
+    "^Castle_KeepCornice$",
+    "^Castle_KeepDoorFrame$",
+    "^Castle_KeepDoorWood$",
+    "^Castle_KeepFinial$",
+    "^Castle_KeepPilaster_-?\\d+\\.-?\\d+_-?\\d+\\.-?\\d+$",
+    "^Castle_KeepPlinth$",
+    "^Castle_KeepRoof$",
+    "^Castle_KeepStringcourse$",
+    "^Castle_KeepWindowUpper_-?\\d+\\.-?\\d+$",
+    "^Castle_Merlon_Back_-?\\d+$",
+    "^Castle_Merlon_FrontL_-?\\d+$",
+    "^Castle_Merlon_FrontR_-?\\d+$",
+    "^Castle_Merlon_Left_-?\\d+$",
+    "^Castle_Merlon_Right_-?\\d+$",
+    "^Castle_PortcullisSpike_-?\\d+\\.-?\\d+$",
+    "^Castle_Spire_NE$",
+    "^Castle_Spire_NW$",
+    "^Castle_Spire_SE$",
+    "^Castle_Spire_SW$",
+    "^Castle_Tower_NE$",
+    "^Castle_Tower_NW$",
+    "^Castle_Tower_SE$",
+    "^Castle_Tower_SW$",
+    "^Castle_WallBack$",
+    "^Castle_WallFrontLeft$",
+    "^Castle_WallFrontRight$",
+    "^Castle_WallLeft$",
+    "^Castle_WallRight$",
+    "^FishingSpot_BobberPeg_-?\\d+$",
+    "^FishingSpot_BobberRed_-?\\d+$",
+    "^FishingSpot_BobberWhite_-?\\d+$",
+    "^FishingSpot_FishBody_-?\\d+$",
+    "^FishingSpot_FishTail_-?\\d+$",
+    "^FishingSpot_RippleInner$",
+    "^FishingSpot_RippleMid$",
+    "^FishingSpot_RippleOuter$",
+    "^Forge_AnvilFace$",
+    "^Forge_AnvilFoot$",
+    "^Forge_AnvilHorn$",
+    "^Forge_AnvilStump$",
+    "^Forge_AnvilWaist$",
+    "^Forge_ArchKeystone$",
+    "^Forge_BellowsBag$",
+    "^Forge_BellowsBot$",
+    "^Forge_BellowsTop$",
+    "^Forge_BucketWater$",
+    "^Forge_ChimneyStack$",
+    "^Forge_FurnacePlinth$",
+    "^Forge_HammerHead$",
+    "^Forge_HammerShaft$",
+    "^Forge_HearthBackWall$",
+    "^Forge_HearthLeftWall$",
+    "^Forge_HearthRightWall$",
+    "^Forge_MoltenCoalBed$",
+    "^Forge_QuenchBucket$",
+    "^Forge_StumpHoopBot$",
+    "^Forge_StumpHoopTop$",
+    "^LavaFissure_BasaltLip_-?\\d+$",
+    "^LavaFissure_BranchCrack$",
+    "^LavaFissure_Bubble_-?\\d+$",
+    "^LavaFissure_MainCrack$",
+    "^MagicTree_ArcaneLobeE$",
+    "^MagicTree_ArcaneLobeW$",
+    "^MagicTree_Branch_-?\\d+$",
+    "^MagicTree_CrownApex$",
+    "^MagicTree_CrownCenter$",
+    "^MagicTree_CrownEast$",
+    "^MagicTree_CrownSouth$",
+    "^MagicTree_CrownWest$",
+    "^MagicTree_GoldRingBot$",
+    "^MagicTree_GoldRingTop$",
+    "^MagicTree_Mote_-?\\d+$",
+    "^MagicTree_RuneSpiral_-?\\d+$",
+    "^MagicTree_Trunk$",
+    "^MapleTree_Branch_-?\\d+$",
+    "^MapleTree_LayerBot$",
+    "^MapleTree_LayerMid$",
+    "^MapleTree_LayerTop$",
+    "^MapleTree_SideEast$",
+    "^MapleTree_SideNorth$",
+    "^MapleTree_SideWest$",
+    "^MapleTree_Trunk$",
+    "^Mushroom_GlowSpot_-?\\d+$",
+    "^Mushroom_Main_Cap$",
+    "^Mushroom_Main_Gills$",
+    "^Mushroom_Main_Stem$",
+    "^Mushroom_SubA_Cap$",
+    "^Mushroom_SubA_Gills$",
+    "^Mushroom_SubA_Stem$",
+    "^Mushroom_SubB_Cap$",
+    "^Mushroom_SubB_Gills$",
+    "^Mushroom_SubB_Stem$",
+    "^NormalTree_Branch_-?\\d+$",
+    "^NormalTree_Root_-?\\d+$",
+    "^NormalTree_SpireTip$",
+    "^NormalTree_TierBot$",
+    "^NormalTree_TierHigh$",
+    "^NormalTree_TierMid$",
+    "^NormalTree_TierTop$",
+    "^NormalTree_Trunk$",
+    "^OakTree_ApexCrown$",
+    "^OakTree_Bough_-?\\d+$",
+    "^OakTree_CenterDome$",
+    "^OakTree_EastDome$",
+    "^OakTree_NorthEast$",
+    "^OakTree_NorthWest$",
+    "^OakTree_Root_-?\\d+$",
+    "^OakTree_SouthFront$",
+    "^OakTree_Trunk$",
+    "^OakTree_WestDome$",
+    "^ObsidianSpire_BaseCrust$",
+    "^ObsidianSpire_HellfireCore$",
+    "^ObsidianSpire_MagmaVein_-?\\d+$",
+    "^ObsidianSpire_MainMonolith$",
+    "^ObsidianSpire_OrbitShard_-?\\d+$",
+    "^ObsidianSpire_ShardA$",
+    "^ObsidianSpire_ShardB$",
+    "^ObsidianSpire_ShardC$",
+    "^OreRock_BackStone$",
+    "^OreRock_FrontStone$",
+    "^OreRock_MainBoulder$",
+    "^OreRock_SideBoulder$",
+    "^OreRock_Vein_-?\\d+$",
+    "^PalmTree_Dates_-?\\d+$",
+    "^PalmTree_Frond_-?\\d+$",
+    "^PalmTree_Trunk$",
+    "^PlazaPillar_Abacus$",
+    "^PlazaPillar_BaseRing$",
+    "^PlazaPillar_BaseSlab$",
+    "^PlazaPillar_BrazierBowl$",
+    "^PlazaPillar_BrazierFlame$",
+    "^PlazaPillar_FlutedShaft$",
+    "^PlazaPillar_GoldCapital$",
+    "^PlazaPillar_NeckRing$",
+    "^PlazaPillar_PlinthMold$",
+    "^RockDepleted_RimEast$",
+    "^RockDepleted_RimNorth$",
+    "^RockDepleted_RimSouth$",
+    "^RockDepleted_RimWest$",
+    "^RockDepleted_Rubble_-?\\d+$",
+    "^SandstoneArch_BandBot_-?\\d+\\.-?\\d+$",
+    "^SandstoneArch_BandTop_-?\\d+\\.-?\\d+$",
+    "^SandstoneArch_LintelCornice$",
+    "^SandstoneArch_LintelGold$",
+    "^SandstoneArch_LintelLower$",
+    "^SandstoneArch_Pillar_-?\\d+\\.-?\\d+$",
+    "^SandstoneArch_Plinth_-?\\d+\\.-?\\d+$",
+    "^SandstoneArch_SunDisc$",
+    "^SandstoneArch_SunGem$",
+    "^SandstoneArch_Wing_-?\\d+\\.-?\\d+$",
+    "^Shrine_BollardGem_-?\\d+$",
+    "^Shrine_Bollard_-?\\d+$",
+    "^Shrine_CapitalCap$",
+    "^Shrine_DaisStepA$",
+    "^Shrine_DaisStepB$",
+    "^Shrine_GoldBandBot$",
+    "^Shrine_GoldBandTop$",
+    "^Shrine_GoldHalo$",
+    "^Shrine_ObeliskPillar$",
+    "^Shrine_OrbitShard_-?\\d+$",
+    "^Shrine_TeleportRune$",
+    "^TreeStump_AxeNotch$",
+    "^TreeStump_BarkBody$",
+    "^TreeStump_Heartwood$",
+    "^TreeStump_Root_-?\\d+$",
+    "^WillowTree_Branch_-?\\d+$",
+    "^WillowTree_CrownMain$",
+    "^WillowTree_CrownTop$",
+    "^WillowTree_Frond_-?\\d+$",
+    "^WillowTree_Root_-?\\d+$",
+    "^WillowTree_Trunk$",
+    "^WoodsLantern_BaseMoss$",
+    "^WoodsLantern_CageBase$",
+    "^WoodsLantern_ChainRing$",
+    "^WoodsLantern_FlameCore$",
+    "^WoodsLantern_PagodaRoof$",
+    "^WoodsLantern_PedestalA$",
+    "^WoodsLantern_PedestalB$",
+    "^WoodsLantern_Post$",
+    "^WoodsLantern_PostMoss$",
+    "^WoodsLantern_SpiritOrb$",
+    "^World_bag_closed_mat_cloth$",
+    "^World_bag_closed_mat_wood$",
+    "^World_bag_grain_mat_cloth$",
+    "^World_bag_grain_mat_sandstone$",
+    "^World_barrel_mat_iron$",
+    "^World_barrel_mat_wood$",
+    "^World_box_apples_mat_cloth$",
+    "^World_box_apples_mat_wood$",
+    "^World_box_cabbage_mat_foliage$",
+    "^World_box_cabbage_mat_wood$",
+    "^World_crate_mat_wood$",
+    "^YewTree_Berry_-?\\d+$",
+    "^YewTree_EastPad$",
+    "^YewTree_MainPad$",
+    "^YewTree_Rib_-?\\d+$",
+    "^YewTree_SouthPad$",
+    "^YewTree_Trunk$",
+    "^YewTree_UpperPad$",
+    "^YewTree_WestPad$"
+  ],
+  "extras": {
+    "World_altar": [
+      "worldAssetId"
+    ],
+    "World_bag_closed": [
+      "worldAssetId"
+    ],
+    "World_bag_grain": [
+      "worldAssetId"
+    ],
+    "World_bank_booth": [
+      "worldAssetId"
+    ],
+    "World_barrel": [
+      "worldAssetId"
+    ],
+    "World_box_apples": [
+      "worldAssetId"
+    ],
+    "World_box_cabbage": [
+      "worldAssetId"
+    ],
+    "World_castle": [
+      "worldAssetId"
+    ],
+    "World_crate": [
+      "worldAssetId"
+    ],
+    "World_fishing_spot": [
+      "worldAssetId"
+    ],
+    "World_forge": [
+      "worldAssetId"
+    ],
+    "World_lava_fissure": [
+      "worldAssetId"
+    ],
+    "World_magic_tree": [
+      "worldAssetId"
+    ],
+    "World_maple_tree": [
+      "worldAssetId"
+    ],
+    "World_mystic_mushroom": [
+      "worldAssetId"
+    ],
+    "World_normal_tree": [
+      "worldAssetId"
+    ],
+    "World_oak_tree": [
+      "worldAssetId"
+    ],
+    "World_obsidian_spire": [
+      "worldAssetId"
+    ],
+    "World_ore_rock": [
+      "worldAssetId"
+    ],
+    "World_palm_tree": [
+      "worldAssetId"
+    ],
+    "World_plaza_pillar": [
+      "worldAssetId"
+    ],
+    "World_river_bridge": [
+      "worldAssetId"
+    ],
+    "World_rock_depleted": [
+      "worldAssetId"
+    ],
+    "World_sandstone_arch": [
+      "worldAssetId"
+    ],
+    "World_shrine": [
+      "worldAssetId"
+    ],
+    "World_tree_stump": [
+      "worldAssetId"
+    ],
+    "World_willow_tree": [
+      "worldAssetId"
+    ],
+    "World_woods_lantern": [
+      "worldAssetId"
+    ],
+    "World_yew_tree": [
+      "worldAssetId"
+    ]
+  },
+  "vertexColor": "none",
+  "clips": {},
+  "budget": {
+    "triangles": 41776,
+    "meshes": 433,
+    "materials": 15,
+    "rawBytes": 2804423,
+    "brotliBytes": 494741
+  }
+}
