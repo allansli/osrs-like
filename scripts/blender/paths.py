@@ -57,9 +57,7 @@ def out_dir() -> str:
     return resolved
 
 
-def checked_write(path: str | None) -> str | None:
-    if path is None:
-        return None
+def checked_write(path: str) -> str:
     resolved = os.path.realpath(os.path.expanduser(path))
     _check_forbidden(resolved)
     os.makedirs(os.path.dirname(resolved), exist_ok=True)
@@ -77,16 +75,9 @@ def blend_path(name: str) -> str:
 
 
 def source(rel: str) -> str:
-    prefix = "blender" + os.sep + "examples" + os.sep
-    alt_prefix = "blender/examples/"
+    prefix = "blender/examples/"
     if rel.startswith(prefix):
         rel = rel[len(prefix) :]
-    elif rel.startswith(alt_prefix):
-        rel = rel[len(alt_prefix) :]
-    elif rel.startswith("examples" + os.sep):
-        rel = rel[len("examples" + os.sep) :]
-    elif rel.startswith("examples/"):
-        rel = rel[len("examples/") :]
     return os.path.abspath(os.path.join(repo_root(), "blender", "examples", rel))
 
 
