@@ -4,8 +4,11 @@ import type { Voice } from '../state/soundPlan';
 // ============================================================================
 // 1. PROCEDURAL WEB AUDIO SYNTHESIZER
 // ============================================================================
+// Stops one scheduled voice, started or not, with a short fade.
+export type VoiceStop = () => void;
+
 export interface SoundEffects {
-  play(plan: Voice[], wide: boolean): void;
+  play(plan: Voice[], wide: boolean): VoiceStop[];
   setMuted(muted: boolean): void;
   hit(): void;
   miss(): void;
@@ -38,6 +41,25 @@ let creationFailed = false;
 let creationWarned = false;
 let nodeWarned = false;
 
+const FADE_S = 0.02;
+
+function fadeOut(c: AudioContext, src: AudioScheduledSourceNode, gain: GainNode): VoiceStop {
+  return () => {
+    try {
+      const now = c.currentTime;
+      gain.gain.cancelScheduledValues(now);
+      gain.gain.setValueAtTime(gain.gain.value, now);
+      gain.gain.linearRampToValueAtTime(0, now + FADE_S);
+      src.stop(now + FADE_S);
+    } catch (err) {
+      if (!nodeWarned) {
+        nodeWarned = true;
+        console.warn('Voice stop failed', err);
+      }
+    }
+  };
+}
+
 function setupMasterChain(): void {
   masterGain = ctx!.createGain();
   masterGain.gain.setValueAtTime(1, ctx!.currentTime);
@@ -66,15 +88,17 @@ function tone(
   vol = 0.12,
   slideTo?: number,
   cap = 12
-): void {
-  if (!ctx || ctx.state !== 'running' || !masterGain) return;
-  if (liveVoices >= cap) return;
+): VoiceStop | null {
+  if (!ctx || ctx.state !== 'running' || !masterGain) return null;
+  if (liveVoices >= cap) return null;
 
   try {
     const startTime = ctx.currentTime + offset;
     const stopTime = startTime + duration;
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
+    // Silent until its start, so a stop before the start never blips.
+    gain.gain.value = 0;
 
     osc.type = type;
     osc.frequency.setValueAtTime(freq, startTime);
@@ -104,11 +128,13 @@ function tone(
 
     osc.start(startTime);
     osc.stop(stopTime);
+    return fadeOut(ctx, osc, gain);
   } catch (err) {
     if (!nodeWarned) {
       nodeWarned = true;
       console.warn('Tone playback failed', err);
     }
+    return null;
   }
 }
 
@@ -119,9 +145,9 @@ function noise(
   vol = 0.12,
   cap = 12,
   slideTo?: number
-): void {
-  if (!ctx || ctx.state !== 'running' || !masterGain) return;
-  if (liveVoices >= cap) return;
+): VoiceStop | null {
+  if (!ctx || ctx.state !== 'running' || !masterGain) return null;
+  if (liveVoices >= cap) return null;
 
   try {
     const startTime = ctx.currentTime + offset;
@@ -138,6 +164,7 @@ function noise(
     filter.Q.setValueAtTime(1, startTime);
 
     const gain = ctx.createGain();
+    gain.gain.value = 0;
     gain.gain.setValueAtTime(vol, startTime);
     gain.gain.exponentialRampToValueAtTime(0.001, stopTime);
 
@@ -162,28 +189,33 @@ function noise(
 
     source.start(startTime);
     source.stop(stopTime);
+    return fadeOut(ctx, source, gain);
   } catch (err) {
     if (!nodeWarned) {
       nodeWarned = true;
       console.warn('Noise playback failed', err);
     }
+    return null;
   }
 }
 
 // wide: wind-up and impact cues may use up to 16 voices (design 6.7); all others 12.
-function play(plan: Voice[], wide: boolean): void {
-  if (!STATE.audioEnabled) return;
-  if (!ctx || ctx.state !== 'running' || !masterGain) return;
+// Returns a stop for every voice it scheduled; a voice dropped by the cap or a muted context has none.
+function play(plan: Voice[], wide: boolean): VoiceStop[] {
+  const stops: VoiceStop[] = [];
+  if (!STATE.audioEnabled) return stops;
+  if (!ctx || ctx.state !== 'running' || !masterGain) return stops;
 
   const cap = wide ? 16 : 12;
 
   for (const v of plan) {
-    if (v.kind === 'tone') {
-      tone(v.at, v.freq, v.type, v.dur, v.vol, v.slideTo, cap);
-    } else if (v.kind === 'noise') {
-      noise(v.at, v.freq, v.dur, v.vol, cap, v.slideTo);
-    }
+    const stop =
+      v.kind === 'tone'
+        ? tone(v.at, v.freq, v.type, v.dur, v.vol, v.slideTo, cap)
+        : noise(v.at, v.freq, v.dur, v.vol, cap, v.slideTo);
+    if (stop) stops.push(stop);
   }
+  return stops;
 }
 
 export function setMuted(muted: boolean): void {
@@ -192,7 +224,7 @@ export function setMuted(muted: boolean): void {
     const now = ctx.currentTime;
     masterGain.gain.cancelScheduledValues(now);
     masterGain.gain.setValueAtTime(masterGain.gain.value, now);
-    masterGain.gain.linearRampToValueAtTime(muted ? 0 : 1, now + 0.02);
+    masterGain.gain.linearRampToValueAtTime(muted ? 0 : 1, now + FADE_S);
   } catch (err) {
     if (!nodeWarned) {
       nodeWarned = true;

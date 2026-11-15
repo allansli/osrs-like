@@ -117,3 +117,15 @@ describe('telegraph fill (review 7): lattice', () => {
     expect(triangles('ashen_nova')).toBeLessThan(1400);
   });
 });
+
+describe('telegraph sound (review 10): clearing a shape stops its wind-up voices', () => {
+  it('every voice attached to the telegraph is stopped once on clear', () => {
+    const m = show('overhead_slam');
+    const voices = [vi.fn(), vi.fn(), vi.fn()];
+    m.telegraph!.sound = voices;
+    clearTelegraph(m);
+    for (const v of voices) expect(v).toHaveBeenCalledTimes(1);
+    clearTelegraph(m);
+    for (const v of voices) expect(v).toHaveBeenCalledTimes(1);
+  });
+});

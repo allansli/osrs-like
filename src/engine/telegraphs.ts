@@ -5,6 +5,7 @@ import { fillScale, shapeOutline } from '../state/telegraph';
 import { getTerrainHeight, TERRAIN_SEGMENTS, TERRAIN_SIZE } from '../state/terrain';
 import { disposeObject3D } from './dispose';
 import { G } from './context';
+import type { VoiceStop } from './audio';
 import type { MonsterEntity } from './context';
 
 export interface TelegraphInstance {
@@ -22,6 +23,8 @@ export interface TelegraphInstance {
   dz: number;
   baseCoords: number[];
   heights: HeightGrid;
+  // The wind-up cue's voices, stopped when the shape is cleared (a cancel, a death, a reset, the resolve).
+  sound: VoiceStop[];
 }
 
 const activeTelegraphs = new Set<TelegraphInstance>();
@@ -440,7 +443,8 @@ export function showTelegraph(
     dx: event.dx,
     dz: event.dz,
     baseCoords: fillData.baseCoords,
-    heights: buildHeightGrid(fillData.baseCoords, event.ox, event.oz, event.dx, event.dz)
+    heights: buildHeightGrid(fillData.baseCoords, event.ox, event.oz, event.dx, event.dz),
+    sound: []
   };
 
   monster.telegraph = instance;
@@ -460,5 +464,6 @@ export function clearTelegraph(monster: MonsterEntity): void {
   if (!t) return;
   monster.telegraph = null;
   activeTelegraphs.delete(t);
+  for (const stop of t.sound) stop();
   disposeObject3D(t.group);
 }

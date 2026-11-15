@@ -675,7 +675,7 @@ export function updateMonsters(f: FrameState): void {
       } else if (ev.kind === 'windup') {
         showTelegraph(m, ev);
         const attack = ATTACKS[ev.attackId];
-        SFX.play(windupPlan(attack, cueFor(attack, m.def.style)), true);
+        m.telegraph!.sound = SFX.play(windupPlan(attack, cueFor(attack, m.def.style)), true);
       } else if (ev.kind === 'cancel') {
         clearTelegraph(m);
       } else if (ev.kind === 'resolve') {
