@@ -5,6 +5,7 @@ import type { BlenderHeroAnimator } from './blenderHero';
 import type { MonsterDef } from '../data/world';
 import type { MonsterLogic } from '../state/monsterAi';
 import type { WalkGrid } from '../state/pathfind';
+import type { TelegraphInstance } from './telegraphs';
 
 export const TICK_SEC = 0.6;
 
@@ -122,6 +123,7 @@ export interface MonsterEntity extends MonsterEntityLike {
   flashTimer: number;
   attackAnim: number;
   labelEl: HTMLElement;
+  telegraph?: TelegraphInstance | null;
 }
 
 export interface ResourceNodeEntity extends ResourceNodeLike {

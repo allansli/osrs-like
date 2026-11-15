@@ -33,9 +33,11 @@ import {
   checkRegionChange,
   performPlayerAttack,
   performMonsterRetaliation,
+  performMonsterHeavy,
   finishRespawn,
   performResourceGather
 } from './actions';
+import { clearTelegraph, showTelegraph, updateTelegraphs } from './telegraphs';
 import { planEntityWalk } from './input';
 import { disposeObject3D } from './dispose';
 import { PRAYERS } from '../data/magic';
@@ -43,7 +45,7 @@ import { WORLD_REGIONS } from '../data/world';
 import { STATE } from '../state/gameState';
 import { getEquipmentBonuses, type EquipmentBonuses } from '../state/combat';
 import { moveWithCollision } from '../state/collision';
-import { isDown, isPlayerSafe, stepMonster } from '../state/monsterAi';
+import { isDown, isPlayerSafe, stepMonster, tickWindupGates } from '../state/monsterAi';
 import { getTerrainHeight } from '../state/terrain';
 import { discoverShrines } from '../state/shrines';
 import { HP_REGEN_PER_SEC } from '../state/economy';
@@ -550,9 +552,11 @@ export function updateCamera(f: FrameState): void {
 }
 
 let monsterLoopOffset = 0;
+const sessionWindupGates: Record<string, number> = {};
 
 export function updateMonsters(f: FrameState): void {
   // Monsters Update: rules in stepMonster, mesh, pose and events here.
+  tickWindupGates(sessionWindupGates, f.dt);
   const playerCombat = getCombatLevel();
   const playerSafe = isPlayerSafe(player.pos.x, player.pos.z, f.now, G.aggroGraceUntil);
   const camps = CAMPS;
@@ -579,23 +583,37 @@ export function updateMonsters(f: FrameState): void {
       playerSafe,
       camps,
       grid,
-      pathBudget
+      pathBudget,
+      windupGate: sessionWindupGates
     });
 
-    if (events.some(e => e.kind === 'aggro')) {
-      addChatMessage(`<b>${m.def.name}</b> attacks!`, 'combat');
-    }
-
-    if (events.some(e => e.kind === 'reset')) {
-      const hpBar = m.labelEl.querySelector<HTMLElement>('.entity-hp-bar')!;
-      const hpFill = m.labelEl.querySelector<HTMLElement>('.entity-hp-fill')!;
-      hpBar.style.display = 'none';
-      hpFill.style.width = '100%';
-      m.labelEl.style.display = 'none';
-      updateTargetHud();
+    for (const ev of events) {
+      if (ev.kind === 'aggro') {
+        addChatMessage(`<b>${m.def.name}</b> attacks!`, 'combat');
+      } else if (ev.kind === 'reset') {
+        clearTelegraph(m);
+        const hpBar = m.labelEl.querySelector<HTMLElement>('.entity-hp-bar')!;
+        const hpFill = m.labelEl.querySelector<HTMLElement>('.entity-hp-fill')!;
+        hpBar.style.display = 'none';
+        hpFill.style.width = '100%';
+        m.labelEl.style.display = 'none';
+        updateTargetHud();
+      } else if (ev.kind === 'windup') {
+        showTelegraph(m, ev);
+      } else if (ev.kind === 'cancel') {
+        clearTelegraph(m);
+      } else if (ev.kind === 'resolve') {
+        clearTelegraph(m);
+        if (ev.hit) {
+          performMonsterHeavy(m, ev.attackId);
+        }
+      } else if (ev.kind === 'died') {
+        clearTelegraph(m);
+      }
     }
 
     if (prevState === 'dying') {
+      clearTelegraph(m);
       const progress = Math.max(0, 1 - (prevTimer - f.dt) / 0.85);
       m.rig.group.rotation.x = progress * (Math.PI / 2.3);
       m.rig.group.position.y = getTerrainHeight(m.pos.x, m.pos.z) - progress * 0.45;
@@ -623,8 +641,8 @@ export function updateMonsters(f: FrameState): void {
     }
 
     if (L.state === 'chase' || L.state === 'attack') {
-      const dx = player.pos.x - fromX;
-      const dz = player.pos.z - fromZ;
+      const dx = L.windup ? L.windup.dx : (player.pos.x - fromX);
+      const dz = L.windup ? L.windup.dz : (player.pos.z - fromZ);
       const targetMonYaw = Math.atan2(dx, dz) + Math.PI;
       m.rig.group.rotation.y = lerpAngle(m.rig.group.rotation.y, targetMonYaw, Math.min(1, f.dt * 9));
       if (L.state === 'chase') {
@@ -665,6 +683,7 @@ export function updateMonsters(f: FrameState): void {
     }
     // chase or attack that dropped to idle this step: nothing else, as before.
   }
+  updateTelegraphs(f.dt);
 }
 
 export function updateWorldTimers(f: FrameState): void {

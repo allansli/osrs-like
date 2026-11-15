@@ -21,12 +21,14 @@ import {
 } from './vfx';
 import { addChatMessage, showBanner, updateTargetHud, updateAllUI, requestUiRefresh, el } from '../ui/hud';
 import { STATE } from '../state/gameState';
-import { prepareAttack, playerAttackProfile, playerHitChance, rollMonsterHit } from '../state/combat';
+import { prepareAttack, playerAttackProfile, playerHitChance, rollMonsterHit, rollMonsterAttack } from '../state/combat';
 import { creditGp, fishDepletes, gatherChance, rollDrops } from '../state/economy';
 import { addItem, removeItem, canAddItem } from '../state/inventory';
 import { SPELLS } from '../data/magic';
 import { AGGRO_GRACE_MS, isDown, onPlayerHit } from '../state/monsterAi';
 import { ITEMS } from '../data/items';
+import { ATTACKS } from '../data/attacks';
+import { clearTelegraph } from './telegraphs';
 import { SKILLS_META } from '../data/skills';
 import { addItemToInventory, announceUnlocksSince, grantXp, skillLevels } from '../ui/playerActions';
 import {
@@ -247,6 +249,7 @@ function wpKindIsChop(kind: string): boolean {
 }
 
 export function handleMonsterDeath(monster: MonsterEntity): void {
+  clearTelegraph(monster);
   if (player.targetEntity && player.targetEntity.ref === monster) {
     player.targetEntity = null;
   }
@@ -332,6 +335,25 @@ export function performMonsterRetaliation(monster: MonsterEntity): void {
   } else {
     applyHit();
   }
+}
+
+export function performMonsterHeavy(monster: MonsterEntity, attackId: string): void {
+  if (isDown(monster.logic) || player.downed || STATE.hp <= 0) return;
+  const attack = ATTACKS[attackId];
+  if (!attack) return;
+  const { dmg } = rollMonsterAttack(monster.typeKey, attack, STATE, { count: 0 }, Math.random);
+  monster.attackAnim = 1;
+
+  if (dmg > 0) {
+    STATE.hp = Math.max(0, STATE.hp - dmg);
+    spawnHitSplatOnPlayer(dmg, 'heavy');
+    if (STATE.hp <= 0) {
+      handlePlayerDeath();
+    }
+  } else {
+    spawnHitSplatOnPlayer(0, 'miss');
+  }
+  requestUiRefresh();
 }
 
 export function handlePlayerDeath(): void {
