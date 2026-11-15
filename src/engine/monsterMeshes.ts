@@ -790,6 +790,9 @@ export function createMonsterMesh(def: MonsterDef, typeKey: string): MonsterRigL
   }
 }
 
+// Monsters posed in a wind-up on the previous frame; only they get the head reset, so types without a pattern keep their pre-T5 pose.
+const windupPosed = new WeakSet<object>();
+
 export function poseMonsterLimbs(m: MonsterEntity, moving: boolean, now: number, dt: number): void {
   const rig = m.rig;
   if (!rig || m.logic.state === 'dying') return;
@@ -820,10 +823,11 @@ export function poseMonsterLimbs(m: MonsterEntity, moving: boolean, now: number,
       rig.rWing.rotation.z = -0.2 - progress * 0.55;
     }
     rig.group.position.y = groundY + progress * 0.15;
+    windupPosed.add(m);
     return;
   }
 
-  if (rig.headGroup) rig.headGroup.rotation.x = 0;
+  if (windupPosed.delete(m) && rig.headGroup) rig.headGroup.rotation.x = 0;
 
   // Distinct Attack Animations
   if (m.attackAnim > 0) {
