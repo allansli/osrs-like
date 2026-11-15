@@ -54,6 +54,7 @@ import { combatLevel } from '../state/adventure';
 import { regenRate, buyVow, vowPrice, DEATH_MIN_COMBAT } from '../state/sustain';
 import { entityAim, escapeStall, shouldRepath, STALL_SEC, stallTime, walkSpent } from '../state/pathfind';
 import { CAMPS } from '../data/worldMap';
+import { spinOffset } from '../data/feel';
 import {
   addChatMessage,
   el,
@@ -360,11 +361,12 @@ export function updatePlayerMotion(f: FrameState): void {
   player.meshGroup!.position.copy(player.pos);
 
   // Smooth Yaw & Turning Angular Velocity
-  const lastMeshYaw = player.meshGroup!.rotation.y;
+  const lastMeshYaw = player.baseYaw;
   const targetMeshYaw = player.yaw + Math.PI;
-  player.meshGroup!.rotation.y = lerpAngle(player.meshGroup!.rotation.y, targetMeshYaw, Math.min(1, f.dt * 12));
+  player.baseYaw = lerpAngle(player.baseYaw, targetMeshYaw, Math.min(1, f.dt * 12));
+  player.meshGroup!.rotation.y = player.baseYaw + spinOffset(player.spinAnim);
 
-  let turnDelta = (player.meshGroup!.rotation.y - lastMeshYaw) / Math.max(0.001, f.dt);
+  let turnDelta = (player.baseYaw - lastMeshYaw) / Math.max(0.001, f.dt);
   const a = Math.pow(0.8, f.dt * 60);
   player.yawVelocity = (player.yawVelocity ?? 0) * a + turnDelta * (1 - a);
 
@@ -529,7 +531,6 @@ export function updatePlayerAnimation(f: FrameState): void {
 
   if (player.spinAnim > 0) {
     player.spinAnim = Math.max(0, player.spinAnim - f.dt * 2.4);
-    player.meshGroup!.rotation.y += (1 - player.spinAnim) * Math.PI * 4;
     player.parts.spinRing.material.opacity = player.spinAnim * 0.85;
     player.parts.spinRing.scale.setScalar(0.8 + (1 - player.spinAnim) * 0.9);
   } else if (player.parts.spinRing) {

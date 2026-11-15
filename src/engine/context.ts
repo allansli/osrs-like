@@ -25,6 +25,7 @@ export interface PlayerState {
   pos: THREE.Vector3;
   vel: THREE.Vector3;
   yaw: number;
+  baseYaw: number;
   waypoints: [number, number][];
   targetEntity: PlayerTargetEntity | null;
   isMoving: boolean;
@@ -55,6 +56,7 @@ export const player: PlayerState = {
   pos: new THREE.Vector3(-4, 0, -3),
   vel: new THREE.Vector3(0, 0, 0),
   yaw: 0.48,
+  baseYaw: 0.48 + Math.PI,
   waypoints: [],
   targetEntity: null,
   isMoving: false,

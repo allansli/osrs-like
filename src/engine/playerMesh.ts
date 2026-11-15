@@ -46,7 +46,8 @@ export function buildPlayerCharacter(): void {
 
   player.pos.y = getTerrainHeight(player.pos.x, player.pos.z);
   player.meshGroup.position.copy(player.pos);
-  player.meshGroup.rotation.y = player.yaw + Math.PI;
+  player.baseYaw = player.yaw + Math.PI;
+  player.meshGroup.rotation.y = player.baseYaw;
   G.scene.add(player.meshGroup);
 
   rebuildPlayerEquipmentMeshes();
