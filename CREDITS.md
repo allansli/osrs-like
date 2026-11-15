@@ -20,3 +20,12 @@ These assets are read by the generator scripts in `scripts/blender/`, and the re
 The CC-BY 3.0 licence requires credit to the author: the dragon is by yoji and Kai is by uchiha007 (https://creativecommons.org/licenses/by/3.0/). CC0 assets need no credit; they are credited anyway.
 
 Note on the knight: its author says the base mesh came from a CGTrader model whose terms are not stated. See `blender/examples/knight_28541/LICENSE.txt`.
+
+## Fonts (`src/ui/fonts/`)
+
+Basic Latin and Latin-1 subsets in woff2. Each family's licence text is shipped beside its files; `src/ui/fonts/SOURCE.md` records the commit, the SHA-256 of every downloaded and shipped file, and the subset command.
+
+| Family | Author | Source | Licence | Shipped |
+|---|---|---|---|---|
+| Grenze 1.003 (display) | Renata Polastri, Omnibus-Type | https://github.com/Omnibus-Type/Grenze at commit `2af38b2f951f5d2d601825c896c2be9b8b282092` | SIL Open Font License 1.1 (OFL-1.1), no Reserved Font Name | `Grenze-SemiBold.woff2`, `Grenze-Bold.woff2`, `LICENSE-Grenze.txt` |
+| Open Sans 3.003 (text) | Steve Matteson (The Open Sans Project Authors) | https://github.com/googlefonts/opensans at commit `6cbc400d4855abee59d85c4ed871d510399bce7b` | SIL Open Font License 1.1 (OFL-1.1), no Reserved Font Name | `OpenSans-Regular.woff2`, `OpenSans-SemiBold.woff2`, `LICENSE-OpenSans.txt` |
