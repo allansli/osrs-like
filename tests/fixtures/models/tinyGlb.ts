@@ -117,7 +117,7 @@ const TIMES = new Float32Array([0, 1]);
 const QUATS = new Float32Array([0, 0, 0, 1, 0.1, 0, 0, 0.995]);
 const MOVES = new Float32Array([0, 0.9, 0, 0, 0.95, 0]);
 
-/** A static figure: 6 mesh nodes of one triangle, 2 materials, 2 clips, no skin. */
+/** A static figure: 5 mesh nodes of one triangle, 2 materials, 2 clips, no skin. */
 export function buildTiny(o: { colorMeshes?: 'all' | string[] } = {}): Doc {
   const b = new Builder();
   const pos = b.accessor(POS, F32, 'VEC3', 3, true);
@@ -146,7 +146,7 @@ export function buildTiny(o: { colorMeshes?: 'all' | string[] } = {}): Doc {
   return b.done();
 }
 
-export const TINY_BUDGET = { triangles: 6, meshes: 6, materials: 2, rawBytes: 4096, brotliBytes: 4096 };
+export const TINY_BUDGET = { triangles: 5, meshes: 5, materials: 2, rawBytes: 4096, brotliBytes: 4096 };
 
 export function tinyManifest(): Manifest {
   const n = (parent: string | null, translation: Vec3) => ({ parent, translation, scale: [1, 1, 1] });
