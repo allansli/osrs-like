@@ -1,5 +1,7 @@
 import type { QuestFlags } from './types';
 
+export const STARTER_ARRIVAL = 'arrival';
+
 export function defaultQuests(): QuestFlags {
   return {
     burnedLog: false,
