@@ -122,6 +122,8 @@ interface KnockBackState {
   // Visual targets with their resting positions: the hero group (base = player.pos, rewritten each frame by
   // the loop) or the monster's mesh children (never the group, whose position is the rules position m.pos).
   targets: { obj: THREE.Object3D; base: THREE.Vector3 }[];
+  // The monster's rig group, whose frame (yaw and scale) the children's positions are in; null for the hero.
+  group: THREE.Object3D | null;
   isHero: boolean;
   dirX: number;
   dirZ: number;
@@ -141,8 +143,14 @@ function applyKnockBack(kb: KnockBackState, offset: number): void {
     g.position.z += kb.dirZ * offset;
     return;
   }
+  // The children sit in the rotated, scaled group: turn the world direction into its frame at its current yaw.
+  const g = kb.group!;
+  const c = Math.cos(g.rotation.y);
+  const s = Math.sin(g.rotation.y);
+  const lx = ((kb.dirX * c - kb.dirZ * s) * offset) / g.scale.x;
+  const lz = ((kb.dirX * s + kb.dirZ * c) * offset) / g.scale.z;
   for (const t of kb.targets) {
-    t.obj.position.set(t.base.x + kb.dirX * offset, t.base.y, t.base.z + kb.dirZ * offset);
+    t.obj.position.set(t.base.x + lx, t.base.y, t.base.z + lz);
   }
 }
 
@@ -164,6 +172,7 @@ export function knockBack(entity: Entity, dirX: number, dirZ: number, amount: nu
 
   activeKnockBacks.set(entity, {
     targets,
+    group: rig ? rig.group : null,
     isHero,
     dirX: dirX / len,
     dirZ: dirZ / len,
