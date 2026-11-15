@@ -11,7 +11,6 @@ export type VoiceStop = () => void;
 export interface SoundEffects {
   play(plan: Voice[], wide: boolean): VoiceStop[];
   setMuted(muted: boolean): void;
-  hit(): void;
   miss(): void;
   slash(): void;
   heavyChop(): void;
@@ -209,7 +208,6 @@ const fx = (...plan: Voice[]) => (): void => {
 export const SFX: SoundEffects = {
   play,
   setMuted,
-  hit: fx(tone(0, 'sawtooth', 165, 0.12, 0.15, 55), tone(0, 'square', 95, 0.09, 0.11, 42)),
   miss: fx(tone(0, 'sine', 310, 0.11, 0.07, 175)),
   slash: fx(tone(0, 'triangle', 420, 0.08, 0.12, 180)),
   heavyChop: fx(tone(0, 'sawtooth', 120, 0.16, 0.18, 40), tone(0, 'square', 65, 0.12, 0.15, 30)),

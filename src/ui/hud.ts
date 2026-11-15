@@ -167,10 +167,14 @@ export function updateVitalsBars(): void {
   updateCooldownOverlays();
 }
 
+// The share of the food or potion cooldown still to run, 0 when that item can be used.
+function cooldownRatio(type: 'food' | 'potion', now: number): number {
+  const left = type === 'food' ? commandClocks.food.readyAt - now : commandClocks.potion.readyAt - now;
+  return Math.max(0, Math.min(1, left / (type === 'food' ? FOOD_CD_SECS : POTION_CD_SECS)));
+}
+
 export function updateCooldownOverlays(): void {
   const now = performance.now() / 1000;
-  const foodRatio = Math.max(0, Math.min(1, (commandClocks.food.readyAt - now) / FOOD_CD_SECS));
-  const potionRatio = Math.max(0, Math.min(1, (commandClocks.potion.readyAt - now) / POTION_CD_SECS));
 
   const slotDivs = el('inventory-grid').querySelectorAll<HTMLElement>('.inv-slot');
   slotDivs.forEach((slotDiv, i) => {
@@ -179,14 +183,11 @@ export function updateCooldownOverlays(): void {
     const entry = STATE.inventory[i];
     if (!overlay || !entry) return;
     const it = (ITEMS as Record<string, ItemDef>)[entry.id];
-    if (it.type === 'food') {
-      slotDiv.classList.toggle('cooldown', foodRatio > 0);
-      slotDiv.style.setProperty('--cd', String(foodRatio));
-      overlay.style.setProperty('--cd', String(foodRatio));
-    } else if (it.type === 'potion') {
-      slotDiv.classList.toggle('cooldown', potionRatio > 0);
-      slotDiv.style.setProperty('--cd', String(potionRatio));
-      overlay.style.setProperty('--cd', String(potionRatio));
+    if (it.type === 'food' || it.type === 'potion') {
+      const ratio = cooldownRatio(it.type, now);
+      slotDiv.classList.toggle('cooldown', ratio > 0);
+      slotDiv.style.setProperty('--cd', String(ratio));
+      overlay.style.setProperty('--cd', String(ratio));
     }
   });
 }
@@ -275,10 +276,7 @@ export function updateAllUI(): void {
         slotDiv.innerHTML += `<span class="item-tier-dot" style="background:${(TIER_COLORS as Record<string, string>)[it.tier]}"></span>`;
       }
       if (it.type === 'food' || it.type === 'potion') {
-        const now = performance.now() / 1000;
-        const cd = it.type === 'food' ? commandClocks.food.readyAt - now : commandClocks.potion.readyAt - now;
-        const maxCd = it.type === 'food' ? FOOD_CD_SECS : POTION_CD_SECS;
-        const ratio = Math.max(0, Math.min(1, cd / maxCd));
+        const ratio = cooldownRatio(it.type, performance.now() / 1000);
         if (ratio > 0) {
           slotDiv.classList.add('cooldown');
         }

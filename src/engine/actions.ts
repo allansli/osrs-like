@@ -264,17 +264,12 @@ export function performPlayerAttack(monster: MonsterEntity): void {
       for (const ev of hit.events) {
         if (ev.kind === 'phase') handleBossPhase(monster, ev.index);
       }
-      if (hit.reason === 'shift') {
-        if (lastRefusalMonster !== monster || lastRefusalReason !== 'shift') {
-          addChatMessage(`The ${monster.def.name} is untouchable.`, 'combat');
+      const refusal = hit.reason === 'shift' ? 'is untouchable.' : hit.reason === 'arena' ? 'is out of the arena.' : null;
+      if (refusal) {
+        if (lastRefusalMonster !== monster || lastRefusalReason !== hit.reason) {
+          addChatMessage(`The ${monster.def.name} ${refusal}`, 'combat');
           lastRefusalMonster = monster;
-          lastRefusalReason = 'shift';
-        }
-      } else if (hit.reason === 'arena') {
-        if (lastRefusalMonster !== monster || lastRefusalReason !== 'arena') {
-          addChatMessage(`The ${monster.def.name} is out of the arena.`, 'combat');
-          lastRefusalMonster = monster;
-          lastRefusalReason = 'arena';
+          lastRefusalReason = hit.reason!;
         }
       } else {
         lastRefusalMonster = null;
@@ -296,16 +291,13 @@ export function performPlayerAttack(monster: MonsterEntity): void {
       flash(monster);
 
       const isKilled = hit.events.some((ev) => ev.kind === 'died');
-      if (isKilled) {
-        hitStop(monster, HIT_STOP_MS.monsterKill);
-        hitStop(player, HIT_STOP_MS.monsterKill);
-      } else if (isSpec || dmg >= maxHit) {
-        hitStop(monster, HIT_STOP_MS.monsterMaxHit);
-        hitStop(player, HIT_STOP_MS.monsterMaxHit);
-      } else {
-        hitStop(monster, HIT_STOP_MS.monsterHit);
-        hitStop(player, HIT_STOP_MS.monsterHit);
-      }
+      const stopMs = isKilled
+        ? HIT_STOP_MS.monsterKill
+        : isSpec || dmg >= maxHit
+          ? HIT_STOP_MS.monsterMaxHit
+          : HIT_STOP_MS.monsterHit;
+      hitStop(monster, stopMs);
+      hitStop(player, stopMs);
 
       const kbAmount = isSpec || dmg >= maxHit ? KNOCK_BACK.monsterMaxHit.amount : KNOCK_BACK.monsterHit.amount;
       knockBack(monster, monster.pos.x - player.pos.x, monster.pos.z - player.pos.z, kbAmount);
@@ -442,9 +434,8 @@ export function handleMonsterDeath(monster: MonsterEntity): void {
 function maybeRetaliate(monster: MonsterEntity): void {
   const hasTarget = player.targetEntity !== null;
   const walking = player.isMoving || player.waypoints.length > 0;
-  const keyHeld = !!(
-    G.keysPressed['KeyW'] || G.keysPressed['KeyA'] || G.keysPressed['KeyS'] || G.keysPressed['KeyD'] ||
-    G.keysPressed['ArrowUp'] || G.keysPressed['ArrowLeft'] || G.keysPressed['ArrowDown'] || G.keysPressed['ArrowRight']
+  const keyHeld = ['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowLeft', 'ArrowDown', 'ArrowRight'].some(
+    (k) => !!G.keysPressed[k]
   );
   const downed = player.downed;
   const windupLive = G.monstersList.some(
