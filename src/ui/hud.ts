@@ -174,17 +174,19 @@ export function updateCooldownOverlays(): void {
 
   const slotDivs = el('inventory-grid').querySelectorAll<HTMLElement>('.inv-slot');
   slotDivs.forEach((slotDiv, i) => {
+    // The grid may be stale (rebuilt after this runs): only slots already drawn with an overlay are updated.
+    const overlay = slotDiv.querySelector<HTMLElement>('.cooldown-overlay');
     const entry = STATE.inventory[i];
-    if (!entry) return;
+    if (!overlay || !entry) return;
     const it = (ITEMS as Record<string, ItemDef>)[entry.id];
     if (it.type === 'food') {
       slotDiv.classList.toggle('cooldown', foodRatio > 0);
       slotDiv.style.setProperty('--cd', String(foodRatio));
-      slotDiv.querySelector<HTMLElement>('.cooldown-overlay')!.style.setProperty('--cd', String(foodRatio));
+      overlay.style.setProperty('--cd', String(foodRatio));
     } else if (it.type === 'potion') {
       slotDiv.classList.toggle('cooldown', potionRatio > 0);
       slotDiv.style.setProperty('--cd', String(potionRatio));
-      slotDiv.querySelector<HTMLElement>('.cooldown-overlay')!.style.setProperty('--cd', String(potionRatio));
+      overlay.style.setProperty('--cd', String(potionRatio));
     }
   });
 }

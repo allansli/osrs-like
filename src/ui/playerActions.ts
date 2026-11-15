@@ -15,11 +15,11 @@ import {
   isUnequippedGear
 } from '../state/inventory';
 import { tryCraft, isLogId } from '../data/recipes';
-import { noteBury, notePlate, notePrayerOffered } from '../state/quests';
+import { noteBury, notePlate } from '../state/quests';
 import { equippedWeapon, allowedStyles, canCastTeleport } from '../state/combat';
-import { weaponSpecial, claimQuest, assignSlayerTask } from '../state/adventure';
+import { claimQuest, assignSlayerTask } from '../state/adventure';
 import { levelUnlockLines } from '../state/unlocks';
-import { PRAYERS, SPELLS } from '../data/magic';
+import { SPELLS } from '../data/magic';
 import { dispatchCommand } from '../engine/actions';
 import { getSkillSvg } from './icons';
 import {
@@ -39,11 +39,10 @@ import {
   showBanner,
   updateAllUI,
   requestUiRefresh,
-  refreshCombatStyleLocks,
   hideItemTooltip
 } from './hud';
 import { SFX } from '../engine/audio';
-import { spawnLevelUpFireworks, spawnHitSplatOnPlayer } from '../engine/vfx';
+import { spawnLevelUpFireworks } from '../engine/vfx';
 import { rebuildPlayerEquipmentMeshes } from '../engine/playerMesh';
 import { saveGameState } from '../engine/session';
 import { teleportToRegion } from '../engine/actions';
