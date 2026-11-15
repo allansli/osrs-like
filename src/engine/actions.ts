@@ -21,13 +21,13 @@ import {
 } from './vfx';
 import { addChatMessage, showBanner, updateTargetHud, updateAllUI, requestUiRefresh, el } from '../ui/hud';
 import { STATE } from '../state/gameState';
-import { prepareAttack, playerAttackProfile, playerHitChance, rollMonsterHit, rollMonsterAttack } from '../state/combat';
+import { prepareAttack, playerAttackProfile, playerHitChance, rollMonsterHit, rollMonsterAttack, addMark } from '../state/combat';
 import { creditGp, fishDepletes, gatherChance, rollDrops } from '../state/economy';
 import { addItem, removeItem, canAddItem } from '../state/inventory';
 import { SPELLS } from '../data/magic';
 import { AGGRO_GRACE_MS, isDown, onPlayerHit } from '../state/monsterAi';
 import { ITEMS } from '../data/items';
-import { ATTACKS } from '../data/attacks';
+import { ATTACKS, BOSSES } from '../data/attacks';
 import { clearTelegraph } from './telegraphs';
 import { SKILLS_META } from '../data/skills';
 import { addItemToInventory, announceUnlocksSince, grantXp, skillLevels } from '../ui/playerActions';
@@ -80,6 +80,35 @@ export function triggerRegionBanner(reg: RegionDef): void {
   b.classList.add('visible');
   if (bannerTimer) clearTimeout(bannerTimer);
   bannerTimer = setTimeout(() => b.classList.remove('visible'), 3600);
+}
+
+declare module './context' {
+  interface PlayerState {
+    marks?: { count: number; left: number };
+  }
+}
+
+if (!player.marks) {
+  player.marks = { count: 0, left: 0 };
+}
+
+let lastRefusalMonster: MonsterEntity | null = null;
+let lastRefusalReason: string | null = null;
+
+export function handleBossPhase(monster: MonsterEntity, phaseIndex: number): void {
+  const boss = BOSSES[monster.logic.typeKey];
+  if (!boss) return;
+  const phase = boss.phases[phaseIndex];
+  showBanner(monster.def.name, phase.name);
+  if (phaseIndex === 0) {
+    addChatMessage('Its bolts are magic.', 'combat');
+  }
+  spawnExpandingRing(monster.pos, 0xfde047);
+  updateTargetHud();
+  const shiftMs = phaseIndex === 0 ? boss.openingShiftMs : phase.shiftMs;
+  setTimeout(() => {
+    updateTargetHud();
+  }, shiftMs);
 }
 
 export function performPlayerAttack(monster: MonsterEntity): void {
@@ -167,14 +196,30 @@ export function performPlayerAttack(monster: MonsterEntity): void {
     if (!hit.applied) {
       SFX.miss();
       spawnHitSplatWorld(monster.pos, 0, 'miss');
-      // A projectile that lands after the monster turned home. If the player still targets it,
-      // this is the one message and the target goes; otherwise the guard above already said it.
-      if (player.targetEntity?.ref === monster) {
-        addChatMessage(`The ${monster.def.name} has lost interest.`, 'combat');
-        player.targetEntity = null;
+      if (hit.reason === 'shift') {
+        if (lastRefusalMonster !== monster || lastRefusalReason !== 'shift') {
+          addChatMessage(`The ${monster.def.name} is untouchable.`, 'combat');
+          lastRefusalMonster = monster;
+          lastRefusalReason = 'shift';
+        }
+      } else if (hit.reason === 'arena') {
+        if (lastRefusalMonster !== monster || lastRefusalReason !== 'arena') {
+          addChatMessage(`The ${monster.def.name} is out of the arena.`, 'combat');
+          lastRefusalMonster = monster;
+          lastRefusalReason = 'arena';
+        }
+      } else {
+        lastRefusalMonster = null;
+        lastRefusalReason = null;
+        if (player.targetEntity?.ref === monster) {
+          addChatMessage(`The ${monster.def.name} has lost interest.`, 'combat');
+          player.targetEntity = null;
+        }
       }
       return;
     }
+    lastRefusalMonster = null;
+    lastRefusalReason = null;
     if (dmg > 0) {
       SFX.hit();
       monster.flinch = 1.0;
@@ -211,12 +256,25 @@ export function performPlayerAttack(monster: MonsterEntity): void {
         grantXp('magic', dmg * 3 + sp.xp * 0.4);
       }
 
-      if (hit.events.some(e => e.kind === 'died')) {
-        handleMonsterDeath(monster);
+      for (const ev of hit.events) {
+        if (ev.kind === 'died') {
+          handleMonsterDeath(monster);
+        } else if (ev.kind === 'phase') {
+          handleBossPhase(monster, ev.index);
+        } else if (ev.kind === 'cancel') {
+          clearTelegraph(monster);
+        }
       }
     } else {
       SFX.miss();
       spawnHitSplatWorld(monster.pos, 0, 'miss');
+      for (const ev of hit.events) {
+        if (ev.kind === 'phase') {
+          handleBossPhase(monster, ev.index);
+        } else if (ev.kind === 'cancel') {
+          clearTelegraph(monster);
+        }
+      }
     }
     updateTargetHud();
     requestUiRefresh();
@@ -340,10 +398,15 @@ export function performMonsterRetaliation(monster: MonsterEntity): void {
 export function performMonsterHeavy(monster: MonsterEntity, attackId: string): void {
   if (isDown(monster.logic) || player.downed || STATE.hp <= 0) return;
   const attack = ATTACKS[attackId];
-  const { dmg } = rollMonsterAttack(monster.typeKey, attack, STATE, { count: 0 }, Math.random);
+  const marks = player.marks!;
+  const boss = BOSSES[monster.logic.typeKey];
+  const { dmg } = rollMonsterAttack(monster.typeKey, attack, STATE, marks, Math.random);
   monster.attackAnim = 1;
 
   if (dmg > 0) {
+    if (boss) {
+      addMark(marks, boss);
+    }
     STATE.hp = Math.max(0, STATE.hp - dmg);
     spawnHitSplatOnPlayer(dmg, 'heavy');
     if (STATE.hp <= 0) {
@@ -361,6 +424,10 @@ export function handlePlayerDeath(): void {
   player.downedTimer = RESPAWN_SECONDS;
   player.targetEntity = null;
   player.waypoints.length = 0;
+  if (player.marks) {
+    player.marks.count = 0;
+    player.marks.left = 0;
+  }
   STATE.hp = 0;
   STATE.activePrayers.clear();
   const notice = deathNotice();

@@ -35,17 +35,19 @@ import {
   performMonsterRetaliation,
   performMonsterHeavy,
   finishRespawn,
-  performResourceGather
+  performResourceGather,
+  handleBossPhase
 } from './actions';
 import { clearTelegraph, showTelegraph, updateTelegraphs } from './telegraphs';
 import { planEntityWalk } from './input';
 import { disposeObject3D } from './dispose';
 import { PRAYERS } from '../data/magic';
 import { WORLD_REGIONS } from '../data/world';
+import { BOSSES } from '../data/attacks';
 import { STATE } from '../state/gameState';
-import { getEquipmentBonuses, type EquipmentBonuses } from '../state/combat';
+import { getEquipmentBonuses, tickMarks, type EquipmentBonuses } from '../state/combat';
 import { moveWithCollision } from '../state/collision';
-import { isDown, isPlayerSafe, stepMonster, tickWindupGates } from '../state/monsterAi';
+import { inCombat, isDown, isPlayerSafe, stepMonster, tickWindupGates } from '../state/monsterAi';
 import { getTerrainHeight } from '../state/terrain';
 import { discoverShrines } from '../state/shrines';
 import { HP_REGEN_PER_SEC } from '../state/economy';
@@ -58,6 +60,7 @@ import {
   updateAllUI,
   updateTargetHud,
   updateVitalsBars,
+  updateBossBar,
   consumeUiRefreshRequest
 } from '../ui/hud';
 import {
@@ -556,6 +559,9 @@ const sessionWindupGates: Record<string, number> = {};
 
 export function updateMonsters(f: FrameState): void {
   // Monsters Update: rules in stepMonster, mesh, pose and events here.
+  if (player.marks) {
+    tickMarks(player.marks, f.dt);
+  }
   tickWindupGates(sessionWindupGates, f.dt);
   const playerCombat = getCombatLevel();
   const playerSafe = isPlayerSafe(player.pos.x, player.pos.z, f.now, G.aggroGraceUntil);
@@ -565,6 +571,7 @@ export function updateMonsters(f: FrameState): void {
   const n = G.monstersList.length;
   const startIdx = n > 0 ? monsterLoopOffset % n : 0;
   monsterLoopOffset++;
+  let activeBoss: MonsterEntity | null = null;
 
   for (let k = 0; k < n; k++) {
     const m = G.monstersList[(startIdx + k) % n];
@@ -609,7 +616,16 @@ export function updateMonsters(f: FrameState): void {
         }
       } else if (ev.kind === 'died') {
         clearTelegraph(m);
+      } else if (ev.kind === 'phase') {
+        handleBossPhase(m, ev.index);
       }
+    }
+
+    if (BOSSES[L.typeKey] && inCombat(L) && !isDown(L)) {
+      activeBoss = m;
+    }
+    if (player.targetEntity?.ref === m && L.shiftLeft === 0 && document.getElementById('target-hud')?.classList.contains('untouchable')) {
+      updateTargetHud();
     }
 
     if (prevState === 'dying') {
@@ -683,6 +699,7 @@ export function updateMonsters(f: FrameState): void {
     }
     // chase or attack that dropped to idle this step: nothing else, as before.
   }
+  updateBossBar(activeBoss, player.marks?.count ?? 0);
   updateTelegraphs(f.dt);
 }
 

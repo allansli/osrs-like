@@ -381,21 +381,39 @@ export function updateTargetHud(): void {
   if (player.targetEntity && player.targetEntity.type === 'monster' && !isDown(player.targetEntity.ref.logic)) {
     const m: MonsterEntity = player.targetEntity.ref;
     hud.classList.add('visible');
+    const isUntouchable = m.logic.shiftLeft > 0;
+    hud.classList.toggle('untouchable', isUntouchable);
     el('target-name').textContent = m.def.name;
     el('target-lvl-tag').textContent = `Lv ${m.def.level}`;
     const pct = Math.max(0, Math.min(100, (m.logic.hp / m.logic.maxHp) * 100));
     el('target-hp-fill').style.width = pct + '%';
-    el('target-hp-text').textContent = `${Math.ceil(m.logic.hp)} / ${m.logic.maxHp}`;
+    el('target-hp-text').textContent = isUntouchable ? 'Untouchable' : `${Math.ceil(m.logic.hp)} / ${m.logic.maxHp}`;
   } else if (player.targetEntity && player.targetEntity.type === 'resource' && !player.targetEntity.ref.depleted) {
     const r: ResourceNodeEntity = player.targetEntity.ref;
     hud.classList.add('visible');
+    hud.classList.remove('untouchable');
     el('target-name').textContent = r.def.name!;
     el('target-lvl-tag').textContent = `Req Lv ${r.def.req}`;
     el('target-hp-fill').style.width = '100%';
     el('target-hp-text').textContent = (SKILLS_META as Record<string, { name: string }>)[r.def.skill!].name;
   } else {
     hud.classList.remove('visible');
+    hud.classList.remove('untouchable');
   }
+}
+
+export function updateBossBar(monster: MonsterEntity | null, markCount = 0): void {
+  const bar = el('boss-bar');
+  if (!monster) {
+    bar.hidden = true;
+    return;
+  }
+  bar.hidden = false;
+  el('boss-name').textContent = monster.def.name;
+  const pct = Math.max(0, Math.min(100, (monster.logic.hp / monster.logic.maxHp) * 100));
+  el('boss-hp-fill').style.width = pct + '%';
+  el('boss-hp-text').textContent = `${Math.ceil(monster.logic.hp)} / ${monster.logic.maxHp}`;
+  el('boss-marks').textContent = `Marks: ${markCount}`;
 }
 
 export function applyLoadedStateToHud(): void {
