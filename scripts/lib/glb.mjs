@@ -34,6 +34,11 @@ const TYPED_ARRAYS = {
   5126: Float32Array
 };
 
+/** Brotli quality 3 compressed size of a buffer, in bytes. */
+export function brotli3Bytes(buffer) {
+  return zlib.brotliCompressSync(buffer, { params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 3 } }).length;
+}
+
 /**
  * Reads, parses, and validates a GLB file or buffer.
  * Enforces magic, declared lengths, bufferView ranges, and accessor bounds.
@@ -239,11 +244,7 @@ export function readGlb(input) {
   }
 
   // Brotli quality 3 size
-  const brotliBytes = zlib.brotliCompressSync(buffer, {
-    params: {
-      [zlib.constants.BROTLI_PARAM_QUALITY]: 3
-    }
-  }).length;
+  const brotliBytes = brotli3Bytes(buffer);
 
   return {
     json,

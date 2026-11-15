@@ -1,7 +1,70 @@
 import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import { readGlb, readAccessor } from './lib/glb.mjs';
+import { fileURLToPath } from 'node:url';
+import { readGlb, readAccessor, brotli3Bytes } from './lib/glb.mjs';
+
+const ROOT = fs.realpathSync(path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'));
+const BUDGET_KEYS = ['triangles', 'meshes', 'materials', 'rawBytes', 'brotliBytes'];
+const MANIFEST_KEYS = ['nodes', 'materials', 'toggled', 'meshClasses', 'extras', 'centres', 'vertexColor', 'clips', 'skin', 'budget', 'figures'];
+const SKIN_KEYS = ['skeleton', 'bones', 'skinnedRoots', 'sharedClips', 'limbs', 'maxLimbDegrees'];
+
+/** A key compare does not read would pass unchecked, so it refuses the manifest (exit 3). */
+function refuseUnknownKeys(obj, allowed, where) {
+  for (const key of Object.keys(obj ?? {})) {
+    if (!allowed.includes(key)) throw new Error(`${where} has unknown key '${key}'`);
+  }
+}
+
+/** Pushes one Budget error per metric over its ceiling; an unknown metric or a non-numeric ceiling refuses (exit 3). */
+function checkCeilings(ceilings, actual, where, suffix, errors) {
+  refuseUnknownKeys(ceilings, BUDGET_KEYS, where);
+  for (const [metric, ceiling] of Object.entries(ceilings)) {
+    if (!Number.isFinite(ceiling)) throw new Error(`${where} '${metric}' is not a number`);
+    if (actual[metric] > ceiling) {
+      errors.push(`Budget ceiling exceeded for '${metric}'${suffix}: actual ${actual[metric]} > ceiling ${ceiling}`);
+    }
+  }
+}
+
+function isInside(p, dir) {
+  const r = path.relative(dir, p);
+  return r === '' || (!r.startsWith('..') && !path.isAbsolute(r));
+}
+
+/** Triangles, meshes, materials, raw and Brotli quality 3 bytes of the meshes in the subtree of one root node. */
+function figureStats(doc, rootIdx) {
+  const nodes = doc.json.nodes || [];
+  const stack = [rootIdx];
+  const stats = { triangles: 0, meshes: 0 };
+  const materials = new Set();
+  const views = new Set();
+  const addAccessor = (a) => {
+    const v = doc.json.accessors[a]?.bufferView;
+    if (v !== undefined) views.add(v);
+  };
+  while (stack.length) {
+    const i = stack.pop();
+    const node = nodes[i];
+    stack.push(...(node.children || []));
+    if (node.skin !== undefined) addAccessor(doc.json.skins[node.skin].inverseBindMatrices);
+    if (node.mesh === undefined) continue;
+    stats.triangles += doc.nodeTriangles[i];
+    stats.meshes++;
+    for (const prim of doc.json.meshes[node.mesh].primitives || []) {
+      if (prim.material !== undefined) materials.add(prim.material);
+      Object.values(prim.attributes || {}).forEach(addAccessor);
+      if (prim.indices !== undefined) addAccessor(prim.indices);
+    }
+  }
+  const bytes = Buffer.concat(
+    [...views].sort((a, b) => a - b).map((v) => {
+      const bv = doc.json.bufferViews[v];
+      return doc.bin.subarray(bv.byteOffset || 0, (bv.byteOffset || 0) + bv.byteLength);
+    })
+  );
+  return { ...stats, materials: materials.size, rawBytes: bytes.length, brotliBytes: brotli3Bytes(bytes) };
+}
 
 function parseArgs() {
   const args = process.argv.slice(2);
@@ -117,6 +180,12 @@ function run() {
   } catch (err) {
     console.error(`Error parsing manifest ${manifestPath}: ${err.message}`);
     process.exit(3);
+  }
+
+  refuseUnknownKeys(manifest, MANIFEST_KEYS, 'Manifest');
+  refuseUnknownKeys(manifest.skin, SKIN_KEYS, 'Manifest skin');
+  for (const [clipName, clipInfo] of Object.entries(manifest.clips ?? {})) {
+    refuseUnknownKeys(clipInfo, ['moves'], `Manifest clip '${clipName}'`);
   }
 
   const contractErrors = [];
@@ -501,19 +570,19 @@ function run() {
       brotliBytes: built.brotliBytes
     };
 
-    for (const metric of Object.keys(manifest.budget)) {
-      if (!(metric in actualBudget)) {
-        throw new Error(`Manifest budget has unknown key '${metric}'`);
-      }
+    checkCeilings(manifest.budget, actualBudget, 'Manifest budget', '', budgetErrors);
+  }
+
+  // Per figure: { <figure root node name>: { triangles, meshes, materials, rawBytes, brotliBytes } }, summed over
+  // the mesh nodes under that root; bytes are the buffer views its meshes and skin read (shared views once).
+  for (const [rootName, ceilings] of Object.entries(manifest.figures ?? {})) {
+    const idx = nodeIndexMap.get(rootName);
+    if (idx === undefined) {
+      refuseUnknownKeys(ceilings, BUDGET_KEYS, `Manifest figure '${rootName}'`);
+      budgetErrors.push(`Figure root '${rootName}' is missing, its budget cannot be checked`);
+      continue;
     }
-    for (const [metric, ceiling] of Object.entries(manifest.budget)) {
-      const actual = actualBudget[metric];
-      if (actual > ceiling) {
-        budgetErrors.push(
-          `Budget ceiling exceeded for '${metric}': actual ${actual} > ceiling ${ceiling}`
-        );
-      }
-    }
+    checkCeilings(ceilings, figureStats(built, idx), `Manifest figure '${rootName}'`, ` of figure '${rootName}'`, budgetErrors);
   }
 
   // ---------------------------------------------------------------------------------------------
@@ -618,13 +687,22 @@ function run() {
       : budgetErrors.map((e) => `- FAIL: ${e}`).join('\n'),
     '',
     '## Drift',
-    driftNotes.length === 0
-      ? 'Zero drift detected against shipped file.'
-      : driftNotes.map((d) => `- ${d}`).join('\n'),
+    !shipped
+      ? 'No shipped file given, so Drift was not checked.'
+      : driftNotes.length === 0
+        ? 'Zero drift detected against shipped file.'
+        : driftNotes.map((d) => `- ${d}`).join('\n'),
     ''
   ].join('\n');
 
-  const reportPath = path.join(path.dirname(builtPath), `${name}.report.md`);
+  // The report goes next to the built file, except inside public/ or blender/ (shipped folders, rule 0.3.2):
+  // a report for a file there goes to scratch/models-build/ instead.
+  let reportDir = fs.realpathSync(path.dirname(builtPath));
+  if (['public', 'blender'].some((d) => isInside(reportDir, path.join(ROOT, d)))) {
+    reportDir = path.join(ROOT, 'scratch', 'models-build');
+    fs.mkdirSync(reportDir, { recursive: true });
+  }
+  const reportPath = path.join(reportDir, `${name}.report.md`);
   fs.writeFileSync(reportPath, report, 'utf8');
   process.stdout.write(report);
 
