@@ -40,7 +40,7 @@ ashen_nova              94.8%                94.0%                    91.6%
 slagburst               93.3%                89.0%                    78.3%
 
 == 4. Monster pathing on the Stage 2 walk grid (real buildWalkGrid and findPath)
-   monsters: 36; home cells closed on the grid: 0
-   findPath calls (to each home from 32 points at leash and leash + 11): 1013; no route: 0
-   expanded cells: mean 125, max 3686; calls over the cap of 6000: 0
-   time: 1.032 ms per call as written today (each call allocates and fills four 55696-cell arrays)
+   monsters: 42; home cells closed on the grid: 0
+   findPath calls (to each home from 32 points at leash and leash + 11): 1166; no route: 0
+   expanded cells: mean 115, max 3686; calls over the cap of 6000: 0
+   time: 0.277 ms per call as written today (each call allocates and fills four 55696-cell arrays)

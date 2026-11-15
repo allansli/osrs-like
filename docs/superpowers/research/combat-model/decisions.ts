@@ -11,7 +11,7 @@ import { createDefaultState } from '../../../../src/state/gameState';
 import { createMonsterLogic, stepMonster } from '../../../../src/state/monsterAi';
 import { buildWalkGrid, findPath } from '../../../../src/state/pathfind';
 import { getTerrainHeight } from '../../../../src/state/terrain';
-import { ARENA } from './boss';
+import { ARENA, BOSS_KEY } from './boss';
 
 const p = (...a: unknown[]) => console.log(...a);
 function seeded(seed: number): () => number {
@@ -188,6 +188,7 @@ function assess(x: number, z: number) {
   const R = ARENA.radius, big = R + ARENA.margin;
   let leashGap = Infinity, reachGap = Infinity, aggroGap = Infinity, worst = '';
   for (const c of CAMPS) {
+    if (c.id === BOSS_KEY) continue; // the boss's own camp, now in the live CAMPS, is not its neighbour
     const d = Math.hypot(c.x - x, c.z - z);
     const lg = d - (c.radius + 4) - big;
     if (lg < leashGap) { leashGap = lg; worst = c.id; }

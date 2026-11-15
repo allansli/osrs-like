@@ -12,7 +12,12 @@ import { createDefaultState } from '../../../../src/state/gameState';
 import type { GameState } from '../../../../src/state/types';
 import { BOSS_KEY, BOSS_ROW, type Attack, type BossConfig } from './boss';
 
-// The new boss is not in the game's tables yet: register its row so rollMonsterHit and the swing read it.
+// The game's row for the boss must match this table (drops aside); then this table's object replaces it, so
+// check.ts section 7 can vary BOSS_ROW.maxHit and rollMonsterHit and the swing read the varied row.
+{
+  const live = MONSTER_TYPES[BOSS_KEY] as unknown as Record<string, unknown>;
+  for (const [k, v] of Object.entries(BOSS_ROW)) if (k !== 'drops' && live[k] !== v) throw new Error(`fight: BOSS_ROW.${k} is ${String(v)}, the game's row has ${String(live[k])}`);
+}
 (MONSTER_TYPES as Record<string, unknown>)[BOSS_KEY] = BOSS_ROW;
 
 export function seeded(seed: number): () => number {
@@ -109,7 +114,7 @@ export function fight(f: Fighter, boss: BossConfig, seed: number): Outcome {
   const HP = boss.hp, PH = boss.phases, A = boss.attacks;
   const stand = STAND[f.style], reach = REACH[f.style];
   const regen = f.regen ?? REGEN_IN_COMBAT, eatEvery = f.eatCd ?? EAT_CD;
-  let bossHp = HP, ph = 0, idx = 0, t = 0, next = 0, shift = 0;
+  let bossHp = HP, ph = 0, idx = 0, t = 0, next = 0, shift = boss.openingShiftMs / 1000; // the opening roar, as a phase shift
   let eatCd = 0, potCd = 0, atkCd = 0, food = f.food, pots = f.pots, marks = 0, markT = 0;
   let pos: V = { x: stand, z: 0 };        // where the hero is (or will be when the current move ends)
   let moveEnd = 0;                          // the hero is still on its old spot until moveEnd
