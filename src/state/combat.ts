@@ -1,3 +1,4 @@
+import { BOSSES, type AttackDef, type BossDef } from '../data/attacks';
 import { ammoForWeapon, ITEMS, type ItemDef } from '../data/items';
 import { SPELLS } from '../data/magic';
 import { MONSTER_TYPES, WORLD_REGIONS } from '../data/world';
@@ -278,5 +279,59 @@ export function rollMonsterHit(
   }
 
   return { dmg, dragonfire, absorbed };
+}
+
+export type Marks = { count: number; left: number };
+
+export function addMark(marks: Marks, boss: BossDef): Marks {
+  marks.count = Math.min(boss.mark.max, marks.count + 1);
+  marks.left = boss.mark.secs;
+  return marks;
+}
+
+export function tickMarks(marks: Marks, dt: number): Marks {
+  if (marks.count === 0) return marks;
+  marks.left -= dt;
+  if (marks.left <= 0) {
+    marks.count = 0;
+    marks.left = 0;
+  }
+  return marks;
+}
+
+export function markMultiplier(marks: Pick<Marks, 'count'>, boss: BossDef): number {
+  return 1 + marks.count * boss.mark.step;
+}
+
+export function rollMonsterAttack(
+  typeKey: string,
+  attack: AttackDef,
+  state: GameState,
+  marks: Pick<Marks, 'count'>,
+  rand: () => number
+): { dmg: number } {
+  const def = MONSTER_TYPES[typeKey];
+  let dmg = 0;
+  if (attack.power !== undefined) {
+    const raw = Math.floor(attack.power * (0.75 + rand() * 0.25));
+    const style = attack.style === 'own' ? def.style : attack.style;
+    let mitigated = raw;
+    if (style === 'fire') {
+      mitigated = resolveDragonfire(raw, state).damage;
+    } else if (style !== 'pure') {
+      mitigated = mitigateDamage(raw, style, state.activePrayers);
+    }
+    const boss = BOSSES[typeKey];
+    dmg = Math.floor(boss ? mitigated * markMultiplier(marks, boss) : mitigated);
+  } else {
+    const hitChance = monsterHitChance(typeKey, state);
+    if (rand() < hitChance) {
+      const raw = Math.max(1, Math.floor(rand() * (def.maxHit + 1)));
+      const style = attack.style === 'own' ? def.style : attack.style;
+      const mitigated = mitigateDamage(raw, style, state.activePrayers);
+      dmg = attack.slots * mitigated;
+    }
+  }
+  return { dmg };
 }
 

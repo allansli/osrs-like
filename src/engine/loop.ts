@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {
   TICK_SEC,
+  commandClocks,
   player,
   camState,
   _camTargetVec,
@@ -22,7 +23,7 @@ import {
   spawnExpandingRing,
   spawnLevelUpFireworks
 } from './vfx';
-import { poseMonsterLimbs } from './monsterMeshes';
+import { poseMonsterDying, poseMonsterLimbs } from './monsterMeshes';
 import { syncWhipGeometry } from './playerMesh';
 import {
   renderMinimap,
@@ -33,22 +34,36 @@ import {
   checkRegionChange,
   performPlayerAttack,
   performMonsterRetaliation,
+  performMonsterHeavy,
   finishRespawn,
-  performResourceGather
+  performResourceGather,
+  handleBossPhase
 } from './actions';
+import { clearTelegraph, showTelegraph, updateTelegraphs } from './telegraphs';
 import { planEntityWalk } from './input';
 import { disposeObject3D } from './dispose';
 import { PRAYERS } from '../data/magic';
 import { WORLD_REGIONS } from '../data/world';
+import { ATTACKS, BOSSES } from '../data/attacks';
+import {
+  cueFor,
+  foodReadyPlan,
+  heartbeatPlan,
+  heavyImpactPlan,
+  resolvePlan,
+  windupPlan
+} from '../state/soundPlan';
 import { STATE } from '../state/gameState';
-import { getEquipmentBonuses, type EquipmentBonuses } from '../state/combat';
+import { getEquipmentBonuses, tickMarks, type EquipmentBonuses } from '../state/combat';
 import { moveWithCollision } from '../state/collision';
-import { isDown, isPlayerSafe, stepMonster } from '../state/monsterAi';
+import { inCombat, isDown, isPlayerSafe, stepMonster, tickWindupGates } from '../state/monsterAi';
 import { getTerrainHeight } from '../state/terrain';
 import { discoverShrines } from '../state/shrines';
-import { HP_REGEN_PER_SEC } from '../state/economy';
+import { regenRate, buyVow, altarVowLine } from '../state/sustain';
 import { entityAim, escapeStall, shouldRepath, STALL_SEC, stallTime, walkSpent } from '../state/pathfind';
 import { CAMPS } from '../data/worldMap';
+import { LOW_HEALTH, spinOffset } from '../data/feel';
+import { isHitStopped, isLowHealth, removeCameraOffsets, setLowHealth, updateReactions } from './reactions';
 import {
   addChatMessage,
   el,
@@ -56,6 +71,7 @@ import {
   updateAllUI,
   updateTargetHud,
   updateVitalsBars,
+  updateBossBar,
   consumeUiRefreshRequest
 } from '../ui/hud';
 import {
@@ -84,6 +100,10 @@ export interface FrameState {
   moveDirZ: number;
 }
 
+let lastAudioEnabled: boolean = STATE.audioEnabled;
+let heartbeatTimer = 0;
+let foodCooldownPending = false;
+
 export function updateVitalsAndRegen(f: FrameState): void {
   if (player.downed) {
     player.downedTimer -= f.dt;
@@ -109,11 +129,19 @@ export function updateVitalsAndRegen(f: FrameState): void {
   if (G.skyUniforms) G.skyUniforms.uTime.value = f.elapsedSec;
   if (G.skyDomeMesh) G.skyDomeMesh.position.copy(player.pos);
 
+  player.sinceCombat += f.dt;
+  const targetingHeroWithWindup = G.monstersList.some(
+    m => (m.logic.state === 'chase' || m.logic.state === 'attack') && m.logic.windup !== null
+  );
+  if (targetingHeroWithWindup) {
+    player.sinceCombat = 0;
+  }
+
   if (STATE.specEnergy < 100) {
     STATE.specEnergy = Math.min(100, STATE.specEnergy + f.dt * 2.5);
   }
   if (STATE.hp < STATE.maxHp && STATE.hp > 0) {
-    STATE.hp = Math.min(STATE.maxHp, STATE.hp + f.dt * HP_REGEN_PER_SEC);
+    STATE.hp = Math.min(STATE.maxHp, STATE.hp + regenRate(player.sinceCombat) * f.dt);
   }
   if (STATE.activePrayers.size > 0) {
     let drainRate = 0;
@@ -124,6 +152,36 @@ export function updateVitalsAndRegen(f: FrameState): void {
       addChatMessage('You have run out of Prayer points! Your prayers have deactivated.', 'combat');
       updateAllUI();
     }
+  }
+
+  const isLow = STATE.hp > 0 && !player.downed && (STATE.hp / STATE.maxHp < LOW_HEALTH.thresholdRatio);
+  if (isLow !== isLowHealth()) {
+    setLowHealth(isLow);
+  }
+
+  if (STATE.audioEnabled !== lastAudioEnabled) {
+    lastAudioEnabled = STATE.audioEnabled;
+    SFX.setMuted(!STATE.audioEnabled);
+  }
+
+  if (isLow && STATE.audioEnabled && !document.hidden) {
+    heartbeatTimer -= f.dt;
+    if (heartbeatTimer <= 0) {
+      SFX.play(heartbeatPlan(), false);
+      heartbeatTimer = LOW_HEALTH.heartbeatPeriodSec;
+    }
+  } else {
+    heartbeatTimer = 0;
+  }
+
+  const nowSec = f.elapsedSec;
+  if (foodCooldownPending && nowSec >= commandClocks.food.readyAt) {
+    foodCooldownPending = false;
+    if (STATE.hp > 0 && !player.downed && (STATE.hp / STATE.maxHp < 0.5)) {
+      SFX.play(foodReadyPlan(), false);
+    }
+  } else if (nowSec < commandClocks.food.readyAt) {
+    foodCooldownPending = true;
   }
 }
 
@@ -220,12 +278,26 @@ export function updatePlayerIntent(f: FrameState): void {
             addChatMessage(`${name}: "${dlg}"`, 'combat');
           }
           else if (act === 'altar') {
-            STATE.prayerPts = STATE.maxPrayerPts;
-            STATE.hp = STATE.maxHp;
-            SFX.prayer();
-            spawnLevelUpFireworks(0x38bdf8);
-            addChatMessage('You pray at the sacred Altar. Your Prayer points and Hitpoints are fully restored!', 'skill');
-            updateAllUI();
+            if (target.intent === 'vow') {
+              const res = buyVow(STATE);
+              if (res.ok) {
+                SFX.prayer();
+                spawnLevelUpFireworks(0xfde047);
+                addChatMessage('You take the Lantern Vow. A light guards your path.', 'skill');
+              } else {
+                addChatMessage(res.reason, 'combat');
+              }
+              updateAllUI();
+            } else {
+              STATE.prayerPts = STATE.maxPrayerPts;
+              STATE.hp = STATE.maxHp;
+              SFX.prayer();
+              spawnLevelUpFireworks(0x38bdf8);
+              addChatMessage('You pray at the sacred Altar. Your Prayer points and Hitpoints are fully restored!', 'skill');
+              const vowLine = altarVowLine(STATE);
+              if (vowLine !== null) addChatMessage(vowLine, 'skill');
+              updateAllUI();
+            }
           }
         } else if (player.actionCooldown <= 0) {
           if (target.type === 'monster') {
@@ -330,11 +402,12 @@ export function updatePlayerMotion(f: FrameState): void {
   player.meshGroup!.position.copy(player.pos);
 
   // Smooth Yaw & Turning Angular Velocity
-  const lastMeshYaw = player.meshGroup!.rotation.y;
+  const lastMeshYaw = player.baseYaw;
   const targetMeshYaw = player.yaw + Math.PI;
-  player.meshGroup!.rotation.y = lerpAngle(player.meshGroup!.rotation.y, targetMeshYaw, Math.min(1, f.dt * 12));
+  player.baseYaw = lerpAngle(player.baseYaw, targetMeshYaw, Math.min(1, f.dt * 12));
+  player.meshGroup!.rotation.y = player.baseYaw + spinOffset(player.spinAnim);
 
-  let turnDelta = (player.meshGroup!.rotation.y - lastMeshYaw) / Math.max(0.001, f.dt);
+  let turnDelta = (player.baseYaw - lastMeshYaw) / Math.max(0.001, f.dt);
   const a = Math.pow(0.8, f.dt * 60);
   player.yawVelocity = (player.yawVelocity ?? 0) * a + turnDelta * (1 - a);
 
@@ -345,6 +418,7 @@ export function updatePlayerMotion(f: FrameState): void {
 }
 
 export function updatePlayerAnimation(f: FrameState): void {
+  const animDt = isHitStopped(player) ? 0 : f.dt;
   // Dynamic cape physics: realistic cloth aerodynamics in Three.js coordinates
   // Note: with Y-up & -Z forward, negative rotation.x swings cape BACKWARD (+Z away from body).
   const updateCapePhysics = (isMoving: boolean, animTime: number): void => {
@@ -402,18 +476,18 @@ export function updatePlayerAnimation(f: FrameState): void {
   };
 
   if (player.blenderAnimator) {
-    player.animTime += f.dt * (player.isMoving ? 4.5 : 2.0);
+    player.animTime += animDt * (player.isMoving ? 4.5 : 2.0);
     player.blenderAnimator.setMoving(player.isMoving);
     player.blenderAnimator.setWalkSpeed(player.currentSpeed / f.moveSpeed);
-    player.blenderAnimator.update(f.dt);
+    player.blenderAnimator.update(animDt);
     updateCapePhysics(player.isMoving, player.animTime);
 
     if (player.attackAnim > 0) {
-      player.attackAnim = Math.max(0, player.attackAnim - f.dt * 3.6);
+      player.attackAnim = Math.max(0, player.attackAnim - animDt * 3.6);
     }
   } else {
     if (player.isMoving) {
-      player.animTime += f.dt * (player.currentSpeed / f.moveSpeed * 10);
+      player.animTime += animDt * (player.currentSpeed / f.moveSpeed * 10);
       const phase = player.animTime;
       const swing = Math.sin(phase) * 0.62;
       const bob = Math.cos(phase * 2) * 0.03;
@@ -443,7 +517,7 @@ export function updatePlayerAnimation(f: FrameState): void {
       }
       updateCapePhysics(true, player.animTime);
     } else {
-      player.animTime += f.dt * 2.0;
+      player.animTime += animDt * 2.0;
       const breath = Math.sin(player.animTime) * 0.035;
       player.parts.leftLegPivot.rotation.x *= Math.pow(0.85, f.dt * 60);
       player.parts.rightLegPivot.rotation.x *= Math.pow(0.85, f.dt * 60);
@@ -465,7 +539,7 @@ export function updatePlayerAnimation(f: FrameState): void {
     }
 
     if (player.attackAnim > 0) {
-      player.attackAnim = Math.max(0, player.attackAnim - f.dt * 3.6);
+      player.attackAnim = Math.max(0, player.attackAnim - animDt * 3.6);
       const slashAngle = Math.sin(player.attackAnim * Math.PI) * 1.65;
       const k = player.activeWeaponKind;
       if (k === 'greataxe') {
@@ -499,7 +573,6 @@ export function updatePlayerAnimation(f: FrameState): void {
 
   if (player.spinAnim > 0) {
     player.spinAnim = Math.max(0, player.spinAnim - f.dt * 2.4);
-    player.meshGroup!.rotation.y += (1 - player.spinAnim) * Math.PI * 4;
     player.parts.spinRing.material.opacity = player.spinAnim * 0.85;
     player.parts.spinRing.scale.setScalar(0.8 + (1 - player.spinAnim) * 0.9);
   } else if (player.parts.spinRing) {
@@ -549,13 +622,25 @@ export function updateCamera(f: FrameState): void {
   G.sunLight.target.updateMatrixWorld();
 }
 
+let monsterLoopOffset = 0;
+const sessionWindupGates: Record<string, number> = {};
+
 export function updateMonsters(f: FrameState): void {
   // Monsters Update: rules in stepMonster, mesh, pose and events here.
+  tickMarks(player.marks, f.dt);
+  tickWindupGates(sessionWindupGates, f.dt);
   const playerCombat = getCombatLevel();
   const playerSafe = isPlayerSafe(player.pos.x, player.pos.z, f.now, G.aggroGraceUntil);
   const camps = CAMPS;
+  const pathBudget = { left: 2 };
+  const grid = G.walkGrid;
+  const n = G.monstersList.length;
+  const startIdx = n > 0 ? monsterLoopOffset % n : 0;
+  monsterLoopOffset++;
+  let activeBoss: MonsterEntity | null = null;
 
-  G.monstersList.forEach((m: MonsterEntity) => {
+  for (let k = 0; k < n; k++) {
+    const m = G.monstersList[(startIdx + k) % n];
     const L = m.logic;
     const prevState = L.state;
     const prevTimer = L.timer;
@@ -569,31 +654,59 @@ export function updateMonsters(f: FrameState): void {
       rand: Math.random,
       playerCombat,
       playerSafe,
-      camps
+      camps,
+      grid,
+      pathBudget,
+      windupGate: sessionWindupGates
     });
 
-    if (events.some(e => e.kind === 'aggro')) {
-      addChatMessage(`<b>${m.def.name}</b> attacks!`, 'combat');
+    for (const ev of events) {
+      if (ev.kind === 'aggro') {
+        addChatMessage(`<b>${m.def.name}</b> attacks!`, 'combat');
+      } else if (ev.kind === 'reset') {
+        clearTelegraph(m);
+        const hpBar = m.labelEl.querySelector<HTMLElement>('.entity-hp-bar')!;
+        const hpFill = m.labelEl.querySelector<HTMLElement>('.entity-hp-fill')!;
+        hpBar.style.display = 'none';
+        hpFill.style.width = '100%';
+        m.labelEl.style.display = 'none';
+        updateTargetHud();
+      } else if (ev.kind === 'windup') {
+        showTelegraph(m, ev);
+        const attack = ATTACKS[ev.attackId];
+        // The rise ends when the shape fills: plan it from the event's scaled wind-up, not the attack row.
+        m.telegraph!.sound = SFX.play(windupPlan({ windupMs: ev.ms }, cueFor(attack, m.def.style)), true);
+      } else if (ev.kind === 'cancel') {
+        clearTelegraph(m);
+      } else if (ev.kind === 'resolve') {
+        clearTelegraph(m);
+        player.sinceCombat = 0;
+        const attack = ATTACKS[ev.attackId];
+        const cue = cueFor(attack, m.def.style);
+        const damage = ev.hit ? performMonsterHeavy(m, ev.attackId) : 0;
+        SFX.play([...resolvePlan(cue), ...heavyImpactPlan(ev.hit, damage)], true);
+      } else if (ev.kind === 'died') {
+        clearTelegraph(m);
+      } else if (ev.kind === 'phase') {
+        handleBossPhase(m, ev.index);
+      }
     }
 
-    if (events.some(e => e.kind === 'reset')) {
-      const hpBar = m.labelEl.querySelector<HTMLElement>('.entity-hp-bar')!;
-      const hpFill = m.labelEl.querySelector<HTMLElement>('.entity-hp-fill')!;
-      hpBar.style.display = 'none';
-      hpFill.style.width = '100%';
-      m.labelEl.style.display = 'none';
+    if (BOSSES[L.typeKey] && inCombat(L) && !isDown(L)) {
+      activeBoss = m;
+    }
+    if (player.targetEntity?.ref === m && L.shiftLeft === 0 && document.getElementById('target-hud')!.classList.contains('untouchable')) {
       updateTargetHud();
     }
 
     if (prevState === 'dying') {
-      const progress = Math.max(0, 1 - (prevTimer - f.dt) / 0.85);
-      m.rig.group.rotation.x = progress * (Math.PI / 2.3);
-      m.rig.group.position.y = getTerrainHeight(m.pos.x, m.pos.z) - progress * 0.45;
+      clearTelegraph(m);
+      poseMonsterDying(m, prevTimer, f.dt);
       if (L.state === 'dead') {
         m.rig.group.visible = false;
         m.rig.group.rotation.x = 0;
       }
-      return;
+      continue;
     }
 
     if (prevState === 'dead') {
@@ -603,7 +716,7 @@ export function updateMonsters(f: FrameState): void {
         m.rig.group.rotation.set(0, 0, 0);
         m.rig.group.visible = true;
       }
-      return;
+      continue;
     }
 
     if (m.rig.lWing && m.rig.rWing) {
@@ -613,8 +726,8 @@ export function updateMonsters(f: FrameState): void {
     }
 
     if (L.state === 'chase' || L.state === 'attack') {
-      const dx = player.pos.x - fromX;
-      const dz = player.pos.z - fromZ;
+      const dx = L.windup ? L.windup.dx : (player.pos.x - fromX);
+      const dz = L.windup ? L.windup.dz : (player.pos.z - fromZ);
       const targetMonYaw = Math.atan2(dx, dz) + Math.PI;
       m.rig.group.rotation.y = lerpAngle(m.rig.group.rotation.y, targetMonYaw, Math.min(1, f.dt * 9));
       if (L.state === 'chase') {
@@ -624,7 +737,10 @@ export function updateMonsters(f: FrameState): void {
         poseMonsterLimbs(m, true, f.now, f.dt);
       } else {
         poseMonsterLimbs(m, false, f.now, f.dt);
-        if (events.some(e => e.kind === 'attack')) performMonsterRetaliation(m);
+        if (events.some(e => e.kind === 'attack')) {
+          player.sinceCombat = 0;
+          performMonsterRetaliation(m);
+        }
       }
     } else if (L.state === 'return') {
       const dx = L.homeX - fromX;
@@ -654,7 +770,9 @@ export function updateMonsters(f: FrameState): void {
       }
     }
     // chase or attack that dropped to idle this step: nothing else, as before.
-  });
+  }
+  updateBossBar(activeBoss, player.marks.count);
+  updateTelegraphs(f.dt);
 }
 
 export function updateWorldTimers(f: FrameState): void {
@@ -792,8 +910,10 @@ export function gameLoop(now: number): void {
   updatePlayerIntent(f);
   updatePlayerMotion(f);
   updatePlayerAnimation(f);
+  removeCameraOffsets();
   updateCamera(f);
   updateMonsters(f);
+  updateReactions(f.dt);
   updateWorldTimers(f);
   updateOverlay(f);
   renderFrame(f);

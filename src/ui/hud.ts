@@ -22,7 +22,8 @@ import {
 } from './stations';
 import { cycleTimeOfDay } from '../engine/worldMesh';
 import { isDown } from '../state/monsterAi';
-import { player, type MonsterEntity, type ResourceNodeEntity } from '../engine/context';
+import { player, commandClocks, type MonsterEntity, type ResourceNodeEntity } from '../engine/context';
+import { FOOD_CD_SECS, POTION_CD_SECS } from '../state/sustain';
 import {
   handleInventoryClick,
   showSellChooseMenu,
@@ -162,6 +163,60 @@ export function updateVitalsBars(): void {
   el('prayer-text').textContent = `${Math.ceil(STATE.prayerPts)} / ${STATE.maxPrayerPts}`;
   el('spec-fill').style.width = STATE.specEnergy + '%';
   el('spec-text').textContent = `Special ${Math.floor(STATE.specEnergy)}%`;
+  el('lantern-mark').hidden = !STATE.quests.lanternVow;
+  updateCooldownOverlays();
+}
+
+// The share of the food or potion cooldown still to run, 0 when that item can be used.
+function cooldownRatio(type: 'food' | 'potion', now: number): number {
+  const left = type === 'food' ? commandClocks.food.readyAt - now : commandClocks.potion.readyAt - now;
+  return Math.max(0, Math.min(1, left / (type === 'food' ? FOOD_CD_SECS : POTION_CD_SECS)));
+}
+
+export function updateCooldownOverlays(): void {
+  const now = performance.now() / 1000;
+
+  const slotDivs = el('inventory-grid').querySelectorAll<HTMLElement>('.inv-slot');
+  slotDivs.forEach((slotDiv, i) => {
+    // The grid may be stale (rebuilt after this runs): only slots already drawn with an overlay are updated.
+    const overlay = slotDiv.querySelector<HTMLElement>('.cooldown-overlay');
+    const entry = STATE.inventory[i];
+    if (!overlay || !entry) return;
+    const it = (ITEMS as Record<string, ItemDef>)[entry.id];
+    if (it.type === 'food' || it.type === 'potion') {
+      const ratio = cooldownRatio(it.type, now);
+      slotDiv.classList.toggle('cooldown', ratio > 0);
+      slotDiv.style.setProperty('--cd', String(ratio));
+      overlay.style.setProperty('--cd', String(ratio));
+    }
+  });
+}
+
+export function updateSkillsPanel(): void {
+  const skillsGrid = el('skills-grid');
+  skillsGrid.innerHTML = '';
+  let totalLvl = 0;
+  let totalXp = 0;
+  for (const [key, meta] of Object.entries(SKILLS_META)) {
+    const sk = STATE.skills[key];
+    totalLvl += sk.lvl;
+    totalXp += sk.xp;
+    const nextLvlXp = OSRS_XP_TABLE[Math.min(99, sk.lvl + 1)];
+    const box = document.createElement('div');
+    box.className = 'skill-box';
+    box.title = `${meta.name}: ${sk.xp.toLocaleString()} XP (Next level at ${nextLvlXp.toLocaleString()} XP)\n${meta.desc}`;
+    box.onclick = () => openXpTableModal(key);
+    box.innerHTML = `
+      <div class="skill-left">
+        <span class="skill-icon-wrap">${getSkillSvg(key)}</span>
+        <span class="skill-name">${meta.name}</span>
+      </div>
+      <span class="skill-lvl">${sk.lvl}</span>
+    `;
+    skillsGrid.appendChild(box);
+  }
+  el('total-lvl-val').textContent = String(totalLvl);
+  el('total-xp-val').textContent = `${totalXp.toLocaleString()} XP`;
 }
 
 export function updateAllUI(): void {
@@ -220,6 +275,14 @@ export function updateAllUI(): void {
       if (it.tier && (TIER_COLORS as Record<string, string>)[it.tier]) {
         slotDiv.innerHTML += `<span class="item-tier-dot" style="background:${(TIER_COLORS as Record<string, string>)[it.tier]}"></span>`;
       }
+      if (it.type === 'food' || it.type === 'potion') {
+        const ratio = cooldownRatio(it.type, performance.now() / 1000);
+        if (ratio > 0) {
+          slotDiv.classList.add('cooldown');
+        }
+        slotDiv.style.setProperty('--cd', String(ratio));
+        slotDiv.innerHTML += `<div class="cooldown-overlay" style="--cd: ${ratio}"></div>`;
+      }
       let statsInfo = '';
       if (it.type === 'equip') {
         const st: string[] = [];
@@ -247,31 +310,7 @@ export function updateAllUI(): void {
     invGrid.appendChild(slotDiv);
   }
 
-  // Skills Grid
-  const skillsGrid = el('skills-grid');
-  skillsGrid.innerHTML = '';
-  let totalLvl = 0;
-  let totalXp = 0;
-  for (const [key, meta] of Object.entries(SKILLS_META)) {
-    const sk = STATE.skills[key];
-    totalLvl += sk.lvl;
-    totalXp += sk.xp;
-    const nextLvlXp = OSRS_XP_TABLE[Math.min(99, sk.lvl + 1)];
-    const box = document.createElement('div');
-    box.className = 'skill-box';
-    box.title = `${meta.name}: ${sk.xp.toLocaleString()} XP (Next level at ${nextLvlXp.toLocaleString()} XP)\n${meta.desc}`;
-    box.onclick = () => openXpTableModal(key);
-    box.innerHTML = `
-      <div class="skill-left">
-        <span class="skill-icon-wrap">${getSkillSvg(key)}</span>
-        <span class="skill-name">${meta.name}</span>
-      </div>
-      <span class="skill-lvl">${sk.lvl}</span>
-    `;
-    skillsGrid.appendChild(box);
-  }
-  el('total-lvl-val').textContent = String(totalLvl);
-  el('total-xp-val').textContent = `${totalXp.toLocaleString()} XP`;
+  updateSkillsPanel();
 
   // Full 10-Slot Equipment Paperdoll (3x4 layout)
   const doll = el('equip-doll');
@@ -381,21 +420,39 @@ export function updateTargetHud(): void {
   if (player.targetEntity && player.targetEntity.type === 'monster' && !isDown(player.targetEntity.ref.logic)) {
     const m: MonsterEntity = player.targetEntity.ref;
     hud.classList.add('visible');
+    const isUntouchable = m.logic.shiftLeft > 0;
+    hud.classList.toggle('untouchable', isUntouchable);
     el('target-name').textContent = m.def.name;
     el('target-lvl-tag').textContent = `Lv ${m.def.level}`;
     const pct = Math.max(0, Math.min(100, (m.logic.hp / m.logic.maxHp) * 100));
     el('target-hp-fill').style.width = pct + '%';
-    el('target-hp-text').textContent = `${Math.ceil(m.logic.hp)} / ${m.logic.maxHp}`;
+    el('target-hp-text').textContent = isUntouchable ? 'Untouchable' : `${Math.ceil(m.logic.hp)} / ${m.logic.maxHp}`;
   } else if (player.targetEntity && player.targetEntity.type === 'resource' && !player.targetEntity.ref.depleted) {
     const r: ResourceNodeEntity = player.targetEntity.ref;
     hud.classList.add('visible');
+    hud.classList.remove('untouchable');
     el('target-name').textContent = r.def.name!;
     el('target-lvl-tag').textContent = `Req Lv ${r.def.req}`;
     el('target-hp-fill').style.width = '100%';
     el('target-hp-text').textContent = (SKILLS_META as Record<string, { name: string }>)[r.def.skill!].name;
   } else {
     hud.classList.remove('visible');
+    hud.classList.remove('untouchable');
   }
+}
+
+export function updateBossBar(monster: MonsterEntity | null, markCount: number): void {
+  const bar = el('boss-bar');
+  if (!monster) {
+    bar.hidden = true;
+    return;
+  }
+  bar.hidden = false;
+  el('boss-name').textContent = monster.def.name;
+  const pct = Math.max(0, Math.min(100, (monster.logic.hp / monster.logic.maxHp) * 100));
+  el('boss-hp-fill').style.width = pct + '%';
+  el('boss-hp-text').textContent = `${Math.ceil(monster.logic.hp)} / ${monster.logic.maxHp}`;
+  el('boss-marks').textContent = `Marks: ${markCount}`;
 }
 
 export function applyLoadedStateToHud(): void {

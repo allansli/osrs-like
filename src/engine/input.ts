@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { G, player, camState, type MonsterEntity, type ResourceNodeEntity } from './context';
 import { noteCheatKey } from './session';
-import { SFX } from './audio';
+import { SFX, armAudioOnGesture } from './audio';
 import { toggleSpecialAttack, closeModals, hideHoverTooltip } from '../ui/playerActions';
 import { switchTab, addChatMessage, updateTargetHud, getCombatLevel, el } from '../ui/hud';
 import { getTerrainHeight } from '../state/terrain';
@@ -14,6 +14,8 @@ import {
   gatherVerb,
   monsterThreatColor
 } from '../state/adventure';
+import { vowPrice, vowRefusal } from '../state/sustain';
+import { dispatchCommand } from './actions';
 
 // The player's own 1-unit cell can be blocked while the player stands on a walkable
 // position (wall edge, shoreline). Start paths from the nearest walkable cell centre.
@@ -51,6 +53,7 @@ export interface PickResult {
 }
 
 export function setupInputHandlers(): void {
+  armAudioOnGesture();
   G.clickMarkerMesh = new THREE.Group();
   G.clickMarkerMesh.userData.life = 0;
   const crossMat = () => new THREE.MeshBasicMaterial({ color: 0xfde047, transparent: true, opacity: 0, depthWrite: false });
@@ -267,16 +270,7 @@ export function onGameContextMenu(e: MouseEvent): void {
       tone,
       run: () => {
         const m = ud.entity as MonsterEntity;
-        const stopDist = (STATE.combatStyle === 'rapid' || STATE.combatStyle === 'ranged' || STATE.combatStyle === 'magic') ? 13.5 : 2.9;
-        const path = planEntityWalk([m.pos.x, m.pos.z], stopDist);
-        if (!path) {
-          addChatMessage('You cannot walk there.', 'combat');
-          return;
-        }
-        player.targetEntity = { type: 'monster', ref: m, madeAt: [m.pos.x, m.pos.z] };
-        player.waypoints = path;
-        showClickMarker(m.pos.x, m.pos.z, 0xef4444);
-        updateTargetHud();
+        dispatchCommand({ kind: 'attack', targetId: m.id });
       }
     });
   } else if (ud && ud.type === 'resource' && ud.entity && !ud.entity.depleted) {
@@ -317,6 +311,22 @@ export function onGameContextMenu(e: MouseEvent): void {
         showClickMarker(anchor.x, anchor.z, 0xfde047);
       }
     });
+    if (ud.action === 'altar' && vowRefusal(STATE) === null) {
+      options.push({
+        label: `Take the Lantern Vow (${vowPrice(STATE)} coins)`,
+        run: () => {
+          const stopDist = 3.5;
+          const path = planEntityWalk([anchor.x, anchor.z], stopDist);
+          if (!path) {
+            addChatMessage('You cannot walk there.', 'combat');
+            return;
+          }
+          player.targetEntity = { type: 'interactive', ref: ud, pos: anchor, intent: 'vow' };
+          player.waypoints = path;
+          showClickMarker(anchor.x, anchor.z, 0xfde047);
+        }
+      });
+    }
   }
 
   options.push({
@@ -333,15 +343,7 @@ export function onGameContextMenu(e: MouseEvent): void {
     options.push({
       label: 'Walk here',
       run: () => {
-        const path = planWalk([pt.x, pt.z]);
-        if (!path) {
-          addChatMessage('You cannot walk there.', 'combat');
-          return;
-        }
-        player.targetEntity = null;
-        player.waypoints = path;
-        showClickMarker(pt.x, pt.z, 0xfde047);
-        updateTargetHud();
+        dispatchCommand({ kind: 'move', x: pt.x, z: pt.z });
       }
     });
   }
@@ -386,31 +388,25 @@ export function handleWorldClick(e: MouseEvent): void {
 
   if (!ud || ud.type === 'ground') {
     const pt = chosen.point;
-    const path = planWalk([pt.x, pt.z]);
-    if (!path) {
-      addChatMessage('You cannot walk there.', 'combat');
-      return;
-    }
-    player.targetEntity = null;
-    player.waypoints = path;
-    showClickMarker(pt.x, pt.z, 0xfde047);
-    updateTargetHud();
+    dispatchCommand({ kind: 'move', x: pt.x, z: pt.z });
     return;
   }
 
   if (ud.type === 'monster') {
     if (isDown(ud.entity.logic)) return;
     const m = ud.entity as MonsterEntity;
-    const stopDist = (STATE.combatStyle === 'rapid' || STATE.combatStyle === 'ranged' || STATE.combatStyle === 'magic') ? 13.5 : 2.9;
-    const path = planEntityWalk([m.pos.x, m.pos.z], stopDist);
-    if (!path) {
-      addChatMessage('You cannot walk there.', 'combat');
+    const atRange = STATE.combatStyle === 'rapid' || STATE.combatStyle === 'ranged' || STATE.combatStyle === 'magic';
+    const stopDist = atRange ? 13.5 : 2.9;
+    const dx = m.pos.x - player.pos.x;
+    const dz = m.pos.z - player.pos.z;
+    const dist = Math.hypot(dx, dz);
+    // The run-in rule (design 6.4): only a ranged or magic hero needs a re-click to mean "walk here"; melee re-attacks.
+    if (atRange && player.targetEntity && player.targetEntity.type === 'monster' && player.targetEntity.ref === m && dist <= stopDist) {
+      const groundHit = hits.find((h) => h.object === G.terrainMesh);
+      if (groundHit) dispatchCommand({ kind: 'move', x: groundHit.point.x, z: groundHit.point.z });
       return;
     }
-    player.targetEntity = { type: 'monster', ref: m, madeAt: [m.pos.x, m.pos.z] };
-    player.waypoints = path;
-    showClickMarker(m.pos.x, m.pos.z, 0xef4444);
-    updateTargetHud();
+    dispatchCommand({ kind: 'attack', targetId: m.id });
   } else if (ud.type === 'resource') {
     if (ud.entity.depleted) {
       addChatMessage(`This ${ud.entity.def.name} is depleted. Wait a moment for it to replenish.`);

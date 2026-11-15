@@ -114,12 +114,18 @@ export function isWalkable(x: number, z: number): boolean {
   return true;
 }
 
-export function moveWithCollision(x: number, z: number, dx: number, dz: number): { x: number; z: number } {
+export function moveWithCollision(
+  x: number,
+  z: number,
+  dx: number,
+  dz: number,
+  walkable: (x: number, z: number) => boolean = isWalkable
+): { x: number; z: number } {
   const clamp = (v: number) => Math.max(-118, Math.min(118, v));
   const nx = clamp(x + dx);
   const nz = clamp(z + dz);
-  if (isWalkable(nx, nz)) return { x: nx, z: nz };
-  if (isWalkable(nx, z)) return { x: nx, z };
-  if (isWalkable(x, nz)) return { x, z: nz };
+  if (walkable(nx, nz)) return { x: nx, z: nz };
+  if (walkable(nx, z)) return { x: nx, z };
+  if (walkable(x, nz)) return { x, z: nz };
   return { x, z };
 }

@@ -1,0 +1,46 @@
+== 1. Timing table: wind-up against the minimum for a click-to-act answer
+   minimum = human 700 + device 160 + accel 90 + escape distance / 11.5 u/s; required margin 200 ms
+attack           shape                        escape(u)  min(ms)  windup(ms)  margin(ms)  slots  recovery(ms)
+tail_lash        cone 4.5 x 40deg                 2.05     1128       1600         472      2         1700
+hex_circle       circle r2.5 at target            2.80     1193       1600         407      2         1700
+pinning_volley   circle r2.5 at target            2.80     1193       1600         407      2         1700
+overhead_slam    circle r3 at target              3.30     1237       1600         363      2         1700
+ground_quake     circle r4.5 at self              4.80     1367       1700         333      2         1600
+scorch_line      line 12 x 2.4                    1.50     1080       1600         520      2         1700
+ember_cone       cone 16 x 45deg                  6.91     1551       1800         249      2         1500
+tail_sweep       circle r5 at self                5.30     1411       1700         289      2         1600
+slag_rain        circle r2.5 at target            2.80     1193       1500         307      1          150
+ashen_nova       ring 8..20                       5.80     1454       2000         546      2         1300
+slagburst        circle r8 at self                8.30     1672       2000         328      2         1300
+   every row has at least 200 ms of margin: true
+   boss phase III (cadence x0.8), in ms: ashen_nova slot 2640 recovery 640; slagburst slot 2640 recovery 640; ember_cone slot 2640 recovery 840; slag_rain slot 1650 recovery 150
+
+== 2. Ordinary monsters: damage per second against a player who never reacts (10,000 s each, seed 7)
+   rule: a heavy attack takes `slots` slots of the cadence and deals `slots` x one basic roll
+monster          today dps   with pattern, standing   dodging every heavy   share avoidable
+scorpion             0.237                    0.229                 0.137               40%
+dark_wizard          0.406                    0.406                 0.237               42%
+dark_ranger          0.670                    0.661                 0.407               38%
+hill_giant           0.705                    0.709                 0.428               40%
+moss_guardian        1.380                    1.428                 0.846               41%
+lesser_demon         2.623                    2.681                 1.624               39%
+
+== 3. Share of wind-ups cleared, by player speed (human time lognormal, median 550 ms, sigma 0.3; 5% not noticed)
+attack            fast device   slow device (+160 ms more)   slow player (+300 ms)
+tail_lash               94.5%                93.1%                    89.2%
+hex_circle              94.1%                91.6%                    85.3%
+pinning_volley          94.1%                91.6%                    85.3%
+overhead_slam           93.8%                90.3%                    81.8%
+ground_quake            93.4%                89.2%                    78.8%
+scorch_line             94.7%                93.7%                    90.9%
+ember_cone              91.7%                84.0%                    67.0%
+tail_sweep              92.6%                86.9%                    73.2%
+slag_rain               93.0%                87.9%                    75.7%
+ashen_nova              94.8%                94.0%                    91.6%
+slagburst               93.3%                89.0%                    78.3%
+
+== 4. Monster pathing on the Stage 2 walk grid (real buildWalkGrid and findPath)
+   monsters: 42; home cells closed on the grid: 0
+   findPath calls (to each home from 32 points at leash and leash + 11): 1166; no route: 0
+   expanded cells: mean 115, max 3686; calls over the cap of 6000: 0
+   time: 0.277 ms per call as written today (each call allocates and fills four 55696-cell arrays)
