@@ -166,12 +166,11 @@ export function updateVitalsAndRegen(f: FrameState): void {
     SFX.setMuted(!STATE.audioEnabled);
   }
 
-  const isDocHidden = typeof document !== 'undefined' && Boolean(document.hidden);
-  if (isLow && STATE.audioEnabled && !isDocHidden) {
+  if (isLow && STATE.audioEnabled && !document.hidden) {
     heartbeatTimer -= f.dt;
     if (heartbeatTimer <= 0) {
       SFX.play(heartbeatPlan(), false);
-      heartbeatTimer = 1.2;
+      heartbeatTimer = LOW_HEALTH.heartbeatPeriodSec;
     }
   } else {
     heartbeatTimer = 0;

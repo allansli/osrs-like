@@ -38,6 +38,7 @@ export const CAMERA = {
 
 export const LOW_HEALTH = {
   thresholdRatio: 0.25,
+  heartbeatPeriodSec: 1.2,
 } as const;
 
 export const TIER_ROWS: Record<string, Record<TierId, number | boolean>> = {
