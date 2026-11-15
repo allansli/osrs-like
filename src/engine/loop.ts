@@ -23,7 +23,7 @@ import {
   spawnExpandingRing,
   spawnLevelUpFireworks
 } from './vfx';
-import { poseMonsterLimbs } from './monsterMeshes';
+import { poseMonsterDying, poseMonsterLimbs } from './monsterMeshes';
 import { syncWhipGeometry } from './playerMesh';
 import {
   renderMinimap,
@@ -701,9 +701,7 @@ export function updateMonsters(f: FrameState): void {
 
     if (prevState === 'dying') {
       clearTelegraph(m);
-      const progress = Math.max(0, 1 - (prevTimer - f.dt) / 0.85);
-      m.rig.group.rotation.x = progress * (Math.PI / 2.3);
-      m.rig.group.position.y = getTerrainHeight(m.pos.x, m.pos.z) - progress * 0.45;
+      poseMonsterDying(m, prevTimer, f.dt);
       if (L.state === 'dead') {
         m.rig.group.visible = false;
         m.rig.group.rotation.x = 0;

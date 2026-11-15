@@ -4,7 +4,7 @@ import type { MonsterEntity } from '../src/engine/context';
 import { CAMERA, KNOCK_BACK, springOffset } from '../src/data/feel';
 import { cameraKick, cameraRumble, hitStop, knockBack, removeCameraOffsets, updateReactions } from '../src/engine/reactions';
 import { G } from '../src/engine/context';
-import { poseMonsterLimbs } from '../src/engine/monsterMeshes';
+import { poseMonsterDying, poseMonsterLimbs } from '../src/engine/monsterMeshes';
 
 vi.stubGlobal('window', { matchMedia: () => ({ matches: false }) });
 
@@ -100,5 +100,37 @@ describe('camera kick and rumble (review 12): offsets ride on top of the lerped 
     cameraRumble(200);
     for (let i = 0; i < 20; i++) frame();
     expect(G.camera.position.distanceTo(target)).toBeCloseTo(0, 9);
+  });
+});
+
+describe('monster hit stop (review 9): the death topple freezes through the killing blow\'s hit stop', () => {
+  it('the dying pose holds while hit-stopped, resumes without a jump and is fully toppled when the rules timer ends', () => {
+    const group = new THREE.Group();
+    const m = { rig: { group }, logic: { state: 'dying' }, pos: new THREE.Vector3(0, 0, 0) } as unknown as MonsterEntity;
+    const dt = 0.016;
+    let left = 0.85;
+    hitStop(m, 110);
+    poseMonsterDying(m, left, dt);
+    const rx = group.rotation.x;
+    const y = group.position.y;
+    for (let i = 0; i < 6; i++) {
+      left -= dt;
+      poseMonsterDying(m, left, dt);
+      expect(group.rotation.x).toBe(rx);
+      expect(group.position.y).toBe(y);
+    }
+    updateReactions(0.2);
+    left -= dt;
+    poseMonsterDying(m, left, dt);
+    const step = group.rotation.x - rx;
+    expect(step).toBeGreaterThan(0);
+    // One frame of a linear 0.85 s topple to 90 / 2.3 degrees, at most doubled by the catch-up.
+    expect(step).toBeLessThan(2 * (dt / 0.85) * (Math.PI / 2.3));
+    while (left > dt) {
+      left -= dt;
+      poseMonsterDying(m, left, dt);
+    }
+    poseMonsterDying(m, left, dt);
+    expect(group.rotation.x).toBeCloseTo(Math.PI / 2.3, 9);
   });
 });

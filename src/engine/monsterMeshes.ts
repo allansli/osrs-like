@@ -794,6 +794,19 @@ export function createMonsterMesh(def: MonsterDef, typeKey: string): MonsterRigL
 // Monsters posed in a wind-up on the previous frame; only they get the head reset, so types without a pattern keep their pre-T5 pose.
 const windupPosed = new WeakSet<object>();
 
+// Death topple progress (0..1), drawn only: it holds through a hit stop and then catches up, so the body is fully
+// toppled on the frame the rules timer ends (timeLeft <= dt), whatever stop it went through.
+const dyingProgress = new WeakMap<object, number>();
+
+export function poseMonsterDying(m: MonsterEntity, timeLeft: number, dt: number): void {
+  const prev = dyingProgress.get(m) ?? 0;
+  const progress = isHitStopped(m) ? prev : prev + (1 - prev) * Math.min(1, dt / timeLeft);
+  if (timeLeft <= dt) dyingProgress.delete(m);
+  else dyingProgress.set(m, progress);
+  m.rig.group.rotation.x = progress * (Math.PI / 2.3);
+  m.rig.group.position.y = getTerrainHeight(m.pos.x, m.pos.z) - progress * 0.45;
+}
+
 export function poseMonsterLimbs(m: MonsterEntity, moving: boolean, now: number, dt: number): void {
   const rig = m.rig;
   if (!rig || m.logic.state === 'dying') return;
