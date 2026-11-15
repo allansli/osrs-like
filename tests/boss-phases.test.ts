@@ -664,9 +664,10 @@ function deadTime(m: MonsterLogic): number {
   const w: StepWorld = { playerX: m.homeX + 40, playerZ: m.homeZ, playerDown: false, dt: DT, rand: seeded(1) };
   let dead = 0;
   for (let i = 0; i < Math.round(200 / DT); i++) {
+    const wasDead = st(m) === 'dead';
     const evs = stepMonster(m, w);
-    if (evs.some((ev) => ev.kind === 'respawned')) return dead + DT;
-    if (st(m) === 'dead') dead += DT;
+    if (wasDead) dead += DT;
+    if (evs.some((ev) => ev.kind === 'respawned')) return dead;
   }
   return Infinity;
 }
