@@ -559,9 +559,7 @@ const sessionWindupGates: Record<string, number> = {};
 
 export function updateMonsters(f: FrameState): void {
   // Monsters Update: rules in stepMonster, mesh, pose and events here.
-  if (player.marks) {
-    tickMarks(player.marks, f.dt);
-  }
+  tickMarks(player.marks, f.dt);
   tickWindupGates(sessionWindupGates, f.dt);
   const playerCombat = getCombatLevel();
   const playerSafe = isPlayerSafe(player.pos.x, player.pos.z, f.now, G.aggroGraceUntil);
@@ -624,7 +622,7 @@ export function updateMonsters(f: FrameState): void {
     if (BOSSES[L.typeKey] && inCombat(L) && !isDown(L)) {
       activeBoss = m;
     }
-    if (player.targetEntity?.ref === m && L.shiftLeft === 0 && document.getElementById('target-hud')?.classList.contains('untouchable')) {
+    if (player.targetEntity?.ref === m && L.shiftLeft === 0 && document.getElementById('target-hud')!.classList.contains('untouchable')) {
       updateTargetHud();
     }
 
@@ -699,7 +697,7 @@ export function updateMonsters(f: FrameState): void {
     }
     // chase or attack that dropped to idle this step: nothing else, as before.
   }
-  updateBossBar(activeBoss, player.marks?.count ?? 0);
+  updateBossBar(activeBoss, player.marks.count);
   updateTelegraphs(f.dt);
 }
 

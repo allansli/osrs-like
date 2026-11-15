@@ -39,6 +39,7 @@ export interface PlayerState {
   activeWeaponKind: string;
   parts: any;
   blenderAnimator?: BlenderHeroAnimator | null;
+  marks: { count: number; left: number };
 }
 
 export const player: PlayerState = {
@@ -64,7 +65,8 @@ export const player: PlayerState = {
   capeAngleY: 0,
   capeAngleZ: 0,
   activeWeaponKind: 'scimitar',
-  parts: {}
+  parts: {},
+  marks: { count: 0, left: 0 }
 };
 
 export interface CamState {
