@@ -2,7 +2,8 @@ import { describe, expect, it, vi } from 'vitest';
 import * as THREE from 'three';
 import type { MonsterEntity } from '../src/engine/context';
 import { KNOCK_BACK, springOffset } from '../src/data/feel';
-import { knockBack, updateReactions } from '../src/engine/reactions';
+import { hitStop, knockBack, updateReactions } from '../src/engine/reactions';
+import { poseMonsterLimbs } from '../src/engine/monsterMeshes';
 
 vi.stubGlobal('window', { matchMedia: () => ({ matches: false }) });
 
@@ -46,4 +47,24 @@ describe('monster knock-back (review 8): the body moves along the world blow dir
       expect(bodyWorld(group, body).distanceTo(rest)).toBeCloseTo(0, 6);
     });
   }
+});
+
+describe('monster hit stop (review 9): the flinch pose freezes while the monster is hit-stopped', () => {
+  it('flinch does not decay during the stop and resumes after it', () => {
+    const group = new THREE.Group();
+    const m = {
+      rig: { group },
+      logic: { state: 'attack', windup: null },
+      pos: new THREE.Vector3(0, 0, 0),
+      flinch: 1,
+      attackAnim: 0
+    } as unknown as MonsterEntity;
+    hitStop(m, 70);
+    poseMonsterLimbs(m, false, 0, 0.016);
+    poseMonsterLimbs(m, false, 16, 0.016);
+    expect(m.flinch).toBe(1);
+    updateReactions(0.1);
+    poseMonsterLimbs(m, false, 116, 0.016);
+    expect(m.flinch).toBeLessThan(1);
+  });
 });

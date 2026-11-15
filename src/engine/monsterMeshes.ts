@@ -799,10 +799,12 @@ export function poseMonsterLimbs(m: MonsterEntity, moving: boolean, now: number,
   if (!rig || m.logic.state === 'dying') return;
 
   const groundY = getTerrainHeight(m.pos.x, m.pos.z);
+  // Hit stop freezes the pose time of the flinch and the attack swing (design 6.5).
+  const animDt = isHitStopped(m) ? 0 : dt;
 
   // Flinch Reaction on Hit
   if (m.flinch > 0) {
-    m.flinch = Math.max(0, m.flinch - dt * 3.8);
+    m.flinch = Math.max(0, m.flinch - animDt * 3.8);
     const curve = Math.sin(m.flinch * Math.PI);
     rig.group.position.y = groundY + curve * 0.16;
     rig.group.rotation.x = curve * 0.24;
@@ -831,7 +833,6 @@ export function poseMonsterLimbs(m: MonsterEntity, moving: boolean, now: number,
   if (windupPosed.delete(m) && rig.headGroup) rig.headGroup.rotation.x = 0;
 
   // Distinct Attack Animations
-  const animDt = isHitStopped(m) ? 0 : dt;
   if (m.attackAnim > 0) {
     m.attackAnim = Math.max(0, m.attackAnim - animDt * 3.2);
     const progress = Math.sin(m.attackAnim * Math.PI);
