@@ -119,6 +119,14 @@ export function dodgedPlan(): Voice[] {
   ];
 }
 
+// The impact half of a resolve, picked after the roll: the thump only when the heavy dealt damage, the whoosh
+// only when the hero was out of the shape. A heavy that lands and rolls 0 has only the resolve cue and its miss splat.
+export function heavyImpactPlan(inShape: boolean, damage: number): Voice[] {
+  if (damage > 0) return heavyTakenPlan();
+  if (!inShape) return dodgedPlan();
+  return [];
+}
+
 export function phasePlan(): Voice[] {
   return [
     { at: 0, kind: 'tone', type: 'triangle', freq: 90, slideTo: 40, dur: 0.25, vol: 0.16 },

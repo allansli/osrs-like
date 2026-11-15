@@ -516,8 +516,9 @@ export function performMonsterRetaliation(monster: MonsterEntity): void {
   }
 }
 
-export function performMonsterHeavy(monster: MonsterEntity, attackId: string): void {
-  if (isDown(monster.logic) || player.downed || STATE.hp <= 0) return;
+// Returns the damage dealt, 0 when the heavy missed or the hero or the monster is already down.
+export function performMonsterHeavy(monster: MonsterEntity, attackId: string): number {
+  if (isDown(monster.logic) || player.downed || STATE.hp <= 0) return 0;
   player.sinceCombat = 0;
   const attack = ATTACKS[attackId];
   const marks = player.marks;
@@ -546,6 +547,7 @@ export function performMonsterHeavy(monster: MonsterEntity, attackId: string): v
     spawnHitSplatOnPlayer(0, 'miss');
   }
   requestUiRefresh();
+  return dmg;
 }
 
 export function handlePlayerDeath(): void {

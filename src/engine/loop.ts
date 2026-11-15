@@ -47,10 +47,9 @@ import { WORLD_REGIONS } from '../data/world';
 import { ATTACKS, BOSSES } from '../data/attacks';
 import {
   cueFor,
-  dodgedPlan,
   foodReadyPlan,
   heartbeatPlan,
-  heavyTakenPlan,
+  heavyImpactPlan,
   resolvePlan,
   windupPlan
 } from '../state/soundPlan';
@@ -683,11 +682,8 @@ export function updateMonsters(f: FrameState): void {
         player.sinceCombat = 0;
         const attack = ATTACKS[ev.attackId];
         const cue = cueFor(attack, m.def.style);
-        const impact = ev.hit ? heavyTakenPlan() : dodgedPlan();
-        SFX.play([...resolvePlan(cue), ...impact], true);
-        if (ev.hit) {
-          performMonsterHeavy(m, ev.attackId);
-        }
+        const damage = ev.hit ? performMonsterHeavy(m, ev.attackId) : 0;
+        SFX.play([...resolvePlan(cue), ...heavyImpactPlan(ev.hit, damage)], true);
       } else if (ev.kind === 'died') {
         clearTelegraph(m);
       } else if (ev.kind === 'phase') {
