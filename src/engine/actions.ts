@@ -6,6 +6,7 @@ import { planWalk, planEntityWalk, showClickMarker } from './input';
 import { applyCommand, type PlayerCommand, type CommandResult } from '../state/commands';
 import { applyDeathLoss, shouldRetaliate } from '../state/sustain';
 import { SFX } from './audio';
+import { bossDownPlan, impactPlan, phasePlan } from '../state/soundPlan';
 import {
   spawnLevelUpFireworks,
   spawnHitSplatWorld,
@@ -99,6 +100,7 @@ export function handleBossPhase(monster: MonsterEntity, phaseIndex: number): voi
   }
   spawnExpandingRing(monster.pos, 0xfde047);
   cameraRumble(CAMERA.rumbleMs);
+  SFX.play(phasePlan(), false);
   updateTargetHud();
 }
 
@@ -284,7 +286,7 @@ export function performPlayerAttack(monster: MonsterEntity): void {
     lastRefusalMonster = null;
     lastRefusalReason = null;
     if (dmg > 0) {
-      SFX.hit();
+      SFX.play(impactPlan(dmg / maxHit), true);
       monster.flinch = 1.0;
       monster.flashTimer = 0.12;
       spawnHitSplatWorld(monster.pos, dmg, isSpec ? 'maxhit' : hitSplatKind(dmg, maxHit));
@@ -398,6 +400,10 @@ export function handleMonsterDeath(monster: MonsterEntity): void {
     player.targetEntity = null;
   }
   spawnBurst(monster.pos.clone().add(new THREE.Vector3(0, 0.8, 0)), 6, 0x64748b, 0.6, 1.4);
+
+  if (BOSSES[monster.logic.typeKey]) {
+    SFX.play(bossDownPlan(), false);
+  }
 
   addChatMessage(`Defeated <b>${monster.def.name}</b> (Lv-${monster.def.level}).`, 'combat');
   const before = skillLevels();

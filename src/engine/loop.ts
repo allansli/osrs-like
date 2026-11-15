@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {
   TICK_SEC,
+  commandClocks,
   player,
   camState,
   _camTargetVec,
@@ -43,7 +44,16 @@ import { planEntityWalk } from './input';
 import { disposeObject3D } from './dispose';
 import { PRAYERS } from '../data/magic';
 import { WORLD_REGIONS } from '../data/world';
-import { BOSSES } from '../data/attacks';
+import { ATTACKS, BOSSES } from '../data/attacks';
+import {
+  cueFor,
+  dodgedPlan,
+  foodReadyPlan,
+  heartbeatPlan,
+  heavyTakenPlan,
+  resolvePlan,
+  windupPlan
+} from '../state/soundPlan';
 import { STATE } from '../state/gameState';
 import { getEquipmentBonuses, tickMarks, type EquipmentBonuses } from '../state/combat';
 import { moveWithCollision } from '../state/collision';
@@ -91,6 +101,10 @@ export interface FrameState {
   moveDirX: number;
   moveDirZ: number;
 }
+
+let lastAudioEnabled: boolean = STATE.audioEnabled;
+let heartbeatTimer = 0;
+let foodCooldownPending = false;
 
 export function updateVitalsAndRegen(f: FrameState): void {
   if (player.downed) {
@@ -145,6 +159,32 @@ export function updateVitalsAndRegen(f: FrameState): void {
   const isLow = STATE.hp > 0 && !player.downed && (STATE.hp / STATE.maxHp < LOW_HEALTH.thresholdRatio);
   if (isLow !== isLowHealth()) {
     setLowHealth(isLow);
+  }
+
+  if (STATE.audioEnabled !== lastAudioEnabled) {
+    lastAudioEnabled = STATE.audioEnabled;
+    SFX.setMuted(!STATE.audioEnabled);
+  }
+
+  const isDocHidden = typeof document !== 'undefined' && Boolean(document.hidden);
+  if (isLow && STATE.audioEnabled && !isDocHidden) {
+    heartbeatTimer -= f.dt;
+    if (heartbeatTimer <= 0) {
+      SFX.play(heartbeatPlan(), false);
+      heartbeatTimer = 1.2;
+    }
+  } else {
+    heartbeatTimer = 0;
+  }
+
+  const nowSec = f.elapsedSec;
+  if (foodCooldownPending && nowSec >= commandClocks.food.readyAt) {
+    foodCooldownPending = false;
+    if (STATE.hp > 0 && !player.downed && (STATE.hp / STATE.maxHp < 0.5)) {
+      SFX.play(foodReadyPlan(), false);
+    }
+  } else if (nowSec < commandClocks.food.readyAt) {
+    foodCooldownPending = true;
   }
 }
 
@@ -638,11 +678,17 @@ export function updateMonsters(f: FrameState): void {
         updateTargetHud();
       } else if (ev.kind === 'windup') {
         showTelegraph(m, ev);
+        const attack = ATTACKS[ev.attackId];
+        SFX.play(windupPlan(attack, cueFor(attack, m.def.style)), true);
       } else if (ev.kind === 'cancel') {
         clearTelegraph(m);
       } else if (ev.kind === 'resolve') {
         clearTelegraph(m);
         player.sinceCombat = 0;
+        const attack = ATTACKS[ev.attackId];
+        const cue = cueFor(attack, m.def.style);
+        const impact = ev.hit ? heavyTakenPlan() : dodgedPlan();
+        SFX.play([...resolvePlan(cue), ...impact], true);
         if (ev.hit) {
           performMonsterHeavy(m, ev.attackId);
         }

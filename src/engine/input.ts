@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { G, player, camState, type MonsterEntity, type ResourceNodeEntity } from './context';
 import { noteCheatKey } from './session';
-import { SFX } from './audio';
+import { SFX, armAudioOnGesture } from './audio';
 import { toggleSpecialAttack, closeModals, hideHoverTooltip } from '../ui/playerActions';
 import { switchTab, addChatMessage, updateTargetHud, getCombatLevel, el } from '../ui/hud';
 import { getTerrainHeight } from '../state/terrain';
@@ -54,6 +54,7 @@ export interface PickResult {
 }
 
 export function setupInputHandlers(): void {
+  armAudioOnGesture();
   G.clickMarkerMesh = new THREE.Group();
   G.clickMarkerMesh.userData.life = 0;
   const crossMat = () => new THREE.MeshBasicMaterial({ color: 0xfde047, transparent: true, opacity: 0, depthWrite: false });
