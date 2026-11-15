@@ -1,5 +1,7 @@
 # Combat with weight: design
 
+> **Owner decision 2026-11-15 ("Merge no green", answering the JS budget question with the recommended option a):** the Stage 4 JS budget is raised from +30 kB to +36 kB over the R0 baseline (955.97 kB), so the limit is 991.97 kB. The stage ships 991.45 kB. The breakdown is in `docs/superpowers/baseline/stage4-bundle-breakdown.md`.
+
 > **Approved by the owner on 2026-11-14**, design and plan, after the critique and the second-pass check. The owner answered each open decision of section 13:
 > - CALL-4.18 (the boss's unwarned bolt): "ok" to the recommendation. The fight opens with a 2-second roar, a banner and the line that its bolts are magic; the bolt's damage stays.
 > - CALL-4.17 (dying): "ok" to the recommendation. 3% of the current level's span from every fighting skill; (a) 10x characters keep the same rule; (b) a loss under a quarter of what the vow can guard costs nothing and leaves the vow; (c) a vow carried across levels is accepted; (d) a skill at 99 loses nothing.
