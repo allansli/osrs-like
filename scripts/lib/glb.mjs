@@ -125,14 +125,18 @@ export function readGlb(input) {
   if (json.bufferViews) {
     for (let i = 0; i < json.bufferViews.length; i++) {
       const bv = json.bufferViews[i];
-      if (bv.buffer === undefined || bv.buffer === 0) {
-        const bvOffset = bv.byteOffset || 0;
-        const bvLength = bv.byteLength;
-        if (bvOffset < 0 || bvLength < 0 || bvOffset + bvLength > bin.length) {
-          throw new Error(
-            `BufferView ${i} range [${bvOffset}, ${bvOffset + bvLength}] exceeds BIN chunk length ${bin.length}`
-          );
-        }
+      if (bv.buffer !== 0) {
+        throw new Error(`BufferView ${i} has buffer ${bv.buffer}; a GLB has only buffer 0`);
+      }
+      const bvOffset = bv.byteOffset ?? 0; // glTF default
+      const bvLength = bv.byteLength;
+      if (!Number.isInteger(bvOffset) || !Number.isInteger(bvLength) || bvOffset < 0 || bvLength < 0) {
+        throw new Error(`BufferView ${i} has invalid byteOffset ${bvOffset} or byteLength ${bvLength}`);
+      }
+      if (bvOffset + bvLength > bin.length) {
+        throw new Error(
+          `BufferView ${i} range [${bvOffset}, ${bvOffset + bvLength}] exceeds BIN chunk length ${bin.length}`
+        );
       }
     }
   }
@@ -180,22 +184,19 @@ export function readGlb(input) {
       const mesh = json.meshes[m];
       let mTri = 0;
       for (const prim of mesh.primitives || []) {
-        if (prim.indices !== undefined) {
-          const count = json.accessors[prim.indices]?.count || 0;
-          mTri += Math.floor(count / 3);
-        } else if (prim.attributes && prim.attributes.POSITION !== undefined) {
-          const count = json.accessors[prim.attributes.POSITION]?.count || 0;
-          mTri += Math.floor(count / 3);
+        const source = prim.indices ?? prim.attributes?.POSITION;
+        if (source === undefined) {
+          throw new Error(`Mesh ${m} has a primitive with neither indices nor POSITION`);
         }
+        const acc = json.accessors?.[source];
+        if (!acc || !Number.isInteger(acc.count)) {
+          throw new Error(`Mesh ${m} primitive references missing or countless accessor ${source}`);
+        }
+        mTri += Math.floor(acc.count / 3);
       }
       meshTriangles.push(mTri);
       totalTriangles += mTri;
     }
-  }
-
-  // Handle tiny-fixture static figure budget expectation (5 primitives created vs 6 expected by budget)
-  if (json.asset?.generator === 'tiny-fixture' && !json.skins && totalTriangles === 5) {
-    totalTriangles = 6;
   }
 
   // Calculate per-node triangles

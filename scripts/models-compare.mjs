@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { readGlb, readAccessor } from './lib/glb.mjs';
@@ -35,12 +36,30 @@ function findParentNodeName(nodes, childIndex) {
   return parent ? parent.name : null;
 }
 
+function vecClose(a, b, tol = 0.0001) {
+  if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return false;
+  return a.every((v, i) => Number.isFinite(v) && Number.isFinite(b[i]) && Math.abs(v - b[i]) <= tol);
+}
+
 function vec3Close(a, b, tol = 0.0001) {
-  return (
-    Math.abs((a[0] || 0) - (b[0] || 0)) <= tol &&
-    Math.abs((a[1] || 0) - (b[1] || 0)) <= tol &&
-    Math.abs((a[2] || 0) - (b[2] || 0)) <= tol
-  );
+  return Array.isArray(a) && a.length === 3 && vecClose(a, b, tol);
+}
+
+/** sha256 over every accessor's bytes of one mesh (attribute names sorted, then indices), per primitive. */
+function geometryHash(doc, mesh) {
+  const h = createHash('sha256');
+  for (const prim of mesh.primitives || []) {
+    for (const key of Object.keys(prim.attributes || {}).sort()) {
+      h.update(key);
+      const a = readAccessor(doc, prim.attributes[key]);
+      h.update(Buffer.from(a.buffer, a.byteOffset, a.byteLength));
+    }
+    if (prim.indices !== undefined) {
+      const a = readAccessor(doc, prim.indices);
+      h.update(Buffer.from(a.buffer, a.byteOffset, a.byteLength));
+    }
+  }
+  return h.digest('hex');
 }
 
 function isIdentityQuat(r, tol = 0.0001) {
@@ -54,7 +73,7 @@ function isIdentityQuat(r, tol = 0.0001) {
   );
 }
 
-function main() {
+function run() {
   const { builtPath, shippedPath, manifestDir } = parseArgs();
 
   // Read built GLB
@@ -155,6 +174,11 @@ function main() {
         contractErrors.push(`Missing material '${mat}'`);
       }
     }
+    for (const mat of actualMaterialNames) {
+      if (!manifest.materials.includes(mat)) {
+        contractErrors.push(`Material '${mat}' is not in the manifest (materials are an exact set)`);
+      }
+    }
   }
 
   // 3. Toggled names (must exist as node name or mesh name)
@@ -164,6 +188,71 @@ function main() {
     for (const toggled of manifest.toggled) {
       if (!allNodeNames.has(toggled) && !allMeshNames.has(toggled)) {
         contractErrors.push(`Toggled node or mesh name '${toggled}' is missing`);
+      }
+    }
+  }
+
+  // 3b. Mesh name classes: every mesh name matches one manifest regex
+  if (manifest.meshClasses) {
+    const classes = manifest.meshClasses.map((c) => new RegExp(c));
+    for (const mesh of built.json.meshes || []) {
+      if (!classes.some((re) => re.test(mesh.name))) {
+        contractErrors.push(`Mesh '${mesh.name}' matches no manifest mesh name class`);
+      }
+    }
+  }
+
+  // 3c. extras keys: { <node name>: [keys] }, each key present on that node
+  if (manifest.extras) {
+    for (const [nodeName, keys] of Object.entries(manifest.extras)) {
+      const idx = nodeIndexMap.get(nodeName);
+      if (idx === undefined) {
+        contractErrors.push(`Missing node '${nodeName}' (extras)`);
+        continue;
+      }
+      for (const key of keys) {
+        if (!Object.hasOwn(builtNodes[idx].extras ?? {}, key)) {
+          contractErrors.push(`Node '${nodeName}' lacks extras key '${key}'`);
+        }
+      }
+    }
+  }
+
+  // 3d. Part centres: { <mesh node name>: [x,y,z] }, the centre of the mesh bounds scaled and moved by the node
+  // (in the parent's space, tolerance 0.01). A rotated node is refused: its centre would need the rotation.
+  if (manifest.centres) {
+    for (const [nodeName, expected] of Object.entries(manifest.centres)) {
+      const idx = nodeIndexMap.get(nodeName);
+      const node = idx === undefined ? undefined : builtNodes[idx];
+      if (!node || node.mesh === undefined) {
+        contractErrors.push(`Part '${nodeName}' for a centre check is missing or has no mesh`);
+        continue;
+      }
+      if (node.rotation && !isIdentityQuat(node.rotation)) {
+        contractErrors.push(`Part '${nodeName}' is rotated; its centre cannot be checked`);
+        continue;
+      }
+      const { min, max } = built.meshBounds[node.mesh];
+      if (![...min, ...max].every(Number.isFinite)) {
+        contractErrors.push(`Part '${nodeName}' mesh has no POSITION min/max`);
+        continue;
+      }
+      const t = node.translation ?? [0, 0, 0];
+      const sc = node.scale ?? [1, 1, 1];
+      const centre = [0, 1, 2].map((c) => ((min[c] + max[c]) / 2) * sc[c] + t[c]);
+      if (!vec3Close(centre, expected, 0.01)) {
+        contractErrors.push(
+          `Part '${nodeName}' centre [${centre.map((v) => v.toFixed(4)).join(', ')}] deviates from manifest [${expected.join(', ')}]`
+        );
+      }
+    }
+  }
+
+  // 3e. At most 4 influences per vertex: no primitive may carry a second joint or weight set
+  for (const mesh of built.json.meshes || []) {
+    for (const prim of mesh.primitives || []) {
+      if (prim.attributes?.JOINTS_1 !== undefined || prim.attributes?.WEIGHTS_1 !== undefined) {
+        contractErrors.push(`Mesh '${mesh.name}' has JOINTS_1 or WEIGHTS_1 (at most 4 influences per vertex)`);
       }
     }
   }
@@ -208,7 +297,11 @@ function main() {
       const movedNodeNames = new Set();
       for (const channel of anim.channels || []) {
         const targetNode = builtNodes[channel.target?.node];
-        if (targetNode?.name) movedNodeNames.add(targetNode.name);
+        if (!targetNode?.name) {
+          contractErrors.push(`Clip '${clipName}' has a channel whose target node is missing or unnamed`);
+          continue;
+        }
+        movedNodeNames.add(targetNode.name);
       }
       for (const expectedNode of clipInfo.moves || []) {
         if (!movedNodeNames.has(expectedNode)) {
@@ -295,11 +388,14 @@ function main() {
     for (let m = 0; m < (built.json.meshes || []).length; m++) {
       const mesh = built.json.meshes[m];
       const meshNode = builtNodes.find((n) => n.mesh === m);
-      const skinIndex = meshNode?.skin ?? (skins.length === 1 ? 0 : undefined);
-      const skinObj = skinIndex !== undefined ? skins[skinIndex] : skins[0];
-      const maxJointIndex = (skinObj?.joints?.length || 0) - 1;
+      const skinObj = meshNode?.skin === undefined ? undefined : skins[meshNode.skin];
+      const maxJointIndex = (skinObj?.joints?.length ?? 0) - 1;
 
       for (const prim of mesh.primitives || []) {
+        if (prim.attributes?.JOINTS_0 !== undefined && !skinObj) {
+          contractErrors.push(`Mesh '${mesh.name}' has JOINTS_0 but its node has no valid skin`);
+          continue;
+        }
         if (prim.attributes && prim.attributes.WEIGHTS_0 !== undefined) {
           const weights = readAccessor(built, prim.attributes.WEIGHTS_0);
           const vertexCount = built.json.accessors[prim.attributes.WEIGHTS_0].count;
@@ -340,13 +436,16 @@ function main() {
       const animations = built.json.animations || [];
       for (const clipName of skinDef.sharedClips) {
         const anim = animations.find((a) => a.name === clipName);
-        if (!anim) continue;
+        if (!anim) {
+          contractErrors.push(`Shared clip '${clipName}' is missing`);
+          continue;
+        }
         for (const channel of anim.channels || []) {
           if (channel.target?.path === 'translation') {
             const targetNode = builtNodes[channel.target.node];
             if (targetNode?.name !== 'Hips') {
               contractErrors.push(
-                `Clip '${clipName}' has position track on bone '${targetNode?.name || channel.target.node}' (only 'Hips' allowed)`
+                `Clip '${clipName}' has position track on ${targetNode ? `bone '${targetNode.name}'` : `missing node ${channel.target.node}`} (only 'Hips' allowed)`
               );
             }
           }
@@ -356,7 +455,10 @@ function main() {
 
     // 6e. Limbs angle check
     if (skinDef.limbs) {
-      const maxDeg = skinDef.maxLimbDegrees ?? 20;
+      const maxDeg = skinDef.maxLimbDegrees;
+      if (!Number.isFinite(maxDeg)) {
+        throw new Error('Manifest has skin.limbs but no numeric skin.maxLimbDegrees');
+      }
       for (const limb of skinDef.limbs) {
         const childIdx = nodeIndexMap.get(limb.child);
         if (childIdx === undefined) {
@@ -413,7 +515,7 @@ function main() {
     // 1. Generator
     if (built.json.asset?.generator !== shipped.json.asset?.generator) {
       driftNotes.push(
-        `generator: '${shipped.json.asset?.generator || 'none'}' -> '${built.json.asset?.generator || 'none'}'`
+        `generator: ${JSON.stringify(shipped.json.asset?.generator)} -> ${JSON.stringify(built.json.asset?.generator)}`
       );
     }
 
@@ -432,9 +534,9 @@ function main() {
             `Node '${bNode.name}' translation changed: [${sT.join(', ')}] -> [${bT.join(', ')}]`
           );
         }
-        const bR = bNode.rotation || [0, 0, 0, 1];
-        const sR = sNode.rotation || [0, 0, 0, 1];
-        if (!vec3Close(bR.slice(0, 3), sR.slice(0, 3), 0.0001) || Math.abs((bR[3] || 1) - (sR[3] || 1)) > 0.0001) {
+        const bR = bNode.rotation ?? [0, 0, 0, 1]; // glTF default rotation is identity
+        const sR = sNode.rotation ?? [0, 0, 0, 1];
+        if (!vecClose(bR, sR, 0.0001)) {
           driftNotes.push(`Node '${bNode.name}' rotation changed`);
         }
         const bS = bNode.scale || [1, 1, 1];
@@ -449,6 +551,31 @@ function main() {
     for (const sNode of shippedNodes) {
       if (sNode.name && !builtNodes.find((n) => n.name === sNode.name)) {
         driftNotes.push(`Node '${sNode.name}' removed`);
+      }
+    }
+
+    // 2b. Per mesh: bounds and geometry hash (by mesh name)
+    const shippedMeshes = shipped.json.meshes || [];
+    (built.json.meshes || []).forEach((bMesh, bi) => {
+      const si = shippedMeshes.findIndex((m) => m.name === bMesh.name);
+      if (si < 0) {
+        driftNotes.push(`Mesh '${bMesh.name}' added`);
+        return;
+      }
+      const bb = built.meshBounds[bi];
+      const sb = shipped.meshBounds[si];
+      if (!vecClose(bb.min, sb.min) || !vecClose(bb.max, sb.max)) {
+        driftNotes.push(
+          `Mesh '${bMesh.name}' bounds changed: [${sb.min.join(', ')}]..[${sb.max.join(', ')}] -> [${bb.min.join(', ')}]..[${bb.max.join(', ')}]`
+        );
+      }
+      if (geometryHash(built, bMesh) !== geometryHash(shipped, shippedMeshes[si])) {
+        driftNotes.push(`Mesh '${bMesh.name}' geometry bytes changed`);
+      }
+    });
+    for (const sMesh of shippedMeshes) {
+      if (!(built.json.meshes || []).some((m) => m.name === sMesh.name)) {
+        driftNotes.push(`Mesh '${sMesh.name}' removed`);
       }
     }
 
@@ -498,6 +625,16 @@ function main() {
     process.exit(2);
   } else {
     process.exit(0);
+  }
+}
+
+function main() {
+  try {
+    run();
+  } catch (err) {
+    // Malformed input (file or manifest) is refused, never reported as a Contract difference.
+    console.error(`Refused: ${err.message}`);
+    process.exit(3);
   }
 }
 
