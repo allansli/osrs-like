@@ -167,8 +167,8 @@ describe('applyCommand: special', () => {
 });
 
 describe('purity of the new state modules', () => {
-  it('sustain.ts and commands.ts exist and mention no STATE, Math.random, Date.now, performance, document or window', () => {
-    for (const name of ['sustain.ts', 'commands.ts']) {
+  it('every src/state file Stage 4 added exists and mentions no STATE, Math.random, Date.now, performance, document or window', () => {
+    for (const name of ['sustain.ts', 'commands.ts', 'monsterPattern.ts', 'soundPlan.ts', 'telegraph.ts']) {
       const url = new URL(`../src/state/${name}`, import.meta.url);
       expect(existsSync(url), name).toBe(true);
       const text = readFileSync(url, 'utf8');
