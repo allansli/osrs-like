@@ -1,10 +1,10 @@
 # P5: full rebuild into scratch
 
-Date: 2026-11-14. Branch `feat/models-pass`. Plan task P5. This is the seventh run, at head `e5ae306`. It repairs the sixth run's record (commit `e5ae306`, run at head `e22fc78`), which wrongly said the guard NORMAL tolerance was met. It runs against P5's Accept as amended on 2026-11-15 in `57a2029`: the project builds with the installed Blender 5.0.1 (owner decision "C"); compares judge Contract and Budget; per-figure Brotli ceilings are the shipped value plus 2% (`scripts/models-manifest.mjs`); whole-file and buffer-order Drift is reported and accepted; the three guard meshes may drift by up to 1.2e-7 in POSITION and 0.000222 in NORMAL; a second build of the same file is byte-identical to the first.
+Date: 2026-11-14. Branch `feat/models-pass`. Plan task P5. This is the seventh run, at head `e5ae306`, re-judged at head `def910c`. It repairs the sixth run's record (commit `e5ae306`, run at head `e22fc78`), which wrongly said the guard NORMAL tolerance was met. It runs against P5's Accept as amended on 2026-11-15 in `57a2029` and `def910c`: the project builds with the installed Blender 5.0.1 (owner decision "C"); compares judge Contract and Budget; per-figure Brotli ceilings are the shipped value plus 2% (`scripts/models-manifest.mjs`); whole-file and buffer-order Drift is reported and accepted; the three guard meshes may drift by up to 1.2e-7 in POSITION and 0.00023 in NORMAL (raised from 0.000222 in `def910c`, after this run measured 0.00022215); a second build of the same file is byte-identical to the first.
 
 Earlier runs: the sixth gave the same numbers as this one. One to three (`29ee250`, `267ffca`, `61657b6`) used 5.0.1 against the unamended Accept, and failed on drift and per-figure Brotli. Runs four and five (`296f8f8`, `b24c824`) used a downloaded 5.2.4, which the owner has since had deleted. It was not used or downloaded again in this run.
 
-**Verdict: the amended Accept is met except one item, which misses by 1.5e-7.** `Circle.034`'s NORMAL drifts by 0.00022214651. The bound in the amended Accept is 0.000222, so this item is **not met**. The main session needs to amend the P5 Accept bound in the plan (outside this task's allowlist) to cover the measured value, for example 0.000223. The drift is the same on all seven runs, so no rebuild is needed after that change. Everything else is met: five builds exit 0 on 5.0.1, five compares exit 0 with zero Contract and zero Budget failures, POSITION drift is within 1.2e-7, the hash lists are equal, UNTOUCHED prints nothing, and a second BLEND(hero) is byte-identical to the first. Nothing shipped changed. Nothing was promoted.
+**Verdict: the amended Accept is met.** `Circle.034`'s NORMAL drifts by 0.00022214651. That missed the earlier bound of 0.000222 by 1.5e-7; the main session raised the bound to 0.00023 in `def910c`, and the drift is within it. The drift is the same on all seven runs, so the seventh run's build was not redone. Instead, at head `def910c`, the five compares, the drift measurement, the hash list, UNTOUCHED and the determinism check were rerun against the seventh run's files in `scratch/models-build/` (see "Re-check at `def910c`" below). Also met: five builds exit 0 on 5.0.1, five compares exit 0 with zero Contract and zero Budget failures, POSITION drift is within 1.2e-7, the hash lists are equal, UNTOUCHED prints nothing, and a second BLEND(hero) is byte-identical to the first. Nothing shipped changed. Nothing was promoted.
 
 ## Environment
 
@@ -55,7 +55,7 @@ Every mesh was matched by name, built against shipped, and the largest absolute 
 | `Circle.038` | 2.98e-8 | 0.000112 |
 | `Circle.034` | 5.96e-8 | 0.000222 (0.00022214651) |
 
-POSITION is within 1.2e-7 for all three. NORMAL is within 0.000222 for `Plane.032` (0.00020962954) and `Circle.038` (0.00011226535). It is not within it for `Circle.034`: 0.00022214651 is 1.5e-7 over. Rounding is not a reason to pass it. It would be within 0.000223. No script checks this tolerance; it was measured with a throw-away script under `scratch/`. This is the drift design 3.2 found. It is the same value to every printed digit in runs one to seven, so it does not depend on the Blender version.
+POSITION is within 1.2e-7 for all three. NORMAL is within 0.00023 for all three: `Plane.032` (0.00020962954), `Circle.038` (0.00011226535) and `Circle.034` (0.00022214651). `Circle.034` was 1.5e-7 over the earlier bound of 0.000222; that bound was raised, not rounded past. No script checks this tolerance; it was measured with a throw-away script under `scratch/`. This is the drift design 3.2 found. It is the same value to every printed digit in runs one to seven, so it does not depend on the Blender version.
 
 ## Determinism
 
@@ -84,6 +84,18 @@ c6d962b9cb8e7a1f6960c691aef24de288654b8a6a40f4e18bfc6f5c2e065295  blender/hero.b
 | five builds exit 0 on 5.0.1 | met (BLEND(all) and BLEND(guard)) |
 | five compares exit 0 on Contract and Budget, per-figure Brotli at shipped plus 2% | met (all five) |
 | whole-file and buffer-order Drift reported and accepted | reported: generator on all five; buffer order and Brotli size on gear, monsters, world |
-| three guard meshes within 1.2e-7 POSITION and 0.000222 NORMAL | POSITION met (largest 1.19e-7). NORMAL **not met**: `Circle.034` 0.00022214651 > 0.000222. Met if the main session amends the bound to 0.000223 |
+| three guard meshes within 1.2e-7 POSITION and 0.00023 NORMAL | met: POSITION largest 1.19e-7; NORMAL largest 0.00022214651 (`Circle.034`) |
 | a second build of the same file is byte-identical | met (hero) |
 | the two hash lists are equal; UNTOUCHED | met |
+
+## Re-check at `def910c`
+
+No Blender ran. Against the seventh run's files in `scratch/models-build/`:
+
+| Check | Command | Result |
+|---|---|---|
+| COMPARE, five names | `node scripts/models-compare.mjs scratch/models-build/<name>.glb public/models/<name>.glb` | all five exit 0; Contract and Budget pass; guard Drift lists the generator, the three guard meshes and brotliBytes 1,174,350 -> 1,174,329 |
+| attribute drift | the throw-away `scratch/p6/drift.mjs`, per file | hero, gear, monsters, world: no drift, no mesh missing. guard: `Plane.032` 1.1920929e-7 / 0.00020962954, `Circle.038` 2.9802322e-8 / 0.00011226535, `Circle.034` 5.9604645e-8 / 0.00022214651 (POSITION / NORMAL) |
+| hash list | `sha256sum public/models/*.glb blender/*.blend`, diffed with the first list | equal |
+| UNTOUCHED | `git status --short public/models blender` | prints nothing |
+| determinism | `cmp scratch/models-build/hero.glb scratch/p5-hero-1.glb` | prints nothing |
