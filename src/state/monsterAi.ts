@@ -1,7 +1,7 @@
 // Monster rules (design 5.4, Stage 1 shape; Stage 2 territory and aggression):
 // a pure step function and the hit entry point.
 // The engine owns meshes, sounds and the HUD; it applies the events returned here.
-import { PATTERNS } from '../data/attacks';
+import { ATTACKS, BOSSES, CADENCE_SECS, PATTERNS, TELEGRAPH_TIME_SCALE } from '../data/attacks';
 import { MONSTER_TYPES } from '../data/world';
 import { isInSafeZone, type CampDef } from '../data/worldMap';
 import { monsterThreatColor } from './adventure';
@@ -16,6 +16,7 @@ import {
   STALL_SEC,
   type WalkGrid
 } from './pathfind';
+import { inShape } from './telegraph';
 import { patternAttack, stepWindupAndRecovery } from './monsterPattern';
 
 export type MonsterState = 'idle' | 'chase' | 'attack' | 'return' | 'dying' | 'dead';
@@ -52,6 +53,9 @@ export type MonsterLogic = {
   patternIdx: number;
   windup: { attackId: string; left: number; total: number; ox: number; oz: number; dx: number; dz: number } | null;
   recoverLeft: number;
+  phase: number;
+  shiftLeft: number;
+  outsideFor: number;
 };
 
 export type MonsterEvent =
@@ -60,6 +64,7 @@ export type MonsterEvent =
   | { kind: 'respawned' }
   | { kind: 'aggro' }
   | { kind: 'reset' }
+  | { kind: 'phase'; index: number }
   | { kind: 'windup'; attackId: string; ox: number; oz: number; dx: number; dz: number; ms: number }
   | { kind: 'resolve'; attackId: string; hit: boolean }
   | { kind: 'cancel' };
@@ -141,7 +146,10 @@ export function createMonsterLogic(
     routeStall: 0,
     patternIdx: 0,
     windup: null,
-    recoverLeft: 0
+    recoverLeft: 0,
+    phase: 0,
+    shiftLeft: 0,
+    outsideFor: 0
   };
 }
 
@@ -186,6 +194,9 @@ function resetToIdle(m: MonsterLogic): void {
   m.patternIdx = 0;
   m.windup = null;
   m.recoverLeft = 0;
+  m.phase = 0;
+  m.shiftLeft = 0;
+  m.outsideFor = 0;
 }
 
 function enterReturn(m: MonsterLogic, world: StepWorld): void {
@@ -196,6 +207,7 @@ function enterReturn(m: MonsterLogic, world: StepWorld): void {
   m.routeStall = 0;
   m.windup = null;
   m.recoverLeft = 0;
+  m.outsideFor = 0;
   if (world.grid) {
     const start = openStart(world.grid, m.x, m.z);
     const route = start ? findPath(world.grid, start, [m.homeX, m.homeZ], undefined, 6000) : null;
@@ -217,7 +229,8 @@ export function stepMonster(m: MonsterLogic, world: StepWorld): MonsterEvent[] {
     m.timer -= dt;
     if (m.timer <= 0) {
       m.state = 'dead';
-      m.timer = DEAD_SECS;
+      const boss = BOSSES[m.typeKey];
+      m.timer = boss ? boss.respawnSecs : DEAD_SECS;
     }
     return [];
   }
@@ -300,19 +313,39 @@ export function stepMonster(m: MonsterLogic, world: StepWorld): MonsterEvent[] {
     return [];
   }
 
+  if (m.shiftLeft > 0) {
+    m.shiftLeft = Math.max(0, m.shiftLeft - dt);
+  }
+
   if (m.state === 'chase' || m.state === 'attack') {
+    const boss = BOSSES[m.typeKey];
     const camp = world.camps?.find((c) => c.id === m.campId);
     const distToPlayer = Math.hypot(world.playerX - m.x, world.playerZ - m.z);
     const distMonsterToCamp = camp ? Math.hypot(m.x - camp.x, m.z - camp.z) : 0;
 
-    const leashTriggered = camp ? distMonsterToCamp > camp.radius + 4 : false;
-    const playerTooFar = distToPlayer > DROP_DIST;
-    const playerDown = world.playerDown;
-    const safeInAggroCamp = !!(world.playerSafe && camp?.aggressive);
+    let shouldReturn = false;
+    if (boss) {
+      const targetDistFromHome = Math.hypot(world.playerX - m.homeX, world.playerZ - m.homeZ);
+      if (targetDistFromHome > boss.arenaRadius + 6) {
+        m.outsideFor += dt;
+      } else {
+        m.outsideFor = 0;
+      }
+      const playerTooFar = distToPlayer > DROP_DIST;
+      const playerDown = world.playerDown;
+      const safeZone = !!world.playerSafe;
+      const outsideTimedOut = m.outsideFor >= 5;
+      shouldReturn = playerTooFar || playerDown || safeZone || outsideTimedOut;
+    } else {
+      const leashTriggered = camp ? distMonsterToCamp > camp.radius + 4 : false;
+      const playerTooFar = distToPlayer > DROP_DIST;
+      const playerDown = world.playerDown;
+      const safeInAggroCamp = !!(world.playerSafe && camp?.aggressive);
+      const stallTriggered = m.state === 'chase' && stalled(m, dt);
+      shouldReturn = leashTriggered || playerTooFar || playerDown || safeInAggroCamp || stallTriggered;
+    }
 
-    const stallTriggered = m.state === 'chase' && stalled(m, dt);
-
-    if (leashTriggered || playerTooFar || playerDown || safeInAggroCamp || stallTriggered) {
+    if (shouldReturn) {
       if (m.windup) {
         m.windup = null;
         m.recoverLeft = 0;
@@ -323,13 +356,36 @@ export function stepMonster(m: MonsterLogic, world: StepWorld): MonsterEvent[] {
       return [];
     }
 
-    const pending = stepWindupAndRecovery(m, world);
-    if (pending) {
-      return pending;
+    if (boss) {
+      if (m.windup) {
+        m.windup.left -= dt;
+        if (m.windup.left <= 0) {
+          const attack = ATTACKS[m.windup.attackId];
+          const hit = inShape(attack.shape, m.windup.ox, m.windup.oz, m.windup.dx, m.windup.dz, world.playerX, world.playerZ);
+          const windSecs = (attack.windupMs * TELEGRAPH_TIME_SCALE) / 1000;
+          const cadence = CADENCE_SECS * boss.phases[m.phase].cadenceMult;
+          const slotSecs = Math.max(attack.slots * cadence, windSecs + 0.15);
+          m.recoverLeft = (slotSecs - windSecs) + m.windup.left;
+          const ev: MonsterEvent = { kind: 'resolve', attackId: m.windup.attackId, hit };
+          m.windup = null;
+          return [ev];
+        }
+        return [];
+      }
+      if (m.recoverLeft > 0) {
+        m.recoverLeft -= dt;
+        if (m.recoverLeft > 0) return [];
+        m.recoverLeft = 0;
+      }
+    } else {
+      const pending = stepWindupAndRecovery(m, world);
+      if (pending) {
+        return pending;
+      }
     }
 
     if (distToPlayer > attackRange(m)) {
-      if (MONSTER_TYPES[m.typeKey].pattern && m.attackCooldown > 0) {
+      if ((MONSTER_TYPES[m.typeKey].pattern || boss) && m.shiftLeft === 0 && m.attackCooldown > 0) {
         m.attackCooldown = Math.max(0, m.attackCooldown - dt);
       }
       if (m.state !== 'chase') {
@@ -344,6 +400,15 @@ export function stepMonster(m: MonsterLogic, world: StepWorld): MonsterEvent[] {
         const dx = world.playerX - m.x;
         const dz = world.playerZ - m.z;
         const stepped = moveWithCollision(m.x, m.z, (dx / distToPlayer) * CHASE_SPEED * dt, (dz / distToPlayer) * CHASE_SPEED * dt);
+        if (boss) {
+          const hx = stepped.x - m.homeX;
+          const hz = stepped.z - m.homeZ;
+          const hd = Math.hypot(hx, hz);
+          if (hd > boss.arenaRadius) {
+            stepped.x = m.homeX + (hx / hd) * boss.arenaRadius;
+            stepped.z = m.homeZ + (hz / hd) * boss.arenaRadius;
+          }
+        }
         m.x = stepped.x;
         m.z = stepped.z;
         return [];
@@ -400,6 +465,15 @@ export function stepMonster(m: MonsterLogic, world: StepWorld): MonsterEvent[] {
           (dz / dist) * moveDist,
           world.grid.walkable
         );
+        if (boss) {
+          const hx = stepped.x - m.homeX;
+          const hz = stepped.z - m.homeZ;
+          const hd = Math.hypot(hx, hz);
+          if (hd > boss.arenaRadius) {
+            stepped.x = m.homeX + (hx / hd) * boss.arenaRadius;
+            stepped.z = m.homeZ + (hz / hd) * boss.arenaRadius;
+          }
+        }
         if (stepped.x === m.x && stepped.z === m.z && m.path.length > 0) {
           m.routeStall += dt;
           if (m.routeStall >= STALL_SEC - 1e-9) {
@@ -418,6 +492,34 @@ export function stepMonster(m: MonsterLogic, world: StepWorld): MonsterEvent[] {
     m.state = 'attack';
     m.path = [];
     m.routeStall = 0;
+
+    if (boss) {
+      if (m.shiftLeft > 0) return [];
+      m.attackCooldown -= dt;
+      if (m.attackCooldown > 0) return [];
+
+      const phase = boss.phases[m.phase];
+      const pattern = Array.isArray(phase.pattern) ? phase.pattern : (PATTERNS[phase.pattern as string] ?? []);
+      const cadence = CADENCE_SECS * phase.cadenceMult;
+      const attackId = pattern[m.patternIdx % pattern.length];
+      if (attackId === 'basic') {
+        m.attackCooldown = cadence;
+        m.patternIdx = (m.patternIdx + 1) % pattern.length;
+        return [{ kind: 'attack' }];
+      }
+      const attack = ATTACKS[attackId];
+      const windSecs = (attack.windupMs * TELEGRAPH_TIME_SCALE) / 1000;
+      m.patternIdx = (m.patternIdx + 1) % pattern.length;
+      const atTarget = attack.shape.type === 'circle' && attack.shape.anchor === 'target';
+      const ox = atTarget ? world.playerX : m.x, oz = atTarget ? world.playerZ : m.z;
+      const dirX = world.playerX - m.x, dirZ = world.playerZ - m.z;
+      const dirDist = Math.hypot(dirX, dirZ);
+      const dx = dirDist > 0.0001 ? dirX / dirDist : 1, dz = dirDist > 0.0001 ? dirZ / dirDist : 0;
+      const ms = attack.windupMs * TELEGRAPH_TIME_SCALE;
+      m.windup = { attackId, left: windSecs, total: windSecs, ox, oz, dx, dz };
+      m.attackCooldown = 0;
+      return [{ kind: 'windup', attackId, ox, oz, dx, dz, ms }];
+    }
 
     const def = MONSTER_TYPES[m.typeKey];
     const pattern = def.pattern ? PATTERNS[def.pattern] : undefined;
@@ -456,6 +558,14 @@ export function stepMonster(m: MonsterLogic, world: StepWorld): MonsterEvent[] {
       m.stallZ = m.z;
       m.routeStall = 0;
       const events: MonsterEvent[] = [{ kind: 'aggro' }];
+      const boss = BOSSES[m.typeKey];
+      if (boss) {
+        m.phase = 0;
+        m.shiftLeft = boss.openingShiftMs / 1000;
+        m.attackCooldown = 1.0;
+        events.push({ kind: 'phase', index: 0 });
+        return events;
+      }
       if (distToPlayer <= attackRange(m)) {
         m.state = 'attack';
         m.path = [];
@@ -537,8 +647,16 @@ export function stepMonster(m: MonsterLogic, world: StepWorld): MonsterEvent[] {
 }
 
 /** The player's attack resolves against the monster (dmg 0 is a miss). */
-export function onPlayerHit(m: MonsterLogic, dmg: number): { applied: boolean; events: MonsterEvent[] } {
+export function onPlayerHit(
+  m: MonsterLogic,
+  dmg: number
+): { applied: boolean; events: MonsterEvent[]; reason?: string } {
   if (isDown(m) || m.state === 'return') return { applied: false, events: [] };
+  const boss = BOSSES[m.typeKey];
+  if (boss) {
+    if (m.outsideFor > 0) return { applied: false, events: [], reason: 'arena' };
+    if (m.shiftLeft > 0) return { applied: false, events: [], reason: 'shift' };
+  }
   if (m.state === 'idle') {
     m.state = 'chase';
     m.patternIdx = 0;
@@ -547,6 +665,26 @@ export function onPlayerHit(m: MonsterLogic, dmg: number): { applied: boolean; e
     m.stallZ = m.z;
   }
   if (dmg <= 0) return { applied: true, events: [] };
+
+  if (boss) {
+    const currentPhase = boss.phases[m.phase];
+    const thresholdHp = Math.round(m.maxHp * currentPhase.untilHpFrac);
+    if (m.hp - dmg <= thresholdHp && thresholdHp > 0) {
+      m.hp = thresholdHp;
+      m.phase += 1;
+      m.shiftLeft = boss.phases[m.phase].shiftMs / 1000;
+      m.attackCooldown = 1.0;
+      m.patternIdx = 0;
+      const events: MonsterEvent[] = [{ kind: 'phase', index: m.phase }];
+      if (m.windup) {
+        m.windup = null;
+        m.recoverLeft = 0;
+        events.push({ kind: 'cancel' });
+      }
+      return { applied: true, events };
+    }
+  }
+
   m.hp = Math.max(0, m.hp - dmg);
   if (m.hp > 0) return { applied: true, events: [] };
   m.state = 'dying';

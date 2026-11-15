@@ -1,4 +1,4 @@
-import type { AttackDef } from '../data/attacks';
+import { BOSSES, type AttackDef } from '../data/attacks';
 import { ammoForWeapon, ITEMS, type ItemDef } from '../data/items';
 import { SPELLS } from '../data/magic';
 import { MONSTER_TYPES, WORLD_REGIONS } from '../data/world';
@@ -281,6 +281,38 @@ export function rollMonsterHit(
   return { dmg, dragonfire, absorbed };
 }
 
+export type Marks = { count: number; left: number };
+
+export function addMark(marks: Marks, boss?: { mark?: { step?: number; max?: number; secs?: number } }): Marks {
+  const max = boss?.mark?.max ?? 4;
+  const secs = boss?.mark?.secs ?? 12;
+  marks.count = Math.min(max, (marks.count ?? 0) + 1);
+  marks.left = secs;
+  return marks;
+}
+
+export function tickMarks(marks: Marks, dt: number): Marks {
+  if (!marks || marks.count === 0 || marks.left <= 0) {
+    if (marks) {
+      marks.count = 0;
+      marks.left = 0;
+    }
+    return marks ?? { count: 0, left: 0 };
+  }
+  marks.left -= dt;
+  if (marks.left <= 0) {
+    marks.count = 0;
+    marks.left = 0;
+  }
+  return marks;
+}
+
+export function markMultiplier(marks: { count: number }, boss?: { mark?: { step?: number } }): number {
+  if (!marks || marks.count <= 0) return 1;
+  const step = boss?.mark?.step ?? 0.25;
+  return 1 + marks.count * step;
+}
+
 export function rollMonsterAttack(
   typeKey: string,
   attack: AttackDef,
@@ -289,13 +321,27 @@ export function rollMonsterAttack(
   rand: () => number
 ): { dmg: number } {
   const def = MONSTER_TYPES[typeKey];
-  const hitChance = monsterHitChance(typeKey, state);
   let dmg = 0;
-  if (rand() < hitChance) {
-    const raw = Math.max(1, Math.floor(rand() * (def.maxHit + 1)));
+  if (attack.power !== undefined) {
+    const raw = Math.floor(attack.power * (0.75 + rand() * 0.25));
     const style = attack.style === 'own' ? def.style : attack.style;
-    const mitigated = mitigateDamage(raw, style, state.activePrayers);
-    dmg = attack.slots * mitigated;
+    let mitigated = raw;
+    if (style === 'fire') {
+      mitigated = resolveDragonfire(raw, state).damage;
+    } else if (style !== 'pure') {
+      mitigated = mitigateDamage(raw, style, state.activePrayers);
+    }
+    const boss = BOSSES[typeKey];
+    const mult = markMultiplier(marks, boss);
+    dmg = Math.floor(mitigated * mult);
+  } else {
+    const hitChance = monsterHitChance(typeKey, state);
+    if (rand() < hitChance) {
+      const raw = Math.max(1, Math.floor(rand() * (def.maxHit + 1)));
+      const style = attack.style === 'own' ? def.style : attack.style;
+      const mitigated = mitigateDamage(raw, style, state.activePrayers);
+      dmg = attack.slots * mitigated;
+    }
   }
   return { dmg };
 }

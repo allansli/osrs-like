@@ -1,3 +1,4 @@
+import { BOSSES } from '../data/attacks';
 import { getLevelForXp } from '../data/skills';
 import { creditGp } from './economy';
 import { addItem, canAddItem } from './inventory';
@@ -439,7 +440,7 @@ export function isRareLoot(item: { tier?: string } | null | undefined): boolean 
 }
 
 export function isBossLoot(typeKey: string): boolean {
-  return typeKey === 'elvarg_dragon';
+  return typeKey === 'elvarg_dragon' || Object.hasOwn(BOSSES, typeKey);
 }
 
 export function gatherVerb(kind: string, itemId: string): string {
@@ -676,6 +677,8 @@ export interface KillResult {
 
 export function registerKill(state: GameState, typeKey: string): KillResult {
   const quests = state.quests;
+  const boss = BOSSES[typeKey];
+  if (boss?.title) quests.title = boss.title;
   if (typeKey === 'goblin' || typeKey === 'goblin_archer') quests.killedGoblin = true;
   if (typeKey === 'dark_wizard' || typeKey === 'dark_ranger') quests.killedArcane = true;
   if (typeKey === 'scorpion') quests.killedScorpion = true;
