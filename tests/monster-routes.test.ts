@@ -361,6 +361,20 @@ describe('return on a route (design 6.1)', () => {
     expect(m.hp).toBe(m.maxHp);
     expect(m.breathCount).toBe(0);
   });
+
+  it('a monster killed while on a route respawns with no route from its previous life (review finding 4)', () => {
+    const grid = wallGrid(6);
+    const m = chaser(-5, 0);
+    for (let t = 0; t < 2 && m.path.length === 0; t += DT) step(m, grid, 5, 0);
+    expect(m.path.length, 'routing round the wall when killed').toBeGreaterThan(0);
+    onPlayerHit(m, 1_000_000);
+    expect(m.state).toBe('dying');
+    let respawned = false;
+    for (let t = 0; t < 30 && !respawned; t += DT) respawned = step(m, grid, 999, 999).some((e) => e.kind === 'respawned');
+    expect(respawned).toBe(true);
+    expect(m.path).toEqual([]);
+    expect(m.repathIn).toBe(0);
+  });
 });
 
 describe('wander (design 6.1)', () => {

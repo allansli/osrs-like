@@ -196,6 +196,8 @@ function resetToIdle(m: MonsterLogic): void {
   m.phase = 0;
   m.shiftLeft = 0;
   m.outsideFor = 0;
+  m.path = [];
+  m.repathIn = 0;
 }
 
 function enterReturn(m: MonsterLogic, world: StepWorld): void {
