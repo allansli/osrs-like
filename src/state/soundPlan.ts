@@ -19,16 +19,39 @@ export function cueFor(attack: { style: string }, monsterStyle: string): Cue {
   return 'high';
 }
 
+// The engine fades every voice from vol to silence over its dur, so a rise is built from
+// staggered overlapping voices with growing vol; the last one ends at windupMs, still loud.
+const SWELL_STEPS = 5;
+function swell(
+  end: number,
+  v: { kind: 'tone'; type: OscillatorType } | { kind: 'noise' },
+  f0: number,
+  f1: number,
+  peak: number
+): Voice[] {
+  const out: Voice[] = [];
+  for (let k = 0; k < SWELL_STEPS; k++) {
+    const at = (end * k) / SWELL_STEPS;
+    const dur = Math.min(end - at, (end * 2) / SWELL_STEPS);
+    const f = (t: number) => f0 * Math.pow(f1 / f0, t / end);
+    out.push({
+      ...v,
+      at,
+      freq: f(at),
+      slideTo: f(at + dur),
+      dur,
+      vol: peak * (0.3 + (0.7 * k) / (SWELL_STEPS - 1))
+    });
+  }
+  return out;
+}
+
 export function windupPlan(attack: { windupMs: number }, cue: Cue): Voice[] {
   const end = attack.windupMs / 1000;
-  if (cue === 'low') {
-    return [
-      { at: 0, kind: 'tone', type: 'square', freq: 110, slideTo: 165, dur: end, vol: 0.12 }
-    ];
-  }
+  if (cue === 'low') return swell(end, { kind: 'tone', type: 'square' }, 110, 165, 0.12);
   if (cue === 'mid') {
     return [
-      { at: 0, kind: 'tone', type: 'triangle', freq: 220, slideTo: 330, dur: end, vol: 0.10 },
+      ...swell(end, { kind: 'tone', type: 'triangle' }, 220, 330, 0.10),
       { at: end - 0.40, kind: 'tone', type: 'square', freq: 750, dur: 0.04, vol: 0.08 },
       { at: end - 0.25, kind: 'tone', type: 'square', freq: 750, dur: 0.04, vol: 0.08 },
       { at: end - 0.10, kind: 'tone', type: 'square', freq: 750, dur: 0.04, vol: 0.08 }
@@ -36,13 +59,13 @@ export function windupPlan(attack: { windupMs: number }, cue: Cue): Voice[] {
   }
   if (cue === 'high') {
     return [
-      { at: 0, kind: 'tone', type: 'sine', freq: 300, slideTo: 600, dur: end, vol: 0.12 },
-      { at: 0, kind: 'tone', type: 'sine', freq: 304, slideTo: 608, dur: end, vol: 0.06 }
-    ];
+      ...swell(end, { kind: 'tone', type: 'sine' }, 300, 600, 0.12),
+      ...swell(end, { kind: 'tone', type: 'sine' }, 304, 608, 0.06)
+    ].slice(0, 12);
   }
   return [
-    { at: 0, kind: 'noise', freq: 350, dur: end, vol: 0.14 },
-    { at: 0, kind: 'tone', type: 'sawtooth', freq: 70, slideTo: 140, dur: end, vol: 0.10 }
+    ...swell(end, { kind: 'noise' }, 250, 700, 0.14),
+    ...swell(end, { kind: 'tone', type: 'sawtooth' }, 70, 140, 0.10)
   ];
 }
 
