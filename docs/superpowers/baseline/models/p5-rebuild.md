@@ -27,9 +27,9 @@ Earlier runs: the sixth gave the same numbers as this one. One to three (`29ee25
 | BLEND(hero), second run | same, mode `hero` | 0 | 3 s |
 | hashes after | same `sha256sum` | 0 | - |
 | UNTOUCHED | `git status --short public/models blender` | 0, prints nothing | - |
-| SUITE | `scripts/capped.sh npx vitest run` | 0 (62 files, 550 tests) | 25 s |
+| SUITE | `scripts/capped.sh npx vitest run` | 0 (62 files, 550 tests) | 23 s |
 | TYPES | `scripts/capped.sh npx tsc --noEmit` | 0, no output | - |
-| BUILD | `scripts/capped.sh npm run build` | 0 | 9 s |
+| BUILD | `scripts/capped.sh npm run build` | 0 | 7 s (vite) |
 
 Built sizes: `hero.glb` 216,844 bytes, `gear.glb` 2,331,672, `monsters.glb` 4,879,064, `world.glb` 2,776,568, `guard.glb` 1,705,360.
 
