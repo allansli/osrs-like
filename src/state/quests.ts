@@ -81,6 +81,7 @@ export function normalizeQuests(raw: unknown): QuestFlags {
     quests.slayerStreak = Math.max(0, Math.floor(data.slayerStreak));
   }
   if (typeof data.title === 'string') quests.title = data.title.slice(0, 40);
+  if (data.lanternVow === true) quests.lanternVow = true;
   if (data.slayer && typeof data.slayer === 'object') {
     const task = data.slayer as Record<string, unknown>;
     if (typeof task.monster === 'string' && typeof task.name === 'string') {
