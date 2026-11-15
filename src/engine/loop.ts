@@ -878,23 +878,19 @@ declare module './context' {
 let infoAutoResetConfigured = false;
 
 export function renderFrame(f: FrameState): void {
-  if (G.renderer) {
-    if (!infoAutoResetConfigured) {
-      G.renderer.info.autoReset = false;
-      infoAutoResetConfigured = true;
-    }
-    G.renderer.info.reset();
+  if (!infoAutoResetConfigured) {
+    G.renderer.info.autoReset = false;
+    infoAutoResetConfigured = true;
   }
+  G.renderer.info.reset();
 
   if (G.grassInstanced && G.grassInstanced.material && (G.grassInstanced.material as THREE.ShaderMaterial).uniforms) {
     (G.grassInstanced.material as THREE.ShaderMaterial).uniforms.uTime.value = f.elapsedSec;
   }
   G.renderer.render(G.scene, G.camera);
 
-  if (G.renderer) {
-    telemetryInfo.calls = G.renderer.info.render.calls;
-    telemetryInfo.triangles = G.renderer.info.render.triangles;
-  }
+  telemetryInfo.calls = G.renderer.info.render.calls;
+  telemetryInfo.triangles = G.renderer.info.render.triangles;
 
   G.frameCounter++;
   if (f.now - G.lastFpsTime >= 500) {

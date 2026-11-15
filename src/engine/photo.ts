@@ -2,6 +2,7 @@ import { WORLD_REGIONS } from '../data/world';
 import { PATHS, POIS } from '../data/worldMap';
 import { STATE } from '../state/gameState';
 import { getTerrainHeight } from '../state/terrain';
+import { el } from '../ui/hud';
 import { loadBlenderWorldTemplate } from './blenderWorld';
 import { camState, G, player } from './context';
 import { applyQualityTier, type QualityTier } from './renderer';
@@ -74,9 +75,6 @@ export function createLookHooks(): LookHooks {
             if (path.id === 'millrace_road') {
               targetX = 18;
               targetZ = 0;
-            } else if (path.points && path.points.length > 0) {
-              targetX = path.points[0][0];
-              targetZ = path.points[0][1];
             }
           }
         }
@@ -103,12 +101,8 @@ export function createLookHooks(): LookHooks {
     },
 
     hud(on: boolean): void {
-      if (typeof document === 'undefined') return;
       for (const id of HUD_ROOT_IDS) {
-        const el = document.getElementById(id);
-        if (el) {
-          el.hidden = !on;
-        }
+        el(id).hidden = !on;
       }
     },
 
