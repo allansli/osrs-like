@@ -396,11 +396,13 @@ export function handleWorldClick(e: MouseEvent): void {
   if (ud.type === 'monster') {
     if (isDown(ud.entity.logic)) return;
     const m = ud.entity as MonsterEntity;
-    const stopDist = (STATE.combatStyle === 'rapid' || STATE.combatStyle === 'ranged' || STATE.combatStyle === 'magic') ? 13.5 : 2.9;
+    const atRange = STATE.combatStyle === 'rapid' || STATE.combatStyle === 'ranged' || STATE.combatStyle === 'magic';
+    const stopDist = atRange ? 13.5 : 2.9;
     const dx = m.pos.x - player.pos.x;
     const dz = m.pos.z - player.pos.z;
     const dist = Math.hypot(dx, dz);
-    if (player.targetEntity && player.targetEntity.type === 'monster' && player.targetEntity.ref === m && dist <= stopDist) {
+    // The run-in rule (design 6.4): only a ranged or magic hero needs a re-click to mean "walk here"; melee re-attacks.
+    if (atRange && player.targetEntity && player.targetEntity.type === 'monster' && player.targetEntity.ref === m && dist <= stopDist) {
       const groundHit = hits.find((h) => h.object === G.terrainMesh);
       if (groundHit) dispatchCommand({ kind: 'move', x: groundHit.point.x, z: groundHit.point.z });
       return;
