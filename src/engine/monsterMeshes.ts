@@ -774,7 +774,7 @@ export function buildElvargMesh(def: MonsterDef): MonsterRigLike {
 }
 
 export function createMonsterMesh(def: MonsterDef, typeKey: string): MonsterRigLike {
-  switch (typeKey) {
+  switch (def.model ?? typeKey) {
     case 'chicken': return buildChickenMesh(def);
     case 'goblin': return buildGoblinMesh(def, 'raider');
     case 'goblin_archer': return buildGoblinMesh(def, 'archer');
@@ -833,23 +833,24 @@ export function poseMonsterLimbs(m: MonsterEntity, moving: boolean, now: number,
   if (m.attackAnim > 0) {
     m.attackAnim = Math.max(0, m.attackAnim - dt * 3.2);
     const progress = Math.sin(m.attackAnim * Math.PI);
-    if (m.typeKey === 'elvarg_dragon') {
+    const model = m.def.model ?? m.typeKey;
+    if (model === 'elvarg_dragon') {
       if (rig.headGroup) rig.headGroup.rotation.x = -0.35 + progress * 0.65;
       if (rig.lWing && rig.rWing) {
         rig.lWing.rotation.z = 0.2 + progress * 0.55;
         rig.rWing.rotation.z = -0.2 - progress * 0.55;
       }
       rig.group.position.y = groundY + progress * 0.32;
-    } else if (m.typeKey === 'dark_wizard') {
+    } else if (model === 'dark_wizard') {
       if (rig.rightArmPivot) rig.rightArmPivot.rotation.x = -1.65 * progress;
       if (rig.leftArmPivot) rig.leftArmPivot.rotation.x = -1.45 * progress;
       if (rig.headGroup) rig.headGroup.rotation.x = -0.25 * progress;
       rig.group.position.y = groundY + progress * 0.12;
-    } else if (m.typeKey === 'moss_guardian' || m.typeKey === 'hill_giant') {
+    } else if (model === 'moss_guardian' || model === 'hill_giant') {
       if (rig.rightArmPivot) rig.rightArmPivot.rotation.x = -1.8 * progress;
       if (rig.leftArmPivot) rig.leftArmPivot.rotation.x = -1.8 * progress;
       rig.group.position.y = groundY + progress * 0.22;
-    } else if (m.typeKey === 'goblin' || m.typeKey === 'hobgoblin') {
+    } else if (model === 'goblin' || model === 'hobgoblin') {
       if (rig.rightArmPivot) rig.rightArmPivot.rotation.x = -1.55 * progress;
       if (rig.leftArmPivot) rig.leftArmPivot.rotation.x = progress * 0.4;
       rig.group.position.y = groundY + progress * 0.25;

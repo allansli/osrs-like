@@ -231,6 +231,20 @@ export const CAMPS: CampDef[] = [
   ], MELEE_AGGRO),
   makeCamp('dragon', [
     { type: 'elvarg_dragon', x: -102, z: 100 }
+  ], RANGED_AGGRO),
+  // Design 6.8: south-east of Tamarisk Pool, and north of Lanternway outside the woods region.
+  makeCamp('saltback_shore', [
+    { type: 'saltback_stalker', x: 103, z: 104 },
+    { type: 'saltback_stalker', x: 109, z: 104 },
+    { type: 'saltback_stalker', x: 106, z: 109 }
+  ], MELEE_AGGRO),
+  makeCamp('thornwatch', [
+    { type: 'thornwatch_marksman', x: -21, z: -48 },
+    { type: 'thornwatch_marksman', x: -15, z: -48 }
+  ], RANGED_AGGRO),
+  // Design 6.4: the boss's arena, far from every other camp's reach.
+  makeCamp('ashmantle', [
+    { type: 'ashmantle', x: -102, z: 54 }
   ], RANGED_AGGRO)
 ];
 
