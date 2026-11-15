@@ -517,7 +517,7 @@ export function updatePlayerAnimation(f: FrameState): void {
       }
       updateCapePhysics(true, player.animTime);
     } else {
-      player.animTime += f.dt * 2.0;
+      player.animTime += animDt * 2.0;
       const breath = Math.sin(player.animTime) * 0.035;
       player.parts.leftLegPivot.rotation.x *= Math.pow(0.85, f.dt * 60);
       player.parts.rightLegPivot.rotation.x *= Math.pow(0.85, f.dt * 60);
@@ -539,7 +539,7 @@ export function updatePlayerAnimation(f: FrameState): void {
     }
 
     if (player.attackAnim > 0) {
-      player.attackAnim = Math.max(0, player.attackAnim - f.dt * 3.6);
+      player.attackAnim = Math.max(0, player.attackAnim - animDt * 3.6);
       const slashAngle = Math.sin(player.attackAnim * Math.PI) * 1.65;
       const k = player.activeWeaponKind;
       if (k === 'greataxe') {
