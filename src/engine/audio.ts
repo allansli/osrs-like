@@ -64,7 +64,7 @@ function tone(
   type: OscillatorType,
   duration: number,
   vol = 0.12,
-  slideTo: number | null = null,
+  slideTo?: number,
   cap = 12
 ): void {
   if (!ctx || ctx.state !== 'running' || !masterGain) return;
@@ -78,8 +78,8 @@ function tone(
 
     osc.type = type;
     osc.frequency.setValueAtTime(freq, startTime);
-    if (slideTo) {
-      osc.frequency.exponentialRampToValueAtTime(Math.max(1, slideTo), stopTime);
+    if (slideTo !== undefined) {
+      osc.frequency.exponentialRampToValueAtTime(slideTo, stopTime);
     }
 
     gain.gain.setValueAtTime(vol, startTime);
@@ -177,7 +177,7 @@ function play(plan: Voice[], wide: boolean): void {
 
   for (const v of plan) {
     if (v.kind === 'tone') {
-      tone(v.at, v.freq, v.type, v.dur, v.vol, v.slideTo ?? null, cap);
+      tone(v.at, v.freq, v.type, v.dur, v.vol, v.slideTo, cap);
     } else if (v.kind === 'noise') {
       noise(v.at, v.freq, v.dur, v.vol, cap);
     }
