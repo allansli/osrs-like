@@ -132,13 +132,15 @@ function getScratch(size: number): PathScratch {
   return scratch;
 }
 
-export function openStart(grid: WalkGrid, x: number, z: number): [number, number] | null {
+/** Whether (x, z) lies in an open cell of the grid. */
+export function isOpenCell(grid: WalkGrid, x: number, z: number): boolean {
   const gx = Math.floor(x - grid.origin);
   const gz = Math.floor(z - grid.origin);
-  if (gx >= 0 && gx < grid.size && gz >= 0 && gz < grid.size && grid.cells[gz * grid.size + gx] === 1) {
-    return [x, z];
-  }
-  return nearestOpenCell(grid, x, z);
+  return gx >= 0 && gx < grid.size && gz >= 0 && gz < grid.size && grid.cells[gz * grid.size + gx] === 1;
+}
+
+export function openStart(grid: WalkGrid, x: number, z: number): [number, number] | null {
+  return isOpenCell(grid, x, z) ? [x, z] : nearestOpenCell(grid, x, z);
 }
 
 export function findPath(
