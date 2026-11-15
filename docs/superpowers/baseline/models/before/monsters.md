@@ -17,6 +17,8 @@ Shipped `public/models/monsters.glb` (ten figures; Stage 4's Ashmantle is not in
 
 Where to look: shape, joints and colour in `<figure>-turnaround.jpg`; what survives at play size in `<figure>-play-distance.jpg`; "the goblin raider and the goblin archer, and the dark ranger next to both, share one outline" (fact 2) in `roster-silhouette.jpg`. Fact 2b (the dragon's and the demon's pivots hold no mesh, so they do not move) is a claim about the file and the engine, not a picture: a render of the stored pose cannot show it.
 
-Heights differ from the design's table by up to 13% (demon at 5.4: 1019 against 907; scorpion 608 against "about 540"; hill giant 712 against 785). The design's numbers are estimates from the GLB height times the builder's scale; the renderer measures the alpha mask at the camera's pitch, with the scale from `scripts/blender/review_scales.json`. Reported as measured, not reconciled.
+Heights differ from the design's table by up to 16% (dragon at 8.5: 566 against 490; chicken at 26: 32 against 37; demon at 5.4: 1019 against 907; scorpion 608 against "about 540"; hill giant 712 against 785). The design's numbers are estimates from the GLB height times the builder's scale; the renderer measures the alpha mask at the camera's pitch, with the scale from `scripts/blender/review_scales.json`. Reported as measured, not reconciled.
+
+**Clipped sheet.** In `elvarg_dragon-play-distance.jpg` the 5.4 crop is cut by the 1080-line frame: the wing tips leave the top and sides and the body leaves the bottom. The logged 796 px is a lower bound, not the figure's height. The 8.5 and 26 crops hold the whole figure. The demon's 5.4 crop (1019 of 1080 lines) holds the whole figure.
 
 **Rendered but not committed** (2 MB budget): the ten per-figure `<figure>-silhouette.jpg` sheets (434 kB); the roster sheet holds every figure in silhouette at its 26-distance size. The command above regenerates them.

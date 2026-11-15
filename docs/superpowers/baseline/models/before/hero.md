@@ -13,7 +13,7 @@ Shipped `public/models/hero.glb`, rendered on Blender 5.0.1 by `scripts/blender/
 | "torso in `Walk` 0.04 rad" | `hero-Walk-strip.jpg` | `Torso` 0.04; legs 1.10, knees 0.75 rad |
 | "torso in `Lunge` 0.24 rad" | `hero-Lunge-strip.jpg` | `Torso` 0.24; `RightArmPivot` 1.06 rad |
 
-Every measured value matches the design's within its rounding; no mismatch.
+Every rotation range matches the design's within its rounding. The heights are 1.2% to 3.5% below the design's (405 / 254 / 82 against 410 / 260 / 85), within the 5% V2 allows.
 
 The strips view the figure from the front (glTF +Z), so a stride reads as feet lifting in turn (see `../README.md`, note on the `Walk` strip).
 
