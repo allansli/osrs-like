@@ -1,3 +1,4 @@
+import type { AttackDef } from '../data/attacks';
 import { ammoForWeapon, ITEMS, type ItemDef } from '../data/items';
 import { SPELLS } from '../data/magic';
 import { MONSTER_TYPES, WORLD_REGIONS } from '../data/world';
@@ -278,5 +279,24 @@ export function rollMonsterHit(
   }
 
   return { dmg, dragonfire, absorbed };
+}
+
+export function rollMonsterAttack(
+  typeKey: string,
+  attack: AttackDef,
+  state: GameState,
+  marks: { count: number; left?: number },
+  rand: () => number
+): { dmg: number } {
+  const def = MONSTER_TYPES[typeKey];
+  const hitChance = monsterHitChance(typeKey, state);
+  let dmg = 0;
+  if (rand() < hitChance) {
+    const raw = Math.max(1, Math.floor(rand() * (def.maxHit + 1)));
+    const style = attack.style === 'own' ? def.style : attack.style;
+    const mitigated = mitigateDamage(raw, style, state.activePrayers);
+    dmg = attack.slots * mitigated;
+  }
+  return { dmg };
 }
 
