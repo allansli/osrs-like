@@ -1,5 +1,7 @@
 # Visual pass: design
 
+> **Owner authorization 2026-11-15** ("tá autorizado já"), answering R0's stop before TR1 (plan review log A9.3 and A11 item 5): the frozen golden route test of Stage 4, `tests/pathfind-budget.test.ts`, is a **declared replacement** for this stage. When the woods trunks enter the walk rules (TR2), the 200-pair golden fixture `tests/fixtures/pathfind-golden.json` is regenerated once, in the TR2 commit, and named in the commit message; the test file's assertions and the pair list stay as they are; routes that do not pass through the woods must come out identical, and the TR1 tests list every test of A9.3. Nothing else in Stage 4's tests changes.
+
 > **Approved by the owner on 2026-11-14** ("aprovo 5"), design and plan, after the independent critique and with every owner decision of section 13 answered. Code starts only after Stages 2, 3 and 4 have landed; task R0 re-checks the premises first.
 
 Date: 2026-11-14. Branch: `feat/visual-pass`. All line numbers refer to commit `a8cad85` (main, before Stages 2, 3 and 4). Symbols are named next to every line number, because the lines will move before this stage starts.
