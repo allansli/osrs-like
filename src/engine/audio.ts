@@ -117,7 +117,8 @@ function noise(
   freq: number,
   duration: number,
   vol = 0.12,
-  cap = 12
+  cap = 12,
+  slideTo?: number
 ): void {
   if (!ctx || ctx.state !== 'running' || !masterGain) return;
   if (liveVoices >= cap) return;
@@ -133,6 +134,7 @@ function noise(
     const filter = ctx.createBiquadFilter();
     filter.type = 'bandpass';
     filter.frequency.setValueAtTime(freq, startTime);
+    if (slideTo !== undefined) filter.frequency.linearRampToValueAtTime(slideTo, stopTime);
     filter.Q.setValueAtTime(1, startTime);
 
     const gain = ctx.createGain();
@@ -179,7 +181,7 @@ function play(plan: Voice[], wide: boolean): void {
     if (v.kind === 'tone') {
       tone(v.at, v.freq, v.type, v.dur, v.vol, v.slideTo, cap);
     } else if (v.kind === 'noise') {
-      noise(v.at, v.freq, v.dur, v.vol, cap);
+      noise(v.at, v.freq, v.dur, v.vol, cap, v.slideTo);
     }
   }
 }
@@ -207,10 +209,9 @@ export function armAudioOnGesture(): void {
         const Ctor =
           window.AudioContext ||
           (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-        if (Ctor) {
-          ctx = new Ctor();
-          setupMasterChain();
-        }
+        if (!Ctor) throw new Error('this browser has no AudioContext');
+        ctx = new Ctor();
+        setupMasterChain();
       } catch (err) {
         creationFailed = true;
         if (!creationWarned) {
@@ -220,7 +221,7 @@ export function armAudioOnGesture(): void {
         return;
       }
     }
-    if (ctx && ctx.state === 'suspended') {
+    if (ctx && ctx.state !== 'running') {
       ctx.resume().catch((err) => {
         if (!nodeWarned) {
           nodeWarned = true;
