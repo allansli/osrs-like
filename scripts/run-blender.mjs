@@ -31,8 +31,7 @@ const BUILD_SCRIPTS = {
 };
 
 const EXTRA_MODES = {
-  guard: 'scripts/blender/export_guard.py',
-  sheets: 'scripts/blender/review_render.py'
+  guard: 'scripts/blender/export_guard.py'
 };
 
 const mode = process.argv[2] || 'hero';
@@ -42,11 +41,17 @@ const positionalArgs = [];
 const remaining = process.argv.slice(3);
 for (let i = 0; i < remaining.length; i++) {
   if (remaining[i] === '--out') {
-    if (i + 1 < remaining.length) {
-      outDir = path.resolve(remaining[i + 1]);
-      i++;
+    if (i + 1 >= remaining.length || !remaining[i + 1]) {
+      console.error('--out needs a directory value');
+      process.exit(2);
     }
+    outDir = path.resolve(remaining[i + 1]);
+    i++;
   } else if (remaining[i].startsWith('--out=')) {
+    if (!remaining[i].slice(6)) {
+      console.error('--out= needs a directory value');
+      process.exit(2);
+    }
     outDir = path.resolve(remaining[i].slice(6));
   } else {
     positionalArgs.push(remaining[i]);
@@ -143,9 +148,6 @@ if (mode === 'open') {
     '--out',
     outDir
   ];
-  if (mode === 'sheets') {
-    spawnArgs.push(...positionalArgs);
-  }
   const res = spawnSync(blenderExe, spawnArgs, { stdio: 'inherit' });
   checkExit(res);
   process.exit(0);

@@ -9,6 +9,7 @@ import os
 import sys
 import bpy
 
+sys.dont_write_bytecode = True
 sys.path.insert(0, os.path.dirname(__file__))
 import paths
 

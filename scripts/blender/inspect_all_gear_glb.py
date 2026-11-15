@@ -2,22 +2,19 @@ import bpy
 import os
 import sys
 
+sys.dont_write_bytecode = True
 sys.path.insert(0, os.path.dirname(__file__))
 import paths
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
 
 glb_path = paths.glb_path("gear")
-if "--" in sys.argv:
-    extra = sys.argv[sys.argv.index("--") + 1 :]
-    if "--glb" in extra:
-        idx = extra.index("--glb")
-        if idx + 1 < len(extra):
-            glb_path = os.path.abspath(extra[idx + 1])
-elif "--glb" in sys.argv:
-    idx = sys.argv.index("--glb")
-    if idx + 1 < len(sys.argv):
-        glb_path = os.path.abspath(sys.argv[idx + 1])
+extra = sys.argv[sys.argv.index("--") + 1 :] if "--" in sys.argv else []
+if "--glb" in extra:
+    idx = extra.index("--glb")
+    if idx + 1 >= len(extra) or not extra[idx + 1]:
+        raise SystemExit("--glb needs a file value")
+    glb_path = os.path.abspath(extra[idx + 1])
 
 bpy.ops.import_scene.gltf(filepath=glb_path)
 

@@ -17,7 +17,7 @@
     "blender:guard": "node scripts/run-blender.mjs guard",
     "models:compare": "node scripts/models-compare.mjs",
     "models:promote": "node scripts/models-promote.mjs",
-    "models:sheets": "node scripts/run-blender.mjs sheets"
+    "models:sheets": "blender --background --factory-startup --disable-autoexec --python-exit-code 1 --python scripts/blender/review_render.py --"
   },
   "dependencies": {
     "three": "^0.169.0"

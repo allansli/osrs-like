@@ -7,9 +7,11 @@ import os
 import sys
 import zipfile
 
+sys.dont_write_bytecode = True
+
 
 def repo_root() -> str:
-    return os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+    return os.path.realpath(os.path.join(os.path.dirname(__file__), "..", ".."))
 
 
 def _is_subpath_or_equal(path: str, base: str) -> bool:
@@ -21,32 +23,35 @@ def _is_subpath_or_equal(path: str, base: str) -> bool:
 
 
 def _check_forbidden(path: str) -> None:
+    # realpath resolves symlinks in the existing prefix; a not-yet-existing tail stays as given.
+    path = os.path.realpath(path)
     root = repo_root()
-    public_dir = os.path.join(root, "public")
-    blender_dir = os.path.join(root, "blender")
+    public_dir = os.path.realpath(os.path.join(root, "public"))
+    blender_dir = os.path.realpath(os.path.join(root, "blender"))
     if _is_subpath_or_equal(path, public_dir) or _is_subpath_or_equal(path, blender_dir):
         raise SystemExit(f"Refusing write target inside forbidden directory: {path}")
 
 
 def out_dir() -> str:
     out = None
-    if "--" in sys.argv:
-        args = sys.argv[sys.argv.index("--") + 1 :]
-    else:
-        args = sys.argv[1:]
+    args = sys.argv[sys.argv.index("--") + 1 :] if "--" in sys.argv else []
 
     for i in range(len(args)):
-        if args[i] == "--out" and i + 1 < len(args):
+        if args[i] == "--out":
+            if i + 1 >= len(args) or not args[i + 1]:
+                raise SystemExit("--out needs a directory value")
             out = args[i + 1]
             break
         elif args[i].startswith("--out="):
             out = args[i][len("--out=") :]
+            if not out:
+                raise SystemExit("--out= needs a directory value")
             break
 
-    if not out:
+    if out is None:
         out = os.path.join(repo_root(), "scratch", "models-build")
 
-    resolved = os.path.abspath(os.path.expanduser(out))
+    resolved = os.path.realpath(os.path.expanduser(out))
     _check_forbidden(resolved)
     os.makedirs(resolved, exist_ok=True)
     return resolved
@@ -55,7 +60,7 @@ def out_dir() -> str:
 def checked_write(path: str | None) -> str | None:
     if path is None:
         return None
-    resolved = os.path.abspath(os.path.expanduser(path))
+    resolved = os.path.realpath(os.path.expanduser(path))
     _check_forbidden(resolved)
     os.makedirs(os.path.dirname(resolved), exist_ok=True)
     return resolved
