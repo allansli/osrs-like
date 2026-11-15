@@ -8,9 +8,6 @@ import { figureStats } from './models-compare.mjs';
 
 export const NAMES = ['hero', 'gear', 'monsters', 'guard', 'world'];
 const MARGIN = 1.01; // per-file bytes and the total: today's value plus 1%
-// per-figure Brotli bytes: today's value plus 2%. A rebuild on Blender 5.0.1 writes the same mesh bytes in another
-// buffer-view order than the shipped 5.2.41 export, which moves a figure's compressed size by up to 1.7% (P5).
-const FIGURE_BROTLI_MARGIN = 1.02;
 const HERO_CENTRES = ['Hand_L', 'Hand_R', 'Boot_L', 'Boot_R', 'Head'];
 // design 8.1: mesh names the engine hides by (playerMesh.ts), and gear leg meshes hidden on the hero (the ordinal _04_)
 const TOGGLED = /^(Hair|CrownSpike_|BackSpike_|Sideburn_|TorsoCoat|OuterCoat_|CoatTrim_|CoatTail_|CoatTailTrim_|InnerCollar)|_leg[LR]_04_/;
@@ -91,7 +88,7 @@ export function buildManifest(name, doc, repoRoot) {
     nodes.forEach((n, i) => {
       if (!root.test(n.name)) return;
       const { triangles, meshes, materials, rawBytes, brotliBytes } = figureStats(doc, i);
-      manifest.figures[n.name] = { triangles, meshes, materials, rawBytes, brotliBytes: Math.ceil(brotliBytes * FIGURE_BROTLI_MARGIN) };
+      manifest.figures[n.name] = { triangles, meshes, materials, rawBytes, brotliBytes };
     });
   }
   return manifest;
