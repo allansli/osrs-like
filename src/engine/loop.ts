@@ -674,7 +674,8 @@ export function updateMonsters(f: FrameState): void {
       } else if (ev.kind === 'windup') {
         showTelegraph(m, ev);
         const attack = ATTACKS[ev.attackId];
-        m.telegraph!.sound = SFX.play(windupPlan(attack, cueFor(attack, m.def.style)), true);
+        // The rise ends when the shape fills: plan it from the event's scaled wind-up, not the attack row.
+        m.telegraph!.sound = SFX.play(windupPlan({ windupMs: ev.ms }, cueFor(attack, m.def.style)), true);
       } else if (ev.kind === 'cancel') {
         clearTelegraph(m);
       } else if (ev.kind === 'resolve') {
