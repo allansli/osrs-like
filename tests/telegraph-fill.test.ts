@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
 import * as THREE from 'three';
 import { ATTACKS } from '../src/data/attacks';
@@ -113,9 +114,33 @@ describe('telegraph fill (review 7): lattice', () => {
   it('every fill but the Ashen Nova ring is under the 400-triangle budget (design 8)', () => {
     for (const id of Object.keys(ATTACKS)) if (id !== 'ashen_nova') expect(triangles(id)).toBeLessThan(400);
   });
-  it('ashen_nova is coarsened to the 1.5-unit spacing: 1,056 square units cannot fit 400 triangles at that spacing', () => {
-    expect(triangles('ashen_nova')).toBeLessThan(1400);
+  it('ashen_nova stays within the ring-fill exception recorded in design section 8 (open as CALL-4.20)', () => {
+    const doc = readFileSync('docs/superpowers/specs/2026-11-14-combat-weight-design.md', 'utf8');
+    const row = doc.split('\n').find(l => l.startsWith('| Live telegraph meshes |'))!;
+    const m = /Ashen Nova ring's fill[^|]*?at most ([\d,]+) triangles[^|]*CALL-4\.20/.exec(row);
+    expect(m).not.toBeNull();
+    const recorded = Number(m![1].replace(/,/g, ''));
+    expect(recorded).toBeLessThan(1400);
+    expect(triangles('ashen_nova')).toBeLessThanOrEqual(recorded);
   });
+  // Design 6.5: fill vertices no farther apart than the terrain's own, about 1.5 units, so a slope cannot poke through.
+  // Each lattice triangle has a row edge and a column edge within that spacing; the third edge is the cell diagonal.
+  for (const id of Object.keys(ATTACKS)) {
+    it(`${id}: at full size every fill triangle's two shorter edges are at most 1.5 units`, () => {
+      const m = show(id);
+      updateTelegraphs(ATTACKS[id].windupMs / 1000);
+      const geo = m.telegraph!.fillMesh.geometry;
+      const arr = geo.attributes.position.array as Float32Array;
+      const idx = geo.index!.array;
+      const d = (a: number, b: number) => Math.hypot(arr[3 * a] - arr[3 * b], arr[3 * a + 2] - arr[3 * b + 2]);
+      for (let t = 0; t < idx.length; t += 3) {
+        const [a, b, c] = [idx[t], idx[t + 1], idx[t + 2]];
+        const e = [d(a, b), d(b, c), d(c, a)].sort((x, y) => x - y);
+        expect(e[1]).toBeLessThanOrEqual(1.5 + 1e-4);
+      }
+      clearTelegraph(m);
+    });
+  }
 });
 
 describe('telegraph sound (review 10): clearing a shape stops its wind-up voices', () => {
