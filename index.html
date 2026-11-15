@@ -54,6 +54,8 @@
       <li><b>Right drag</b> orbits the camera. The compass resets it behind you.</li>
       <li><b>F1–F6</b> open combat, skills, inventory, equipment, prayer, and magic.</li>
       <li>The tracker under your health shows the next quest step and your Slayer task.</li>
+      <li>You start with <b>nothing</b>. Everything you wear is earned.</li>
+      <li>First steps: follow the <b>tracker</b>. Six short tasks in the haven pay your first kit.</li>
     </ul>
     <button class="hud-btn" type="button" onclick="dismissOnboarding()">Enter Gielinor</button>
   </div>
@@ -379,7 +381,6 @@
       <div class="settings-grid">
         <button class="hud-btn" id="graphics-quality-btn" onclick="cycleGraphicsQuality()">Graphics: Balanced</button>
         <button class="hud-btn" id="outlines-toggle-btn" onclick="toggleOutlines()">Outlines: On</button>
-        <button class="hud-btn active" id="xp-rate-btn" onclick="toggleXpMultiplier()">10x League XP</button>
         <button class="hud-btn" id="time-of-day-btn" onclick="cycleTimeOfDay()">Golden Hour</button>
         <button class="hud-btn active" id="audio-btn" onclick="toggleAudio()">Audio On</button>
         <button class="hud-btn" id="save-status-btn" onclick="manualSaveToast()">Save</button>
@@ -387,15 +388,18 @@
         <button class="hud-btn" onclick="openXpTableModal()">XP Table</button>
         <button class="hud-btn" type="button" onclick="replayOnboarding()">Show introduction</button>
       </div>
-      <div class="cheat-panel">
-        <h3>Developer Cheats</h3>
-        <div class="cheat-entry">
-          <input id="cheat-code-input" type="text" autocomplete="off" spellcheck="false" placeholder="Enter cheat code (skills10, gold200k)..." />
-          <button class="hud-btn" type="button" onclick="applyTypedCheat()">Apply</button>
-        </div>
-        <div class="cheat-quick">
-          <button class="hud-btn" type="button" onclick="cheatSkillsPlus10()">+10 All Skills (skills10)</button>
-          <button class="hud-btn" type="button" onclick="cheatGold200k()">+200,000 GP (gold200k)</button>
+      <div id="hidden-tools" hidden>
+        <button class="hud-btn active" id="xp-rate-btn" onclick="toggleXpMultiplier()">10x League XP</button>
+        <div class="cheat-panel">
+          <h3>Developer Cheats</h3>
+          <div class="cheat-entry">
+            <input id="cheat-code-input" type="text" autocomplete="off" spellcheck="false" placeholder="Enter cheat code (skills10, gold200k)..." />
+            <button class="hud-btn" type="button" onclick="applyTypedCheat()">Apply</button>
+          </div>
+          <div class="cheat-quick">
+            <button class="hud-btn" type="button" onclick="cheatSkillsPlus10()">+10 All Skills (skills10)</button>
+            <button class="hud-btn" type="button" onclick="cheatGold200k()">+200,000 GP (gold200k)</button>
+          </div>
         </div>
       </div>
     </div>

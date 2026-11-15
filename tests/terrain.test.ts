@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { WORLD_REGIONS } from '../src/data/world';
+import { BASINS } from '../src/data/worldMap';
 import { riverCenterX } from '../src/state/collision';
 import { getTerrainHeight, regionAt } from '../src/state/terrain';
 
@@ -19,12 +20,13 @@ describe('terrain invariants', () => {
     expect(getTerrainHeight(riverCenterX(0), 0)).toBeLessThan(-0.34);
   });
 
-  it('land 28+ from every centre and outside the trough is at least 0.08', () => {
+  it('land 28+ from every centre, outside basins and outside the trough is at least 0.08', () => {
     let checked = 0;
     for (let x = -130; x <= 130; x += 1.5) {
       for (let z = -130; z <= 130; z += 1.5) {
         if (WORLD_REGIONS.some((r) => Math.hypot(x - r.x, z - r.z) < 28)) continue;
         if (Math.abs(x - riverCenterX(z)) < 6.8) continue;
+        if (BASINS.some((b) => Math.hypot(x - b.x, z - b.z) < b.radius)) continue;
         checked++;
         expect(getTerrainHeight(x, z), `(${x}, ${z})`).toBeGreaterThanOrEqual(0.08);
       }

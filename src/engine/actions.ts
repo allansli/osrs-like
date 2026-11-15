@@ -21,32 +21,32 @@ import {
 } from './vfx';
 import { addChatMessage, showBanner, updateTargetHud, updateAllUI, requestUiRefresh, el } from '../ui/hud';
 import { STATE } from '../state/gameState';
-import { prepareAttack, getEquipmentBonuses, mitigateDamage } from '../state/combat';
+import { prepareAttack, playerAttackProfile, playerHitChance, rollMonsterHit } from '../state/combat';
+import { creditGp, fishDepletes, gatherChance, rollDrops } from '../state/economy';
 import { addItem, removeItem, canAddItem } from '../state/inventory';
 import { SPELLS } from '../data/magic';
-import { isDown, onPlayerHit } from '../state/monsterAi';
+import { AGGRO_GRACE_MS, isDown, onPlayerHit } from '../state/monsterAi';
 import { ITEMS } from '../data/items';
 import { SKILLS_META } from '../data/skills';
-import { addItemToInventory, grantXp } from '../ui/playerActions';
+import { addItemToInventory, announceUnlocksSince, grantXp, skillLevels } from '../ui/playerActions';
 import {
   applyRespawn,
   deathNotice,
-  dharokMultiplier,
   hitSplatKind,
   isBossLoot,
   isRareLoot,
   noteGather,
   registerKill,
   RESPAWN_SECONDS,
-  resolveDragonfire,
   weaponSpecial
 } from '../state/adventure';
 
 export function teleportToRegion(regionId?: string): void {
   const reg = WORLD_REGIONS.find((r: RegionDef) => r.id === regionId);
   if (!reg) return;
+  G.aggroGraceUntil = performance.now() + AGGRO_GRACE_MS;
   player.targetEntity = null;
-  player.targetPos = null;
+  player.waypoints.length = 0;
   player.pos.set(reg.x, getTerrainHeight(reg.x, reg.z + 4), reg.z + 4);
   player.yaw = Math.PI;
   camState.yaw = Math.PI;
@@ -82,6 +82,12 @@ export function triggerRegionBanner(reg: RegionDef): void {
 
 export function performPlayerAttack(monster: MonsterEntity): void {
   if (isDown(monster.logic) || player.downed) return;
+  if (monster.logic.state === 'return') {
+    // Immune on the way home (design 6.5): spend nothing, say it once, drop the target.
+    addChatMessage(`The ${monster.def.name} has lost interest.`, 'combat');
+    player.targetEntity = null;
+    return;
+  }
   const prep = prepareAttack(STATE);
   if (!prep.ok) {
     addChatMessage(prep.reason, 'combat');
@@ -89,30 +95,10 @@ export function performPlayerAttack(monster: MonsterEntity): void {
     return;
   }
   prep.consume.forEach(cost => removeItem(STATE, cost.id, cost.qty));
-  const bon = getEquipmentBonuses(STATE);
-  const s = STATE.skills;
+  const profile = playerAttackProfile(STATE);
+  let maxHit = profile.maxHit;
+  let accuracyScore = profile.accuracy;
   const style = STATE.combatStyle;
-  let maxHit = 2;
-  let accuracyScore = 10;
-
-  const prayStrMult = STATE.activePrayers.has('piety') ? 1.25 : (STATE.activePrayers.has('burst_str') ? 1.15 : 1.0);
-  const prayRngMult = STATE.activePrayers.has('sharp_eye') ? 1.20 : 1.0;
-  const prayMagMult = STATE.activePrayers.has('mystic_might') ? 1.20 : 1.0;
-
-  if ((style === 'rapid' || style === 'ranged')) {
-    maxHit = Math.max(2, Math.floor((2 + s.ranged.lvl * 0.35 + bon.rng * 0.22) * prayRngMult));
-    accuracyScore = s.ranged.lvl * 1.4 + bon.rng + 12;
-  } else if (style === 'magic') {
-    const sp = SPELLS.find(x => x.id === STATE.activeSpell) || SPELLS[0];
-    maxHit = Math.max(3, Math.floor((sp.maxHit! + s.magic.lvl * 0.22 + bon.mag * 0.18) * prayMagMult));
-    accuracyScore = s.magic.lvl * 1.5 + bon.mag + 16;
-  } else {
-    const styleStrBonus = style === 'aggressive' ? 2 : (style === 'controlled' ? 1 : 0);
-    const styleAtkBonus = style === 'accurate' ? 4 : (style === 'controlled' ? 2 : 0);
-    maxHit = Math.max(2, Math.floor((1.5 + (s.strength.lvl + styleStrBonus) * 0.32 + bon.str * 0.22) * prayStrMult));
-    maxHit = Math.max(2, Math.floor(maxHit * dharokMultiplier(STATE)));
-    accuracyScore = (s.attack.lvl + styleAtkBonus) * 1.35 + bon.atk + 12;
-  }
 
   const wepId = STATE.equipment.weapon;
   const wepDef = wepId ? (ITEMS[wepId] || null) : null;
@@ -170,14 +156,23 @@ export function performPlayerAttack(monster: MonsterEntity): void {
     }
   }
 
-  const monsterDefRoll = monster.def.def * 1.1 + 4;
-  const hitChance = Math.min(0.94, Math.max(0.22, accuracyScore / (accuracyScore + monsterDefRoll * 0.75)));
+  const hitChance = playerHitChance(accuracyScore, monster.def.def);
   const didHit = Math.random() < hitChance;
   const dmg = didHit ? Math.max(1, Math.floor(Math.random() * (maxHit + 1))) : 0;
 
   const applyDamage = (): void => {
     const hit = onPlayerHit(monster.logic, dmg);
-    if (!hit.applied) return;
+    if (!hit.applied) {
+      SFX.miss();
+      spawnHitSplatWorld(monster.pos, 0, 'miss');
+      // A projectile that lands after the monster turned home. If the player still targets it,
+      // this is the one message and the target goes; otherwise the guard above already said it.
+      if (player.targetEntity?.ref === monster) {
+        addChatMessage(`The ${monster.def.name} has lost interest.`, 'combat');
+        player.targetEntity = null;
+      }
+      return;
+    }
     if (dmg > 0) {
       SFX.hit();
       monster.flinch = 1.0;
@@ -258,6 +253,7 @@ export function handleMonsterDeath(monster: MonsterEntity): void {
   spawnBurst(monster.pos.clone().add(new THREE.Vector3(0, 0.8, 0)), 6, 0x64748b, 0.6, 1.4);
 
   addChatMessage(`Defeated <b>${monster.def.name}</b> (Lv-${monster.def.level}).`, 'combat');
+  const before = skillLevels();
   const kill = registerKill(STATE, monster.typeKey);
   if (kill.slayerKillXp > 0 && !kill.slayerCompleted) {
     addChatMessage(`Slayer progress: <b>${kill.remaining}</b> ${kill.taskName} remaining.`, 'skill');
@@ -267,25 +263,21 @@ export function handleMonsterDeath(monster: MonsterEntity): void {
     showBanner('Slayer Bounty', `${kill.taskName} complete`);
     spawnLevelUpFireworks(0xc084fc);
   }
+  announceUnlocksSince(before);
 
   let rareBeam = isBossLoot(monster.typeKey);
-  if (monster.def.drops) {
-    monster.def.drops.forEach(d => {
-      if (Math.random() <= d.chance) {
-        if (d.gp) {
-          const coins = d.gp[0] + Math.floor(Math.random() * (d.gp[1] - d.gp[0] + 1));
-          STATE.gp += coins;
-          SFX.coin();
-          addChatMessage(`Looted <b style="color:#ffe642">${coins} GP</b> from ${monster.def.name}.`, 'loot');
-        } else if (d.id && ITEMS[d.id]) {
-          if (isRareLoot(ITEMS[d.id])) rareBeam = true;
-          const qty = d.qty || 1;
-          const gained = addItem(STATE, d.id, qty);
-          if (gained.added > 0) addChatMessage('Looted <b>' + ITEMS[d.id].name + '</b>' + (gained.added > 1 ? ' x' + gained.added : '') + '.', 'loot');
-          if (!gained.ok) addChatMessage('Your backpack is full. The <b>' + ITEMS[d.id].name + '</b> is left behind.', 'combat');
-        }
-      }
-    });
+  const drops = rollDrops(monster.typeKey, Math.random);
+  for (const drop of drops) {
+    if (drop.kind === 'gp') {
+      creditGp(STATE, drop.amount);
+      SFX.coin();
+      addChatMessage(`Looted <b style="color:#ffe642">${drop.amount} GP</b> from ${monster.def.name}.`, 'loot');
+    } else if (drop.kind === 'item' && ITEMS[drop.id]) {
+      if (isRareLoot(ITEMS[drop.id])) rareBeam = true;
+      const gained = addItem(STATE, drop.id, drop.qty);
+      if (gained.added > 0) addChatMessage('Looted <b>' + ITEMS[drop.id].name + '</b>' + (gained.added > 1 ? ' x' + gained.added : '') + '.', 'loot');
+      if (!gained.ok) addChatMessage('Your backpack is full. The <b>' + ITEMS[drop.id].name + '</b> is left behind.', 'combat');
+    }
   }
   if (rareBeam) spawnRareLootBeam(monster.pos);
   requestUiRefresh();
@@ -293,30 +285,14 @@ export function handleMonsterDeath(monster: MonsterEntity): void {
 
 export function performMonsterRetaliation(monster: MonsterEntity): void {
   if (isDown(monster.logic) || player.downed || STATE.hp <= 0) return;
-  monster.attackAnim = 1;
-  const bon = getEquipmentBonuses(STATE);
-  const defLvl = STATE.skills.defence.lvl + (STATE.combatStyle === 'defensive' ? 3 : 0);
-  const prayDefMult = STATE.activePrayers.has('piety') ? 1.25 : (STATE.activePrayers.has('thick_skin') ? 1.15 : 1.0);
-  const playerDefScore = (defLvl * 1.2 + bon.def) * prayDefMult + 10;
-  const monAtkScore = monster.def.atk * 1.25 + 8;
-
-  const hitChance = Math.min(0.82, Math.max(0.12, monAtkScore / (monAtkScore + playerDefScore)));
   monster.logic.breathCount = (monster.logic.breathCount || 0) + 1;
-  const dragonfire = monster.typeKey === 'elvarg_dragon' && monster.logic.breathCount % 3 === 0;
-
-  let dmg = 0;
-  let absorbedBreath = false;
-  if (Math.random() < hitChance) {
-    if (dragonfire) {
-      const raw = Math.max(1, Math.floor(Math.random() * 43));
-      const resolved = resolveDragonfire(raw, STATE);
-      dmg = resolved.damage;
-      absorbedBreath = resolved.absorbed && raw > 0;
-    } else {
-      dmg = Math.max(1, Math.floor(Math.random() * (monster.def.maxHit + 1)));
-      dmg = mitigateDamage(dmg, monster.def.style, STATE.activePrayers);
-    }
-  }
+  const { dmg, dragonfire, absorbed: absorbedBreath } = rollMonsterHit(
+    monster.typeKey,
+    monster.logic.breathCount,
+    STATE,
+    Math.random
+  );
+  monster.attackAnim = 1;
 
   const applyHit = (): void => {
     if (absorbedBreath) {
@@ -363,7 +339,7 @@ export function handlePlayerDeath(): void {
   player.downed = true;
   player.downedTimer = RESPAWN_SECONDS;
   player.targetEntity = null;
-  player.targetPos = null;
+  player.waypoints.length = 0;
   STATE.hp = 0;
   STATE.activePrayers.clear();
   const notice = deathNotice();
@@ -376,6 +352,7 @@ export function handlePlayerDeath(): void {
 }
 
 export function finishRespawn(): void {
+  G.aggroGraceUntil = performance.now() + AGGRO_GRACE_MS;
   applyRespawn(STATE);
   player.downed = false;
   player.downedTimer = 0;
@@ -422,18 +399,19 @@ export function performResourceGather(node: ResourceNodeEntity): void {
     if (player.blenderAnimator) player.blenderAnimator.playAction('Fish', 1.15);
   }
 
-  const successChance = Math.min(0.92, 0.50 + (skillLvl - def.req!) * 0.02);
+  const successChance = gatherChance(skillLvl, def.req!);
   if (Math.random() <= successChance) {
     addItemToInventory(def.item!, 1);
     noteGather(STATE, def.item!);
     grantXp(def.skill!, def.xp!);
     addChatMessage(`Gathered <b>${ITEMS[def.item!].name}</b>.`, 'skill');
 
-    if (def.kind !== 'fish' || Math.random() < 0.35) {
+    if (def.kind !== 'fish' || fishDepletes(Math.random())) {
       node.depleted = true;
       node.respawnTimer = def.respawn! / 1000;
       node.visualMesh.visible = false;
       node.depletedMesh.visible = true;
+      if (def.kind === 'fish') SFX.spotEmpty();
       player.targetEntity = null;
       updateTargetHud();
     }

@@ -38,7 +38,7 @@ describe('five new adventure log quests', () => {
     state.quests.killedGoblin = true;
     expect(adventureTracker(state).detail).toBe('Claim the reward in the Adventure Log');
     expect(claimQuest(state, 'lumbridge').ok).toBe(true);
-    expect(adventureTracker(state).title).toBe('Varrock Arcane Trial');
+    expect(adventureTracker(state).title).toBe("Cook's Errand");
   });
 
   it('pays the five new rewards once their steps are met', () => {

@@ -1,5 +1,7 @@
 import { ammoForWeapon, ITEMS, type ItemDef } from '../data/items';
 import { SPELLS } from '../data/magic';
+import { MONSTER_TYPES, WORLD_REGIONS } from '../data/world';
+import { dharokMultiplier, resolveDragonfire } from './adventure';
 import { countItem } from './inventory';
 import type { GameState } from './types';
 
@@ -125,6 +127,10 @@ export function canCastTeleport(state: GameState, spellId: string): { ok: boolea
   if (!hasRunes(state, spell.runes)) {
     return { ok: false, reason: `You need ${runeList(spell.runes)} to cast ${spell.name}.` };
   }
+  if (spell.regionId && !state.shrines[spell.regionId]) {
+    const region = WORLD_REGIONS.find((r) => r.id === spell.regionId)!;
+    return { ok: false, reason: `You must discover the ${region.name} shrine before teleporting there.` };
+  }
   return { ok: true, reason: '', regionId: spell.regionId, xp: spell.xp, runes: spell.runes };
 }
 
@@ -201,5 +207,76 @@ export function getEquipmentBonuses(state: GameState): EquipmentBonuses {
   }
 
   return { atk, str, def, rng, mag, matchedSet, isFullKit, dominantCount, dominantSetName };
+}
+
+export function playerAttackProfile(state: GameState): { maxHit: number; accuracy: number } {
+  const bon = getEquipmentBonuses(state);
+  const s = state.skills;
+  const style = state.combatStyle;
+  let maxHit = 2;
+  let accuracyScore = 10;
+
+  const prayStrMult = state.activePrayers.has('piety') ? 1.25 : (state.activePrayers.has('burst_str') ? 1.15 : 1.0);
+  const prayRngMult = state.activePrayers.has('sharp_eye') ? 1.20 : 1.0;
+  const prayMagMult = state.activePrayers.has('mystic_might') ? 1.20 : 1.0;
+
+  if (style === 'rapid' || style === 'ranged') {
+    maxHit = Math.max(2, Math.floor((2 + s.ranged.lvl * 0.35 + bon.rng * 0.22) * prayRngMult));
+    accuracyScore = s.ranged.lvl * 1.4 + bon.rng + 12;
+  } else if (style === 'magic') {
+    const sp = SPELLS.find(x => x.id === state.activeSpell) || SPELLS[0];
+    maxHit = Math.max(3, Math.floor((sp.maxHit! + s.magic.lvl * 0.22 + bon.mag * 0.18) * prayMagMult));
+    accuracyScore = s.magic.lvl * 1.5 + bon.mag + 16;
+  } else {
+    const styleStrBonus = style === 'aggressive' ? 2 : (style === 'controlled' ? 1 : 0);
+    const styleAtkBonus = style === 'accurate' ? 4 : (style === 'controlled' ? 2 : 0);
+    maxHit = Math.max(2, Math.floor((1.5 + (s.strength.lvl + styleStrBonus) * 0.32 + bon.str * 0.22) * prayStrMult));
+    maxHit = Math.max(2, Math.floor(maxHit * dharokMultiplier(state)));
+    accuracyScore = (s.attack.lvl + styleAtkBonus) * 1.35 + bon.atk + 12;
+  }
+
+  return { maxHit, accuracy: accuracyScore };
+}
+
+export function playerHitChance(accuracy: number, monsterDef: number): number {
+  return Math.min(0.94, Math.max(0.22, accuracy / (accuracy + (monsterDef * 1.1 + 4) * 0.75)));
+}
+
+export function monsterHitChance(typeKey: string, state: GameState): number {
+  const def = MONSTER_TYPES[typeKey];
+  const bon = getEquipmentBonuses(state);
+  const defLvl = state.skills.defence.lvl + (state.combatStyle === 'defensive' ? 3 : 0);
+  const prayDefMult = state.activePrayers.has('piety') ? 1.25 : (state.activePrayers.has('thick_skin') ? 1.15 : 1.0);
+  const playerDefScore = (defLvl * 1.2 + bon.def) * prayDefMult + 10;
+  const monAtkScore = def.atk * 1.25 + 8;
+
+  return Math.min(0.82, Math.max(0.12, monAtkScore / (monAtkScore + playerDefScore)));
+}
+
+export function rollMonsterHit(
+  typeKey: string,
+  breathCount: number,
+  state: GameState,
+  rand: () => number
+): { dmg: number; dragonfire: boolean; absorbed: boolean } {
+  const def = MONSTER_TYPES[typeKey];
+  const hitChance = monsterHitChance(typeKey, state);
+  const dragonfire = typeKey === 'elvarg_dragon' && breathCount % 3 === 0;
+
+  let dmg = 0;
+  let absorbed = false;
+  if (rand() < hitChance) {
+    if (dragonfire) {
+      const raw = Math.max(1, Math.floor(rand() * 43));
+      const resolved = resolveDragonfire(raw, state);
+      dmg = resolved.damage;
+      absorbed = resolved.absorbed && raw > 0;
+    } else {
+      dmg = Math.max(1, Math.floor(rand() * (def.maxHit + 1)));
+      dmg = mitigateDamage(dmg, def.style, state.activePrayers);
+    }
+  }
+
+  return { dmg, dragonfire, absorbed };
 }
 
