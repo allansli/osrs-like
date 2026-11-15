@@ -62,147 +62,82 @@ function subdivideLocalLoop(loop: Array<[number, number]>, maxLen = 1.0): Array<
 // Fill lattice spacing: the terrain's own vertex spacing (design 6.5), so the ground cannot poke through on a slope.
 const FILL_STEP = 1.5;
 
-function buildCircleFillData(radius: number): { baseCoords: number[]; indices: number[] } {
-  const baseCoords: number[] = [0, 0];
+type FillData = { baseCoords: number[]; indices: number[] };
+
+// A lattice of rows by segments, with an optional centre vertex fanned to the first row. A wrapped lattice
+// closes each row on itself; an open one has segments + 1 columns. point(row, col) is the vertex's local x, z.
+function buildLattice(
+  center: boolean,
+  lastRow: number,
+  segments: number,
+  wrap: boolean,
+  point: (row: number, col: number) => [number, number]
+): FillData {
+  const baseCoords: number[] = center ? [0, 0] : [];
   const indices: number[] = [];
-  const nr = Math.max(2, Math.ceil(radius / FILL_STEP));
-  const nTheta = Math.max(12, Math.ceil((2 * Math.PI * radius) / FILL_STEP));
+  const first = center ? 1 : 0;
+  const cols = wrap ? segments : segments + 1;
+  const next = (c: number) => (wrap ? (c + 1) % segments : c + 1);
 
-  for (let rIdx = 1; rIdx <= nr; rIdx++) {
-    const r = (rIdx / nr) * radius;
-    for (let tIdx = 0; tIdx < nTheta; tIdx++) {
-      const theta = (tIdx / nTheta) * 2 * Math.PI;
-      baseCoords.push(r * Math.sin(theta), r * Math.cos(theta));
-    }
+  for (let row = first; row <= lastRow; row++) {
+    for (let col = 0; col < cols; col++) baseCoords.push(...point(row, col));
   }
-
-  for (let tIdx = 0; tIdx < nTheta; tIdx++) {
-    const nextT = (tIdx + 1) % nTheta;
-    indices.push(0, 1 + tIdx, 1 + nextT);
+  if (center) {
+    for (let c = 0; c < segments; c++) indices.push(0, 1 + c, 1 + next(c));
   }
-
-  for (let rIdx = 1; rIdx < nr; rIdx++) {
-    const rowA = 1 + (rIdx - 1) * nTheta;
-    const rowB = 1 + rIdx * nTheta;
-    for (let tIdx = 0; tIdx < nTheta; tIdx++) {
-      const nextT = (tIdx + 1) % nTheta;
-      const a1 = rowA + tIdx;
-      const a2 = rowA + nextT;
-      const b1 = rowB + tIdx;
-      const b2 = rowB + nextT;
+  for (let row = 0; row < lastRow - first; row++) {
+    const rowA = first + row * cols;
+    const rowB = rowA + cols;
+    for (let c = 0; c < segments; c++) {
+      const a1 = rowA + c;
+      const a2 = rowA + next(c);
+      const b1 = rowB + c;
+      const b2 = rowB + next(c);
       indices.push(a1, b1, a2, a2, b1, b2);
     }
   }
-
   return { baseCoords, indices };
 }
 
-function buildConeFillData(length: number, halfAngleDeg: number): { baseCoords: number[]; indices: number[] } {
-  const baseCoords: number[] = [0, 0];
-  const indices: number[] = [];
-  const halfRad = (halfAngleDeg * Math.PI) / 180;
-  const nr = Math.max(2, Math.ceil(length / FILL_STEP));
-  const arcLen = 2 * halfRad * length;
-  const nTheta = Math.max(4, Math.ceil(arcLen / FILL_STEP));
-  const cols = nTheta + 1;
-
-  for (let rIdx = 1; rIdx <= nr; rIdx++) {
-    const r = (rIdx / nr) * length;
-    for (let tIdx = 0; tIdx < cols; tIdx++) {
-      const theta = -halfRad + (tIdx / nTheta) * (2 * halfRad);
-      baseCoords.push(r * Math.sin(theta), r * Math.cos(theta));
-    }
-  }
-
-  for (let tIdx = 0; tIdx < nTheta; tIdx++) {
-    indices.push(0, 1 + tIdx, 1 + tIdx + 1);
-  }
-
-  for (let rIdx = 1; rIdx < nr; rIdx++) {
-    const rowA = 1 + (rIdx - 1) * cols;
-    const rowB = 1 + rIdx * cols;
-    for (let tIdx = 0; tIdx < nTheta; tIdx++) {
-      const a1 = rowA + tIdx;
-      const a2 = rowA + tIdx + 1;
-      const b1 = rowB + tIdx;
-      const b2 = rowB + tIdx + 1;
-      indices.push(a1, b1, a2, a2, b1, b2);
-    }
-  }
-
-  return { baseCoords, indices };
-}
-
-function buildLineFillData(length: number, halfWidth: number): { baseCoords: number[]; indices: number[] } {
-  const baseCoords: number[] = [];
-  const indices: number[] = [];
-  const nx = Math.max(2, Math.ceil((2 * halfWidth) / FILL_STEP));
-  const nz = Math.max(2, Math.ceil(length / FILL_STEP));
-  const cols = nx + 1;
-
-  for (let iz = 0; iz <= nz; iz++) {
-    const lz = (iz / nz) * length;
-    for (let ix = 0; ix <= nx; ix++) {
-      const lx = -halfWidth + (ix / nx) * (2 * halfWidth);
-      baseCoords.push(lx, lz);
-    }
-  }
-
-  for (let iz = 0; iz < nz; iz++) {
-    const rowA = iz * cols;
-    const rowB = (iz + 1) * cols;
-    for (let ix = 0; ix < nx; ix++) {
-      const a1 = rowA + ix;
-      const a2 = rowA + ix + 1;
-      const b1 = rowB + ix;
-      const b2 = rowB + ix + 1;
-      indices.push(a1, b1, a2, a2, b1, b2);
-    }
-  }
-
-  return { baseCoords, indices };
-}
-
-function buildRingFillData(inner: number, outer: number): { baseCoords: number[]; indices: number[] } {
-  const baseCoords: number[] = [];
-  const indices: number[] = [];
-  const nr = Math.max(2, Math.ceil((outer - inner) / FILL_STEP));
-  const nTheta = Math.max(16, Math.ceil((2 * Math.PI * outer) / FILL_STEP));
-
-  for (let rIdx = 0; rIdx <= nr; rIdx++) {
-    const r = inner + (rIdx / nr) * (outer - inner);
-    for (let tIdx = 0; tIdx < nTheta; tIdx++) {
-      const theta = (tIdx / nTheta) * 2 * Math.PI;
-      baseCoords.push(r * Math.sin(theta), r * Math.cos(theta));
-    }
-  }
-
-  for (let rIdx = 0; rIdx < nr; rIdx++) {
-    const rowA = rIdx * nTheta;
-    const rowB = (rIdx + 1) * nTheta;
-    for (let tIdx = 0; tIdx < nTheta; tIdx++) {
-      const nextT = (tIdx + 1) % nTheta;
-      const a1 = rowA + tIdx;
-      const a2 = rowA + nextT;
-      const b1 = rowB + tIdx;
-      const b2 = rowB + nextT;
-      indices.push(a1, b1, a2, a2, b1, b2);
-    }
-  }
-
-  return { baseCoords, indices };
-}
-
-function buildFillData(shape: Shape): { baseCoords: number[]; indices: number[] } {
+function buildFillData(shape: Shape): FillData {
   switch (shape.type) {
-    case 'circle':
-      return buildCircleFillData(shape.radius);
-    case 'cone':
-      return buildConeFillData(shape.length, shape.halfAngleDeg);
-    case 'line':
-      return buildLineFillData(shape.length, shape.halfWidth);
-    case 'ring':
-      return buildRingFillData(shape.inner, shape.outer);
+    case 'circle': {
+      const nr = Math.max(2, Math.ceil(shape.radius / FILL_STEP));
+      const nTheta = Math.max(12, Math.ceil((2 * Math.PI * shape.radius) / FILL_STEP));
+      return buildLattice(true, nr, nTheta, true, (rIdx, tIdx) => {
+        const r = (rIdx / nr) * shape.radius;
+        const theta = (tIdx / nTheta) * 2 * Math.PI;
+        return [r * Math.sin(theta), r * Math.cos(theta)];
+      });
+    }
+    case 'cone': {
+      const halfRad = (shape.halfAngleDeg * Math.PI) / 180;
+      const nr = Math.max(2, Math.ceil(shape.length / FILL_STEP));
+      const nTheta = Math.max(4, Math.ceil((2 * halfRad * shape.length) / FILL_STEP));
+      return buildLattice(true, nr, nTheta, false, (rIdx, tIdx) => {
+        const r = (rIdx / nr) * shape.length;
+        const theta = -halfRad + (tIdx / nTheta) * (2 * halfRad);
+        return [r * Math.sin(theta), r * Math.cos(theta)];
+      });
+    }
+    case 'line': {
+      const nx = Math.max(2, Math.ceil((2 * shape.halfWidth) / FILL_STEP));
+      const nz = Math.max(2, Math.ceil(shape.length / FILL_STEP));
+      return buildLattice(false, nz, nx, false, (iz, ix) => [
+        -shape.halfWidth + (ix / nx) * (2 * shape.halfWidth),
+        (iz / nz) * shape.length
+      ]);
+    }
+    case 'ring': {
+      const { inner, outer } = shape;
+      const nr = Math.max(2, Math.ceil((outer - inner) / FILL_STEP));
+      const nTheta = Math.max(16, Math.ceil((2 * Math.PI * outer) / FILL_STEP));
+      return buildLattice(false, nr, nTheta, true, (rIdx, tIdx) => {
+        const r = inner + (rIdx / nr) * (outer - inner);
+        const theta = (tIdx / nTheta) * 2 * Math.PI;
+        return [r * Math.sin(theta), r * Math.cos(theta)];
+      });
+    }
   }
 }
 
@@ -354,6 +289,22 @@ function buildBandGeometry(
   return geom;
 }
 
+function telegraphMaterial(
+  color: number,
+  opacity: number,
+  extra: THREE.MeshBasicMaterialParameters
+): THREE.MeshBasicMaterial {
+  return new THREE.MeshBasicMaterial({
+    color,
+    transparent: true,
+    opacity,
+    fog: false,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+    ...extra
+  });
+}
+
 export function showTelegraph(
   monster: MonsterEntity,
   event: { kind: 'windup'; attackId: string; ox: number; oz: number; dx: number; dz: number; ms: number }
@@ -371,29 +322,9 @@ export function showTelegraph(
   const haloGeom = buildBandGeometry(rawLoops, event, 0.11 + 0.12);
 
   // Halo and band ignore depth so a canopy or a prop never hides the edge; the halo is drawn first.
-  const haloMat = new THREE.MeshBasicMaterial({
-    color: 0x140a08,
-    transparent: true,
-    opacity: 0.75,
-    fog: false,
-    depthTest: false,
-    depthWrite: false,
-    side: THREE.DoubleSide
-  });
-  const haloMesh = new THREE.Mesh(haloGeom, haloMat);
+  const haloMesh = new THREE.Mesh(haloGeom, telegraphMaterial(0x140a08, 0.75, { depthTest: false }));
   haloMesh.renderOrder = 998;
-
-  const outlineMat = new THREE.MeshBasicMaterial({
-    color: 0xef4444,
-    transparent: true,
-    opacity: 0.85,
-    fog: false,
-    depthTest: false,
-    depthWrite: false,
-    side: THREE.DoubleSide
-  });
-
-  const outlineMesh = new THREE.Mesh(outlineGeom, outlineMat);
+  const outlineMesh = new THREE.Mesh(outlineGeom, telegraphMaterial(0xef4444, 0.85, { depthTest: false }));
   outlineMesh.renderOrder = 999;
 
   // Build fill mesh
@@ -404,16 +335,10 @@ export function showTelegraph(
   fillGeom.setAttribute('position', new THREE.BufferAttribute(fillPositions, 3));
   fillGeom.setIndex(fillData.indices);
 
-  const fillMat = new THREE.MeshBasicMaterial({
-    color: 0xef4444,
-    transparent: true,
-    opacity: 0.35,
-    fog: false,
-    depthWrite: false,
+  const fillMat = telegraphMaterial(0xef4444, 0.35, {
     polygonOffset: true,
     polygonOffsetFactor: -1,
-    polygonOffsetUnits: -1,
-    side: THREE.DoubleSide
+    polygonOffsetUnits: -1
   });
 
   const fillMesh = new THREE.Mesh(fillGeom, fillMat);
