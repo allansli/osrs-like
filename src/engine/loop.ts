@@ -610,6 +610,13 @@ export function updateCamera(f: FrameState): void {
   camState.currentLookAt.lerp(_lookTargetVec, Math.min(1, f.dt * 14));
   G.camera.lookAt(camState.currentLookAt);
 
+  // Micro-Camera Shake Impulse
+  if (camState.shake > 0.001) {
+    camState.shake *= Math.pow(0.012, f.dt);
+    G.camera.position.x += (Math.random() - 0.5) * camState.shake;
+    G.camera.position.y += (Math.random() - 0.5) * camState.shake;
+  }
+
   G.sunLight.position.set(player.pos.x + 38, player.pos.y + 58, player.pos.z + 28);
   G.sunLight.target.position.copy(player.pos);
   G.sunLight.target.updateMatrixWorld();

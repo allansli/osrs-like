@@ -87,6 +87,7 @@ export interface CamState {
   pitch: number;
   distance: number;
   currentLookAt: THREE.Vector3;
+  shake: number;
   isDragging: boolean;
   lastMouseX: number;
   lastMouseY: number;
@@ -98,6 +99,7 @@ export const camState: CamState = {
   pitch: 0.18,
   distance: 5.4,
   currentLookAt: new THREE.Vector3(-4, 2, -3),
+  shake: 0,
   isDragging: false,
   lastMouseX: 0,
   lastMouseY: 0
