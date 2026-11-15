@@ -33,6 +33,7 @@ import { ITEMS } from '../data/items';
 import { WORLD_REGIONS } from '../data/world';
 import { STATE } from '../state/gameState';
 import { loadBlenderGearTemplate } from './blenderGear';
+import { createLookHooks } from './photo';
 import { bridge } from '../ui/bridge';
 import {
   el,
@@ -191,7 +192,7 @@ export function boot(): void {
     });
     const startReg = WORLD_REGIONS.find(r => r.id === STATE.currentRegion) || WORLD_REGIONS[0];
     triggerRegionBanner(startReg);
-    (window as unknown as { __DEBUG?: unknown }).__DEBUG = { STATE, player, camState, rebuildPlayerEquipmentMeshes, ITEMS };
+    (window as unknown as { __DEBUG?: unknown }).__DEBUG = { STATE, player, camState, rebuildPlayerEquipmentMeshes, ITEMS, look: createLookHooks() };
     requestAnimationFrame(gameLoop);
   });
 }
