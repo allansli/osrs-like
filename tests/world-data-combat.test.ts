@@ -80,7 +80,7 @@ describe('camps on the walk grid (design 6.1)', () => {
         const reach = Math.max(...c.members.map((m) => (MONSTER_TYPES[m.type].style === 'melee' ? 2.9 : 11)));
         if (d - (c.radius + 4) - big <= 0) fails.push(`margin inside the leash circle of ${c.id}`);
         if (d - (c.radius + 4 + reach) - R <= 0) fails.push(`arena inside the attack reach of ${c.id}`);
-        if (c.aggressive && d - (c.aggroRadius ?? 0) - R <= 0) fails.push(`arena inside the aggression circle of ${c.id}`);
+        if (c.aggressive && d - c.aggroRadius! - R <= 0) fails.push(`arena inside the aggression circle of ${c.id}`);
       }
       for (const s of SAFE_ZONES) if (Math.hypot(s.x - x, s.z - z) - s.radius - big <= 0) fails.push(`margin inside safe zone ${s.id}`);
       if (Math.abs(x) + R > WORLD || Math.abs(z) + R > WORLD) fails.push('arena past the world bound');
