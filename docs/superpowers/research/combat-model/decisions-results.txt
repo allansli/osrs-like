@@ -1,0 +1,58 @@
+== 1. What a death costs: experience lost, in kills to earn it back, and the price of the blessing
+   rule: each of attack, strength, defence, hitpoints, ranged, magic loses min(experience inside its level, share x the level's span); never a level; nothing at 99;
+   nothing below combat level 15. Blessing: 1 coin per point it guards (share x span, summed), at least 250 coins.
+   hero: melee, controlled style, Attack = Strength = Defence = L, halfway through each level; 1x experience.
+   "kills back" = kills of the same monster until the slowest skill has re-earned its loss; at the 10x rate divide by 10.
+ L  combat  monster         kills/level  coins/kill |  share 1%: xp lost  kills back  blessing (coins, kills of coin) |  share 3%:  xp lost  kills back  blessing        |  share 5%:  xp lost  kills back  blessing
+12     14  scorpion                9          70 |         0        0.0         0 (  0.0 kills) |         0        0.0         0 (  0.0 kills) |         0        0.0         0 (  0.0 kills)
+20     23  hill_giant              9         202 |        21        0.1       250 (  1.2 kills) |        68        0.3       250 (  1.2 kills) |       114        0.5       250 (  1.2 kills)
+30     34  hill_giant             24         202 |        58        0.2       250 (  1.2 kills) |       180        0.7       250 (  1.2 kills) |       300        1.2       308 (  1.5 kills)
+40     46  hill_giant             63         202 |       160        0.6       250 (  1.2 kills) |       484        1.9       488 (  2.4 kills) |       808        3.2       816 (  4.0 kills)
+50     57  hill_giant            170         202 |       435        1.7       435 (  2.2 kills) |      1305        5.1      1309 (  6.5 kills) |      2175        8.5      2183 ( 10.8 kills)
+60     69  moss_guardian         282         430 |      1170        2.8      1170 (  2.7 kills) |      3513        8.4      3517 (  8.2 kills) |      5856       14.1      5864 ( 13.6 kills)
+70     80  lesser_demon          473         954 |      3152        4.7      3152 (  3.3 kills) |      9456       14.2      9460 (  9.9 kills) |     15760       23.6     15768 ( 16.5 kills)
+80     92  lesser_demon         1272         954 |      8483       12.7      8483 (  8.9 kills) |     25454       38.2     25458 ( 26.7 kills) |     42424       63.6     42432 ( 44.5 kills)
+90    103  lesser_demon         3425         954 |     22836       34.2     22836 ( 23.9 kills) |     68514      102.7     68518 ( 71.8 kills) |    114193      171.2    114201 (119.7 kills)
+99    113  lesser_demon         7562         954 |         0        0.0       250 (  0.3 kills) |         0        0.0       250 (  0.3 kills) |         0        0.0       250 (  0.3 kills)
+   as a gold sink (share 3%): one blessing costs this share of the coins the same hero earns while gaining one level:
+   L20 14.1%, L30 5.3%, L40 3.8%, L50 3.8%, L60 2.9%, L70 2.1%, L80 2.1%, L90 2.1%, L99 0.0%
+
+== 2. The Stage 2 gate (Cinderstep Pass, 1000 seeds, three lines) with hitpoints regenerating during the run
+regeneration during the run     fresh character survives (must stay under 5%)   40 HP with Protect from Melee survives (must be 100%)
+none (the frozen test)                   4.4% / 4.3% / 4.3%                       100.0% / 100.0% / 100.0%
+0.25 HP/s (in combat, as today)          4.5% / 4.4% / 4.4%                       100.0% / 100.0% / 100.0%
+1.0 HP/s (if the resting rate applied)   4.8% / 4.8% / 4.8%                       100.0% / 100.0% / 100.0%
+   the fresh character over seeds 1 to 10000 (ten blocks of 1000 on each of the three lines):
+   none (the frozen test)             pooled 3.33%   worst block 4.4% (seeds 1-1000, z 55)
+   0.25 HP/s (in combat, as today)    pooled 3.66%   worst block 4.8% (seeds 4001-5000, z 52.5)
+   time to regenerate from 1 hitpoint to full while resting, by maximum hitpoints (0.25 HP/s today, 1.0 HP/s proposed):
+   10 HP: 36 s -> 9 s, 30 HP: 116 s -> 29 s, 50 HP: 196 s -> 49 s, 70 HP: 276 s -> 69 s, 99 HP: 392 s -> 98 s
+
+== 3. Arena of the new boss
+   the existing dragon stays at (-102, 100) and counts as one of the other camps (magic, reach 11, aggression radius 12)
+   first draft (-106, 106), arena 12 + margin 6: FAILS
+      gap to the nearest leash circle -19.8 (dragon); arena to the nearest camp's attack reach -24.8; arena to the nearest aggression circle -16.8; gap to the nearest safe zone 20.3
+      arena cells open 448 of 448; arena + margin cells open 797 of 797; nearest resource node 20.9 beyond arena + 2, nearest path 41.8 beyond the margin, nearest point of interest -0.6; world bound -6.0 from the margin
+      ground inside the arena: rises 4.6 in all, steepest 0.34 per unit (limit 0.8)
+   critique (-106, 66), arena 12 + margin 6: PASSES
+      gap to the nearest leash circle 7.2 (dragon); arena to the nearest camp's attack reach 2.2; arena to the nearest aggression circle 10.2; gap to the nearest safe zone 4.1
+      arena cells open 448 of 448; arena + margin cells open 908 of 908; nearest resource node 0.1 beyond arena + 2, nearest path 22.5 beyond the margin, nearest point of interest 14.8; world bound -6.0 from the margin
+      ground inside the arena: rises 4.8 in all, steepest 0.66 per unit (limit 0.8)
+   first pick of this revision (-100, 50), arena 12 + margin 6: FAILS
+      gap to the nearest leash circle 20.1 (slagfall_terrace); arena to the nearest camp's attack reach 18.0; arena to the nearest aggression circle 26.0; gap to the nearest safe zone 3.0
+      arena cells open 448 of 448; arena + margin cells open 972 of 1020; nearest resource node 5.7 beyond arena + 2, nearest path 17.8 beyond the margin, nearest point of interest 26.6; world bound 0.0 from the margin
+      ground inside the arena: rises 9.4 in all, steepest 2.64 per unit (limit 0.8)
+   chosen (-102, 54), arena 12 + margin 6: PASSES
+      gap to the nearest leash circle 17.2 (slagfall_terrace); arena to the nearest camp's attack reach 14.0; arena to the nearest aggression circle 22.0; gap to the nearest safe zone 2.9
+      arena cells open 448 of 448; arena + margin cells open 998 of 998; nearest resource node 3.2 beyond arena + 2, nearest path 18.8 beyond the margin, nearest point of interest 23.5; world bound -2.0 from the margin
+      ground inside the arena: rises 3.8 in all, steepest 0.52 per unit (limit 0.8)
+   spots on a 2-unit lattice (x -116..-40, z 20..116) that pass: 16; the eight with the widest smallest gap:
+      (-102, 54) smallest gap 2.9, steepest 0.52, rise 3.8, margin cells open 998 of 998, world bound -2.0
+      (-104, 54) smallest gap 2.0, steepest 0.45, rise 4.0, margin cells open 958 of 958, world bound -4.0
+      (-104, 56) smallest gap 2.0, steepest 0.52, rise 4.4, margin cells open 958 of 958, world bound -4.0
+      (-104, 58) smallest gap 1.6, steepest 0.58, rise 4.8, margin cells open 958 of 958, world bound -4.0
+      (-102, 56) smallest gap 1.6, steepest 0.58, rise 4.8, margin cells open 998 of 998, world bound -2.0
+      (-100, 54) smallest gap 1.1, steepest 0.57, rise 4.5, margin cells open 1020 of 1020, world bound 0.0
+      (-104, 60) smallest gap 0.4, steepest 0.63, rise 5.2, margin cells open 958 of 958, world bound -4.0
+      (-100, 56) smallest gap 0.3, steepest 0.61, rise 5.6, margin cells open 1020 of 1020, world bound 0.0
+   route from the pass's west mouth (-48, 55) to the arena: 54 units; from the arena to the existing lair: 47 units; arena centre open: true

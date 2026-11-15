@@ -47,6 +47,7 @@
   - Switch between *Accurate (Slash)*, *Aggressive (Lunge)*, *Defensive (Parry)*, *Rapid Ranged*, and *Autocast Magic* (*Wind Strike*, *Fire Bolt*, *Ancient Ice Burst*, *Blood Barrage*).
   - **Hylian Spin-Slash Special Attack** (25% Special Energy) with 360° shockwave cleave.
   - **8 Prayers** including overhead protections (*Protect from Melee*, *Protect from Magic*, *Protect from Ranged*, *Hylian Piety*) rendered above your character's head.
+- **Combat With Weight** (see [Combat](#combat) below): heavy attacks are shown on the ground before they land, a three-phase boss, a food cooldown, regeneration in and out of combat, and a small experience cost for dying.
 - **Rotating Radar Minimap**: Live 2D canvas minimap rotating with camera yaw, displaying rivers, stone roads, trees (green), ore veins (cyan), NPCs/Altars/Forges (gold), and monsters (red).
 
 ### 3. Item & Equipment Progression (261 Items & 36 Matched Sets)
@@ -74,11 +75,33 @@
 | :--- | :--- | :--- | :--- |
 | **Lumbridge Haven** | Emerald River Valley | Lumbridge Castle, Sacred Altar, Blacksmith Forge & Range, Grand Emporium, River Lum Bridge, Normal/Oak/Maple Trees, Copper Rocks, Shrimp/Trout Fishing, Lobster & Shark river spots (south, along the River Lum), Three Kettle Camp | Plump Chicken (Lv 1) x4, Goblin Raider (Lv 2) x5, Goblin Archer (Lv 5) x2 (both camps passive) |
 | **Varrock Grand Plaza** | Royal Trade Capital | Cathedral Prayer Altar, Royal Blacksmith, Trade Master, Willow Trees, Iron & Mithril Quarry; Millrace Road ends at its shrine | Dark Wizard (Lv 18) x3, Dark Ranger (Lv 24) x2, Hill Giant (Lv 28) x4 (all aggressive) |
-| **Al-Kharid Golden Dunes** | Sunscorched Oasis | Bazaar Merchant, Mithril & Gold Ore Quarry, Desert Shrine, Tamarisk Pool (fishing); Saltwind Track ends at its shrine | King Scorpion (Lv 12) x5 in two nests (aggressive) |
-| **Whispering Korok Woods** | Sacred Forest Sanctuary | Sacred Blossom Yew Trees and Magic Korok Trees (deep woods only), Reedglass Tarn (fishing), Lampwright's Hollow; Lanternway ends at its shrine | Moss Guardian (Lv 45) x4 in two deep-woods camps (aggressive) |
-| **Dragon's Peak Highlands** | Volcanic Obsidian Crag | Runite Ore Veins, Wilderness Shrine, Wardstone Cairn, Slagfall Terrace; Harrowback Ridge walls off the crag and Cinderstep Pass is its only gap; Cinder Stair ends at its shrine | Lesser Demon (Lv 68) x6 (four pass sentries, two at Slagfall Terrace), **Elvarg the Crag Dragon (Lv 95 Boss)** x1 (all aggressive) |
+| **Al-Kharid Golden Dunes** | Sunscorched Oasis | Bazaar Merchant, Mithril & Gold Ore Quarry, Desert Shrine, Tamarisk Pool (fishing); Saltwind Track ends at its shrine | King Scorpion (Lv 12) x5 in two nests, Saltback Stalker (Lv 34) x3 south-east of Tamarisk Pool (all aggressive) |
+| **Whispering Korok Woods** | Sacred Forest Sanctuary | Sacred Blossom Yew Trees and Magic Korok Trees (deep woods only), Reedglass Tarn (fishing), Lampwright's Hollow; Lanternway ends at its shrine | Moss Guardian (Lv 45) x4 in two deep-woods camps, Thornwatch Marksman (Lv 38) x2 north of Lanternway, outside the woods (all aggressive) |
+| **Dragon's Peak Highlands** | Volcanic Obsidian Crag | Runite Ore Veins, Wilderness Shrine, Wardstone Cairn, Slagfall Terrace; Harrowback Ridge walls off the crag and Cinderstep Pass is its only gap; Cinder Stair ends at its shrine | Lesser Demon (Lv 68) x6 (four pass sentries, two at Slagfall Terrace), **Elvarg the Crag Dragon (Lv 95 Boss)** x1, **Ashmantle the Slag Wyrm (Lv 110 Boss)** x1 in the south-west corner (all aggressive) |
 
-The world spawns 36 monsters of 10 types; the number after each monster is how many spawn in that region. Every camp is aggressive except the hen yard and Three Kettle Camp: aggressive monsters notice a player within 9 units (melee) or 12 units (ranged and magic) when the monster's level is at least the player's combat level (its name is not shown in green), and never in the first 3 seconds after a load, a respawn or a teleport.
+The world spawns 42 monsters of 13 types; the number after each monster is how many spawn in that region. Every camp is aggressive except the hen yard and Three Kettle Camp: aggressive monsters notice a player within 9 units (melee) or 12 units (ranged and magic) when the monster's level is at least the player's combat level (its name is not shown in green), and never in the first 3 seconds after a load, a respawn or a teleport.
+
+### Monsters
+
+| Monster | Level | Hitpoints | Style | Heavy attack |
+| :--- | :--- | :--- | :--- | :--- |
+| Saltback Stalker | 34 | 58 | Melee | Tail Lash (cone) |
+| Thornwatch Marksman | 38 | 54 | Ranged | Pinning Volley (circle on the hero) |
+| **Ashmantle the Slag Wyrm** | 110 | 1,400 | Magic, boss | Five attacks in three phases (see [Combat](#combat)) |
+
+The two new monsters fill the gap between the hill giant and the moss guardian. The existing Elvarg is unchanged: no heavy attack, and it is back 8.35 seconds after it dies.
+
+### Prepared monster slots
+
+These slots are planned and carry no code yet. A new monster is a data row (a pattern, a model, a tint and a size) and a camp, and a boss also gets a boss row.
+
+| Slot | Level | Role | Model |
+| :--- | :--- | :--- | :--- |
+| Cinder Adept | 52 | Caster, Hexfall | Dark wizard, tinted |
+| Slag Brute | 58 | Heavy melee, Overhead Slam and Rootquake | Hill giant, tinted |
+| Camp captain | 40 | Elite, one per camp, two phases | New model |
+| Swarm creature | 30 | Many weak bodies, no heavy attack | New model |
+| Dungeon boss | 80 | Boss, three phases | New model |
 
 ### New places
 
@@ -98,6 +121,21 @@ Twelve names were added to the world.
 | Place | **Wardstone Cairn** | Warning cairn before the pass |
 | Place | **Slagfall Terrace** | Lesser demon terrace in the crag |
 | Place | **Lampwright's Hollow** | Lantern clearing in the Korok Woods |
+
+---
+
+## Combat
+
+- **Heavy attacks show first.** Most monsters from the scorpion up wind up a heavy attack every few blows: a shape (a circle, cone, lane or ring) appears on the ground and fills. Stand in it when it fills and the blow lands for about twice an ordinary one. One click out of the shape avoids it, and the monster is then open while it recovers. Chickens and goblins in the start region have none. Ordinary blows are still dice rolls, answered by gear, level and prayer.
+- **Ashmantle the Slag Wyrm** (Lv 110, 1,400 hitpoints, an arena of radius 12, back 120 seconds after it dies) opens with a 2-second roar and a banner saying its bolts are magic. It fights in three phases, with a 2-second pause and roar between them in which it cannot be hurt:
+  - **I. Grounded** (to 66% health): basic magic bolts, Ember Cone, Tail Sweep. Pray against magic, leave the cone, back off from the sweep.
+  - **II. Rain of Slag** (66% to 33%): three Slag Rain circles fall where you stood, then Tail Sweep and Ember Cone. Keep moving.
+  - **III. Fury** (33% to 0): faster. Ashen Nova burns everything from 8 units out, so run in; Slagburst then covers the disc it left safe, so run out. Slag Rain is mixed in.
+  - Boss attacks deal sure damage to a hero inside the shape. Slag Rain cannot be reduced by anything, Ember Cone is cut by a warding shield or Protect from Magic, and Tail Sweep by Protect from Melee. Defeating it earns the title *Ashbreaker*.
+- **Food and potions** each have a 1.8 second cooldown. Eating costs the next swing.
+- **Regeneration** is always on: 0.25 HP per second in combat, 1.0 HP per second after 6 seconds without an attack made or taken.
+- **Dying** keeps your gear and coins. From combat level 15, each fighting skill (Attack, Strength, Defence, Hitpoints, Ranged, Magic) loses 3% of the current level's experience span: never a level, and a skill at 99 loses nothing. A very small loss is waived. **The Lantern Vow**, taken from the right-click menu of either altar for one coin per point of experience it can guard (at least 250), cancels the whole loss of your next death and is then spent. Only one can be held, and it is saved with your game.
+- **Hits have weight.** Both sides flinch and flash, a hit stops the frame for a moment, damage numbers rise from the target, and low health darkens the screen edges. Attack, hit and warning sounds are synthesised (no audio files), with a heartbeat when health is low.
 
 ---
 

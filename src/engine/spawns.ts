@@ -17,6 +17,7 @@ import { addCartoonOutline, facetMaterial } from './materials';
 import { createMonsterMesh } from './monsterMeshes';
 import { loadBlenderMonstersTemplate, upgradeMonsterRigWithGltf } from './blenderMonsters';
 import { loadBlenderWorldTemplate, upgradeResourceNodeWithGltf } from './blenderWorld';
+import { collectFlashMaterials } from './reactions';
 import { el } from '../ui/hud';
 
 interface ResourceNodeDef {
@@ -33,15 +34,19 @@ interface ResourceNodeDef {
   scale?: number;
 }
 
+let nextMonsterId = 1;
+
 export function spawnMonster(
   typeKey: string,
   x: number,
   z: number,
   opts?: { campId?: string; wander?: number }
 ): void {
-  const def: MonsterDef | undefined = MONSTER_TYPES[typeKey];
+  const def: (MonsterDef & { model?: string; tint?: number; modelScale?: number }) | undefined =
+    MONSTER_TYPES[typeKey];
   if (!def) return;
   const rig = createMonsterMesh(def, typeKey);
+  rig.group.scale.multiplyScalar(def.modelScale ?? 1);
   const phase = ((Math.abs(x) * 12.9898 + Math.abs(z) * 78.233) % 1);
   offsetAlbedoPhase(rig.group, phase, (phase * 1.618) % 1);
   const y = getTerrainHeight(x, z);
@@ -55,10 +60,14 @@ export function spawnMonster(
   `;
   el('world-labels').appendChild(labelEl);
 
+  const id = `monster_${nextMonsterId++}`;
   const logic = createMonsterLogic(typeKey, x, z, opts);
   logic.wanderTimer = Math.random() * 3;
+  const modelKey = def.model ?? typeKey;
   const mObj: MonsterEntity = {
+    id,
     typeKey,
+    modelKey,
     def,
     rig,
     pos: rig.group.position,
@@ -75,9 +84,11 @@ export function spawnMonster(
   G.worldInteractiveObjects.push(rig.hitbox);
   G.scene.add(rig.group);
   G.monstersList.push(mObj);
+  collectFlashMaterials(mObj);
   loadBlenderMonstersTemplate().then((gltf: GLTF | null) => {
     if (!gltf) return;
     upgradeMonsterRigWithGltf(mObj, gltf);
+    collectFlashMaterials(mObj);
   });
 }
 

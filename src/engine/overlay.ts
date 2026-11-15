@@ -117,8 +117,8 @@ export function renderMinimap(): void {
     const px = (m.pos.x - player.pos.x) * scale;
     const pz = (m.pos.z - player.pos.z) * scale;
     ctx.beginPath();
-    ctx.arc(px, pz, m.typeKey === 'elvarg_dragon' ? 5.5 : 3.2, 0, Math.PI * 2);
-    ctx.fillStyle = m.typeKey === 'elvarg_dragon' ? '#b91c1c' : '#881337';
+    ctx.arc(px, pz, m.modelKey === 'elvarg_dragon' ? 5.5 : 3.2, 0, Math.PI * 2);
+    ctx.fillStyle = m.modelKey === 'elvarg_dragon' ? '#b91c1c' : '#881337';
     ctx.fill();
   });
 
@@ -243,7 +243,7 @@ export function updateFloatingWorldLabels(): void {
       m.labelEl.style.display = 'none';
       return;
     }
-    const topY = m.typeKey === 'elvarg_dragon' ? 4.6 : (2.4 * (m.def.scale || 1));
+    const topY = (m.modelKey === 'elvarg_dragon' ? 4.6 : (2.4 * (m.def.scale || 1))) * (m.def.modelScale ?? 1);
     const sp = worldToScreenPos(m.pos.x, m.pos.y + topY, m.pos.z);
     if (!sp.visible) {
       m.labelEl.style.display = 'none';

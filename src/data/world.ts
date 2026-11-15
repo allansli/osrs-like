@@ -31,10 +31,23 @@ export type MonsterDef = {
   kind: string;
   weaponColor?: number;
   drops: Array<{ id?: string; chance: number; gp?: [number, number] }>;
+  pattern?: string;
+  // Design 6.8: a new type may reuse an existing model, tinted and scaled.
+  model?: string;
+  tint?: number;
+  modelScale?: number;
 };
 
 export const MONSTER_TYPES: Record<string, MonsterDef> = {
   ...(BASE_MONSTERS as Record<string, MonsterDef>),
+  scorpion: {
+    ...(BASE_MONSTERS.scorpion as MonsterDef),
+    pattern: 'scorpion'
+  },
+  dark_wizard: {
+    ...(BASE_MONSTERS.dark_wizard as MonsterDef),
+    pattern: 'dark_wizard'
+  },
   goblin_archer: {
     name: 'Goblin Archer',
     level: 5,
@@ -74,7 +87,89 @@ export const MONSTER_TYPES: Record<string, MonsterDef> = {
       { id: 'bronze_arrow', chance: 1 },
       { id: 'willow_bow', chance: 0.008 },
       { id: 'green_dhide_body', chance: 0.004 }
-    ]
+    ],
+    pattern: 'dark_ranger'
+  },
+  hill_giant: {
+    ...(BASE_MONSTERS.hill_giant as MonsterDef),
+    pattern: 'hill_giant'
+  },
+  moss_guardian: {
+    ...(BASE_MONSTERS.moss_guardian as MonsterDef),
+    pattern: 'moss_guardian'
+  },
+  lesser_demon: {
+    ...(BASE_MONSTERS.lesser_demon as MonsterDef),
+    pattern: 'lesser_demon'
+  },
+  // Design 6.8: the two shipped slots between the hill giant and the moss guardian.
+  saltback_stalker: {
+    name: 'Saltback Stalker',
+    level: 34,
+    hp: 58,
+    maxHit: 12,
+    atk: 32,
+    def: 28,
+    scale: 1.05,
+    style: 'melee',
+    bodyColor: 0x57534e,
+    accentColor: 0x1c1917,
+    kind: 'scorpion',
+    drops: [
+      { id: 'big_bones', chance: 1 },
+      { gp: [140, 340], chance: 0.95 },
+      { id: 'lobster', chance: 0.4 }
+    ],
+    pattern: 'scorpion',
+    model: 'scorpion',
+    tint: 0x6b6470,
+    modelScale: 1.4
+  },
+  thornwatch_marksman: {
+    name: 'Thornwatch Marksman',
+    level: 38,
+    hp: 54,
+    maxHit: 13,
+    atk: 36,
+    def: 26,
+    scale: 1.05,
+    style: 'ranged',
+    bodyColor: 0x1f3a24,
+    accentColor: 0x4d7c0f,
+    kind: 'archer',
+    weaponColor: 0x3f6212,
+    drops: [
+      { id: 'big_bones', chance: 1 },
+      { gp: [160, 400], chance: 0.95 },
+      { id: 'bronze_arrow', chance: 1 },
+      { id: 'swordfish', chance: 0.3 }
+    ],
+    pattern: 'dark_ranger',
+    model: 'dark_ranger',
+    tint: 0x7fb069,
+    modelScale: 1.1
+  },
+  // Design 6.4: the new boss, built from the existing dragon's model. Its phases arrive with BOSSES (B2).
+  ashmantle: {
+    name: 'Ashmantle the Slag Wyrm',
+    level: 110,
+    hp: 1400,
+    maxHit: 72,
+    atk: 120,
+    def: 78,
+    scale: 2.35,
+    style: 'magic',
+    bodyColor: 0x57534e,
+    accentColor: 0xf97316,
+    kind: 'dragon',
+    drops: [
+      { gp: [1500, 3000], chance: 1 },
+      { id: 'dragon_bones', chance: 1 },
+      { id: 'shark', chance: 1 }
+    ],
+    model: 'elvarg_dragon',
+    tint: 0x8a8580,
+    modelScale: 1.2
   }
 };
 

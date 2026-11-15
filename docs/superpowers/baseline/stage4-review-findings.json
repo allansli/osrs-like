@@ -1,0 +1,304 @@
+{
+ "confirmed": [
+  {
+   "title": "Clicking the current target again within stop distance cancels a melee hero's attack",
+   "severity": "medium",
+   "file": "src/engine/input.ts",
+   "line": 403,
+   "evidence": "handleWorldClick: `if (player.targetEntity?.type === 'monster' && player.targetEntity.ref === m && dist <= stopDist) { const groundHit = hits.find(h => h.object === G.terrainMesh); if (groundHit) dispatchCommand({ kind: 'move', ... }); return; }`. The rule runs for every style, and stopDist is 2.9 for melee. dispatchCommand 'move' sets `player.targetEntity = null` (actions.ts dispatchCommand). The design gives this rule to the ranged or magic hero who has to run in from the nova, and says 'Re-clicking the current target does nothing useful today, so nothing is lost'. Before W1, a re-click just re-issued the attack.",
+   "scenario": "A melee hero fighting at 2.9 units clicks the monster again, out of the usual click-to-attack habit. The target is cleared and the hero walks to the terrain point under the monster's body, then stands idle. The hero only attacks again if the monster's next blow lands with dmg > 0 and no wind-up is live (maybeRetaliate). In a boss phase where wind-ups follow each other, shouldRetaliate stays false, so the hero stops fighting until the player clicks somewhere else. That costs DPS and is confusing.",
+   "fix": "Apply the click-to-ground rule only when the stop distance is the ranged one (13.5: styles rapid, ranged or magic). A melee hero never needs to run in, and its run out is a plain ground click. For melee, keep the old behaviour: dispatchCommand({ kind: 'attack', targetId: m.id }).",
+   "lens": "combat",
+   "check": {
+    "real": true,
+    "severity": "medium",
+    "reason": "I confirmed this from the code on feat/combat-weight.\n\n**The rule cancels a melee attack.** At src/engine/input.ts:403 the re-click rule applies to every combat style. For melee, stopDist is 2.9. `G.terrainMesh` is in `worldInteractiveObjects` (worldMesh.ts:123), and `intersectObjects` returns every hit along the ray, so the terrain point behind the monster's body is nearly always found. The click then goes to `dispatchCommand({kind:'move'})`, and that sets `player.targetEntity = null` (actions.ts:114). The attack is cancelled and the hero walks to the ground point under or behind the monster.\n\n**This is new behaviour.** The diff against main shows that before this change, a monster click always re-set the target and re-planned the walk, so a re-click kept the hero attacking.\n\n**It goes against the design.** The design (combat-weight-design.md:439) gives the rule to the ranged hero running in from the nova, and says \"Re-clicking the current target does nothing useful today, so nothing is lost\". For melee, something is lost.\n\n**The fight resumes only in two ways:**\n- The next hit lands with dmg > 0 while no wind-up is live, through `maybeRetaliate` and `shouldRetaliate`, which needs `windupLive` to be false.\n- The player clicks again. The target is then null, so the click dispatches an attack.\n\n**Why medium and not higher.** One more click recovers, so the effect is lost DPS and confusion, not a hard failure. It still hits melee, the default style and the most common re-click habit, and in a boss fight with back-to-back wind-ups the hero stays idle.\n\n**Fix:** gate the rule to the ranged styles (stopDist 13.5) or to a distance above melee range."
+   }
+  },
+  {
+   "title": "The hit that pulls an idle boss deals full damage during the untouchable opening roar",
+   "severity": "low",
+   "file": "src/state/monsterAi.ts",
+   "line": 576,
+   "evidence": "onPlayerHit checks `m.shiftLeft > 0` before the idle branch. Then `if (m.state === 'idle') { ... if (boss) opening.push(...startBossOpening(m, boss)); }` sets shiftLeft = 2 s, and execution goes on to `m.hp = Math.max(0, m.hp - dmg)`. So the opening hit lands even though the opening is meant to be 'the same 2.0 s untouchable roar as a phase change'.",
+   "scenario": "A ranged or magic hero pulls Ashmantle from 13.5 units with a special attack or a max hit. That damage is applied, and only the hits after it are refused as 'untouchable'. An aggro by walking into the arena gives the full 2 s untouchable opening, so a pull by hit gets one free hit that a proximity aggro does not.",
+   "fix": "In onPlayerHit, when the boss is pulled from idle, return { applied: true, events: opening } before any hp change, so the pulling hit counts as the trigger only. Or start the shift and fall through to the shift refusal. Add a case to tests/boss-phases.test.ts: hp stays maxHp after the pulling hit.",
+   "lens": "combat",
+   "check": {
+    "real": true,
+    "severity": "low",
+    "reason": "I confirmed this from the code in src/state/monsterAi.ts at lines 567-599. onPlayerHit checks `m.shiftLeft > 0` at line 573, before the idle branch runs. A boss that is still idle has shiftLeft at 0, so the hit gets past that check. The idle branch then calls startBossOpening, which sets shiftLeft to 2 s (monsterPattern.ts lines 87-91). Execution does not return there. It goes on to crossPhase or `m.hp -= dmg`, so the hit that pulls the boss does its full damage. Every later hit in those 2 s is refused with reason 'shift'. The proximity path is different. At line 474 the boss aggroes without taking a hit, so the whole 2 s opening is untouchable. The spec describes the opening as \"a 2.0 s untouchable roar, as at a phase change\" (design CALL-4.18), so the pull hit is a real gap. The pull is easy to reach. The boss aggroes only within 5 units (the camp's aggroRadius), and ranged or magic heroes reach much further than that. outsideFor stays at 0 while the boss is idle, so the arena check does not block the pull hit either. I found no test that covers the pull by hit. The tests in boss-phases.test.ts only start the opening through the camp aggro. Severity is low. The effect is one hit of free damage once per fight. That is a fairness or consistency issue, and nothing breaks."
+   }
+  },
+  {
+   "title": "A Lantern Vow can be bought when it guards nothing (every fighting skill at 99)",
+   "severity": "low",
+   "file": "src/state/sustain.ts",
+   "line": 183,
+   "evidence": "guardable() skips skills at 99, so with all six fighting skills at 99 it returns 0. vowPrice returns Math.max(250, 0) = 250. buyVow checks only combat level, whether a vow is held and coins, so it succeeds. applyDeathLoss then always returns { kind: 'none' } (totalLoss 0) before it reaches the vow, so the vow is never spent and never protects anything. The input.ts menu entry and the altar chat line both still advertise it.",
+   "scenario": "A maxed fighter right-clicks the altar, pays 250 coins for 'Take the Lantern Vow' and carries a lantern mark that has no effect for ever. Coins are taken for nothing.",
+   "fix": "In buyVow, refuse with 'You risk nothing yet.' when guardable(state) === 0. Use the same condition to hide the menu entry (input.ts 315) and the altar's price line (loop.ts 299).",
+   "lens": "combat",
+   "check": {
+    "real": true,
+    "severity": "low",
+    "reason": "The code confirms the finding. In src/state/sustain.ts, guardable() only counts skills with lvl < 99, so if all six fighting skills are at 99 it returns 0 and vowPrice returns Math.max(250, 0) = 250. buyVow checks only three things: combat level is at least DEATH_MIN_COMBAT, no vow is held yet, and gp covers the price. A maxed fighter passes all three, so 250 coins are taken and quests.lanternVow is set. On death, deathLoss gives 0 for every skill at 99, so totalLoss is 0 and applyDeathLoss returns { kind: 'none' } before it reaches the vow check. The vow is never spent, and while it is held buyVow refuses another one. The altar menu entry in input.ts:315 checks the same conditions and shows the 250-coin price, and the chat hint in loop.ts:300-301 still names the price. Severity is low: it is a one-time 250-coin loss with no further harm, it needs every fighting skill at 99, and the flag only sits there with no effect."
+   }
+  },
+  {
+   "title": "The altar's chat line points to a menu entry that is not shown when the hero cannot afford the vow; the below-15 message cannot be reached",
+   "severity": "low",
+   "file": "src/engine/loop.ts",
+   "line": 301,
+   "evidence": "After a prayer, the line `A Lantern Vow costs ${price} coins. Right-click the Altar to take the vow.` is printed whenever combat >= 15 and no vow is held. The context-menu entry (input.ts 315) is added only when `STATE.gp >= vowPrice(STATE)`. Below combat 15 the entry is hidden too, so buyVow's 'You risk nothing yet.' (the design's 'Below 15 the altar says the hero risks nothing yet') never shows.",
+   "scenario": "A combat-40 hero with 100 coins prays and is told to right-click for a 488-coin vow. The right-click menu has no such entry, and nothing explains why.",
+   "fix": "Print the price line only when the entry will be offered. Otherwise say 'You need N coins'. Alternatively, always show the entry for combat >= 15 and let buyVow's reason ('You do not have enough coins.') answer on arrival.",
+   "lens": "combat",
+   "check": {
+    "real": true,
+    "severity": "low",
+    "reason": "The code confirms it. In loop.ts, around lines 299 to 301, the prayer branch prints \"A Lantern Vow costs ${price} coins. Right-click the Altar to take the vow.\" whenever combat >= DEATH_MIN_COMBAT and no vow is held. It does not check STATE.gp. In input.ts at line 315, the \"Take the Lantern Vow\" menu entry also needs STATE.gp >= vowPrice(STATE). So a combat-40 hero with 100 coins is told to right-click for an entry that isn't there. The price in the chat line is the only hint that coins are the problem. buyVow is called from one place only: loop.ts:284, under intent === 'vow'. That intent is set only by the gated menu entry at input.ts:325. As a result, buyVow's 'You risk nothing yet.' and 'You do not have enough coins.' replies cannot be reached from the UI. Below combat 15 the prayer branch prints nothing about the vow, so the designed \"Below 15 the altar says the hero risks nothing yet\" message never appears. Low severity: this is misleading text and an unreachable designed message, with no effect on state or money."
+   }
+  },
+  {
+   "title": "A monster's route survives its death, so after respawning it can follow a stale route from its previous life",
+   "severity": "low",
+   "file": "src/state/monsterAi.ts",
+   "line": 189,
+   "evidence": "resetToIdle (called on respawn from 'dead') clears pattern, wind-up, phase and outsideFor, but not m.path, pathGoalX/Z or repathIn. A monster killed in chase while following a route keeps that path. The next aggro (the idle branch or onPlayerHit) does not clear the path either. Chase then steers to path[0] at once and, at the next repath tick, keeps the stale path when shouldRepath(oldGoal, player, false) is false (the hero has not moved more than 2 units).",
+   "scenario": "At Three Kettle Camp (river), a ranged hero across the water kills a goblin that was routing over the bridge, then shoots its respawn. The respawned monster walks from home toward the old mid-bridge waypoint in a straight line that may cross blocked cells. It can slide or stall, and the 1.5 s chase stall test then sends it home with a full heal. The fight resets for no visible reason.",
+   "fix": "Add `m.path = []; m.repathIn = 0;` to resetToIdle. The return branch already clears path after it.",
+   "lens": "combat",
+   "check": {
+    "real": true,
+    "severity": "low",
+    "reason": "The mechanism is confirmed in the code. onPlayerHit (monsterAi.ts:589-592) sets 'dying' and does not touch m.path, pathGoalX/Z or repathIn. The respawn branch (237-243) calls resetToIdle (189-199), which also leaves them alone, and then moves the monster to home. Only the grid return-reset (278) clears the path. Re-aggro through the idle branch (475-480) or onPlayerHit (576-582) does not clear the path either; only an immediate in-range attack (489) does. In chase, the steering at 401-406 targets path[0] at once. When repathIn hits zero and the straight line to the hero is blocked (true across a river), shouldRepath(oldGoal, player, reachedLast=false) at pathfind.ts:358-365 returns false while the hero is within 2 units of the old goal. Line 396 then just resets repathIn to 0.5, so the stale route stays until it is used up or the hero moves more than 2 units. A stationary ranged hero meets that condition exactly. A straight line from home to a waypoint left from the previous life can cross unwalkable cells. In that case moveWithCollision slides or stops, escapeStall only adds a nearby open cell, and stalled() (the 1.5 s, under 0.2 units test) can send the monster to enterReturn, and the return reset restores full HP. The geography at Three Kettle Camp was not checked, so whether the line from home to the old waypoint is blocked there is plausible but unverified. Often the stale route still leads roughly toward the hero. The effect is an occasional odd walk or a fight reset with a heal, with no crash and no data loss, so the claimed severity of low is right."
+   }
+  },
+  {
+   "title": "The growing telegraph fill gets frustum-culled once its origin leaves the view, because its bounding sphere is frozen at the first visible frame",
+   "severity": "high",
+   "file": "src/engine/telegraphs.ts",
+   "line": 356,
+   "evidence": "The fill geometry is created with every vertex at the origin (updateTelegraphProgress(instance, 0), and p=0 scales baseCoords to 0). fillMesh.visible is false on that frame. The first frame where p > 0.001 (about dt/duration, roughly 0.01) is when three 0.169 runs Frustum.intersectsObject, which calls geometry.computeBoundingSphere() only while boundingSphere is null (node_modules/three/src/math/Frustum.js:83-91). Setting posAttr.needsUpdate on later frames never resets it. Nothing in telegraphs.ts sets frustumCulled or a bounding sphere. So the fill's culling sphere stays about 1% of the shape's real size, centred on the shape's origin.",
+   "scenario": "An Ember Cone (length 16), Scorch Lane (12), Slagburst (r 8), Tail Sweep (r 5) or Ashen Nova (r 20) starts its wind-up. The hero walks away from the monster to dodge, and the chase camera turns with player.yaw, so the monster, which is the shape's origin, falls off-screen or behind the camera. The outline band was built once at full size, so it stays drawn, but the whole fill vanishes even though the filling area lies under the hero on screen. The player loses the only picture of when the impact lands (design 6.5: the moment of impact can be read from the fill alone).",
+   "fix": "Right after creating fillGeom, set fillGeom.boundingSphere = new THREE.Sphere(new THREE.Vector3(event.ox, terrainY, event.oz), maxExtent), where maxExtent is the shape's radius, length or outer radius. Or set fillMesh.frustumCulled = false. One line either way.",
+   "lens": "feel",
+   "check": {
+    "real": true,
+    "severity": "medium",
+    "reason": "I could not refute it. The code shows the bug. In telegraphs.ts:338-357 the fill geometry starts as a zeroed Float32Array, fillMesh.visible starts false, and updateTelegraphProgress(instance, 0) at line 384 writes every vertex at p=0, which is the origin (ox, terrainY+0.06, oz). Later frames (lines 201-218) rewrite the positions in place and set only posAttr.needsUpdate. Nothing resets geometry.boundingSphere. three 0.169 Frustum.intersectsObject (Frustum.js:83-91) computes the sphere only while it is null. That happens on the first frame the mesh is visible (p > 0.001, roughly 1/100 of the 1.5-1.8 s wind-up), so the sphere is frozen at about 1% of the shape's size, centred on the origin. No code under src sets frustumCulled=false on the fill or overrides its sphere; the only frustumCulled/boundingSphere code is in materials.ts and covers outline shells. A raycast before that first frame would freeze an even smaller sphere at p=0. So whenever the monster's origin point leaves the frustum, the whole fill is culled. That is easy to reach with a 16-unit cone, a 12-unit lane or a radius-20 nova while the hero stands far from the monster or moves away from it. The outline and halo use geometry built at full size, so they keep drawing and only the growing fill disappears. I lowered the severity from high to medium: there is no crash, no state corruption and no effect on game logic. The danger area is still shown by the outline. The loss is the timing cue, intermittent and depending on the camera. That is a real readability regression for a core combat cue, but not a high-severity defect. The fix is one line: set fillMesh.frustumCulled = false, or recompute or preset the bounding sphere to the shape's full extent."
+   }
+  },
+  {
+   "title": "The Ashen Nova ring fill is drawn inside the safe inner circle for the whole wind-up",
+   "severity": "medium",
+   "file": "src/engine/telegraphs.ts",
+   "line": 206,
+   "evidence": "buildRingFillData places vertices at r from inner to outer (lines 164-169). updateTelegraphProgress scales every base coordinate by p (lx = p*baseCoords[i]), so at progress p the red fill covers radii [inner*p, outer*p]. For ashen_nova (inner 8, outer 20) the fill sits entirely inside the safe zone (r < 8) until p = 0.4, and still covers part of it, from 8p to 8, until p = 1.",
+   "scenario": "In phase III the boss winds up Ashen Nova. The answer is to stand inside r < 8. A hero who dodges in, at r = 5, sees the red fill sweep under their feet at about p = 0.25 to 0.6 and reads the centre as the danger. The design's meaning, that the fill reaches the outline at the resolve and shows the hit area, is broken for the one ring attack. That attack is also the boss's 2-second signature move.",
+   "fix": "For a ring, grow the fill from the inner edge outward instead of scaling from the origin. Interpolate the radius as inner + (r - inner)*p, or scale only (r - inner), so the fill always stays in [inner, outer]. Keep the origin scaling for circle, cone and line.",
+   "lens": "feel",
+   "check": {
+    "real": true,
+    "severity": "medium",
+    "reason": "I read the code and the finding holds. buildRingFillData (telegraphs.ts:164-169) places its vertices at radii from inner to outer. updateTelegraphProgress (lines 206-208) multiplies every local coordinate by p (lx = p*baseCoords[i], lz = p*baseCoords[i+1]), so it scales about the origin instead of growing the fill outward from the inner edge. At progress p the fill therefore covers [inner*p, outer*p]. ashen_nova is { type: 'ring', inner: 8, outer: 20 } with a 2000 ms wind-up (attacks.ts:111-119), and it opens the phase-III pattern (line 175). That puts the fill entirely inside the safe zone r < 8 for p < 0.4. It keeps covering [8p, 8) until p = 1. A hero standing at r = 5 has the red fill under them for p in [0.25, 0.625], about 0.5 to 1.25 s of the 2 s wind-up. telegraphs.ts is a new file on this branch, so this is a defect introduced here. The fill only snaps onto the true ring area at the resolve. The severity stays medium, not higher. The static outline and halo bands are built from shapeOutline at the real inner and outer radii and stay correct the whole time, so a careful player can still read the safe zone. Nothing changes in the game logic or the hit check. The harm is a misleading cue on the boss's signature attack, and it pushes players toward the wrong answer. The circle, cone and line fills start at the origin, so for them scaling by p is correct. The ring is the only shape affected."
+   }
+  },
+  {
+   "title": "The telegraph fill re-samples terrain height for every vertex every frame, and the nova fill is far over the triangle budget",
+   "severity": "medium",
+   "file": "src/engine/telegraphs.ts",
+   "line": 211,
+   "evidence": "updateTelegraphs calls updateTelegraphProgress every frame, which calls getTerrainHeight(wx, wz) for every fill vertex. getTerrainHeight loops over WORLD_REGIONS and POIS and evaluates composed() (src/state/terrain.ts:21-46). The ashen_nova ring builds nr=12 by nTheta=126 = 1,638 vertices and 3,024 triangles; design section 8 budgets under 400 triangles per mesh. I bundled getTerrainHeight with esbuild and timed 1,638 calls at the Ashmantle camp in node: 2.65 ms per frame, warm. Ember Cone (433 vertices) and Slagburst (409) add about 0.7 ms each.",
+   "scenario": "Phase III, with the boss winding up Ashen Nova for 2 s while camp telegraphs are live. About 3 ms of the 16.6 ms frame goes to terrain sampling for one decoration, on top of 42 monsters, and more on the Low tier's weaker CPUs and under the 6x throttle check in design 9.2. Frames drop exactly when the player has to read and dodge.",
+   "fix": "Sample terrain heights once at build time on the full-size lattice and keep them. Then each frame either reveal the fill with a uniform in a small onBeforeCompile or ShaderMaterial clip (discard beyond the grown edge), which needs no per-frame CPU work, or interpolate the cached heights. Coarsen the ring lattice, for example nTheta = 64, to get near the 400-triangle budget.",
+   "lens": "feel",
+   "check": {
+    "real": true,
+    "severity": "medium",
+    "reason": "I could not refute it; the code backs every part of the claim. updateTelegraphs (src/engine/telegraphs.ts:387, called every frame from src/engine/loop.ts:783) calls updateTelegraphProgress for each live telegraph. That function (line 211) runs getTerrainHeight on every fill vertex every frame, because the fill scales by p and its world positions keep moving. getTerrainHeight goes through settledHeight (a WORLD_REGIONS loop) and composed() (a PATHS nearestOnPolyline loop, hills and more), then runs POI pad passes that can call settledHeight again. ashen_nova is a ring with inner 8 and outer 20 (src/data/attacks.ts:114). That gives nr=ceil(12)=12 and nTheta=ceil(2*pi*20)=126, so 13*126 = 1,638 vertices and 12*126*2 = 3,024 triangles. The design table (combat-weight-design.md:812) budgets each telegraph mesh under 400 triangles, so this is about 7.5x over. Ember Cone (16 long, 45 degrees: 17 rows, about 433 vertices) and Slagburst (radius 8) are also over budget, by less. All three are in the boss's Phase III pattern, and camp telegraphs can be live at the same time. I did not rerun the 2.65 ms timing, but it fits about 1.6 us per call on this multi-loop height function. Medium fits: frame time drops during 1.8-2 s wind-ups, exactly when the player has to read and dodge, and the design budget is broken. It is not high, though: nothing becomes incorrect, it is time-limited, and on a desktop CPU it uses only part of the frame."
+   }
+  },
+  {
+   "title": "Monster knock-back is applied in the rotated group's local frame, so the body slides sideways or toward the hero instead of away",
+   "severity": "medium",
+   "file": "src/engine/reactions.ts",
+   "line": 145,
+   "evidence": "applyKnockBack writes t.obj.position = base + (dirX, dirZ)*offset on the children of rig.group, but dir is a world-space direction (monster.pos - player.pos, actions.ts:308). The children live in rig.group's local frame, which is rotated by rig.group.rotation.y (lerped to atan2(player - monster) + PI in loop.ts) and scaled by modelScale. With world direction angle phi and group yaw about phi, the world offset is Ry(phi)*(sin phi, cos phi) = (sin 2phi, cos 2phi). That is angle 2*phi, not phi.",
+   "scenario": "The hero hits a monster standing due east (phi = 90 degrees). The 0.18 knock-back, or 0.35 on a max hit or special, shoves the body along -Z, sideways. A monster due south (phi = 180 degrees) is knocked toward the hero. The boss is also pushed modelScale times farther. The reaction that should sell weight reads as a random jitter.",
+   "fix": "Convert the world direction into the group's local frame on every apply, using its current yaw: lx = dX*cos(yaw) - dZ*sin(yaw), lz = dX*sin(yaw) + dZ*cos(yaw). Divide by group.scale.x. Then add that to each child's base.",
+   "lens": "feel",
+   "check": {
+    "real": true,
+    "severity": "medium",
+    "reason": "I could not refute it. The bug is real.\n\n1. In reactions.ts:146, `applyKnockBack` sets `t.obj.position` directly on the children of `rig.group`, which are local-frame positions. The direction comes from actions.ts:308 and is a world-space vector, monster minus player. It is normalized and never rotated into the group's frame.\n\n2. The hero path does the opposite, which shows the author knew the conversion was needed. reactions.ts:289-290 states the torso sits under a rotated meshGroup and turns the world direction into its frame using the yaw. The monster path has no such step.\n\n3. `rig.group` is rotated. During chase and attack, loop.ts:739-740 lerps `rotation.y` toward `atan2(player - monster) + PI`. That equals phi, the world angle of (monster - player). Attack is the state a monster is in while the hero hits it, so the yaw is about phi at knock-back time.\n\n4. `rig.group` is also scaled: by `def.scale` (monsterMeshes.ts:141/313/387/444) and then by `modelScale` (spawns.ts:49). So the offset is multiplied by `def.scale * modelScale` as well. That is a bit more than the finding states; it also applies to monsters without a `modelScale`.\n\n5. The math holds. In Three.js, Ry(phi) maps local (x, z) to world (x cos phi + z sin phi, -x sin phi + z cos phi). Feeding in (sin phi, cos phi) gives (sin 2phi, cos 2phi), which is angle 2phi.\n   - phi = 90 deg (monster due east): world -Z, which is sideways.\n   - phi = 180 deg (monster due south): world +Z, which is toward the hero.\n   - phi = 0: correct by coincidence.\n\nOnly directions near phi = 0 come out right. The correct local offset would be a constant local axis divided by the scale.\n\nSeverity: medium. The effect is visual only, with no gameplay or state corruption: the children's base positions are restored at the end. But it defeats the purpose of this feature branch, which is combat weight. The 0.18 / 0.35 push goes in the wrong direction for most approach angles and is enlarged by the model scale."
+   }
+  },
+  {
+   "title": "Monster hit stop does nothing on a hit, because the flinch branch runs first and decays with the unfrozen dt",
+   "severity": "medium",
+   "file": "src/engine/monsterMeshes.ts",
+   "line": 804,
+   "evidence": "applyDamage sets monster.flinch = 1.0 and calls hitStop(monster, 40/70/110 ms) (actions.ts:290-305). In poseMonsterLimbs, the flinch branch (lines 804-813) runs first, decays m.flinch with plain dt and returns. animDt = isHitStopped(m) ? 0 : dt is only computed at line 834, after that return, and is used only for attackAnim. Walk and idle poses use `now`.",
+   "scenario": "Every hit the hero lands puts the monster in the flinch pose for about 260 ms, and that whole pose keeps animating through the 40-110 ms hit stop. The victim's pose never freezes, so the design 6.5 'pose time of attacker and victim freezes' row is not met for monsters. The killing-blow 110 ms freeze is not visible either.",
+   "fix": "Compute animDt at the top of poseMonsterLimbs and use it for the flinch decay (m.flinch -= animDt * 3.8), so the flinch holds during hit stop.",
+   "lens": "feel",
+   "check": {
+    "real": true,
+    "severity": "medium",
+    "reason": "I could not refute it; the code confirms it. In actions.ts:288-305, every hit with damage above 0 sets monster.flinch = 1.0 and calls hitStop(monster, 40/70/110 ms). In poseMonsterLimbs (monsterMeshes.ts:804-813), the branch `if (m.flinch > 0)` runs first. It decays the flinch with plain `dt` (`m.flinch - dt * 3.8`, about 263 ms in total), poses the body and returns. `animDt = isHitStopped(m) ? 0 : dt` is computed only at line 834, after that return, and only attackAnim uses it. Every call site in loop.ts (745, 747, 761, 772, 777) passes the raw f.dt, and loop.ts only applies isHitStopped to the player (line 425). So for a hit monster, the flinch keeps animating for the whole hit stop and the victim's pose never freezes. The 'pose time of attacker and victim freezes' row in design 6.5 (G4.6) is not met for monsters. On a killing blow the monster enters 'dying', and poseMonsterLimbs returns at line 799, so that function never shows the 110 ms freeze either. Nothing else in the code checks hit stop for a dying monster. The hero-side freeze does work. The impact is limited to how combat feels: rules, control and state are unaffected. But it defeats a stated design goal for every hit the hero lands, so medium is appropriate."
+   }
+  },
+  {
+   "title": "The wind-up sound keeps rising after a cancel, with no shape on the ground",
+   "severity": "low",
+   "file": "src/engine/loop.ts",
+   "line": 682,
+   "evidence": "On 'windup' the loop pre-schedules the whole rising cue, up to 10 voices over windupMs of up to 2.0 s (loop.ts:681, soundPlan.windupPlan). On 'cancel' (loop.ts:682-683, and actions.ts for phase or death cancels) only clearTelegraph runs. audio.ts has no way to stop voices already scheduled. They also stay counted in liveVoices against the 12/16 cap until they end.",
+   "scenario": "The hero pushes Ashmantle across a phase threshold mid wind-up (crossPhase emits cancel), or leaves the leash. The shape vanishes, but the Fire or Magic swell rises for up to 2 more seconds with no impact. That breaks 'every cue has a picture' (design 6.7) and blocks voices for the phase-change cue.",
+   "fix": "Have play() return the started source nodes, keep them on the MonsterEntity, and on cancel or died ramp their gain to 0 and stop() them.",
+   "lens": "feel",
+   "check": {
+    "real": true,
+    "severity": "low",
+    "reason": "The finding holds; I confirmed it in the code. On 'windup', loop.ts:681 calls SFX.play(windupPlan(...)). windupPlan in src/state/soundPlan.ts builds up to 10 voices that run until end = windupMs/1000, which is up to 2.0 s (attacks.ts has two attacks at 2000 ms). audio.ts play() schedules every voice at once with osc.start(startTime) / osc.stop(stopTime). tone() and noise() increment liveVoices when the voice is scheduled, not when it starts, and decrement it only in onended. No node handle is kept, and audio.ts has no stop or cancel API. The only nearby control is setMuted, which ramps the master gain. The cancel handlers (loop.ts:682-683, actions.ts:349 and 359) only call clearTelegraph. Cancels come from these places: crossPhase (monsterPattern.ts:125), the leash, player too far, player down, safe zone, stall and gave-up paths (monsterAi.ts:330-335), and death mid-wind-up (monsterAi.ts:597). After any of them, the rising swell plays to its end with no shape and no impact cue. The future voices also count against the 12/16 cap, so the next sounds may be dropped, for example the boss phase-change cue or the death sound in the same frame. Low severity: the effect is cosmetic, it lasts at most about 2 s, and it does not touch game state. I did not check the exact wording of design section 6.7."
+   }
+  },
+  {
+   "title": "The 'heavy taken' thump plays when the heavy rolls zero damage",
+   "severity": "low",
+   "file": "src/engine/loop.ts",
+   "line": 689,
+   "evidence": "The resolve handler picks heavyTakenPlan() whenever ev.hit (the hero is inside the shape), before performMonsterHeavy rolls. rollMonsterAttack for an ordinary heavy can miss its accuracy roll, or a prayer can mitigate the damage to 0 (combat.ts:327-333). performMonsterHeavy then shows a 'miss' splat, and returns early if the hero is already downed.",
+   "scenario": "The hero stands in a Hill Giant slam and the accuracy roll misses. They hear the 'that was avoidable' heavy-taken cue while a miss splat shows. The two carriers contradict each other.",
+   "fix": "Choose the impact plan after the roll. Let performMonsterHeavy return dmg, or play the sound inside it: heavyTakenPlan only when dmg > 0, otherwise dodgedPlan or a blocked cue.",
+   "lens": "feel",
+   "check": {
+    "real": true,
+    "severity": "low",
+    "reason": "I confirmed this from the code. In loop.ts:689 the sound is picked from ev.hit alone (`ev.hit ? heavyTakenPlan() : dodgedPlan()`). ev.hit only means the hero was inside the shape (monsterPattern.ts:28). The damage roll happens afterwards, in performMonsterHeavy (actions.ts:516). Ordinary heavies such as overhead_slam, rootquake and tail_lash have no `power` (attacks.ts), so rollMonsterAttack (combat.ts:327-333) makes an accuracy roll (`rand() < hitChance`). When that roll fails, dmg is 0 and performMonsterHeavy shows `spawnHitSplatOnPlayer(0, 'miss')`, yet the heavy-taken thump has already played. The function also returns early, playing the thump with no splat at all, when the hero is downed or at 0 hp. A protect prayer leaves floor(raw*0.2), which is 0 for raw 1-4, and gives the same mismatch. The code came in on this branch (it is in the diff against main). Spec line 666 defines the cue as \"a telegraphed hit lands on the hero\". You could argue that standing in the shape is the avoidable part even when the roll misses, which softens the problem. Severity stays low: the cue contradicts the splat, but nothing in gameplay or state goes wrong."
+   }
+  },
+  {
+   "title": "The camera kick and rumble are undone against a lerped camera, so the kick is weaker and recoils past its rest point",
+   "severity": "low",
+   "file": "src/engine/reactions.ts",
+   "line": 316,
+   "evidence": "updateCamera (loop.ts:612) lerps G.camera.position toward its target by a = min(1, dt*12), which keeps only (1-a) of last frame's added offset. updateReactions (run after it, loop.ts:923) then subtracts the full lastOffset, leaving an error of -a*lastOffset each frame that builds up opposite to the kick.",
+   "scenario": "At 60 FPS (a = 0.2) a 0.18 heavy-taken kick peaks lower than designed. After its 140 ms it leaves a visible pull the other way that settles over about 10 frames. That is the 'random jitter' feel that design 6.5 replaced. The rumble on y behaves the same way.",
+   "fix": "Remove last frame's kick and rumble offsets before updateCamera's lerp: split updateReactions so a 'remove camera offsets' step runs at the start of the frame. Or apply the offsets to a child or parent of the camera instead of the lerped position.",
+   "lens": "feel",
+   "check": {
+    "real": true,
+    "severity": "low",
+    "reason": "I could not refute it. In the frame loop (loop.ts:921-923), updateCamera runs before updateReactions. updateCamera calls G.camera.position.lerp(target, a) with a = min(1, dt*12). That carries only (1-a) of last frame's added kick offset. reactions.ts:316-317 then subtracts the full lastOffset. Writing B for the camera position without the kick: B_n = B_{n-1} + a(T - B_{n-1}) - a*o_{n-1}. So every frame pushes an extra -a*o_{n-1} into the base position, and that error builds up against the kick direction. I hand-simulated it at 60 FPS (a = 0.2) with springOffset = sin(pi*t/140)*0.18, about 8 frames. The kick the player sees peaks near 0.13 instead of 0.18, about 28% lower, and by frame 5 it is already falling. When the kick ends, the base is left about 0.1 past rest on the opposite side. That decays by 0.8 per frame, so it settles over about 10 frames, which matches the claimed overshoot. The rumble block (x and y, from line 335) uses the same subtract-then-add pattern against the same lerp, so it is affected too. The effect is purely cosmetic: a few hundredths of a world unit on a chase camera, with no gameplay or state impact. Low severity is right."
+   }
+  },
+  {
+   "title": "Hit stop does not freeze the swing on the procedural hero rig",
+   "severity": "low",
+   "file": "src/engine/loop.ts",
+   "line": 546,
+   "evidence": "updatePlayerAnimation computes animDt for hit stop, but the procedural branch decays player.attackAnim with f.dt (line 546) and the idle animTime with f.dt (line 524). Only the walk cycle and the Blender mixer use animDt.",
+   "scenario": "Until the hero GLTF loads, or when it fails to load and the procedural rig stays, the 40-110 ms hit stop on the hero's own blows is invisible: the slash keeps moving through it.",
+   "fix": "Use animDt in the procedural attackAnim decay and the idle animTime increment.",
+   "lens": "feel",
+   "check": {
+    "real": true,
+    "severity": "low",
+    "reason": "The finding holds. In src/engine/loop.ts:425 updatePlayerAnimation sets animDt = isHitStopped(player) ? 0 : f.dt, and actions.ts:298/301/304 call hitStop(player, ...) on the hero's own blows. The Blender branch uses animDt everywhere: animTime at 483, mixer.update at 486, and the attackAnim decay at 490. The procedural branch, which runs whenever player.blenderAnimator is unset, uses animDt only for the walk phase (494). The idle animTime at 524 and the attackAnim decay at 546 both still use f.dt. So on the procedural rig, slashAngle keeps advancing during the stop and the freeze never shows. The idle legs, torso and cape easing also use f.dt, but that matters less. The effect is purely cosmetic: game-feel is lost only on the fallback or pre-load rig, and no state or gameplay is touched. Low is the right severity."
+   }
+  },
+  {
+   "title": "The wind-up cue is planned from the unscaled windupMs, while the shape and the rules use windupMs * TELEGRAPH_TIME_SCALE",
+   "severity": "low",
+   "file": "src/engine/loop.ts",
+   "line": 681,
+   "evidence": "windupPlan(attack, cue) reads attack.windupMs (soundPlan.ts:50). The 'windup' event carries ms = windupMs * TELEGRAPH_TIME_SCALE (monsterPattern.ts:79), and showTelegraph and the resolve both use that scaled value. TELEGRAPH_TIME_SCALE is 1 today (attacks.ts:3).",
+   "scenario": "Changing the documented tuning knob, for example to 1.2 for a slower or accessibility pass, makes the rise end 20% before the fill completes and the impact plays. The sound then teaches the wrong timing.",
+   "fix": "Plan the cue from the event: windupPlan({ windupMs: ev.ms }, cue).",
+   "lens": "feel",
+   "check": {
+    "real": true,
+    "severity": "low",
+    "reason": "Confirmed from the code. At loop.ts:681 the call is `windupPlan(ATTACKS[ev.attackId], cue)`, and soundPlan.ts:50 sets `end = attack.windupMs / 1000`, which has no scale applied. The rules use `windupMs * TELEGRAPH_TIME_SCALE` for windSecs and the event's ms (monsterPattern.ts:67 and 79), and showTelegraph gets that scaled event. The design spec (combat-weight-design.md:316) names TELEGRAPH_TIME_SCALE as the knob kept on purpose for touch controls or an accessibility setting. If someone raises it to 1.2, the swell and the mid-cue ticks (placed at end-0.40/-0.25/-0.10) finish at the unscaled time, about 20% before the fill completes and the hit resolves. The fix is to pass ev.ms, or to scale the value inside windupPlan. Severity is low: the scale is 1 today, so nothing goes wrong now. It is a latent mismatch that only appears once someone uses the documented knob."
+   }
+  },
+  {
+   "title": "The G4.10 purity scan checks only 2 of the 5 new src/state files",
+   "severity": "low",
+   "file": "tests/commands.test.ts",
+   "line": 170,
+   "evidence": "Design 9.1 row G4.10 asks for a text scan showing that no new file under src/state mentions STATE, Math.random, Date.now or performance. `git diff --name-status origin/main...HEAD -- src/state` adds five files: commands.ts, monsterPattern.ts, soundPlan.ts, sustain.ts and telegraph.ts. The test loops over a hard-coded `['sustain.ts', 'commands.ts']`. monsterPattern.ts, soundPlan.ts and telegraph.ts are not checked. I grepped those three and they are clean today, so nothing fails now, but no test proves it.",
+   "scenario": "A later edit puts `Math.random()` into monsterPattern.ts, the heavy-attack step that stepMonster calls, or reads `STATE` in telegraph.ts. The rules module is then no longer deterministic for the seeded tests and the future co-op replay, and the suite stays green.",
+   "fix": "Build the file list from the diff instead of hard-coding it. Either list all five new files (`['sustain.ts','commands.ts','monsterPattern.ts','soundPlan.ts','telegraph.ts']`) or take every file under src/state that is missing from a frozen list of the pre-Stage-4 files. Keep the existing regex and the check that nothing is imported from engine/ or ui/.",
+   "lens": "saves-tests",
+   "check": {
+    "real": true,
+    "severity": "low",
+    "reason": "The finding holds. Running `git diff --name-status origin/main...HEAD -- src/state` lists five added files: commands.ts, monsterPattern.ts, soundPlan.ts, sustain.ts and telegraph.ts. The purity test in tests/commands.test.ts (describe 'purity of the new state modules') loops over the hard-coded list ['sustain.ts', 'commands.ts'] only. Design 9.1 row G4.10 (docs/superpowers/specs/2026-11-14-combat-weight-design.md:837) asks for a text scan of every new src/state file for STATE, Math.random, Date.now and performance. tests/architecture.test.ts does scan all of src/state and src/data, but it only checks for engine, ui or three imports and for document or window. It does not check STATE, Math.random, Date.now or performance. So a later Math.random() in monsterPattern.ts, or a STATE read in telegraph.ts, would leave the suite green unless some behavioural test happened to catch it. A grep shows the three unchecked files are clean today, so nothing is broken now. This is a gap in the test's coverage of what the design asks for, not a defect in the code, so severity stays low."
+   }
+  },
+  {
+   "title": "The G4.6 position-write scan covers reactions.ts but not telegraphs.ts",
+   "severity": "low",
+   "file": "tests/feel-data.test.ts",
+   "line": 97,
+   "evidence": "Design 9.1 row G4.6 says: 'A text scan: reactions.ts and telegraphs.ts do not write logic.x, logic.z or player.pos.' The only scan, `G4.6 text scan`, reads `src/engine/reactions.ts` and nothing else. No test reads src/engine/telegraphs.ts as text; tests/telegraph-contrast.test.ts imports it only to call show and clear. telegraphs.ts (400 new lines) has no such writes today: the same regex grep returns nothing.",
+   "scenario": "A later change makes the telegraph renderer snap `logic.x` or `player.pos` (for example, to centre a ring on the hero). The rules position then moves from the view layer, which breaks design 6.5's rule that nothing takes control of the hero, and nothing in the suite fails.",
+   "fix": "Run the two `not.toMatch` assertions over both files: `for (const f of ['src/engine/reactions.ts','src/engine/telegraphs.ts'])`.",
+   "lens": "saves-tests",
+   "check": {
+    "real": true,
+    "severity": "low",
+    "reason": "I confirmed the finding from the code. Design 9.1 row G4.6 (spec line 833) says the text scan must cover both reactions.ts and telegraphs.ts. The only scan, at tests/feel-data.test.ts:96-102, reads src/engine/reactions.ts and nothing else. No test reads telegraphs.ts as text: tests/telegraph-contrast.test.ts only imports showTelegraph and clearTelegraph. telegraphs.ts (400 lines) has no position writes today, so nothing is broken yet. The gap is in the guard: a later change that writes logic.x, logic.z or player.pos from the telegraph view would pass the suite even though the design says it must fail. Severity is low because the risk is a future regression that no test catches, and current behaviour is correct."
+   }
+  },
+  {
+   "title": "G-7 item 2: the JS chunk grew 37.73 kB over the R0 baseline, over the stage budget of 30 kB",
+   "severity": "medium",
+   "file": "dist (build)",
+   "line": 0,
+   "evidence": "2. FAIL (BUILD size). TYPES (`scripts/capped.sh npx tsc --noEmit`) exited 0 with no output. BUILD exited 0 and produced `dist/assets/index-C4nOTtoF.js 993.70 kB \u2502 gzip: 275.42 kB`. The R0 baseline in the plan's review log is 955.97 kB (gzip 263.46 kB). The difference is +37.73 kB, which is over the limit of +30 kB. Gzip grew by +11.96 kB.",
+   "scenario": "The stage ships more JavaScript than the approved design allows.",
+   "fix": "Find what grew (compare a build of origin/main with HEAD per module, e.g. with rollup-plugin-visualizer output or by reading the chunk), remove duplication or dead code introduced by Stage 4 without changing behaviour, until the chunk is at most 985.97 kB. If that cannot be reached without cutting a feature, stop and report the exact breakdown by module; do not cut a feature.",
+   "lens": "gate",
+   "check": {
+    "real": true,
+    "severity": "medium",
+    "reason": "measured by G-7"
+   }
+  },
+  {
+   "title": "G-7 item 6: design timings and sizes written as literals outside attacks.ts and feel.ts (rule 0.3.6)",
+   "severity": "low",
+   "file": "src/state/telegraph.ts",
+   "line": 0,
+   "evidence": "6. PARTIAL. Rule 0.3.5 (purity) passes in substance; rule 0.3.6 (timings are data) fails if read strictly.\n   - Rule 0.3.5. I scanned the new src/state and src/data files (attacks.ts, feel.ts, commands.ts, monsterPattern.ts, soundPlan.ts, sustain.ts, telegraph.ts). None imports from engine or ui, and none mentions STATE, Math.random, Date.now, document or window. The only hits are the word `performance` in src/data/feel.ts lines 4 and 45-56. That is the tier id `'performance'` (the design's internal tier name), not the `performance` API.\n   - Rule 0.3.6. The design 6.6 constants are only in src/state/sustain.ts (FOOD_CD_SECS, POTION_CD_SECS, COMBAT_REST_SECS, HP_REGEN_RESTING_PER_SEC, DEATH_XP_SHARE, DEATH_MIN_COMBAT, VOW_COINS_PER_XP, VOW_MIN_PRICE), and the boss margin 6 is `BOSS_ARENA_MARGIN` in attacks.ts. These literals from design 6.3 to 6.7 sit outside attacks.ts and feel.ts:\n     (a) src/state/telegraph.ts `minWindupMs`: `700 + 160 + 90 + (escapeDistance(attack) / 11.5) * 1000`. These are the reaction-window milliseconds of design 6.3. `const BODY = 0.3` is in the same file.\n     (b) src/engine/audio.ts: the voice caps `cap = 12` (lines 68 and 120) and `wide ? 16 : 12` (line 178), and the 20 ms mute ramp `now + 0.02` (line 195), all from design 6.7.\n     (c) src/state/soundPlan.ts holds the cue voices, among them the 1.50 s and 1.20 s chord voices (lines 134-137) and the ranged ticks at end-0.40, -0.25 and -0.10 (lines 55-57). Design 6.7 itself places these voices in soundPlan.ts, so the design and rule 0.3.6 conflict here.\n     (d) src/engine/telegraphs.ts: the 0.06 height offset (lines 211, 274, 275), the band width 0.11 and the halo 0.11 + 0.12 (lines 307-308), and the vertex step 1.0. These are design 6.5 sizes, not milliseconds, radii, powers or amplitudes.\n     The audio cue literals (lines 244-331 of audio.ts) are ported from main's existing `tone` calls and are not design numbers. The 6000 in monsterAi.ts lines 212 and 384 is a findPath node cap, not a timing.",
+   "scenario": "Stage 5 restyles effects from data; literals in code are missed.",
+   "fix": "Move the reaction-window numbers of minWindupMs (700, 160, 90, 11.5 and BODY 0.3) into named constants in src/data/attacks.ts, and the voice caps 12/16 and the 20 ms mute ramp into src/data/feel.ts, and import them. Leave the soundPlan.ts cue voices where design 6.7 puts them, and the telegraph mesh sizes in telegraphs.ts, and write one sentence in the plan review log that design 6.7 places the voices in soundPlan.ts and 6.5 mesh sizes are not timings, so rule 0.3.6 does not apply to them.",
+   "lens": "gate",
+   "check": {
+    "real": true,
+    "severity": "low",
+    "reason": "measured by G-7"
+   }
+  },
+  {
+   "title": "G-7 item 8: the combat model scripts are stale against the live tables",
+   "severity": "medium",
+   "file": "docs/superpowers/research/combat-model/decisions.ts",
+   "line": 0,
+   "evidence": "8. FAIL (not done). I ran MODEL's steps from run.sh against the live tables, writing to the scratchpad:\n   - check.ts exited 0, and its output is identical to the committed check-results.txt.\n   - model.ts exited 0, but results.txt is stale. Committed: \"monsters: 36 \u2026 findPath calls 1013 \u2026 mean 125 \u2026 1.032 ms per call\". Live run: \"monsters: 42 \u2026 findPath calls 1166 \u2026 mean 115 \u2026 1.131 ms per call\".\n   - decisions.ts exits 1 with `Error: arena: the chosen spot fails the criterion`. The script reads the live CAMPS, which now include the boss's own camp, so `ashmantle` is counted as its own neighbour. The chosen (-102, 54) now reports \"gap to the nearest leash circle -27.0 (ashmantle)\", and the 16-spot lattice table is not printed.\n   - boss.ts is not fully in line with the live tables. Attacks, phases, mark, respawn, arena, hitpoints, max hit, attack and defence all match. But `BOSS_ROW.bodyColor` is 0x3f3f46 where the live value is 0x57534e. More importantly, live `BOSSES.ashmantle.openingShiftMs: 2000` and the chat line \"Its bolts are magic.\" (actions.ts line 99) are not modelled anywhere in research/combat-model. I found no record that CALL-4.18's \"open with a warning\" option was decided. The plan still lists CALL-4.18 as open. The opening shift came in through B2/B4 (b09263d, 6e12fd3, bf36a4f, 4131791).\n   To close this item: decisions.ts must leave the boss's own camp out of the arena criterion, boss.ts must be brought in line (including the opening shift, or a record of its decision), and the three outputs must be rerun and committed under the allowlist G-7 gives for research/combat-model. This run was read-only, so I did not do it.",
+   "scenario": "The stage proof rests on model outputs that no longer run.",
+   "fix": "decisions.ts must leave the boss's own camp out of the arena criterion; boss.ts must use the live bodyColor and model the opening shift (2000 ms, CALL-4.18 decided by the owner on 2026-11-14: open with a roar, a banner and \"Its bolts are magic\"); rerun run.sh and commit results.txt, check-results.txt and decisions-results.txt; mark CALL-4.18 decided in the plan where it is still listed as open. Every proof row must still hold; report any that moves.",
+   "lens": "gate",
+   "check": {
+    "real": true,
+    "severity": "medium",
+    "reason": "measured by G-7"
+   }
+  }
+ ]
+}

@@ -3,6 +3,7 @@ import { addCartoonOutline, facetMaterial } from './materials';
 import { albedoMaterial, speciesAlbedo } from './textures';
 import { getTerrainHeight } from '../state/terrain';
 import { inCombat } from '../state/monsterAi';
+import { isHitStopped } from './reactions';
 import type { MonsterDef } from '../data/world';
 import type { MonsterEntity } from './context';
 import type { MonsterRigLike } from './blenderMonsters';
@@ -774,7 +775,7 @@ export function buildElvargMesh(def: MonsterDef): MonsterRigLike {
 }
 
 export function createMonsterMesh(def: MonsterDef, typeKey: string): MonsterRigLike {
-  switch (typeKey) {
+  switch (def.model ?? typeKey) {
     case 'chicken': return buildChickenMesh(def);
     case 'goblin': return buildGoblinMesh(def, 'raider');
     case 'goblin_archer': return buildGoblinMesh(def, 'archer');
@@ -790,15 +791,33 @@ export function createMonsterMesh(def: MonsterDef, typeKey: string): MonsterRigL
   }
 }
 
+// Monsters posed in a wind-up on the previous frame; only they get the head reset, so types without a pattern keep their pre-T5 pose.
+const windupPosed = new WeakSet<object>();
+
+// Death topple progress (0..1), drawn only: it holds through a hit stop and then catches up, so the body is fully
+// toppled on the frame the rules timer ends (timeLeft <= dt), whatever stop it went through.
+const dyingProgress = new WeakMap<object, number>();
+
+export function poseMonsterDying(m: MonsterEntity, timeLeft: number, dt: number): void {
+  const prev = dyingProgress.get(m) ?? 0;
+  const progress = isHitStopped(m) ? prev : prev + (1 - prev) * Math.min(1, dt / timeLeft);
+  if (timeLeft <= dt) dyingProgress.delete(m);
+  else dyingProgress.set(m, progress);
+  m.rig.group.rotation.x = progress * (Math.PI / 2.3);
+  m.rig.group.position.y = getTerrainHeight(m.pos.x, m.pos.z) - progress * 0.45;
+}
+
 export function poseMonsterLimbs(m: MonsterEntity, moving: boolean, now: number, dt: number): void {
   const rig = m.rig;
   if (!rig || m.logic.state === 'dying') return;
 
   const groundY = getTerrainHeight(m.pos.x, m.pos.z);
+  // Hit stop freezes the pose time of the flinch and the attack swing (design 6.5).
+  const animDt = isHitStopped(m) ? 0 : dt;
 
   // Flinch Reaction on Hit
   if (m.flinch > 0) {
-    m.flinch = Math.max(0, m.flinch - dt * 3.8);
+    m.flinch = Math.max(0, m.flinch - animDt * 3.8);
     const curve = Math.sin(m.flinch * Math.PI);
     rig.group.position.y = groundY + curve * 0.16;
     rig.group.rotation.x = curve * 0.24;
@@ -809,27 +828,45 @@ export function poseMonsterLimbs(m: MonsterEntity, moving: boolean, now: number,
   }
   rig.group.rotation.x = 0;
 
+  // Wind-up Pose while winding up
+  if (m.logic.windup) {
+    const progress = Math.min(1, Math.max(0, 1 - m.logic.windup.left / m.logic.windup.total));
+    if (rig.rightArmPivot) rig.rightArmPivot.rotation.x = -1.8 * progress;
+    if (rig.leftArmPivot) rig.leftArmPivot.rotation.x = -1.8 * progress;
+    if (rig.headGroup) rig.headGroup.rotation.x = -0.35 * progress;
+    if (rig.lWing && rig.rWing) {
+      rig.lWing.rotation.z = 0.2 + progress * 0.55;
+      rig.rWing.rotation.z = -0.2 - progress * 0.55;
+    }
+    rig.group.position.y = groundY + progress * 0.15;
+    windupPosed.add(m);
+    return;
+  }
+
+  if (windupPosed.delete(m) && rig.headGroup) rig.headGroup.rotation.x = 0;
+
   // Distinct Attack Animations
   if (m.attackAnim > 0) {
-    m.attackAnim = Math.max(0, m.attackAnim - dt * 3.2);
+    m.attackAnim = Math.max(0, m.attackAnim - animDt * 3.2);
     const progress = Math.sin(m.attackAnim * Math.PI);
-    if (m.typeKey === 'elvarg_dragon') {
+    const model = m.def.model ?? m.typeKey;
+    if (model === 'elvarg_dragon') {
       if (rig.headGroup) rig.headGroup.rotation.x = -0.35 + progress * 0.65;
       if (rig.lWing && rig.rWing) {
         rig.lWing.rotation.z = 0.2 + progress * 0.55;
         rig.rWing.rotation.z = -0.2 - progress * 0.55;
       }
       rig.group.position.y = groundY + progress * 0.32;
-    } else if (m.typeKey === 'dark_wizard') {
+    } else if (model === 'dark_wizard') {
       if (rig.rightArmPivot) rig.rightArmPivot.rotation.x = -1.65 * progress;
       if (rig.leftArmPivot) rig.leftArmPivot.rotation.x = -1.45 * progress;
       if (rig.headGroup) rig.headGroup.rotation.x = -0.25 * progress;
       rig.group.position.y = groundY + progress * 0.12;
-    } else if (m.typeKey === 'moss_guardian' || m.typeKey === 'hill_giant') {
+    } else if (model === 'moss_guardian' || model === 'hill_giant') {
       if (rig.rightArmPivot) rig.rightArmPivot.rotation.x = -1.8 * progress;
       if (rig.leftArmPivot) rig.leftArmPivot.rotation.x = -1.8 * progress;
       rig.group.position.y = groundY + progress * 0.22;
-    } else if (m.typeKey === 'goblin' || m.typeKey === 'hobgoblin') {
+    } else if (model === 'goblin' || model === 'hobgoblin') {
       if (rig.rightArmPivot) rig.rightArmPivot.rotation.x = -1.55 * progress;
       if (rig.leftArmPivot) rig.leftArmPivot.rotation.x = progress * 0.4;
       rig.group.position.y = groundY + progress * 0.25;

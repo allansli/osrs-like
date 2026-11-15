@@ -37,6 +37,31 @@
     color: var(--botw-cream);
   }
 
+  #low-health-vignette {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 15;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    box-shadow: inset 0 0 80px 20px rgba(185, 28, 28, 0.55);
+  }
+
+  #low-health-vignette.active {
+    opacity: 1;
+    animation: lowHealthPulse 1.4s ease-in-out infinite alternate;
+  }
+
+  #low-health-vignette.active.steady {
+    animation: none;
+    opacity: 0.7;
+  }
+
+  @keyframes lowHealthPulse {
+    0% { opacity: 0.45; }
+    100% { opacity: 0.85; }
+  }
+
   #death-overlay {
     position: absolute;
     inset: 0;
@@ -223,6 +248,10 @@
   }
 
   .hitsplat.hit::before { background: #d31313; }
+  .hitsplat.heavy { font-size: 17px; }
+  .hitsplat.heavy::before { background: #b91c1c; }
+  .hitsplat.blocked { font-size: 13px; transform: translate(-50%, -50%) scale(0.85); }
+  .hitsplat.blocked::before { background: #475569; }
   .hitsplat.maxhit { font-size: 18px; }
   .hitsplat.maxhit::before { background: #9a3412; }
   .hitsplat.miss::before { background: #1d4ed8; }
@@ -422,6 +451,19 @@
     font-size: 12px;
   }
 
+  .lantern-mark {
+    font-size: 14px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: help;
+    filter: drop-shadow(0 0 4px #f59e0b);
+  }
+  .lantern-mark[hidden] {
+    display: none !important;
+  }
+
   .vital-icon {
     width: 18px;
     height: 18px;
@@ -510,12 +552,92 @@
     box-shadow: 0 4px 14px rgba(0,0,0,0.55);
   }
   #target-hud.visible { display: block; }
+  #target-hud.untouchable {
+    border-color: #64748b;
+  }
+  #target-hud.untouchable .vital-bar-fill {
+    background: #64748b !important;
+  }
   .target-title {
     display: flex;
     justify-content: space-between;
     font-size: 13px;
     font-weight: 800;
     margin-bottom: 5px;
+  }
+
+  /* Boss Bar HUD */
+  #boss-bar {
+    position: absolute;
+    top: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 440px;
+    max-width: 90vw;
+    background: var(--panel-glass);
+    backdrop-filter: blur(10px);
+    border: 1.5px solid rgba(239, 68, 68, 0.75);
+    border-radius: 10px;
+    padding: 8px 14px;
+    z-index: 35;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.75), 0 0 15px rgba(239, 68, 68, 0.25);
+    pointer-events: none;
+  }
+  #boss-bar[hidden] {
+    display: none;
+  }
+  .boss-bar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    font-weight: 800;
+    margin-bottom: 5px;
+  }
+  .boss-name {
+    color: var(--osrs-yellow);
+    letter-spacing: 0.5px;
+  }
+  .boss-marks {
+    font-size: 12px;
+    color: #f97316;
+    font-weight: 800;
+  }
+  .boss-bar-track {
+    position: relative;
+    height: 18px;
+    background: #18181b;
+    border-radius: 6px;
+    border: 1px solid #3f3f46;
+    overflow: hidden;
+  }
+  .boss-bar-fill {
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(90deg, #b91c1c, #ef4444);
+    transition: width 0.15s ease-out;
+  }
+  .boss-pip {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: #fde047;
+    transform: translateX(-50%);
+    z-index: 2;
+    box-shadow: 0 0 4px rgba(253, 224, 71, 0.8);
+  }
+  .boss-bar-text {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 800;
+    color: #fff;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+    z-index: 3;
   }
 
   /* Top-Right Minimap & GP Pouch */
@@ -694,6 +816,20 @@
     width: 6px;
     height: 6px;
     border-radius: 50%;
+  }
+
+  .inv-slot .cooldown-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.65);
+    border-radius: 6px;
+    pointer-events: none;
+    transform-origin: bottom;
+    transform: scaleY(var(--cd, 0));
+    display: none;
+  }
+  .inv-slot.cooldown .cooldown-overlay {
+    display: block;
   }
 
   /* Skills Grid */
