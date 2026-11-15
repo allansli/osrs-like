@@ -63,7 +63,7 @@ import { regenRate, buyVow, altarVowLine } from '../state/sustain';
 import { entityAim, escapeStall, shouldRepath, STALL_SEC, stallTime, walkSpent } from '../state/pathfind';
 import { CAMPS } from '../data/worldMap';
 import { LOW_HEALTH, spinOffset } from '../data/feel';
-import { isHitStopped, isLowHealth, setLowHealth, updateReactions } from './reactions';
+import { isHitStopped, isLowHealth, removeCameraOffsets, setLowHealth, updateReactions } from './reactions';
 import {
   addChatMessage,
   el,
@@ -911,6 +911,7 @@ export function gameLoop(now: number): void {
   updatePlayerIntent(f);
   updatePlayerMotion(f);
   updatePlayerAnimation(f);
+  removeCameraOffsets();
   updateCamera(f);
   updateMonsters(f);
   updateReactions(f.dt);

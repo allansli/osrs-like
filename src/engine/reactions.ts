@@ -238,6 +238,22 @@ export function cameraRumble(ms: number = CAMERA.rumbleMs): void {
   };
 }
 
+// The chase camera lerps its position toward a target: last frame's kick and rumble must come off before that
+// lerp (the loop calls this before updateCamera), or the lerp keeps part of them and the kick recoils.
+export function removeCameraOffsets(): void {
+  if (activeCameraKick) {
+    G.camera.position.x -= activeCameraKick.dirX * activeCameraKick.lastOffset;
+    G.camera.position.z -= activeCameraKick.dirZ * activeCameraKick.lastOffset;
+    activeCameraKick.lastOffset = 0;
+  }
+  if (activeCameraRumble) {
+    G.camera.position.x -= activeCameraRumble.lastOffsetX;
+    G.camera.position.y -= activeCameraRumble.lastOffsetY;
+    activeCameraRumble.lastOffsetX = 0;
+    activeCameraRumble.lastOffsetY = 0;
+  }
+}
+
 let lowHealthActive = false;
 
 export function isLowHealth(): boolean {
@@ -321,9 +337,8 @@ export function updateReactions(dt: number): void {
     }
   }
 
+  removeCameraOffsets();
   if (activeCameraKick) {
-    G.camera.position.x -= activeCameraKick.dirX * activeCameraKick.lastOffset;
-    G.camera.position.z -= activeCameraKick.dirZ * activeCameraKick.lastOffset;
     activeCameraKick.elapsedMs += dtMs;
     if (activeCameraKick.elapsedMs >= activeCameraKick.durationMs) {
       activeCameraKick = null;
@@ -340,8 +355,6 @@ export function updateReactions(dt: number): void {
   }
 
   if (activeCameraRumble) {
-    G.camera.position.x -= activeCameraRumble.lastOffsetX;
-    G.camera.position.y -= activeCameraRumble.lastOffsetY;
     activeCameraRumble.elapsedMs += dtMs;
     if (activeCameraRumble.elapsedMs >= activeCameraRumble.durationMs) {
       activeCameraRumble = null;

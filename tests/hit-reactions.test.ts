@@ -1,8 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 import * as THREE from 'three';
 import type { MonsterEntity } from '../src/engine/context';
-import { KNOCK_BACK, springOffset } from '../src/data/feel';
-import { hitStop, knockBack, updateReactions } from '../src/engine/reactions';
+import { CAMERA, KNOCK_BACK, springOffset } from '../src/data/feel';
+import { cameraKick, cameraRumble, hitStop, knockBack, removeCameraOffsets, updateReactions } from '../src/engine/reactions';
+import { G } from '../src/engine/context';
 import { poseMonsterLimbs } from '../src/engine/monsterMeshes';
 
 vi.stubGlobal('window', { matchMedia: () => ({ matches: false }) });
@@ -66,5 +67,38 @@ describe('monster hit stop (review 9): the flinch pose freezes while the monster
     updateReactions(0.1);
     poseMonsterLimbs(m, false, 116, 0.016);
     expect(m.flinch).toBeLessThan(1);
+  });
+});
+
+describe('camera kick and rumble (review 12): offsets ride on top of the lerped chase camera', () => {
+  // One frame as the loop runs it: offsets off, updateCamera's lerp toward its target, reactions on.
+  const target = new THREE.Vector3(4, 9, -3);
+  const dt = 1 / 60;
+  const frame = (): void => {
+    removeCameraOffsets();
+    G.camera.position.lerp(target, Math.min(1, dt * 12));
+    updateReactions(dt);
+  };
+
+  it('the kick shows its full spring offset each frame and leaves the camera exactly on its target', () => {
+    G.camera = new THREE.PerspectiveCamera();
+    G.camera.position.copy(target);
+    cameraKick(1, 0, CAMERA.kickMax);
+    let elapsed = 0;
+    for (let i = 0; i < 30; i++) {
+      frame();
+      elapsed += dt * 1000;
+      const want = elapsed < CAMERA.kickMs ? springOffset(elapsed, CAMERA.kickMax, CAMERA.kickMs) : 0;
+      expect(G.camera.position.x - target.x).toBeCloseTo(want, 9);
+      expect(G.camera.position.z).toBeCloseTo(target.z, 9);
+    }
+  });
+
+  it('the rumble leaves the camera exactly on its target when it ends', () => {
+    G.camera = new THREE.PerspectiveCamera();
+    G.camera.position.copy(target);
+    cameraRumble(200);
+    for (let i = 0; i < 20; i++) frame();
+    expect(G.camera.position.distanceTo(target)).toBeCloseTo(0, 9);
   });
 });
