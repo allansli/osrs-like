@@ -3,7 +3,7 @@
 // The owner's decisions of 2026-11-14 made the phased fight a separate, new boss and made hitpoints regenerate
 // during fights, so this now prints (1) the first draft's fight as a baseline, without and with regeneration,
 // (2) the new boss as tuned, (3) the variants behind three decisions.
-import { FIGHTERS, REGEN_IN_COMBAT, table } from './fight';
+import { FIGHTERS, LABELS, REGEN_IN_COMBAT, profile, table } from './fight';
 import { BOSS, BOSS_ROW, FIRST_DRAFT } from './boss';
 
 const p = (...a: unknown[]) => console.log(...a);
@@ -44,4 +44,33 @@ p('\n== 7. The new boss with the existing dragon\'s basic max hit (32) instead o
   BOSS_ROW.maxHit = 32;
   p(table(BOSS, ['A', 'F', 'FR', 'FM']).join('\n'));
   BOSS_ROW.maxHit = kept;
+}
+
+p('\n== 8. The bolt\'s max hit swept with the opening roar in (2000 seeds): what lowering it does (design 6.4, "The bolt against the stage\'s promise")');
+{
+  const kept = BOSS_ROW.maxHit;
+  for (const mh of [32, 52, 56, 60, 64, 68, 72]) {
+    BOSS_ROW.maxHit = mh;
+    p(`   max hit ${mh}`);
+    p(table(BOSS, ['A', 'R', 'M', 'FM']).slice(1).join('\n'));
+  }
+  BOSS_ROW.maxHit = kept;
+}
+
+p('\n== 9. A level-50 hero who heeds the roar and has the prayer: the F, FR and FM kits and food, no ward, Protect from Magic on, no potions (CALL-4.18)');
+{
+  const kits = {
+    F: ['melee', { weapon: 'rune_scimitar', body: 'rune_plate', legs: 'rune_legs', shield: 'rune_shield' }],
+    FR: ['ranged', { weapon: 'rune_crossbow', body: 'green_dhide_body', legs: 'green_dhide_chaps', shield: 'rune_shield' }],
+    FM: ['magic', { weapon: 'ancient_staff', body: 'mystic_top', legs: 'mystic_bottom' }]
+  } as const;
+  for (const prayer of [25, 43]) {
+    const keys = Object.entries(kits).map(([k, [style, kit]]) => {
+      const key = `${k}p${prayer}`;
+      FIGHTERS[key] = { ...FIGHTERS[k], ward: false, pots: 0, make: () => profile(style, 50, 50, prayer, kit, ['prot_magic']) };
+      LABELS[key] = `${k} level 50, Prayer ${prayer}, prays magic`;
+      return key;
+    });
+    p(table(BOSS, keys).join('\n'));
+  }
 }

@@ -99,3 +99,50 @@ A melee, prepared, moves                99.4        103                   69%   
 F melee, level 50 rune, unprepared      24.1        188                   40%                 94%   basic 143, slag_rain 23, tail_sweep 8, ember_cone 20, slagburst 7
 FR ranged, level 50, unprepared         62.2        113                   62%                 93%   basic 118, slag_rain 19, ember_cone 14, slagburst 6, ashen_nova 2
 FM magic, level 50, unprepared          89.7         71                   72%                 92%   basic 93, ember_cone 8, slag_rain 12, slagburst 5, ashen_nova 2
+
+== 8. The bolt's max hit swept with the opening roar in (2000 seeds): what lowering it does (design 6.4, "The bolt against the stage's promise")
+   max hit 32
+A melee, prepared, moves                99.4        103                   69%                 93%   basic 17, ember_cone 4, slag_rain 19, slagburst 7, tail_sweep 3
+R ranged, prepared, moves               99.3         63                   93%                 91%   basic 10, ember_cone 2, slag_rain 11, slagburst 4, ashen_nova 3
+M magic, prepared, moves                99.8         49                  100%                 89%   basic 8, slag_rain 7, ember_cone 1, slagburst 3, ashen_nova 3
+FM magic, level 50, unprepared          89.7         71                   72%                 92%   basic 93, ember_cone 8, slag_rain 12, slagburst 5, ashen_nova 2
+   max hit 52
+A melee, prepared, moves                99.1        104                   84%                 93%   basic 29, ember_cone 4, slagburst 7, slag_rain 19, tail_sweep 3
+R ranged, prepared, moves               99.2         63                   94%                 91%   basic 17, ember_cone 2, slag_rain 11, slagburst 4, ashen_nova 3
+M magic, prepared, moves                99.8         49                  100%                 89%   basic 14, slag_rain 7, ember_cone 1, slagburst 3, ashen_nova 3
+FM magic, level 50, unprepared          55.5         71                   83%                 92%   basic 127, slag_rain 10, ember_cone 7, ashen_nova 2, slagburst 3
+   max hit 56
+A melee, prepared, moves                98.9        104                   61%                 93%   basic 31, ember_cone 4, slag_rain 19, tail_sweep 3, slagburst 7
+R ranged, prepared, moves               99.0         63                   86%                 91%   basic 19, ember_cone 2, slag_rain 11, slagburst 4, ashen_nova 3
+M magic, prepared, moves                99.8         49                  100%                 89%   basic 15, slag_rain 7, ember_cone 1, slagburst 3, ashen_nova 3
+FM magic, level 50, unprepared          37.0         71                   90%                 92%   basic 115, slag_rain 8, ember_cone 5, ashen_nova 2, slagburst 2
+   max hit 60
+A melee, prepared, moves                98.9        104                   65%                 93%   basic 34, ember_cone 4, slag_rain 19, tail_sweep 3, slagburst 7
+R ranged, prepared, moves               98.9         63                   83%                 91%   basic 20, ember_cone 2, slag_rain 11, slagburst 4, ashen_nova 3
+M magic, prepared, moves                99.8         49                  100%                 89%   basic 17, slag_rain 7, ember_cone 1, slagburst 3, ashen_nova 3
+FM magic, level 50, unprepared          26.8         71                   92%                 92%   basic 109, slag_rain 7, ember_cone 5, ashen_nova 1, slagburst 1
+   max hit 64
+A melee, prepared, moves                99.1        104                   68%                 93%   basic 36, ember_cone 3, slagburst 7, slag_rain 19, tail_sweep 3
+R ranged, prepared, moves               98.9         63                   82%                 91%   basic 21, ember_cone 2, slag_rain 11, slagburst 4, ashen_nova 3
+M magic, prepared, moves                99.8         49                  100%                 89%   basic 18, slag_rain 7, ember_cone 1, slagburst 3, ashen_nova 3
+FM magic, level 50, unprepared          17.9         70                   93%                 92%   basic 104, slag_rain 5, ember_cone 4, ashen_nova 1, slagburst 1
+   max hit 68
+A melee, prepared, moves                99.4        104                   50%                 93%   basic 39, ember_cone 3, slagburst 7, slag_rain 19, tail_sweep 3
+R ranged, prepared, moves               99.0         63                   90%                 91%   basic 23, ember_cone 2, slag_rain 11, slagburst 4, ashen_nova 3
+M magic, prepared, moves                99.8         49                  100%                 89%   basic 19, slag_rain 7, ember_cone 1, slagburst 3, ashen_nova 3
+FM magic, level 50, unprepared          13.1         69                   94%                 92%   basic 99, ember_cone 4, slag_rain 5, ashen_nova 1, slagburst 1
+   max hit 72
+A melee, prepared, moves                99.1        104                   56%                 93%   basic 41, ember_cone 3, slagburst 7, slag_rain 19, tail_sweep 3
+R ranged, prepared, moves               98.8         63                   88%                 91%   basic 24, ember_cone 2, slag_rain 11, slagburst 4, ashen_nova 3
+M magic, prepared, moves                99.8         49                  100%                 89%   basic 20, slag_rain 7, ember_cone 1, slagburst 3, ashen_nova 3
+FM magic, level 50, unprepared          10.4         69                   95%                 92%   basic 96, ember_cone 3, slag_rain 4, ashen_nova 1, slagburst 1
+
+== 9. A level-50 hero who heeds the roar and has the prayer: the F, FR and FM kits and food, no ward, Protect from Magic on, no potions (CALL-4.18)
+fighter                                 win%  mean s (wins)  one-hit deaths from >=70% HP  heavies dodged  damage taken per fight, by source
+F level 50, Prayer 25, prays magic       3.9        183                   92%                 95%   basic 113, slag_rain 18, ember_cone 7, tail_sweep 8, slagburst 3
+FR level 50, Prayer 25, prays magic     25.1        106                   94%                 93%   basic 91, slagburst 5, slag_rain 17, ember_cone 6, ashen_nova 3
+FM level 50, Prayer 25, prays magic     88.5         67                   97%                 92%   basic 43, slag_rain 12, slagburst 4, ember_cone 2, ashen_nova 3
+fighter                                 win%  mean s (wins)  one-hit deaths from >=70% HP  heavies dodged  damage taken per fight, by source
+F level 50, Prayer 43, prays magic      13.5        180                   90%                 95%   basic 113, slag_rain 26, ember_cone 8, slagburst 7, tail_sweep 8
+FR level 50, Prayer 43, prays magic     83.2        109                   94%                 93%   basic 55, slagburst 7, slag_rain 20, ember_cone 4, ashen_nova 3
+FM level 50, Prayer 43, prays magic     93.7         67                  100%                 92%   basic 38, slag_rain 12, slagburst 4, ember_cone 2, ashen_nova 3
