@@ -31,10 +31,19 @@ export type MonsterDef = {
   kind: string;
   weaponColor?: number;
   drops: Array<{ id?: string; chance: number; gp?: [number, number] }>;
+  pattern?: string;
 };
 
 export const MONSTER_TYPES: Record<string, MonsterDef> = {
   ...(BASE_MONSTERS as Record<string, MonsterDef>),
+  scorpion: {
+    ...(BASE_MONSTERS.scorpion as MonsterDef),
+    pattern: 'scorpion'
+  },
+  dark_wizard: {
+    ...(BASE_MONSTERS.dark_wizard as MonsterDef),
+    pattern: 'dark_wizard'
+  },
   goblin_archer: {
     name: 'Goblin Archer',
     level: 5,
@@ -74,7 +83,20 @@ export const MONSTER_TYPES: Record<string, MonsterDef> = {
       { id: 'bronze_arrow', chance: 1 },
       { id: 'willow_bow', chance: 0.008 },
       { id: 'green_dhide_body', chance: 0.004 }
-    ]
+    ],
+    pattern: 'dark_ranger'
+  },
+  hill_giant: {
+    ...(BASE_MONSTERS.hill_giant as MonsterDef),
+    pattern: 'hill_giant'
+  },
+  moss_guardian: {
+    ...(BASE_MONSTERS.moss_guardian as MonsterDef),
+    pattern: 'moss_guardian'
+  },
+  lesser_demon: {
+    ...(BASE_MONSTERS.lesser_demon as MonsterDef),
+    pattern: 'lesser_demon'
   }
 };
 
