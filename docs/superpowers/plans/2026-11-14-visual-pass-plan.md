@@ -675,3 +675,122 @@ The owner accepts after G-5 and G-6. The main session pushes the branch, opens t
 | 7 | Effects in the idiom | CP-FX | about 0 | 0 | about 0 |
 
 Every frame cost above is an estimate made without a GPU measurement; V2 (benched, OV-2), GR7 and G-6 replace them with numbers.
+
+---
+
+## 11. Anchors (task R0, 2026-11-15)
+
+Read at `feat/visual-pass` commit `cb7b83f`, which holds `main` at `c84cd12` (Stages 2, 3 and 4 merged) and task UI1 (`27ca2c9`). Lines below are at `cb7b83f`; "was" gives the `a8cad85` line this plan and the design cite. Nothing was changed under `src/`, `tests/` or `public/`.
+
+### A1. Verdict
+
+**The premises hold for V1a through GR2, with the corrections of A11. The stage stops before TR1** until the design is amended for the frozen golden test `tests/pathfind-budget.test.ts` (A9.3); the owner sees that amendment, because rule 0.3.3 freezes the file. CALL-V21 is moot: monsters now path-find (A9.1), so OV-4b is satisfied and TR2 does not wait for a Stage 4 task. Facts 1 to 5 of design section 1 all hold (A2). Step 7: every table is non-empty and every named place exists, except that Millrace Road is a `PATHS` row, not a POI (A8); that is a wording error in step 7 and in pose P2, corrected in A11.
+
+### A2. The five facts of design section 1 (step 2)
+
+| # | Fact | Holds | Where now |
+|---|---|---|---|
+| 1 | `facetMaterial` discards `reflectedLight` | yes, unchanged since `a8cad85` | `materials.ts` 116-167; the replacement of `outgoingLight` with the fixed light `vec3(0.52, 0.78, 0.34)` is 158-163 |
+| 2 | `renderer.info` is reset after the shadow pass | yes | `node_modules/three/src/renderers/WebGLRenderer.js` 1216 (`shadowMap.render`) and 1222 (`info.reset`) |
+| 3 | `cycleTimeOfDay` writes only sky and fog | yes, unchanged | `worldMesh.ts` 71-97 |
+| 4 | sky, water and grass shaders lack tone mapping, colour space and fog | yes | sky `worldMesh.ts` 33-69 (fragment 53-64), water 125-167 (fragment 151-162), `grassMaterial` `materials.ts` 169-217; each writes `gl_FragColor` directly |
+| 5 | `cloneWorldNode` keeps one mesh per GLB mesh | yes, unchanged | `blenderWorld.ts` 120-143; `applyWorldMaterials` still clones each geometry at 51 |
+
+### A3. Source anchors (step 1)
+
+`materials.ts`, `textures.ts`, `blenderWorld.ts` and `vfx.ts` are byte-identical to `a8cad85`, so every line this plan and the design cite in them still holds.
+
+| File | Symbol: line now (was) |
+|---|---|
+| `src/engine/materials.ts` | `PALETTE` 4 (`PALETTE.water` 14); `addCartoonOutline` 78-107; `facetMaterial` 116-167 (parameter filter with `metalness`, `roughness` and `flatShading` 118-131, `map` handling 132-139, `userData.albedoSpace` 144, `flatNormal` 145-150, `onBeforeCompile` with `vCelNormal` 151-165); `grassMaterial` 169-217 (`uLightDir` 176) |
+| `src/engine/textures.ts` | `loadAlbedo` 124-141; `albedoMaterial` 226; `assignProjectedUvs` 256 (`geometry.userData.albedoUv` read 262, written 312); `assignGroundUvs` 367 (writes `albedoUv` 380); `sealAlbedoUvs` 383; `TERRAIN_SAMPLE` 416; `terrainMaterial` 445 |
+| `src/engine/blenderWorld.ts` | `loadBlenderWorldTemplate` 7 (calls `loadGltfOnce`, `gltf.ts` 9); `applyWorldMaterials` 47-118, not exported (`mesh.geometry.clone` 51); `cloneWorldNode` 120-143; `upgradeResourceNodeWithGltf` 148-232; `upgradeWorldPropWithGltf` 244-295 (pushes to the interactive list 282-283) |
+| `src/engine/vfx.ts` | hit splat DOM 13-32 (`innerHTML` 25); `glowMaterial` 34-42; `spawnVfx` 44; `launchProjectile` 63; first `SphereGeometry` 109. `disposeObject3D` is in `dispose.ts` 4 |
+| `src/engine/renderer.ts` | `QualityTier` 12; `getQualityDpr` 16-24 (15-23); `applyQualityTier` 26-45 (`PCFSoftShadowMap` 37); `cycleGraphicsQuality` 47-52; `syncGraphicsButtons` 67-72; `initGpuTelemetry` 74-105 (73-104); `init3DEngine` 107-166 (camera far 360 at 112, was 111; `PCFSoftShadowMap` 124; `applyQualityTier('balanced')` 132; the three lights 134-154, was 133-153; `G.walkGrid = buildWalkGrid()` 156, new); `onWindowResize` 168 |
+| `src/engine/worldMesh.ts` | `getBiomeColor` 18 (now reads `onPath` and `slopeAt`); `buildSkyDomeShader` 33-69 (dome radius 290 at 41, was 40); `cycleTimeOfDay` 71-97 (70-96); `buildTerrainAndWater` 99-197 (terrain 100-123 at `TERRAIN_SEGMENTS` 160; water block 125-167, `G.waterUniforms` 126, `waterGeo` 132, plane at -0.34 at 166, was 166; grass block 172-196, 900 blades at 179); `buildRiverBridge` 199 |
+| `src/engine/loop.ts` | `G.waterUniforms.uTime` and `G.skyUniforms.uTime` 128-129; `updatePlayerIntent` 192 (stop distances 231-253); `updatePlayerMotion` 370 (`moveWithCollision` 380); `updateCamera` 595-623 (old `camState.shake` 614-618; sun-follow `G.sunLight` lines 620-622, was 502-504); `updateMonsters` 628 (passes `G.walkGrid` 636); `renderFrame` 871-890 (`G.grassInstanced` uniform 872-874, `G.renderer.render` 875, frame time 877-881, was 676-679; `perf-calls` 887); `gameLoop` 892 |
+| `src/engine/context.ts` | `player` 55 (`player.pos` 56, `waypoints` 60); `camState` 96 (`camState.yaw`); `telemetryInfo` 123 (no `calls` or `triangles` yet); `G` 237; fields `G.sunLight`, `G.ambientLight`, `G.hemiLight` 200-202, `G.grassInstanced`, `G.waterUniforms`, `G.skyUniforms` 206-208 (186-188), `G.worldInteractiveObjects` 209, `G.walkGrid` 234 |
+| `src/engine/worldBuild.ts` | `buildBiomeLandmarks` 20 (woods props 144-147, see A8); `buildAllCitiesAndLandmarks` 153 (stations 223-235); `spawnWorldProp` 584-609 (580-603); `buildPointsOfInterest` 765 |
+| `src/engine/spawns.ts` | `spawnMonster` 39; `spawnResourceNode` 96; `spawnAllResourcesAndMonsters` 233 |
+| `src/engine/runtime.ts` | `WINDOW_GLOBALS` 115; `wireBridge` 117; `window.__DEBUG` 194 (190) |
+| `src/engine/input.ts` | `planWalk` 32, `planEntityWalk` 37; `setupInputHandlers` 55 (global `keydown` 74, text-input rule 78-80, Space 84); camera clamps 142 and 153 (114 and 125); minimap click 156-173; `handleWorldHover` 197 (ray 209-212); `pointerToWorld` 248; `updateHoverTile` 440 |
+| `src/engine/overlay.ts` | `renderMinimap` 25 |
+| `src/ui/` | `openModal` `playerActions.ts` 294, `closeModals` 281; `renderBankModal` `stations.ts` 180, `renderShopModal` `stations.ts` 241 (wrapped by `playerActions.ts` 308) |
+| `src/state/` | `collision.ts`: `riverCenterX` 4, `isWalkable` 108-115 (bound 118 at 109, was 47), `moveWithCollision` 117-131 (clamp 124). `pathfind.ts`: `buildWalkGrid` 10, `findPath` 146, `findWalkPath` 309, `entityGoal` 320. `monsterAi.ts`: `stepMonster` 262. `save.ts`: `timeOfDay` 48-51 (47-50), `serializeState` 138, `sanitizePose` 209-230, `sanitizeCam` 232-239. `terrain.ts`: `getTerrainHeight` 23, `regionAt` 127. `gameState.ts`: `STATE` 101 (`STATE.timeOfDay`) |
+| `src/data/` | `worldMap.ts`: `PATHS` 74, `RIDGES` 83, `BASINS` 95, `POIS` 100, `CAMPS` 176, `SAFE_ZONES` 253. `WORLD_REGIONS`: `catalog.ts` 432, re-exported by `world.ts` 7. `NODE_PLACEMENTS`: `placements.ts` 13 |
+| `index.html` | `perf-calls` 144; `graphics-quality-btn` 397; `time-of-day-btn` 399; the module script 425 |
+
+The world node names `World_woods_lantern`, `World_forge`, `World_lava_fissure`, `World_shrine` and `World_mystic_mushroom` are all looked up today (`worldBuild.ts`, `blenderWorld.ts`; the forge as `World_forge` inside `createForgeStation`).
+
+### A4. three (step 5)
+
+- Installed `three` is 0.169.0 (`package.json` `^0.169.0`).
+- `meshlambert.glsl.js`: `lights_lambert_pars_fragment` included at 78; `normal_fragment_begin` 101; `lights_fragment_begin` 107; the Lambert sum `outgoingLight` 114; `opaque_fragment` 117, `tonemapping_fragment` 118, `colorspace_fragment` 119, `fog_fragment` 120 (design 6.3 says 111-115).
+- `lights_lambert_pars_fragment`: `RE_Direct_Lambert` uses `BRDF_Lambert( material.diffuseColor )`, as design 6.1 says. `lights_fragment_begin` 145 multiplies the shadow into `directLight.color` before `RE_Direct` (148). `normal_fragment_begin` 4-8 derives the face normal under `FLAT_SHADED`; `normal_pars_fragment` declares `vNormal` only under `#ifndef FLAT_SHADED`.
+- `Material.customProgramCacheKey` is still `onBeforeCompile.toString()` (`Material.js` 109-113); `WebGLPrograms.js` pushes it into the key at 360 and 410; `acquireProgram` at `WebGLRenderer.js` 1689. `renderer.debug.onShaderError` is called at `WebGLProgram.js` 936-938.
+- `EffectComposer`, `RenderPass`, `UnrealBloomPass`, `OutputPass` (`examples/jsm/postprocessing/`) and `three/examples/jsm/utils/BufferGeometryUtils.js` exist.
+- The chunks `fog_pars_fragment`, `fog_fragment` and `begin_vertex` exist under `ShaderChunk/`, as do `USE_INSTANCING` and `gl_InstanceID` (WebGL2). Library and platform names the plan uses with their stock meaning, no line to record: `AmbientLight`, `DirectionalLight`, `HemisphereLight`, `PointLight`, `InstancedMesh`, `ShaderMaterial`, `MeshLambertMaterial`, `DataTexture`, `HalfFloatType`, `UnsignedByteType`, `WebGLRenderTarget`, `RingGeometry`, `CylinderGeometry`, `ConeGeometry`, `TubeGeometry`, `TorusGeometry`, `Color.setHex`, `material.defines`, `needsUpdate`, `shader.uniforms`, `vertexColors`, the shadow's `normalBias`, `renderer.capabilities.getMaxAnisotropy`, `G.renderer.toneMappingExposure` (set at `renderer.ts` 127), `devicePixelRatio` (read at `renderer.ts` 17), `document.activeElement`, `textContent`, `gl.finish`, `Uint8Array`, `WeakSet`. The mesh flags `isCollider` and `userData.noOutline` are read by `isSkippableOutline` (`materials.ts` 63-71).
+- Documents the plan cites, with nothing to anchor: `docs/superpowers/specs/2026-11-14-visual-pass-design.md`, `docs/superpowers/plans/2026-11-14-visual-pass-plan.md`, `docs/superpowers/specs/2026-11-13-world-foundation-design.md`, `docs/superpowers/plans/2026-11-13-world-foundation-plan.md`, `CREDITS.md` (UI1 added the Fonts table), `src/ui/fonts/SOURCE.md` (UI1). `flora.glb` does not exist (CALL-V8 keeps it that way), and `fogFactor`, `GFX_TIERS.pointLights`, `HORIZON_APRON.outer` and `WOODS_TREES.length` are new names (A12).
+
+### A5. What Stages 2 to 4 changed, and where a task must change (step 3)
+
+- **`worldMesh.ts` (Stage 2)**: the terrain has 160 segments from `TERRAIN_SIZE` and `TERRAIN_SEGMENTS` (`terrain.ts` 6 and 8); `getBiomeColor` paints `onPath` as dirt and `slopeAt` above 0.55 as crag; the grass block skips paths and steep slopes (it still calls `Math.random`; GR6 replaces it). No task text changes, except LT5b (A11.3).
+- **`getBiomeColor`, the grass block**: see above. GR6's density rule "slope above the Stage 2 crag threshold" means `slopeAt(x, z) > 0.55`.
+- **`worldMap.ts` (Stage 2)**: filled (A8). Two moss guardian camps replace the one the design assumed (design 6.11, corrected).
+- **`loop.ts` (Stages 2 and 4)**: 920 lines, 80 under the 1000-line limit of rule 0.3.10, and LT5a, LT6, AR4a, AR4b, GR6, WT3 and WX3 all add to it. Each of those tasks keeps new logic in its own module and adds calls only. Stage 4 added `removeCameraOffsets` and `updateReactions` to `gameLoop` (913 and 916): the call to `updateLighting` (LT5a) goes after `updateCamera`, before `renderFrame`.
+- **`vfx.ts` (Stage 4)**: untouched. Stage 4's new visual code is `src/engine/reactions.ts` (hit flash, hit stop, camera kick and rumble, low-health vignette) and `src/engine/telegraphs.ts` (attack telegraphs, `MeshBasicMaterial`, which keep `scene.fog`). Neither file is on any allowlist; FX1's fixture is taken from `vfx.ts` as it is.
+- **Reduced motion (WX3)**: Stage 4 already exports `prefersReducedMotion` (`reactions.ts` 19), and `cameraKick` and `cameraRumble` already return early under it. WX3 reuses that function; the camera shake it skips is the old `camState.shake` block in `updateCamera` (614-618).
+- **`worldBuild.ts` (Stage 2)**: 861 lines. `spawnWorldProp` now also places the 15 GLB pieces of `POIS` (`buildPointsOfInterest` 778), so 27 props keep `MeshStandardMaterial` today, not 13. LT5b's change covers all of them.
+- **`renderer.ts` (Stage 2)**: one import and `G.walkGrid = buildWalkGrid()` (156). `applyQualityTier('balanced')` runs at 132, before `G.sunLight` exists (147): `applyShadowTier` (LT5a) must handle a missing light or the light rig must be created first.
+
+### A6. Existing tests (step 4)
+
+Rule 0.3.3's "existing tests" are the 77 test files on `main` at `c84cd12`, with their fixtures and helpers:
+
+- `src/__tests__/`: blender-hero, bulk-buy, bulk-sell, combat-class, lean-rig.
+- `tests/`: architecture, attack-data, boss-fight, boss-phases, cheats, combat-profile, commands, content-freeze, credits, dispose, economy-invariants, economy-rolls, entry-staff, feel-data, fishing-cues, gate-simulation, globals, gltf-loader, gp-cap, heavy-impact-sound, hidden-tools, hit-reactions, input-keys, minimap-place-labels, monster-ai, monster-hit, monster-patterns, monster-routes, monster-territory, names-combat, names, new-game, new-monsters, pacing, pathfind-budget, pathfind, phase1, phase2, phase3-content, phase4-combat, placements, reachability, recipes-bars, relief, ridge-spans, rule-fixes, run-blender, save-compat-s3, save-hardening, save-relocation, shop-gathered, shop-price, size-refactor-golden, sound-plan, source-limits, stage2-review-fixes, stage3-review-fixes, starter-quests, sustain, telegraph-contrast, telegraph-fill, telegraph, teleport-discovery, terrain-golden, terrain, textures, tracker-order, unlocks, vercel-headers, world-budget, world-data-combat, world-data (each `tests/<name>.test.ts`).
+- `tests/fixtures/` (14 files, among them `pathfind-golden.json`, `monster-steps-golden.json`, `size-refactor-golden.json`, `terrain-golden.json`, `save-v4.json`) and `tests/support/` (3 files).
+
+No test imports `grassMaterial`, `buildSkyDomeShader`, `G.grassInstanced`, `G.waterUniforms` or `G.skyUniforms`, so LT6, GR6 and WT3 may remove them with no wrapper. The cited test lines still hold: `tests/textures.test.ts` 81-92, 94-119 (the three assertions at 107-111, the outline at 113-118) and 262; `tests/dispose.test.ts` 57-58; `src/__tests__/lean-rig.test.ts` 64-65. The frozen-test sweep found no Stage 2 to 4 test that reads `PCFSoftShadowMap`, the `Graphics:` label, the time-of-day labels, `styles.css` or `perf-calls`; `tests/hidden-tools.test.ts` scans `index.html` for the hidden tools and `tests/globals.test.ts` for `onclick` (design 8.3 item 3 already covers the latter); `tests/telegraph-fill.test.ts` 94-101 pins telegraph fills to a stock `PlaneGeometry` terrain (A11.3).
+
+### A7. Inline handlers and scripts (step 6)
+
+`index.html` has 38 `onclick` attributes, no other `on<event>=` attribute, and one `<script>`: `<script type="module" src="/src/main.ts">` at 425. Under `src/` no generated markup carries an inline handler attribute: the 19 handlers in `hud.ts` and `stations.ts` are DOM properties (`el.onclick = ...`), which a strict script policy allows. UI8's premise holds.
+
+### A8. Stage 2 data (step 7)
+
+- Non-empty: `PATHS` 4 rows (Millrace Road, Saltwind Track, Lanternway, Cinder Stair), `RIDGES` 1 (Harrowback Ridge, its one gap Cinderstep Pass at (-32, 55), half-width 2.5), `BASINS` 2 (Reedglass Tarn (-40, -30), Tamarisk Pool (96, 90)), `POIS` 7, `CAMPS` 15, `SAFE_ZONES` 5 (radius 14 around each region centre).
+- POIs with `padRadius`: Three Kettle Camp 5, Wardstone Cairn 2, Cinderstep Pass 3, Slagfall Terrace 6, Lampwright's Hollow 2.5, Reedglass Tarn 0 (no pieces), Tamarisk Pool 2.5. **Millrace Road is not a POI**; it is the `PATHS` row `millrace_road` (half-width 2), whose point (18, 0) is at the west end of the bridge (deck x 20.5 to 35.5).
+- `isWalkable`, `regionAt`, `riverCenterX` and the walk grid exist (A3). The walkable bound is 118 (`collision.ts` 109 and 124).
+- Woods data (6.11): region `woods` (-75, -30), radius 45; `regionAt` returns the first region that matches, and `lumbridge` (0, 0, radius 46) is listed first. Camps `deep_woods_west` (-99, -30) and `deep_woods_south` (-75, -56), radius 9 each. Woods nodes: yews (-96, -24), (-102, -27), (-70, -53), (-80, -53); magic trees (-97, -36), (-75, -61), (-79, -59); trout spot (-38, -30). Woods shrine (-75, -36) (`shrineWorldPos`). Woods landmark props, literals in `buildBiomeLandmarks` (`worldBuild.ts` 144-147) and in no data table: mushrooms (-66, -22) and (-84, -26), lanterns (-72, -38) and (-90, -34); the first three are inside the woods safe zone, and the lantern at (-90, -34) is outside it and only 1.2 units inside `deep_woods_west`'s radius plus 2.
+
+### A9. Walking premises (step 9)
+
+1. **Monsters path-find (changed by Stage 4).** With a grid, chase walks straight only while `segmentWalkable` holds, otherwise it follows a `findPath` route to an `entityGoal` cell; return follows a route home; both through `followPath` (`monsterAi.ts` 197-223), which passes `grid.walkable` to `moveWithCollision`. `updateMonsters` always passes `G.walkGrid` (`loop.ts` 636). CALL-V21 is moot; design 6.11 is corrected.
+2. Hold: `isWalkable` is the one predicate behind `buildWalkGrid` (its default argument, `pathfind.ts` 10), the ground click and minimap and "Walk here" (`planWalk` and `planEntityWalk` through `findWalkPath`, `findPath`, `entityGoal` on `G.walkGrid`, `input.ts` 32-42), `moveWithCollision` (default argument, `collision.ts` 122) and `sanitizePose` (`save.ts` 215 and 224). The hover takes the terrain hit of a ray over `G.worldInteractiveObjects` (`input.ts` 209-212) and highlights the 1-unit cell (`updateHoverTile` 440-449); the click ray tests only `G.worldInteractiveObjects` (252, 383). `G.walkGrid` is built once (`renderer.ts` 156). The grid is 236 by 236 cells of 1 unit over ±118, sampled at cell centres, A* on 8 neighbours with no corner cutting (`pathfind.ts` 233-238), smoothed by `segmentWalkable` every 0.25 units. `stepMonster` steps through `moveWithCollision` (now with a route, item 1). `sanitizePose` searches 24 rings from 0.5 to 12 units, 24 angles each.
+3. **Frozen tests that read `isWalkable` or `buildWalkGrid()` with the real predicate (the list 6.11 must hold green).** The design's six: `reachability`, `relief`, `world-data`, `pathfind`, `save-relocation`, `world-budget`. Added by Stages 2 to 4 and also reading the real predicate where trees will stand: `pathfind-budget` (golden routes on 200 seeded pairs), `monster-routes` (realGrid; "from 200 seeded points per camp", out to camp radius + 15 = 24 around both woods camps), `stage2-review-fixes` (approach simulations from stop distance + 3 and + 9 around every node and monster placement, woods yews and guardians included), `world-data-combat` (routes from every open cell within leash + 11 of every camp), `placements`, `save-hardening`, `phase1`, `monster-territory`. `pathfind-budget` cannot stay green with trees as designed: its 200 pairs make 1,726 rejection draws of `grid.cells`, 198 of them in the woods, and 30 of its golden routes have a waypoint in the woods (counted at R0, read-only). This is the stop before TR1 of A1. The others should stay green by the argument of 6.11 (reachable set minus tree cells, camps are clearings, nodes have 4.5 clearance), but TR2's accept must run every one of them, not only the six.
+4. Stop distances by kind: melee monster 2.9, ranged and magic monster 13.5 (`loop.ts` 240, `actions.ts` 126-129, `input.ts` 399), resource node and fishing spot 3.1 (`loop.ts` 249, `input.ts` 281 and 416), station, shrine and other interactive 3.5 (`loop.ts` 253, `input.ts` 303 and 428); the fallback before a target is known is 2.8 (`loop.ts` 231).
+5. No station other than the woods shrine is in `woods`: the stations are in Lumbridge, Varrock and the desert (`worldBuild.ts` 223-235).
+6. `node_modules/.bin/esbuild` exists (esbuild 0.25.12), so TR2's bundle command needs no download.
+7. The Stage 1 save fixture's position is (8, 10) (`tests/fixtures/save-v4.json`); the start point is (-4, -3) (`tests/reachability.test.ts` 9, `player.pos` in `context.ts` 56); the 20 old spawn points are `OLD_SPAWNS` in `tests/save-relocation.test.ts` 28-34, four of them moss guardians in the woods ((-64, -18), (-82, -22), (-70, -44), (-86, -38)).
+
+### A10. Camera limits and props (step 8)
+
+- Live camera limits: pitch 0.12 to 1.15 (`input.ts` 142), distance 3.6 to 26 (153), unchanged. `sanitizeCam` (`save.ts` 232-239) caps a saved camera at pitch 0.42 and distance 9.5.
+- `spawnWorldProp` (`worldBuild.ts` 584-609) still clones the GLB node with `node.clone(true)`, never calls `applyWorldMaterials`, and sets `castShadow` and `receiveShadow` on every mesh; then `sealAlbedoUvs` and `addCartoonOutline`.
+
+### A11. Corrections the main session applies before the task that needs them
+
+These are not decided here; each names the task that cannot start without an answer.
+
+1. **Before V1a and V1b, pose P2.** Its place, Millrace Road, is a `PATHS` id, and V1a's test allows only `POIS` and `WORLD_REGIONS` ids. Either P2 moves to a valid id, or V1a and V1b also accept a `PATHS` id with a stated resolution (for example its point (18, 0), at the bridge).
+2. **Before V1b, `pose` and `sanitizeCam`.** V1b sets the camera "through `sanitizeCam`", which would cap P10's distance 26 at 9.5 and P8's pitch 1.15 at 0.42. `pose` clamps to the live limits of `input.ts` (A10) instead, as V1a's test already says.
+3. **Before LT5b, the checkerboard diagonal.** `telegraphs.ts` `gridHeight` (183-197) assumes three's `PlaneGeometry` diagonal and lifts telegraph fills 0.06 above it, and `tests/telegraph-fill.test.ts` 94-101 checks that against a stock plane. Alternating the terrain's diagonal (LT5b) would sink or float the fills by up to the slope times a cell. Either drop the alternation from LT5b, or add `telegraphs.ts` to LT5b's files with the matching diagonal rule (the frozen test, which builds its own stock plane, would then no longer describe the game's terrain).
+4. **Before AR4b, the flash cache.** `collectFlashMaterials` (`reactions.ts` 55-66) caches each body's materials at spawn, and `flash` writes their colours. `enterPlainMode` swapping those materials leaves the cache on detached materials, so monsters stop flashing in plain mode. Hero and monster bodies use round `facetMaterial`, so they are registered. Either plain mode skips bodies (they keep their material), or AR4b's files include `reactions.ts` to refresh the cache.
+5. **Before TR1, the golden route test.** A9.3: the design needs an answer for `tests/pathfind-budget.test.ts` (a declared replacement in design 8.3, approved by the owner, or another way) and TR1, TR2 and G-5 step 10 list every test of A9.3.
+6. **Before TR1, the woods landmark props.** They are literals in engine code (A8), so TR1 holds them as literals, like the station list. The lantern at (-90, -34) is protected only by the camp clearance, by 1.2 units; a clearance for these four props (for example 2.5 units, the scatter's rule) keeps a trunk off them if a camp moves.
+7. **R0 step 7 wording.** "Every POI the design names (... Millrace Road)": Millrace Road is a path. Nothing else depends on it being a POI.
+
+### A12. Names this plan cites that do not exist yet
+
+Every other backticked name in this plan (for example `look.ts`, `GFX_TIERS`, `dayFrameAt`, `fitShadow`, `attachAtmosphere`, `mergeByMaterial`, `isWalkableGround`, `WOODS_TREES`, `buildScatter`, `buildWaterGrid`, `weatherAt`, `createLookHooks`, `enterPlainMode`, the new test files) is created by the task that cites it, and R0 has no line to record for it.
