@@ -20,6 +20,9 @@ import bpy
 import bmesh
 from mathutils import Vector, Euler, Matrix
 
+sys.path.insert(0, os.path.dirname(__file__))
+import paths
+
 
 # =============================================================================
 # Coordinate Conversion & Core Helpers
@@ -2906,18 +2909,12 @@ def setup_studio_and_render(render_path: str | None):
         scene.render.engine = "BLENDER_EEVEE"
         scene.render.resolution_x = 1600
         scene.render.resolution_y = 1000
-        scene.render.filepath = render_path
+        scene.render.filepath = paths.checked_write(render_path)
         bpy.ops.render.render(write_still=True)
         print(f"[Blender] Rendered monsters preview image: {render_path}")
 
 
 def main():
-    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-    blend_dir = os.path.join(repo_root, "blender")
-    models_dir = os.path.join(repo_root, "public", "models")
-    os.makedirs(blend_dir, exist_ok=True)
-    os.makedirs(models_dir, exist_ok=True)
-
     render_path = None
     if "--" in sys.argv:
         extra = sys.argv[sys.argv.index("--") + 1 :]
@@ -2925,7 +2922,7 @@ def main():
             idx = extra.index("--render")
             if idx + 1 >= len(extra):
                 raise SystemExit("--render requires an output path: blender ... -- --render <file.png>")
-            render_path = extra[idx + 1]
+            render_path = paths.checked_write(extra[idx + 1])
 
     clear_scene()
     mats = build_materials()
@@ -2945,12 +2942,12 @@ def main():
     build_lesser_demon((2.2, 0.0, 2.2), mats)
     build_elvarg_dragon((6.2, 0.0, 2.6), mats)
 
-    blend_path = os.path.join(blend_dir, "monsters.blend")
-    glb_path = os.path.join(models_dir, "monsters.glb")
+    blend_path = paths.blend_path("monsters")
+    glb_path = paths.glb_path("monsters")
 
     # Export clean glTF binary before adding studio camera/lights/floor
     bpy.ops.export_scene.gltf(
-        filepath=glb_path,
+        filepath=paths.glb_path("monsters"),
         export_format="GLB",
         export_yup=True,
         export_extras=True,
@@ -2958,7 +2955,7 @@ def main():
     print(f"[Blender] Exported glTF binary: {glb_path}")
 
     setup_studio_and_render(render_path)
-    bpy.ops.wm.save_as_mainfile(filepath=blend_path)
+    bpy.ops.wm.save_as_mainfile(filepath=paths.blend_path("monsters"))
     print(f"[Blender] Saved editable source file: {blend_path}")
 
 

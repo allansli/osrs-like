@@ -23,10 +23,6 @@ function findBlenderExecutable() {
   return 'blender';
 }
 
-const mode = process.argv[2] || 'hero';
-const argTarget = process.argv[3] || 'hero';
-const blenderExe = findBlenderExecutable();
-
 const BUILD_SCRIPTS = {
   hero: 'scripts/blender/build_hero.py',
   gear: 'scripts/blender/build_gear.py',
@@ -34,7 +30,34 @@ const BUILD_SCRIPTS = {
   world: 'scripts/blender/build_world.py'
 };
 
-const KNOWN_MODES = ['open', 'export', 'all', ...Object.keys(BUILD_SCRIPTS)];
+const EXTRA_MODES = {
+  guard: 'scripts/blender/export_guard.py',
+  sheets: 'scripts/blender/review_render.py'
+};
+
+const mode = process.argv[2] || 'hero';
+
+let outDir = path.resolve('scratch/models-build');
+const positionalArgs = [];
+const remaining = process.argv.slice(3);
+for (let i = 0; i < remaining.length; i++) {
+  if (remaining[i] === '--out') {
+    if (i + 1 < remaining.length) {
+      outDir = path.resolve(remaining[i + 1]);
+      i++;
+    }
+  } else if (remaining[i].startsWith('--out=')) {
+    outDir = path.resolve(remaining[i].slice(6));
+  } else {
+    positionalArgs.push(remaining[i]);
+  }
+}
+
+const argTarget = positionalArgs[0] || 'hero';
+const blenderExe = findBlenderExecutable();
+
+const ALL_SCRIPTS = { ...BUILD_SCRIPTS, ...EXTRA_MODES };
+const KNOWN_MODES = ['open', 'export', 'all', ...Object.keys(ALL_SCRIPTS)];
 if (!KNOWN_MODES.includes(mode) && !fs.existsSync(mode)) {
   console.error(`Unknown mode: "${mode}". Valid modes: ${KNOWN_MODES.join(', ')}`);
   process.exit(2);
@@ -64,7 +87,20 @@ if (mode === 'open') {
   const exportScript = path.resolve('scripts/blender/export_from_blend.py');
   const res = spawnSync(
     blenderExe,
-    ['--background', '--disable-autoexec', blendFile, '--python-exit-code', '1', '--python', exportScript],
+    [
+      '--background',
+      '--factory-startup',
+      '--disable-autoexec',
+      blendFile,
+      '--python-exit-code',
+      '1',
+      '--python',
+      exportScript,
+      '--',
+      '--out',
+      outDir,
+      argTarget
+    ],
     { stdio: 'inherit' }
   );
   checkExit(res);
@@ -76,19 +112,41 @@ if (mode === 'open') {
     console.log(`[Blender] Building ${key} (${scriptRel})...`);
     const res = spawnSync(
       blenderExe,
-      ['--background', '--disable-autoexec', '--python-exit-code', '1', '--python', scriptFile],
+      [
+        '--background',
+        '--factory-startup',
+        '--disable-autoexec',
+        '--python-exit-code',
+        '1',
+        '--python',
+        scriptFile,
+        '--',
+        '--out',
+        outDir
+      ],
       { stdio: 'inherit' }
     );
     checkExit(res);
   }
 } else {
-  const scriptRel = fs.existsSync(mode) ? mode : BUILD_SCRIPTS[mode];
+  const scriptRel = fs.existsSync(mode) ? mode : ALL_SCRIPTS[mode];
   const scriptFile = path.resolve(scriptRel);
-  const res = spawnSync(
-    blenderExe,
-    ['--background', '--disable-autoexec', '--python-exit-code', '1', '--python', scriptFile],
-    { stdio: 'inherit' }
-  );
+  const spawnArgs = [
+    '--background',
+    '--factory-startup',
+    '--disable-autoexec',
+    '--python-exit-code',
+    '1',
+    '--python',
+    scriptFile,
+    '--',
+    '--out',
+    outDir
+  ];
+  if (mode === 'sheets') {
+    spawnArgs.push(...positionalArgs);
+  }
+  const res = spawnSync(blenderExe, spawnArgs, { stdio: 'inherit' });
   checkExit(res);
   process.exit(0);
 }

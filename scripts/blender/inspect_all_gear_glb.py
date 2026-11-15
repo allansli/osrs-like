@@ -1,9 +1,23 @@
 import bpy
 import os
+import sys
+
+sys.path.insert(0, os.path.dirname(__file__))
+import paths
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
-repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-glb_path = os.path.join(repo_root, "public", "models", "gear.glb")
+
+glb_path = paths.glb_path("gear")
+if "--" in sys.argv:
+    extra = sys.argv[sys.argv.index("--") + 1 :]
+    if "--glb" in extra:
+        idx = extra.index("--glb")
+        if idx + 1 < len(extra):
+            glb_path = os.path.abspath(extra[idx + 1])
+elif "--glb" in sys.argv:
+    idx = sys.argv.index("--glb")
+    if idx + 1 < len(sys.argv):
+        glb_path = os.path.abspath(sys.argv[idx + 1])
 
 bpy.ops.import_scene.gltf(filepath=glb_path)
 

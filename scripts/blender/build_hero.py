@@ -1,14 +1,18 @@
 """
 Build the authentic Game Anime RPG Character (BlendSwap #4503 by uchiha007)
-directly from `blender/examples/kai/kaiV2.blend` and export `public/models/hero.glb`
-and `blender/hero.blend` with full textures, PBR materials, and 10 NLA animations.
+directly from Kai blend and export hero glb
+and hero blend with full textures, PBR materials, and 10 NLA animations.
 """
 
 import bpy
 import bmesh
 import os
+import sys
 import math
 from mathutils import Vector, Euler, Matrix
+
+sys.path.insert(0, os.path.dirname(__file__))
+import paths
 
 def t2b_pos(tx: float, ty: float, tz: float):
     return (tx, -tz, ty)
@@ -417,21 +421,13 @@ def build_all_animations(pivots: dict):
 
 
 def main():
-    root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-    kai_dir = os.path.join(root_dir, 'blender', 'examples', 'kai')
-    kai_blend = os.path.join(kai_dir, 'kaiV2.blend')
-    glb_path = os.path.join(root_dir, 'public', 'models', 'hero.glb')
-    blend_path = os.path.join(root_dir, 'blender', 'hero.blend')
-    preview_path = os.path.join(root_dir, 'scratch', 'kai_baked_preview.png')
-    os.makedirs(os.path.dirname(preview_path), exist_ok=True)
+    kai_dir = os.path.join(paths.out_dir(), "kai")
+    kai_blend = os.path.join(kai_dir, "kaiV2.blend")
 
     if not os.path.exists(kai_blend):
-        zip_path = os.path.join(root_dir, 'blender', 'examples', 'Game Anime RPG Character.zip')
+        zip_path = paths.source("Game Anime RPG Character.zip")
         if os.path.exists(zip_path):
-            import zipfile
-            os.makedirs(kai_dir, exist_ok=True)
-            with zipfile.ZipFile(zip_path, 'r') as zf:
-                zf.extractall(kai_dir)
+            paths.extract_zip(zip_path, kai_dir)
 
     # 1. Open kaiV2.blend natively
     bpy.ops.wm.open_mainfile(filepath=kai_blend)
@@ -622,37 +618,14 @@ def main():
     except Exception as e:
         print('pack_all warning:', e)
 
-    # 10. Studio Camera & Render
-    scene = bpy.context.scene
-    scene.render.resolution_x = 960
-    scene.render.resolution_y = 1080
-    scene.render.film_transparent = True
+    # 10. Save blend and export GLB
+    blend_path = paths.blend_path("hero")
+    glb_path = paths.glb_path("hero")
 
-    key_data = bpy.data.lights.new(name="FrontKeyLight", type="SUN")
-    key_data.energy = 4.0
-    key_data.color = (1.0, 0.98, 0.95)
-    key_obj = bpy.data.objects.new(name="FrontKeyLight", object_data=key_data)
-    scene.collection.objects.link(key_obj)
-    key_obj.rotation_euler = Euler((math.radians(-72), math.radians(12), math.radians(-5)), "XYZ")
-
-    cam_data = bpy.data.cameras.new(name="StudioCam")
-    cam_data.lens = 52.0
-    cam_obj = bpy.data.objects.new(name="StudioCam", object_data=cam_data)
-    scene.collection.objects.link(cam_obj)
-    cam_obj.location = (0.0, 3.40, 0.95)
-    direction = Vector((0.0, 0.0, 0.92)) - cam_obj.location
-    cam_obj.rotation_euler = direction.to_track_quat("-Z", "Y").to_euler()
-    scene.camera = cam_obj
-
-    scene.render.filepath = preview_path
-    bpy.ops.render.render(write_still=True)
-    print(f"[BlenderHero] Rendered studio preview to {preview_path}")
-
-    # 11. Save blend and export GLB
-    bpy.ops.wm.save_as_mainfile(filepath=blend_path)
+    bpy.ops.wm.save_as_mainfile(filepath=paths.blend_path("hero"))
 
     bpy.ops.export_scene.gltf(
-        filepath=glb_path,
+        filepath=paths.glb_path("hero"),
         export_format="GLB",
         export_yup=True,
         export_apply=True,

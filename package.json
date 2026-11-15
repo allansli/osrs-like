@@ -13,7 +13,11 @@
     "blender:monsters": "node scripts/run-blender.mjs monsters",
     "blender:world": "node scripts/run-blender.mjs world",
     "blender:open": "node scripts/run-blender.mjs open",
-    "blender:export": "node scripts/run-blender.mjs export"
+    "blender:export": "node scripts/run-blender.mjs export",
+    "blender:guard": "node scripts/run-blender.mjs guard",
+    "models:compare": "node scripts/models-compare.mjs",
+    "models:promote": "node scripts/models-promote.mjs",
+    "models:sheets": "node scripts/run-blender.mjs sheets"
   },
   "dependencies": {
     "three": "^0.169.0"

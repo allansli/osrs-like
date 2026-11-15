@@ -1,13 +1,16 @@
 import bpy
 import bmesh
 import os
+import sys
 import math
 from mathutils import Vector, Euler, Matrix
 
+sys.path.insert(0, os.path.dirname(__file__))
+import paths
+
 def export_guard():
-    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-    knight_blend = os.path.join(repo_root, "blender", "examples", "knight_28541", "knight.blend")
-    guard_glb = os.path.join(repo_root, "public", "models", "guard.glb")
+    knight_blend = paths.source("knight_28541/knight.blend")
+    guard_glb = paths.glb_path("guard")
     
     bpy.ops.wm.open_mainfile(filepath=knight_blend)
     
@@ -108,7 +111,7 @@ def export_guard():
                 
     # Export glTF
     bpy.ops.export_scene.gltf(
-        filepath=guard_glb,
+        filepath=paths.glb_path("guard"),
         export_format="GLB",
         export_yup=True
     )
