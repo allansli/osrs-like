@@ -1,5 +1,6 @@
 import { STATE } from '../state/gameState';
 import type { Voice } from '../state/soundPlan';
+import { AUDIO } from '../data/feel';
 
 // ============================================================================
 // 1. PROCEDURAL WEB AUDIO SYNTHESIZER
@@ -41,7 +42,7 @@ let creationFailed = false;
 let creationWarned = false;
 let nodeWarned = false;
 
-const FADE_S = 0.02;
+const FADE_S = AUDIO.muteRampSecs;
 
 function fadeOut(c: AudioContext, src: AudioScheduledSourceNode, gain: GainNode): VoiceStop {
   return () => {
@@ -87,7 +88,7 @@ function tone(
   duration: number,
   vol = 0.12,
   slideTo?: number,
-  cap = 12
+  cap: number = AUDIO.voiceCap
 ): VoiceStop | null {
   if (!ctx || ctx.state !== 'running' || !masterGain) return null;
   if (liveVoices >= cap) return null;
@@ -143,7 +144,7 @@ function noise(
   freq: number,
   duration: number,
   vol = 0.12,
-  cap = 12,
+  cap: number = AUDIO.voiceCap,
   slideTo?: number
 ): VoiceStop | null {
   if (!ctx || ctx.state !== 'running' || !masterGain) return null;
@@ -206,7 +207,7 @@ function play(plan: Voice[], wide: boolean): VoiceStop[] {
   if (!STATE.audioEnabled) return stops;
   if (!ctx || ctx.state !== 'running' || !masterGain) return stops;
 
-  const cap = wide ? 16 : 12;
+  const cap = wide ? AUDIO.wideVoiceCap : AUDIO.voiceCap;
 
   for (const v of plan) {
     const stop =

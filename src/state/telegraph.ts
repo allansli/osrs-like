@@ -1,6 +1,7 @@
 import type { AttackDef, Shape } from '../data/attacks';
+import { REACTION_WINDOW } from '../data/attacks';
 
-const BODY = 0.3;
+const BODY = REACTION_WINDOW.heroBodyRadius;
 
 export function escapeDistance(attack: AttackDef): number {
   const s = attack.shape;
@@ -16,7 +17,8 @@ export function escapeDistance(attack: AttackDef): number {
 }
 
 export function minWindupMs(attack: AttackDef): number {
-  return 700 + 160 + 90 + (escapeDistance(attack) / 11.5) * 1000;
+  const w = REACTION_WINDOW;
+  return w.humanMs + w.deviceMs + w.accelerationMs + (escapeDistance(attack) / w.heroRunSpeed) * 1000;
 }
 
 export function inShape(

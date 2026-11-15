@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Shape } from '../src/data/attacks';
-import { ATTACKS } from '../src/data/attacks';
+import { ATTACKS, REACTION_WINDOW } from '../src/data/attacks';
+import { readFileSync } from 'node:fs';
 import { escapeDistance, inShape, minWindupMs, shapeOutline } from '../src/state/telegraph';
 
 // Shape geometry (design 6.2, 6.3; plan T1). Red until T2 adds src/state/telegraph.ts and src/data/attacks.ts.
@@ -174,5 +175,11 @@ describe('escapeDistance and minWindupMs', () => {
     expect(row).toBeDefined();
     expect(Math.abs(minWindupMs(row!) - (950 + (escapeDistance(row!) / 11.5) * 1000))).toBeLessThan(0.5);
     expect(Math.abs(minWindupMs(row!) - 1367)).toBeLessThanOrEqual(2);
+  });
+
+  it('the reaction-window numbers of design 6.3 live in src/data/attacks.ts, not as literals in telegraph.ts', () => {
+    expect(REACTION_WINDOW).toEqual({ humanMs: 700, deviceMs: 160, accelerationMs: 90, heroRunSpeed: 11.5, heroBodyRadius: 0.3 });
+    const src = readFileSync('src/state/telegraph.ts', 'utf8');
+    expect(src).not.toMatch(/\b(?:700|160|90|11\.5)\b|=\s*0\.3\b/);
   });
 });

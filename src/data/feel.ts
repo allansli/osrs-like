@@ -41,6 +41,13 @@ export const LOW_HEALTH = {
   heartbeatPeriodSec: 1.2,
 } as const;
 
+/** Audio of design 6.7: voices at once, the wider cap a wind-up or impact cue may use, and the mute ramp in seconds. */
+export const AUDIO = {
+  voiceCap: 12,
+  wideVoiceCap: 16,
+  muteRampSecs: 0.02,
+} as const;
+
 export const TIER_ROWS: Record<string, Record<TierId, number | boolean>> = {
   telegraphOutline: { performance: true, balanced: true, high: true, ultra: true },
   telegraphFill: { performance: true, balanced: true, high: true, ultra: true },

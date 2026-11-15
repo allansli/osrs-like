@@ -127,3 +127,11 @@ describe('G4.12 tier rows (design section 10)', () => {
     expect(TIERS.map((t) => feel.TIER_ROWS.impactBurst[t])).toEqual([0, 6, 12, 12]);
   });
 });
+
+describe('rule 0.3.6: the audio caps and mute ramp of design 6.7 are data', () => {
+  it('feel.ts holds them and audio.ts writes none of them as a literal', () => {
+    expect(feel.AUDIO).toEqual({ voiceCap: 12, wideVoiceCap: 16, muteRampSecs: 0.02 });
+    const src = readFileSync('src/engine/audio.ts', 'utf8');
+    expect(src).not.toMatch(/cap\s*=\s*\d|\?\s*16\s*:\s*12|=\s*0\.02\b/);
+  });
+});

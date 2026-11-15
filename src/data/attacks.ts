@@ -5,6 +5,14 @@ export const TELEGRAPH_TIME_SCALE = 1;
 export const BOSS_OUTSIDE_SECS = 5;
 export const BOSS_ARENA_MARGIN = 6;
 export const BOSS_FIRST_ENTRY_SECS = 1.0;
+/** Reaction time of design 6.3: human, device and acceleration ms, the hero's run speed (units/s) and body radius (units). */
+export const REACTION_WINDOW = {
+  humanMs: 700,
+  deviceMs: 160,
+  accelerationMs: 90,
+  heroRunSpeed: 11.5,
+  heroBodyRadius: 0.3,
+} as const;
 
 export type Shape =
   | { type: 'circle'; anchor: 'target' | 'self'; radius: number }
