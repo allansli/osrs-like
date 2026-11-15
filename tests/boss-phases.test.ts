@@ -165,8 +165,7 @@ function engagedBoss(seed = 1, d = 3): Fight {
 function crossThreshold(f: Fight, d = 6): { tHit: number; r: HitResult } {
   const tHit = f.t;
   const r = f.hit(1_000_000);
-  const next = bossRow().phases[f.m.phase];
-  f.run((next?.shiftMs ?? 0) / 1000 + 3 * DT, d);
+  f.run(bossRow().phases[f.m.phase].shiftMs / 1000 + 3 * DT, d);
   return { tHit, r };
 }
 
