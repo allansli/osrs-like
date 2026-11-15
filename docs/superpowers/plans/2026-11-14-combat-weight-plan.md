@@ -205,6 +205,14 @@ Spine order: R0; P1 to P4; T1 to T5; CP-4; merge M2; M1, M3; B1 to B4; merge S, 
 - **Accept**: SG. `grep -c "logic\.\(x\|z\) *=" src/engine/telegraphs.ts` prints `0`; `grep -c LineLoop src/engine/telegraphs.ts` prints `0`. The opus verify reads that every created mesh has a dispose path.
 - **Must not change**: `vfx.ts`; `performMonsterRetaliation`'s behaviour for basic attacks.
 
+### T6 Shapes read on every ground [CLAUDE] (added after CP-4, 2026-11-14)
+- **Tier**: sonnet.
+- **Depends**: T5; the CP-4 captures in `docs/superpowers/baseline/cw/` (the band is faint on volcanic ground and hidden under tree canopies).
+- **Files**: `src/engine/telegraphs.ts`, `tests/telegraph-contrast.test.ts` (new).
+- **Change**: in `showTelegraph`, (1) add a dark halo band just outside the coloured band, the same triangle-band construction, 0.12 wide, colour `0x140a08`, opacity 0.75; (2) widen the coloured band from about 0.15 to 0.22; (3) draw the halo and the coloured band with `depthTest: false` and a `renderOrder` above the world so a canopy or a prop never hides the edge; the fill keeps its depth test; (4) dispose the halo with the rest in `clearTelegraph`. No timing, shape, colour of the coloured band or data changes. The test (written first) builds a telegraph for each attack and asserts the group holds a halo mesh and a band mesh, both with `depthTest === false`, the halo drawn before the band, and that `clearTelegraph` disposes every geometry and material it created.
+- **Accept**: the new test passes, then SG. The main session re-captures grass, sand and volcanic ground and judges them; the captures replace the CP-4 ones.
+- **Must not change**: `src/data/attacks.ts`, `src/state/telegraph.ts`, any timing, any test of T1 to T5.
+
 ### CP-4 "Do the shapes read?" [HUMAN]
 Design 9.2, the first two items: each shape on four grounds and four tiers, by day and night, and one hill giant fight. Screenshots go in `docs/superpowers/baseline/cw/`. If a shape does not read, the fix is in `telegraphs.ts` (opacity, outline width, height offset) and is one more [AGY] task with the same allowlist. M1 and lane B do not start before this passes.
 
