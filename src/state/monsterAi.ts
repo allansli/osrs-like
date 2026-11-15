@@ -570,7 +570,6 @@ export function onPlayerHit(m: MonsterLogic, dmg: number): { applied: boolean; e
   const boss = BOSSES[m.typeKey];
   if (boss) {
     if (m.outsideFor > 0) return { applied: false, events: [], reason: 'arena' };
-    if (m.shiftLeft > 0) return { applied: false, events: [], reason: 'shift' };
   }
   const opening: MonsterEvent[] = [];
   if (m.state === 'idle') {
@@ -581,6 +580,8 @@ export function onPlayerHit(m: MonsterLogic, dmg: number): { applied: boolean; e
     m.stallZ = m.z;
     if (boss) opening.push(...startBossOpening(m, boss));
   }
+  // After the idle branch, so the hit that pulls a boss is refused by the roar it starts.
+  if (boss && m.shiftLeft > 0) return { applied: false, events: opening, reason: 'shift' };
   if (dmg <= 0) return { applied: true, events: opening };
 
   const crossed = boss ? crossPhase(m, boss, dmg) : null;

@@ -261,6 +261,9 @@ export function performPlayerAttack(monster: MonsterEntity): void {
     if (!hit.applied) {
       SFX.miss();
       spawnHitSplatWorld(monster.pos, 0, 'miss');
+      for (const ev of hit.events) {
+        if (ev.kind === 'phase') handleBossPhase(monster, ev.index);
+      }
       if (hit.reason === 'shift') {
         if (lastRefusalMonster !== monster || lastRefusalReason !== 'shift') {
           addChatMessage(`The ${monster.def.name} is untouchable.`, 'combat');

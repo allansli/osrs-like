@@ -541,6 +541,28 @@ describe('phases: gate, shift, patterns (G4.4)', () => {
     expect(first?.ev.kind, 'phase I opens with a basic').toBe('attack');
     expect(f.hit(25).applied).toBe(true);
   });
+
+  it('a hit that pulls the idle boss from range starts the same untouchable roar and deals nothing itself (review finding 1)', () => {
+    const f = bossFight(10);
+    const b = bossRow();
+    expect(st(f.m)).toBe('idle');
+    const pull = f.hit(40);
+    expect(pull.applied, 'the pulling hit is refused').toBe(false);
+    expect(pull.reason).toBe('shift');
+    expect(f.m.hp, 'the pulling hit deals nothing').toBe(f.m.maxHp);
+    expect(st(f.m)).toBe('chase');
+    expect(f.log.filter((r) => isPhase(r.ev)).map((r) => phaseIndex(r.ev)), 'the opening is announced by the pull').toEqual([0]);
+    const [px, pz] = f.at(10);
+    for (let i = 0; i < Math.round(b.openingShiftMs / 1000 / DT) - 2; i++) {
+      f.step(px, pz);
+      expect(f.hit(25).reason, `frame ${i}`).toBe('shift');
+      expect(f.m.hp).toBe(f.m.maxHp);
+    }
+    f.run(5 * DT, 10);
+    expect(f.hit(25).applied, 'after the roar').toBe(true);
+    expect(f.m.hp).toBe(f.m.maxHp - 25);
+    expect(f.log.filter((r) => isPhase(r.ev)), 'one opening only').toHaveLength(1);
+  });
 });
 
 describe('the arena (design 6.4)', () => {
