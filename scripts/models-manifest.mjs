@@ -119,4 +119,4 @@ function main() {
   console.log(`wrote ${NAMES.length} manifests and totals.json to ${out}`);
 }
 
-if (process.argv[1] === import.meta.filename) main();
+if (process.argv[1] && fs.realpathSync(process.argv[1]) === import.meta.filename) main(); // realpath: a symlinked path still runs

@@ -70,6 +70,27 @@ describe('shipped files satisfy their manifest (Contract and Budget)', () => {
   });
 });
 
+describe('compare: main guard', () => {
+  it('run through a symlinked path, compare still checks and refuses a truncated file (exit 3)', () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'symlink-'));
+    try {
+      const link = path.join(tmp, 'repo');
+      fs.symlinkSync(ROOT, link, 'dir');
+      const bad = path.join(tmp, 'bad.glb');
+      fs.writeFileSync(bad, 'glTF\x02\x00\x00');
+      const r = spawnSync(process.execPath, [path.join(link, 'scripts', 'models-compare.mjs'), bad, bad], {
+        encoding: 'utf8',
+        timeout: 60000,
+        env: { PATH: path.dirname(process.execPath) }
+      });
+      expect(r.stdout + r.stderr).toContain('File truncated');
+      expect(r.status).toBe(3);
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+});
+
 describe('compare: attack clip anticipation time', () => {
   function check(attackClips: Record<string, number>, built: Doc = buildTinySkin()) {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'attack-'));

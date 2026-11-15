@@ -738,7 +738,8 @@ function run() {
 }
 
 function main() {
-  if (process.argv[1] !== fileURLToPath(import.meta.url)) return; // imported for figureStats, not run
+  // realpath both sides: a symlinked argv[1] must still run, never skip every check and exit 0.
+  if (!process.argv[1] || fs.realpathSync(process.argv[1]) !== fileURLToPath(import.meta.url)) return; // imported for figureStats, not run
   try {
     run();
   } catch (err) {
