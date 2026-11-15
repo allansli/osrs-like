@@ -393,6 +393,35 @@ describe('models-compare: Budget, pending manifests, Drift, unreadable files', (
     bad.write('XXXX', 0, 'latin1');
     expect(compare({ built: bad }).status).toBe(3);
   });
+
+  it('an accessor with a negative count is refused, with no shipped file given', () => {
+    const doc = buildTiny();
+    doc.json.accessors[0].count = -5;
+    const f = setup({ built: doc });
+    const r = spawnSync(
+      process.execPath,
+      [COMPARE, path.join(f.build, 'tiny.glb'), '--manifest-dir', f.contract],
+      { cwd: ROOT, encoding: 'utf8', timeout: 20000, env: { PATH: path.dirname(process.execPath) } }
+    );
+    expect(r.status).toBe(3);
+  });
+
+  it('a shipped path that does not exist is refused, not reported as zero drift', () => {
+    const f = setup({});
+    const r = spawnSync(
+      process.execPath,
+      [COMPARE, path.join(f.build, 'tiny.glb'), path.join(f.models, 'nosuch.glb'), '--manifest-dir', f.contract],
+      { cwd: ROOT, encoding: 'utf8', timeout: 20000, env: { PATH: path.dirname(process.execPath) } }
+    );
+    expect(r.status).toBe(3);
+    expect(r.stdout).not.toContain('Zero drift');
+  });
+
+  it('an unknown budget key fails the manifest', () => {
+    const manifest = tinyManifest() as { budget: Record<string, number> };
+    manifest.budget = { triangle: 1 };
+    expect(compare({ manifest }).status).toBe(3);
+  });
 });
 
 // ---------------------------------------------------------------------------------------------
@@ -447,6 +476,33 @@ describe('models-promote', () => {
     expect(r.status, r.stdout + r.stderr).toBe(0);
     expect(JSON.parse(fs.readFileSync(path.join(r.contract, 'tiny.json'), 'utf8'))).toEqual(pending);
     expect(fs.existsSync(path.join(r.contract, 'pending', 'tiny.json'))).toBe(false);
+  });
+
+  it('refuses a built file byte-identical to the shipped one', () => {
+    const r = promote({});
+    expect(r.status).not.toBe(0);
+    expect(r.stderr).toContain('byte-identical');
+  });
+
+  it('never writes a .blend outside an explicit --blend-dir', () => {
+    const f = setup({ shipped: buildTinySkin() });
+    fs.writeFileSync(path.join(f.build, 'tiny.blend'), 'blend bytes');
+    const run = (extra: string[]) =>
+      spawnSync(
+        process.execPath,
+        [PROMOTE, 'tiny', '--yes', '--build-dir', f.build, '--models-dir', f.models, '--manifest-dir', f.contract, ...extra],
+        { cwd: ROOT, encoding: 'utf8', timeout: 20000, env: { PATH: path.dirname(process.execPath) } }
+      );
+    const real = path.join(ROOT, 'blender', 'tiny.blend');
+    const r = run([]);
+    expect(r.status, r.stdout + r.stderr).toBe(0);
+    expect(fs.existsSync(real)).toBe(false);
+    const bl = path.join(dir, 'blend-out');
+    fs.mkdirSync(bl);
+    fs.writeFileSync(path.join(f.models, 'tiny.glb'), packGlb(buildTinySkin()));
+    const r2 = run(['--blend-dir', bl]);
+    expect(r2.status, r2.stdout + r2.stderr).toBe(0);
+    expect(fs.readFileSync(path.join(bl, 'tiny.blend'), 'utf8')).toBe('blend bytes');
   });
 
   it.each(['nosuch', '../tiny', 'tiny.glb'])('refuses a name not in the manifest (%s)', (name) => {

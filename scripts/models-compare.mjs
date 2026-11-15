@@ -87,7 +87,11 @@ function run() {
 
   // Read shipped GLB if provided and exists
   let shipped = null;
-  if (shippedPath && fs.existsSync(shippedPath)) {
+  if (shippedPath && !fs.existsSync(shippedPath)) {
+    console.error(`Shipped file not found: ${shippedPath}`);
+    process.exit(3);
+  }
+  if (shippedPath) {
     try {
       shipped = readGlb(shippedPath);
     } catch (err) {
@@ -497,9 +501,14 @@ function run() {
       brotliBytes: built.brotliBytes
     };
 
+    for (const metric of Object.keys(manifest.budget)) {
+      if (!(metric in actualBudget)) {
+        throw new Error(`Manifest budget has unknown key '${metric}'`);
+      }
+    }
     for (const [metric, ceiling] of Object.entries(manifest.budget)) {
       const actual = actualBudget[metric];
-      if (actual !== undefined && actual > ceiling) {
+      if (actual > ceiling) {
         budgetErrors.push(
           `Budget ceiling exceeded for '${metric}': actual ${actual} > ceiling ${ceiling}`
         );

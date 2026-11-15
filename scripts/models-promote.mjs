@@ -4,11 +4,17 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+function sha256(b) {
+  return createHash('sha256').update(b).digest('hex');
+}
+
 function parseArgs() {
   const args = process.argv.slice(2);
   let yes = false;
   let buildDir = path.resolve('scratch/models-build');
   let modelsDir = path.resolve('public/models');
+  let blendDir = null;
+  let blendDirGiven = false;
   let manifestDir = path.resolve('tests/fixtures/model-contract');
   const positional = [];
 
@@ -24,6 +30,12 @@ function parseArgs() {
       modelsDir = path.resolve(args[++i]);
     } else if (arg.startsWith('--models-dir=')) {
       modelsDir = path.resolve(arg.slice('--models-dir='.length));
+    } else if (arg === '--blend-dir') {
+      blendDir = path.resolve(args[++i]);
+      blendDirGiven = true;
+    } else if (arg.startsWith('--blend-dir=')) {
+      blendDir = path.resolve(arg.slice('--blend-dir='.length));
+      blendDirGiven = true;
     } else if (arg === '--manifest-dir') {
       manifestDir = path.resolve(args[++i]);
     } else if (arg.startsWith('--manifest-dir=')) {
@@ -33,12 +45,16 @@ function parseArgs() {
     }
   }
 
+  // The .blend is only written to blender/ on a fully default run; any override needs its own --blend-dir.
+  if (!blendDirGiven && buildDir === path.resolve('scratch/models-build') && modelsDir === path.resolve('public/models')) {
+    blendDir = path.resolve('blender');
+  }
   const name = positional[0];
-  return { name, yes, buildDir, modelsDir, manifestDir };
+  return { name, yes, buildDir, modelsDir, manifestDir, blendDir };
 }
 
 function main() {
-  const { name, yes, buildDir, modelsDir, manifestDir } = parseArgs();
+  const { name, yes, buildDir, modelsDir, manifestDir, blendDir } = parseArgs();
 
   if (!name || !/^[a-zA-Z0-9_-]+$/.test(name)) {
     console.error(`Invalid model name '${name}': must match /^[a-zA-Z0-9_-]+$/`);
@@ -66,18 +82,30 @@ function main() {
     process.exit(1);
   }
 
+  if (
+    fs.existsSync(targetGlb) &&
+    sha256(fs.readFileSync(builtGlb)) === sha256(fs.readFileSync(targetGlb))
+  ) {
+    console.error(`Built ${name}.glb is byte-identical to the shipped file; a rebuild that changes nothing is never promoted.`);
+    process.exit(1);
+  }
+
   // Run compare
   const currentDir = path.dirname(fileURLToPath(import.meta.url));
   const compareScript = path.join(currentDir, 'models-compare.mjs');
   const compareRes = spawnSync(
     process.execPath,
     [compareScript, builtGlb, targetGlb, '--manifest-dir', manifestDir],
-    { encoding: 'utf8' }
+    { encoding: 'utf8', timeout: 20000 }
   );
 
   if (compareRes.stdout) process.stdout.write(compareRes.stdout);
   if (compareRes.stderr) process.stderr.write(compareRes.stderr);
 
+  if (compareRes.error) {
+    console.error(`Compare did not finish: ${compareRes.error.message}; promotion aborted.`);
+    process.exit(1);
+  }
   if (compareRes.status !== 0) {
     console.error(`Compare failed with exit code ${compareRes.status}; promotion aborted.`);
     process.exit(compareRes.status || 1);
@@ -91,8 +119,8 @@ function main() {
 
   // Copy .blend if present in buildDir and blender directory exists
   const builtBlend = path.join(buildDir, `${name}.blend`);
-  const blenderDir = path.resolve('blender');
-  if (fs.existsSync(blenderDir) && fs.existsSync(builtBlend)) {
+  const blenderDir = blendDir;
+  if (blenderDir && fs.existsSync(blenderDir) && fs.existsSync(builtBlend)) {
     const targetBlend = path.join(blenderDir, `${name}.blend`);
     const tmpBlend = `${targetBlend}.tmp`;
     fs.copyFileSync(builtBlend, tmpBlend);

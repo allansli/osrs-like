@@ -145,6 +145,12 @@ export function readGlb(input) {
   if (json.accessors) {
     for (let i = 0; i < json.accessors.length; i++) {
       const acc = json.accessors[i];
+      if (!Number.isInteger(acc.count) || acc.count < 0) {
+        throw new Error(`Accessor ${i} has invalid count ${acc.count}`);
+      }
+      if (acc.byteOffset !== undefined && (!Number.isInteger(acc.byteOffset) || acc.byteOffset < 0)) {
+        throw new Error(`Accessor ${i} has invalid byteOffset ${acc.byteOffset}`);
+      }
       if (acc.bufferView !== undefined) {
         if (!json.bufferViews || !json.bufferViews[acc.bufferView]) {
           throw new Error(`Accessor ${i} references missing bufferView ${acc.bufferView}`);
