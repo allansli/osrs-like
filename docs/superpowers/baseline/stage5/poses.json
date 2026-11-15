@@ -1,0 +1,165 @@
+[
+  {
+    "id": "P1",
+    "place": "lumbridge",
+    "yaw": 1.571,
+    "pitch": 0.2,
+    "distance": 8,
+    "times": [
+      "noon",
+      "golden",
+      "night"
+    ]
+  },
+  {
+    "id": "P2",
+    "place": "millrace_road",
+    "yaw": -1.571,
+    "pitch": 0.3,
+    "distance": 10,
+    "times": [
+      "dawn",
+      "noon"
+    ]
+  },
+  {
+    "id": "P3",
+    "place": "wardstone_cairn",
+    "yaw": -1.144,
+    "pitch": 0.25,
+    "distance": 9,
+    "times": [
+      "golden"
+    ]
+  },
+  {
+    "id": "P4",
+    "place": "cinderstep_pass",
+    "yaw": 0,
+    "pitch": 0.2,
+    "distance": 6,
+    "times": [
+      "night"
+    ]
+  },
+  {
+    "id": "P5",
+    "place": "wilderness",
+    "yaw": 0,
+    "pitch": 0.25,
+    "distance": 10,
+    "times": [
+      "noon",
+      "night"
+    ]
+  },
+  {
+    "id": "P6",
+    "place": "reedglass_tarn",
+    "yaw": 0,
+    "pitch": 0.3,
+    "distance": 9,
+    "times": [
+      "dawn"
+    ],
+    "weather": "rain"
+  },
+  {
+    "id": "P7",
+    "place": "tamarisk_pool",
+    "yaw": 0,
+    "pitch": 0.3,
+    "distance": 9,
+    "times": [
+      "noon",
+      "golden"
+    ],
+    "weather": "haze"
+  },
+  {
+    "id": "P8",
+    "place": "lampwrights_hollow",
+    "yaw": 0,
+    "pitch": 0.25,
+    "distance": 8,
+    "times": [
+      "noon",
+      "night"
+    ]
+  },
+  {
+    "id": "P9",
+    "place": "varrock",
+    "yaw": 0,
+    "pitch": 0.3,
+    "distance": 10,
+    "times": [
+      "noon"
+    ],
+    "weather": "overcast"
+  },
+  {
+    "id": "P10",
+    "place": "three_kettle_camp",
+    "yaw": 0,
+    "pitch": 0.12,
+    "distance": 26,
+    "times": [
+      "noon"
+    ],
+    "yaws": [
+      0.0,
+      0.785,
+      1.571,
+      2.356,
+      3.142,
+      3.927,
+      4.712,
+      5.498
+    ],
+    "fromCorner": true
+  },
+  {
+    "id": "P11",
+    "place": "lumbridge",
+    "yaw": 1.571,
+    "pitch": 0.2,
+    "distance": 8,
+    "times": [
+      "noon"
+    ],
+    "viewports": [
+      {
+        "width": 1280,
+        "height": 720,
+        "ratio": 1
+      },
+      {
+        "width": 1920,
+        "height": 1080,
+        "ratio": 1
+      },
+      {
+        "width": 3840,
+        "height": 2160,
+        "ratio": 1
+      },
+      {
+        "width": 1920,
+        "height": 1080,
+        "ratio": 2
+      }
+    ]
+  },
+  {
+    "id": "P12",
+    "place": "lumbridge",
+    "yaw": 1.571,
+    "pitch": 0.2,
+    "distance": 8,
+    "times": [
+      "noon"
+    ],
+    "walk": 30
+  }
+]
