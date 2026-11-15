@@ -6,13 +6,20 @@ import type { MonsterDef } from '../data/world';
 import type { MonsterLogic } from '../state/monsterAi';
 import type { WalkGrid } from '../state/pathfind';
 import type { TelegraphInstance } from './telegraphs';
+import { COMBAT_REST_SECS, type DeathOutcome } from '../state/sustain';
+import type { CommandClocks } from '../state/commands';
 
 export const TICK_SEC = 0.6;
+
+export const commandClocks: CommandClocks = {
+  food: { readyAt: 0 },
+  potion: { readyAt: 0 }
+};
 
 export type PlayerTargetEntity =
   | { type: 'monster'; ref: MonsterEntity; pos?: THREE.Vector3; madeAt: [number, number] }
   | { type: 'resource'; ref: ResourceNodeEntity; pos?: THREE.Vector3 }
-  | { type: 'interactive'; ref: THREE.Object3D['userData']; pos?: THREE.Vector3 };
+  | { type: 'interactive'; ref: THREE.Object3D['userData']; pos?: THREE.Vector3; intent?: string };
 
 export interface PlayerState {
   pos: THREE.Vector3;
@@ -27,6 +34,7 @@ export interface PlayerState {
   attackAnim: number;
   spinAnim: number;
   actionCooldown: number;
+  sinceCombat: number;
   downed: boolean;
   downedTimer: number;
   meshGroup: THREE.Group | null;
@@ -40,6 +48,7 @@ export interface PlayerState {
   parts: any;
   blenderAnimator?: BlenderHeroAnimator | null;
   marks: { count: number; left: number };
+  deathOutcome?: DeathOutcome;
 }
 
 export const player: PlayerState = {
@@ -55,6 +64,7 @@ export const player: PlayerState = {
   attackAnim: 0,
   spinAnim: 0,
   actionCooldown: 0,
+  sinceCombat: COMBAT_REST_SECS + 1,
   downed: false,
   downedTimer: 0,
   meshGroup: null,
@@ -117,6 +127,7 @@ export const telemetryInfo: TelemetryInfo = {
 };
 
 export interface MonsterEntity extends MonsterEntityLike {
+  id: string;
   def: Omit<MonsterDef, 'drops'> & MonsterEntityLike['def'] & {
     drops: Array<{ id?: string; chance: number; gp?: [number, number]; qty?: number }>;
   };

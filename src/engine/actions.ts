@@ -1,7 +1,10 @@
 import * as THREE from 'three';
 import { WORLD_REGIONS, type RegionDef } from '../data/world';
 import { regionAt, getTerrainHeight } from '../state/terrain';
-import { player, camState, G, type MonsterEntity, type ResourceNodeEntity } from './context';
+import { player, camState, G, commandClocks, TICK_SEC, type MonsterEntity, type ResourceNodeEntity } from './context';
+import { planWalk, planEntityWalk, showClickMarker } from './input';
+import { applyCommand, type PlayerCommand, type CommandResult } from '../state/commands';
+import { applyDeathLoss, shouldRetaliate } from '../state/sustain';
 import { SFX } from './audio';
 import {
   spawnLevelUpFireworks,
@@ -19,7 +22,7 @@ import {
   spawnExpandingRing,
   spawnProjectile
 } from './vfx';
-import { addChatMessage, showBanner, updateTargetHud, updateAllUI, requestUiRefresh, el } from '../ui/hud';
+import { addChatMessage, showBanner, updateTargetHud, updateAllUI, updateSkillsPanel, refreshCombatStyleLocks, requestUiRefresh, el } from '../ui/hud';
 import { STATE } from '../state/gameState';
 import { prepareAttack, playerAttackProfile, playerHitChance, rollMonsterHit, rollMonsterAttack, addMark } from '../state/combat';
 import { creditGp, fishDepletes, gatherChance, rollDrops } from '../state/economy';
@@ -94,6 +97,81 @@ export function handleBossPhase(monster: MonsterEntity, phaseIndex: number): voi
   }
   spawnExpandingRing(monster.pos, 0xfde047);
   updateTargetHud();
+}
+
+export function dispatchCommand(cmd: PlayerCommand): CommandResult {
+  if (cmd.kind === 'move') {
+    const path = planWalk([cmd.x, cmd.z]);
+    if (!path) {
+      addChatMessage('You cannot walk there.', 'combat');
+      return { ok: false, reason: 'You cannot walk there.' };
+    }
+    player.targetEntity = null;
+    player.waypoints = path;
+    showClickMarker(cmd.x, cmd.z, 0xfde047);
+    updateTargetHud();
+    return { ok: true, reason: '' };
+  }
+
+  if (cmd.kind === 'attack') {
+    const m = G.monstersList.find((mon) => mon.id === cmd.targetId);
+    if (!m || isDown(m.logic)) {
+      return { ok: false, reason: 'Target is not available.' };
+    }
+    const stopDist =
+      STATE.combatStyle === 'rapid' || STATE.combatStyle === 'ranged' || STATE.combatStyle === 'magic'
+        ? 13.5
+        : 2.9;
+    const path = planEntityWalk([m.pos.x, m.pos.z], stopDist);
+    if (!path) {
+      addChatMessage('You cannot walk there.', 'combat');
+      return { ok: false, reason: 'You cannot walk there.' };
+    }
+    player.targetEntity = { type: 'monster', ref: m, madeAt: [m.pos.x, m.pos.z] };
+    player.waypoints = path;
+    showClickMarker(m.pos.x, m.pos.z, 0xef4444);
+    updateTargetHud();
+    return { ok: true, reason: '' };
+  }
+
+  const now = performance.now() / 1000;
+  const item =
+    cmd.kind === 'eat' || cmd.kind === 'drink'
+      ? STATE.inventory[cmd.slot]
+        ? ITEMS[STATE.inventory[cmd.slot].id]
+        : null
+      : null;
+  const res = applyCommand(STATE, cmd, commandClocks, now);
+  if (!res.ok) {
+    if (res.reason) {
+      addChatMessage(res.reason, 'combat');
+    }
+    if (cmd.kind === 'style') {
+      refreshCombatStyleLocks();
+    }
+    return res;
+  }
+
+  if (cmd.kind === 'eat') {
+    player.actionCooldown = Math.max(player.actionCooldown, TICK_SEC);
+    SFX.eat();
+    const itemName = item ? item.name : 'food';
+    const healed = res.restored ?? 1;
+    addChatMessage(`You eat the <b>${itemName}</b> and restore ${healed} Hitpoints.`, 'skill');
+    spawnHitSplatOnPlayer(healed, 'heal');
+    updateAllUI();
+  } else if (cmd.kind === 'drink') {
+    SFX.prayer();
+    const itemName = item ? item.name : 'potion';
+    addChatMessage(`You drink the <b>${itemName}</b> and restore your Prayer energy.`, 'skill');
+    updateAllUI();
+  } else if (cmd.kind === 'style') {
+    refreshCombatStyleLocks();
+    updateAllUI();
+  } else {
+    updateAllUI();
+  }
+  return res;
 }
 
 export function performPlayerAttack(monster: MonsterEntity): void {
@@ -265,6 +343,8 @@ export function performPlayerAttack(monster: MonsterEntity): void {
     requestUiRefresh();
   };
 
+  player.sinceCombat = 0;
+
   if ((style === 'rapid' || style === 'ranged')) {
     if (wepKind === 'crossbow') SFX.crossbow();
     else SFX.bow();
@@ -329,8 +409,25 @@ export function handleMonsterDeath(monster: MonsterEntity): void {
   requestUiRefresh();
 }
 
+function maybeRetaliate(monster: MonsterEntity): void {
+  const hasTarget = player.targetEntity !== null;
+  const walking = player.isMoving || player.waypoints.length > 0;
+  const keyHeld = !!(
+    G.keysPressed['KeyW'] || G.keysPressed['KeyA'] || G.keysPressed['KeyS'] || G.keysPressed['KeyD'] ||
+    G.keysPressed['ArrowUp'] || G.keysPressed['ArrowLeft'] || G.keysPressed['ArrowDown'] || G.keysPressed['ArrowRight']
+  );
+  const downed = player.downed;
+  const windupLive = G.monstersList.some(
+    (m) => (m.logic.state === 'chase' || m.logic.state === 'attack') && m.logic.windup !== null
+  );
+  if (shouldRetaliate({ hasTarget, walking, keyHeld, downed, windupLive })) {
+    dispatchCommand({ kind: 'attack', targetId: monster.id });
+  }
+}
+
 export function performMonsterRetaliation(monster: MonsterEntity): void {
   if (isDown(monster.logic) || player.downed || STATE.hp <= 0) return;
+  player.sinceCombat = 0;
   monster.logic.breathCount = (monster.logic.breathCount || 0) + 1;
   const { dmg, dragonfire, absorbed: absorbedBreath } = rollMonsterHit(
     monster.typeKey,
@@ -341,6 +438,7 @@ export function performMonsterRetaliation(monster: MonsterEntity): void {
   monster.attackAnim = 1;
 
   const applyHit = (): void => {
+    player.sinceCombat = 0;
     if (absorbedBreath) {
       addChatMessage("Your shield / prayer absorbs most of Elvarg's dragonfire!", 'skill');
     }
@@ -349,9 +447,14 @@ export function performMonsterRetaliation(monster: MonsterEntity): void {
       spawnHitSplatOnPlayer(dmg, hitSplatKind(dmg, monster.def.maxHit));
       if (STATE.hp <= 0) {
         handlePlayerDeath();
+      } else {
+        maybeRetaliate(monster);
       }
     } else {
       spawnHitSplatOnPlayer(0, 'miss');
+      if (absorbedBreath) {
+        maybeRetaliate(monster);
+      }
     }
     requestUiRefresh();
   };
@@ -382,6 +485,7 @@ export function performMonsterRetaliation(monster: MonsterEntity): void {
 
 export function performMonsterHeavy(monster: MonsterEntity, attackId: string): void {
   if (isDown(monster.logic) || player.downed || STATE.hp <= 0) return;
+  player.sinceCombat = 0;
   const attack = ATTACKS[attackId];
   const marks = player.marks;
   const boss = BOSSES[monster.logic.typeKey];
@@ -396,6 +500,8 @@ export function performMonsterHeavy(monster: MonsterEntity, attackId: string): v
     spawnHitSplatOnPlayer(dmg, 'heavy');
     if (STATE.hp <= 0) {
       handlePlayerDeath();
+    } else {
+      maybeRetaliate(monster);
     }
   } else {
     spawnHitSplatOnPlayer(0, 'miss');
@@ -413,12 +519,17 @@ export function handlePlayerDeath(): void {
   player.marks.left = 0;
   STATE.hp = 0;
   STATE.activePrayers.clear();
-  const notice = deathNotice();
+  const outcome = applyDeathLoss(STATE);
+  player.deathOutcome = outcome;
+  const notice = deathNotice(outcome);
   const overlay = el('death-overlay');
   overlay.hidden = false;
   el('death-title').textContent = notice.title;
   el('death-body').textContent = notice.body;
   el('death-count').textContent = String(Math.ceil(RESPAWN_SECONDS));
+  if (outcome.kind === 'lost') {
+    updateSkillsPanel();
+  }
   updateAllUI();
 }
 
@@ -436,7 +547,10 @@ export function finishRespawn(): void {
     camState.manualOffset = 0;
     triggerRegionBanner(reg);
   }
-  addChatMessage(`<b>${deathNotice().title}</b> ${deathNotice().body}`, 'combat');
+  const outcome = player.deathOutcome;
+  const notice = deathNotice(outcome);
+  delete player.deathOutcome;
+  addChatMessage(`<b>${notice.title}</b> ${notice.body}`, 'combat');
   updateAllUI();
 }
 

@@ -22,7 +22,8 @@ import {
 } from './stations';
 import { cycleTimeOfDay } from '../engine/worldMesh';
 import { isDown } from '../state/monsterAi';
-import { player, type MonsterEntity, type ResourceNodeEntity } from '../engine/context';
+import { player, commandClocks, type MonsterEntity, type ResourceNodeEntity } from '../engine/context';
+import { FOOD_CD_SECS, POTION_CD_SECS } from '../state/sustain';
 import {
   handleInventoryClick,
   showSellChooseMenu,
@@ -162,6 +163,69 @@ export function updateVitalsBars(): void {
   el('prayer-text').textContent = `${Math.ceil(STATE.prayerPts)} / ${STATE.maxPrayerPts}`;
   el('spec-fill').style.width = STATE.specEnergy + '%';
   el('spec-text').textContent = `Special ${Math.floor(STATE.specEnergy)}%`;
+  const lanternEl = document.getElementById('lantern-mark');
+  if (lanternEl) {
+    lanternEl.hidden = !STATE.quests.lanternVow;
+  }
+  updateCooldownOverlays();
+}
+
+export function updateCooldownOverlays(): void {
+  const now = typeof performance !== 'undefined' ? performance.now() / 1000 : 0;
+  const foodRatio = Math.max(0, Math.min(1, (commandClocks.food.readyAt - now) / FOOD_CD_SECS));
+  const potionRatio = Math.max(0, Math.min(1, (commandClocks.potion.readyAt - now) / POTION_CD_SECS));
+
+  const invGrid = document.getElementById('inventory-grid');
+  if (!invGrid) return;
+  const slotDivs = invGrid.querySelectorAll<HTMLElement>('.inv-slot');
+  slotDivs.forEach((slotDiv, i) => {
+    const entry = STATE.inventory[i];
+    if (!entry) return;
+    const it = (ITEMS as Record<string, ItemDef>)[entry.id];
+    if (!it) return;
+    if (it.type === 'food') {
+      slotDiv.classList.toggle('cooldown', foodRatio > 0);
+      slotDiv.style.setProperty('--cd', String(foodRatio));
+      const overlay = slotDiv.querySelector<HTMLElement>('.cooldown-overlay');
+      if (overlay) {
+        overlay.style.setProperty('--cd', String(foodRatio));
+      }
+    } else if (it.type === 'potion') {
+      slotDiv.classList.toggle('cooldown', potionRatio > 0);
+      slotDiv.style.setProperty('--cd', String(potionRatio));
+      const overlay = slotDiv.querySelector<HTMLElement>('.cooldown-overlay');
+      if (overlay) {
+        overlay.style.setProperty('--cd', String(potionRatio));
+      }
+    }
+  });
+}
+
+export function updateSkillsPanel(): void {
+  const skillsGrid = el('skills-grid');
+  skillsGrid.innerHTML = '';
+  let totalLvl = 0;
+  let totalXp = 0;
+  for (const [key, meta] of Object.entries(SKILLS_META)) {
+    const sk = STATE.skills[key];
+    totalLvl += sk.lvl;
+    totalXp += sk.xp;
+    const nextLvlXp = OSRS_XP_TABLE[Math.min(99, sk.lvl + 1)];
+    const box = document.createElement('div');
+    box.className = 'skill-box';
+    box.title = `${meta.name}: ${sk.xp.toLocaleString()} XP (Next level at ${nextLvlXp.toLocaleString()} XP)\n${meta.desc}`;
+    box.onclick = () => openXpTableModal(key);
+    box.innerHTML = `
+      <div class="skill-left">
+        <span class="skill-icon-wrap">${getSkillSvg(key)}</span>
+        <span class="skill-name">${meta.name}</span>
+      </div>
+      <span class="skill-lvl">${sk.lvl}</span>
+    `;
+    skillsGrid.appendChild(box);
+  }
+  el('total-lvl-val').textContent = String(totalLvl);
+  el('total-xp-val').textContent = `${totalXp.toLocaleString()} XP`;
 }
 
 export function updateAllUI(): void {
@@ -220,6 +284,17 @@ export function updateAllUI(): void {
       if (it.tier && (TIER_COLORS as Record<string, string>)[it.tier]) {
         slotDiv.innerHTML += `<span class="item-tier-dot" style="background:${(TIER_COLORS as Record<string, string>)[it.tier]}"></span>`;
       }
+      if (it.type === 'food' || it.type === 'potion') {
+        const now = typeof performance !== 'undefined' ? performance.now() / 1000 : 0;
+        const cd = it.type === 'food' ? commandClocks.food.readyAt - now : commandClocks.potion.readyAt - now;
+        const maxCd = it.type === 'food' ? FOOD_CD_SECS : POTION_CD_SECS;
+        const ratio = Math.max(0, Math.min(1, cd / maxCd));
+        if (ratio > 0) {
+          slotDiv.classList.add('cooldown');
+        }
+        slotDiv.style.setProperty('--cd', String(ratio));
+        slotDiv.innerHTML += `<div class="cooldown-overlay" style="--cd: ${ratio}"></div>`;
+      }
       let statsInfo = '';
       if (it.type === 'equip') {
         const st: string[] = [];
@@ -247,31 +322,7 @@ export function updateAllUI(): void {
     invGrid.appendChild(slotDiv);
   }
 
-  // Skills Grid
-  const skillsGrid = el('skills-grid');
-  skillsGrid.innerHTML = '';
-  let totalLvl = 0;
-  let totalXp = 0;
-  for (const [key, meta] of Object.entries(SKILLS_META)) {
-    const sk = STATE.skills[key];
-    totalLvl += sk.lvl;
-    totalXp += sk.xp;
-    const nextLvlXp = OSRS_XP_TABLE[Math.min(99, sk.lvl + 1)];
-    const box = document.createElement('div');
-    box.className = 'skill-box';
-    box.title = `${meta.name}: ${sk.xp.toLocaleString()} XP (Next level at ${nextLvlXp.toLocaleString()} XP)\n${meta.desc}`;
-    box.onclick = () => openXpTableModal(key);
-    box.innerHTML = `
-      <div class="skill-left">
-        <span class="skill-icon-wrap">${getSkillSvg(key)}</span>
-        <span class="skill-name">${meta.name}</span>
-      </div>
-      <span class="skill-lvl">${sk.lvl}</span>
-    `;
-    skillsGrid.appendChild(box);
-  }
-  el('total-lvl-val').textContent = String(totalLvl);
-  el('total-xp-val').textContent = `${totalXp.toLocaleString()} XP`;
+  updateSkillsPanel();
 
   // Full 10-Slot Equipment Paperdoll (3x4 layout)
   const doll = el('equip-doll');

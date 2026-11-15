@@ -50,7 +50,8 @@ import { moveWithCollision } from '../state/collision';
 import { inCombat, isDown, isPlayerSafe, stepMonster, tickWindupGates } from '../state/monsterAi';
 import { getTerrainHeight } from '../state/terrain';
 import { discoverShrines } from '../state/shrines';
-import { HP_REGEN_PER_SEC } from '../state/economy';
+import { combatLevel } from '../state/adventure';
+import { regenRate, buyVow, vowPrice, DEATH_MIN_COMBAT } from '../state/sustain';
 import { entityAim, escapeStall, shouldRepath, STALL_SEC, stallTime, walkSpent } from '../state/pathfind';
 import { CAMPS } from '../data/worldMap';
 import {
@@ -114,11 +115,19 @@ export function updateVitalsAndRegen(f: FrameState): void {
   if (G.skyUniforms) G.skyUniforms.uTime.value = f.elapsedSec;
   if (G.skyDomeMesh) G.skyDomeMesh.position.copy(player.pos);
 
+  player.sinceCombat += f.dt;
+  const targetingHeroWithWindup = G.monstersList.some(
+    m => (m.logic.state === 'chase' || m.logic.state === 'attack') && m.logic.windup !== null
+  );
+  if (targetingHeroWithWindup) {
+    player.sinceCombat = 0;
+  }
+
   if (STATE.specEnergy < 100) {
     STATE.specEnergy = Math.min(100, STATE.specEnergy + f.dt * 2.5);
   }
   if (STATE.hp < STATE.maxHp && STATE.hp > 0) {
-    STATE.hp = Math.min(STATE.maxHp, STATE.hp + f.dt * HP_REGEN_PER_SEC);
+    STATE.hp = Math.min(STATE.maxHp, STATE.hp + regenRate(player.sinceCombat) * f.dt);
   }
   if (STATE.activePrayers.size > 0) {
     let drainRate = 0;
@@ -225,12 +234,28 @@ export function updatePlayerIntent(f: FrameState): void {
             addChatMessage(`${name}: "${dlg}"`, 'combat');
           }
           else if (act === 'altar') {
-            STATE.prayerPts = STATE.maxPrayerPts;
-            STATE.hp = STATE.maxHp;
-            SFX.prayer();
-            spawnLevelUpFireworks(0x38bdf8);
-            addChatMessage('You pray at the sacred Altar. Your Prayer points and Hitpoints are fully restored!', 'skill');
-            updateAllUI();
+            if (target.intent === 'vow') {
+              const res = buyVow(STATE);
+              if (res.ok) {
+                SFX.prayer();
+                spawnLevelUpFireworks(0xfde047);
+                addChatMessage('You take the Lantern Vow. A light guards your path.', 'skill');
+              } else {
+                addChatMessage(res.reason, 'combat');
+              }
+              updateAllUI();
+            } else {
+              STATE.prayerPts = STATE.maxPrayerPts;
+              STATE.hp = STATE.maxHp;
+              SFX.prayer();
+              spawnLevelUpFireworks(0x38bdf8);
+              addChatMessage('You pray at the sacred Altar. Your Prayer points and Hitpoints are fully restored!', 'skill');
+              if (combatLevel(STATE) >= DEATH_MIN_COMBAT && !STATE.quests.lanternVow) {
+                const price = vowPrice(STATE);
+                addChatMessage(`A Lantern Vow costs ${price} coins. Right-click the Altar to take the vow.`, 'skill');
+              }
+              updateAllUI();
+            }
           }
         } else if (player.actionCooldown <= 0) {
           if (target.type === 'monster') {
@@ -609,6 +634,7 @@ export function updateMonsters(f: FrameState): void {
         clearTelegraph(m);
       } else if (ev.kind === 'resolve') {
         clearTelegraph(m);
+        player.sinceCombat = 0;
         if (ev.hit) {
           performMonsterHeavy(m, ev.attackId);
         }
@@ -666,7 +692,10 @@ export function updateMonsters(f: FrameState): void {
         poseMonsterLimbs(m, true, f.now, f.dt);
       } else {
         poseMonsterLimbs(m, false, f.now, f.dt);
-        if (events.some(e => e.kind === 'attack')) performMonsterRetaliation(m);
+        if (events.some(e => e.kind === 'attack')) {
+          player.sinceCombat = 0;
+          performMonsterRetaliation(m);
+        }
       }
     } else if (L.state === 'return') {
       const dx = L.homeX - fromX;

@@ -33,6 +33,8 @@ interface ResourceNodeDef {
   scale?: number;
 }
 
+let nextMonsterId = 1;
+
 export function spawnMonster(
   typeKey: string,
   x: number,
@@ -57,10 +59,12 @@ export function spawnMonster(
   `;
   el('world-labels').appendChild(labelEl);
 
+  const id = `monster_${nextMonsterId++}`;
   const logic = createMonsterLogic(typeKey, x, z, opts);
   logic.wanderTimer = Math.random() * 3;
   const modelKey = def.model ?? typeKey;
   const mObj: MonsterEntity = {
+    id,
     typeKey,
     modelKey,
     def,
