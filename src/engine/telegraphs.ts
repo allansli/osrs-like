@@ -10,6 +10,7 @@ import type { MonsterEntity } from './context';
 export interface TelegraphInstance {
   monster: MonsterEntity;
   group: THREE.Group;
+  haloMesh: THREE.Mesh;
   outlineMesh: THREE.Mesh;
   fillMesh: THREE.Mesh;
   durationSecs: number;
@@ -217,23 +218,14 @@ function updateTelegraphProgress(t: TelegraphInstance, p: number): void {
   t.fillMesh.visible = p > 0.001;
 }
 
-export function showTelegraph(
-  monster: MonsterEntity,
-  event: { kind: 'windup'; attackId: string; ox: number; oz: number; dx: number; dz: number; ms: number }
-): void {
-  if (monster.telegraph) {
-    clearTelegraph(monster);
-  }
-
-  const attack = ATTACKS[event.attackId];
-
-  const shape = attack.shape;
-  const rawLoops = shapeOutline(shape, 64);
-
-  // Build outline triangle band geometry (~0.15 wide)
-  const outlinePositions: number[] = [];
-  const outlineIndices: number[] = [];
-  const hw = 0.075;
+// Triangle band of half-width hw around every outline loop, lifted onto the terrain.
+function buildBandGeometry(
+  rawLoops: Array<Array<[number, number]>>,
+  event: { ox: number; oz: number; dx: number; dz: number },
+  hw: number
+): THREE.BufferGeometry {
+  const positions: number[] = [];
+  const indices: number[] = [];
 
   for (const rawLoop of rawLoops) {
     const subLoop = subdivideLocalLoop(rawLoop, 1.0);
@@ -241,7 +233,7 @@ export function showTelegraph(
     const N = worldLoop.length - 1;
     if (N < 2) continue;
 
-    const loopStartIndex = outlinePositions.length / 3;
+    const loopStartIndex = positions.length / 3;
 
     for (let i = 0; i < N; i++) {
       const cur = worldLoop[i];
@@ -277,43 +269,69 @@ export function showTelegraph(
 
       const lx = cur[0] + mX * w;
       const lz = cur[1] + mZ * w;
-      const ly = getTerrainHeight(lx, lz) + 0.06;
-
       const rx = cur[0] - mX * w;
       const rz = cur[1] - mZ * w;
-      const ry = getTerrainHeight(rx, rz) + 0.06;
-
-      outlinePositions.push(lx, ly, lz);
-      outlinePositions.push(rx, ry, rz);
+      positions.push(lx, getTerrainHeight(lx, lz) + 0.06, lz);
+      positions.push(rx, getTerrainHeight(rx, rz) + 0.06, rz);
     }
 
     for (let i = 0; i < N; i++) {
       const next = (i + 1) % N;
       const a1 = loopStartIndex + i * 2;
-      const a2 = loopStartIndex + i * 2 + 1;
+      const a2 = a1 + 1;
       const b1 = loopStartIndex + next * 2;
-      const b2 = loopStartIndex + next * 2 + 1;
-      outlineIndices.push(a1, a2, b1, b1, a2, b2);
+      const b2 = b1 + 1;
+      indices.push(a1, a2, b1, b1, a2, b2);
     }
   }
 
-  const outlineGeom = new THREE.BufferGeometry();
-  outlineGeom.setAttribute('position', new THREE.Float32BufferAttribute(outlinePositions, 3));
-  outlineGeom.setIndex(outlineIndices);
+  const geom = new THREE.BufferGeometry();
+  geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geom.setIndex(indices);
+  return geom;
+}
+
+export function showTelegraph(
+  monster: MonsterEntity,
+  event: { kind: 'windup'; attackId: string; ox: number; oz: number; dx: number; dz: number; ms: number }
+): void {
+  if (monster.telegraph) {
+    clearTelegraph(monster);
+  }
+
+  const attack = ATTACKS[event.attackId];
+
+  const shape = attack.shape;
+  const rawLoops = shapeOutline(shape, 64);
+
+  const outlineGeom = buildBandGeometry(rawLoops, event, 0.11);
+  const haloGeom = buildBandGeometry(rawLoops, event, 0.11 + 0.12);
+
+  // Halo and band ignore depth so a canopy or a prop never hides the edge; the halo is drawn first.
+  const haloMat = new THREE.MeshBasicMaterial({
+    color: 0x140a08,
+    transparent: true,
+    opacity: 0.75,
+    fog: false,
+    depthTest: false,
+    depthWrite: false,
+    side: THREE.DoubleSide
+  });
+  const haloMesh = new THREE.Mesh(haloGeom, haloMat);
+  haloMesh.renderOrder = 998;
 
   const outlineMat = new THREE.MeshBasicMaterial({
     color: 0xef4444,
     transparent: true,
     opacity: 0.85,
     fog: false,
+    depthTest: false,
     depthWrite: false,
-    polygonOffset: true,
-    polygonOffsetFactor: -2,
-    polygonOffsetUnits: -2,
     side: THREE.DoubleSide
   });
 
   const outlineMesh = new THREE.Mesh(outlineGeom, outlineMat);
+  outlineMesh.renderOrder = 999;
 
   // Build fill mesh
   const fillData = buildFillData(shape);
@@ -339,6 +357,7 @@ export function showTelegraph(
   fillMesh.visible = false;
 
   const group = new THREE.Group();
+  group.add(haloMesh);
   group.add(outlineMesh);
   group.add(fillMesh);
 
@@ -348,6 +367,7 @@ export function showTelegraph(
   const instance: TelegraphInstance = {
     monster,
     group,
+    haloMesh,
     outlineMesh,
     fillMesh,
     durationSecs,
