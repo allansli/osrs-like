@@ -259,7 +259,7 @@ describe('models-compare: Contract is the built file against its manifest', () =
 
   it('a missing clip fails Contract', () => {
     const doc = buildTiny();
-    doc.json.animations = doc.json.animations.filter((a: any) => a.name !== 'Walk');
+    doc.json.animations = doc.json.animations.filter((a) => a.name !== 'Walk');
     const r = compare({ built: doc });
     expect(r.status).toBe(1);
     expect(section(r.stdout, 'Contract')).toContain('Walk');
@@ -268,7 +268,7 @@ describe('models-compare: Contract is the built file against its manifest', () =
   it.each(['TorsoCoat', 'Hair', 'Gear_trousers_legL_04_'])('a merged mesh that swallowed a toggled name (%s) fails Contract', (name) => {
     const doc = buildTiny();
     nodeOf(doc, name).name = 'Merged';
-    doc.json.meshes.find((m: any) => m.name === name).name = 'Merged';
+    doc.json.meshes.find((m) => m.name === name)!.name = 'Merged';
     const r = compare({ built: doc });
     expect(r.status).toBe(1);
     expect(section(r.stdout, 'Contract')).toContain(name);
@@ -279,6 +279,7 @@ describe('models-compare: Contract is the built file against its manifest', () =
     for (const vertexColor of ['all', 'none']) {
       const r = compare({ built: buildTiny({ colorMeshes: ['Head'] }), manifest: { ...tinyManifest(), vertexColor } });
       expect(r.status, vertexColor).toBe(1);
+      expect(section(r.stdout, 'Contract'), vertexColor).toContain('COLOR_0');
     }
   });
 });
@@ -310,11 +311,13 @@ describe('models-compare: skin rules on a tiny skinned fixture', () => {
   it('a vertex whose weights sum to 0.9 fails Contract', () => {
     const r = skin(buildTinySkin({ weights: [[0.9, 0, 0, 0], [0.5, 0.5, 0, 0], [0.25, 0.25, 0.25, 0.25]] }));
     expect(r.status).toBe(1);
+    expect(section(r.stdout, 'Contract')).toMatch(/WEIGHTS_0|vertex/);
   });
 
   it('a joint index outside the skin fails Contract', () => {
     const r = skin(buildTinySkin({ joints: [[0, 1, 0, 0], [2, 3, 0, 0], [4, 7, 0, 0]] }));
     expect(r.status).toBe(1);
+    expect(section(r.stdout, 'Contract')).toMatch(/JOINTS_0|joint/);
   });
 
   it('a shared clip with a position track on a bone other than Hips fails Contract', () => {
@@ -330,7 +333,7 @@ describe('models-compare: skin rules on a tiny skinned fixture', () => {
     ['scale', [2, 2, 2]]
   ])('a skinned root node with a %s fails Contract', (key, value) => {
     const doc = buildTinySkin();
-    nodeOf(doc, 'Monster_tiny')[key] = value;
+    Object.assign(nodeOf(doc, 'Monster_tiny'), { [key]: value });
     const r = skin(doc);
     expect(r.status).toBe(1);
     expect(section(r.stdout, 'Contract')).toContain('Monster_tiny');
@@ -342,7 +345,7 @@ describe('models-compare: skin rules on a tiny skinned fixture', () => {
     const doc = buildTinySkin();
     nodeOf(doc, 'LeftElbowPivot').translation = [-0.5, -0.2, 0];
     const manifest = tinySkinManifest();
-    manifest.skin.bones.LeftElbowPivot.translation = [-0.5, -0.2, 0];
+    manifest.skin!.bones.LeftElbowPivot.translation = [-0.5, -0.2, 0];
     expect(skin(doc, { ...manifest, skin: { ...manifest.skin, maxLimbDegrees: 90 } }).status).toBe(0);
     const r = skin(doc, manifest);
     expect(r.status).toBe(1);

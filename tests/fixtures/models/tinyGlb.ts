@@ -11,7 +11,41 @@
 //   skin?:       { skeleton, bones: { <bone>: { parent: <bone> | null, translation } }, skinnedRoots: [node names],
 //                  sharedClips: [clip names], limbs: [{ bone, child, direction: [x,y,z] }], maxLimbDegrees: number }
 //   budget:      { triangles, meshes, materials, rawBytes, brotliBytes }  (ceilings; equal passes, over fails)
-export type Doc = { json: any; bin: Buffer };
+export type GltfNode = { name: string; translation?: number[]; rotation?: number[]; scale?: number[]; mesh?: number; skin?: number; extras?: Record<string, unknown>; children?: number[] };
+export type GltfAccessor = { bufferView: number; componentType: number; count: number; type: string; min?: number[]; max?: number[] };
+export type GltfPrimitive = { attributes: Record<string, number>; indices: number; material: number };
+export type GltfAnimation = { name: string; samplers: { input: number; output: number; interpolation: string }[]; channels: { sampler: number; target: { node: number; path: string } }[] };
+export type GltfJson = {
+  asset: { version: string; generator: string };
+  scene: number;
+  scenes: { nodes: number[] }[];
+  nodes: GltfNode[];
+  meshes: { name: string; primitives: GltfPrimitive[] }[];
+  materials: { name: string; pbrMetallicRoughness: { baseColorFactor: number[] } }[];
+  accessors: GltfAccessor[];
+  bufferViews: { buffer: number; byteOffset: number; byteLength: number }[];
+  animations: GltfAnimation[];
+  buffers?: { byteLength: number }[];
+  skins?: { joints: number[]; inverseBindMatrices: number; skeleton: number }[];
+};
+/** The manifest shape documented at the top of this file. */
+export type Manifest = {
+  nodes: Record<string, { parent: string | null; translation: number[]; scale: number[] }>;
+  materials: string[];
+  toggled: string[];
+  vertexColor: string;
+  clips: Record<string, { moves: string[] }>;
+  skin?: {
+    skeleton: string;
+    bones: Record<string, { parent: string | null; translation: number[] }>;
+    skinnedRoots: string[];
+    sharedClips: string[];
+    limbs: { bone: string; child: string; direction: number[] }[];
+    maxLimbDegrees: number;
+  };
+  budget: { triangles: number; meshes: number; materials: number; rawBytes: number; brotliBytes: number };
+};
+export type Doc = { json: GltfJson; bin: Buffer };
 
 type Vec3 = [number, number, number];
 type NodeOpts = { t?: Vec3; r?: number[]; s?: Vec3; mesh?: number; skin?: number; extras?: Record<string, unknown> };
@@ -21,7 +55,7 @@ const U16 = 5123;
 const U8 = 5121;
 
 class Builder {
-  json: any = { asset: { version: '2.0', generator: 'tiny-fixture' }, scene: 0, scenes: [{ nodes: [0] }], nodes: [], meshes: [], materials: [], accessors: [], bufferViews: [], animations: [] };
+  json: GltfJson = { asset: { version: '2.0', generator: 'tiny-fixture' }, scene: 0, scenes: [{ nodes: [0] }], nodes: [], meshes: [], materials: [], accessors: [], bufferViews: [], animations: [] };
   parts: Buffer[] = [];
   len = 0;
   index = new Map<string, number>();
@@ -33,7 +67,7 @@ class Builder {
     this.json.bufferViews.push({ buffer: 0, byteOffset: this.len, byteLength: raw.length });
     this.parts.push(padded);
     this.len += padded.length;
-    const acc: any = { bufferView: this.json.bufferViews.length - 1, componentType, count, type };
+    const acc: GltfAccessor = { bufferView: this.json.bufferViews.length - 1, componentType, count, type };
     if (minmax) {
       const f = data as Float32Array;
       acc.min = [0, 0, 0].map((_, k) => Math.min(...Array.from({ length: count }, (_, v) => f[v * 3 + k])));
@@ -44,7 +78,7 @@ class Builder {
   }
 
   node(name: string, parent: string | null, o: NodeOpts = {}): number {
-    const n: any = { name };
+    const n: GltfNode = { name };
     if (o.t) n.translation = o.t;
     if (o.r) n.rotation = o.r;
     if (o.s) n.scale = o.s;
@@ -61,8 +95,8 @@ class Builder {
   }
 
   clip(name: string, channels: { node: string; path: 'rotation' | 'translation'; output: number }[], input: number) {
-    const samplers: any[] = [];
-    const chans: any[] = [];
+    const samplers: GltfAnimation['samplers'] = [];
+    const chans: GltfAnimation['channels'] = [];
     for (const c of channels) {
       samplers.push({ input, output: c.output, interpolation: 'LINEAR' });
       chans.push({ sampler: samplers.length - 1, target: { node: this.index.get(c.node)!, path: c.path } });
@@ -93,7 +127,7 @@ export function buildTiny(o: { colorMeshes?: 'all' | string[] } = {}): Doc {
   const quats = b.accessor(QUATS, F32, 'VEC4', 2);
   b.json.materials.push({ name: 'skin', pbrMetallicRoughness: { baseColorFactor: [0.8, 0.6, 0.5, 1] } }, { name: 'cloth', pbrMetallicRoughness: { baseColorFactor: [0.2, 0.3, 0.6, 1] } });
   const mesh = (name: string, material: number) => {
-    const attributes: any = { POSITION: pos };
+    const attributes: Record<string, number> = { POSITION: pos };
     if (o.colorMeshes === 'all' || (Array.isArray(o.colorMeshes) && o.colorMeshes.includes(name))) attributes.COLOR_0 = col;
     return b.json.meshes.push({ name, primitives: [{ attributes, indices: idx, material }] }) - 1;
   };
@@ -114,7 +148,7 @@ export function buildTiny(o: { colorMeshes?: 'all' | string[] } = {}): Doc {
 
 export const TINY_BUDGET = { triangles: 6, meshes: 6, materials: 2, rawBytes: 4096, brotliBytes: 4096 };
 
-export function tinyManifest(): any {
+export function tinyManifest(): Manifest {
   const n = (parent: string | null, translation: Vec3) => ({ parent, translation, scale: [1, 1, 1] });
   return {
     nodes: {
@@ -167,7 +201,7 @@ export function buildTinySkin(o: { weights?: number[][]; joints?: number[][]; wa
   b.json.meshes.push({ name: 'tinybody', primitives: [{ attributes: { POSITION: pos, JOINTS_0: joints, WEIGHTS_0: weights }, indices: idx, material: 0 }] });
   b.node('Monster_tiny', null);
   for (const j of SKIN_JOINTS) b.node(j, SKIN_PARENT[j], { t: SKIN_REST[j] });
-  b.json.skins = [{ joints: SKIN_JOINTS.map((j) => b.index.get(j)!), inverseBindMatrices: ibmAcc, skeleton: b.index.get('Root') }];
+  b.json.skins = [{ joints: SKIN_JOINTS.map((j) => b.index.get(j)!), inverseBindMatrices: ibmAcc, skeleton: b.index.get('Root')! }];
   b.node('Monster_tiny_body', 'Monster_tiny', { mesh: 0, skin: 0 });
   const walk = [
     ...(o.walkTranslationOn ?? ['Hips']).map((node) => ({ node, path: 'translation' as const, output: moves })),
@@ -179,7 +213,7 @@ export function buildTinySkin(o: { weights?: number[][]; joints?: number[][]; wa
   return b.done();
 }
 
-export function tinySkinManifest(): any {
+export function tinySkinManifest(): Manifest {
   const bone = (k: string) => ({ parent: SKIN_PARENT[k] === 'Monster_tiny' ? null : SKIN_PARENT[k], translation: SKIN_REST[k] });
   const d = SKIN_REST.LeftElbowPivot;
   const len = Math.hypot(d[0], d[1], d[2]);
@@ -201,8 +235,8 @@ export function tinySkinManifest(): any {
   };
 }
 
-export function nodeOf(doc: Doc, name: string): any {
-  const n = doc.json.nodes.find((x: any) => x.name === name);
+export function nodeOf(doc: Doc, name: string): GltfNode {
+  const n = doc.json.nodes.find((x) => x.name === name);
   if (!n) throw new Error(`fixture has no node ${name}`);
   return n;
 }
