@@ -3,15 +3,17 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { describe, expect, it } from 'vitest';
-// @ts-expect-error plain node script, no declaration file
-import { readGlb } from '../scripts/lib/glb.mjs';
 import { buildTinySkin, packGlb, tinySkinManifest, type Doc } from './fixtures/models/tinyGlb';
 
 const ROOT = path.resolve(__dirname, '..');
 const COMPARE = path.join(ROOT, 'scripts', 'models-compare.mjs');
 const CONTRACT = path.join(__dirname, 'fixtures', 'model-contract');
 const NAMES = ['hero', 'gear', 'monsters', 'guard', 'world'];
+// glb.mjs is a plain node script with no declaration file: a non-literal specifier and the shape this test reads.
+type ReadGlb = (p: string) => { json: unknown; rawBytes: number; brotliBytes: number };
+const { readGlb } = (await import(/* @vite-ignore */ pathToFileURL(path.join(ROOT, 'scripts', 'lib', 'glb.mjs')).href)) as { readGlb: ReadGlb };
 const totals = JSON.parse(fs.readFileSync(path.join(CONTRACT, 'totals.json'), 'utf8'));
 
 function compare(glb: string, manifestDir: string) {
