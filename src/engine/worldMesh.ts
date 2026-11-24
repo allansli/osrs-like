@@ -90,33 +90,7 @@ export function buildTerrainAndWater(): void {
   const geo = new THREE.PlaneGeometry(size, size, TERRAIN_SEGMENTS, TERRAIN_SEGMENTS);
   geo.rotateX(-Math.PI / 2);
 
-  const indices = geo.index!.array as Uint16Array;
-  const gridX1 = TERRAIN_SEGMENTS + 1;
-  let ptr = 0;
-  for (let iy = 0; iy < TERRAIN_SEGMENTS; iy++) {
-    for (let ix = 0; ix < TERRAIN_SEGMENTS; ix++) {
-      const a = ix + gridX1 * iy;
-      const b = ix + gridX1 * (iy + 1);
-      const c = (ix + 1) + gridX1 * (iy + 1);
-      const d = (ix + 1) + gridX1 * iy;
-      if ((ix + iy) % 2 === 0) {
-        indices[ptr++] = a;
-        indices[ptr++] = b;
-        indices[ptr++] = d;
-        indices[ptr++] = b;
-        indices[ptr++] = c;
-        indices[ptr++] = d;
-      } else {
-        indices[ptr++] = a;
-        indices[ptr++] = b;
-        indices[ptr++] = c;
-        indices[ptr++] = a;
-        indices[ptr++] = c;
-        indices[ptr++] = d;
-      }
-    }
-  }
-  geo.index!.needsUpdate = true;
+  // The quad diagonal stays three's stock split: telegraphs.ts gridHeight lifts fills by that rule (A11.3).
 
   const posAttr = geo.attributes.position;
   const colors: number[] = [];
