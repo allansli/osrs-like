@@ -55,10 +55,12 @@ export function fitShadow(
   const sx = Math.round(cx / texel) * texel;
   const sy = Math.round(cy / texel) * texel;
 
+  // keep the along-light component (stepped by range so it never crawls, error <= range/2 < light distance)
+  const sz = Math.round(dot(idealTarget, lightDir) / range) * range;
   const target: Vec3 = [
-    xAx[0] * sx + yAx[0] * sy,
-    xAx[1] * sx + yAx[1] * sy,
-    xAx[2] * sx + yAx[2] * sy,
+    xAx[0] * sx + yAx[0] * sy + lightDir[0] * sz,
+    xAx[1] * sx + yAx[1] * sy + lightDir[1] * sz,
+    xAx[2] * sx + yAx[2] * sy + lightDir[2] * sz,
   ];
 
   const dist = Math.max(range * 2, 100);

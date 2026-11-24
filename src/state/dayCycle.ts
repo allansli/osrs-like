@@ -85,6 +85,23 @@ const v: Vec3 = [
   v0[2] * Math.cos(roll) + w0[2] * Math.sin(roll),
 ];
 
+// Horizon crossings of the sun circle: sy(th) = (A cos th + B sin th + cy) / h, zero where A cos th + B sin th = -cy.
+const SUNSET_FADE = 0.02; // phase span after the sunset crossing over which the sun's key fades to zero before the moon takes over
+const horizonCrossings = (() => {
+  const A = u0[1];
+  const B = v[1];
+  const phi = Math.atan2(B, A);
+  const d = Math.acos(-cy / Math.hypot(A, B));
+  const wrap = (th: number) => (((p0 + th / (2 * Math.PI)) % 1) + 1) % 1;
+  const a = wrap(phi + d);
+  const b = wrap(phi - d);
+  const rising = (p: number) => -A * Math.sin(2 * Math.PI * (p - p0)) + B * Math.cos(2 * Math.PI * (p - p0)) > 0;
+  return rising(a) ? { rise: a, set: b } : { rise: b, set: a };
+})();
+const P_RISE = horizonCrossings.rise;
+const P_SET = horizonCrossings.set;
+const P_HAND = P_SET + SUNSET_FADE;
+
 export function dayFrameAt(phase: number): DayFrame {
   let p = phase % 1;
   if (p < 0) p += 1;
@@ -98,8 +115,15 @@ export function dayFrameAt(phase: number): DayFrame {
   const sy = vy / h;
   const sz = vz / h;
 
-  const keyIsMoon = sy <= 0;
-  const sunDir: Vec3 = keyIsMoon ? [-sx, -sy, -sz] : [sx, sy, sz];
+  const keyIsMoon = p >= P_HAND || p < P_RISE;
+  let sunDir: Vec3;
+  if (keyIsMoon) sunDir = [-sx, -sy, -sz];
+  else if (sy > 0) sunDir = [sx, sy, sz];
+  else {
+    // sunset fade: the key stays on the horizon while it fades out
+    const hh = Math.hypot(sx, sz);
+    sunDir = [sx / hh, 0, sz / hh];
+  }
 
   let idx = 0;
   while (idx < DAY_KEYS.length - 1 && p >= DAY_KEYS[idx + 1].phase) {
@@ -116,14 +140,12 @@ export function dayFrameAt(phase: number): DayFrame {
 
   let keyIntensity: number;
   if (p < 0.25) {
-    const pRise = 0.226;
-    if (p <= pRise) {
-      keyIntensity = 0.35 * (1 - p / pRise);
-    } else {
-      keyIntensity = 0.9 * ((p - pRise) / (0.25 - pRise));
-    }
+    // moon fades to zero at sunrise, then the sun rises to the 0.25 key
+    keyIntensity = p < P_RISE ? DAY_KEYS[0].keyIntensity * (1 - p / P_RISE) : DAY_KEYS[1].keyIntensity * ((p - P_RISE) / (0.25 - P_RISE));
   } else {
     keyIntensity = (1 - t) * k1.keyIntensity + t * k2.keyIntensity;
+    if (p >= P_SET && p < P_HAND) keyIntensity *= 1 - (p - P_SET) / SUNSET_FADE;
+    else if (p >= P_HAND) keyIntensity *= Math.min(1, (p - P_HAND) / SUNSET_FADE);
   }
 
   return {

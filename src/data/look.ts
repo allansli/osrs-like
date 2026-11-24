@@ -105,6 +105,16 @@ export interface GfxTier {
   shadowSize: number;
   shadowRange: number;
   composer: boolean;
+  composerSamples: number;
+  composerSamplesAbove83Mp: number;
+  shadowFade: boolean;
+  terrainCasts: boolean;
+  cloudShadows: boolean;
+  airHeightSunLeanRegionTint: boolean;
+  skyStarsHorizonGlow: boolean;
+  clouds: boolean;
+  waterMode: 'ramp' | 'full';
+  glowingEffects: boolean;
   anisotropy: number;
   carpetTufts: number;
   scatterDensity: number;
@@ -120,6 +130,16 @@ export const GFX_TIERS: Record<QualityTier, GfxTier> = {
     shadowSize: 0,
     shadowRange: 0,
     composer: false,
+    composerSamples: 0,
+    composerSamplesAbove83Mp: 0,
+    shadowFade: false,
+    terrainCasts: false,
+    cloudShadows: false,
+    airHeightSunLeanRegionTint: false,
+    skyStarsHorizonGlow: false,
+    clouds: false,
+    waterMode: 'ramp',
+    glowingEffects: false,
     anisotropy: 1,
     carpetTufts: 0,
     scatterDensity: 0.5,
@@ -133,6 +153,16 @@ export const GFX_TIERS: Record<QualityTier, GfxTier> = {
     shadowSize: 2048,
     shadowRange: 40,
     composer: false,
+    composerSamples: 0,
+    composerSamplesAbove83Mp: 0,
+    shadowFade: true,
+    terrainCasts: true,
+    cloudShadows: false,
+    airHeightSunLeanRegionTint: true,
+    skyStarsHorizonGlow: true,
+    clouds: true,
+    waterMode: 'full',
+    glowingEffects: false,
     anisotropy: 4,
     carpetTufts: 6000,
     scatterDensity: 0.75,
@@ -146,6 +176,16 @@ export const GFX_TIERS: Record<QualityTier, GfxTier> = {
     shadowSize: 2048,
     shadowRange: 54,
     composer: true,
+    composerSamples: 4,
+    composerSamplesAbove83Mp: 4,
+    shadowFade: true,
+    terrainCasts: true,
+    cloudShadows: true,
+    airHeightSunLeanRegionTint: true,
+    skyStarsHorizonGlow: true,
+    clouds: true,
+    waterMode: 'full',
+    glowingEffects: true,
     anisotropy: 8,
     carpetTufts: 14000,
     scatterDensity: 1,
@@ -159,6 +199,16 @@ export const GFX_TIERS: Record<QualityTier, GfxTier> = {
     shadowSize: 4096,
     shadowRange: 70,
     composer: true,
+    composerSamples: 4,
+    composerSamplesAbove83Mp: 2,
+    shadowFade: true,
+    terrainCasts: true,
+    cloudShadows: true,
+    airHeightSunLeanRegionTint: true,
+    skyStarsHorizonGlow: true,
+    clouds: true,
+    waterMode: 'full',
+    glowingEffects: true,
     anisotropy: 16,
     carpetTufts: 24000,
     scatterDensity: 1,
