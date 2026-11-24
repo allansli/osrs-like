@@ -361,12 +361,22 @@ def make_rig(
     child (BoneDef.ref_child) is more than 20 degrees from BoneDef.ref_dir, unless the row
     or its reference child is flagged 'code_posed'. Only that one child is checked, however
     many children the bone has. A bone whose `parent` has no joint takes `fallback_parent`.
+    A joint key that is neither a table bone nor `<prefix>_<bone>` raises (a typo must not
+    silently drop a joint). Each bone's reference child is recorded on the armature data
+    (`figkit_ref_child`, not exported) for the weighting segments.
     """
     def key_of(bone):
         pk = f"{prefix}_{bone}" if prefix else None
         return pk if pk is not None and pk in joints else bone
 
+    def full(bone):
+        return f"{prefix}_{bone}" if prefix else bone
+
     entries = {e.bone: e for e in table}
+    known = set(entries) | {full(b) for b in entries}
+    unknown = sorted(k for k in joints if k not in known)
+    if unknown:
+        raise ValueError(f"make_rig: joint keys {unknown} are not bones of the table (prefix {prefix!r})")
     present = {b for b in entries if key_of(b) in joints}
 
     # 1. Refusal check against the reference pose
@@ -419,7 +429,7 @@ def make_rig(
     for entry in table:
         if entry.bone not in present:
             continue
-        eb = arm_data.edit_bones.new(f"{prefix}_{entry.bone}" if prefix else entry.bone)
+        eb = arm_data.edit_bones.new(full(entry.bone))
         head_pos = Vector(joints[key_of(entry.bone)])
         eb.head = head_pos
         eb.tail = head_pos + Vector((0.0, 0.0, 0.1))
@@ -433,6 +443,11 @@ def make_rig(
                 created[entry.bone].parent = created[parent]
 
     bpy.ops.object.mode_set(mode="OBJECT")
+    # On the armature data, which the glTF exporter does not write (bone and object
+    # properties would become extras).
+    arm_data["figkit_ref_child"] = {
+        full(e.bone): full(e.ref_child) for e in table if e.bone in present and e.ref_child in present
+    }
     bpy.context.view_layer.update()
     return arm_obj
 
@@ -507,6 +522,24 @@ def organic_body(
     return ob
 
 
+def _limb_segment(rig: bpy.types.Object, b: bpy.types.Bone) -> tuple[Vector, Vector]:
+    """
+    Start and end of bone b's limb in rig space: to its reference child (make_rig's
+    figkit_ref_child), else to its only child. A bone with no such child continues the
+    direction from its parent's joint to its own for its own length; a parentless one points up.
+    """
+    head = b.head_local.copy()
+    ref = rig.data.get("figkit_ref_child", {}).get(b.name)
+    child = rig.data.bones[ref] if ref else (b.children[0] if len(b.children) == 1 else None)
+    if child is not None and (child.head_local - head).length > 1e-4:
+        return head, child.head_local.copy()
+    if b.parent is not None:
+        d = head - b.parent.head_local
+        if d.length > 1e-4:
+            return head, head + d.normalized() * b.length
+    return head, head + Vector((0.0, 0.0, b.length))
+
+
 def segment_weights(body: bpy.types.Object, rig: bpy.types.Object, limb_radius) -> int:
     """
     Fallback weighting for vertices that have no weight: distance to each limb segment
@@ -525,8 +558,7 @@ def segment_weights(body: bpy.types.Object, rig: bpy.types.Object, limb_radius) 
             r = float(limb_radius)
         if r <= 0.0:
             raise ValueError(f"segment_weights: limb radius for bone {b.name!r} must be positive, got {r}")
-        p0 = b.head_local
-        p1 = b.children[0].head_local if b.children else b.tail_local
+        p0, p1 = _limb_segment(rig, b)
         segs.append((b.name, p0, p1, r))
         if b.name not in body.vertex_groups:
             body.vertex_groups.new(name=b.name)
@@ -562,6 +594,7 @@ def segment_weights(body: bpy.types.Object, rig: bpy.types.Object, limb_radius) 
 def auto_weights(
     body: bpy.types.Object,
     rig: bpy.types.Object,
+    *,
     limb_radius=None,
 ) -> None:
     """
@@ -581,21 +614,7 @@ def auto_weights(
 
     for b in rig.data.bones:
         tb = twin_data.edit_bones.new(b.name)
-        tb.head = b.head_local.copy()
-        if b.children:
-            child_head = b.children[0].head_local
-            if (child_head - tb.head).length > 1e-4:
-                tb.tail = child_head.copy()
-            else:
-                tb.tail = tb.head + Vector((0.0, 0.0, 0.1))
-        elif b.parent:
-            parent_dir = b.head_local - b.parent.head_local
-            if parent_dir.length > 1e-4:
-                tb.tail = tb.head + parent_dir.normalized() * 0.1
-            else:
-                tb.tail = tb.head + Vector((0.0, 0.0, 0.1))
-        else:
-            tb.tail = tb.head + Vector((0.0, 0.0, 0.1))
+        tb.head, tb.tail = _limb_segment(rig, b)
         tb.roll = 0.0
         tb.use_connect = False
 
@@ -660,12 +679,16 @@ def hard_weights(part: bpy.types.Object, bone: str | bpy.types.Bone) -> None:
         vg.add(list(range(len(part.data.vertices))), 1.0, "REPLACE")
 
 
-def fold_weights(mesh: bpy.types.Object, mapping: dict) -> None:
+def fold_weights(mesh: bpy.types.Object, mapping: dict, *, unweighted_to: str | None = None) -> None:
     """
     Sums a source's vertex groups onto the rig's bones and normalises.
     `mapping` is {target bone name: [source group names]}, in that direction only.
     Raises if a source is listed under two targets or if the mesh has a vertex group
     that no target lists.
+    A vertex with no source weight (or a total of 0) raises, naming the count, unless
+    `unweighted_to` names a target bone: those vertices then get weight 1 on it and the
+    count is printed (the hero source's 4 unweighted coat vertices go to Torso, critique
+    "Second pass").
     """
     src_to_target = {}
     for tgt, sources in mapping.items():
@@ -695,14 +718,25 @@ def fold_weights(mesh: bpy.types.Object, mapping: dict) -> None:
     for tgt in set(src_to_target.values()):
         target_vgs[tgt] = mesh.vertex_groups.new(name=tgt)
 
+    if unweighted_to is not None and unweighted_to not in mapping:
+        raise ValueError(f"fold_weights: unweighted_to {unweighted_to!r} is not a target of the mapping")
+    bare = [i for i, tw in enumerate(target_weights) if sum(tw.values()) <= 1e-6]
+    if bare and unweighted_to is None:
+        raise ValueError(
+            f"fold_weights: {len(bare)} vertices of {mesh.name} have no source weight; "
+            f"pass unweighted_to=<bone> to put them on one bone"
+        )
+    if bare:
+        print(f"[figkit] fold_weights put {len(bare)} unweighted vertices of {mesh.name} on {unweighted_to}")
+
     for v_idx, tw in enumerate(target_weights):
-        if not tw:
-            continue
         items = sorted(tw.items(), key=lambda x: x[1], reverse=True)[:4]
         total = sum(w for _, w in items)
         if total > 1e-6:
             for tgt, w in items:
                 target_vgs[tgt].add([v_idx], w / total, "REPLACE")
+        else:
+            target_vgs[unweighted_to].add([v_idx], 1.0, "REPLACE")
 
     bpy.ops.object.select_all(action="DESELECT")
     mesh.select_set(True)
@@ -720,29 +754,48 @@ def _srgb_byte(c: float) -> int:
 def exported_emission(mat) -> tuple[list[float], float] | None:
     """
     The emissive factor and KHR_materials_emissive_strength the glTF exporter writes for mat
-    (io_scene_gltf2 material/extensions/emission.py): colour times strength read from the
-    Principled BSDF or Emission node that the active Material Output's Surface is linked to
-    (a node that is not linked to the output does not count); if any channel exceeds 1 the
-    factor is divided by its maximum and that maximum becomes the strength, else the strength
-    is 1 (no extension). Returns None when the exporter writes no emissive factor.
-    A linked colour or strength socket is read as white or 1, as the exporter does without
-    an image. ponytail: only the node directly linked to Surface is followed, no mix shaders.
+    (io_scene_gltf2 material/extensions/emission.py), for the one node graph the builders use:
+    a Principled BSDF or Emission node, not muted, whose emission colour and strength inputs
+    are unlinked, linked straight (unmuted link) into the Surface of an active, unmuted
+    Material Output. The factor is colour times strength; if any channel exceeds 1 it is
+    divided by its maximum and that maximum becomes the strength, else the strength is 1
+    (no extension). Returns None for no material or a zero factor (the exporter writes none).
+    Raises ValueError on every other graph, which this function cannot mirror: no node tree,
+    no active output, Surface unlinked or fed by any other node (a Mix or Add shader), a
+    linked colour or strength input, a muted node or link. Nodes not linked to the output
+    are ignored, as the exporter ignores them.
     """
-    if mat is None or not mat.use_nodes or mat.node_tree is None:
+    if mat is None:
         return None
-    outs = [n for n in mat.node_tree.nodes if n.type == "OUTPUT_MATERIAL"]
-    out = next((n for n in outs if n.is_active_output), outs[0] if outs else None)
-    if out is None or not out.inputs["Surface"].links:
-        return None
-    node = out.inputs["Surface"].links[0].from_node
+
+    def refuse(why):
+        raise ValueError(f"exported_emission: material {mat.name!r}: {why}; only an unlinked Principled BSDF or Emission node wired straight into the active Material Output is supported")
+
+    if mat.node_tree is None:
+        refuse("no node tree")
+    out = next((n for n in mat.node_tree.nodes if n.type == "OUTPUT_MATERIAL" and n.is_active_output), None)
+    if out is None:
+        refuse("no active Material Output")
+    if out.mute:
+        refuse("the Material Output is muted")
+    links = out.inputs["Surface"].links
+    if not links:
+        refuse("Surface is not linked")
+    if links[0].is_muted:
+        refuse("the Surface link is muted")
+    node = links[0].from_node
     if node.type == "BSDF_PRINCIPLED":
         color_sock, strength_sock = node.inputs["Emission Color"], node.inputs["Emission Strength"]
     elif node.type == "EMISSION":
         color_sock, strength_sock = node.inputs["Color"], node.inputs["Strength"]
     else:
-        return None
-    color = [1.0, 1.0, 1.0] if color_sock.is_linked else [float(c) for c in color_sock.default_value[:3]]
-    strength = 1.0 if strength_sock.is_linked else float(strength_sock.default_value)
+        refuse(f"Surface is fed by a {node.type} node")
+    if node.mute:
+        refuse(f"node {node.name!r} is muted")
+    if color_sock.is_linked or strength_sock.is_linked:
+        refuse(f"an emission input of {node.name!r} is linked")
+    color = [float(c) for c in color_sock.default_value[:3]]
+    strength = float(strength_sock.default_value)
     factor = [c * strength for c in color]
     if factor == [0.0, 0.0, 0.0]:
         return None
@@ -772,9 +825,18 @@ def get_material_family(obj: bpy.types.Object) -> str:
     Engine material family rule from blenderMonsters.ts 103-136.
     Classifies mesh into one of: 'eye', 'glow', 'skin', 'cloth', 'leather',
     'wood', 'bark', 'moss', 'stone', 'metal', or 'plain'.
+    Every material slot is classified; a mesh whose slots fall in more than one family
+    raises, naming the mesh and the families (merging it would recolour faces).
     """
-    mesh_name = obj.name.lower()
-    mat = obj.data.materials[0] if (obj.data and obj.data.materials) else None
+    mats = list(obj.data.materials) if obj.data else []
+    families = {_material_family(obj.name, m) for m in (mats or [None])}
+    if len(families) > 1:
+        raise ValueError(f"get_material_family: mesh {obj.name!r} has materials in several families {sorted(families)}")
+    return families.pop()
+
+
+def _material_family(obj_name: str, mat) -> str:
+    mesh_name = obj_name.lower()
     mat_name = mat.name.lower() if mat else ""
 
     is_emissive = engine_emissive_hex(mat) is not None
@@ -809,6 +871,8 @@ def merge_by_family(root=None, keep=TOGGLED) -> list[bpy.types.Object]:
     material family, and noOutline flag, so meshes parented to different
     bones of one armature never merge.
     Never merges a mesh whose name matches keep (default TOGGLED).
+    Every non-kept mesh, alone or merged, ends with one material slot. Any input mesh whose
+    materials fall in more than one family raises (get_material_family).
     """
     meshes = get_descendant_meshes(root)
     if not meshes:
@@ -817,6 +881,7 @@ def merge_by_family(root=None, keep=TOGGLED) -> list[bpy.types.Object]:
     to_merge = []
     kept_alone = []
     for m in meshes:
+        get_material_family(m)  # refuses a mesh with materials in several families, kept or not
         if matches_keep(m.name, keep):
             kept_alone.append(m)
         else:
@@ -834,44 +899,12 @@ def merge_by_family(root=None, keep=TOGGLED) -> list[bpy.types.Object]:
 
     result = list(kept_alone)
     for key, group_objs in groups.items():
-        if len(group_objs) <= 1:
-            result.extend(group_objs)
-            continue
-
         target = group_objs[0]
+        if len(group_objs) > 1:
+            _join_group(group_objs, key)
 
-        merged_extras = {}
-        for obj in group_objs:
-            for k in obj.keys():
-                if k == "_RNA_UI":
-                    continue
-                v = _plain(obj[k])
-                if k in merged_extras and merged_extras[k] != v:
-                    raise ValueError(
-                        f"merge_by_family: extras key {k!r} has conflicting values "
-                        f"{merged_extras[k]!r} vs {v!r} in group {key}"
-                    )
-                merged_extras[k] = v
-
-        orphans = [(c, c.matrix_world.copy()) for obj in group_objs[1:] for c in obj.children]
-
-        bpy.ops.object.select_all(action="DESELECT")
-        for obj in group_objs:
-            obj.select_set(True)
-        bpy.context.view_layer.objects.active = target
-
-        bpy.ops.object.join()
-
-        for c, mw in orphans:
-            c.parent = target
-            c.matrix_world = mw
-
-        target.data.name = target.name
-
-        for k, v in merged_extras.items():
-            target[k] = v
-
-        # One material slot per merged family, so one primitive and one draw call.
+        # One material slot per merged family, so one primitive and one draw call; a lone
+        # mesh with several slots of one family collapses too.
         if len(target.data.materials) > 1:
             first = target.data.materials[0]
             for poly in target.data.polygons:
@@ -883,6 +916,41 @@ def merge_by_family(root=None, keep=TOGGLED) -> list[bpy.types.Object]:
 
     bpy.context.view_layer.update()
     return result
+
+
+def _join_group(group_objs, key) -> None:
+    """Joins group_objs into group_objs[0], keeping every extra (conflicts raise) and re-parenting children."""
+    target = group_objs[0]
+    merged_extras = {}
+    for obj in group_objs:
+        for k in obj.keys():
+            if k == "_RNA_UI":
+                continue
+            v = _plain(obj[k])
+            if k in merged_extras and merged_extras[k] != v:
+                raise ValueError(
+                    f"merge_by_family: extras key {k!r} has conflicting values "
+                    f"{merged_extras[k]!r} vs {v!r} in group {key}"
+                )
+            merged_extras[k] = v
+
+    orphans = [(c, c.matrix_world.copy()) for obj in group_objs[1:] for c in obj.children]
+
+    bpy.ops.object.select_all(action="DESELECT")
+    for obj in group_objs:
+        obj.select_set(True)
+    bpy.context.view_layer.objects.active = target
+
+    bpy.ops.object.join()
+
+    for c, mw in orphans:
+        c.parent = target
+        c.matrix_world = mw
+
+    target.data.name = target.name
+
+    for k, v in merged_extras.items():
+        target[k] = v
 
 
 def make_clip(

@@ -422,8 +422,43 @@ def test_rigs_and_directions():
         rigs.BoneDef("LeftArmPivot", "Root", optional=False, ref_dir=(-0.468, 0.0, -0.884), ref_child="LeftElbowPivot"),
         rigs.BoneDef("LeftElbowPivot", "LeftArmPivot", optional=False, flag="code_posed"),
     ]
-    cp_rig = figkit.make_rig("CodePosedRig", code_posed_table, bad_joints)
+    cp_joints = {k: bad_joints[k] for k in ("Root", "LeftArmPivot", "LeftElbowPivot")}
+    cp_rig = figkit.make_rig("CodePosedRig", code_posed_table, cp_joints)
     assert cp_rig is not None
+
+    # The row's own code_posed flag exempts it; the same row unflagged is refused.
+    for flag, ok in (("code_posed", True), (None, False)):
+        row_table = [
+            rigs.BoneDef("Root", None),
+            rigs.BoneDef("LeftArmPivot", "Root", flag=flag, ref_dir=(-0.468, 0.0, -0.884), ref_child="LeftElbowPivot"),
+            rigs.BoneDef("LeftElbowPivot", "LeftArmPivot"),
+        ]
+        clear_scene()
+        if ok:
+            assert figkit.make_rig("RowPosed", row_table, cp_joints) is not None
+        else:
+            try:
+                figkit.make_rig("RowUnposed", row_table, cp_joints)
+            except ValueError as e:
+                assert "LeftArmPivot" in str(e) and "deviates" in str(e), str(e)
+            else:
+                raise AssertionError("the same row without code_posed must be refused")
+
+    # Unknown joint keys raise, bare or prefixed: a typo must not drop a joint.
+    for prefix, typo in ((None, "LeftShouldr"), ("g", "g_LeftShouldr")):
+        j = {(f"{prefix}_{k}" if prefix else k): v for k, v in joints.items()}
+        j[typo] = (-0.09, 0.0, 1.478)
+        clear_scene()
+        try:
+            figkit.make_rig("TypoRig", rigs.BIPED_TABLE, j, prefix=prefix)
+        except ValueError as e:
+            assert typo in str(e), str(e)
+        else:
+            raise AssertionError(f"make_rig must raise on the unknown joint key {typo!r}")
+    clear_scene()
+    assert "g_LeftArmPivot" in figkit.make_rig(
+        "PrefixRig", rigs.BIPED_TABLE, {f"g_{k}": v for k, v in joints.items()}, prefix="g"
+    ).data.bones
 
     # The 20 degree line: a limb 25 degrees off the reference is refused, 15 degrees is accepted.
     ref = Vector(rigs.BIPED_TABLE[[e.bone for e in rigs.BIPED_TABLE].index("LeftArmPivot")].ref_dir).normalized()
@@ -432,9 +467,12 @@ def test_rigs_and_directions():
         q = Quaternion((0.0, 1.0, 0.0), math.radians(deg))
         return tuple(Vector(joints["LeftArmPivot"]) + (q @ ref) * 0.28)
 
-    for deg, ok in ((25.0, False), (15.0, True)):
+    for deg, ok in ((25.0, False), (15.0, True), (20.5, False), (19.5, True)):
         j = dict(joints)
         j["LeftElbowPivot"] = elbow_off_by(deg)
+        # The forearm moves with the elbow, so only the upper arm is off the reference.
+        shift = Vector(j["LeftElbowPivot"]) - Vector(joints["LeftElbowPivot"])
+        j["LeftHand"] = tuple(Vector(joints["LeftHand"]) + shift)
         measured = math.degrees((Vector(j["LeftElbowPivot"]) - Vector(j["LeftArmPivot"])).angle(ref))
         assert abs(measured - deg) < 0.01, f"fixture is {measured} degrees off, wanted {deg}"
         clear_scene()
@@ -573,6 +611,8 @@ def test_skinned_figure_build_and_export():
         assert "rotation" not in b_node or b_node["rotation"] == [0.0, 0.0, 0.0, 1.0], (
             f"Joint {b_name} has non-identity rest rotation: {b_node.get('rotation')}"
         )
+        assert "extras" not in b_node, f"Joint {b_name} gained extras: {b_node['extras']}"
+    assert "extras" not in arm_node, f"Armature node gained extras: {arm_node['extras']}"
 
     # 3. Weights and influences on skinned meshes
     skins = doc.get("skins", [])
@@ -899,7 +939,13 @@ def test_segment_weights():
     clear_scene()
     rig = figkit.make_rig("IslandRig2", two, {"B0": (0.0, 0.0, 0.0), "B1": (0.0, 0.0, 0.5)})
     body = island_body()
-    _, out = _run_captured(figkit.auto_weights, body, rig, 0.2)
+    try:
+        figkit.auto_weights(body, rig, 0.2)
+    except TypeError:
+        pass
+    else:
+        raise AssertionError("limb_radius must be keyword-only")
+    _, out = _run_captured(figkit.auto_weights, body, rig, limb_radius=0.2)
     assert "segment_weights ran on 8" in out, f"auto_weights did not run segment_weights on the island: {out!r}"
     for v in body.data.vertices:
         assert 1 <= len(v.groups) <= 4 and abs(sum(g.weight for g in v.groups) - 1.0) < 1e-4
@@ -1075,6 +1121,179 @@ def test_merge_by_family_single_primitive():
     print("[figkit_selftest] merge_by_family single primitive test passed!")
 
 
+def test_merge_by_family_group_key():
+    print("[figkit_selftest] Testing merge_by_family group key: parent name, parent type, lone mesh, mixed families...")
+    # Same family under two different parents: never merged.
+    clear_scene()
+    root = bpy.data.objects.new("KeyRoot", None)
+    bpy.context.collection.objects.link(root)
+    pa = bpy.data.objects.new("ParentA", None)
+    pb = bpy.data.objects.new("ParentB", None)
+    for p in (pa, pb):
+        p.parent = root
+        bpy.context.collection.objects.link(p)
+    mat = bpy.data.materials.new("mat_skin_key")
+    create_mesh_box("UnderA", pa, mat, center=(0.0, 0.0, 0.2), size=(0.2, 0.2, 0.2))
+    create_mesh_box("UnderB", pb, mat, center=(0.0, 0.0, 0.6), size=(0.2, 0.2, 0.2))
+    names = {o.name for o in figkit.merge_by_family(root)}
+    assert names == {"UnderA", "UnderB"}, f"same family under different parents merged: {names}"
+
+    # OBJECT- and ARMATURE-parented meshes under one armature: never merged.
+    clear_scene()
+    rig = figkit.make_rig("KeyRig", [rigs.BoneDef("B0", None)], {"B0": (0.0, 0.0, 0.0)})
+    mat = bpy.data.materials.new("mat_skin_pt")
+    create_mesh_box("ObjParented", rig, mat, center=(0.0, 0.0, 0.2), size=(0.2, 0.2, 0.2))
+    arm_child = create_mesh_box("ArmParented", rig, mat, center=(0.0, 0.0, 0.6), size=(0.2, 0.2, 0.2))
+    arm_child.parent_type = "ARMATURE"
+    names = {o.name for o in figkit.merge_by_family(rig)}
+    assert names == {"ObjParented", "ArmParented"}, f"OBJECT and ARMATURE parented meshes merged: {names}"
+
+    # A lone mesh with two materials of one family collapses to one slot and one primitive.
+    clear_scene()
+    root = bpy.data.objects.new("LoneRoot", None)
+    bpy.context.collection.objects.link(root)
+    lone = create_mesh_box("Lone", root, bpy.data.materials.new("mat_skin_x"), size=(0.2, 0.2, 0.2))
+    lone.data.materials.append(bpy.data.materials.new("mat_skin_y"))
+    for poly in lone.data.polygons[:3]:
+        poly.material_index = 1
+    survivors = figkit.merge_by_family(root)
+    assert [o.name for o in survivors] == ["Lone"], [o.name for o in survivors]
+    assert len(lone.data.materials) == 1, [m.name for m in lone.data.materials]
+    assert all(p.material_index == 0 for p in lone.data.polygons)
+    out_path = os.path.join(paths.out_dir(), "figkit_lone_selftest.glb")
+    figkit.export_glb(out_path)
+    doc = parse_glb(out_path)
+    assert len(doc["meshes"]) == 1 and len(doc["meshes"][0]["primitives"]) == 1, (
+        f"lone mesh exports {len(doc['meshes'][0]['primitives'])} primitives"
+    )
+
+    # A mesh whose materials fall in two families is refused, naming the mesh and the families.
+    clear_scene()
+    root = bpy.data.objects.new("MixRoot", None)
+    bpy.context.collection.objects.link(root)
+    mixed = create_mesh_box("MixedMesh", root, bpy.data.materials.new("mat_skin_m"), size=(0.2, 0.2, 0.2))
+    mixed.data.materials.append(bpy.data.materials.new("mat_iron_m"))
+    try:
+        figkit.merge_by_family(root)
+    except ValueError as e:
+        assert "MixedMesh" in str(e) and "skin" in str(e) and "metal" in str(e), str(e)
+    else:
+        raise AssertionError("merge_by_family must refuse a mesh with materials in two families")
+    print("[figkit_selftest] merge_by_family group key test passed!")
+
+
+def test_emission_refuses_unmirrored_graphs():
+    print("[figkit_selftest] Testing exported_emission refuses graphs it cannot mirror...")
+    clear_scene()
+
+    def base(name):
+        mat = bpy.data.materials.new(name)
+        nt = mat.node_tree
+        return mat, nt, next(n for n in nt.nodes if n.type == "BSDF_PRINCIPLED"), next(n for n in nt.nodes if n.type == "OUTPUT_MATERIAL")
+
+    mat_mix, nt, pr, out = base("em_mix")
+    em = nt.nodes.new("ShaderNodeEmission")
+    em.inputs["Strength"].default_value = 5.0
+    mix = nt.nodes.new("ShaderNodeAddShader")
+    nt.links.new(pr.outputs["BSDF"], mix.inputs[0])
+    nt.links.new(em.outputs["Emission"], mix.inputs[1])
+    nt.links.new(mix.outputs["Shader"], out.inputs["Surface"])
+
+    mat_noout, nt, pr, out = base("em_noout")
+    nt.nodes.remove(out)
+
+    mat_linked, nt, pr, out = base("em_linked")
+    rgb = nt.nodes.new("ShaderNodeRGB")
+    nt.links.new(rgb.outputs["Color"], pr.inputs["Emission Color"])
+
+    mat_muted, nt, pr, out = base("em_muted")
+    pr.inputs["Emission Strength"].default_value = 2.0
+    pr.mute = True
+
+    for mat in (mat_mix, mat_noout, mat_linked, mat_muted):
+        try:
+            figkit.exported_emission(mat)
+        except ValueError as e:
+            assert mat.name in str(e), str(e)
+        else:
+            raise AssertionError(f"exported_emission must refuse {mat.name}")
+    plain, _, _, _ = base("em_plain")
+    assert figkit.exported_emission(plain) is None
+    print("[figkit_selftest] exported_emission refusal test passed!")
+
+
+def test_fold_weights_unweighted():
+    print("[figkit_selftest] Testing fold_weights on unweighted vertices...")
+
+    def box():
+        clear_scene()
+        m = create_mesh_box("FoldGap", None, None)
+        g = m.vertex_groups.new(name="spine1")
+        g.add([0, 1, 2, 3, 4, 5], 1.0, "REPLACE")
+        g.add([6], 0.0, "REPLACE")  # vertex 6: a total of 0; vertex 7: no group at all
+        return m
+
+    try:
+        figkit.fold_weights(box(), {"Torso": ["spine1"]})
+    except ValueError as e:
+        assert "2 vertices" in str(e), str(e)
+    else:
+        raise AssertionError("fold_weights must raise on vertices with no source weight")
+
+    m = box()
+    _, out = _run_captured(figkit.fold_weights, m, {"Torso": ["spine1"]}, unweighted_to="Torso")
+    assert "put 2 unweighted vertices" in out, out
+    for v in m.data.vertices:
+        assert len(v.groups) == 1 and abs(v.groups[0].weight - 1.0) < 1e-6, (v.index, [(g.group, g.weight) for g in v.groups])
+    try:
+        figkit.fold_weights(box(), {"Torso": ["spine1"]}, unweighted_to="Hips")
+    except ValueError as e:
+        assert "Hips" in str(e), str(e)
+    else:
+        raise AssertionError("unweighted_to must name a target of the mapping")
+    print("[figkit_selftest] fold_weights unweighted test passed!")
+
+
+def _vertex_weight(obj, vi, group):
+    return next((g.weight for g in obj.data.vertices[vi].groups if obj.vertex_groups[g.group].name == group), 0.0)
+
+
+def _point_box(name, co):
+    """A one-vertex mesh at co."""
+    me = bpy.data.meshes.new(name)
+    me.from_pydata([co], [], [])
+    ob = bpy.data.objects.new(name, me)
+    bpy.context.collection.objects.link(ob)
+    return ob
+
+
+def test_limb_segments():
+    print("[figkit_selftest] Testing limb segments: reference child and leaf direction...")
+    # The reference child, not children[0]: B2 is created first, so it is children[0] of B0.
+    clear_scene()
+    table = [
+        rigs.BoneDef("B0", None, ref_dir=(0.0, 0.0, 1.0), ref_child="B1"),
+        rigs.BoneDef("B2", "B0"),
+        rigs.BoneDef("B1", "B0"),
+    ]
+    rig = figkit.make_rig("RefRig", table, {"B0": (0.0, 0.0, 0.0), "B1": (0.0, 0.0, 0.5), "B2": (0.5, 0.0, 0.0)})
+    assert rig.data.bones["B0"].children[0].name == "B2", "fixture: children[0] must be the non-reference child"
+    p = _point_box("RefPoint", (0.0, 0.0, 0.25))
+    figkit.segment_weights(p, rig, 0.2)
+    w = _vertex_weight(p, 0, "B0")
+    assert w > 0.9, f"a point on the B0 -> B1 limb must belong to B0, got {w}"
+
+    # A leaf continues its parent's direction: a horizontal limb, a point beyond the leaf joint.
+    clear_scene()
+    rig = figkit.make_rig("LeafRig", [rigs.BoneDef("B0", None), rigs.BoneDef("B1", "B0")],
+                          {"B0": (0.0, 0.0, 0.0), "B1": (0.5, 0.0, 0.0)})
+    p = _point_box("LeafPoint", (0.58, 0.0, 0.0))
+    figkit.segment_weights(p, rig, 0.2)
+    w = _vertex_weight(p, 0, "B1")
+    assert w > 0.9, f"a point past the leaf joint along the limb must belong to the leaf, got {w}"
+    print("[figkit_selftest] limb segments test passed!")
+
+
 if __name__ == "__main__":
     try:
         test_two_part_figure()
@@ -1090,6 +1309,10 @@ if __name__ == "__main__":
         test_make_clip_forms_and_names()
         test_family_emissive_mirrors_engine()
         test_merge_by_family_single_primitive()
+        test_merge_by_family_group_key()
+        test_emission_refuses_unmirrored_graphs()
+        test_fold_weights_unweighted()
+        test_limb_segments()
         print("[figkit_selftest] ALL TESTS PASSED.")
         sys.exit(0)
     except Exception as e:
