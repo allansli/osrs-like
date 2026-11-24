@@ -233,10 +233,9 @@ export function facetMaterial(params: Record<string, unknown> = {}): THREE.MeshL
   const mat = new THREE.MeshLambertMaterial(cleaned as THREE.MeshLambertMaterialParameters);
   mat.defines = { ...mat.defines, ...defines };
   if (map) mat.userData.albedoSpace = 'prop';
-  const facet = { value: facetBlend ?? 0 };
   const foot = { value: footHeight };
   mat.onBeforeCompile = (shader) => {
-    shader.uniforms.uFacet = facet;
+    if (facetBlend !== null) shader.uniforms.uFacet = { value: facetBlend };
     shader.uniforms.uFootHeight = foot;
     shader.vertexShader = 'varying float vFootHeight;\n' + shader.vertexShader.replace(
       '#include <begin_vertex>',
