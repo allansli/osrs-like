@@ -51,6 +51,16 @@ describe('interface tokens and type', () => {
     }
   });
 
+  it('minimap: the renderMinimap canvas backing store is sized from devicePixelRatio, capped at 3', () => {
+    const src = read('src/engine/overlay.ts');
+    const i = src.indexOf('function renderMinimap');
+    expect(i, 'renderMinimap exists').toBeGreaterThan(-1);
+    const next = src.indexOf('\nexport function', i + 1);
+    const body = src.slice(i, next < 0 ? undefined : next);
+    expect(body).toMatch(/devicePixelRatio/);
+    expect(body).toMatch(/Math\.min\(\s*3\s*,[^)]*devicePixelRatio|Math\.min\([^)]*devicePixelRatio[^)]*,\s*3\s*\)/);
+  });
+
   it('index.html has no inline style that sets a colour or a font size', () => {
     const styles = [...html.matchAll(/\sstyle\s*=\s*(?:"([^"]*)"|'([^']*)')/g)].map((m) => m[1] ?? m[2]);
     const bad = styles.filter(
