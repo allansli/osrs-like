@@ -45,8 +45,8 @@ export function createOutput(
 
   const size = renderer.getSize(new THREE.Vector2());
   const pixelRatio = renderer.getPixelRatio();
-  const effW = Math.max(1, Math.round(size.width * pixelRatio));
-  const effH = Math.max(1, Math.round(size.height * pixelRatio));
+  const effW = Math.round(size.width * pixelRatio);
+  const effH = Math.round(size.height * pixelRatio);
   const samples = effW * effH > 8.3 * 1e6 ? GFX_TIERS[tier].composerSamplesAbove83Mp : GFX_TIERS[tier].composerSamples;
 
   const renderTarget = new THREE.WebGLRenderTarget(effW, effH, {
@@ -69,6 +69,8 @@ export function createOutput(
 
   const outputPass = new OutputPass();
   composer.addPass(outputPass);
+  composer.setPixelRatio(pixelRatio);
+  composer.setSize(size.width, size.height);
 
   return {
     render: () => {
@@ -76,8 +78,8 @@ export function createOutput(
     },
     setSize: (width: number, height: number) => {
       const dpr = renderer.getPixelRatio();
-      const w = Math.max(1, Math.round(width * dpr));
-      const h = Math.max(1, Math.round(height * dpr));
+      const w = Math.round(width * dpr);
+      const h = Math.round(height * dpr);
       const s = w * h > 8.3 * 1e6 ? GFX_TIERS[tier].composerSamplesAbove83Mp : GFX_TIERS[tier].composerSamples;
       composer.renderTarget1.samples = s;
       composer.renderTarget2.samples = s;

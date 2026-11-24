@@ -31,9 +31,7 @@ export function getQualityDpr(tier: QualityTier): number {
 export function applyQualityTier(tier: QualityTier): void {
   const prevTier = currentQuality;
   currentQuality = tier;
-  const dpr = typeof window !== 'undefined'
-    ? effectivePixelRatio(tier, window.innerWidth, window.innerHeight, window.devicePixelRatio || 1)
-    : 1;
+  const dpr = effectivePixelRatio(tier, window.innerWidth, window.innerHeight, window.devicePixelRatio);
   if (G.renderer && typeof window !== 'undefined') {
     G.renderer.setPixelRatio(dpr);
     G.renderer.setSize(window.innerWidth, window.innerHeight);
@@ -155,7 +153,7 @@ export function init3DEngine(): void {
 export function onWindowResize(): void {
   G.camera.aspect = window.innerWidth / window.innerHeight;
   G.camera.updateProjectionMatrix();
-  const dpr = effectivePixelRatio(currentQuality, window.innerWidth, window.innerHeight, window.devicePixelRatio || 1);
+  const dpr = effectivePixelRatio(currentQuality, window.innerWidth, window.innerHeight, window.devicePixelRatio);
   G.renderer.setSize(window.innerWidth, window.innerHeight);
   G.renderer.setPixelRatio(dpr);
   output.setSize(window.innerWidth, window.innerHeight);
