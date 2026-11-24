@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { G } from './context';
 import { STATE } from '../state/gameState';
 import { DAY_CLOCK, GFX_TIERS, type QualityTier, SHADOW_BIAS, SHADOW_NORMAL_BIAS, SHADOW_SUN_STEP_DEG } from '../data/look';
-import { dayFrameAt, phaseToPreset, presetToPhase, stepPhase, type Vec3 } from '../state/dayCycle';
+import { dayFrameAt, phaseToPreset, presetToPhase, stepPhase, type DayFrame, type Vec3 } from '../state/dayCycle';
 import { fitShadow, stepShadowDir } from '../state/shadowFit';
 
 let currentPhase = presetToPhase(STATE.timeOfDay);
@@ -26,6 +26,10 @@ export function setPhase(p: number, frozen: boolean): void {
     STATE.timeOfDay = preset;
   }
   updateLightingFrame(currentPhase);
+}
+
+export function currentDayFrame(): DayFrame {
+  return dayFrameAt(currentPhase);
 }
 
 export function initLighting(): void {

@@ -31,6 +31,7 @@ export function buildSky(): void {
       uniform vec3 uFill;
       uniform float uNight;
       varying vec3 vDir;
+      #include <dithering_pars_fragment>
 
       float hashStars(vec3 p) {
         vec3 cell = floor(p * 120.0);
@@ -68,8 +69,8 @@ export function buildSky(): void {
         }
 
         gl_FragColor = vec4(sky, 1.0);
-        #include <dithering_fragment>
         ${COLOR_FOOTER}
+        #include <dithering_fragment>
       }
     `,
   });
@@ -78,15 +79,9 @@ export function buildSky(): void {
   G.scene.add(G.skyDomeMesh);
 }
 
-export function updateSky(frame?: DayFrame): void {
-  if (frame) {
-    uNight.value = frame.keyIsMoon ? 1.0 : 0.0;
-  }
-  if (G.camera && G.skyDomeMesh) {
-    G.skyDomeMesh.position.copy(G.camera.position);
-  }
-  if (G.scene && G.scene.fog && 'color' in G.scene.fog) {
-    (G.scene.fog as THREE.FogExp2).color.copy(AIR.uAirColor.value);
-    (G.scene.fog as THREE.FogExp2).density = AIR.uFogDensity.value;
-  }
+export function updateSky(frame: DayFrame): void {
+  uNight.value = frame.keyIsMoon ? 1.0 : 0.0;
+  G.skyDomeMesh.position.copy(G.camera.position);
+  (G.scene.fog as THREE.FogExp2).color.copy(AIR.uAirColor.value);
+  (G.scene.fog as THREE.FogExp2).density = AIR.uFogDensity.value;
 }
