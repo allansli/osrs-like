@@ -165,8 +165,14 @@ const VERGE_WIDTH = 2;
 const VERGE_DENSITY = 1.5;
 const POI_MIN_CLEAR = 2; // a POI without a pad (Reedglass Tarn's marker) still keeps its centre bare
 
-// Carpet family per region (field B): 0 meadow, 1/3 woods, 2/3 dry, 1 ember. Regions not named are meadow.
-const REGION_FAMILY: Record<string, number> = { woods: 1 / 3, desert: 2 / 3, wilderness: 1 };
+// Carpet family per region (field B): 0 meadow, 1/3 woods, 2/3 dry, 1 ember. Every WORLD_REGIONS id is listed.
+const REGION_FAMILY: Record<string, number> = { lumbridge: 0, varrock: 0, woods: 1 / 3, desert: 2 / 3, wilderness: 1 };
+
+function regionFamily(id: string): number {
+  const f = REGION_FAMILY[id];
+  if (f === undefined) throw new Error(`buildGroundField: region '${id}' has no carpet family in REGION_FAMILY`);
+  return f;
+}
 
 /**
  * Carpet density at a point (field G): 0 inside a path's half-width, a POI pad, water, the castle walls,
@@ -209,7 +215,7 @@ export function buildGroundField(): THREE.DataTexture {
         const w = 1 - THREE.MathUtils.smoothstep(d, 0.75 * reg.radius, reg.radius);
         if (w > blend) {
           blend = w;
-          family = REGION_FAMILY[reg.id] ?? 0;
+          family = regionFamily(reg.id);
         }
       }
       const o = (j * n + i) * 4;
