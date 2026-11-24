@@ -4,11 +4,13 @@ import {
   GFX_TIERS,
   KIT_PIECES,
   type KitPieceId,
+  type PoiFloraRule,
+  type RegionFloraRule,
   type QualityTier,
 } from '../data/look';
 import { NODE_PLACEMENTS } from '../data/placements';
 import { WORLD_REGIONS } from '../data/world';
-import { CAMPS, PATHS, POIS, RIDGES, SAFE_ZONES } from '../data/worldMap';
+import { BASINS, CAMPS, PATHS, POIS, RIDGES, SAFE_ZONES, type PoiDef } from '../data/worldMap';
 import { WOODS_TREES } from '../data/woodsTrees';
 import {
   hitsCastleWall,
@@ -16,6 +18,7 @@ import {
   isDeepWater,
   isWalkableGround,
   nearestOnPolyline,
+  riverCenterX,
 } from './collision';
 import { shrineWorldPos } from './shrines';
 import { getTerrainHeight, regionAt } from './terrain';
@@ -76,6 +79,26 @@ const GAMEPLAY_POINTS: [number, number][] = [
 ];
 
 const WOODS_TREE_CENTRES: [number, number][] = WOODS_TREES.map(([i, j]) => [-118 + i + 0.5, -118 + j + 0.5]);
+
+function regionRule(id: string): RegionFloraRule {
+  const rule = FLORA_RULES[id];
+  if (!rule || !('clusterDensity' in rule)) throw new Error(`FLORA_RULES has no region row for "${id}"`);
+  return rule;
+}
+
+function poiRule(id: string): PoiFloraRule {
+  const rule = FLORA_RULES[id];
+  if (!rule || !('frame' in rule)) throw new Error(`FLORA_RULES has no point-of-interest row for "${id}"`);
+  return rule;
+}
+
+// Clusters a region of clusterDensity 1 gets; the other regions scale from it.
+const CLUSTERS_AT_DENSITY_1 = 14;
+// Where a POI's frame stands: from focus + 2 out to focus + 12 units from its centre.
+const FRAME_INNER = 2;
+const FRAME_OUTER = 12;
+// How far past the river's deep water the water-edge anchors sit, and where along z they run.
+const RIVER_BANK_HALF_WIDTH = 4.6;
 
 function createRng(seed: number) {
   let s = seed >>> 0;
@@ -142,7 +165,6 @@ function isPositionClear(x: number, z: number, pieceId: KitPieceId): boolean {
   if (def.layer === 'canopy') {
     if (isWalkableGround(x, z)) return false;
     if (inWater(x, z)) return false;
-    if (hitsCastleWall(x, z)) return false;
   } else {
     if (inWater(x, z)) return false;
     if (pieceId === 'reed') {
@@ -303,6 +325,45 @@ function placeCluster(
   return placedInCluster;
 }
 
+/** Design 5.6: a POI's frame, tall pieces behind it. A canopy piece that finds no unwalkable ground takes the tallest understorey of the POI's own pieces. */
+function placeFrame(
+  poi: PoiDef,
+  rule: PoiFloraRule,
+  grid: SpatialGrid,
+  rng: () => number,
+  allInstances: PlacedInstance[]
+): void {
+  const tallest = rule.pieces
+    .filter((id) => KIT_PIECES[id].layer === 'understorey')
+    .reduce((a, b) => (KIT_PIECES[b].maxHeight > KIT_PIECES[a].maxHeight ? b : a));
+
+  const tryPlace = (pieceId: KitPieceId): boolean => {
+    const radius = KIT_PIECES[pieceId].radius;
+    const inner = rule.focus + FRAME_INNER;
+    const outer = rule.focus + FRAME_OUTER;
+    const candidates: [number, number][] = [];
+    for (let dx = -outer; dx <= outer; dx++) {
+      for (let dz = -outer; dz <= outer; dz++) {
+        const d = Math.hypot(dx, dz);
+        if (d < inner || d > outer) continue;
+        const x = poi.x + dx;
+        const z = poi.z + dz;
+        if (isPositionClear(x, z, pieceId) && grid.canPlace(x, z, radius)) candidates.push([x, z]);
+      }
+    }
+    if (candidates.length === 0) return false;
+    const [x, z] = candidates[Math.floor(rng() * candidates.length)];
+    const inst: PlacedInstance = { id: pieceId, x, z, rot: rng() * Math.PI * 2, scale: 1.0 + 0.2 * rng(), radius, critical: true, sortKey: 0 };
+    grid.add(inst);
+    allInstances.push(inst);
+    return true;
+  };
+
+  for (const id of rule.frame) {
+    if (!tryPlace(id) && KIT_PIECES[id].layer === 'canopy') tryPlace(tallest);
+  }
+}
+
 export function buildScatter(seed: number, tier: QualityTier): ScatterResult {
   const rng = createRng(seed);
   const grid = new SpatialGrid();
@@ -354,9 +415,11 @@ export function buildScatter(seed: number, tier: QualityTier): ScatterResult {
   // 2. POI clusters (7 POIs)
   for (let i = 0; i < POIS.length; i++) {
     const poi = POIS[i];
-    const rule = FLORA_RULES[poi.id];
-    const pieces = (rule && 'pieces' in rule && rule.pieces ? rule.pieces : ['bush_a', 'boulder_s', 'log']) as KitPieceId[];
+    const rule = poiRule(poi.id);
+    const pieces = rule.pieces;
     let poiInstances = 0;
+
+    placeFrame(poi, rule, grid, rng, allInstances);
 
     for (let c = 0; c < 2; c++) {
       for (let attempt = 0; attempt < 15; attempt++) {
@@ -387,12 +450,16 @@ export function buildScatter(seed: number, tier: QualityTier): ScatterResult {
   }
 
   // 3. River reeds and water edge clusters
-  const waterAnchorPoints: [number, number][] = [
-    [-29, -30], // Reedglass Tarn
-    [85, 90], // Tamarisk Pool
-  ];
+  // Three anchors on each basin's rim.
+  const waterAnchorPoints: [number, number][] = BASINS.flatMap((b) =>
+    [0, 1, 2].map((k): [number, number] => [
+      b.x + b.radius * Math.cos((k * 2 * Math.PI) / 3),
+      b.z + b.radius * Math.sin((k * 2 * Math.PI) / 3),
+    ])
+  );
   for (let z = -105; z <= 105; z += 15) {
-    waterAnchorPoints.push([18, z], [32, z]);
+    const rx = riverCenterX(z);
+    waterAnchorPoints.push([rx - RIVER_BANK_HALF_WIDTH, z], [rx + RIVER_BANK_HALF_WIDTH, z]);
   }
   for (const [wx, wz] of waterAnchorPoints) {
     for (let attempt = 0; attempt < 10; attempt++) {
@@ -429,10 +496,12 @@ export function buildScatter(seed: number, tier: QualityTier): ScatterResult {
   }
 
   // 5. Harrowback Ridge core canopy clusters (unwalkable ridge core)
+  const spine = RIDGES[0].points.slice(-2);
   for (let i = 0; i < 8; i++) {
     for (let attempt = 0; attempt < 15; attempt++) {
-      const cx = -34 + 6 * rng();
-      const cz = 32 + 80 * rng();
+      const t = rng();
+      const cx = spine[0][0] + (spine[1][0] - spine[0][0]) * t + RIDGES[0].coreHalfWidth * (rng() - 0.5);
+      const cz = spine[0][1] + (spine[1][1] - spine[0][1]) * t;
       if (!isWalkableGround(cx, cz) && !inWater(cx, cz) && !inCorridor(cx, cz)) {
         placeCluster(cx, cz, 6.0, 3 + Math.floor(rng() * 4), ['crag_a', 'crag_b', 'snag'], grid, rng, allInstances);
         break;
@@ -441,23 +510,16 @@ export function buildScatter(seed: number, tier: QualityTier): ScatterResult {
   }
 
   // 6. Regional understorey clusters across the 5 regions
-  const regionBounds: Record<string, { minX: number; maxX: number; minZ: number; maxZ: number; count: number }> = {
-    lumbridge: { minX: -25, maxX: 45, minZ: -25, maxZ: 35, count: 14 },
-    varrock: { minX: 45, maxX: 105, minZ: -65, maxZ: 10, count: 12 },
-    desert: { minX: 45, maxX: 110, minZ: 35, maxZ: 110, count: 12 },
-    woods: { minX: -105, maxX: -25, minZ: -105, maxZ: 5, count: 14 },
-    wilderness: { minX: -105, maxX: -38, minZ: 45, maxZ: 110, count: 10 },
-  };
-
   for (const reg of WORLD_REGIONS) {
-    const b = regionBounds[reg.id];
-    const pieces = (FLORA_RULES[reg.id] as { pieces: KitPieceId[] }).pieces;
+    const rule = regionRule(reg.id);
+    const pieces = rule.pieces;
+    const count = Math.round(CLUSTERS_AT_DENSITY_1 * rule.clusterDensity);
     let regInstances = 0;
 
-    for (let c = 0; c < b.count; c++) {
+    for (let c = 0; c < count; c++) {
       for (let attempt = 0; attempt < 15; attempt++) {
-        const cx = b.minX + (b.maxX - b.minX) * rng();
-        const cz = b.minZ + (b.maxZ - b.minZ) * rng();
+        const cx = reg.x + reg.radius * (2 * rng() - 1);
+        const cz = reg.z + reg.radius * (2 * rng() - 1);
         if (regionAt(cx, cz)?.id === reg.id) {
           placeCluster(
             cx,

@@ -302,7 +302,7 @@ export interface PoiFloraRule {
   frame: KitPieceId[];
   focus: number;
   floor: string;
-  pieces?: KitPieceId[];
+  pieces: KitPieceId[];
 }
 
 export type FloraRule = RegionFloraRule | PoiFloraRule;
@@ -353,7 +353,7 @@ export const FLORA_RULES: Record<string, FloraRule> = {
     pieces: ['boulder_m', 'boulder_l'],
   },
   lampwrights_hollow: {
-    frame: ['backdrop_tree_b', 'mushrooms'],
+    frame: ['backdrop_tree_b', 'backdrop_tree_a'],
     focus: 2.5,
     floor: 'moss',
     pieces: ['mushrooms', 'fern', 'bush_b', 'log'],
