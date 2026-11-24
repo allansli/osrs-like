@@ -224,6 +224,8 @@ export const HORIZON_APRON = { inner: 130, outer: 240 };
 export const CAMERA_LIMITS = { pitchMin: 0.12, pitchMax: 1.15, distanceMin: 3.6, distanceMax: 26 };
 export const WALK_BOUND = 118;
 export const SHADOW_SUN_STEP_DEG = 0.5;
+export const SHADOW_BIAS = -0.0004;
+export const SHADOW_NORMAL_BIAS = 0.02;
 
 // Empty tables populated by later slices
 export const REGION_LOOK: unknown[] = [];
