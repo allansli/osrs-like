@@ -36,8 +36,8 @@ describe('keyboard and dialogs in index.html', () => {
     const bad = els.filter((e) => {
       if (e.tag !== 'button' || e.attrs['aria-label'] || e.attrs['aria-labelledby']) return false;
       const close = html.indexOf('</button>', e.end);
-      const text = html.slice(e.end, close).replace(/<[^>]*>/g, '');
-      return !/[\p{L}\p{N}]/u.test(text); // no letter or digit: empty, a glyph, or an image only
+      const text = html.slice(e.end, close).replace(/<[^>]*>/g, '').replace(/&#?\w+;/g, '#').trim();
+      return [...text].length <= 1; // empty, an image, or one glyph or character such as X, x or &times;
     });
     expect(bad.map(label)).toEqual([]);
   });
