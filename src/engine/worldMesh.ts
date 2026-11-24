@@ -18,7 +18,7 @@ import { loadBlenderWorldTemplate, upgradeWorldPropWithGltf } from './blenderWor
 import { el } from '../ui/hud';
 import { GFX_TIERS } from '../data/look';
 import { currentQuality } from './renderer';
-import { COLOR_FOOTER } from './atmosphere';
+import { AIR, AIR_GLSL, COLOR_FOOTER } from './atmosphere';
 
 export function getBiomeColor(x: number, z: number, h: number): THREE.Color {
   const dirt = new THREE.Color(PALETTE.dirt);
@@ -78,7 +78,9 @@ export function buildTerrainAndWater(): void {
   G.worldInteractiveObjects.push(G.terrainMesh);
 
   // Custom GLSL Animated Water Shader with Specular Sun Glint & Ripples
+  // the water keeps its own uTime: loop.ts writes it with the elapsed time
   G.waterUniforms = {
+    ...AIR,
     uTime: { value: 0 },
     uDeepColor: { value: new THREE.Color(PALETTE.water) },
     uShallowColor: { value: new THREE.Color(PALETTE.foam) }
@@ -104,15 +106,16 @@ export function buildTerrainAndWater(): void {
       }
     `,
     fragmentShader: `
-      uniform float uTime;
       uniform vec3 uDeepColor;
       uniform vec3 uShallowColor;
       varying vec3 vWorldPos;
       varying float vWave;
+      ${AIR_GLSL}
       void main() {
         float rip = sin(vWorldPos.x * 0.45 + uTime * 0.7) * cos(vWorldPos.z * 0.32);
         float foam = smoothstep(0.48, 0.78, rip);
         vec3 col = mix(uDeepColor, uShallowColor, foam);
+        col = applyAir(col, vWorldPos);
         gl_FragColor = vec4(col, 0.94);
         ${COLOR_FOOTER}
       }

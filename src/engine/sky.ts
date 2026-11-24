@@ -1,10 +1,16 @@
 import * as THREE from 'three';
 import { G } from './context';
 import { SKY_DOME_RADIUS } from '../data/look';
-import { AIR, COLOR_FOOTER } from './atmosphere';
+import { AIR, AIR_GLSL, COLOR_FOOTER, setAirTier } from './atmosphere';
+import { currentQuality } from './renderer';
 import type { DayFrame } from '../state/dayCycle';
 
 const uNight = { value: 0 };
+
+// The dome takes the air at the distance where its view ray meets a ceiling this high, capped by its radius:
+// thick at the horizon, thin overhead even on the tier without the height term.
+const AIR_SKY_CEILING = '40.0';
+const AIR_SKY_RADIUS = SKY_DOME_RADIUS.toFixed(1);
 
 export function buildSky(): void {
   const skyGeo = new THREE.SphereGeometry(SKY_DOME_RADIUS, 32, 16);
@@ -24,7 +30,6 @@ export function buildSky(): void {
       }
     `,
     fragmentShader: `
-      uniform vec3 uSunDir;
       uniform vec3 uKeyColor;
       uniform vec3 uZenith;
       uniform vec3 uHorizon;
@@ -32,6 +37,7 @@ export function buildSky(): void {
       varying vec3 vDir;
       #include <common>
       #include <dithering_pars_fragment>
+      ${AIR_GLSL}
 
       float hashStars(vec3 p) {
         vec3 cell = floor(p * 120.0);
@@ -70,6 +76,7 @@ export function buildSky(): void {
           sky += vec3(star * 0.8) * uNight;
         }
 
+        sky = applyAir(sky, cameraPosition + dir * min(${AIR_SKY_RADIUS}, ${AIR_SKY_CEILING} / max(dir.y, 1e-3)));
         gl_FragColor = vec4(sky, 1.0);
         ${COLOR_FOOTER}
         #include <dithering_fragment>
@@ -82,6 +89,8 @@ export function buildSky(): void {
 }
 
 export function updateSky(frame: DayFrame): void {
+  // ponytail: polls the tier each frame because renderer.ts (applyQualityTier) is outside AR2's files; AR4b can call setAirTier there
+  setAirTier(currentQuality);
   uNight.value = frame.keyIsMoon ? 1.0 : 0.0;
   G.skyDomeMesh.position.copy(G.camera.position);
   (G.scene.fog as THREE.FogExp2).color.copy(AIR.uAirColor.value);

@@ -231,8 +231,22 @@ export const SHADOW_SUN_STEP_DEG = 0.5;
 export const SHADOW_BIAS = -0.0004;
 export const SHADOW_NORMAL_BIAS = 0.08;
 
+export interface RegionLook {
+  id: string;
+  airTint: string;
+  airWeight: number;
+}
+
+// Air tint per region (design 5.5), in WORLD_REGIONS order; the weight is the most the air leans to the tint.
+export const REGION_LOOK: RegionLook[] = [
+  { id: 'lumbridge', airTint: '#ffffff', airWeight: 0 },
+  { id: 'varrock', airTint: '#c4d4ec', airWeight: 0.1 },
+  { id: 'desert', airTint: '#e8c48e', airWeight: 0.18 },
+  { id: 'woods', airTint: '#6fae9c', airWeight: 0.2 },
+  { id: 'wilderness', airTint: '#8e82a0', airWeight: 0.18 },
+];
+
 // Empty tables populated by later slices
-export const REGION_LOOK: unknown[] = [];
 export const WEATHER: unknown[] = [];
 export const FLORA_RULES: unknown[] = [];
 export const KIT_PIECES: unknown[] = [];

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { AIR, COLOR_FOOTER } from './atmosphere';
+import { AIR, AIR_GLSL, COLOR_FOOTER, attachAtmosphere } from './atmosphere';
 
 /** Flat Nordic fantasy tokens inspired by Skyrim. */
 export const PALETTE = {
@@ -141,6 +141,9 @@ float facetBand(float x) {
 void RE_Direct_Lambert( const in IncidentLight directLight, const in vec3 geometryPosition, const in vec3 geometryNormal, const in vec3 geometryViewDir, const in vec3 geometryClearcoatNormal, const in LambertMaterial material, inout ReflectedLight reflectedLight ) {
   float rawNL = dot( geometryNormal, directLight.direction );
   float lit = 1.0 - step( rawNL, 0.0 );
+#ifdef CLOUD_SHADOW
+  lit *= cloudShade( vAirWorld.xz );
+#endif
   reflectedLight.directDiffuse += lit * facetBand( saturate( rawNL ) ) * directLight.color * material.diffuseColor;
 }
 
@@ -250,6 +253,7 @@ export function facetMaterial(params: Record<string, unknown> = {}): THREE.MeshL
       .replace('#include <normal_fragment_begin>', FACET_BLEND_NORMAL);
   };
   mat.customProgramCacheKey = () => cacheKey;
+  attachAtmosphere(mat);
   return mat;
 }
 
@@ -257,11 +261,11 @@ export function grassMaterial(): THREE.ShaderMaterial {
   return new THREE.ShaderMaterial({
     side: THREE.DoubleSide,
     uniforms: {
+      // the grass keeps its own uTime: loop.ts writes it with the elapsed time
+      ...AIR,
       uTime: { value: 0 },
       uBase: { value: new THREE.Color(PALETTE.sage) },
-      uLit: { value: new THREE.Color(PALETTE.sageLit) },
-      uSunDir: AIR.uSunDir,
-      uKeyColor: AIR.uKeyColor
+      uLit: { value: new THREE.Color(PALETTE.sageLit) }
     },
     vertexShader: `
       uniform float uTime;
@@ -288,8 +292,8 @@ export function grassMaterial(): THREE.ShaderMaterial {
     fragmentShader: `
       uniform vec3 uBase;
       uniform vec3 uLit;
-      uniform vec3 uSunDir;
       uniform vec3 uKeyColor;
+      ${AIR_GLSL}
       varying vec3 vWorld;
       varying float vH;
       void main() {
@@ -299,6 +303,7 @@ export function grassMaterial(): THREE.ShaderMaterial {
         vec3 albedo = mix(uBase, uLit, smoothstep(0.20, 0.85, vH));
         vec3 col = albedo * mix(vec3(0.64, 0.68, 0.80), uKeyColor, cel);
         col += vec3(0.12, 0.16, 0.04) * smoothstep(0.60, 1.0, vH) * cel;
+        col = applyAir(col, vWorld);
         gl_FragColor = vec4(col, 1.0);
         ${COLOR_FOOTER}
       }

@@ -204,3 +204,16 @@ export function litGroundValue(frame: DayFrame, albedoValue: number): number {
   const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
   return toSrgb(lum);
 }
+
+/** The terms of the air (design 6.3): `heightFalloff` is the natural-log rate per unit of height above `base`. */
+export interface FogFrame {
+  density: number;
+  heightFalloff: number;
+  base: number;
+}
+
+/** TypeScript twin of `applyAir`'s fog amount (atmosphere.ts): exponential-squared distance fog times a height term. */
+export function fogFactor(distance: number, height: number, frame: FogFrame): number {
+  const fd = frame.density * distance;
+  return (1 - Math.exp(-fd * fd)) * Math.exp(-frame.heightFalloff * Math.max(height - frame.base, 0));
+}
