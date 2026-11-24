@@ -1,4 +1,5 @@
 import { BASINS, RIDGES, type RidgeDef } from '../data/worldMap';
+import { WOODS_TREES } from '../data/woodsTrees';
 
 /** River Lum centerline used by both the renderer and the collision tests. */
 export function riverCenterX(z: number): number {
@@ -105,13 +106,33 @@ export function inRidgeCore(x: number, z: number): boolean {
   return false;
 }
 
-export function isWalkable(x: number, z: number): boolean {
+export function isWalkableGround(x: number, z: number): boolean {
   if (x < -118 || x > 118 || z < -118 || z > 118) return false;
   if (isDeepWater(x, z)) return false;
   if (hitsCastleWall(x, z)) return false;
   if (inRidgeCore(x, z)) return false;
   if (inBasinWater(x, z)) return false;
   return true;
+}
+
+let woodsTreeMap: Uint8Array | null = null;
+
+export function isWoodsTreeCell(x: number, z: number): boolean {
+  if (x < -118 || x > 118 || z < -118 || z > 118) return false;
+  const ix = Math.floor(x + 118);
+  const iz = Math.floor(z + 118);
+  if (ix < 0 || ix >= 236 || iz < 0 || iz >= 236) return false;
+  if (!woodsTreeMap) {
+    woodsTreeMap = new Uint8Array(236 * 236);
+    for (const [i, j] of WOODS_TREES) {
+      woodsTreeMap[j * 236 + i] = 1;
+    }
+  }
+  return woodsTreeMap[iz * 236 + ix] === 1;
+}
+
+export function isWalkable(x: number, z: number): boolean {
+  return isWalkableGround(x, z) && !isWoodsTreeCell(x, z);
 }
 
 export function moveWithCollision(
