@@ -683,8 +683,8 @@
     display: none;
   }
   #target-hud.visible { display: block; }
-  #target-hud.untouchable {
-    border-color: #64748b;
+  #target-hud.untouchable::before {
+    background-color: #64748b;
   }
   #target-hud.untouchable .vital-bar-fill {
     background: #64748b !important;
@@ -1813,11 +1813,6 @@
   cursor: pointer;
 }
 
-.quest-claim:disabled {
-  opacity: 0.45;
-  cursor: default;
-}
-
 .quest-claim::before { background: #fde047; }
 .quest-locate { color: #7dd3fc; }
 .quest-locate::before { background: #38bdf8; }
@@ -1841,10 +1836,6 @@
   margin-top: 8px;
   width: 248px;
   padding: 8px 10px 9px;
-}
-
-.slayer-widget {
-  border-color: rgba(148, 163, 184, 0.28);
 }
 
 .slayer-widget.empty {
