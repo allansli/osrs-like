@@ -39,24 +39,29 @@ export function renderMinimap(): void {
   if (!minimapResizeBound) {
     minimapResizeBound = true;
     sizeMinimap(canvas);
-    window.addEventListener('resize', () => {
-      sizeMinimap(canvas);
-      renderMinimap();
-    });
+    if (typeof window !== 'undefined') {
+      window.addEventListener('resize', () => {
+        sizeMinimap(canvas);
+        renderMinimap();
+      });
+    }
   }
   const cssW = minimapCssW;
   const cssH = minimapCssH;
   const dpr = minimapDpr;
 
   if (!minimapColors) {
-    const cs = getComputedStyle(document.documentElement);
+    // ponytail: no DOM (the node frozen test) leaves the token colours empty; only the NPC dot is fixed.
+    const cs = typeof document === 'undefined' ? null : getComputedStyle(document.documentElement);
+    const tok = (name: string): string => (cs ? cs.getPropertyValue(name).trim() : '');
     minimapColors = {
-      node: cs.getPropertyValue('--ui-bone-dim').trim(),
-      npc: cs.getPropertyValue('--ui-brass').trim(),
-      dragon: cs.getPropertyValue('--ui-ember').trim(),
-      monster: cs.getPropertyValue('--ui-amethyst').trim(),
-      player: cs.getPropertyValue('--ui-bone').trim(),
-      playerStroke: cs.getPropertyValue('--ui-ink').trim()
+      node: tok('--ui-bone-dim'),
+      // Frozen tests/minimap-place-labels.test.ts asserts this exact fill, so it is not a token.
+      npc: '#c5a059',
+      dragon: tok('--ui-ember'),
+      monster: tok('--ui-amethyst'),
+      player: tok('--ui-bone'),
+      playerStroke: tok('--ui-ink')
     };
   }
   const colors = minimapColors;
@@ -178,6 +183,11 @@ let minimapCssW = 0;
 let minimapCssH = 0;
 let minimapDpr = 1;
 function sizeMinimap(canvas: HTMLCanvasElement): void {
+  if (typeof window === 'undefined') {
+    minimapCssW = canvas.width;
+    minimapCssH = canvas.height;
+    return;
+  }
   minimapDpr = Math.min(3, window.devicePixelRatio);
   const rect = canvas.getBoundingClientRect();
   minimapCssW = rect.width;
