@@ -71,10 +71,6 @@
     background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0, rgba(255, 255, 255, 0.15) 1px, transparent 1px);
     clip-path: polygon(6px 0, calc(100% - 6px) 0, 100% 6px, 100% calc(100% - 6px), calc(100% - 6px) 100%, 6px 100%, 0 calc(100% - 6px), 0 6px);
     z-index: -2;
-    padding: 1px;
-    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-    -webkit-mask-composite: xor;
-    mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
     pointer-events: none;
   }
 
@@ -96,7 +92,7 @@
     pointer-events: none;
     z-index: 15;
     opacity: 0;
-    transition: opacity 0.3s ease;
+    transition: opacity 0.24s ease-out;
     box-shadow: inset 0 0 80px 20px rgba(185, 28, 28, 0.55);
   }
 
@@ -234,7 +230,7 @@
     background-color: var(--ui-moss);
     background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.18) 50%, transparent 50%);
     border-radius: 0;
-    transition: width 0.15s ease-out;
+    transition: width 0.12s ease-out;
   }
 
   .overhead-prayer-badge {
@@ -380,10 +376,6 @@
     background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0, rgba(255, 255, 255, 0.15) 1px, transparent 1px);
     clip-path: polygon(6px 0, calc(100% - 6px) 0, 100% 6px, 100% calc(100% - 6px), calc(100% - 6px) 100%, 6px 100%, 0 calc(100% - 6px), 0 6px);
     z-index: -2;
-    padding: 1px;
-    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-    -webkit-mask-composite: xor;
-    mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
   }
 
   #region-banner::after,
@@ -399,7 +391,7 @@
   #region-banner {
     top: 68px;
     opacity: 0;
-    transition: opacity 0.8s ease, transform 0.8s ease;
+    transition: opacity 0.24s ease-out, transform 0.24s ease-out;
   }
   #region-banner.visible {
     opacity: 1;
@@ -560,7 +552,7 @@
     height: 100%;
     border-radius: 0;
     background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.18) 50%, transparent 50%);
-    transition: width 0.2s ease;
+    transition: width 0.24s ease-out;
   }
 
   .vital-bar-text {
@@ -751,7 +743,7 @@
     background-color: var(--ui-ember);
     background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.18) 50%, transparent 50%);
     border-radius: 0;
-    transition: width 0.15s ease-out;
+    transition: width 0.12s ease-out;
   }
   .boss-pip {
     position: absolute;
@@ -932,9 +924,8 @@
     justify-content: center;
     position: relative;
     cursor: pointer;
-    transition: background-color 0.12s, transform 0.1s;
+    transition: background-color 0.12s ease-out, transform 0.12s ease-out;
     min-height: 36px;
-    aspect-ratio: 1;
   }
   .inv-slot:hover {
     transform: scale(1.03);
@@ -1019,7 +1010,7 @@
     align-items: center;
     justify-content: space-between;
     cursor: pointer;
-    transition: border-color 0.12s;
+    transition: border-color 0.12s ease-out;
   }
   .skill-box:hover { border-color: var(--ui-brass); }
   .skill-left {
@@ -1069,7 +1060,7 @@
     align-items: center;
     justify-content: space-between;
     cursor: pointer;
-    transition: all 0.12s;
+    transition: all 0.12s ease-out;
   }
   .style-btn:hover { border-color: var(--ui-brass); }
   .style-btn.active {
@@ -1091,7 +1082,7 @@
     font-size: 0.6875rem;
     cursor: pointer;
     text-align: center;
-    transition: all 0.15s;
+    transition: all 0.12s ease-out;
   }
   .spec-attack-btn.armed {
     background: linear-gradient(90deg, #ca8a04, #dc2626);
@@ -1121,7 +1112,7 @@
     justify-content: center;
     cursor: pointer;
     position: relative;
-    transition: background-color 0.12s;
+    transition: background-color 0.12s ease-out;
   }
   .equip-slot.empty-spacer {
     background: transparent;
@@ -1166,7 +1157,7 @@
     text-align: center;
     cursor: pointer;
     gap: 3px;
-    transition: all 0.12s;
+    transition: all 0.12s ease-out;
   }
   .action-card:hover { border-color: var(--ui-brass); }
   .action-card.active {
@@ -1275,20 +1266,14 @@
     margin-bottom: 10px;
   }
   .filter-pill {
-    background: #261f16;
-    border: 1px solid #574834;
     color: #d6c7ab;
     padding: 4px 10px;
-    border-radius: 14px;
     font-size: 0.6875rem;
     font-weight: 700;
     cursor: pointer;
   }
-  .filter-pill.active {
-    background: var(--ui-brass);
-    color: #1a140d;
-    border-color: #fff;
-  }
+  .filter-pill.active { color: var(--ui-brass); }
+  .filter-pill.active::before { background: var(--ui-brass); }
 
   .shop-grid {
     display: grid;
@@ -1374,26 +1359,14 @@
   .shop-card.combat-magic { box-shadow: inset 3px 0 0 #818cf8; }
   .shop-card.combat-all_around { box-shadow: inset 3px 0 0 #22d3ee; }
   .shop-card.combat-supply { box-shadow: inset 3px 0 0 #a8a29e; }
-  #shop-filter-pills .filter-pill.active.filter-melee {
-    background: linear-gradient(180deg, #ea580c, #9f1239);
-    color: #fff7ed;
-    border-color: #fdba74;
-  }
-  #shop-filter-pills .filter-pill.active.filter-ranged {
-    background: linear-gradient(180deg, #059669, #047857);
-    color: #ecfdf5;
-    border-color: #6ee7b7;
-  }
-  #shop-filter-pills .filter-pill.active.filter-magic {
-    background: linear-gradient(180deg, #4f46e5, #6d28d9);
-    color: #f5f3ff;
-    border-color: #c4b5fd;
-  }
-  #shop-filter-pills .filter-pill.active.filter-all_around {
-    background: linear-gradient(90deg, #22d3ee, #facc15);
-    color: #042f2e;
-    border-color: #fef08a;
-  }
+  #shop-filter-pills .filter-pill.active.filter-melee { color: #fdba74; }
+  #shop-filter-pills .filter-pill.active.filter-melee::before { background: #ea580c; }
+  #shop-filter-pills .filter-pill.active.filter-ranged { color: #6ee7b7; }
+  #shop-filter-pills .filter-pill.active.filter-ranged::before { background: #059669; }
+  #shop-filter-pills .filter-pill.active.filter-magic { color: #c4b5fd; }
+  #shop-filter-pills .filter-pill.active.filter-magic::before { background: #4f46e5; }
+  #shop-filter-pills .filter-pill.active.filter-all_around { color: #fef08a; }
+  #shop-filter-pills .filter-pill.active.filter-all_around::before { background: #22d3ee; }
   .shop-buy-btn { line-height: 1.25; white-space: normal; }
 
   #shop-items-grid {
@@ -1439,19 +1412,16 @@
   }
 
   .rune-pack-btn {
-    background: linear-gradient(180deg, #3f6212, #14532d);
-    border: 1px solid #86efac;
     color: #ecfccb;
-    border-radius: 999px;
     padding: 6px 12px;
     font-size: 0.75rem;
     font-weight: 700;
     cursor: pointer;
   }
   .rune-pack-actions.prominent .rune-pack-btn {
-    box-shadow: 0 0 0 1px #bef264, 0 0 16px rgba(190, 242, 100, 0.35);
+    color: var(--ui-brass);
   }
-  .rune-pack-btn:hover { filter: brightness(1.12); }
+  .rune-pack-actions.prominent .rune-pack-btn::before { background: var(--ui-brass); }
 
   /* XP Table */
   .xp-table-grid {
@@ -1600,10 +1570,7 @@
 
 .qty-pill,
 .filter-pill {
-  background: #2a241b;
   color: #f6f2e4;
-  border: 1px solid #6e5d45;
-  border-radius: 999px;
   padding: 4px 10px;
   cursor: pointer;
   font-weight: 700;
@@ -1611,11 +1578,9 @@
 }
 
 .qty-pill.active,
-.filter-pill.active {
-  background: #fef08a;
-  color: #1d1812;
-  border-color: #fef08a;
-}
+.filter-pill.active { color: var(--ui-brass); }
+.qty-pill.active::before,
+.filter-pill.active::before { background: var(--ui-brass); }
 
 .station-panes {
   display: grid;
@@ -1643,10 +1608,7 @@
   grid-template-columns: 34px 1fr auto;
   gap: 6px;
   align-items: center;
-  background: #1d1812;
   color: #f6f2e4;
-  border: 1px solid #6e5d45;
-  border-radius: 6px;
   padding: 6px;
   cursor: pointer;
   text-align: left;
@@ -1676,10 +1638,7 @@
 }
 
 .sell-bulk-btn {
-  background: linear-gradient(180deg, #3f6212, #14532d);
-  border: 1px solid #86efac;
   color: #ecfccb;
-  border-radius: 6px;
   padding: 7px 8px;
   font-size: 0.6875rem;
   font-weight: 700;
@@ -1688,15 +1647,8 @@
   line-height: 1.3;
 }
 
-.sell-bulk-btn.gear {
-  background: linear-gradient(180deg, #85581A, #54360c);
-  border-color: #fde047;
-  color: #fef9c3;
-}
-
-.sell-bulk-btn:hover {
-  filter: brightness(1.12);
-}
+.sell-bulk-btn.gear { color: #fef9c3; }
+.sell-bulk-btn.gear::before { background: var(--ui-brass); }
 
 #shop-pack.backpack-grid {
   grid-template-columns: 1fr;
@@ -1734,10 +1686,7 @@
 }
 
 .sell-quick {
-  background: #241c14;
   color: #fef08a;
-  border: 1px solid #6e5d45;
-  border-radius: 4px;
   padding: 3px 0 2px;
   font-size: 0.6875rem;
   font-weight: 700;
@@ -1754,10 +1703,7 @@
   font-weight: 700;
 }
 
-.sell-quick:hover {
-  border-color: var(--ui-brass);
-  background: #3a2d1c;
-}
+.sell-quick:hover::before { background: var(--ui-brass); }
 
 .qty-badge {
   background: transparent;
@@ -1860,10 +1806,7 @@
 
 .quest-claim,
 .quest-locate {
-  background: #261f16;
-  border: 1px solid #fde047;
   color: #fde047;
-  border-radius: 6px;
   padding: 4px 10px;
   font-weight: 700;
   font-size: 0.75rem;
@@ -1873,14 +1816,11 @@
 .quest-claim:disabled {
   opacity: 0.45;
   cursor: default;
-  border-color: #6e5d45;
-  color: #d6c7ab;
 }
 
-.quest-locate {
-  border-color: #38bdf8;
-  color: #7dd3fc;
-}
+.quest-claim::before { background: #fde047; }
+.quest-locate { color: #7dd3fc; }
+.quest-locate::before { background: #38bdf8; }
 
 .region-target {
   animation: region-pulse 1.1s ease-in-out infinite;
@@ -2020,7 +1960,7 @@
   font-size: 0.75rem;
   color: var(--ui-bone);
   white-space: nowrap;
-  transition: background-color 0.12s, color 0.12s;
+  transition: background-color 0.12s ease-out, color 0.12s ease-out;
 }
 
 .osrs-menu-item:hover {
