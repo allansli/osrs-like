@@ -113,7 +113,7 @@ const CUT_LOW_EDGE = '0.15';
 const CUT_HIGH_EDGE = '0.55';
 const CUT_GRAZE = '0.22';
 const CUT_HALF = '0.62';
-const ROUND_EDGE = '0.35';
+const ROUND_EDGE = '0.30';
 const ROUND_SHADE = '0.62';
 const FOOT_FLOOR = '0.75';
 
