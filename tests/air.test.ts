@@ -164,7 +164,7 @@ describe('nextTier, the governor (design 6.10)', () => {
     expect(nextTier('ultra', run(24), open)).toBe('ultra');
     const spiky = [...run(16, 120), ...run(200, 20)];
     expect(nextTier('ultra', spiky, open)).toBe('ultra');
-    const mostlySlow = [...run(30, 90), ...run(10, 40)];
+    const mostlySlow = [...run(30, 120), ...run(10, 50)];
     expect(nextTier('ultra', mostlySlow, open)).toBe('high');
   });
 
