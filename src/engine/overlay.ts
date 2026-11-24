@@ -36,51 +36,28 @@ export function renderMinimap(): void {
   const canvas = el<HTMLCanvasElement>('minimap-canvas');
   const ctx = canvas.getContext('2d')!;
 
-  if (!minimapResizeBound && typeof window !== 'undefined') {
+  if (!minimapResizeBound) {
     minimapResizeBound = true;
+    sizeMinimap(canvas);
     window.addEventListener('resize', () => {
-      const d = Math.min(3, window.devicePixelRatio || 1);
-      const r = canvas.getBoundingClientRect ? canvas.getBoundingClientRect() : null;
-      const w = r ? r.width : (canvas.clientWidth || 198);
-      const h = r ? r.height : (canvas.clientHeight || 198);
-      canvas.width = Math.round(w * d);
-      canvas.height = Math.round(h * d);
+      sizeMinimap(canvas);
       renderMinimap();
     });
   }
-
-  const dpr = Math.min(3, typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1);
-  const rect = canvas.getBoundingClientRect ? canvas.getBoundingClientRect() : null;
-  const cssW = rect ? rect.width : (canvas.clientWidth || 198);
-  const cssH = rect ? rect.height : (canvas.clientHeight || 198);
-  const targetW = Math.round(cssW * dpr);
-  const targetH = Math.round(cssH * dpr);
-  if (canvas.width !== targetW || canvas.height !== targetH) {
-    canvas.width = targetW;
-    canvas.height = targetH;
-  }
+  const cssW = minimapCssW;
+  const cssH = minimapCssH;
+  const dpr = minimapDpr;
 
   if (!minimapColors) {
-    if (typeof document !== 'undefined') {
-      const cs = getComputedStyle(document.documentElement);
-      minimapColors = {
-        node: cs.getPropertyValue('--ui-slate-3').trim(),
-        npc: cs.getPropertyValue('--ui-brass').trim(),
-        dragon: cs.getPropertyValue('--ui-ember').trim(),
-        monster: cs.getPropertyValue('--ui-ember').trim(),
-        player: cs.getPropertyValue('--ui-bone').trim(),
-        playerStroke: cs.getPropertyValue('--ui-ink').trim()
-      };
-    } else {
-      minimapColors = {
-        node: '#64748b',
-        npc: '#c5a059',
-        dragon: '#b91c1c',
-        monster: '#881337',
-        player: '#ffffff',
-        playerStroke: '#000000'
-      };
-    }
+    const cs = getComputedStyle(document.documentElement);
+    minimapColors = {
+      node: cs.getPropertyValue('--ui-bone-dim').trim(),
+      npc: cs.getPropertyValue('--ui-brass').trim(),
+      dragon: cs.getPropertyValue('--ui-ember').trim(),
+      monster: cs.getPropertyValue('--ui-amethyst').trim(),
+      player: cs.getPropertyValue('--ui-bone').trim(),
+      playerStroke: cs.getPropertyValue('--ui-ink').trim()
+    };
   }
   const colors = minimapColors;
 
@@ -194,6 +171,19 @@ export function renderMinimap(): void {
   ctx.stroke();
 
   ctx.restore();
+}
+
+// Backing store = CSS size x devicePixelRatio (capped at 3); runs on the first frame and on resize.
+let minimapCssW = 0;
+let minimapCssH = 0;
+let minimapDpr = 1;
+function sizeMinimap(canvas: HTMLCanvasElement): void {
+  minimapDpr = Math.min(3, window.devicePixelRatio);
+  const rect = canvas.getBoundingClientRect();
+  minimapCssW = rect.width;
+  minimapCssH = rect.height;
+  canvas.width = Math.round(minimapCssW * minimapDpr);
+  canvas.height = Math.round(minimapCssH * minimapDpr);
 }
 
 export function worldToScreenPos(x: number, y: number, z: number): { x: number; y: number; visible: boolean } {
