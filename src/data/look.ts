@@ -314,7 +314,7 @@ export const FLORA_RULES: Record<string, FloraRule> = {
   },
   varrock: {
     pieces: ['bush_a', 'boulder_s', 'boulder_m', 'sapling'],
-    clusterDensity: 0.6,
+    clusterDensity: 0.8,
   },
   desert: {
     pieces: ['boulder_s', 'boulder_m', 'boulder_l', 'bush_b', 'log'],
@@ -322,7 +322,7 @@ export const FLORA_RULES: Record<string, FloraRule> = {
   },
   woods: {
     pieces: ['fern', 'mushrooms', 'sapling', 'log', 'bush_a', 'bush_b', 'boulder_s'],
-    clusterDensity: 1.2,
+    clusterDensity: 1.6,
   },
   wilderness: {
     pieces: ['boulder_s', 'boulder_m', 'boulder_l', 'log'],
