@@ -44,3 +44,19 @@ describe('graphics tier table', () => {
     }
   });
 });
+
+// Plan AR1, design 8.1 G5.9: the pixel budget never returns more than the tier's megapixels, nor its ratio cap.
+describe('pixel budget', () => {
+  it('holds both caps on every tier at 4K and 8K sizes and ratios up to 3', async () => {
+    const { effectivePixelRatio } = await import('../src/engine/post');
+    for (const id of IDS) {
+      for (const [w, h] of [[1920, 1080], [3840, 2160], [7680, 4320]]) {
+        for (const dpr of [1, 1.5, 2, 3]) {
+          const r = effectivePixelRatio(id, w, h, dpr);
+          expect(r, `${id} ${w}x${h} ${dpr}`).toBeLessThanOrEqual(GFX_TIERS[id].pixelRatioCap + 1e-9);
+          expect(w * r * h * r, `${id} ${w}x${h} ${dpr}`).toBeLessThanOrEqual(GFX_TIERS[id].megapixelCap * 1e6 * (1 + 1e-6));
+        }
+      }
+    }
+  });
+});

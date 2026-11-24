@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { CAMERA_FAR, CAMERA_LIMITS, DAY_KEYS, HORIZON_APRON, SHADOW_SUN_STEP_DEG, SKY_DOME_RADIUS, WALK_BOUND } from '../src/data/look';
+import { BLOOM, CAMERA_FAR, CAMERA_LIMITS, DAY_KEYS, HORIZON_APRON, REGION_LOOK, SHADOW_SUN_STEP_DEG, SKY_DOME_RADIUS, WALK_BOUND } from '../src/data/look';
+import { WORLD_REGIONS } from '../src/data/world';
 import { dayFrameAt, litGroundValue } from '../src/state/dayCycle';
 import { TERRAIN_SIZE } from '../src/state/terrain';
 
@@ -59,5 +60,48 @@ describe('look data: distances', () => {
     expect(HORIZON_APRON.inner).toBe(TERRAIN_SIZE / 2);
     expect(HORIZON_APRON.inner).toBe(130);
     expect(HORIZON_APRON.outer).toBeGreaterThan(HORIZON_APRON.inner);
+  });
+});
+
+// Plan AR1, design 5.5 and 6.10. Row fields pinned for AR2: `{ id, airTint: '#rrggbb', airWeight }`.
+describe('look data: region air (design 5.5)', () => {
+  const rows = REGION_LOOK as unknown as Array<{ id: string; airTint: string; airWeight: number }>;
+
+  it('has five rows, one per WORLD_REGIONS id, in order', () => {
+    expect(rows).toHaveLength(5);
+    expect(rows.map((r) => r.id)).toEqual(WORLD_REGIONS.map((r) => r.id));
+  });
+
+  it('gives each an air tint with a weight of at most 0.2', () => {
+    expect(rows).toHaveLength(5);
+    for (const row of rows) {
+      expect(row.airTint, row.id).toMatch(HEX);
+      expect(Number.isFinite(row.airWeight), row.id).toBe(true);
+      expect(row.airWeight, row.id).toBeGreaterThanOrEqual(0);
+      expect(row.airWeight, row.id).toBeLessThanOrEqual(0.2);
+    }
+  });
+});
+
+describe('look data: bloom (design 6.10)', () => {
+  // Linear, pre-exposure, full band, fill and bounce included, the way UnrealBloomPass thresholds.
+  const brightestLit = Math.max(
+    ...DAY_KEYS.map((row) => {
+      const f = dayFrameAt(row.phase);
+      const c = [0, 1, 2].map((i) => (f.keyIntensity * f.key[i] + f.fill[i] + f.bounce[i]) * 0.75);
+      return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+    })
+  );
+
+  it('has a finite threshold, strength and radius', () => {
+    for (const n of ['threshold', 'strength', 'radius'] as const) expect(Number.isFinite(BLOOM[n]), n).toBe(true);
+    expect(BLOOM.strength).toBeGreaterThan(0);
+    expect(BLOOM.radius).toBeGreaterThanOrEqual(0);
+    expect(BLOOM.radius).toBeLessThanOrEqual(1);
+  });
+
+  it('sets the threshold at least 15 percent above the brightest lit surface under any key', () => {
+    expect(brightestLit).toBeGreaterThan(0);
+    expect(BLOOM.threshold).toBeGreaterThanOrEqual(1.15 * brightestLit);
   });
 });
