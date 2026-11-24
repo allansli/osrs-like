@@ -49,6 +49,70 @@
     color: var(--ui-bone);
   }
 
+  /* Panel Component (design 7.3): Slate-1, 6 px chamfered corners, a 1 px slate-3 line and a 1 px lighter top edge, one hard 2 px ink shadow, no glow */
+  .ui-panel,
+  #right-panel,
+  #chatbox,
+  .player-vitals-card,
+  .perf-hud,
+  #target-hud,
+  #boss-bar,
+  .modal-window,
+  .death-card,
+  .quest-tracker,
+  .slayer-widget,
+  .cheat-panel {
+    position: relative;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    filter: drop-shadow(0 2px 0 var(--ui-ink));
+    box-shadow: none;
+  }
+
+  .ui-panel::before,
+  #right-panel::before,
+  #chatbox::before,
+  .player-vitals-card::before,
+  .perf-hud::before,
+  #target-hud::before,
+  #boss-bar::before,
+  .modal-window::before,
+  .death-card::before,
+  .quest-tracker::before,
+  .slayer-widget::before,
+  .cheat-panel::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--ui-slate-3);
+    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0, rgba(255, 255, 255, 0.15) 1px, transparent 1px);
+    clip-path: polygon(6px 0, calc(100% - 6px) 0, 100% 6px, 100% calc(100% - 6px), calc(100% - 6px) 100%, 6px 100%, 0 calc(100% - 6px), 0 6px);
+    z-index: -2;
+    pointer-events: none;
+  }
+
+  .ui-panel::after,
+  #right-panel::after,
+  #chatbox::after,
+  .player-vitals-card::after,
+  .perf-hud::after,
+  #target-hud::after,
+  #boss-bar::after,
+  .modal-window::after,
+  .death-card::after,
+  .quest-tracker::after,
+  .slayer-widget::after,
+  .cheat-panel::after {
+    content: '';
+    position: absolute;
+    inset: 1px;
+    background: var(--ui-panel);
+    clip-path: polygon(5px 0, calc(100% - 5px) 0, 100% 5px, 100% calc(100% - 5px), calc(100% - 5px) 100%, 5px 100%, 0 calc(100% - 5px), 0 5px);
+    z-index: -1;
+    pointer-events: none;
+  }
+
   #low-health-vignette {
     position: absolute;
     inset: 0;
@@ -92,9 +156,6 @@
     width: min(420px, calc(100% - 32px));
     padding: 22px 24px 18px;
     text-align: center;
-    background: #1d1812;
-    border: 2px solid #d8b556;
-    border-radius: 10px;
   }
 
   .death-card h2 {
@@ -363,10 +424,6 @@
 
   /* Hardware Telemetry & Performance HUD */
   .perf-hud {
-    background: rgba(15, 23, 42, 0.88);
-    backdrop-filter: blur(8px);
-    border: 1px solid rgba(216, 181, 86, 0.45);
-    border-radius: 8px;
     padding: 6px 10px;
     width: 292px;
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
@@ -377,11 +434,9 @@
     gap: 3px;
     cursor: pointer;
     user-select: none;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-    transition: border-color 0.15s ease, background-color 0.15s ease;
+    transition: background-color 0.15s ease;
   }
   .perf-hud:hover {
-    border-color: rgba(253, 224, 71, 0.85);
     background: rgba(15, 23, 42, 0.96);
   }
   .perf-row {
@@ -419,13 +474,8 @@
   }
 
   .player-vitals-card {
-    background: var(--ui-panel);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(148, 163, 184, 0.28);
-    border-radius: 8px;
     padding: 10px 14px;
     width: 292px;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.7);
   }
 
   .vitals-header {
@@ -554,14 +604,9 @@
 
   /* Active Target HUD */
   #target-hud {
-    background: var(--ui-panel);
-    backdrop-filter: blur(10px);
-    border: 1.5px solid rgba(239, 68, 68, 0.65);
-    border-radius: 10px;
     padding: 8px 12px;
     width: 292px;
     display: none;
-    box-shadow: 0 4px 14px rgba(0,0,0,0.55);
   }
   #target-hud.visible { display: block; }
   #target-hud.untouchable {
@@ -586,13 +631,8 @@
     transform: translateX(-50%);
     width: 440px;
     max-width: 90vw;
-    background: var(--ui-panel);
-    backdrop-filter: blur(10px);
-    border: 1.5px solid rgba(239, 68, 68, 0.75);
-    border-radius: 10px;
     padding: 8px 14px;
     z-index: 35;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.75), 0 0 15px rgba(239, 68, 68, 0.25);
     pointer-events: none;
   }
   #boss-bar[hidden] {
@@ -725,10 +765,6 @@
     right: 14px;
     width: 268px;
     height: 432px;
-    background: var(--ui-panel);
-    border: 2px solid #334155;
-    border-radius: 8px;
-    box-shadow: 0 12px 34px rgba(0,0,0,0.85);
     z-index: 60;
     display: flex;
     flex-direction: column;
@@ -1024,14 +1060,9 @@
     left: 14px;
     width: 440px;
     height: 162px;
-    background: rgba(24, 19, 14, 0.9);
-    backdrop-filter: blur(8px);
-    border: 2.5px solid var(--ui-slate-3);
-    border-radius: 8px;
     z-index: 10;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 8px 26px rgba(0,0,0,0.75);
   }
 
   #chat-messages {
@@ -1068,7 +1099,6 @@
     position: absolute;
     inset: 0;
     background: rgba(0, 0, 0, 0.68);
-    backdrop-filter: blur(5px);
     z-index: 80;
     display: none;
     align-items: center;
@@ -1077,15 +1107,11 @@
   .modal-backdrop.open { display: flex; }
 
   .modal-window {
-    background: linear-gradient(180deg, #332b20, #201a13);
-    border: 3px solid var(--ui-brass);
-    border-radius: 12px;
     width: 760px;
     max-width: 95vw;
     max-height: 85vh;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 24px 60px rgba(0,0,0,0.92);
     overflow: hidden;
   }
 
@@ -1762,10 +1788,6 @@
   margin-top: 8px;
   width: 248px;
   padding: 8px 10px 9px;
-  background: var(--ui-panel);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(148, 163, 184, 0.24);
-  border-radius: 8px;
 }
 
 .slayer-widget {

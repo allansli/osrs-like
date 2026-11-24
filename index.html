@@ -91,7 +91,7 @@
 
 <!-- Top-Left Vitals & Utility Bar -->
 <div id="top-left-hud">
-  <div class="player-vitals-card">
+  <div class="player-vitals-card ui-panel">
     <div class="vitals-header">
       <div class="char-name-badge">
         <span id="hero-crest-icon" class="vital-icon"></span>
@@ -133,7 +133,7 @@
     <button class="hud-btn" id="btn-settings" onclick="openSettingsModal()">Settings</button>
   </div>
 
-  <div id="perf-hud" class="perf-hud" title="Hardware Acceleration & FPS Status (Click to cycle Graphics Quality)" onclick="cycleGraphicsQuality()">
+  <div id="perf-hud" class="perf-hud ui-panel" title="Hardware Acceleration & FPS Status (Click to cycle Graphics Quality)" onclick="cycleGraphicsQuality()">
     <div class="perf-row">
       <span class="perf-status-dot" id="perf-dot"></span>
       <span id="perf-gpu-name">GPU: Detecting...</span>
@@ -191,7 +191,7 @@
 </div>
 
 <!-- Right-Side Classic OSRS Tabbed Panel -->
-<div id="right-panel">
+<div id="right-panel" class="ui-panel">
   <div class="tab-bar">
     <button class="tab-btn" onclick="switchTab('combat')" id="tab-btn-combat" title="Combat Styles & Special Attack"></button>
     <button class="tab-btn" onclick="switchTab('skills')" id="tab-btn-skills" title="Skills & XP Levels"></button>
@@ -294,7 +294,7 @@
 </div>
 
 <!-- Chatbox -->
-<div id="chatbox">
+<div id="chatbox" class="ui-panel">
   <div id="chat-messages"></div>
   <div class="chat-footer">
     <span><b>WASD</b>: Move | <b>Click</b>: Walk or interact | <b>F1–F6</b>: Panels | <b>Esc</b>: Close | <b>Space</b>: Jump</span>
@@ -304,7 +304,7 @@
 
 <!-- MODAL: GENERAL STORE -->
 <div class="modal-backdrop" id="shop-modal">
-  <div class="modal-window wide">
+  <div class="modal-window wide ui-panel">
     <div class="modal-header">
       <h2>Lumbridge General Store</h2>
       <button class="modal-close" onclick="closeModals()">X</button>
@@ -315,7 +315,7 @@
 
 <!-- MODAL: BANK -->
 <div class="modal-backdrop" id="bank-modal">
-  <div class="modal-window wide">
+  <div class="modal-window wide ui-panel">
     <div class="modal-header">
       <h2>Lumbridge Bank Vault</h2>
       <button class="modal-close" onclick="closeModals()">X</button>
@@ -326,7 +326,7 @@
 
 <!-- MODAL 2: FORGE / SMITHING & COOKING -->
 <div class="modal-backdrop" id="smithing-modal">
-  <div class="modal-window">
+  <div class="modal-window ui-panel">
     <div class="modal-header">
       <h2>Royal Anvil, Smelting Furnace & Cooking Range</h2>
       <button class="modal-close" onclick="closeModals()">X</button>
@@ -342,7 +342,7 @@
 
 <!-- MODAL 3: OSRS XP TABLE -->
 <div class="modal-backdrop" id="xptable-modal">
-  <div class="modal-window">
+  <div class="modal-window ui-panel">
     <div class="modal-header">
       <h2>Official OldSchool RuneScape Experience Table (Lv 1–99)</h2>
       <button class="modal-close" onclick="closeModals()">X</button>
@@ -356,7 +356,7 @@
 
 <!-- MODAL 4: WORLD MAP & TELEPORT SHRINES -->
 <div class="modal-backdrop" id="worldmap-modal">
-  <div class="modal-window">
+  <div class="modal-window ui-panel">
     <div class="modal-header">
       <h2>Kingdom of Gielinor — Regions & Shrines</h2>
       <button class="modal-close" onclick="closeModals()">X</button>
@@ -371,7 +371,7 @@
 </div>
 
 <div class="modal-backdrop" id="quest-modal">
-  <div class="modal-window">
+  <div class="modal-window ui-panel">
     <div class="modal-header">
       <h2>Adventure Log</h2>
       <button class="modal-close" onclick="closeModals()">X</button>
@@ -381,7 +381,7 @@
 </div>
 
 <div class="modal-backdrop" id="settings-modal">
-  <div class="modal-window">
+  <div class="modal-window ui-panel">
     <div class="modal-header">
       <h2>Settings</h2>
       <button class="modal-close" onclick="closeModals()">X</button>
