@@ -711,13 +711,6 @@ def fold_weights(mesh: bpy.types.Object, mapping: dict, *, unweighted_to: str | 
             tgt = src_to_target[vg_names[g.group]]
             target_weights[v.index][tgt] = target_weights[v.index].get(tgt, 0.0) + g.weight
 
-    for vg in list(mesh.vertex_groups):
-        mesh.vertex_groups.remove(vg)
-
-    target_vgs = {}
-    for tgt in set(src_to_target.values()):
-        target_vgs[tgt] = mesh.vertex_groups.new(name=tgt)
-
     if unweighted_to is not None and unweighted_to not in mapping:
         raise ValueError(f"fold_weights: unweighted_to {unweighted_to!r} is not a target of the mapping")
     bare = [i for i, tw in enumerate(target_weights) if sum(tw.values()) <= 1e-6]
@@ -728,6 +721,11 @@ def fold_weights(mesh: bpy.types.Object, mapping: dict, *, unweighted_to: str | 
         )
     if bare:
         print(f"[figkit] fold_weights put {len(bare)} unweighted vertices of {mesh.name} on {unweighted_to}")
+
+    # Every check has passed: only now replace the source groups.
+    for vg in list(mesh.vertex_groups):
+        mesh.vertex_groups.remove(vg)
+    target_vgs = {tgt: mesh.vertex_groups.new(name=tgt) for tgt in set(src_to_target.values())}
 
     for v_idx, tw in enumerate(target_weights):
         items = sorted(tw.items(), key=lambda x: x[1], reverse=True)[:4]
@@ -871,8 +869,9 @@ def merge_by_family(root=None, keep=TOGGLED) -> list[bpy.types.Object]:
     material family, and noOutline flag, so meshes parented to different
     bones of one armature never merge.
     Never merges a mesh whose name matches keep (default TOGGLED).
-    Every non-kept mesh, alone or merged, ends with one material slot. Any input mesh whose
-    materials fall in more than one family raises (get_material_family).
+    Every non-kept mesh, alone or merged, ends with one material slot. Any non-kept mesh whose
+    materials fall in more than one family raises (get_material_family); kept meshes keep
+    every slot.
     """
     meshes = get_descendant_meshes(root)
     if not meshes:
@@ -881,10 +880,10 @@ def merge_by_family(root=None, keep=TOGGLED) -> list[bpy.types.Object]:
     to_merge = []
     kept_alone = []
     for m in meshes:
-        get_material_family(m)  # refuses a mesh with materials in several families, kept or not
         if matches_keep(m.name, keep):
-            kept_alone.append(m)
+            kept_alone.append(m)  # never merged or recoloured, so its materials may mix families
         else:
+            get_material_family(m)  # refuses a mesh with materials in several families
             to_merge.append(m)
 
     groups: dict[tuple, list[bpy.types.Object]] = {}

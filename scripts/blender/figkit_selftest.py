@@ -1167,6 +1167,29 @@ def test_merge_by_family_group_key():
         f"lone mesh exports {len(doc['meshes'][0]['primitives'])} primitives"
     )
 
+    # One family under one parent, differing only in noOutline: never merged.
+    clear_scene()
+    root = bpy.data.objects.new("OutlineRoot", None)
+    bpy.context.collection.objects.link(root)
+    mat = bpy.data.materials.new("mat_skin_ol")
+    create_mesh_box("Outlined", root, mat, center=(0.0, 0.0, 0.2), size=(0.2, 0.2, 0.2))
+    create_mesh_box("Unoutlined", root, mat, center=(0.0, 0.0, 0.6), size=(0.2, 0.2, 0.2), no_outline=True)
+    names = {o.name for o in figkit.merge_by_family(root)}
+    assert names == {"Outlined", "Unoutlined"}, f"meshes differing only in noOutline merged: {names}"
+
+    # A kept (TOGGLED) mesh is never merged or recoloured: skin and metal slots both survive.
+    clear_scene()
+    root = bpy.data.objects.new("KeptRoot", None)
+    bpy.context.collection.objects.link(root)
+    hair = create_mesh_box("Hair", root, bpy.data.materials.new("mat_skin_h"), size=(0.2, 0.2, 0.2))
+    hair.data.materials.append(bpy.data.materials.new("mat_iron_h"))
+    for poly in hair.data.polygons[:3]:
+        poly.material_index = 1
+    survivors = figkit.merge_by_family(root)
+    assert [o.name for o in survivors] == ["Hair"], [o.name for o in survivors]
+    assert [m.name for m in hair.data.materials] == ["mat_skin_h", "mat_iron_h"], [m.name for m in hair.data.materials]
+    assert [p.material_index for p in hair.data.polygons] == [1, 1, 1, 0, 0, 0]
+
     # A mesh whose materials fall in two families is refused, naming the mesh and the families.
     clear_scene()
     root = bpy.data.objects.new("MixRoot", None)
@@ -1210,7 +1233,31 @@ def test_emission_refuses_unmirrored_graphs():
     pr.inputs["Emission Strength"].default_value = 2.0
     pr.mute = True
 
-    for mat in (mat_mix, mat_noout, mat_linked, mat_muted):
+    mat_linked_strength, nt, pr, out = base("em_linked_strength")
+    val = nt.nodes.new("ShaderNodeValue")
+    val.outputs[0].default_value = 3.0
+    nt.links.new(val.outputs[0], pr.inputs["Emission Strength"])
+
+    # Blender 5 ignores mute on a Material Output, so this one is a stand-in over a real
+    # material whose output reports muted (a file from elsewhere could still carry it).
+    class _Over:
+        def __init__(self, real, **over):
+            self.__dict__.update(over)
+            self._real = real
+
+        def __getattr__(self, k):
+            return getattr(self._real, k)
+
+    real_muted_out, nt, pr, out = base("em_muted_out")
+    mat_muted_out = _Over(real_muted_out, node_tree=_Over(nt, nodes=[pr, _Over(out, mute=True)]))
+
+    mat_muted_link, nt, pr, out = base("em_muted_link")
+    out.inputs["Surface"].links[0].is_muted = True
+
+    mat_unlinked, nt, pr, out = base("em_unlinked")
+    nt.links.remove(out.inputs["Surface"].links[0])
+
+    for mat in (mat_mix, mat_noout, mat_linked, mat_muted, mat_linked_strength, mat_muted_out, mat_muted_link, mat_unlinked):
         try:
             figkit.exported_emission(mat)
         except ValueError as e:
@@ -1233,24 +1280,33 @@ def test_fold_weights_unweighted():
         g.add([6], 0.0, "REPLACE")  # vertex 6: a total of 0; vertex 7: no group at all
         return m
 
+    def source_groups(m):
+        return [vg.name for vg in m.vertex_groups], [[(g.group, g.weight) for g in v.groups] for v in m.data.vertices]
+
+    m = box()
+    before = source_groups(m)
     try:
-        figkit.fold_weights(box(), {"Torso": ["spine1"]})
+        figkit.fold_weights(m, {"Torso": ["spine1"]})
     except ValueError as e:
         assert "2 vertices" in str(e), str(e)
     else:
         raise AssertionError("fold_weights must raise on vertices with no source weight")
+    assert source_groups(m) == before, f"a raising fold_weights changed the source groups: {source_groups(m)} vs {before}"
 
     m = box()
     _, out = _run_captured(figkit.fold_weights, m, {"Torso": ["spine1"]}, unweighted_to="Torso")
     assert "put 2 unweighted vertices" in out, out
     for v in m.data.vertices:
         assert len(v.groups) == 1 and abs(v.groups[0].weight - 1.0) < 1e-6, (v.index, [(g.group, g.weight) for g in v.groups])
+    m = box()
+    before = source_groups(m)
     try:
-        figkit.fold_weights(box(), {"Torso": ["spine1"]}, unweighted_to="Hips")
+        figkit.fold_weights(m, {"Torso": ["spine1"]}, unweighted_to="Hips")
     except ValueError as e:
         assert "Hips" in str(e), str(e)
     else:
         raise AssertionError("unweighted_to must name a target of the mapping")
+    assert source_groups(m) == before, f"a raising fold_weights changed the source groups: {source_groups(m)} vs {before}"
     print("[figkit_selftest] fold_weights unweighted test passed!")
 
 
@@ -1270,18 +1326,21 @@ def _point_box(name, co):
 def test_limb_segments():
     print("[figkit_selftest] Testing limb segments: reference child and leaf direction...")
     # The reference child, not children[0]: B2 is created first, so it is children[0] of B0.
-    clear_scene()
+    # Bare and prefixed ("goblin_B0"): the reference child is looked up by the full bone name.
     table = [
         rigs.BoneDef("B0", None, ref_dir=(0.0, 0.0, 1.0), ref_child="B1"),
         rigs.BoneDef("B2", "B0"),
         rigs.BoneDef("B1", "B0"),
     ]
-    rig = figkit.make_rig("RefRig", table, {"B0": (0.0, 0.0, 0.0), "B1": (0.0, 0.0, 0.5), "B2": (0.5, 0.0, 0.0)})
-    assert rig.data.bones["B0"].children[0].name == "B2", "fixture: children[0] must be the non-reference child"
-    p = _point_box("RefPoint", (0.0, 0.0, 0.25))
-    figkit.segment_weights(p, rig, 0.2)
-    w = _vertex_weight(p, 0, "B0")
-    assert w > 0.9, f"a point on the B0 -> B1 limb must belong to B0, got {w}"
+    for prefix in (None, "goblin"):
+        clear_scene()
+        n = (lambda b: f"{prefix}_{b}") if prefix else (lambda b: b)
+        rig = figkit.make_rig("RefRig", table, {"B0": (0.0, 0.0, 0.0), "B1": (0.0, 0.0, 0.5), "B2": (0.5, 0.0, 0.0)}, prefix=prefix)
+        assert rig.data.bones[n("B0")].children[0].name == n("B2"), "fixture: children[0] must be the non-reference child"
+        p = _point_box("RefPoint", (0.0, 0.0, 0.25))
+        figkit.segment_weights(p, rig, 0.2)
+        w = _vertex_weight(p, 0, n("B0"))
+        assert w > 0.9, f"a point on the {n('B0')} -> {n('B1')} limb must belong to {n('B0')}, got {w}"
 
     # A leaf continues its parent's direction: a horizontal limb, a point beyond the leaf joint.
     clear_scene()
@@ -1291,6 +1350,18 @@ def test_limb_segments():
     figkit.segment_weights(p, rig, 0.2)
     w = _vertex_weight(p, 0, "B1")
     assert w > 0.9, f"a point past the leaf joint along the limb must belong to the leaf, got {w}"
+
+    # auto_weights' twin lies along the limbs: on a horizontal chain B0 -> B1 -> B2, the body
+    # between x 0.6 and 0.9 lies on B0's limb, though B1's joint (x 1) is nearer than B0's (x 0).
+    clear_scene()
+    chain = [rigs.BoneDef("B0", None), rigs.BoneDef("B1", "B0"), rigs.BoneDef("B2", "B1")]
+    rig = figkit.make_rig("TwinRig", chain, {"B0": (0.0, 0.0, 0.0), "B1": (1.0, 0.0, 0.0), "B2": (2.0, 0.0, 0.0)})
+    body = figkit.organic_body(([(0, 0, 0), (1, 0, 0), (2, 0, 0)], [(0, 1), (1, 2)]), 0.12, voxel=0.04, triangles=600)
+    figkit.auto_weights(body, rig)  # no limb_radius: segment_weights must not rescue the twin
+    mid = [v.index for v in body.data.vertices if 0.6 < v.co.x < 0.9]
+    assert len(mid) >= 4, f"fixture: {len(mid)} body vertices between x 0.6 and 0.9"
+    b0 = sum(_vertex_weight(body, i, "B0") for i in mid) / len(mid)
+    assert b0 > 0.6, f"body on the B0 -> B1 limb must lean to B0 under auto_weights, mean B0 weight {b0:.3f}"
     print("[figkit_selftest] limb segments test passed!")
 
 
