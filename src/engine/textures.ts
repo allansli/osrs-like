@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { PALETTE, facetMaterial } from './materials';
+import { GROUND_GRASS_GAIN } from '../data/look';
 
 /** Painted gouache atlases in /public/textures. Phase 1 is albedo only. */
 export const ALBEDO_IDS = [
@@ -429,7 +430,7 @@ if (weightSum < 0.2) {
   else stoneW = 1.0;
   weightSum = grassW + dirtW + sandW + stoneW;
 }
-vec3 albedoTex = (grassTex * grassW + dirtTex * dirtW + sandTex * sandW + stoneTex * stoneW) / max(weightSum, 0.0001);
+vec3 albedoTex = (grassTex * grassW * ${GROUND_GRASS_GAIN.toFixed(3)} + dirtTex * dirtW + sandTex * sandW + stoneTex * stoneW) / max(weightSum, 0.0001);
 vec2 worldXZ = vMapUv * uMetersPerTile;
 float desertBiome = smoothstep(32.0, 46.0, worldXZ.y) * smoothstep(32.0, 48.0, worldXZ.x);
 float peakBiome = smoothstep(28.0, 42.0, worldXZ.y) * smoothstep(-32.0, -46.0, worldXZ.x);

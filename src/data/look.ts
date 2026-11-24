@@ -88,6 +88,10 @@ export const DAY_KEYS: DayKey[] = [
   },
 ];
 
+// Gain on the grass weight of the ground shader: the painted meadow albedo is dark (about 0.05
+// linear), so it is lifted here instead of through a global exposure that also lifts every other region.
+export const GROUND_GRASS_GAIN = 1.0;
+
 export const DAY_CLOCK = {
   dayMinutes: 24,
   nightSpeed: 2,

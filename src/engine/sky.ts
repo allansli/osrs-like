@@ -28,7 +28,6 @@ export function buildSky(): void {
       uniform vec3 uKeyColor;
       uniform vec3 uZenith;
       uniform vec3 uHorizon;
-      uniform vec3 uFill;
       uniform float uNight;
       varying vec3 vDir;
       #include <common>
@@ -43,8 +42,10 @@ export function buildSky(): void {
         vec3 dir = normalize(vDir);
         float h = clamp(dir.y, 0.0, 1.0);
 
-        // Three-stop gradient
-        vec3 sky = mix(uHorizon, uFill, smoothstep(0.0, 0.25, h));
+        // Three-stop gradient; the middle stop sits between horizon and zenith, not on the fill,
+        // which carries the shadow light's level and would wash the band out
+        vec3 skyMid = mix(uHorizon, uZenith, 0.5);
+        vec3 sky = mix(uHorizon, skyMid, smoothstep(0.0, 0.25, h));
         sky = mix(sky, uZenith, smoothstep(0.25, 0.85, h));
 
         // Horizon glow toward uSunDir
