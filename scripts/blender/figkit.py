@@ -79,6 +79,15 @@ def get_descendant_meshes(root) -> list[bpy.types.Object]:
     return meshes
 
 
+def _plain(v):
+    """IDProperty arrays and groups compare by identity; compare their plain values."""
+    if hasattr(v, "to_dict"):
+        return v.to_dict()
+    if hasattr(v, "to_list"):
+        return v.to_list()
+    return v
+
+
 def merge_parts(root=None, keep=TOGGLED) -> list[bpy.types.Object]:
     """
     Joins meshes sharing parent, material, noOutline and name class ('eye', 'glow', 'gem', 'orb', 'string', other).
@@ -129,12 +138,15 @@ def merge_parts(root=None, keep=TOGGLED) -> list[bpy.types.Object]:
             for k in obj.keys():
                 if k == "_RNA_UI":
                     continue
-                if k in merged_extras and merged_extras[k] != obj[k]:
+                # Plain copies: an IDProperty array or group compares by identity, and
+                # a reference into a joined-away object dangles after the join.
+                v = _plain(obj[k])
+                if k in merged_extras and merged_extras[k] != v:
                     raise ValueError(
                         f"merge_parts: extras key {k!r} has conflicting values "
-                        f"{merged_extras[k]!r} vs {obj[k]!r} in group {key}"
+                        f"{merged_extras[k]!r} vs {v!r} in group {key}"
                     )
-                merged_extras[k] = obj[k]
+                merged_extras[k] = v
 
         # Children of joined-away meshes are re-parented to the target, keeping world matrix
         orphans = [(c, c.matrix_world.copy()) for obj in group_objs[1:] for c in obj.children]

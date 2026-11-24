@@ -267,6 +267,17 @@ def test_conflict_reparent_keep():
     else:
         raise AssertionError("merge_parts must raise on conflicting extras values")
 
+    # Equal list- and dict-valued extras are not a conflict
+    clear_scene()
+    mat = bpy.data.materials.new("mat_e")
+    root = bpy.data.objects.new("ERoot", None)
+    bpy.context.collection.objects.link(root)
+    create_mesh_box("E_A", root, mat, extras={"v": [1.0, 2.0], "d": {"a": 1}})
+    create_mesh_box("E_B", root, mat, center=(0, 0, 0.5), extras={"v": [1.0, 2.0], "d": {"a": 1}})
+    surviving = figkit.merge_parts(root)
+    assert len(surviving) == 1, f"Equal array/dict extras must merge, got {len(surviving)}"
+    assert list(surviving[0]["v"]) == [1.0, 2.0], "List extra must survive the merge"
+
     # Child of a joined-away mesh is re-parented to the target, world position kept
     clear_scene()
     mat = bpy.data.materials.new("mat_d")
