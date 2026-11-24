@@ -55,7 +55,7 @@ def matches_keep(name: str, keep_rule) -> bool:
         return name in keep_rule
     if callable(keep_rule):
         return bool(keep_rule(name))
-    return False
+    raise TypeError(f"Unrecognised keep rule {keep_rule!r} ({type(keep_rule).__name__})")
 
 
 def get_descendant_meshes(root) -> list[bpy.types.Object]:
@@ -127,8 +127,17 @@ def merge_parts(root=None, keep=TOGGLED) -> list[bpy.types.Object]:
         merged_extras = {}
         for obj in group_objs:
             for k in obj.keys():
-                if k != "_RNA_UI":
-                    merged_extras[k] = obj[k]
+                if k == "_RNA_UI":
+                    continue
+                if k in merged_extras and merged_extras[k] != obj[k]:
+                    raise ValueError(
+                        f"merge_parts: extras key {k!r} has conflicting values "
+                        f"{merged_extras[k]!r} vs {obj[k]!r} in group {key}"
+                    )
+                merged_extras[k] = obj[k]
+
+        # Children of joined-away meshes are re-parented to the target, keeping world matrix
+        orphans = [(c, c.matrix_world.copy()) for obj in group_objs[1:] for c in obj.children]
 
         # Deselect all, select group, make target active
         bpy.ops.object.select_all(action="DESELECT")
@@ -138,6 +147,10 @@ def merge_parts(root=None, keep=TOGGLED) -> list[bpy.types.Object]:
 
         # Join objects
         bpy.ops.object.join()
+
+        for c, mw in orphans:
+            c.parent = target
+            c.matrix_world = mw
 
         # Target mesh name can match target object name
         target.data.name = target.name

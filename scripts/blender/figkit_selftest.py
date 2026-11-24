@@ -51,6 +51,7 @@ def create_mesh_box(name, parent, mat, center=(0, 0, 0), size=(0.4, 0.4, 0.4), n
     mesh = bpy.data.meshes.new(name)
     mesh.from_pydata(verts, [], faces)
     mesh.update()
+    mesh.uv_layers.new()
 
     obj = bpy.data.objects.new(name, mesh)
     if parent is not None:
@@ -93,8 +94,8 @@ def test_two_part_figure():
     bpy.context.collection.objects.link(root)
 
     # Two parts sharing parent, material, noOutline=False, class 'other'
-    p1 = create_mesh_box("Part_Lower", root, mat, center=(0, 0, 0.4), size=(0.4, 0.4, 0.4), extras={"tag": "twopart"})
-    p2 = create_mesh_box("Part_Upper", root, mat, center=(0, 0, 0.8), size=(0.4, 0.4, 0.4))
+    p1 = create_mesh_box("Part_Lower", root, mat, center=(0, 0, 0.4), size=(0.4, 0.4, 0.4), )
+    p2 = create_mesh_box("Part_Upper", root, mat, center=(0, 0, 0.8), size=(0.4, 0.4, 0.4), extras={"tag": "twopart"})
 
     meshes_before = [o for o in root.children if o.type == "MESH"]
     assert len(meshes_before) == 2, f"Expected 2 meshes before merge, got {len(meshes_before)}"
@@ -150,7 +151,7 @@ def test_toggled_and_edge_cases():
 
     # 1. Two body parts
     p1 = create_mesh_box("Part_A", root, mat_body, center=(0, 0, 0.5), size=(0.4, 0.4, 0.4), extras={"partTag": "body"})
-    p2 = create_mesh_box("Part_B", root, mat_body, center=(0, 0, 0.9), size=(0.4, 0.4, 0.4))
+    p2 = create_mesh_box("Part_B", root, mat_body, center=(0, 0, 0.9), size=(0.4, 0.4, 0.4), extras={"partB": "fromB"})
 
     # 2. TorsoCoat: shares parent, mat_body, noOutline=False, class 'other' -> matches TOGGLED -> MUST SURVIVE ALONE
     torso_coat = create_mesh_box("TorsoCoat", root, mat_body, center=(0, 0, 0.7), size=(0.45, 0.45, 0.5))
@@ -188,6 +189,7 @@ def test_toggled_and_edge_cases():
     )
     merged_body = bpy.data.objects["Part_A" if has_part_a else "Part_B"]
     assert merged_body.get("partTag") == "body", "Extras should be preserved on merged object"
+    assert merged_body.get("partB") == "fromB", "Extras of a non-target merged part must survive the merge"
 
     # TorsoCoat survived alone
     assert "TorsoCoat" in surviving_names, "TorsoCoat MUST survive merge alone"
@@ -248,10 +250,60 @@ def test_toggled_and_edge_cases():
     print("[figkit_selftest] TOGGLED and edge cases test passed!")
 
 
+def test_conflict_reparent_keep():
+    print("[figkit_selftest] Testing extras conflict, child re-parenting, bad keep...")
+    clear_scene()
+    mat = bpy.data.materials.new("mat_c")
+    root = bpy.data.objects.new("CRoot", None)
+    bpy.context.collection.objects.link(root)
+
+    # Conflicting extras raise and name the key
+    create_mesh_box("C_A", root, mat, extras={"slot": 1})
+    create_mesh_box("C_B", root, mat, center=(0, 0, 0.5), extras={"slot": 2})
+    try:
+        figkit.merge_parts(root)
+    except ValueError as e:
+        assert "slot" in str(e), f"Conflict error must name the key: {e}"
+    else:
+        raise AssertionError("merge_parts must raise on conflicting extras values")
+
+    # Child of a joined-away mesh is re-parented to the target, world position kept
+    clear_scene()
+    mat = bpy.data.materials.new("mat_d")
+    root = bpy.data.objects.new("DRoot", None)
+    bpy.context.collection.objects.link(root)
+    a = create_mesh_box("D_A", root, mat)
+    b = create_mesh_box("D_B", root, mat, center=(0, 0, 0.5))
+    b.location = (1.0, 0.0, 0.0)
+    child = bpy.data.objects.new("D_Child", None)
+    child.parent = b
+    child.location = (0.0, 2.0, 0.0)
+    bpy.context.collection.objects.link(child)
+    bpy.context.view_layer.update()
+    before = child.matrix_world.translation.copy()
+    surviving = figkit.merge_parts(root)
+    assert len(surviving) == 1, f"Expected 1 merged mesh, got {len(surviving)}"
+    bpy.context.view_layer.update()
+    assert child.parent == surviving[0], f"Child must be re-parented to join target, got {child.parent}"
+    assert (child.matrix_world.translation - before).length < 1e-5, (
+        f"Child world position moved: {before} -> {child.matrix_world.translation}"
+    )
+
+    # Unrecognised keep value raises TypeError
+    try:
+        figkit.matches_keep("X", 42)
+    except TypeError:
+        pass
+    else:
+        raise AssertionError("matches_keep must raise TypeError for an unrecognised keep value")
+    print("[figkit_selftest] Conflict, re-parent and keep test passed!")
+
+
 if __name__ == "__main__":
     try:
         test_two_part_figure()
         test_toggled_and_edge_cases()
+        test_conflict_reparent_keep()
         print("[figkit_selftest] ALL TESTS PASSED.")
         sys.exit(0)
     except Exception as e:
