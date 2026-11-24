@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
 import { mergeByMaterial, materialKey } from '../src/engine/batching';
 import { albedoMaterial } from '../src/engine/textures';
+import { enterPlainMode } from '../src/engine/post';
 
 const RED = 0xaa2200;
 const BLUE = 0x0022aa;
@@ -165,5 +166,18 @@ describe('mergeByMaterial', () => {
     const out = mergeByMaterial(group);
     expect(meshes(out)).toHaveLength(1);
     expect(triangles(out)).toBe(tris);
+  });
+});
+
+// plain mode cannot be left once entered, so this stays the last test of the file
+describe('mergeByMaterial in plain mode', () => {
+  it('merges a group whose materials are stock Lambert materials', () => {
+    enterPlainMode(new THREE.Scene());
+    const mat = albedoMaterial(RED, 'iron');
+    expect((mat as THREE.MeshLambertMaterial).defines).toBeUndefined();
+    const group = new THREE.Group();
+    group.add(box(0, 0, 0, mat), box(2, 0, 0, albedoMaterial(RED, 'iron')));
+    const out = mergeByMaterial(group);
+    expect(meshes(out)).toHaveLength(1);
   });
 });

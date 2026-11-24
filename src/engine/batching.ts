@@ -3,7 +3,7 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 
 export function materialKey(mat: THREE.Material): string {
   const m = mat as THREE.MeshLambertMaterial;
-  const defines = m.defines!; // every world material is a facet or Lambert material, which carry defines
+  const defines = m.defines ?? {}; // a stock Lambert (plain mode) has no defines and is 'round'
   const shade = defines.FACET_CUT !== undefined ? 'cut' : defines.FACET_BLEND !== undefined ? 'blend' : 'round';
   return `${m.color.getHex().toString(16)}|${m.userData.albedoId}|${m.emissive.getHex().toString(16)}:${m.emissiveIntensity}|${shade}|${m.side}`;
 }
@@ -23,7 +23,7 @@ export function mergeByMaterial(group: THREE.Group): THREE.Group {
   group.traverse((obj) => {
     const mesh = obj as THREE.Mesh;
     if (!mesh.isMesh) return;
-    if (mesh.userData?.noOutline || mesh.userData?.isCollider) return;
+    if (mesh.userData.noOutline || mesh.userData.isCollider) return;
     toMerge.push(mesh);
   });
 
@@ -117,7 +117,7 @@ export function mergeByMaterial(group: THREE.Group): THREE.Group {
   }
 
   for (const m of toMerge) {
-    m.parent?.remove(m);
+    m.parent!.remove(m);
   }
 
   function pruneEmptyContainers(obj: THREE.Object3D) {
