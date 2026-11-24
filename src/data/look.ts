@@ -329,10 +329,10 @@ export const FLORA_RULES: Record<string, FloraRule> = {
     clusterDensity: 0.4,
   },
   three_kettle_camp: {
-    frame: ['backdrop_tree_a', 'bush_a', 'log'],
+    frame: ['backdrop_tree_a', 'sapling', 'boulder_l'],
     focus: 5,
     floor: 'trampled dirt',
-    pieces: ['bush_a', 'boulder_s', 'log'],
+    pieces: ['sapling', 'boulder_l', 'boulder_s'],
   },
   wardstone_cairn: {
     frame: ['crag_a', 'backdrop_tree_a'],

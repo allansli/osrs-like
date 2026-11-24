@@ -474,27 +474,6 @@ export function buildScatter(seed: number, tier: QualityTier): ScatterResult {
     }
   }
 
-  // 4. Woods fern and mushroom clusters
-  for (let i = 0; i < 18; i++) {
-    for (let attempt = 0; attempt < 15; attempt++) {
-      const cx = -95 + 65 * rng();
-      const cz = -95 + 90 * rng();
-      if (regionAt(cx, cz)?.id === 'woods') {
-        placeCluster(
-          cx,
-          cz,
-          6.0,
-          4 + Math.floor(rng() * 5),
-          ['fern', 'mushrooms', 'sapling', 'log', 'bush_a', 'bush_b', 'boulder_s'],
-          grid,
-          rng,
-          allInstances
-        );
-        break;
-      }
-    }
-  }
-
   // 5. Harrowback Ridge core canopy clusters (unwalkable ridge core)
   const spine = RIDGES[0].points.slice(-2);
   for (let i = 0; i < 8; i++) {
