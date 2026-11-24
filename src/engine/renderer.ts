@@ -7,7 +7,7 @@ import { CAMERA_FAR, GFX_TIERS } from '../data/look';
 import { buildAllCitiesAndLandmarks } from './worldBuild';
 import { buildPlayerCharacter } from './playerMesh';
 import { spawnAllResourcesAndMonsters } from './spawns';
-import { sealAlbedoUvs } from './textures';
+import { sealAlbedoUvs, setAlbedoAnisotropy } from './textures';
 import { setupInputHandlers } from './input';
 import { buildWalkGrid } from '../state/pathfind';
 import { applyShadowTier, initLighting } from './lighting';
@@ -35,6 +35,8 @@ export function applyQualityTier(tier: QualityTier): void {
   const prevTier = currentQuality;
   currentQuality = tier;
   setAirTier(tier);
+  const maxAniso = G.renderer ? G.renderer.capabilities.getMaxAnisotropy() : GFX_TIERS[tier].anisotropy;
+  setAlbedoAnisotropy(Math.min(GFX_TIERS[tier].anisotropy, maxAniso));
   const dpr = effectivePixelRatio(tier, window.innerWidth, window.innerHeight, window.devicePixelRatio);
   if (G.renderer && typeof window !== 'undefined') {
     G.renderer.setPixelRatio(dpr);

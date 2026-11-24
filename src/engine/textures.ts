@@ -93,7 +93,19 @@ export interface AlbedoLoader {
   load(url: string): THREE.Texture;
 }
 
-const cache = new Map<string, THREE.Texture>();
+const baseCache = new Map<string, THREE.Texture>();
+const cloneCache = new Map<string, THREE.Texture>();
+let currentAnisotropy = 1;
+
+export function setAlbedoAnisotropy(n: number): void {
+  currentAnisotropy = n;
+  for (const tex of baseCache.values()) {
+    tex.anisotropy = n;
+  }
+  for (const tex of cloneCache.values()) {
+    tex.anisotropy = n;
+  }
+}
 
 function fallbackTexture(url: string): THREE.Texture {
   const tex = new THREE.DataTexture(new Uint8Array([255, 255, 255, 255]), 1, 1);
@@ -123,22 +135,48 @@ export function albedoUrl(id: string): string {
 }
 
 export function loadAlbedo(id: string, repeat = PROP_REPEAT, loader?: AlbedoLoader): THREE.Texture {
-  const key = `${id}:${repeat}`;
-  if (!loader) {
-    const cached = cache.get(key);
-    if (cached) return cached;
+  if (loader) {
+    const url = albedoUrl(id);
+    const tex = loader.load(url);
+    tex.name = url;
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.wrapT = THREE.RepeatWrapping;
+    tex.magFilter = THREE.LinearFilter;
+    tex.minFilter = THREE.LinearMipmapLinearFilter;
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.repeat.set(repeat, repeat);
+    tex.anisotropy = currentAnisotropy;
+    return tex;
   }
-  const url = albedoUrl(id);
-  const tex = (loader ?? defaultLoader).load(url);
-  tex.name = url;
-  tex.wrapS = THREE.RepeatWrapping;
-  tex.wrapT = THREE.RepeatWrapping;
-  tex.magFilter = THREE.LinearFilter;
-  tex.minFilter = THREE.LinearMipmapLinearFilter;
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.repeat.set(repeat, repeat);
-  if (!loader) cache.set(key, tex);
-  return tex;
+
+  const key = `${id}:${repeat}`;
+  const cachedClone = cloneCache.get(key);
+  if (cachedClone) return cachedClone;
+
+  let baseTex = baseCache.get(id);
+  if (!baseTex) {
+    const url = albedoUrl(id);
+    baseTex = defaultLoader.load(url);
+    baseTex.name = url;
+    baseTex.wrapS = THREE.RepeatWrapping;
+    baseTex.wrapT = THREE.RepeatWrapping;
+    baseTex.magFilter = THREE.LinearFilter;
+    baseTex.minFilter = THREE.LinearMipmapLinearFilter;
+    baseTex.colorSpace = THREE.SRGBColorSpace;
+    baseTex.anisotropy = currentAnisotropy;
+    baseCache.set(id, baseTex);
+  }
+
+  const clone = baseTex.clone();
+  clone.wrapS = baseTex.wrapS;
+  clone.wrapT = baseTex.wrapT;
+  clone.magFilter = baseTex.magFilter;
+  clone.minFilter = baseTex.minFilter;
+  clone.colorSpace = baseTex.colorSpace;
+  clone.anisotropy = baseTex.anisotropy;
+  clone.repeat.set(repeat, repeat);
+  cloneCache.set(key, clone);
+  return clone;
 }
 
 /** Material-tier tiles in /public/textures/gear. Trims and gems stay flat. */
