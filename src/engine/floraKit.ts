@@ -299,11 +299,11 @@ function buildSnagGeometry(t: Tint, rng: () => number): THREE.BufferGeometry {
 }
 
 function buildSaplingGeometry(t: Tint, rng: () => number): THREE.BufferGeometry {
-  const trunk = new THREE.CylinderGeometry(0.04, 0.07, 0.7, 5);
-  trunk.translate(0, 0.35, 0);
+  const trunk = new THREE.CylinderGeometry(0.04, 0.07, 0.6, 5);
+  trunk.translate(0, 0.3, 0);
   const tCol = applyColorsAndNormals(trunk, t.base, t.top, 0.03, rng);
-  const crown = new THREE.ConeGeometry(0.35, 0.55, 5);
-  crown.translate(0, 0.85, 0);
+  const crown = new THREE.ConeGeometry(0.35, 0.45, 5);
+  crown.translate(0, 0.775, 0);
   const cCol = applyColorsAndNormals(crown, t.accentBase, t.accentTop, 0.04, rng);
   const merged = mergeGeometries([tCol, cCol], false);
   merged.computeVertexNormals();
@@ -342,6 +342,7 @@ function buildBackdropTreeAGeometry(t: Tint, rng: () => number): THREE.BufferGeo
   jitterUnique(crown, [0.4, 0.4, 0.4], rng);
   const cCol = applyColorsAndNormals(crown, t.accentBase, t.accentTop, 0.05, rng);
   const merged = mergeGeometries([tCol, cCol], false);
+  merged.scale(0.88, 0.88, 0.88); // top 8.09 -> 7.12: stays under maxHeight 9 at the largest scatter scale (1.2)
   merged.computeVertexNormals();
   return merged;
 }
@@ -361,6 +362,7 @@ function buildBackdropTreeBGeometry(t: Tint, rng: () => number): THREE.BufferGeo
     parts.push(applyColorsAndNormals(cone, t.accentBase, t.accentTop, 0.04, rng));
   }
   const merged = mergeGeometries(parts, false);
+  merged.scale(0.88, 0.88, 0.88); // top 10.2 -> 8.98: stays under maxHeight 11 at the largest scatter scale (1.2)
   merged.computeVertexNormals();
   return merged;
 }
@@ -389,7 +391,13 @@ function buildWoodsTreeGeometry(
   const tCol = applyColorsAndNormals(trunk, t.base, t.top, 0.04, rng);
 
   // Crown colours: the wood family's crown tint, darkened so it reads darker and less saturated than a harvestable tree.
-  const dark = (hex: string, l: number) => new THREE.Color(hex).offsetHSL(0, -0.04, l);
+  // Darkened in sRGB: three's offsetHSL works in linear space, where -0.04 turns the crown black.
+  const hsl = { h: 0, s: 0, l: 0 };
+  const dark = (hex: string, l: number) => {
+    const c = new THREE.Color(hex);
+    c.getHSL(hsl, THREE.SRGBColorSpace);
+    return c.setHSL(hsl.h, Math.max(0, hsl.s - 0.04), Math.max(0, hsl.l + l), THREE.SRGBColorSpace);
+  };
   const h1 = (height - crownBaseY) * 0.65;
   const c1 = new THREE.ConeGeometry(crownR1, h1, 6);
   c1.translate(0, crownBaseY + h1 * 0.5, 0);
@@ -407,8 +415,6 @@ function buildWoodsTreeGeometry(
 }
 
 export function buildKitPiece(id: string, rng: () => number): THREE.BufferGeometry {
-  // Woods trees are not scatter pieces; they take the wood family.
-  const t = TINTS[(KIT_PIECES as Record<string, KitPieceDef | undefined>)[id]?.tintFamily ?? 'wood'];
   switch (id) {
     case 'cloud_a':
       return buildCloudGeometry(3, rng);
@@ -419,39 +425,39 @@ export function buildKitPiece(id: string, rng: () => number): THREE.BufferGeomet
     case 'horizon_apron':
       return buildHorizonApronGeometry(rng);
     case 'boulder_s':
-      return buildBoulderGeometry(t, 0.35, 0.7, 0.08, rng);
+      return buildBoulderGeometry(TINTS[KIT_PIECES[id].tintFamily], 0.35, 0.7, 0.08, rng);
     case 'boulder_m':
-      return buildBoulderGeometry(t, 0.6, 0.7, 0.12, rng);
+      return buildBoulderGeometry(TINTS[KIT_PIECES[id].tintFamily], 0.6, 0.7, 0.12, rng);
     case 'boulder_l':
-      return buildBoulderGeometry(t, 0.85, 0.75, 0.16, rng);
+      return buildBoulderGeometry(TINTS[KIT_PIECES[id].tintFamily], 0.85, 0.75, 0.16, rng);
     case 'bush_a':
-      return buildBushGeometry(t, 0.65, 0.75, 0.12, rng);
+      return buildBushGeometry(TINTS[KIT_PIECES[id].tintFamily], 0.65, 0.75, 0.12, rng);
     case 'bush_b':
-      return buildBushGeometry(t, 0.85, 0.72, 0.15, rng);
+      return buildBushGeometry(TINTS[KIT_PIECES[id].tintFamily], 0.77, 0.72, 0.15, rng);
     case 'fern':
-      return buildFernGeometry(t, rng);
+      return buildFernGeometry(TINTS[KIT_PIECES[id].tintFamily], rng);
     case 'reed':
-      return buildReedGeometry(t, rng);
+      return buildReedGeometry(TINTS[KIT_PIECES[id].tintFamily], rng);
     case 'log':
-      return buildLogGeometry(t, rng);
+      return buildLogGeometry(TINTS[KIT_PIECES[id].tintFamily], rng);
     case 'snag':
-      return buildSnagGeometry(t, rng);
+      return buildSnagGeometry(TINTS[KIT_PIECES[id].tintFamily], rng);
     case 'sapling':
-      return buildSaplingGeometry(t, rng);
+      return buildSaplingGeometry(TINTS[KIT_PIECES[id].tintFamily], rng);
     case 'mushrooms':
-      return buildMushroomsGeometry(t, rng);
+      return buildMushroomsGeometry(TINTS[KIT_PIECES[id].tintFamily], rng);
     case 'backdrop_tree_a':
-      return buildBackdropTreeAGeometry(t, rng);
+      return buildBackdropTreeAGeometry(TINTS[KIT_PIECES[id].tintFamily], rng);
     case 'backdrop_tree_b':
-      return buildBackdropTreeBGeometry(t, rng);
+      return buildBackdropTreeBGeometry(TINTS[KIT_PIECES[id].tintFamily], rng);
     case 'crag_a':
-      return buildCragGeometry(t, 0.4, 1.2, 5.5, 5, rng);
+      return buildCragGeometry(TINTS[KIT_PIECES[id].tintFamily], 0.4, 1.2, 4.6, 5, rng);
     case 'crag_b':
-      return buildCragGeometry(t, 0.5, 1.5, 7.5, 6, rng);
+      return buildCragGeometry(TINTS[KIT_PIECES[id].tintFamily], 0.5, 1.5, 6.2, 6, rng);
     case 'woods_tree_a':
-      return buildWoodsTreeGeometry(t, 0.38, 0.33, 8.5, 3.5, 1.25, 0.95, rng);
+      return buildWoodsTreeGeometry(TINTS.wood, 0.38, 0.33, 8.5, 3.5, 1.25, 0.95, rng);
     case 'woods_tree_b':
-      return buildWoodsTreeGeometry(t, 0.385, 0.335, 9.0, 3.6, 1.3, 1.0, rng);
+      return buildWoodsTreeGeometry(TINTS.wood, 0.385, 0.335, 9.0, 3.6, 1.3, 1.0, rng);
     default:
       throw new Error(`Unknown kit piece: ${id}`);
   }
