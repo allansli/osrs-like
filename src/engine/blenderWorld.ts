@@ -3,6 +3,7 @@ import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { loadGltfOnce } from './gltf';
 import { addCartoonOutline, facetMaterial } from './materials';
 import { albedoMaterial, biomeAlbedoId, biomeGroundId, sealAlbedoUvs } from './textures';
+import { mergeByMaterial } from './batching';
 
 export function loadBlenderWorldTemplate(url = '/models/world.glb'): Promise<GLTF | null> {
   if (typeof window === 'undefined' || typeof document === 'undefined') {
@@ -48,7 +49,6 @@ export function applyWorldMaterials(root: THREE.Object3D, overrides: WorldMateri
   root.traverse((obj) => {
     const mesh = obj as THREE.Mesh;
     if (!mesh.isMesh) return;
-    mesh.geometry = mesh.geometry.clone();
     mesh.castShadow = true;
     mesh.receiveShadow = true;
 
@@ -63,7 +63,8 @@ export function applyWorldMaterials(root: THREE.Object3D, overrides: WorldMateri
         color: c,
         emissive: c,
         emissiveIntensity: 0.28,
-        shade: 'cut'
+        shade: 'cut',
+        footHeight: 0.6
       });
     } else if (matName.includes('mushroom_cap') || meshName.includes('mushroom_cap')) {
       const c = overrides.mushroomHex ?? baseHex;
@@ -71,50 +72,53 @@ export function applyWorldMaterials(root: THREE.Object3D, overrides: WorldMateri
         color: c,
         emissive: c,
         emissiveIntensity: 0.45,
-        shade: 'cut'
+        shade: 'cut',
+        footHeight: 0.6
       });
     } else if (matName.includes('crystal') || meshName.includes('crystal') || meshName.includes('rune')) {
       mesh.material = facetMaterial({
         color: 0x5d8096,
         emissive: 0x2d4857,
         emissiveIntensity: 0.45,
-        shade: 'cut'
+        shade: 'cut',
+        footHeight: 0.6
       });
     } else if (matName.includes('lava') || matName.includes('fire') || meshName.includes('lava') || meshName.includes('flame')) {
       mesh.material = facetMaterial({
         color: 0xab3815,
         emissive: 0x781a07,
         emissiveIntensity: 0.82,
-        shade: 'cut'
+        shade: 'cut',
+        footHeight: 0.6
       });
     } else if (matName.includes('foliage') || matName.includes('leaf') || matName.includes('grass') || matName.includes('moss')) {
       const c = overrides.foliageHex ?? 0x334835;
-      mesh.material = albedoMaterial(c, 'grass', { shade: 'cut' });
+      mesh.material = albedoMaterial(c, 'grass', { shade: 'cut', footHeight: 0.6 });
     } else if (matName.includes('bark') || meshName.includes('trunk')) {
       const c = overrides.trunkHex ?? 0x362b22;
-      mesh.material = albedoMaterial(c, 'bark', { shade: 'cut' });
+      mesh.material = albedoMaterial(c, 'bark', { shade: 'cut', footHeight: 0.6 });
     } else if (matName.includes('wood') || matName.includes('timber')) {
-      mesh.material = albedoMaterial(0x44372c, 'wood', { shade: 'cut' });
+      mesh.material = albedoMaterial(0x44372c, 'wood', { shade: 'cut', footHeight: 0.6 });
     } else if (matName.includes('sandstone') || matName.includes('sand')) {
-      mesh.material = albedoMaterial(0x786e5c, biomeAlbedoId('alkharid-sand'), { shade: 'cut' });
+      mesh.material = albedoMaterial(0x786e5c, biomeAlbedoId('alkharid-sand'), { shade: 'cut', footHeight: 0.6 });
     } else if (matName.includes('obsidian')) {
-      mesh.material = albedoMaterial(0x383535, biomeAlbedoId('peak-volcanic'), { shade: 'cut' });
+      mesh.material = albedoMaterial(0x383535, biomeAlbedoId('peak-volcanic'), { shade: 'cut', footHeight: 0.6 });
     } else if (matName.includes('slate') || matName.includes('roof')) {
-      mesh.material = albedoMaterial(0x2d333b, 'slate', { shade: 'cut' });
+      mesh.material = albedoMaterial(0x2d333b, 'slate', { shade: 'cut', footHeight: 0.6 });
     } else if (matName.includes('stone') || matName.includes('marble') || matName.includes('rock')) {
       const c = overrides.stoneHex ?? 0x525c66;
-      mesh.material = albedoMaterial(c, (overrides.stoneAlbedo as 'stone') || 'stone', { shade: 'cut' });
+      mesh.material = albedoMaterial(c, (overrides.stoneAlbedo as 'stone') || 'stone', { shade: 'cut', footHeight: 0.6 });
     } else if (matName.includes('iron') || matName.includes('anvil') || matName.includes('steel')) {
-      mesh.material = albedoMaterial(0x33373d, 'iron', { shade: 'cut' });
+      mesh.material = albedoMaterial(0x33373d, 'iron', { shade: 'cut', footHeight: 0.6 });
     } else if (matName.includes('gold') || matName.includes('brass')) {
-      mesh.material = facetMaterial({ color: 0x8f7d4e, emissive: 0x5e4f2b, emissiveIntensity: 0.12, shade: 'cut' });
+      mesh.material = facetMaterial({ color: 0x8f7d4e, emissive: 0x5e4f2b, emissiveIntensity: 0.12, shade: 'cut', footHeight: 0.6 });
     } else if (matName.includes('cloth')) {
-      mesh.material = albedoMaterial(baseHex, 'cloth', { side: THREE.DoubleSide, shade: 'cut' });
+      mesh.material = albedoMaterial(baseHex, 'cloth', { side: THREE.DoubleSide, shade: 'cut', footHeight: 0.6 });
     } else if (matName.includes('water') || meshName.includes('ripple')) {
       mesh.material = new THREE.MeshBasicMaterial({ color: 0x1c2d36 });
       mesh.userData.noOutline = true;
     } else {
-      mesh.material = facetMaterial({ color: baseHex, shade: 'cut' });
+      mesh.material = facetMaterial({ color: baseHex, shade: 'cut', footHeight: 0.6 });
     }
   });
 }
@@ -141,6 +145,7 @@ function cloneWorldNode(gltf: GLTF, name: string, overrides: WorldMaterialOverri
   } else {
     return null;
   }
+  mergeByMaterial(group);
   return group;
 }
 

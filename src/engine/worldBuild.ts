@@ -12,6 +12,7 @@ import { getTerrainHeight } from '../state/terrain';
 import { albedoMaterial, biomeAlbedoId, sealAlbedoUvs } from './textures';
 import { addCartoonOutline, facetMaterial } from './materials';
 import { applyWorldMaterials, loadBlenderWorldTemplate, upgradeWorldPropWithGltf } from './blenderWorld';
+import { mergeByMaterial } from './batching';
 import { buildHumanoidRig, LEAN_RIG } from './humanoid';
 import { loadBlenderHeroTemplate, upgradeHumanoidRigWithGltf } from './blenderHero';
 import { loadBlenderGearTemplate } from './blenderGear';
@@ -596,14 +597,9 @@ export function spawnWorldProp(assetName: string, x: number, z: number, rotY = 0
     const cloned = node.clone(true);
     cloned.position.set(0, 0, 0);
     applyWorldMaterials(cloned);
-    cloned.traverse((obj: THREE.Object3D) => {
-      const m = obj as THREE.Mesh;
-      if (m.isMesh) {
-        m.castShadow = true;
-        m.receiveShadow = true;
-      }
-    });
-    grp.add(cloned);
+    const propGroup = cloned instanceof THREE.Group ? cloned : new THREE.Group().add(cloned);
+    mergeByMaterial(propGroup);
+    grp.add(propGroup);
     sealAlbedoUvs(grp);
     addCartoonOutline(grp, 0.028);
   });
