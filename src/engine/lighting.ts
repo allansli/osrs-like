@@ -11,6 +11,10 @@ let currentShadowDir: Vec3 = [0, 1, 0]; // set from the first frame in initLight
 let currentTier: QualityTier = 'balanced';
 
 const _camFwd = new THREE.Vector3();
+const _shadowPos = new THREE.Vector3(); // where the shadow camera sits (stepped direction)
+const _shadowTarget = new THREE.Vector3();
+const _keepPos = new THREE.Vector3();
+const _keepTarget = new THREE.Vector3();
 
 export function setPhase(p: number, frozen: boolean): void {
   let next = p % 1;
@@ -37,6 +41,20 @@ export function initLighting(): void {
   G.sunLight.shadow.camera.far = 250;
   G.scene.add(G.sunLight);
   G.scene.add(G.sunLight.target);
+
+  // The light object sits along the true sun (shading); the shadow camera is placed from _shadowPos/_shadowTarget.
+  const shadow = G.sunLight.shadow;
+  const light = G.sunLight;
+  const baseUpdate = shadow.updateMatrices.bind(shadow);
+  shadow.updateMatrices = (l: THREE.Light) => {
+    _keepPos.setFromMatrixPosition(light.matrixWorld);
+    _keepTarget.setFromMatrixPosition(light.target.matrixWorld);
+    light.matrixWorld.setPosition(_shadowPos);
+    light.target.matrixWorld.setPosition(_shadowTarget);
+    baseUpdate(l);
+    light.matrixWorld.setPosition(_keepPos);
+    light.target.matrixWorld.setPosition(_keepTarget);
+  };
 
   currentPhase = presetToPhase(STATE.timeOfDay);
   currentShadowDir = clampCastDir(dayFrameAt(currentPhase).sunDir);
@@ -74,16 +92,13 @@ export function applyShadowTier(tier: QualityTier): void {
   G.sunLight.shadow.normalBias = SHADOW_NORMAL_BIAS;
 }
 
-// The key light shades and casts along the clamped, stepped direction (one DirectionalLight cannot do both);
-// the shading deviates from the true sun by at most the 12 degree clamp and SHADOW_SUN_STEP_DEG. Accepted deviation.
+// The key light shades along the true sun; only the shadow camera uses the clamped, stepped direction.
 function clampCastDir(sunDir: Vec3): Vec3 {
   const sin12 = Math.sin((12 * Math.PI) / 180);
   const cos12 = Math.cos((12 * Math.PI) / 180);
   if (sunDir[1] >= sin12) return sunDir;
   const horiz = Math.hypot(sunDir[0], sunDir[2]);
-  return horiz > 1e-6
-    ? [(sunDir[0] / horiz) * cos12, sin12, (sunDir[2] / horiz) * cos12]
-    : [cos12, sin12, 0];
+  return [(sunDir[0] / horiz) * cos12, sin12, (sunDir[2] / horiz) * cos12];
 }
 
 function updateLightingFrame(phase: number): void {
@@ -106,18 +121,25 @@ function updateLightingFrame(phase: number): void {
     const camFwd: Vec3 = [_camFwd.x, _camFwd.y, _camFwd.z];
 
     const fit = fitShadow(camPos, camFwd, currentShadowDir, cfg.shadowRange, cfg.shadowSize);
-    G.sunLight.position.set(fit.lightPos[0], fit.lightPos[1], fit.lightPos[2]);
-    G.sunLight.target.position.set(fit.target[0], fit.target[1], fit.target[2]);
-    G.sunLight.target.updateMatrixWorld();
+    _shadowPos.set(fit.lightPos[0], fit.lightPos[1], fit.lightPos[2]);
+    _shadowTarget.set(fit.target[0], fit.target[1], fit.target[2]);
   } else {
-    G.sunLight.position.set(
+    _shadowPos.set(
       G.camera.position.x + currentShadowDir[0] * 100,
       G.camera.position.y + currentShadowDir[1] * 100,
       G.camera.position.z + currentShadowDir[2] * 100
     );
-    G.sunLight.target.position.set(G.camera.position.x, G.camera.position.y, G.camera.position.z);
-    G.sunLight.target.updateMatrixWorld();
+    _shadowTarget.copy(G.camera.position);
   }
+
+  G.sunLight.target.position.copy(_shadowTarget);
+  G.sunLight.position.set(
+    _shadowTarget.x + frame.sunDir[0] * 100,
+    _shadowTarget.y + frame.sunDir[1] * 100,
+    _shadowTarget.z + frame.sunDir[2] * 100
+  );
+  G.sunLight.target.updateMatrixWorld();
+  G.sunLight.updateMatrixWorld();
 }
 
 export function updateLighting(dt: number): void {
