@@ -278,11 +278,17 @@ export function toggleXpMultiplier(): void {
   updateAllUI();
 }
 
+let lastActiveElement: HTMLElement | null = null;
+
 export function closeModals(): void {
   document.querySelectorAll('.modal-backdrop').forEach(m => m.classList.remove('open'));
   hideHoverTooltip();
   hideItemTooltip();
   hideContextMenu();
+  if (lastActiveElement) {
+    lastActiveElement.focus();
+    lastActiveElement = null;
+  }
 }
 
 export function hideHoverTooltip(): void {
@@ -292,10 +298,16 @@ export function hideHoverTooltip(): void {
 }
 
 export function openModal(id: string): HTMLElement {
+  const previousActive = document.activeElement as HTMLElement | null;
   closeModals();
+  lastActiveElement = previousActive;
   const modal = el(id);
   modal.classList.add('open');
   hideHoverTooltip();
+  const first = modal.querySelector<HTMLElement>('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+  if (first) {
+    first.focus();
+  }
   return modal;
 }
 
