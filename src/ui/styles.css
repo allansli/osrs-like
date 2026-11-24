@@ -350,15 +350,46 @@
     100% { opacity: 0; transform: translateY(-135px); }
   }
 
-  /* BotW Region Discovery Banner */
-  #region-banner {
+  /* Banner and Toast (design 7.3): Display face on a wide, low panel; region banner has large title and spaced small capitals subtitle */
+  #region-banner,
+  #levelup-banner {
     position: absolute;
-    top: 68px;
     left: 50%;
     transform: translateX(-50%);
-    z-index: 20;
-    pointer-events: none;
+    z-index: 40;
     text-align: center;
+    pointer-events: none;
+    padding: 8px 32px;
+    filter: drop-shadow(0 2px 0 var(--ui-ink));
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+  }
+
+  #region-banner::before,
+  #levelup-banner::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--ui-slate-3);
+    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0, rgba(255, 255, 255, 0.15) 1px, transparent 1px);
+    clip-path: polygon(6px 0, calc(100% - 6px) 0, 100% 6px, 100% calc(100% - 6px), calc(100% - 6px) 100%, 6px 100%, 0 calc(100% - 6px), 0 6px);
+    z-index: -2;
+  }
+
+  #region-banner::after,
+  #levelup-banner::after {
+    content: '';
+    position: absolute;
+    inset: 1px;
+    background: var(--ui-panel);
+    clip-path: polygon(5px 0, calc(100% - 5px) 0, 100% 5px, 100% calc(100% - 5px), calc(100% - 5px) 100%, 5px 100%, 0 calc(100% - 5px), 0 5px);
+    z-index: -1;
+  }
+
+  #region-banner {
+    top: 68px;
     opacity: 0;
     transition: opacity 0.8s ease, transform 0.8s ease;
   }
@@ -367,21 +398,19 @@
     transform: translateX(-50%) translateY(6px);
   }
   #region-banner .region-sub {
+    font-family: var(--ui-font-text);
     font-size: 0.6875rem;
-    letter-spacing: 4.5px;
+    font-variant: small-caps;
     text-transform: uppercase;
-    color: var(--ui-brass);
-    text-shadow: 0 2px 6px #000;
+    letter-spacing: 4px;
+    color: var(--ui-bone-dim);
   }
   #region-banner .region-title {
     font-family: var(--ui-font-display);
     font-size: 1.75rem;
     font-weight: 700;
-    letter-spacing: 3px;
+    letter-spacing: 2px;
     color: var(--ui-bone);
-    text-shadow: 0 2px 14px rgba(0,0,0,0.95), 0 0 24px rgba(216, 181, 86, 0.45);
-    border-bottom: 1.5px solid rgba(216, 181, 86, 0.75);
-    padding: 2px 36px 6px;
     margin-top: 2px;
   }
 
@@ -1415,22 +1444,10 @@
   .xp-cell .lvl-num { font-weight: 700; color: var(--ui-brass); }
   .xp-cell .xp-num { color: #ccc; }
 
-  /* Level Up Banner */
   #levelup-banner {
-    position: absolute;
     bottom: 195px;
-    left: 50%;
-    transform: translateX(-50%) scale(0.8);
-    background: linear-gradient(180deg, #423522, #221a0f);
-    border: 3px solid #fde047;
-    border-radius: 12px;
-    padding: 12px 28px;
-    z-index: 40;
-    text-align: center;
-    box-shadow: 0 10px 35px rgba(0,0,0,0.85), 0 0 25px rgba(253, 224, 71, 0.55);
     opacity: 0;
-    pointer-events: none;
-    transition: all 0.35s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+    transition: opacity 0.24s ease-out, transform 0.24s ease-out;
   }
   #levelup-banner.show {
     opacity: 1;
