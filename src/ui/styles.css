@@ -491,7 +491,7 @@
 
   .player-vitals-card {
     padding: 10px 14px;
-    width: 292px;
+    width: 18.25rem;
   }
 
   .vitals-header {
@@ -502,6 +502,7 @@
   }
 
   .char-name-badge {
+    white-space: nowrap;
     font-weight: 700;
     font-size: 0.875rem;
     color: var(--ui-bone);
@@ -512,6 +513,7 @@
   }
 
   .combat-lvl-pill {
+    white-space: nowrap;
     background: linear-gradient(135deg, #334155, #1e293b);
     color: #e2e8f0;
     font-size: 0.6875rem;
@@ -554,7 +556,7 @@
   /* Vitals Bar Component (design 7.3): Flat fill split into two tones along length, tabular figures, no rounded caps, no gradient */
   .vital-bar-bg {
     flex: 1;
-    height: 12px;
+    height: 1rem;
     background: var(--ui-slate-1);
     border: 1px solid var(--ui-slate-3);
     border-radius: 0;
@@ -577,6 +579,7 @@
     justify-content: center;
     font-size: 0.6875rem;
     font-weight: 700;
+    line-height: 1;
     font-variant-numeric: tabular-nums;
     text-shadow: 0 1px 0 var(--ui-ink), 1px 0 0 var(--ui-ink), -1px 0 0 var(--ui-ink), 0 -1px 0 var(--ui-ink);
     color: var(--ui-bone);
@@ -2078,3 +2081,7 @@
       transition: none !important;
     }
   }
+
+  /* Links inside windows read in brass, not the browser's default blue */
+  .modal-window a { color: var(--ui-brass); }
+  .modal-window a:hover { color: var(--ui-bone); }
