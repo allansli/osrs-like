@@ -40,7 +40,7 @@ export function getWoodsTreeMeshes(): [THREE.InstancedMesh, THREE.InstancedMesh]
 
 export function clearFlora(): void {
   for (const mesh of floraMeshes) {
-    if (G.scene) G.scene.remove(mesh);
+    G.scene.remove(mesh);
     mesh.geometry.dispose();
     if (Array.isArray(mesh.material)) {
       mesh.material.forEach((m) => m.dispose());
@@ -61,7 +61,6 @@ export function buildFlora(tier: QualityTier): THREE.InstancedMesh[] {
   for (let pIdx = 0; pIdx < ALL_PIECES.length; pIdx++) {
     const id = ALL_PIECES[pIdx];
     const instances = scatterResult[id];
-    if (!instances || instances.length === 0) continue;
 
     const geoRng = makeRng(FLORA_SEED + pIdx);
     const geo = buildKitPiece(id, geoRng);
@@ -82,7 +81,7 @@ export function buildFlora(tier: QualityTier): THREE.InstancedMesh[] {
       mesh.setMatrixAt(i, dummy.matrix);
     }
     mesh.instanceMatrix.needsUpdate = true;
-    if (G.scene) G.scene.add(mesh);
+    G.scene.add(mesh);
     floraMeshes.push(mesh);
   }
 
@@ -123,7 +122,7 @@ export function buildFlora(tier: QualityTier): THREE.InstancedMesh[] {
     meshA.setMatrixAt(k, dummy.matrix);
   }
   meshA.instanceMatrix.needsUpdate = true;
-  if (G.scene) G.scene.add(meshA);
+  G.scene.add(meshA);
   floraMeshes.push(meshA);
 
   const geoB = buildKitPiece('woods_tree_b', makeRng(FLORA_SEED + 102));
@@ -141,7 +140,7 @@ export function buildFlora(tier: QualityTier): THREE.InstancedMesh[] {
     meshB.setMatrixAt(k, dummy.matrix);
   }
   meshB.instanceMatrix.needsUpdate = true;
-  if (G.scene) G.scene.add(meshB);
+  G.scene.add(meshB);
   floraMeshes.push(meshB);
 
   woodsTreeMeshes = [meshA, meshB];
