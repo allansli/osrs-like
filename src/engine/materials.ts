@@ -138,8 +138,9 @@ float facetBand(float x) {
 }
 
 void RE_Direct_Lambert( const in IncidentLight directLight, const in vec3 geometryPosition, const in vec3 geometryNormal, const in vec3 geometryViewDir, const in vec3 geometryClearcoatNormal, const in LambertMaterial material, inout ReflectedLight reflectedLight ) {
-  float dotNL = saturate( dot( geometryNormal, directLight.direction ) );
-  reflectedLight.directDiffuse += facetBand(dotNL) * directLight.color * material.diffuseColor;
+  float rawNL = dot( geometryNormal, directLight.direction );
+  float lit = 1.0 - step( rawNL, 0.0 );
+  reflectedLight.directDiffuse += lit * facetBand( saturate( rawNL ) ) * directLight.color * material.diffuseColor;
 }
 
 void RE_IndirectDiffuse_Lambert( const in vec3 irradiance, const in vec3 geometryPosition, const in vec3 geometryNormal, const in vec3 geometryViewDir, const in vec3 geometryClearcoatNormal, const in LambertMaterial material, inout ReflectedLight reflectedLight ) {
