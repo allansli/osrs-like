@@ -263,11 +263,13 @@ export function updateAllUI(): void {
   el('inv-count').textContent = String(STATE.inventory.length);
   invGrid.innerHTML = '';
   for (let i = 0; i < 28; i++) {
-    const slotDiv = document.createElement('div');
+    const slotDiv = document.createElement('button');
+    slotDiv.type = 'button';
     slotDiv.className = 'inv-slot';
     const entry = STATE.inventory[i];
     if (entry && (ITEMS as Record<string, ItemDef>)[entry.id]) {
       const it = (ITEMS as Record<string, ItemDef>)[entry.id];
+      slotDiv.setAttribute('aria-label', it.name + (entry.qty > 1 ? ` (${entry.qty})` : ''));
       slotDiv.innerHTML = `<div class="item-svg-wrap">${getItemSvg(it)}</div>`;
       if (isStackableInBackpack(it) || entry.qty > 1) {
         slotDiv.innerHTML += `<span class="qty-badge">${entry.qty}</span>`;
@@ -306,6 +308,8 @@ export function updateAllUI(): void {
         e.stopPropagation();
         showSellChooseMenu(e, i);
       };
+    } else {
+      slotDiv.setAttribute('aria-label', `Empty slot ${i + 1}`);
     }
     invGrid.appendChild(slotDiv);
   }
