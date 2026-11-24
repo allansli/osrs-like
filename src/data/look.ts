@@ -251,3 +251,15 @@ export const WEATHER: unknown[] = [];
 export const FLORA_RULES: unknown[] = [];
 export const KIT_PIECES: unknown[] = [];
 export const EMITTERS: unknown[] = [];
+
+export interface BloomConfig {
+  threshold: number;
+  strength: number;
+  radius: number;
+}
+
+export const BLOOM: BloomConfig = {
+  threshold: 1.35,
+  strength: 0.5,
+  radius: 0.4,
+};

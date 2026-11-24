@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { output } from './renderer';
 import { currentDayFrame, updateLighting } from './lighting';
 import { updateAir } from './atmosphere';
 import { updateSky } from './sky';
@@ -885,7 +886,7 @@ export function renderFrame(f: FrameState): void {
   if (G.grassInstanced && G.grassInstanced.material && (G.grassInstanced.material as THREE.ShaderMaterial).uniforms) {
     (G.grassInstanced.material as THREE.ShaderMaterial).uniforms.uTime.value = f.elapsedSec;
   }
-  G.renderer.render(G.scene, G.camera);
+  output.render();
 
   telemetryInfo.calls = G.renderer.info.render.calls;
   telemetryInfo.triangles = G.renderer.info.render.triangles;

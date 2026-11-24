@@ -3,7 +3,7 @@ import { G, telemetryInfo } from './context';
 import { addChatMessage, el } from '../ui/hud';
 import { buildTerrainAndWater } from './worldMesh';
 import { buildSky } from './sky';
-import { CAMERA_FAR } from '../data/look';
+import { CAMERA_FAR, GFX_TIERS } from '../data/look';
 import { buildAllCitiesAndLandmarks } from './worldBuild';
 import { buildPlayerCharacter } from './playerMesh';
 import { spawnAllResourcesAndMonsters } from './spawns';
@@ -11,10 +11,12 @@ import { sealAlbedoUvs } from './textures';
 import { setupInputHandlers } from './input';
 import { buildWalkGrid } from '../state/pathfind';
 import { applyShadowTier, initLighting } from './lighting';
+import { createOutput, effectivePixelRatio, type OutputPipeline } from './post';
 
 export type QualityTier = 'performance' | 'balanced' | 'high' | 'ultra';
 export let currentQuality: QualityTier = 'balanced';
 export let outlinesEnabled = false;
+export let output!: OutputPipeline;
 
 export function getQualityDpr(tier: QualityTier): number {
   const dpr = typeof window !== 'undefined' ? (window.devicePixelRatio || 1) : 1;
@@ -27,12 +29,23 @@ export function getQualityDpr(tier: QualityTier): number {
 }
 
 export function applyQualityTier(tier: QualityTier): void {
+  const prevTier = currentQuality;
   currentQuality = tier;
-  const dpr = getQualityDpr(tier);
+  const dpr = typeof window !== 'undefined'
+    ? effectivePixelRatio(tier, window.innerWidth, window.innerHeight, window.devicePixelRatio || 1)
+    : 1;
   if (G.renderer && typeof window !== 'undefined') {
     G.renderer.setPixelRatio(dpr);
     G.renderer.setSize(window.innerWidth, window.innerHeight);
     applyShadowTier(tier);
+
+    const pathChanged = !output || GFX_TIERS[prevTier].composer !== GFX_TIERS[tier].composer;
+    if (pathChanged) {
+      output?.dispose();
+      output = createOutput(G.renderer, G.scene, G.camera, tier);
+    } else {
+      output.setSize(window.innerWidth, window.innerHeight);
+    }
   }
   const dprEl = el('perf-dpr');
   dprEl.textContent = `${dpr.toFixed(2)}x DPR`;
@@ -142,6 +155,10 @@ export function init3DEngine(): void {
 export function onWindowResize(): void {
   G.camera.aspect = window.innerWidth / window.innerHeight;
   G.camera.updateProjectionMatrix();
+  const dpr = typeof window !== 'undefined'
+    ? effectivePixelRatio(currentQuality, window.innerWidth, window.innerHeight, window.devicePixelRatio || 1)
+    : 1;
   G.renderer.setSize(window.innerWidth, window.innerHeight);
-  G.renderer.setPixelRatio(getQualityDpr(currentQuality));
+  G.renderer.setPixelRatio(dpr);
+  output?.setSize(window.innerWidth, window.innerHeight);
 }
