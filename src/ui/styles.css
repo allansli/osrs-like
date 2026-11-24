@@ -1437,18 +1437,49 @@
     transform: translateX(-50%) scale(1);
   }
 
-  /* Context Tooltip */
-  #hover-tooltip {
-    position: absolute;
-    pointer-events: none;
-    z-index: 100;
-    background: rgba(15, 12, 9, 0.95);
-    border: 1.5px solid var(--ui-brass);
-    border-radius: 6px;
-    padding: 6px 10px;
+  /* Tooltip & Context Menu (design 7.3): Slate-2, 3 px chamfer, text face 12; the menu's items are buttons */
+  #hover-tooltip,
+  #item-tooltip,
+  #context-menu {
+    position: fixed;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    filter: drop-shadow(0 2px 0 var(--ui-ink));
+    font-family: var(--ui-font-text);
     font-size: 0.75rem;
     color: var(--ui-bone);
-    box-shadow: 0 4px 14px rgba(0,0,0,0.85);
+  }
+
+  #hover-tooltip::before,
+  #item-tooltip::before,
+  #context-menu::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--ui-slate-3);
+    clip-path: polygon(3px 0, calc(100% - 3px) 0, 100% 3px, 100% calc(100% - 3px), calc(100% - 3px) 100%, 3px 100%, 0 calc(100% - 3px), 0 3px);
+    z-index: -2;
+    pointer-events: none;
+  }
+
+  #hover-tooltip::after,
+  #item-tooltip::after,
+  #context-menu::after {
+    content: '';
+    position: absolute;
+    inset: 1px;
+    background: var(--ui-slate-2);
+    clip-path: polygon(2px 0, calc(100% - 2px) 0, 100% 2px, 100% calc(100% - 2px), calc(100% - 2px) 100%, 2px 100%, 0 calc(100% - 2px), 0 2px);
+    z-index: -1;
+    pointer-events: none;
+  }
+
+  #hover-tooltip {
+    pointer-events: none;
+    z-index: 100;
+    padding: 6px 10px;
     display: none;
     max-width: 260px;
   }
@@ -1906,16 +1937,10 @@
 }
 
 #context-menu {
-  position: fixed;
   z-index: 140;
   display: none;
   min-width: 220px;
   width: max-content;
-  background: #3e3529;
-  border: 2px solid #0c0a09;
-  box-shadow: 2px 2px 0 #000;
-  font-size: 0.75rem;
-  color: #fff;
 }
 
 #context-menu.open {
@@ -1923,30 +1948,40 @@
 }
 
 .osrs-menu-head {
-  background: #000;
-  color: #fff;
+  background: var(--ui-slate-1);
+  color: var(--ui-brass);
   text-align: center;
   font-weight: 700;
-  padding: 3px 10px;
+  padding: 4px 10px;
   letter-spacing: 0.3px;
 }
 
 .osrs-menu-item {
-  padding: 3px 10px;
+  appearance: none;
+  -webkit-appearance: none;
+  display: block;
+  width: 100%;
+  border: none;
+  border-top: 1px solid var(--ui-slate-3);
+  background: transparent;
+  padding: 4px 10px;
   cursor: pointer;
-  background: #5b5346;
-  border-top: 1px solid #2a241c;
+  text-align: left;
+  font-family: var(--ui-font-text);
+  font-size: 0.75rem;
+  color: var(--ui-bone);
   white-space: nowrap;
+  transition: background-color 0.12s, color 0.12s;
 }
 
 .osrs-menu-item:hover {
-  background: #1d1812;
-  color: #fde047;
+  background: var(--ui-slate-3);
+  color: var(--ui-brass);
 }
 
-.osrs-menu-item.threat-green { color: #4ade80; }
-.osrs-menu-item.threat-yellow { color: #ffe642; }
-.osrs-menu-item.threat-red { color: #f87171; }
+.osrs-menu-item.threat-green { color: var(--ui-moss); }
+.osrs-menu-item.threat-yellow { color: var(--ui-warn); }
+.osrs-menu-item.threat-red { color: var(--ui-ember); }
 
 .quest-name {
   font-weight: 700;
@@ -1954,27 +1989,21 @@
 }
 
 #item-tooltip {
-  position: fixed;
   z-index: 120;
   display: none;
   pointer-events: none;
-  background: rgba(20, 16, 12, 0.97);
-  border: 1px solid #fef08a;
-  color: #f6f2e4;
   padding: 8px 10px;
-  border-radius: 6px;
-  font-size: 0.75rem;
   max-width: 240px;
 }
 
 .tip-title {
   font-weight: 700;
-  color: #ffe642;
+  color: var(--ui-brass);
   margin-bottom: 4px;
 }
 
 .tip-sub {
-  color: #d6c7ab;
+  color: var(--ui-bone-dim);
   margin-bottom: 4px;
 }
 
