@@ -99,11 +99,10 @@ let currentAnisotropy = 1;
 
 export function setAlbedoAnisotropy(n: number): void {
   currentAnisotropy = n;
-  for (const tex of baseCache.values()) {
+  for (const tex of [...baseCache.values(), ...cloneCache.values()]) {
+    if (tex.anisotropy === n) continue;
     tex.anisotropy = n;
-  }
-  for (const tex of cloneCache.values()) {
-    tex.anisotropy = n;
+    tex.needsUpdate = true; // three applies anisotropy only on upload
   }
 }
 

@@ -35,7 +35,7 @@ export function applyQualityTier(tier: QualityTier): void {
   const prevTier = currentQuality;
   currentQuality = tier;
   setAirTier(tier);
-  const maxAniso = G.renderer ? G.renderer.capabilities.getMaxAnisotropy() : GFX_TIERS[tier].anisotropy;
+  const maxAniso = G.renderer.capabilities.getMaxAnisotropy();
   setAlbedoAnisotropy(Math.min(GFX_TIERS[tier].anisotropy, maxAniso));
   const dpr = effectivePixelRatio(tier, window.innerWidth, window.innerHeight, window.devicePixelRatio);
   if (G.renderer && typeof window !== 'undefined') {
