@@ -8,6 +8,7 @@ import { spawnAllResourcesAndMonsters } from './spawns';
 import { sealAlbedoUvs } from './textures';
 import { setupInputHandlers } from './input';
 import { buildWalkGrid } from '../state/pathfind';
+import { applyShadowTier, initLighting } from './lighting';
 
 export type QualityTier = 'performance' | 'balanced' | 'high' | 'ultra';
 export let currentQuality: QualityTier = 'balanced';
@@ -29,15 +30,7 @@ export function applyQualityTier(tier: QualityTier): void {
   if (G.renderer && typeof window !== 'undefined') {
     G.renderer.setPixelRatio(dpr);
     G.renderer.setSize(window.innerWidth, window.innerHeight);
-    if (tier === 'performance') {
-      G.renderer.shadowMap.enabled = false;
-    } else {
-      G.renderer.shadowMap.enabled = true;
-      G.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-      if (G.sunLight) {
-        G.sunLight.castShadow = true;
-      }
-    }
+    applyShadowTier(tier);
   }
   const dprEl = el('perf-dpr');
   dprEl.textContent = `${dpr.toFixed(2)}x DPR`;
@@ -121,7 +114,7 @@ export function init3DEngine(): void {
   G.renderer.setSize(window.innerWidth, window.innerHeight);
   G.renderer.setPixelRatio(getQualityDpr(currentQuality));
   G.renderer.shadowMap.enabled = true;
-  G.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  G.renderer.shadowMap.type = THREE.PCFShadowMap;
   G.renderer.outputColorSpace = THREE.SRGBColorSpace;
   G.renderer.toneMapping = THREE.ACESFilmicToneMapping;
   G.renderer.toneMappingExposure = 1.05;
@@ -129,29 +122,8 @@ export function init3DEngine(): void {
   container.appendChild(G.renderer.domElement);
 
   initGpuTelemetry(G.renderer.getContext());
+  initLighting();
   applyQualityTier('balanced');
-
-  G.hemiLight = new THREE.HemisphereLight(0xa5b8c9, 0x333d32, 0.52);
-  G.scene.add(G.hemiLight);
-
-  G.ambientLight = new THREE.AmbientLight(0x617282, 0.28);
-  G.scene.add(G.ambientLight);
-
-  G.sunLight = new THREE.DirectionalLight(0xf8f5ed, 1.15);
-  G.sunLight.position.set(45, 68, 35);
-  G.sunLight.castShadow = true;
-  G.sunLight.shadow.mapSize.width = 2048;
-  G.sunLight.shadow.mapSize.height = 2048;
-  G.sunLight.shadow.camera.near = 5;
-  G.sunLight.shadow.camera.far = 170;
-  const d = 54;
-  G.sunLight.shadow.camera.left = -d;
-  G.sunLight.shadow.camera.right = d;
-  G.sunLight.shadow.camera.top = d;
-  G.sunLight.shadow.camera.bottom = -d;
-  G.sunLight.shadow.bias = -0.0004;
-  G.scene.add(G.sunLight);
-  G.scene.add(G.sunLight.target);
 
   G.walkGrid = buildWalkGrid();
   buildSkyDomeShader();

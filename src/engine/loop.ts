@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { updateLighting } from './lighting';
 import {
   TICK_SEC,
   commandClocks,
@@ -617,9 +618,6 @@ export function updateCamera(f: FrameState): void {
     G.camera.position.y += (Math.random() - 0.5) * camState.shake;
   }
 
-  G.sunLight.position.set(player.pos.x + 38, player.pos.y + 58, player.pos.z + 28);
-  G.sunLight.target.position.copy(player.pos);
-  G.sunLight.target.updateMatrixWorld();
 }
 
 let monsterLoopOffset = 0;
@@ -934,5 +932,6 @@ export function gameLoop(now: number): void {
   updateReactions(f.dt);
   updateWorldTimers(f);
   updateOverlay(f);
+  updateLighting(f.dt);
   renderFrame(f);
 }

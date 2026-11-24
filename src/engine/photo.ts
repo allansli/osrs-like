@@ -7,12 +7,14 @@ import { loadBlenderWorldTemplate } from './blenderWorld';
 import { camState, G, player } from './context';
 import { applyQualityTier, type QualityTier } from './renderer';
 import { cycleTimeOfDay } from './worldMesh';
+import { setPhase } from './lighting';
 
 export let playerChoseTier = false;
 
 export interface LookHooks {
   ready(): boolean;
   pose(row: { place: string; yaw: number; pitch: number; distance: number }): void;
+  phase(p: number): void;
   preset(n: 0 | 1 | 2): void;
   hud(on: boolean): void;
   tier(id: QualityTier): void;
@@ -92,6 +94,10 @@ export function createLookHooks(): LookHooks {
       camState.manualOffset = row.yaw - player.yaw;
       camState.pitch = Math.max(0.12, Math.min(1.15, row.pitch));
       camState.distance = Math.max(3.6, Math.min(26, row.distance));
+    },
+
+    phase(p: number): void {
+      setPhase(p, true);
     },
 
     preset(n: 0 | 1 | 2): void {

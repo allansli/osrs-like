@@ -11,6 +11,8 @@ import {
   sealAlbedoUvs
 } from './textures';
 import { getTerrainHeight, onPath, slopeAt, TERRAIN_SEGMENTS, TERRAIN_SIZE } from '../state/terrain';
+import { setPhase } from './lighting';
+import { presetToPhase } from '../state/dayCycle';
 import { isDeepWater } from '../state/collision';
 import { loadBlenderWorldTemplate, upgradeWorldPropWithGltf } from './blenderWorld';
 import { el } from '../ui/hud';
@@ -70,28 +72,13 @@ export function buildSkyDomeShader(): void {
 
 export function cycleTimeOfDay(): void {
   STATE.timeOfDay = (STATE.timeOfDay + 1) % 3;
+  setPhase(presetToPhase(STATE.timeOfDay), false);
   const btn = el('time-of-day-btn');
-  const fog = G.scene.fog as THREE.FogExp2;
   if (STATE.timeOfDay === 0) {
-    G.skyUniforms.uTopColor.value.setHex(0x253545);
-    G.skyUniforms.uMidColor.value.setHex(0x5a6875);
-    G.skyUniforms.uHorizonColor.value.setHex(0x8a8a92);
-    fog.color.setHex(0x8a8a92);
-    fog.density = 0.0030;
     btn.textContent = 'Golden Hour';
   } else if (STATE.timeOfDay === 1) {
-    G.skyUniforms.uTopColor.value.setHex(0x2e4359);
-    G.skyUniforms.uMidColor.value.setHex(0x5f788e);
-    G.skyUniforms.uHorizonColor.value.setHex(0x9ab0c2);
-    fog.color.setHex(0x9ab0c2);
-    fog.density = 0.0028;
     btn.textContent = 'High Noon';
   } else {
-    G.skyUniforms.uTopColor.value.setHex(0x090e14);
-    G.skyUniforms.uMidColor.value.setHex(0x141d27);
-    G.skyUniforms.uHorizonColor.value.setHex(0x1e2936);
-    fog.color.setHex(0x1e2936);
-    fog.density = 0.0042;
     btn.textContent = 'Starry Night';
   }
 }
