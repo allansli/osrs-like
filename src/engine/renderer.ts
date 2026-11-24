@@ -140,17 +140,17 @@ export function init3DEngine(): void {
   container.appendChild(G.renderer.domElement);
 
   initGpuTelemetry(G.renderer.getContext());
-  G.renderer.debug.onShaderError = (gl, program) => {
-    const log = gl.getProgramInfoLog(program);
-    console.error(log);
+  const goPlain = (): void => {
     enterPlainMode(G.scene);
     output.dispose();
     output = createOutput(G.renderer, G.scene, G.camera, currentQuality);
+  };
+  G.renderer.debug.onShaderError = (gl, program) => {
+    const log = gl.getProgramInfoLog(program);
+    console.error(log);
+    goPlain();
     addChatMessage('Shader compile error: switched to plain mode.', 'skill');
   };
-  if (new URLSearchParams(location.search).has('plain')) {
-    enterPlainMode(G.scene);
-  }
   initLighting();
   applyQualityTier('balanced');
 
@@ -161,6 +161,8 @@ export function init3DEngine(): void {
   buildPlayerCharacter();
   spawnAllResourcesAndMonsters();
   sealAlbedoUvs(G.scene);
+  // After the build, so the walk reaches the clouds and every facet material.
+  if (new URLSearchParams(location.search).has('plain')) goPlain();
 
   window.addEventListener('resize', onWindowResize);
   setupInputHandlers();

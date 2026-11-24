@@ -236,7 +236,9 @@ export function facetMaterial(params: Record<string, unknown> = {}): THREE.MeshL
     cleaned.side = THREE.DoubleSide;
   }
   if (isPlainMode()) {
-    return new THREE.MeshLambertMaterial(cleaned as THREE.MeshLambertMaterialParameters);
+    const stock = new THREE.MeshLambertMaterial(cleaned as THREE.MeshLambertMaterialParameters);
+    if (map) stock.userData.albedoSpace = 'prop';
+    return stock;
   }
   const defines: Record<string, string> = {};
   let cacheKey: string;
