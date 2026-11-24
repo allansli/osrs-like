@@ -1,7 +1,9 @@
 import * as THREE from 'three';
 import { G } from './context';
-import { SKY_DOME_RADIUS } from '../data/look';
+import { GFX_TIERS, SKY_DOME_RADIUS } from '../data/look';
 import { AIR, AIR_GLSL, COLOR_FOOTER, setAirTier } from './atmosphere';
+import { facetMaterial } from './materials';
+import { buildKitPiece, makeRng } from './floraKit';
 import { currentQuality } from './renderer';
 import type { DayFrame } from '../state/dayCycle';
 
@@ -12,7 +14,45 @@ const uNight = { value: 0 };
 const AIR_SKY_CEILING = '40.0';
 const AIR_SKY_RADIUS = SKY_DOME_RADIUS.toFixed(1);
 
+interface CloudInstance {
+  x: number;
+  y: number;
+  z: number;
+  scale: number;
+  rotY: number;
+}
+
+interface CloudGroup {
+  mesh: THREE.InstancedMesh;
+  instances: CloudInstance[];
+}
+
+let apronMesh: THREE.Mesh | null = null;
+let apronMat: THREE.MeshLambertMaterial | null = null;
+const cloudGroups: CloudGroup[] = [];
+let lastCloudTime = 0;
+const dummy = new THREE.Object3D();
+
 export function buildSky(): void {
+  if (G.skyDomeMesh) {
+    G.scene.remove(G.skyDomeMesh);
+    G.skyDomeMesh.geometry.dispose();
+    (G.skyDomeMesh.material as THREE.Material).dispose();
+  }
+  if (apronMesh) {
+    G.scene.remove(apronMesh);
+    apronMesh.geometry.dispose();
+    (apronMesh.material as THREE.Material).dispose();
+    apronMesh = null;
+    apronMat = null;
+  }
+  for (const group of cloudGroups) {
+    G.scene.remove(group.mesh);
+    group.mesh.geometry.dispose();
+    (group.mesh.material as THREE.Material).dispose();
+  }
+  cloudGroups.length = 0;
+
   const skyGeo = new THREE.SphereGeometry(SKY_DOME_RADIUS, 32, 16);
   const skyMat = new THREE.ShaderMaterial({
     uniforms: {
@@ -86,6 +126,51 @@ export function buildSky(): void {
 
   G.skyDomeMesh = new THREE.Mesh(skyGeo, skyMat);
   G.scene.add(G.skyDomeMesh);
+
+  // Horizon apron: one mesh welded to the terrain square, rising to hills
+  const apronRng = makeRng(0x5ca1e);
+  const apronGeo = buildKitPiece('horizon_apron', apronRng);
+  apronMat = facetMaterial({ shade: 'cut', color: AIR.uAirColor.value.clone() });
+  apronMesh = new THREE.Mesh(apronGeo, apronMat);
+  apronMesh.castShadow = false;
+  apronMesh.receiveShadow = false;
+  G.scene.add(apronMesh);
+
+  // Clouds: instanced meshes of cloud solids drifting 60 to 90 units up
+  const cloudRng = makeRng(0xc100d);
+  const CLOUD_IDS = ['cloud_a', 'cloud_b', 'cloud_c'] as const;
+  const INSTANCES_PER_VARIANT = 8;
+
+  for (const id of CLOUD_IDS) {
+    const geo = buildKitPiece(id, cloudRng);
+    const mat = facetMaterial({ shade: 'cut', vertexColors: true, color: 0xffffff });
+    const instMesh = new THREE.InstancedMesh(geo, mat, INSTANCES_PER_VARIANT);
+    instMesh.castShadow = false;
+    instMesh.receiveShadow = false;
+    instMesh.frustumCulled = false;
+
+    const instances: CloudInstance[] = [];
+    for (let i = 0; i < INSTANCES_PER_VARIANT; i++) {
+      const inst: CloudInstance = {
+        x: (cloudRng() - 0.5) * 260,
+        y: 60 + cloudRng() * 30,
+        z: (cloudRng() - 0.5) * 260,
+        scale: 2.0 + cloudRng() * 1.5,
+        rotY: cloudRng() * Math.PI * 2,
+      };
+      instances.push(inst);
+      dummy.position.set(inst.x, inst.y, inst.z);
+      dummy.rotation.y = inst.rotY;
+      dummy.scale.set(inst.scale, inst.scale * 0.6, inst.scale);
+      dummy.updateMatrix();
+      instMesh.setMatrixAt(i, dummy.matrix);
+    }
+    instMesh.instanceMatrix.needsUpdate = true;
+    G.scene.add(instMesh);
+    cloudGroups.push({ mesh: instMesh, instances });
+  }
+
+  lastCloudTime = AIR.uTime.value;
 }
 
 export function updateSky(frame: DayFrame): void {
@@ -95,4 +180,40 @@ export function updateSky(frame: DayFrame): void {
   G.skyDomeMesh.position.copy(G.camera.position);
   (G.scene.fog as THREE.FogExp2).color.copy(AIR.uAirColor.value);
   (G.scene.fog as THREE.FogExp2).density = AIR.uFogDensity.value;
+
+  if (apronMat) {
+    apronMat.color.copy(AIR.uAirColor.value);
+  }
+
+  const cloudsEnabled = GFX_TIERS[currentQuality].clouds;
+  const curTime = AIR.uTime.value;
+  const dt = lastCloudTime > 0 ? Math.min(Math.max(curTime - lastCloudTime, 0), 0.1) : 0;
+  lastCloudTime = curTime;
+
+  for (const group of cloudGroups) {
+    group.mesh.count = cloudsEnabled ? group.instances.length : 0;
+    group.mesh.visible = cloudsEnabled;
+
+    if (cloudsEnabled && dt > 0) {
+      for (let i = 0; i < group.instances.length; i++) {
+        const inst = group.instances[i];
+        inst.x += AIR.uWind.value.x * 2.5 * dt;
+        inst.z += AIR.uWind.value.y * 2.5 * dt;
+
+        // Wrap inside the 260-unit square [-130, 130]
+        if (inst.x > 130) inst.x -= 260;
+        else if (inst.x < -130) inst.x += 260;
+
+        if (inst.z > 130) inst.z -= 260;
+        else if (inst.z < -130) inst.z += 260;
+
+        dummy.position.set(inst.x, inst.y, inst.z);
+        dummy.rotation.y = inst.rotY;
+        dummy.scale.set(inst.scale, inst.scale * 0.6, inst.scale);
+        dummy.updateMatrix();
+        group.mesh.setMatrixAt(i, dummy.matrix);
+      }
+      group.mesh.instanceMatrix.needsUpdate = true;
+    }
+  }
 }
