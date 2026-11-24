@@ -164,18 +164,9 @@ function wireBridge(): void {
       throw new Error(`Unknown action: ${action}`);
     }
     const fn = (WINDOW_ACTIONS as Record<string, (...args: unknown[]) => unknown>)[action];
-    if (typeof fn !== 'function') {
-      throw new Error(`Action ${action} is not a function`);
-    }
     const args: string[] = [];
     if (actionEl.hasAttribute('data-arg')) {
       args.push(actionEl.getAttribute('data-arg')!);
-    }
-    const extraArgs = Array.from(actionEl.attributes)
-      .filter((attr) => /^data-arg(-\d+|\d+)$/i.test(attr.name))
-      .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
-    for (const attr of extraArgs) {
-      args.push(attr.value);
     }
     fn(...args);
   });
