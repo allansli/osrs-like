@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { HORIZON_APRON } from '../data/look';
-import { getTerrainHeight } from '../state/terrain';
+import { getTerrainHeight, TERRAIN_SEGMENTS, TERRAIN_SIZE } from '../state/terrain';
 
 /**
  * 32-bit seeded pseudo-random number generator (Mulberry32).
@@ -57,80 +57,88 @@ function buildCloudGeometry(puffCount: number, rng: () => number): THREE.BufferG
 }
 
 function buildHorizonApronGeometry(rng: () => number): THREE.BufferGeometry {
-  const M = 120;
+  // Outer loops are coarse (M); the inner loop has one vertex per terrain edge vertex so the seam is exact.
+  const M = 32;
+  const INNER = HORIZON_APRON.inner;
+  const STEP = TERRAIN_SIZE / TERRAIN_SEGMENTS;
   const positions: number[] = [];
   const indices: number[] = [];
+  const loopStart: number[] = [];
+  const theta0 = -Math.PI / 4;
 
-  // Loop 0: Inner boundary following the terrain's square edge at HORIZON_APRON.inner (130)
-  for (let i = 0; i < M; i++) {
-    const theta = (i / M) * Math.PI * 2;
-    const cosT = Math.cos(theta);
-    const sinT = Math.sin(theta);
-    const absCos = Math.abs(cosT);
-    const absSin = Math.abs(sinT);
-    const tInner = Math.min(
-      absCos > 1e-6 ? HORIZON_APRON.inner / absCos : Infinity,
-      absSin > 1e-6 ? HORIZON_APRON.inner / absSin : Infinity
-    );
-    const x0 = Math.max(-HORIZON_APRON.inner, Math.min(HORIZON_APRON.inner, tInner * cosT));
-    const z0 = Math.max(-HORIZON_APRON.inner, Math.min(HORIZON_APRON.inner, tInner * sinT));
-    const y0 = getTerrainHeight(x0, z0);
-    positions.push(x0, y0, z0);
+  // Loop 0: the terrain's edge vertices, from (+inner, -inner) counter-clockwise (increasing z at x=+inner first).
+  const edge: [number, number][] = [];
+  const n = TERRAIN_SEGMENTS;
+  for (let k = 0; k < n; k++) edge.push([INNER, -INNER + k * STEP]);
+  for (let k = 0; k < n; k++) edge.push([INNER - k * STEP, INNER]);
+  for (let k = 0; k < n; k++) edge.push([-INNER, INNER - k * STEP]);
+  for (let k = 0; k < n; k++) edge.push([-INNER + k * STEP, -INNER]);
+  loopStart.push(0);
+  const innerAngles: number[] = [];
+  for (const [x, z] of edge) {
+    positions.push(x, getTerrainHeight(x, z), z);
+    innerAngles.push((((Math.atan2(z, x) - theta0) % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2));
   }
+  const innerLen = edge.length;
+
+  const dir = (i: number) => {
+    const theta = theta0 + (i / M) * Math.PI * 2;
+    const c = Math.cos(theta), s = Math.sin(theta);
+    return { theta, c, s, tIn: INNER / Math.max(Math.abs(c), Math.abs(s)) };
+  };
+  const addLoop = (f: (i: number, d: ReturnType<typeof dir>) => [number, number, number]) => {
+    loopStart.push(positions.length / 3);
+    for (let i = 0; i < M; i++) {
+      const [x, y, z] = f(i, dir(i));
+      positions.push(x, y, z);
+    }
+  };
 
   // Loop 1: flat shelf at terrain edge height, kept under the camera's reach
   // (camera stands up to 26 units outside the square, ~5 above ground).
-  for (let i = 0; i < M; i++) {
-    const theta = (i / M) * Math.PI * 2;
-    const cosT = Math.cos(theta);
-    const sinT = Math.sin(theta);
-    const absCos = Math.abs(cosT);
-    const absSin = Math.abs(sinT);
-    const tInner = Math.min(
-      absCos > 1e-6 ? HORIZON_APRON.inner / absCos : Infinity,
-      absSin > 1e-6 ? HORIZON_APRON.inner / absSin : Infinity
-    );
-    const rS = tInner + 24.0;
-    positions.push(rS * cosT, positions[i * 3 + 1], rS * sinT);
-  }
-
-  // Loop 2: First row of low jittered hills
-  for (let i = 0; i < M; i++) {
-    const theta = (i / M) * Math.PI * 2;
-    const cosT = Math.cos(theta);
-    const sinT = Math.sin(theta);
-    const absCos = Math.abs(cosT);
-    const absSin = Math.abs(sinT);
-    const tInner = Math.min(
-      absCos > 1e-6 ? HORIZON_APRON.inner / absCos : Infinity,
-      absSin > 1e-6 ? HORIZON_APRON.inner / absSin : Infinity
-    );
-    const r1 = tInner + (HORIZON_APRON.outer - tInner) * 0.65 + (rng() - 0.5) * 4.0;
-    const x1 = r1 * cosT;
-    const z1 = r1 * sinT;
-    const y0 = positions[i * 3 + 1];
-    const y1 = Math.max(y0 + 6.0, 14.0) + (rng() * 8.0 + 4.0) * (1.0 + 0.3 * Math.sin(6 * theta));
-    positions.push(x1, y1, z1);
-  }
-
-  // Loop 3: Second row of hills out to HORIZON_APRON.outer (240)
-  for (let i = 0; i < M; i++) {
-    const theta = (i / M) * Math.PI * 2;
-    const cosT = Math.cos(theta);
-    const sinT = Math.sin(theta);
+  addLoop((_i, d) => {
+    const x = INNER * Math.max(-1, Math.min(1, d.c / Math.max(Math.abs(d.c), Math.abs(d.s))));
+    const z = INNER * Math.max(-1, Math.min(1, d.s / Math.max(Math.abs(d.c), Math.abs(d.s))));
+    const r = d.tIn + 24.0;
+    return [r * d.c, getTerrainHeight(x, z), r * d.s];
+  });
+  // Loop 2: first row of low jittered hills
+  addLoop((i, d) => {
+    const r1 = d.tIn + (HORIZON_APRON.outer - d.tIn) * 0.65 + (rng() - 0.5) * 4.0;
+    const y0 = positions[(loopStart[1] + i) * 3 + 1];
+    const y1 = Math.max(y0 + 6.0, 14.0) + (rng() * 8.0 + 4.0) * (1.0 + 0.3 * Math.sin(6 * d.theta));
+    return [r1 * d.c, y1, r1 * d.s];
+  });
+  // Loop 3: second row of hills out to HORIZON_APRON.outer
+  addLoop((i, d) => {
     const r2 = HORIZON_APRON.outer + (rng() - 0.5) * 3.0;
-    const x2 = r2 * cosT;
-    const z2 = r2 * sinT;
-    const y1 = positions[(2 * M + i) * 3 + 1];
-    const y2 = y1 + 10.0 + (rng() * 12.0 + 6.0) * (1.0 + 0.3 * Math.cos(4 * theta));
-    positions.push(x2, y2, z2);
-  }
+    const y1 = positions[(loopStart[2] + i) * 3 + 1];
+    const y2 = y1 + 10.0 + (rng() * 12.0 + 6.0) * (1.0 + 0.3 * Math.cos(4 * d.theta));
+    return [r2 * d.c, y2, r2 * d.s];
+  });
 
-  // Quads connecting each loop to the next (counter-clockwise winding)
-  for (let i = 0; i < M; i++) {
-    const next = (i + 1) % M;
-    for (let r = 0; r < 3; r++) {
-      const a = r * M + i, an = r * M + next, b = (r + 1) * M + i, bn = (r + 1) * M + next;
+  // Stitch the fine inner loop to the coarse shelf by walking both in angle order.
+  {
+    const a0 = 0, b0 = loopStart[1];
+    let i = 0, j = 0;
+    while (i < innerLen || j < M) {
+      const nextInner = i < innerLen ? (i + 1 < innerLen ? innerAngles[i + 1] : Math.PI * 2) : Infinity;
+      const nextOuter = j < M ? ((j + 1) / M) * Math.PI * 2 : Infinity;
+      const a = a0 + (i % innerLen), b = b0 + (j % M);
+      if (i < innerLen && (j >= M || nextInner <= nextOuter)) {
+        indices.push(a, a0 + ((i + 1) % innerLen), b);
+        i++;
+      } else {
+        indices.push(a, b0 + ((j + 1) % M), b);
+        j++;
+      }
+    }
+  }
+  // Coarse quads between loops 1-2 and 2-3 (counter-clockwise winding)
+  for (let r = 1; r < 3; r++) {
+    for (let i = 0; i < M; i++) {
+      const next = (i + 1) % M;
+      const a = loopStart[r] + i, an = loopStart[r] + next, b = loopStart[r + 1] + i, bn = loopStart[r + 1] + next;
       indices.push(a, an, b);
       indices.push(an, bn, b);
     }
@@ -138,7 +146,7 @@ function buildHorizonApronGeometry(rng: () => number): THREE.BufferGeometry {
 
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-  geo.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(M * 4 * 2), 2));
+  geo.setAttribute('uv', new THREE.BufferAttribute(new Float32Array((positions.length / 3) * 2), 2));
   geo.setIndex(indices);
   geo.computeVertexNormals();
   return geo;
