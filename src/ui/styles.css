@@ -593,7 +593,9 @@
 
   /* Button Component (design 7.3): 3 px chamfer, two layers, 3 kinds (primary, plain, danger), pressed moves down 1px */
   :where(button:not(.tab-btn)),
-  .ui-btn {
+  .ui-btn,
+  .style-btn,
+  .spec-attack-btn {
     position: relative;
     isolation: isolate;
     background: transparent;
@@ -613,7 +615,9 @@
   }
 
   :where(button:not(.tab-btn))::before,
-  .ui-btn::before {
+  .ui-btn::before,
+  .style-btn::before,
+  .spec-attack-btn::before {
     content: '';
     position: absolute;
     inset: 0;
@@ -625,7 +629,9 @@
   }
 
   :where(button:not(.tab-btn))::after,
-  .ui-btn::after {
+  .ui-btn::after,
+  .style-btn::after,
+  .spec-attack-btn::after {
     content: '';
     position: absolute;
     inset: 1px;
@@ -637,13 +643,17 @@
   }
 
   :where(button:not(.tab-btn)):hover::after,
-  .ui-btn:hover::after {
+  .ui-btn:hover::after,
+  .style-btn:hover::after,
+  .spec-attack-btn:hover::after {
     background: var(--ui-slate-2);
   }
 
   /* Pressed moves down 1 px */
   :where(button:not(.tab-btn)):active,
-  .ui-btn:active {
+  .ui-btn:active,
+  .style-btn:active,
+  .spec-attack-btn:active {
     transform: translateY(1px);
   }
 
@@ -1061,46 +1071,29 @@
     margin-top: 2px;
   }
 
+  /* Button component (design 7.3): chamfer from the shared button layers; state on ::before (line) and ::after (fill) */
   .style-btn {
-    background: #2b2319;
-    border: 1.5px solid #574834;
-    border-radius: 6px;
     padding: 6px 10px;
-    color: var(--ui-bone);
     display: flex;
-    align-items: center;
     justify-content: space-between;
-    cursor: pointer;
-    transition: all 0.12s ease-out;
   }
-  .style-btn:hover { border-color: var(--ui-brass); }
-  .style-btn.active {
-    background: linear-gradient(90deg, #73251b, #45150f);
-    border-color: #ff981f;
-    box-shadow: 0 0 8px rgba(255, 152, 31, 0.35);
-  }
+  .style-btn.active { color: var(--ui-brass); }
+  .style-btn.active::before { background: var(--ui-brass); }
+  .style-btn.active::after { background: var(--ui-slate-3); }
   .style-btn .style-name { font-size: 0.75rem; font-weight: 700; }
   .style-btn .style-xp { font-size: 0.6875rem; color: #bfb299; }
 
   .spec-attack-btn {
     margin-top: 7px;
-    background: linear-gradient(90deg, #1b4d3e, #113228);
-    border: 2px solid #eab308;
-    border-radius: 6px;
+    display: flex;
     padding: 8px;
-    color: #fef08a;
+    color: var(--ui-warn);
     font-weight: 700;
-    font-size: 0.6875rem;
-    cursor: pointer;
-    text-align: center;
-    transition: all 0.12s ease-out;
   }
-  .spec-attack-btn.armed {
-    background: linear-gradient(90deg, #ca8a04, #dc2626);
-    color: #fff;
-    box-shadow: 0 0 14px rgba(250, 204, 21, 0.8);
-    animation: pulsePrayer 0.8s infinite;
-  }
+  .spec-attack-btn::before { background: var(--ui-moss); }
+  .spec-attack-btn.armed { color: var(--ui-ink); animation: pulsePrayer 0.8s infinite; }
+  .spec-attack-btn.armed::before { background: var(--ui-warn); }
+  .spec-attack-btn.armed::after { background: var(--ui-ember); }
 
   /* 10-Slot OSRS Equipment Paperdoll */
   .equip-doll {
