@@ -22,16 +22,76 @@ import { el, getCombatLevel } from '../ui/hud';
 // ============================================================================
 // 11. ROTATING MINIMAP & FLOATING LABELS
 // ============================================================================
+let minimapResizeBound = false;
+let minimapColors: {
+  node: string;
+  npc: string;
+  dragon: string;
+  monster: string;
+  player: string;
+  playerStroke: string;
+} | null = null;
+
 export function renderMinimap(): void {
   const canvas = el<HTMLCanvasElement>('minimap-canvas');
   const ctx = canvas.getContext('2d')!;
-  const w = canvas.width;
-  const h = canvas.height;
-  const cx = w / 2;
-  const cy = h / 2;
+
+  if (!minimapResizeBound && typeof window !== 'undefined') {
+    minimapResizeBound = true;
+    window.addEventListener('resize', () => {
+      const d = Math.min(3, window.devicePixelRatio || 1);
+      const r = canvas.getBoundingClientRect ? canvas.getBoundingClientRect() : null;
+      const w = r ? r.width : (canvas.clientWidth || 198);
+      const h = r ? r.height : (canvas.clientHeight || 198);
+      canvas.width = Math.round(w * d);
+      canvas.height = Math.round(h * d);
+      renderMinimap();
+    });
+  }
+
+  const dpr = Math.min(3, typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1);
+  const rect = canvas.getBoundingClientRect ? canvas.getBoundingClientRect() : null;
+  const cssW = rect ? rect.width : (canvas.clientWidth || 198);
+  const cssH = rect ? rect.height : (canvas.clientHeight || 198);
+  const targetW = Math.round(cssW * dpr);
+  const targetH = Math.round(cssH * dpr);
+  if (canvas.width !== targetW || canvas.height !== targetH) {
+    canvas.width = targetW;
+    canvas.height = targetH;
+  }
+
+  if (!minimapColors) {
+    if (typeof document !== 'undefined') {
+      const cs = getComputedStyle(document.documentElement);
+      minimapColors = {
+        node: cs.getPropertyValue('--ui-slate-3').trim(),
+        npc: cs.getPropertyValue('--ui-brass').trim(),
+        dragon: cs.getPropertyValue('--ui-ember').trim(),
+        monster: cs.getPropertyValue('--ui-ember').trim(),
+        player: cs.getPropertyValue('--ui-bone').trim(),
+        playerStroke: cs.getPropertyValue('--ui-ink').trim()
+      };
+    } else {
+      minimapColors = {
+        node: '#64748b',
+        npc: '#c5a059',
+        dragon: '#b91c1c',
+        monster: '#881337',
+        player: '#ffffff',
+        playerStroke: '#000000'
+      };
+    }
+  }
+  const colors = minimapColors;
+
+  const cx = cssW / 2;
+  const cy = cssH / 2;
   const scale = 1.75;
 
-  ctx.clearRect(0, 0, w, h);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.save();
+  ctx.scale(dpr, dpr);
+
   ctx.save();
   ctx.translate(cx, cy);
   ctx.rotate(camState.yaw - Math.PI);
@@ -96,7 +156,7 @@ export function renderMinimap(): void {
     if (r.depleted) return;
     const px = (r.pos.x - player.pos.x) * scale;
     const pz = (r.pos.z - player.pos.z) * scale;
-    ctx.fillStyle = '#64748b';
+    ctx.fillStyle = colors.node;
     ctx.fillRect(px - 2, pz - 2, 4, 4);
   });
 
@@ -107,7 +167,7 @@ export function renderMinimap(): void {
     const pz = (n.pos.z - player.pos.z) * scale;
     ctx.beginPath();
     ctx.arc(px, pz, 3.5, 0, Math.PI * 2);
-    ctx.fillStyle = '#c5a059';
+    ctx.fillStyle = colors.npc;
     ctx.fill();
   });
 
@@ -118,7 +178,7 @@ export function renderMinimap(): void {
     const pz = (m.pos.z - player.pos.z) * scale;
     ctx.beginPath();
     ctx.arc(px, pz, m.modelKey === 'elvarg_dragon' ? 5.5 : 3.2, 0, Math.PI * 2);
-    ctx.fillStyle = m.modelKey === 'elvarg_dragon' ? '#b91c1c' : '#881337';
+    ctx.fillStyle = m.modelKey === 'elvarg_dragon' ? colors.dragon : colors.monster;
     ctx.fill();
   });
 
@@ -127,11 +187,13 @@ export function renderMinimap(): void {
   // Player Center Dot
   ctx.beginPath();
   ctx.arc(cx, cy, 4.2, 0, Math.PI * 2);
-  ctx.fillStyle = '#ffffff';
+  ctx.fillStyle = colors.player;
   ctx.fill();
-  ctx.strokeStyle = '#000000';
+  ctx.strokeStyle = colors.playerStroke;
   ctx.lineWidth = 1.5;
   ctx.stroke();
+
+  ctx.restore();
 }
 
 export function worldToScreenPos(x: number, y: number, z: number): { x: number; y: number; visible: boolean } {
