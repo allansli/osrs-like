@@ -57,7 +57,7 @@ function buildCloudGeometry(puffCount: number, rng: () => number): THREE.BufferG
 }
 
 function buildHorizonApronGeometry(rng: () => number): THREE.BufferGeometry {
-  const M = 180;
+  const M = 120;
   const positions: number[] = [];
   const indices: number[] = [];
 
@@ -78,7 +78,8 @@ function buildHorizonApronGeometry(rng: () => number): THREE.BufferGeometry {
     positions.push(x0, y0, z0);
   }
 
-  // Loop 1: First row of low jittered hills
+  // Loop 1: flat shelf at terrain edge height, kept under the camera's reach
+  // (camera stands up to 26 units outside the square, ~5 above ground).
   for (let i = 0; i < M; i++) {
     const theta = (i / M) * Math.PI * 2;
     const cosT = Math.cos(theta);
@@ -89,7 +90,22 @@ function buildHorizonApronGeometry(rng: () => number): THREE.BufferGeometry {
       absCos > 1e-6 ? HORIZON_APRON.inner / absCos : Infinity,
       absSin > 1e-6 ? HORIZON_APRON.inner / absSin : Infinity
     );
-    const r1 = tInner + (HORIZON_APRON.outer - tInner) * 0.45 + (rng() - 0.5) * 4.0;
+    const rS = tInner + 24.0;
+    positions.push(rS * cosT, positions[i * 3 + 1], rS * sinT);
+  }
+
+  // Loop 2: First row of low jittered hills
+  for (let i = 0; i < M; i++) {
+    const theta = (i / M) * Math.PI * 2;
+    const cosT = Math.cos(theta);
+    const sinT = Math.sin(theta);
+    const absCos = Math.abs(cosT);
+    const absSin = Math.abs(sinT);
+    const tInner = Math.min(
+      absCos > 1e-6 ? HORIZON_APRON.inner / absCos : Infinity,
+      absSin > 1e-6 ? HORIZON_APRON.inner / absSin : Infinity
+    );
+    const r1 = tInner + (HORIZON_APRON.outer - tInner) * 0.65 + (rng() - 0.5) * 4.0;
     const x1 = r1 * cosT;
     const z1 = r1 * sinT;
     const y0 = positions[i * 3 + 1];
@@ -97,7 +113,7 @@ function buildHorizonApronGeometry(rng: () => number): THREE.BufferGeometry {
     positions.push(x1, y1, z1);
   }
 
-  // Loop 2: Second row of hills out to HORIZON_APRON.outer (240)
+  // Loop 3: Second row of hills out to HORIZON_APRON.outer (240)
   for (let i = 0; i < M; i++) {
     const theta = (i / M) * Math.PI * 2;
     const cosT = Math.cos(theta);
@@ -105,24 +121,24 @@ function buildHorizonApronGeometry(rng: () => number): THREE.BufferGeometry {
     const r2 = HORIZON_APRON.outer + (rng() - 0.5) * 3.0;
     const x2 = r2 * cosT;
     const z2 = r2 * sinT;
-    const y1 = positions[(M + i) * 3 + 1];
+    const y1 = positions[(2 * M + i) * 3 + 1];
     const y2 = y1 + 10.0 + (rng() * 12.0 + 6.0) * (1.0 + 0.3 * Math.cos(4 * theta));
     positions.push(x2, y2, z2);
   }
 
-  // Quads connecting Loop 0 to Loop 1, and Loop 1 to Loop 2 (counter-clockwise winding)
+  // Quads connecting each loop to the next (counter-clockwise winding)
   for (let i = 0; i < M; i++) {
     const next = (i + 1) % M;
-    indices.push(i, next, M + i);
-    indices.push(next, M + next, M + i);
-
-    indices.push(M + i, M + next, 2 * M + i);
-    indices.push(M + next, 2 * M + next, 2 * M + i);
+    for (let r = 0; r < 3; r++) {
+      const a = r * M + i, an = r * M + next, b = (r + 1) * M + i, bn = (r + 1) * M + next;
+      indices.push(a, an, b);
+      indices.push(an, bn, b);
+    }
   }
 
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-  geo.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(M * 3 * 2), 2));
+  geo.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(M * 4 * 2), 2));
   geo.setIndex(indices);
   geo.computeVertexNormals();
   return geo;

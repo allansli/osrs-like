@@ -27,32 +27,12 @@ interface CloudGroup {
   instances: CloudInstance[];
 }
 
-let apronMesh: THREE.Mesh | null = null;
-let apronMat: THREE.MeshLambertMaterial | null = null;
+let apronMat: THREE.MeshLambertMaterial;
 const cloudGroups: CloudGroup[] = [];
 let lastCloudTime = 0;
 const dummy = new THREE.Object3D();
 
 export function buildSky(): void {
-  if (G.skyDomeMesh) {
-    G.scene.remove(G.skyDomeMesh);
-    G.skyDomeMesh.geometry.dispose();
-    (G.skyDomeMesh.material as THREE.Material).dispose();
-  }
-  if (apronMesh) {
-    G.scene.remove(apronMesh);
-    apronMesh.geometry.dispose();
-    (apronMesh.material as THREE.Material).dispose();
-    apronMesh = null;
-    apronMat = null;
-  }
-  for (const group of cloudGroups) {
-    G.scene.remove(group.mesh);
-    group.mesh.geometry.dispose();
-    (group.mesh.material as THREE.Material).dispose();
-  }
-  cloudGroups.length = 0;
-
   const skyGeo = new THREE.SphereGeometry(SKY_DOME_RADIUS, 32, 16);
   const skyMat = new THREE.ShaderMaterial({
     uniforms: {
@@ -131,7 +111,7 @@ export function buildSky(): void {
   const apronRng = makeRng(0x5ca1e);
   const apronGeo = buildKitPiece('horizon_apron', apronRng);
   apronMat = facetMaterial({ shade: 'cut', color: AIR.uAirColor.value.clone() });
-  apronMesh = new THREE.Mesh(apronGeo, apronMat);
+  const apronMesh = new THREE.Mesh(apronGeo, apronMat);
   apronMesh.castShadow = false;
   apronMesh.receiveShadow = false;
   G.scene.add(apronMesh);
@@ -181,9 +161,7 @@ export function updateSky(frame: DayFrame): void {
   (G.scene.fog as THREE.FogExp2).color.copy(AIR.uAirColor.value);
   (G.scene.fog as THREE.FogExp2).density = AIR.uFogDensity.value;
 
-  if (apronMat) {
-    apronMat.color.copy(AIR.uAirColor.value);
-  }
+  apronMat.color.copy(AIR.uAirColor.value);
 
   const cloudsEnabled = GFX_TIERS[currentQuality].clouds;
   const curTime = AIR.uTime.value;
