@@ -8,6 +8,9 @@ import { dayFrameAt, phaseToPreset, presetToPhase, stepPhase } from '../src/stat
 //   plus sunDir (unit vector toward the key light, the moon when keyIsMoon) and keyIsMoon.
 // - stepPhase: the clock runs 1 / (dayMinutes * 60) per second, DAY_CLOCK.nightSpeed times faster while phase < sunDownBelow
 //   or phase >= sunDownFrom; the result wraps into [0, 1).
+// - Sun/moon hand-over: as the plan's LT2 says, the moon sits on the opposite side and the key intensity fades through zero
+//   where they hand over, so sunDir may jump on the one step where keyIsMoon flips; the continuity test leaves sunDir out
+//   of that step only. Every other channel and every other step stays continuous.
 
 type Rgb = [number, number, number];
 const PHASES = [0, 0.25, 0.33, 0.5, 0.7, 0.77];
@@ -30,6 +33,7 @@ const elevationDeg = (d: number[]): number => (Math.asin(d[1] / Math.hypot(...d)
 const channels = (f: ReturnType<typeof dayFrameAt>): number[] => [
   ...COLOURS.flatMap((k) => f[k] as number[]), f.exposure, ...f.sunDir,
 ];
+const SUN_AT = channels(dayFrameAt(0)).length - 3;
 
 describe('day cycle', () => {
   it('has six keys at the phases and elevations of design 5.3', () => {
@@ -72,7 +76,11 @@ describe('day cycle', () => {
     for (let i = 1; i <= N; i++) {
       const f = dayFrameAt(i === N ? 1 : i / N);
       const cur = channels(f);
-      cur.forEach((v, c) => expect(Math.abs(v - prev[c]), `phase ${i / N} channel ${c}`).toBeLessThanOrEqual(0.02));
+      const flip = f.keyIsMoon !== dayFrameAt((i - 1) / N).keyIsMoon;
+      cur.forEach((v, c) => {
+        if (flip && c >= SUN_AT) return;
+        expect(Math.abs(v - prev[c]), `phase ${i / N} channel ${c}`).toBeLessThanOrEqual(0.02);
+      });
       expect(Math.abs(f.keyIntensity - dayFrameAt((i - 1) / N).keyIntensity), `phase ${i / N} intensity`).toBeLessThanOrEqual(0.05);
       prev = cur;
     }
