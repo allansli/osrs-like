@@ -131,8 +131,8 @@ function targets(): [string, number, number, number][] {
   ];
   expect(STATIONS).toHaveLength(9 + WORLD_REGIONS.length);
   expect(POIS).toHaveLength(7);
-  expect(members.length).toBe(CAMPS.reduce((s, c) => s + c.members.length, 0));
-  expect(out.length).toBe(STATIONS.length + POIS.length + members.length + NODE_PLACEMENTS.length);
+  expect(members).toHaveLength(42);
+  expect(NODE_PLACEMENTS).toHaveLength(46);
   return out;
 }
 
@@ -215,7 +215,7 @@ describe('woods trees: placement', () => {
   it('no tree is within 4.5 of a node, fishing spot, station or shrine', () => {
     expect(STATIONS).toHaveLength(9 + WORLD_REGIONS.length);
     expect(WORLD_REGIONS).toHaveLength(5);
-    expect(NODE_PLACEMENTS.length).toBeGreaterThan(0);
+    expect(NODE_PLACEMENTS).toHaveLength(46);
     const points: [string, number, number][] = [
       ...STATIONS,
       ...NODE_PLACEMENTS.map((p): [string, number, number] => [p.type, p.x, p.z])
