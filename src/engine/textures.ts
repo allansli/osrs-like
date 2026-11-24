@@ -249,6 +249,8 @@ export function applyAlbedo(material: THREE.MeshLambertMaterial, id: string | nu
   else delete material.userData.albedoSpace;
 }
 
+const projectedGeometries = new WeakSet<THREE.BufferGeometry>();
+
 /**
  * Project UVs from face direction so a tile covers `metersPerTile` world units
  * once Texture.repeat is applied. Small props are scaled up to at least `minSpan`
@@ -260,7 +262,7 @@ export function assignProjectedUvs(
   textureRepeat: number,
   minSpan = 1
 ): void {
-  if (geometry.userData.albedoUv) return;
+  if (projectedGeometries.has(geometry)) return;
   const pos = geometry.getAttribute('position') as THREE.BufferAttribute | undefined;
   if (!pos) return;
   let uv = geometry.getAttribute('uv') as THREE.BufferAttribute | undefined;
@@ -310,7 +312,7 @@ export function assignProjectedUvs(
   }
   stitchUvWraps(geometry, metersPerTile);
   uv.needsUpdate = true;
-  geometry.userData.albedoUv = true;
+  projectedGeometries.add(geometry);
 }
 
 /**
@@ -378,7 +380,7 @@ export function assignGroundUvs(geometry: THREE.BufferGeometry): void {
     uv.setXY(i, pos.getX(i) / divisor, pos.getZ(i) / divisor);
   }
   uv.needsUpdate = true;
-  geometry.userData.albedoUv = true;
+  projectedGeometries.add(geometry);
 }
 
 export function sealAlbedoUvs(root: THREE.Object3D): void {
