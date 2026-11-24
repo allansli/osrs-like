@@ -11,6 +11,10 @@ import { setPhase } from './lighting';
 
 export let playerChoseTier = false;
 
+export function setPlayerChoseTier(val = true): void {
+  playerChoseTier = val;
+}
+
 export interface LookHooks {
   ready(): boolean;
   pose(row: { place: string; yaw: number; pitch: number; distance: number }): void;

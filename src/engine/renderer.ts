@@ -11,12 +11,15 @@ import { sealAlbedoUvs } from './textures';
 import { setupInputHandlers } from './input';
 import { buildWalkGrid } from '../state/pathfind';
 import { applyShadowTier, initLighting } from './lighting';
-import { createOutput, effectivePixelRatio, type OutputPipeline } from './post';
+import { createOutput, effectivePixelRatio, enterPlainMode, TIER_LABELS, type OutputPipeline } from './post';
+import { setAirTier } from './atmosphere';
+import { setPlayerChoseTier } from './photo';
 
 export type QualityTier = 'performance' | 'balanced' | 'high' | 'ultra';
 export let currentQuality: QualityTier = 'balanced';
 export let outlinesEnabled = false;
 export let output!: OutputPipeline;
+export { TIER_LABELS };
 
 export function getQualityDpr(tier: QualityTier): number {
   const dpr = typeof window !== 'undefined' ? (window.devicePixelRatio || 1) : 1;
@@ -31,6 +34,7 @@ export function getQualityDpr(tier: QualityTier): number {
 export function applyQualityTier(tier: QualityTier): void {
   const prevTier = currentQuality;
   currentQuality = tier;
+  setAirTier(tier);
   const dpr = effectivePixelRatio(tier, window.innerWidth, window.innerHeight, window.devicePixelRatio);
   if (G.renderer && typeof window !== 'undefined') {
     G.renderer.setPixelRatio(dpr);
@@ -51,10 +55,11 @@ export function applyQualityTier(tier: QualityTier): void {
 }
 
 export function cycleGraphicsQuality(): void {
+  setPlayerChoseTier(true);
   const tiers: QualityTier[] = ['performance', 'balanced', 'high', 'ultra'];
   const nextIdx = (tiers.indexOf(currentQuality) + 1) % tiers.length;
   applyQualityTier(tiers[nextIdx]);
-  addChatMessage(`Graphics Quality set to <b>${tiers[nextIdx].toUpperCase()}</b> (${getQualityDpr(tiers[nextIdx]).toFixed(2)}x DPR).`, 'skill');
+  addChatMessage(`Graphics Quality set to <b>${TIER_LABELS[tiers[nextIdx]]}</b> (${getQualityDpr(tiers[nextIdx]).toFixed(2)}x DPR).`, 'skill');
 }
 
 export function toggleOutlines(): void {
@@ -72,7 +77,7 @@ export function toggleOutlines(): void {
 
 export function syncGraphicsButtons(): void {
   const gBtn = el('graphics-quality-btn');
-  gBtn.textContent = `Graphics: ${currentQuality.charAt(0).toUpperCase() + currentQuality.slice(1)}`;
+  gBtn.textContent = `Graphics: ${TIER_LABELS[currentQuality]}`;
   const oBtn = el('outlines-toggle-btn');
   oBtn.textContent = outlinesEnabled ? 'Outlines: On' : 'Outlines: Off';
 }
@@ -135,6 +140,18 @@ export function init3DEngine(): void {
   container.appendChild(G.renderer.domElement);
 
   initGpuTelemetry(G.renderer.getContext());
+  G.renderer.debug.onShaderError = (gl, program) => {
+    const log = gl.getProgramInfoLog(program);
+    console.error(log);
+    enterPlainMode(G.scene);
+    output?.dispose();
+    output = createOutput(G.renderer, G.scene, G.camera, currentQuality);
+    addChatMessage('Shader compile error: switched to plain mode.', 'skill');
+  };
+  const isPlain = typeof location !== 'undefined' ? new URLSearchParams(location.search).has('plain') : false;
+  if (isPlain) {
+    enterPlainMode(G.scene);
+  }
   initLighting();
   applyQualityTier('balanced');
 

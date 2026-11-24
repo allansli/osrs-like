@@ -4,11 +4,100 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { BLOOM, GFX_TIERS, type QualityTier } from '../data/look';
+import { registeredFacetMaterials } from './materials';
+import { refreshFlashMaterials } from './reactions';
 
 export interface OutputPipeline {
   render(): void;
   setSize(width: number, height: number): void;
   dispose(): void;
+}
+
+export const TIER_LABELS: Record<QualityTier, string> = {
+  performance: 'Low',
+  balanced: 'Medium',
+  high: 'High',
+  ultra: 'Ultra'
+};
+
+let plainMode = false;
+
+export function isPlainMode(): boolean {
+  return plainMode;
+}
+
+export function enterPlainMode(scene?: THREE.Scene): void {
+  if (plainMode) return;
+  plainMode = true;
+
+  const regMap = new Map<THREE.Material, (typeof registeredFacetMaterials)[number]['params']>();
+  for (const reg of registeredFacetMaterials) {
+    regMap.set(reg.material, reg.params);
+  }
+
+  const stockMap = new Map<THREE.Material, THREE.MeshLambertMaterial>();
+  const replaceMat = (mat: THREE.Material): THREE.Material => {
+    const params = regMap.get(mat);
+    if (!params) return mat;
+    let stock = stockMap.get(mat);
+    if (!stock) {
+      stock = new THREE.MeshLambertMaterial({
+        color: params.color,
+        map: params.map,
+        emissive: params.emissive,
+        side: params.side,
+        vertexColors: params.vertexColors
+      });
+      stockMap.set(mat, stock);
+    }
+    return stock;
+  };
+
+  if (scene) {
+    scene.traverse((obj) => {
+      const mesh = obj as THREE.Mesh;
+      if (mesh.isMesh) {
+        if (Array.isArray(mesh.material)) {
+          mesh.material = mesh.material.map(replaceMat);
+        } else if (mesh.material) {
+          mesh.material = replaceMat(mesh.material);
+        }
+      }
+      if (obj instanceof THREE.InstancedMesh) {
+        if (obj.geometry?.type === 'IcosahedronGeometry') {
+          obj.visible = false;
+          obj.count = 0;
+        }
+      }
+    });
+  }
+
+  refreshFlashMaterials();
+}
+
+const TIER_ORDER: QualityTier[] = ['performance', 'balanced', 'high', 'ultra'];
+
+export function nextTier(
+  tier: QualityTier,
+  frameTimes: number[],
+  state: { hidden: boolean; playerChose: boolean }
+): QualityTier {
+  if (state.playerChose || state.hidden || frameTimes.length === 0) {
+    return tier;
+  }
+
+  const sorted = [...frameTimes].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  const median = sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
+
+  if (median > 24) {
+    const idx = TIER_ORDER.indexOf(tier);
+    if (idx > 0) {
+      return TIER_ORDER[idx - 1];
+    }
+  }
+
+  return tier;
 }
 
 export function effectivePixelRatio(
@@ -30,7 +119,7 @@ export function createOutput(
   camera: THREE.Camera,
   tier: QualityTier
 ): OutputPipeline {
-  if (!GFX_TIERS[tier].composer) {
+  if (isPlainMode() || !GFX_TIERS[tier].composer) {
     return {
       render: () => {
         renderer.render(scene, camera);

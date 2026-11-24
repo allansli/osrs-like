@@ -3,6 +3,7 @@ import type { DayFrame } from '../state/dayCycle';
 import { GFX_TIERS, REGION_LOOK, type QualityTier } from '../data/look';
 import { WORLD_REGIONS } from '../data/catalog';
 import { player } from './context';
+import { isPlainMode } from './post';
 
 export const COLOR_FOOTER = `
 #include <tonemapping_fragment>
@@ -97,6 +98,7 @@ function applyTierDefines(material: THREE.Material): void {
  * `outgoingLight` before `opaque_fragment`. Appends `|air` to the program cache key.
  */
 export function attachAtmosphere(material: THREE.Material): void {
+  if (isPlainMode()) return;
   const previous = material.onBeforeCompile;
   material.onBeforeCompile = (shader, renderer) => {
     previous.call(material, shader, renderer);

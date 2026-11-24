@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { AIR, AIR_GLSL, COLOR_FOOTER, attachAtmosphere } from './atmosphere';
+import { isPlainMode } from './post';
 
 /** Flat Nordic fantasy tokens inspired by Skyrim. */
 export const PALETTE = {
@@ -171,6 +172,19 @@ normal = normalize(mix(normal, normalize(cross(dFdx(vViewPosition), dFdy(vViewPo
 
 export type FacetShade = 'cut' | 'round';
 
+export interface RegisteredFacetMaterial {
+  material: THREE.MeshLambertMaterial;
+  params: {
+    color: THREE.Color;
+    map: THREE.Texture | null;
+    emissive: THREE.Color;
+    side: THREE.Side;
+    vertexColors: boolean;
+  };
+}
+
+export const registeredFacetMaterials: RegisteredFacetMaterial[] = [];
+
 /**
  * Banded Lambert albedo (design 6.1). The scene's lights and shadows reach the surface through
  * three's own Lambert sum; only the key's response is banded.
@@ -218,6 +232,12 @@ export function facetMaterial(params: Record<string, unknown> = {}): THREE.MeshL
     map.colorSpace = THREE.SRGBColorSpace;
     cleaned.map = map;
   }
+  if (cleaned.side === undefined) {
+    cleaned.side = THREE.DoubleSide;
+  }
+  if (isPlainMode()) {
+    return new THREE.MeshLambertMaterial(cleaned as THREE.MeshLambertMaterialParameters);
+  }
   const defines: Record<string, string> = {};
   let cacheKey: string;
   if (facetBlend !== null) {
@@ -232,10 +252,17 @@ export function facetMaterial(params: Record<string, unknown> = {}): THREE.MeshL
     cacheKey = 'facet|round';
   }
   cleaned.flatShading = flat;
-  if (cleaned.side === undefined) {
-    cleaned.side = THREE.DoubleSide;
-  }
   const mat = new THREE.MeshLambertMaterial(cleaned as THREE.MeshLambertMaterialParameters);
+  registeredFacetMaterials.push({
+    material: mat,
+    params: {
+      color: mat.color.clone(),
+      map: mat.map,
+      emissive: mat.emissive.clone(),
+      side: mat.side,
+      vertexColors: mat.vertexColors
+    }
+  });
   mat.defines = { ...mat.defines, ...defines };
   if (map) mat.userData.albedoSpace = 'prop';
   const foot = { value: footHeight };

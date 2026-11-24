@@ -49,10 +49,12 @@ const _whiteColor = new THREE.Color(0xffffff);
 const _tempColor = new THREE.Color();
 
 const flashMaterials = new WeakMap<Entity, THREE.Material[]>();
+const cachedFlashEntities = new Set<Entity>();
 
 // Collects the body's materials once (design 6.5): spawn code calls it for each monster, and the hero calls it
 // after every rebuildPlayerEquipmentMeshes, since gear meshes are replaced when equipment changes.
 export function collectFlashMaterials(entity: Entity): void {
+  cachedFlashEntities.add(entity);
   const materials: THREE.Material[] = [];
   meshRoot(entity).traverse((child: THREE.Object3D) => {
     const mesh = child as THREE.Mesh;
@@ -63,6 +65,16 @@ export function collectFlashMaterials(entity: Entity): void {
     }
   });
   flashMaterials.set(entity, materials);
+}
+
+export function refreshFlashMaterials(): void {
+  for (const entity of cachedFlashEntities) {
+    try {
+      if (meshRoot(entity)) collectFlashMaterials(entity);
+    } catch {
+      // ignore
+    }
+  }
 }
 
 export function flash(entity: Entity): void {

@@ -1,5 +1,7 @@
 import * as THREE from 'three';
-import { output } from './renderer';
+import { output, currentQuality, applyQualityTier } from './renderer';
+import { nextTier, TIER_LABELS } from './post';
+import { playerChoseTier } from './photo';
 import { currentDayFrame, updateLighting } from './lighting';
 import { updateAir } from './atmosphere';
 import { updateSky } from './sky';
@@ -875,6 +877,27 @@ declare module './context' {
 }
 
 let infoAutoResetConfigured = false;
+let governorWindow: number[] = [];
+let governorElapsed = 0;
+let governorHidden = false;
+
+function stepGovernor(dt: number, frameMs: number): void {
+  if (playerChoseTier) return;
+  if (typeof document !== 'undefined' && document.hidden) governorHidden = true;
+  governorWindow.push(frameMs);
+  governorElapsed += dt;
+  if (governorElapsed >= 4.0) {
+    const tier = currentQuality;
+    const next = nextTier(tier, governorWindow, { hidden: governorHidden, playerChose: playerChoseTier });
+    governorWindow = [];
+    governorElapsed = 0;
+    governorHidden = false;
+    if (next !== tier) {
+      applyQualityTier(next);
+      addChatMessage(`Graphics Quality stepped down to <b>${TIER_LABELS[next]}</b>.`, 'skill');
+    }
+  }
+}
 
 export function renderFrame(f: FrameState): void {
   if (!infoAutoResetConfigured) {
@@ -887,6 +910,7 @@ export function renderFrame(f: FrameState): void {
     (G.grassInstanced.material as THREE.ShaderMaterial).uniforms.uTime.value = f.elapsedSec;
   }
   output.render();
+  stepGovernor(f.dt, f.dt * 1000);
 
   telemetryInfo.calls = G.renderer.info.render.calls;
   telemetryInfo.triangles = G.renderer.info.render.triangles;
