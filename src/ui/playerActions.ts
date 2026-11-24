@@ -298,16 +298,15 @@ export function hideHoverTooltip(): void {
 }
 
 export function openModal(id: string): HTMLElement {
-  const previousActive = document.activeElement as HTMLElement | null;
+  const active = document.activeElement as HTMLElement;
+  // A modal opened from inside another modal keeps the original HUD opener.
+  const opener = active.closest('.modal-backdrop') ? lastActiveElement : active;
   closeModals();
-  lastActiveElement = previousActive;
+  lastActiveElement = opener;
   const modal = el(id);
   modal.classList.add('open');
   hideHoverTooltip();
-  const first = modal.querySelector<HTMLElement>('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
-  if (first) {
-    first.focus();
-  }
+  modal.querySelector<HTMLElement>('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')!.focus();
   return modal;
 }
 

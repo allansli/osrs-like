@@ -52,9 +52,8 @@ export interface PickResult {
   ground: THREE.Intersection | null;
 }
 
-export function isTextInputTarget(t: HTMLElement | null): boolean {
-  if (!t) return false;
-  return t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || Boolean(t.isContentEditable);
+export function isTextInputTarget(t: HTMLElement): boolean {
+  return t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable;
 }
 
 export function setupInputHandlers(): void {
@@ -84,7 +83,7 @@ export function setupInputHandlers(): void {
     if (isTextInputTarget(t)) {
       return;
     }
-    if ((e.code === 'Space' || e.code === 'Enter') && (t.tagName === 'BUTTON' || (typeof t.closest === 'function' && t.closest('button')))) {
+    if ((e.code === 'Space' || e.code === 'Enter') && t.closest('button')) {
       return;
     }
     G.keysPressed[e.code] = true;
