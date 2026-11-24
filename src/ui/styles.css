@@ -557,12 +557,8 @@
   }
 
   /* Button Component (design 7.3): 3 px chamfer, two layers, 3 kinds (primary, plain, danger), pressed moves down 1px */
-  .ui-btn,
-  .hud-btn,
-  .modal-close,
-  .shop-buy-btn,
-  .shop-batch-btn,
-  .rune-pack-btn {
+  button:not(.tab-btn),
+  .ui-btn {
     position: relative;
     background: transparent;
     border: none;
@@ -580,12 +576,8 @@
     transition: transform 0.12s ease-out, color 0.12s ease-out;
   }
 
-  .ui-btn::before,
-  .hud-btn::before,
-  .modal-close::before,
-  .shop-buy-btn::before,
-  .shop-batch-btn::before,
-  .rune-pack-btn::before {
+  button:not(.tab-btn)::before,
+  .ui-btn::before {
     content: '';
     position: absolute;
     inset: 0;
@@ -596,12 +588,8 @@
     transition: background-color 0.12s ease-out;
   }
 
-  .ui-btn::after,
-  .hud-btn::after,
-  .modal-close::after,
-  .shop-buy-btn::after,
-  .shop-batch-btn::after,
-  .rune-pack-btn::after {
+  button:not(.tab-btn)::after,
+  .ui-btn::after {
     content: '';
     position: absolute;
     inset: 1px;
@@ -612,46 +600,28 @@
     transition: background-color 0.12s ease-out;
   }
 
-  .ui-btn:hover::after,
-  .hud-btn:hover::after,
-  .modal-close:hover::after,
-  .shop-buy-btn:hover::after,
-  .shop-batch-btn:hover::after,
-  .rune-pack-btn:hover::after {
+  button:not(.tab-btn):hover::after,
+  .ui-btn:hover::after {
     background: var(--ui-slate-2);
   }
 
   /* Pressed moves down 1 px */
-  .ui-btn:active,
-  .hud-btn:active,
-  .modal-close:active,
-  .shop-buy-btn:active,
-  .shop-batch-btn:active,
-  .rune-pack-btn:active {
+  button:not(.tab-btn):active,
+  .ui-btn:active {
     transform: translateY(1px);
   }
 
   /* Disabled drops to bone-dim */
+  button:not(.tab-btn):disabled,
   .ui-btn:disabled,
-  .hud-btn:disabled,
-  .modal-close:disabled,
-  .shop-buy-btn:disabled,
-  .shop-batch-btn:disabled,
-  .rune-pack-btn:disabled,
-  .ui-btn[disabled],
-  .hud-btn[disabled],
-  .modal-close[disabled],
-  .shop-buy-btn[disabled],
-  .shop-batch-btn[disabled],
-  .rune-pack-btn[disabled] {
+  button:not(.tab-btn)[disabled],
+  .ui-btn[disabled] {
     color: var(--ui-bone-dim) !important;
     cursor: not-allowed;
     transform: none;
   }
-  .ui-btn:disabled::before,
-  .hud-btn:disabled::before,
-  .ui-btn[disabled]::before,
-  .hud-btn[disabled]::before {
+  button:not(.tab-btn):disabled::before,
+  .ui-btn:disabled::before {
     background: var(--ui-slate-3) !important;
   }
 
@@ -915,23 +885,29 @@
     flex: 1;
   }
 
+  /* Slot Component (design 7.3): Slate-2 square with 3px chamfer; quantity bottom-right in tabular figures with ink outline; selected is a brass line */
   .inv-slot {
-    background: rgba(18, 24, 32, 0.78);
-    border: 1px solid rgba(148, 163, 184, 0.22);
-    border-radius: 6px;
+    background: var(--ui-slate-2);
+    border: none;
+    border-radius: 0;
+    clip-path: polygon(3px 0, calc(100% - 3px) 0, 100% 3px, 100% calc(100% - 3px), calc(100% - 3px) 100%, 3px 100%, 0 calc(100% - 3px), 0 3px);
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     position: relative;
     cursor: pointer;
-    transition: border-color 0.12s, background 0.12s, transform 0.1s;
+    transition: background-color 0.12s, transform 0.1s;
     min-height: 36px;
+    aspect-ratio: 1;
   }
   .inv-slot:hover {
-    border-color: #94a3b8;
-    background: rgba(30, 41, 59, 0.75);
+    background: var(--ui-slate-3);
     transform: scale(1.03);
+  }
+  .inv-slot.selected,
+  .equip-slot.selected {
+    box-shadow: inset 0 0 0 1.5px var(--ui-brass);
   }
   .inv-slot .item-svg-wrap {
     width: 30px;
@@ -1076,29 +1052,31 @@
   }
   .equip-slot {
     width: 48px;
-    height: 46px;
-    background: #1a150f;
-    border: 1.5px solid #594a36;
-    border-radius: 6px;
+    height: 48px;
+    background: var(--ui-slate-2);
+    border: none;
+    border-radius: 0;
+    clip-path: polygon(3px 0, calc(100% - 3px) 0, 100% 3px, 100% calc(100% - 3px), calc(100% - 3px) 100%, 3px 100%, 0 calc(100% - 3px), 0 3px);
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     position: relative;
-    transition: border-color 0.12s;
+    transition: background-color 0.12s;
   }
   .equip-slot.empty-spacer {
     background: transparent;
     border: none;
+    clip-path: none;
     pointer-events: none;
   }
-  .equip-slot:hover { border-color: var(--ui-brass); }
+  .equip-slot:hover { background: var(--ui-slate-3); }
   .equip-slot svg { width: 26px; height: 26px; }
   .equip-slot .slot-placeholder {
     font-size: 0.6875rem;
     font-weight: 700;
-    color: #7a6a53;
+    color: var(--ui-bone-dim);
     text-transform: uppercase;
   }
   .equip-stats-box {
@@ -1478,10 +1456,7 @@
 
 /* Phase 1 HUD, dual-pane stations, and the 0.6s tick ring. */
 
-.quick-top-buttons {
-  display: flex;
-  gap: 6px;
-}
+
 
 #tick-meter {
   display: flex;
@@ -1706,23 +1681,20 @@
 }
 
 .qty-badge {
-  background: #111;
-  color: #ffe642;
+  background: transparent;
+  color: var(--ui-bone);
   font-size: 0.6875rem;
   font-weight: 700;
-  padding: 0 4px;
-  border-radius: 3px;
-  line-height: 1.4;
-}
-
-.inv-slot {
-  position: relative;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  text-shadow: 0 1px 0 var(--ui-ink), 1px 0 0 var(--ui-ink), -1px 0 0 var(--ui-ink), 0 -1px 0 var(--ui-ink);
+  pointer-events: none;
 }
 
 .inv-slot .qty-badge {
   position: absolute;
   right: 2px;
-  bottom: 1px;
+  bottom: 2px;
 }
 
 .bank-search {
