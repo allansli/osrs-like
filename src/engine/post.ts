@@ -56,6 +56,8 @@ export function enterPlainMode(scene: THREE.Scene): void {
   scene.traverse((obj) => {
     const mesh = obj as THREE.Mesh;
     if (!mesh.isMesh) return;
+    // Clouds are the only instanced meshes with frustum culling off; sky.ts resets visible every frame, so the camera layer goes instead.
+    if ((obj as THREE.InstancedMesh).isInstancedMesh && !mesh.frustumCulled) mesh.layers.disable(0);
     mesh.material = Array.isArray(mesh.material) ? mesh.material.map(replaceMat) : replaceMat(mesh.material);
   });
 
