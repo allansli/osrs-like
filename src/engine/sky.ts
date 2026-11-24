@@ -31,6 +31,7 @@ export function buildSky(): void {
       uniform vec3 uFill;
       uniform float uNight;
       varying vec3 vDir;
+      #include <common>
       #include <dithering_pars_fragment>
 
       float hashStars(vec3 p) {
