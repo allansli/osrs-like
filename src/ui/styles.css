@@ -2071,6 +2071,8 @@
     outline: 2px solid var(--ui-brass);
     outline-offset: 2px;
   }
+  /* The tab bar is clipped on the panel chamfer, so the focus ring is drawn inside the button, clear of the 5 px corner cut */
+  .tab-btn:focus-visible { outline-offset: -5px; }
 
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
