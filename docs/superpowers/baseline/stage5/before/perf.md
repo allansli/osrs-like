@@ -13,10 +13,10 @@ Headless, software renderer. The count includes the shadow pass (V1b). Counts mo
 | P3 | golden | 342/201 | 1764/438 | 1764/438 | 1764/438 |
 | P3 | noon | 342/201 | 1705/430 | 1705/430 | 1764/438 |
 | P3 | night | 342/201 | 1764/438 | 1764/438 | 1764/438 |
-| P4 | golden | 311/198 | 2723/482 | 1334/379 | 1334/379 |
-| P4 | noon | 432/214 | 1302/385 | 1273/380 | 1276/382 |
-| P4 | night | 432/214 | 1273/382 | 1233/377 | 1223/375 |
-| P5 | golden | 507/225 | 488/257 | 492/266 | 492/266 |
+| P4 | golden | 311/198 | 1273/373 | 1330/381 | 1347/382 |
+| P4 | noon | 311/198 | 1273/373 | 1330/381 | 1350/392 |
+| P4 | night | 311/198 | 1330/381 | 1345/382 | 1287/384 |
+| P5 | golden | 156/120 | 488/257 | 492/266 | 492/266 |
 | P5 | noon | 156/120 | 492/266 | 488/257 | 488/257 |
 | P5 | night | 156/120 | 492/266 | 492/266 | 492/266 |
 | P6 | golden | 436/108 | 2162/430 | 2162/430 | 2162/430 |
@@ -34,9 +34,12 @@ Headless, software renderer. The count includes the shadow pass (V1b). Counts mo
 | P10 | golden | 1546/295 | 3370/640 | 3370/640 | 3365/639 |
 | P10 | noon | 1536/294 | 3384/643 | 3343/637 | 3320/640 |
 | P10 | night | 1479/294 | 3363/645 | 3346/638 | 3346/638 |
-| P11 | 1280x720 noon | 1532/265 | 3181/589 | 3180/589 | 3174/588 |
-| P11 | 1920x1080 noon | 1513/263 | 3267/603 | 3327/612 | 3328/612 |
-| P11 | 3840x2160 noon | 1501/262 | 3220/597 | 3194/593 | 3181/590 |
+| P11 | 1280x720 @1 noon, HUD on | 1499/261 | 3150/585 | 3139/583 | 3151/585 |
+| P11 | 1920x1080 @1 noon, HUD on | 1530/265 | 3197/592 | 3180/589 | 3180/589 |
+| P11 | 3840x2160 @1 noon, HUD on | 1532/265 | 3181/589 | 3180/589 | 3159/586 |
+| P11 | 1920x1080 @2 noon, HUD on | 1499/261 | 3180/589 | 3160/586 | 3177/588 |
 
-P11 at ratio 2 (1920x1080) is not captured: the headless browser tool fixes the device pixel ratio at 1. The owner or a headed run covers it.
+P4 and P5 golden performance were recaptured on a fresh load with the player's skills raised to 99 before the first pose, so no camp aggroes (`monsterThreatColor` is green) and the player stays alive at the pose. Every recaptured shot was checked after the screenshot: `player.downed` false, hp above 0, the player within 1 unit of the pose target, and no monster in chase or attack.
+
+P11 is the HUD on, inventory tab open, the level-up banner shown and one hit splat over the player, at four sizes on every tier (`P11-<w>x<h>@<ratio>-<tier>.jpg`). The bank, shop, world map, quests and settings windows exclude each other, so each is its own picture per size, on balanced only, since windows do not change with the tier (`P11-<w>x<h>@<ratio>-<window>.jpg`). At ratio 2 the drawing buffer follows the tier's pixel-ratio cap: 1920x1080 on performance, 2400x1350 on balanced, 2880x1620 on high, 3840x2160 on ultra.
 Pictures: `<pose>-<time>-<tier>.jpg` in this folder (P10 only at its base yaw).
