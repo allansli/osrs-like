@@ -1,7 +1,9 @@
 import * as THREE from 'three';
 import { G, telemetryInfo } from './context';
 import { addChatMessage, el } from '../ui/hud';
-import { buildSkyDomeShader, buildTerrainAndWater } from './worldMesh';
+import { buildTerrainAndWater } from './worldMesh';
+import { buildSky } from './sky';
+import { CAMERA_FAR } from '../data/look';
 import { buildAllCitiesAndLandmarks } from './worldBuild';
 import { buildPlayerCharacter } from './playerMesh';
 import { spawnAllResourcesAndMonsters } from './spawns';
@@ -102,7 +104,7 @@ export function init3DEngine(): void {
   G.scene = new THREE.Scene();
   G.scene.fog = new THREE.FogExp2(0x9ab0c2, 0.0028);
 
-  G.camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.5, 360);
+  G.camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.5, CAMERA_FAR);
 
   G.renderer = new THREE.WebGLRenderer({
     antialias: true,
@@ -126,7 +128,7 @@ export function init3DEngine(): void {
   applyQualityTier('balanced');
 
   G.walkGrid = buildWalkGrid();
-  buildSkyDomeShader();
+  buildSky();
   buildTerrainAndWater();
   buildAllCitiesAndLandmarks();
   buildPlayerCharacter();

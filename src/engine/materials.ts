@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { AIR, COLOR_FOOTER } from './atmosphere';
 
 /** Flat Nordic fantasy tokens inspired by Skyrim. */
 export const PALETTE = {
@@ -259,7 +260,8 @@ export function grassMaterial(): THREE.ShaderMaterial {
       uTime: { value: 0 },
       uBase: { value: new THREE.Color(PALETTE.sage) },
       uLit: { value: new THREE.Color(PALETTE.sageLit) },
-      uLightDir: { value: new THREE.Vector3(0.52, 0.78, 0.34).normalize() }
+      uSunDir: AIR.uSunDir,
+      uKeyColor: AIR.uKeyColor
     },
     vertexShader: `
       uniform float uTime;
@@ -286,17 +288,19 @@ export function grassMaterial(): THREE.ShaderMaterial {
     fragmentShader: `
       uniform vec3 uBase;
       uniform vec3 uLit;
-      uniform vec3 uLightDir;
+      uniform vec3 uSunDir;
+      uniform vec3 uKeyColor;
       varying vec3 vWorld;
       varying float vH;
       void main() {
         vec3 n = normalize(cross(dFdx(vWorld), dFdy(vWorld)));
-        float ndl = dot(n, normalize(uLightDir));
+        float ndl = dot(n, normalize(uSunDir));
         float cel = smoothstep(0.28, 0.42, ndl);
         vec3 albedo = mix(uBase, uLit, smoothstep(0.20, 0.85, vH));
-        vec3 col = albedo * mix(vec3(0.64, 0.68, 0.80), vec3(1.08, 1.04, 0.96), cel);
+        vec3 col = albedo * mix(vec3(0.64, 0.68, 0.80), uKeyColor, cel);
         col += vec3(0.12, 0.16, 0.04) * smoothstep(0.60, 1.0, vH) * cel;
         gl_FragColor = vec4(col, 1.0);
+        ${COLOR_FOOTER}
       }
     `
   });

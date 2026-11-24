@@ -1,5 +1,9 @@
 import * as THREE from 'three';
 import { updateLighting } from './lighting';
+import { DAY_CLOCK } from '../data/look';
+import { dayFrameAt, presetToPhase, stepPhase } from '../state/dayCycle';
+import { updateAir } from './atmosphere';
+import { updateSky } from './sky';
 import {
   TICK_SEC,
   commandClocks,
@@ -102,6 +106,8 @@ export interface FrameState {
 }
 
 let lastAudioEnabled: boolean = STATE.audioEnabled;
+let dayCyclePhase = presetToPhase(STATE.timeOfDay);
+let prevTimeOfDay = STATE.timeOfDay;
 let heartbeatTimer = 0;
 let foodCooldownPending = false;
 
@@ -127,8 +133,6 @@ export function updateVitalsAndRegen(f: FrameState): void {
   }
 
   if (G.waterUniforms) G.waterUniforms.uTime.value = f.elapsedSec;
-  if (G.skyUniforms) G.skyUniforms.uTime.value = f.elapsedSec;
-  if (G.skyDomeMesh) G.skyDomeMesh.position.copy(player.pos);
 
   player.sinceCombat += f.dt;
   const targetingHeroWithWindup = G.monstersList.some(
@@ -933,5 +937,14 @@ export function gameLoop(now: number): void {
   updateWorldTimers(f);
   updateOverlay(f);
   updateLighting(f.dt);
+  if (STATE.timeOfDay !== prevTimeOfDay) {
+    dayCyclePhase = presetToPhase(STATE.timeOfDay);
+    prevTimeOfDay = STATE.timeOfDay;
+  } else {
+    dayCyclePhase = stepPhase(dayCyclePhase, f.dt, DAY_CLOCK);
+  }
+  const frame = dayFrameAt(dayCyclePhase);
+  updateAir(frame, f.dt);
+  updateSky(frame);
   renderFrame(f);
 }

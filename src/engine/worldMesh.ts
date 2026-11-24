@@ -18,6 +18,7 @@ import { loadBlenderWorldTemplate, upgradeWorldPropWithGltf } from './blenderWor
 import { el } from '../ui/hud';
 import { GFX_TIERS } from '../data/look';
 import { currentQuality } from './renderer';
+import { COLOR_FOOTER } from './atmosphere';
 
 export function getBiomeColor(x: number, z: number, h: number): THREE.Color {
   const dirt = new THREE.Color(PALETTE.dirt);
@@ -33,44 +34,6 @@ export function getBiomeColor(x: number, z: number, h: number): THREE.Color {
   return grass[band];
 }
 
-// Custom GLSL Atmospheric Sky Dome with Volumetric Clouds & Sun Disc
-export function buildSkyDomeShader(): void {
-  G.skyUniforms = {
-    uTime: { value: 0 },
-    uTopColor: { value: new THREE.Color(PALETTE.skyZenith) },
-    uMidColor: { value: new THREE.Color(PALETTE.skyMid) },
-    uHorizonColor: { value: new THREE.Color(PALETTE.skyHorizon) }
-  };
-
-  const skyGeo = new THREE.SphereGeometry(290, 24, 16);
-  const skyMat = new THREE.ShaderMaterial({
-    uniforms: G.skyUniforms,
-    side: THREE.BackSide,
-    depthWrite: false,
-    vertexShader: `
-      varying vec3 vNormPos;
-      void main() {
-        vNormPos = normalize(position);
-        gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(position, 1.0);
-      }
-    `,
-    fragmentShader: `
-      uniform vec3 uTopColor;
-      uniform vec3 uMidColor;
-      uniform vec3 uHorizonColor;
-      varying vec3 vNormPos;
-      void main() {
-        float h = clamp(vNormPos.y, 0.0, 1.0);
-        vec3 col = mix(uHorizonColor, uMidColor, smoothstep(0.0, 0.28, h));
-        col = mix(col, uTopColor, smoothstep(0.28, 0.85, h));
-        gl_FragColor = vec4(col, 1.0);
-      }
-    `
-  });
-
-  G.skyDomeMesh = new THREE.Mesh(skyGeo, skyMat);
-  G.scene.add(G.skyDomeMesh);
-}
 
 export function cycleTimeOfDay(): void {
   STATE.timeOfDay = (STATE.timeOfDay + 1) % 3;
@@ -151,6 +114,7 @@ export function buildTerrainAndWater(): void {
         float foam = smoothstep(0.48, 0.78, rip);
         vec3 col = mix(uDeepColor, uShallowColor, foam);
         gl_FragColor = vec4(col, 0.94);
+        ${COLOR_FOOTER}
       }
     `
   });
