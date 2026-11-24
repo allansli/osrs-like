@@ -248,9 +248,129 @@ export const REGION_LOOK: RegionLook[] = [
 
 // Empty tables populated by later slices
 export const WEATHER: unknown[] = [];
-export const FLORA_RULES: unknown[] = [];
-export const KIT_PIECES: unknown[] = [];
 export const EMITTERS: unknown[] = [];
+
+export type KitPieceId =
+  | 'boulder_s'
+  | 'boulder_m'
+  | 'boulder_l'
+  | 'bush_a'
+  | 'bush_b'
+  | 'fern'
+  | 'reed'
+  | 'log'
+  | 'snag'
+  | 'sapling'
+  | 'mushrooms'
+  | 'backdrop_tree_a'
+  | 'backdrop_tree_b'
+  | 'crag_a'
+  | 'crag_b';
+
+export interface KitPieceDef {
+  layer: 'understorey' | 'canopy';
+  maxHeight: number;
+  radius: number;
+  tintFamily: 'stone' | 'foliage' | 'wood' | 'fungus';
+  castShadow: boolean;
+}
+
+export const KIT_PIECES: Record<KitPieceId, KitPieceDef> = {
+  boulder_s: { layer: 'understorey', maxHeight: 0.5, radius: 0.5, tintFamily: 'stone', castShadow: false },
+  boulder_m: { layer: 'understorey', maxHeight: 0.8, radius: 0.8, tintFamily: 'stone', castShadow: true },
+  boulder_l: { layer: 'understorey', maxHeight: 1.2, radius: 1.1, tintFamily: 'stone', castShadow: true },
+  bush_a: { layer: 'understorey', maxHeight: 0.9, radius: 0.7, tintFamily: 'foliage', castShadow: false },
+  bush_b: { layer: 'understorey', maxHeight: 1.1, radius: 0.9, tintFamily: 'foliage', castShadow: false },
+  fern: { layer: 'understorey', maxHeight: 0.7, radius: 0.5, tintFamily: 'foliage', castShadow: false },
+  reed: { layer: 'understorey', maxHeight: 1.2, radius: 0.4, tintFamily: 'foliage', castShadow: false },
+  log: { layer: 'understorey', maxHeight: 0.6, radius: 0.8, tintFamily: 'wood', castShadow: false },
+  snag: { layer: 'canopy', maxHeight: 4.5, radius: 1.2, tintFamily: 'wood', castShadow: true },
+  sapling: { layer: 'understorey', maxHeight: 1.2, radius: 0.6, tintFamily: 'wood', castShadow: false },
+  mushrooms: { layer: 'understorey', maxHeight: 0.4, radius: 0.4, tintFamily: 'fungus', castShadow: false },
+  backdrop_tree_a: { layer: 'canopy', maxHeight: 9.0, radius: 1.8, tintFamily: 'wood', castShadow: true },
+  backdrop_tree_b: { layer: 'canopy', maxHeight: 11.0, radius: 2.0, tintFamily: 'wood', castShadow: true },
+  crag_a: { layer: 'canopy', maxHeight: 6.0, radius: 1.6, tintFamily: 'stone', castShadow: true },
+  crag_b: { layer: 'canopy', maxHeight: 8.0, radius: 2.0, tintFamily: 'stone', castShadow: true },
+};
+
+export interface RegionFloraRule {
+  pieces: KitPieceId[];
+  clusterDensity: number;
+}
+
+export interface PoiFloraRule {
+  frame: KitPieceId[];
+  focus: number;
+  floor: string;
+  pieces?: KitPieceId[];
+}
+
+export type FloraRule = RegionFloraRule | PoiFloraRule;
+
+export const FLORA_RULES: Record<string, FloraRule> = {
+  lumbridge: {
+    pieces: ['bush_a', 'bush_b', 'boulder_s', 'boulder_m', 'sapling', 'log', 'reed'],
+    clusterDensity: 1.0,
+  },
+  varrock: {
+    pieces: ['bush_a', 'boulder_s', 'boulder_m', 'sapling'],
+    clusterDensity: 0.6,
+  },
+  desert: {
+    pieces: ['boulder_s', 'boulder_m', 'boulder_l', 'bush_b', 'log'],
+    clusterDensity: 0.5,
+  },
+  woods: {
+    pieces: ['fern', 'mushrooms', 'sapling', 'log', 'bush_a', 'bush_b', 'boulder_s'],
+    clusterDensity: 1.2,
+  },
+  wilderness: {
+    pieces: ['boulder_s', 'boulder_m', 'boulder_l', 'log'],
+    clusterDensity: 0.4,
+  },
+  three_kettle_camp: {
+    frame: ['backdrop_tree_a', 'bush_a', 'log'],
+    focus: 5,
+    floor: 'trampled dirt',
+    pieces: ['bush_a', 'boulder_s', 'log'],
+  },
+  wardstone_cairn: {
+    frame: ['crag_a', 'backdrop_tree_a'],
+    focus: 2,
+    floor: 'stone paving',
+    pieces: ['boulder_s', 'boulder_m', 'bush_a'],
+  },
+  cinderstep_pass: {
+    frame: ['crag_a', 'crag_b', 'snag'],
+    focus: 3,
+    floor: 'cracked basalt',
+    pieces: ['boulder_s', 'boulder_m'],
+  },
+  slagfall_terrace: {
+    frame: ['crag_b', 'snag', 'crag_a'],
+    focus: 6,
+    floor: 'ash',
+    pieces: ['boulder_m', 'boulder_l'],
+  },
+  lampwrights_hollow: {
+    frame: ['backdrop_tree_b', 'mushrooms'],
+    focus: 2.5,
+    floor: 'moss',
+    pieces: ['mushrooms', 'fern', 'bush_b', 'log'],
+  },
+  reedglass_tarn: {
+    frame: ['backdrop_tree_a', 'reed'],
+    focus: 0,
+    floor: 'wet stones',
+    pieces: ['reed', 'bush_a', 'boulder_s'],
+  },
+  tamarisk_pool: {
+    frame: ['crag_a', 'bush_b'],
+    focus: 2.5,
+    floor: 'wet stones',
+    pieces: ['bush_b', 'boulder_s', 'reed'],
+  },
+};
 
 export interface BloomConfig {
   threshold: number;
