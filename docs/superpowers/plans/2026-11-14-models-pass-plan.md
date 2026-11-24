@@ -24,7 +24,7 @@ Model tiers used: haiku for [RUN]; sonnet for pipeline scripts, wiring and tests
 
 Run from the worktree root, in a shell started with an allowlisted environment: `env -i HOME="$HOME" PATH="$PATH" XDG_RUNTIME_DIR="$XDG_RUNTIME_DIR" DBUS_SESSION_BUS_ADDRESS="$DBUS_SESSION_BUS_ADDRESS" bash`.
 
-`CAP` stands for `systemd-run --user --scope -q -p MemoryMax=3G -p MemorySwapMax=0`.
+`CAP` stands for `scripts/capped.sh` for test, type and build commands (the memory-capped container, 3 GB, no swap, no network; amended 2026-11-24, since `systemd-run --user` no longer works after a WSL restart). Blender is not in that container: for BLEND and SHEETS, `CAP` is empty and the command runs on the host under its `timeout 600`, one Blender process at a time machine-wide.
 
 | Name | Command | Expected |
 |---|---|---|
