@@ -51,17 +51,11 @@
 
   /* Panel Component (design 7.3): Slate-1, 6 px chamfered corners, a 1 px slate-3 line and a 1 px lighter top edge, one hard 2 px ink shadow, no glow */
   .ui-panel,
-  #right-panel,
-  #chatbox,
-  .player-vitals-card,
-  .perf-hud,
   #target-hud,
   #boss-bar,
-  .modal-window,
   .death-card,
   .quest-tracker,
-  .slayer-widget,
-  .cheat-panel {
+  .slayer-widget {
     position: relative;
     background: transparent;
     border: none;
@@ -71,17 +65,11 @@
   }
 
   .ui-panel::before,
-  #right-panel::before,
-  #chatbox::before,
-  .player-vitals-card::before,
-  .perf-hud::before,
   #target-hud::before,
   #boss-bar::before,
-  .modal-window::before,
   .death-card::before,
   .quest-tracker::before,
-  .slayer-widget::before,
-  .cheat-panel::before {
+  .slayer-widget::before {
     content: '';
     position: absolute;
     inset: 0;
@@ -93,17 +81,11 @@
   }
 
   .ui-panel::after,
-  #right-panel::after,
-  #chatbox::after,
-  .player-vitals-card::after,
-  .perf-hud::after,
   #target-hud::after,
   #boss-bar::after,
-  .modal-window::after,
   .death-card::after,
   .quest-tracker::after,
-  .slayer-widget::after,
-  .cheat-panel::after {
+  .slayer-widget::after {
     content: '';
     position: absolute;
     inset: 1px;
@@ -574,32 +556,129 @@
     max-width: 440px;
   }
 
-  .hud-btn {
-    background: rgba(18, 23, 30, 0.92);
-    border: 1px solid #334155;
-    color: #cbd5e1;
-    padding: 6px 11px;
-    border-radius: 6px;
+  /* Button Component (design 7.3): 3 px chamfer, two layers, 3 kinds (primary, plain, danger), pressed moves down 1px */
+  .ui-btn,
+  .hud-btn,
+  .modal-close,
+  .shop-buy-btn,
+  .shop-batch-btn,
+  .rune-pack-btn {
+    position: relative;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    font-family: var(--ui-font-text);
     font-size: 0.6875rem;
-    font-weight: 700;
+    font-weight: 600;
+    color: var(--ui-bone);
     cursor: pointer;
-    transition: all 0.15s;
-    display: flex;
+    display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 6px;
+    padding: 6px 12px;
+    transition: transform 0.12s ease-out, color 0.12s ease-out;
   }
-  .hud-btn svg { width: 14px; height: 14px; }
-  .hud-btn:hover {
-    background: rgba(30, 41, 59, 0.96);
-    border-color: #64748b;
-    color: #f1f5f9;
-    transform: translateY(-1px);
-    box-shadow: 0 3px 10px rgba(0,0,0,0.5);
+
+  .ui-btn::before,
+  .hud-btn::before,
+  .modal-close::before,
+  .shop-buy-btn::before,
+  .shop-batch-btn::before,
+  .rune-pack-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--ui-slate-3);
+    clip-path: polygon(3px 0, calc(100% - 3px) 0, 100% 3px, 100% calc(100% - 3px), calc(100% - 3px) 100%, 3px 100%, 0 calc(100% - 3px), 0 3px);
+    z-index: -2;
+    pointer-events: none;
+    transition: background-color 0.12s ease-out;
   }
-  .hud-btn.active {
-    background: linear-gradient(135deg, #334155, #1e293b);
-    color: #f8fafc;
-    border-color: #94a3b8;
+
+  .ui-btn::after,
+  .hud-btn::after,
+  .modal-close::after,
+  .shop-buy-btn::after,
+  .shop-batch-btn::after,
+  .rune-pack-btn::after {
+    content: '';
+    position: absolute;
+    inset: 1px;
+    background: var(--ui-slate-1);
+    clip-path: polygon(2px 0, calc(100% - 2px) 0, 100% 2px, 100% calc(100% - 2px), calc(100% - 2px) 100%, 2px 100%, 0 calc(100% - 2px), 0 2px);
+    z-index: -1;
+    pointer-events: none;
+    transition: background-color 0.12s ease-out;
+  }
+
+  .ui-btn:hover::after,
+  .hud-btn:hover::after,
+  .modal-close:hover::after,
+  .shop-buy-btn:hover::after,
+  .shop-batch-btn:hover::after,
+  .rune-pack-btn:hover::after {
+    background: var(--ui-slate-2);
+  }
+
+  /* Pressed moves down 1 px */
+  .ui-btn:active,
+  .hud-btn:active,
+  .modal-close:active,
+  .shop-buy-btn:active,
+  .shop-batch-btn:active,
+  .rune-pack-btn:active {
+    transform: translateY(1px);
+  }
+
+  /* Disabled drops to bone-dim */
+  .ui-btn:disabled,
+  .hud-btn:disabled,
+  .modal-close:disabled,
+  .shop-buy-btn:disabled,
+  .shop-batch-btn:disabled,
+  .rune-pack-btn:disabled,
+  .ui-btn[disabled],
+  .hud-btn[disabled],
+  .modal-close[disabled],
+  .shop-buy-btn[disabled],
+  .shop-batch-btn[disabled],
+  .rune-pack-btn[disabled] {
+    color: var(--ui-bone-dim) !important;
+    cursor: not-allowed;
+    transform: none;
+  }
+  .ui-btn:disabled::before,
+  .hud-btn:disabled::before,
+  .ui-btn[disabled]::before,
+  .hud-btn[disabled]::before {
+    background: var(--ui-slate-3) !important;
+  }
+
+  /* Primary: brass line, brass text */
+  .ui-btn.primary,
+  .hud-btn.primary,
+  .hud-btn.active,
+  .shop-buy-btn {
+    color: var(--ui-brass);
+  }
+  .ui-btn.primary::before,
+  .hud-btn.primary::before,
+  .hud-btn.active::before,
+  .shop-buy-btn::before {
+    background: var(--ui-brass);
+  }
+
+  /* Danger: ember line */
+  .ui-btn.danger,
+  .hud-btn.danger,
+  .modal-close {
+    color: var(--ui-ember);
+  }
+  .ui-btn.danger::before,
+  .hud-btn.danger::before,
+  .modal-close::before {
+    background: var(--ui-ember);
   }
 
   /* Active Target HUD */
@@ -1130,12 +1209,8 @@
     text-transform: uppercase;
   }
   .modal-close {
-    background: #7f1d1d;
-    border: 1px solid #f87171;
-    color: #fff;
     width: 28px;
     height: 28px;
-    border-radius: 6px;
     font-weight: 700;
     cursor: pointer;
   }
@@ -1272,17 +1347,6 @@
     color: #042f2e;
     border-color: #fef08a;
   }
-  .shop-buy-btn {
-    background: linear-gradient(180deg, #85581A, #54360c);
-    border: 1px solid var(--ui-brass);
-    color: var(--ui-bone);
-    border-radius: 5px;
-    padding: 5px;
-    font-size: 0.6875rem;
-    font-weight: 700;
-    cursor: pointer;
-  }
-  .shop-buy-btn:hover { filter: brightness(1.18); }
   .shop-buy-btn { line-height: 1.25; white-space: normal; }
 
   #shop-items-grid {
@@ -1302,19 +1366,8 @@
 
   .shop-batch-btn {
     flex: 1 1 0;
-    background: #241c14;
-    color: #fef08a;
-    border: 1px solid #6e5d45;
-    border-radius: 4px;
     padding: 4px 0;
-    font-size: 0.6875rem;
-    font-weight: 700;
-    cursor: pointer;
     line-height: 1.2;
-  }
-  .shop-batch-btn:hover {
-    border-color: var(--ui-brass);
-    background: #3a2d1c;
   }
 
   #shop-body .shop-toolbar {
