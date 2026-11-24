@@ -853,27 +853,36 @@
   .tab-bar {
     display: grid;
     grid-template-columns: repeat(6, 1fr);
-    background: #0f141a;
-    border-bottom: 1px solid #334155;
+    background: var(--ui-slate-1);
+    border-bottom: 1px solid var(--ui-slate-3);
   }
 
+  /* Tab Component (design 7.3): A button without a bottom line; the selected tab joins its panel and carries a brass top edge */
   .tab-btn {
+    position: relative;
     background: var(--ui-slate-2);
     border: none;
-    border-right: 1px solid #221c14;
+    border-top: 2px solid transparent;
+    border-right: 1px solid var(--ui-slate-3);
+    border-bottom: none;
     padding: 8px 0;
     cursor: pointer;
-    transition: background 0.12s;
+    color: var(--ui-bone-dim);
+    transition: background-color 0.12s ease-out, color 0.12s ease-out;
     display: flex;
     align-items: center;
     justify-content: center;
   }
   .tab-btn svg { width: 20px; height: 20px; }
   .tab-btn:last-child { border-right: none; }
-  .tab-btn:hover { background: var(--ui-slate-3); }
+  .tab-btn:hover { background: var(--ui-slate-3); color: var(--ui-bone); }
   .tab-btn.active {
-    background: #6e5a3e;
-    box-shadow: inset 0 2px 5px rgba(255, 215, 130, 0.35);
+    background: var(--ui-panel);
+    color: var(--ui-brass);
+    border-top: 2px solid var(--ui-brass);
+    margin-bottom: -1px;
+    box-shadow: none;
+    z-index: 1;
   }
 
   .tab-content {
