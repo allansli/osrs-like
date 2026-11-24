@@ -51,9 +51,6 @@
 
   /* Panel Component (design 7.3): Slate-1, 6 px chamfered corners, a 1 px slate-3 line and a 1 px lighter top edge, one hard 2 px ink shadow, no glow */
   .ui-panel,
-  #target-hud,
-  #boss-bar,
-  .death-card,
   .quest-tracker,
   .slayer-widget {
     position: relative;
@@ -65,9 +62,6 @@
   }
 
   .ui-panel::before,
-  #target-hud::before,
-  #boss-bar::before,
-  .death-card::before,
   .quest-tracker::before,
   .slayer-widget::before {
     content: '';
@@ -81,9 +75,6 @@
   }
 
   .ui-panel::after,
-  #target-hud::after,
-  #boss-bar::after,
-  .death-card::after,
   .quest-tracker::after,
   .slayer-widget::after {
     content: '';
@@ -227,16 +218,18 @@
   .entity-hp-bar {
     width: 52px;
     height: 6px;
-    background: rgba(140, 16, 16, 0.92);
-    border: 1px solid rgba(0,0,0,0.9);
-    border-radius: 3px;
+    background: var(--ui-slate-1);
+    border: 1px solid var(--ui-slate-3);
+    border-radius: 0;
     overflow: hidden;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.6);
+    box-shadow: 0 1px 2px var(--ui-ink);
   }
 
   .entity-hp-fill {
     height: 100%;
-    background: linear-gradient(90deg, #16a34a, #4ade80);
+    background-color: var(--ui-moss);
+    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.18) 50%, transparent 50%);
+    border-radius: 0;
     transition: width 0.15s ease-out;
   }
 
@@ -517,18 +510,21 @@
   }
   .vital-icon svg { width: 15px; height: 15px; }
 
+  /* Vitals Bar Component (design 7.3): Flat fill split into two tones along length, tabular figures, no rounded caps, no gradient */
   .vital-bar-bg {
     flex: 1;
     height: 12px;
-    background: rgba(0, 0, 0, 0.75);
-    border: 1px solid rgba(255,255,255,0.14);
-    border-radius: 4px;
+    background: var(--ui-slate-1);
+    border: 1px solid var(--ui-slate-3);
+    border-radius: 0;
     overflow: hidden;
     position: relative;
   }
 
   .vital-bar-fill {
     height: 100%;
+    border-radius: 0;
+    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.18) 50%, transparent 50%);
     transition: width 0.2s ease;
   }
 
@@ -540,14 +536,15 @@
     justify-content: center;
     font-size: 0.6875rem;
     font-weight: 700;
-    text-shadow: 1px 1px 2px #000;
-    color: #e2e8f0;
+    font-variant-numeric: tabular-nums;
+    text-shadow: 0 1px 0 var(--ui-ink), 1px 0 0 var(--ui-ink), -1px 0 0 var(--ui-ink), 0 -1px 0 var(--ui-ink);
+    color: var(--ui-bone);
     letter-spacing: 0.3px;
   }
 
-  #hp-fill { background: linear-gradient(90deg, #7f1d1d, #b91c1c); }
-  #prayer-fill { background: linear-gradient(90deg, #1e3a8a, #2563eb); }
-  #spec-fill { background: linear-gradient(90deg, #14532d, #15803d); }
+  #hp-fill { background-color: var(--ui-ember); }
+  #prayer-fill { background-color: var(--ui-tide); }
+  #spec-fill { background-color: var(--ui-moss); }
 
   .quick-top-buttons {
     display: flex;
@@ -707,15 +704,17 @@
   .boss-bar-track {
     position: relative;
     height: 18px;
-    background: #18181b;
-    border-radius: 6px;
-    border: 1px solid #3f3f46;
+    background: var(--ui-slate-1);
+    border-radius: 0;
+    border: 1px solid var(--ui-slate-3);
     overflow: hidden;
   }
   .boss-bar-fill {
     height: 100%;
     width: 100%;
-    background: linear-gradient(90deg, #b91c1c, #ef4444);
+    background-color: var(--ui-ember);
+    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.18) 50%, transparent 50%);
+    border-radius: 0;
     transition: width 0.15s ease-out;
   }
   .boss-pip {
@@ -2034,7 +2033,7 @@
   .levelup-kicker { font-size: 0.75rem; color: var(--ui-warn); font-weight: 700; letter-spacing: 2px; text-transform: uppercase; }
   .levelup-text { font-size: 1rem; font-weight: 700; margin-top: 3px; color: var(--ui-bone); }
   .target-lvl-tag { color: var(--ui-bone); }
-  .target-hp-fill-gradient { background: linear-gradient(90deg, var(--ui-ember), var(--ui-moss)); }
+  .target-hp-fill-gradient { background-color: var(--ui-ember); background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.18) 50%, transparent 50%); }
   .style-badge { font-size: 0.6875rem; }
   .style-badge-brass { color: var(--ui-brass); }
   .style-badge-ember { color: var(--ui-ember); }
