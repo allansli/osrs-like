@@ -3,6 +3,8 @@ Self-test for figkit: verifies merge_parts, bake_paint, and export_glb.
 Asserts on a generated two-part figure and edge cases, exits non-zero on failure.
 """
 
+import contextlib
+import io
 import json
 import math
 import os
@@ -416,12 +418,61 @@ def test_rigs_and_directions():
 
     # Flag code_posed allows deviation
     code_posed_table = [
-        rigs.BoneDef("Root", None, optional=False, ref_dir=(0.0, 0.0, 1.0)),
-        rigs.BoneDef("LeftArmPivot", "Root", optional=False, ref_dir=(-0.468, 0.0, -0.884)),
-        rigs.BoneDef("LeftElbowPivot", "LeftArmPivot", optional=False, flag="code_posed", ref_dir=(-0.528, 0.0, -0.849)),
+        rigs.BoneDef("Root", None, optional=False),
+        rigs.BoneDef("LeftArmPivot", "Root", optional=False, ref_dir=(-0.468, 0.0, -0.884), ref_child="LeftElbowPivot"),
+        rigs.BoneDef("LeftElbowPivot", "LeftArmPivot", optional=False, flag="code_posed"),
     ]
     cp_rig = figkit.make_rig("CodePosedRig", code_posed_table, bad_joints)
     assert cp_rig is not None
+
+    # The 20 degree line: a limb 25 degrees off the reference is refused, 15 degrees is accepted.
+    ref = Vector(rigs.BIPED_TABLE[[e.bone for e in rigs.BIPED_TABLE].index("LeftArmPivot")].ref_dir).normalized()
+
+    def elbow_off_by(deg):
+        q = Quaternion((0.0, 1.0, 0.0), math.radians(deg))
+        return tuple(Vector(joints["LeftArmPivot"]) + (q @ ref) * 0.28)
+
+    for deg, ok in ((25.0, False), (15.0, True)):
+        j = dict(joints)
+        j["LeftElbowPivot"] = elbow_off_by(deg)
+        measured = math.degrees((Vector(j["LeftElbowPivot"]) - Vector(j["LeftArmPivot"])).angle(ref))
+        assert abs(measured - deg) < 0.01, f"fixture is {measured} degrees off, wanted {deg}"
+        clear_scene()
+        if ok:
+            assert figkit.make_rig(f"Arm{int(deg)}", rigs.BIPED_TABLE, j) is not None
+        else:
+            try:
+                figkit.make_rig(f"Arm{int(deg)}", rigs.BIPED_TABLE, j)
+            except ValueError as e:
+                assert "LeftArmPivot" in str(e) and "deviates" in str(e), str(e)
+            else:
+                raise AssertionError(f"a limb {deg} degrees off the reference pose must be refused")
+
+    # A bone with several children: HeadGroup 90 degrees sideways of Torso is refused.
+    side = dict(joints)
+    side["HeadGroup"] = (joints["Torso"][0] + 0.358, 0.0, joints["Torso"][2])
+    try:
+        figkit.make_rig("SideHead", rigs.BIPED_TABLE, side)
+    except ValueError as e:
+        assert "'Torso' -> 'HeadGroup'" in str(e) and "deviates" in str(e), str(e)
+    else:
+        raise AssertionError("HeadGroup 90 degrees sideways of Torso must be refused")
+
+    # Shoulders (design 6.1.2): between Torso and the arm bones when present, else the arms hang from Torso.
+    clear_scene()
+    plain = figkit.make_rig("NoShoulders", rigs.BIPED_TABLE, joints)
+    assert plain.data.bones["LeftArmPivot"].parent.name == "Torso"
+    assert plain.data.bones["RightArmPivot"].parent.name == "Torso"
+    assert "LeftShoulder" not in plain.data.bones
+    with_sh = dict(joints)
+    with_sh["LeftShoulder"] = (-0.09, 0.0, 1.478)
+    with_sh["RightShoulder"] = (0.09, 0.0, 1.478)
+    shoulder_rig = figkit.make_rig("WithShoulders", rigs.BIPED_TABLE, with_sh)
+    for side_name in ("Left", "Right"):
+        bones = shoulder_rig.data.bones
+        assert bones[f"{side_name}Shoulder"].parent.name == "Torso", side_name
+        assert bones[f"{side_name}ArmPivot"].parent.name == f"{side_name}Shoulder", side_name
+        assert bones[f"{side_name}ElbowPivot"].parent.name == f"{side_name}ArmPivot", side_name
     print("[figkit_selftest] Rigs and limb directions test passed!")
 
 
@@ -440,8 +491,8 @@ def test_skinned_figure_build_and_export():
     clear_scene()
 
     table = [
-        rigs.BoneDef("Bone1", None, optional=False, ref_dir=(0.0, 0.0, 1.0)),
-        rigs.BoneDef("Bone2", "Bone1", optional=False, ref_dir=(0.0, 0.0, 1.0)),
+        rigs.BoneDef("Bone1", None, optional=False, ref_dir=(0.0, 0.0, 1.0), ref_child="Bone2"),
+        rigs.BoneDef("Bone2", "Bone1", optional=False),
     ]
     joints = {
         "Bone1": (0.0, 0.0, 0.0),
@@ -466,6 +517,11 @@ def test_skinned_figure_build_and_export():
     acc.parent = rig
     mod_acc = acc.modifiers.new("Armature", "ARMATURE")
     mod_acc.object = rig
+    # Before export: exactly one group, named after the bone, weight 1.0 on every vertex
+    assert [vg.name for vg in acc.vertex_groups] == ["Bone2"], [vg.name for vg in acc.vertex_groups]
+    for v in acc.data.vertices:
+        assert len(v.groups) == 1 and acc.vertex_groups[v.groups[0].group].name == "Bone2", f"vertex {v.index}"
+        assert v.groups[0].weight == 1.0, f"vertex {v.index} has weight {v.groups[0].weight}"
 
     # Key clip with pose table entry (0.3, 0.5, 0.7) on Bone2
     pose_table = {
@@ -601,8 +657,8 @@ def test_merge_by_family_and_bone_parenting():
     clear_scene()
 
     table = [
-        rigs.BoneDef("BoneA", None, optional=False, ref_dir=(0.0, 0.0, 1.0)),
-        rigs.BoneDef("BoneB", None, optional=False, ref_dir=(0.0, 0.0, 1.0)),
+        rigs.BoneDef("BoneA", None, optional=False),
+        rigs.BoneDef("BoneB", None, optional=False),
     ]
     joints = {"BoneA": (-0.3, 0.0, 0.5), "BoneB": (0.3, 0.0, 0.5)}
     rig = figkit.make_rig("TestRigFamily", table, joints)
@@ -692,7 +748,331 @@ def test_fold_weights():
         assert abs(w_torso - 0.5) < 1e-4, f"Torso weight should be 0.5, got {w_torso}"
         assert abs(w_hand + w_torso - 1.0) < 1e-4
 
+    # A group the mapping does not list raises; so does a mapping in the other direction.
+    clear_scene()
+    m2 = create_mesh_box("FoldBad", None, None)
+    m2.vertex_groups.new(name="finger1")
+    m2.vertex_groups.new(name="stray")
+    for v in m2.data.vertices:
+        m2.vertex_groups["finger1"].add([v.index], 1.0, "REPLACE")
+        m2.vertex_groups["stray"].add([v.index], 1.0, "REPLACE")
+    try:
+        figkit.fold_weights(m2, {"Hand": ["finger1"]})
+    except ValueError as e:
+        assert "stray" in str(e), str(e)
+    else:
+        raise AssertionError("fold_weights must raise on a source group missing from the mapping")
+    try:
+        figkit.fold_weights(m2, {"finger1": "Hand", "stray": "Hand"})
+    except TypeError:
+        pass
+    else:
+        raise AssertionError("fold_weights takes {target: [sources]} only")
     print("[figkit_selftest] fold_weights test passed!")
+
+
+def test_four_influences():
+    """Six bones around one body: automatic weights give more than 4 groups per vertex; auto_weights must cut them."""
+    print("[figkit_selftest] Testing the 4-influence limit...")
+    table = [rigs.BoneDef(f"B{i}", None) for i in range(6)]
+    joints = {f"B{i}": (0.04 * (i - 2.5), 0.03 * ((i % 2) - 0.5), 0.05 + 0.03 * i) for i in range(6)}
+    graph = ([(0, 0, 0), (0, 0, 0.15), (0, 0, 0.3)], [(0, 1), (1, 2)])
+
+    # The fixture must be able to fail: raw automatic weights exceed 4 groups on some vertex.
+    clear_scene()
+    raw_rig = figkit.make_rig("RawRig", table, joints)
+    raw_body = figkit.organic_body(graph, 0.12, voxel=0.03, triangles=150)
+    bpy.ops.object.select_all(action="DESELECT")
+    raw_body.select_set(True)
+    raw_rig.select_set(True)
+    bpy.context.view_layer.objects.active = raw_rig
+    bpy.ops.object.parent_set(type="ARMATURE_AUTO")
+    raw_max = max(len(v.groups) for v in raw_body.data.vertices)
+    assert raw_max > 4, f"fixture is too weak: raw automatic weights give at most {raw_max} groups"
+
+    clear_scene()
+    rig = figkit.make_rig("InfluenceRig", table, joints)
+    body = figkit.organic_body(graph, 0.12, voxel=0.03, triangles=150)
+    body.data.materials.append(bpy.data.materials.new("mat_skin_inf"))
+    figkit.auto_weights(body, rig)
+    worst = max(len(v.groups) for v in body.data.vertices)
+    assert worst <= 4, f"a vertex has {worst} vertex groups after auto_weights"
+    assert all(len(v.groups) >= 1 for v in body.data.vertices), "unweighted vertex"
+
+    out_path = os.path.join(paths.out_dir(), "figkit_influence_selftest.glb")
+    figkit.export_glb(out_path, export_all_influences=True)
+    doc, bin_bytes = read_glb(out_path)
+    prims = [pr for m in doc["meshes"] for pr in m["primitives"]]
+    assert prims and all("JOINTS_0" in pr["attributes"] for pr in prims)
+    for pr in prims:
+        assert "WEIGHTS_1" not in pr["attributes"], f"file has WEIGHTS_1: {pr['attributes']}"
+        assert "JOINTS_1" not in pr["attributes"], f"file has JOINTS_1: {pr['attributes']}"
+    print("[figkit_selftest] 4-influence test passed!")
+
+
+def _weights_box(name, weighted):
+    """A unit-ish box on the z axis with group B0 = 0.7 on the vertices in `weighted`."""
+    box = create_mesh_box(name, None, None, center=(0.0, 0.0, 0.25), size=(0.3, 0.3, 0.5))
+    vg = box.vertex_groups.new(name="B0")
+    for i in weighted:
+        vg.add([i], 0.7, "REPLACE")
+    return box
+
+
+def _run_captured(fn, *a, **kw):
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        result = fn(*a, **kw)
+    return result, buf.getvalue()
+
+
+def test_segment_weights():
+    print("[figkit_selftest] Testing segment_weights...")
+    two = [rigs.BoneDef("B0", None), rigs.BoneDef("B1", "B0")]
+    clear_scene()
+    rig = figkit.make_rig("SegRig", two, {"B0": (0.0, 0.0, 0.0), "B1": (0.0, 0.0, 0.5)})
+
+    # Only the unweighted vertices are rewritten, and the call says it ran.
+    box = _weights_box("SegBox", weighted=[0, 1, 2, 3])
+    n, out = _run_captured(figkit.segment_weights, box, rig, 0.2)
+    assert n == 4, f"expected 4 rewritten vertices, got {n}"
+    assert "segment_weights ran on 4" in out, f"no print of the run: {out!r}"
+    for i in range(4):
+        v = box.data.vertices[i]
+        assert len(v.groups) == 1 and abs(v.groups[0].weight - 0.7) < 1e-6, (
+            f"weighted vertex {i} was rewritten: {[(g.group, g.weight) for g in v.groups]}"
+        )
+    for i in range(4, 8):
+        v = box.data.vertices[i]
+        total = sum(g.weight for g in v.groups)
+        assert abs(total - 1.0) < 1e-5 and 1 <= len(v.groups) <= 2, f"vertex {i}: {[(g.group, g.weight) for g in v.groups]}"
+
+    # The limb's radius is used: a larger radius on B1 pulls weight towards B1.
+    def b0_weight(radii):
+        b = _weights_box("RadiusBox", weighted=[])
+        figkit.segment_weights(b, rig, radii)
+        v = b.data.vertices[0]
+        return next((g.weight for g in v.groups if b.vertex_groups[g.group].name == "B0"), 0.0)
+
+    narrow = b0_weight({"B0": 0.1, "B1": 0.1})
+    wide_b1 = b0_weight({"B0": 0.1, "B1": 0.6})
+    assert wide_b1 < narrow - 0.01, f"a larger B1 radius must lower the B0 weight: {narrow} vs {wide_b1}"
+    for bad in ({"B0": 0.1}, 0.0):
+        try:
+            figkit.segment_weights(_weights_box("BadRadius", weighted=[]), rig, bad)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError(f"segment_weights must raise on limb_radius {bad!r}")
+
+    # A one-bone rig.
+    clear_scene()
+    one = figkit.make_rig("OneRig", [rigs.BoneDef("B0", None)], {"B0": (0.0, 0.0, 0.0)})
+    b = _weights_box("OneBox", weighted=[])
+    n, out = _run_captured(figkit.segment_weights, b, one, 0.2)
+    assert n == 8 and "segment_weights ran on 8" in out, (n, out)
+    for v in b.data.vertices:
+        assert len(v.groups) == 1 and v.groups[0].weight == 1.0, [(g.group, g.weight) for g in v.groups]
+
+    # auto_weights reaches it: a body island far from every bone gets no automatic weight.
+    clear_scene()
+    rig = figkit.make_rig("IslandRig", two, {"B0": (0.0, 0.0, 0.0), "B1": (0.0, 0.0, 0.5)})
+    graph = ([(0, 0, 0), (0, 0, 0.5), (0, 0, 1.0)], [(0, 1), (1, 2)])
+
+    def island_body():
+        body = figkit.organic_body(graph, 0.12, voxel=0.04, triangles=150)
+        import bmesh
+        from mathutils import Matrix
+        bm = bmesh.new()
+        bm.from_mesh(body.data)
+        bmesh.ops.create_cube(bm, size=0.1, matrix=Matrix.Translation((3.0, 0.0, 0.5)))
+        bm.to_mesh(body.data)
+        bm.free()
+        return body
+
+    try:
+        figkit.auto_weights(island_body(), rig)
+    except ValueError as e:
+        assert "limb_radius" in str(e), str(e)
+    else:
+        raise AssertionError("auto_weights must raise when vertices are unweighted and no limb_radius is given")
+    clear_scene()
+    rig = figkit.make_rig("IslandRig2", two, {"B0": (0.0, 0.0, 0.0), "B1": (0.0, 0.0, 0.5)})
+    body = island_body()
+    _, out = _run_captured(figkit.auto_weights, body, rig, 0.2)
+    assert "segment_weights ran on 8" in out, f"auto_weights did not run segment_weights on the island: {out!r}"
+    for v in body.data.vertices:
+        assert 1 <= len(v.groups) <= 4 and abs(sum(g.weight for g in v.groups) - 1.0) < 1e-4
+    print("[figkit_selftest] segment_weights test passed!")
+
+
+def test_organic_body_radii():
+    print("[figkit_selftest] Testing organic_body radii...")
+    clear_scene()
+    graph = ([(0, 0, 0), (0, 0, 0.5), (0, 0, 1.0)], [(0, 1), (1, 2)])
+    for bad in ({0: 0.1, 1: 0.1}, [0.1, 0.1]):
+        try:
+            figkit.organic_body(graph, bad, voxel=0.05, triangles=100)
+        except ValueError as e:
+            assert "radi" in str(e), str(e)
+        else:
+            raise AssertionError(f"organic_body must raise on missing radius {bad!r}")
+    assert figkit.organic_body(graph, {0: 0.1, 1: 0.1, 2: 0.1}, voxel=0.05, triangles=100) is not None
+    print("[figkit_selftest] organic_body radii test passed!")
+
+
+def _clip_rig(prefix):
+    clear_scene()
+    table = [rigs.BoneDef("Bone1", None), rigs.BoneDef("Bone2", "Bone1")]
+    return figkit.make_rig("ClipRig", table, {"Bone1": (0.0, 0.0, 0.0), "Bone2": (0.0, 0.0, 0.5)}, prefix=prefix)
+
+
+def _clip_quat(rig, bone, frame):
+    bpy.context.scene.frame_set(frame)
+    bpy.context.view_layer.update()
+    return Quaternion(rig.pose.bones[bone].rotation_quaternion)
+
+
+def test_make_clip_forms_and_names():
+    print("[figkit_selftest] Testing make_clip forms and bone names...")
+    want = Euler((0.3, 0.5, 0.7), "XZY").to_quaternion()
+    zero = Quaternion((1.0, 0.0, 0.0, 0.0))
+
+    # Unknown names raise: a typo, and the bare name of a prefixed bone (no "_<name>" fallback).
+    rig = _clip_rig("g")
+    assert "g_Bone2" in rig.pose.bones
+    actions_before = len(bpy.data.actions)
+    for bad in ({"Bone2": (0.3, 0.5, 0.7)}, {"g_Bonee2": (0.3, 0.5, 0.7)}, {1: {"Nope": (0.1, 0.0, 0.0)}}):
+        try:
+            figkit.make_clip(rig, "Bad", 2, bad)
+        except ValueError as e:
+            assert "no bone" in str(e), str(e)
+        else:
+            raise AssertionError(f"make_clip must raise on an unknown bone: {bad!r}")
+    assert len(bpy.data.actions) == actions_before, "a refused clip left an action behind"
+    assert rig.animation_data is None or not rig.animation_data.nla_tracks
+
+    # Constant triple on every frame.
+    rig = _clip_rig(None)
+    figkit.make_clip(rig, "Const", 2, {"Bone2": (0.3, 0.5, 0.7)})
+    for f in (0, 1, 2):
+        q = _clip_quat(rig, "Bone2", f)
+        assert (q - want).magnitude < 1e-5, f"constant triple, frame {f}: {tuple(q)} vs {tuple(want)}"
+
+    # One triple per frame.
+    rig = _clip_rig(None)
+    figkit.make_clip(rig, "PerFrame", 2, {"Bone2": [(0.0, 0.0, 0.0), (0.3, 0.5, 0.7), (0.0, 0.0, 0.0)]})
+    for f, expect in ((0, zero), (1, want), (2, zero)):
+        q = _clip_quat(rig, "Bone2", f)
+        assert (q - expect).magnitude < 1e-5, f"per-frame list, frame {f}: {tuple(q)} vs {tuple(expect)}"
+    try:
+        figkit.make_clip(_clip_rig(None), "Short", 2, {"Bone2": [(0.0, 0.0, 0.0), (0.3, 0.5, 0.7)]})
+    except ValueError as e:
+        assert "per-frame" in str(e), str(e)
+    else:
+        raise AssertionError("a per-frame list of the wrong length must raise")
+
+    # Frame-keyed form and prefixed full names still work.
+    rig = _clip_rig("g")
+    figkit.make_clip(rig, "Framed", 1, {0: {"g_Bone2": (0.0, 0.0, 0.0)}, 1: {"g_Bone2": (0.3, 0.5, 0.7)}})
+    assert (_clip_quat(rig, "g_Bone2", 1) - want).magnitude < 1e-5
+    print("[figkit_selftest] make_clip forms and names test passed!")
+
+
+def _emissive_material(name, color=(1.0, 0.5, 0.0), strength=1.0, connected_node="BSDF_PRINCIPLED", extra_node_strength=None):
+    mat = bpy.data.materials.new(name)
+    mat.use_nodes = True
+    nt = mat.node_tree
+    pr = next(n for n in nt.nodes if n.type == "BSDF_PRINCIPLED")
+    out = next(n for n in nt.nodes if n.type == "OUTPUT_MATERIAL")
+    pr.inputs["Emission Color"].default_value = (*color, 1.0)
+    pr.inputs["Emission Strength"].default_value = strength
+    if connected_node == "EMISSION":
+        em = nt.nodes.new("ShaderNodeEmission")
+        em.inputs["Color"].default_value = (*color, 1.0)
+        em.inputs["Strength"].default_value = strength
+        nt.links.new(em.outputs["Emission"], out.inputs["Surface"])
+        pr.inputs["Emission Strength"].default_value = 0.0
+    if extra_node_strength is not None:
+        # An Emission node that is NOT linked to the output: the exporter ignores it.
+        em = nt.nodes.new("ShaderNodeEmission")
+        em.inputs["Color"].default_value = (1.0, 0.0, 0.0, 1.0)
+        em.inputs["Strength"].default_value = extra_node_strength
+    return mat
+
+
+def test_family_emissive_mirrors_engine():
+    """The family rule's emissive test mirrors extractEmissiveHex (blenderMonsters.ts) on what the exporter writes."""
+    print("[figkit_selftest] Testing the emissive rule against the exported file...")
+    clear_scene()
+    cases = {
+        "mat_plain_dim": dict(strength=0.03),
+        "mat_plain_half": dict(strength=0.5),
+        "mat_plain_bright": dict(color=(0.8, 0.4, 0.0), strength=2.0),
+        "mat_plain_zero": dict(strength=0.0),
+        "mat_plain_tiny": dict(color=(1.0, 0.0, 0.0), strength=0.0001),
+        "mat_plain_node": dict(strength=3.0, connected_node="EMISSION"),
+        "mat_plain_loose": dict(strength=0.0, extra_node_strength=5.0),
+    }
+    objs = {}
+    for i, (name, kw) in enumerate(cases.items()):
+        mat = _emissive_material(name, **kw)
+        objs[name] = create_mesh_box(f"Blob{i}", None, mat, center=(i * 0.5, 0.0, 0.0), size=(0.2, 0.2, 0.2))
+    out_path = os.path.join(paths.out_dir(), "figkit_emissive_selftest.glb")
+    figkit.export_glb(out_path)
+    doc = parse_glb(out_path)
+
+    def srgb_byte(c):
+        c = max(0.0, min(1.0, c))
+        e = 12.92 * c if c <= 0.0031308 else 1.055 * c ** (1 / 2.4) - 0.055
+        return math.floor(e * 255 + 0.5)
+
+    exported = {m["name"]: m for m in doc["materials"]}
+    for name, obj in objs.items():
+        m = exported[name]
+        factor = m.get("emissiveFactor", [0.0, 0.0, 0.0])
+        ext = m.get("extensions", {}).get("KHR_materials_emissive_strength", {})
+        intensity = ext.get("emissiveStrength", 1.0)
+        hex_ = (srgb_byte(factor[0]) << 16) | (srgb_byte(factor[1]) << 8) | srgb_byte(factor[2])
+        engine = hex_ if hex_ > 0 and intensity > 0.05 else None
+        mat = obj.data.materials[0]
+        assert figkit.engine_emissive_hex(mat) == engine, (
+            f"{name}: engine rule gives {figkit.engine_emissive_hex(mat)}, exported file gives {engine} "
+            f"(factor {factor}, strength {intensity})"
+        )
+        want_family = "glow" if engine is not None else "plain"
+        assert figkit.get_material_family(obj) == want_family, f"{name}: family {figkit.get_material_family(obj)}"
+    # The cases that pin the rule
+    assert figkit.engine_emissive_hex(objs["mat_plain_dim"].data.materials[0]) is not None, "strength 0.03 is emissive for the engine"
+    assert figkit.get_material_family(objs["mat_plain_dim"]) == "glow"
+    assert figkit.engine_emissive_hex(objs["mat_plain_bright"].data.materials[0]) is not None
+    assert figkit.engine_emissive_hex(objs["mat_plain_node"].data.materials[0]) is not None
+    assert figkit.engine_emissive_hex(objs["mat_plain_tiny"].data.materials[0]) is None, "factor rounds to hex 0"
+    assert figkit.engine_emissive_hex(objs["mat_plain_zero"].data.materials[0]) is None
+    assert figkit.engine_emissive_hex(objs["mat_plain_loose"].data.materials[0]) is None, "a disconnected EMISSION node must not count"
+    assert figkit.get_material_family(objs["mat_plain_loose"]) == "plain"
+    print("[figkit_selftest] emissive rule test passed!")
+
+
+def test_merge_by_family_single_primitive():
+    print("[figkit_selftest] Testing merge_by_family collapses a family to one material...")
+    clear_scene()
+    root = bpy.data.objects.new("FamilyRoot", None)
+    bpy.context.collection.objects.link(root)
+    m1 = bpy.data.materials.new("mat_skin_a")
+    m2 = bpy.data.materials.new("mat_skin_b")
+    create_mesh_box("SkinA", root, m1, center=(0.0, 0.0, 0.2), size=(0.2, 0.2, 0.2))
+    create_mesh_box("SkinB", root, m2, center=(0.0, 0.0, 0.6), size=(0.2, 0.2, 0.2))
+    survivors = figkit.merge_by_family(root)
+    assert len(survivors) == 1, [o.name for o in survivors]
+    assert len(survivors[0].data.materials) == 1 and survivors[0].data.materials[0].name in ("mat_skin_a", "mat_skin_b")
+    assert all(p.material_index == 0 for p in survivors[0].data.polygons)
+    out_path = os.path.join(paths.out_dir(), "figkit_family_selftest.glb")
+    figkit.export_glb(out_path)
+    doc = parse_glb(out_path)
+    assert len(doc["meshes"]) == 1, len(doc["meshes"])
+    assert len(doc["meshes"][0]["primitives"]) == 1, f"{len(doc['meshes'][0]['primitives'])} primitives, so as many draw calls"
+    print("[figkit_selftest] merge_by_family single primitive test passed!")
 
 
 if __name__ == "__main__":
@@ -704,6 +1084,12 @@ if __name__ == "__main__":
         test_skinned_figure_build_and_export()
         test_merge_by_family_and_bone_parenting()
         test_fold_weights()
+        test_four_influences()
+        test_segment_weights()
+        test_organic_body_radii()
+        test_make_clip_forms_and_names()
+        test_family_emissive_mirrors_engine()
+        test_merge_by_family_single_primitive()
         print("[figkit_selftest] ALL TESTS PASSED.")
         sys.exit(0)
     except Exception as e:

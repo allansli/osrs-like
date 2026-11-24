@@ -357,60 +357,52 @@ def make_rig(
     Creates an armature object at the origin with identity transform whose every bone
     points straight up with roll 0, heads at the given joint positions, named
     <prefix>_<Bone> when a prefix is given.
-    Refuses joints whose limb directions are more than 20 degrees from the skeleton's
-    reference pose (unless the table row is flagged 'code_posed').
+    `table` is a list of rigs.BoneDef. Refuses a joint whose direction to its reference
+    child (BoneDef.ref_child) is more than 20 degrees from BoneDef.ref_dir, unless the row
+    or its reference child is flagged 'code_posed'. Only that one child is checked, however
+    many children the bone has. A bone whose `parent` has no joint takes `fallback_parent`.
     """
-    # 1. Refusal check for limb directions > 20 degrees from reference pose
-    # Find children per bone
-    children_map: dict[str, list] = {}
-    entry_map = {}
-    for entry in table:
-        bone = entry.bone if hasattr(entry, "bone") else entry[0]
-        parent = entry.parent if hasattr(entry, "parent") else entry[1]
-        entry_map[bone] = entry
-        if parent:
-            children_map.setdefault(parent, []).append(bone)
+    def key_of(bone):
+        pk = f"{prefix}_{bone}" if prefix else None
+        return pk if pk is not None and pk in joints else bone
 
-    for bone, entry in entry_map.items():
-        flag = getattr(entry, "flag", None) or (entry[3] if len(entry) > 3 and isinstance(entry[3], str) else None)
-        ref_dir = getattr(entry, "ref_dir", None) or (
-            entry[4] if len(entry) > 4 else (entry[3] if len(entry) > 3 and not isinstance(entry[3], str) else None)
-        )
+    entries = {e.bone: e for e in table}
+    present = {b for b in entries if key_of(b) in joints}
 
-        if ref_dir is not None and bone in children_map:
-            # Check if flagged code_posed
-            if flag and "code_posed" in str(flag):
-                continue
+    # 1. Refusal check against the reference pose
+    for bone, entry in entries.items():
+        if bone not in present or entry.ref_dir is None:
+            continue
+        child = entries.get(entry.ref_child)
+        if child is None:
+            raise ValueError(f"make_rig: row {bone!r} has ref_dir but ref_child {entry.ref_child!r} is not in the table")
+        if child.bone not in present:
+            continue  # optional reference child absent: nothing to compare
+        if "code_posed" in (entry.flag or "") or "code_posed" in (child.flag or ""):
+            continue
+        delta = Vector(joints[key_of(child.bone)]) - Vector(joints[key_of(bone)])
+        if delta.length < 1e-5:
+            raise ValueError(f"make_rig: joints '{bone}' and '{child.bone}' coincide")
+        ref_v = Vector(entry.ref_dir).normalized()
+        angle_deg = math.degrees(math.acos(max(-1.0, min(1.0, delta.normalized().dot(ref_v)))))
+        if angle_deg > 20.0001:
+            raise ValueError(
+                f"make_rig: Joint '{bone}' -> '{child.bone}' limb direction {tuple(delta.normalized())} deviates "
+                f"{angle_deg:.2f} degrees from reference pose {tuple(ref_v)} (max 20 degrees allowed)"
+            )
 
-            b_key = f"{prefix}_{bone}" if prefix and f"{prefix}_{bone}" in joints else bone
-            if b_key not in joints:
-                continue
+    for bone, entry in entries.items():
+        if bone not in present and not entry.optional:
+            raise ValueError(f"make_rig: Required joint '{bone}' (key {key_of(bone)!r}) not found in joints dict")
 
-            # Check against primary limb child (e.g. Torso -> HeadGroup, LeftArmPivot -> LeftElbowPivot)
-            candidate_children = children_map[bone]
-            for child_bone in candidate_children:
-                c_entry = entry_map[child_bone]
-                c_flag = getattr(c_entry, "flag", None) or (c_entry[3] if len(c_entry) > 3 and isinstance(c_entry[3], str) else None)
-                if c_flag and "code_posed" in str(c_flag):
-                    continue
-
-                c_key = f"{prefix}_{child_bone}" if prefix and f"{prefix}_{child_bone}" in joints else child_bone
-                if c_key in joints:
-                    delta = Vector(joints[c_key]) - Vector(joints[b_key])
-                    if delta.length > 1e-5:
-                        actual_dir = delta.normalized()
-                        ref_v = Vector(ref_dir).normalized()
-                        dot = max(-1.0, min(1.0, actual_dir.dot(ref_v)))
-                        angle_deg = math.degrees(math.acos(dot))
-                        # If bone has multiple children (e.g. Torso -> HeadGroup, arms), only test if this child is the reference child
-                        if len(candidate_children) > 1 and angle_deg > 20.0001:
-                            continue
-                        if angle_deg > 20.0001:
-                            raise ValueError(
-                                f"make_rig: Joint '{bone}' -> '{child_bone}' limb direction {tuple(actual_dir)} deviates "
-                                f"{angle_deg:.2f}° from reference pose {tuple(ref_v)} (max 20° allowed)"
-                            )
-                        break
+    def parent_of(entry):
+        if entry.parent is None:
+            return None
+        if entry.parent in present:
+            return entry.parent
+        if entry.fallback_parent is not None:
+            return entry.fallback_parent
+        raise ValueError(f"make_rig: parent '{entry.parent}' of '{entry.bone}' has no joint and no fallback_parent")
 
     # 2. Create armature object at origin with identity transform
     arm_data = bpy.data.armatures.new(name)
@@ -423,34 +415,22 @@ def make_rig(
 
     # 3. Create bones pointing straight up (+Z) with roll 0
     bpy.ops.object.mode_set(mode="EDIT")
-    created_bones = {}
-
+    created = {}
     for entry in table:
-        bone = entry.bone if hasattr(entry, "bone") else entry[0]
-        parent = entry.parent if hasattr(entry, "parent") else entry[1]
-        optional = entry.optional if hasattr(entry, "optional") else (entry[2] if len(entry) > 2 and isinstance(entry[2], bool) else False)
-
-        b_key = f"{prefix}_{bone}" if prefix and f"{prefix}_{bone}" in joints else bone
-        if b_key not in joints:
-            if optional:
-                continue
-            raise ValueError(f"make_rig: Required joint '{bone}' (key {b_key!r}) not found in joints dict")
-
-        bone_name = f"{prefix}_{bone}" if prefix else bone
-        eb = arm_data.edit_bones.new(bone_name)
-        head_pos = Vector(joints[b_key])
+        if entry.bone not in present:
+            continue
+        eb = arm_data.edit_bones.new(f"{prefix}_{entry.bone}" if prefix else entry.bone)
+        head_pos = Vector(joints[key_of(entry.bone)])
         eb.head = head_pos
         eb.tail = head_pos + Vector((0.0, 0.0, 0.1))
         eb.roll = 0.0
         eb.use_connect = False
-        created_bones[bone] = eb
-
-    # Link parents
+        created[entry.bone] = eb
     for entry in table:
-        bone = entry.bone if hasattr(entry, "bone") else entry[0]
-        parent = entry.parent if hasattr(entry, "parent") else entry[1]
-        if bone in created_bones and parent and parent in created_bones:
-            created_bones[bone].parent = created_bones[parent]
+        if entry.bone in created:
+            parent = parent_of(entry)
+            if parent is not None:
+                created[entry.bone].parent = created[parent]
 
     bpy.ops.object.mode_set(mode="OBJECT")
     bpy.context.view_layer.update()
@@ -473,23 +453,20 @@ def organic_body(
         pts = graph.vertices if hasattr(graph, "vertices") else graph[0]
         edges = graph.edges if hasattr(graph, "edges") else graph[1]
 
+    def pair(r):
+        return (float(r), float(r)) if isinstance(r, (int, float)) else (float(r[0]), float(r[1]))
+
     if isinstance(radii, (int, float)):
-        radii_list = [(float(radii), float(radii))] * len(pts)
+        radii_list = [pair(radii)] * len(pts)
     elif isinstance(radii, dict):
-        radii_list = []
-        for i in range(len(pts)):
-            r = radii.get(i, 0.1)
-            if isinstance(r, (int, float)):
-                radii_list.append((float(r), float(r)))
-            else:
-                radii_list.append((float(r[0]), float(r[1])))
+        missing = [i for i in range(len(pts)) if i not in radii]
+        if missing:
+            raise ValueError(f"organic_body: no radius for graph vertices {missing}")
+        radii_list = [pair(radii[i]) for i in range(len(pts))]
     else:
-        radii_list = []
-        for r in radii:
-            if isinstance(r, (int, float)):
-                radii_list.append((float(r), float(r)))
-            else:
-                radii_list.append((float(r[0]), float(r[1])))
+        radii_list = [pair(r) for r in radii]
+        if len(radii_list) != len(pts):
+            raise ValueError(f"organic_body: {len(radii_list)} radii for {len(pts)} graph vertices")
 
     me = bpy.data.meshes.new("organic_body_graph")
     me.from_pydata([tuple(v) for v in pts], list(edges), [])
@@ -503,8 +480,7 @@ def organic_body(
     # 1. Skin modifier
     mod_skin = ob.modifiers.new("Skin", "SKIN")
     for i, sv in enumerate(me.skin_vertices[0].data):
-        r = radii_list[i] if i < len(radii_list) else (0.1, 0.1)
-        sv.radius = r
+        sv.radius = radii_list[i]
         sv.use_root = (i == 0)
     bpy.ops.object.modifier_apply(modifier="Skin")
 
@@ -531,28 +507,34 @@ def organic_body(
     return ob
 
 
-def segment_weights(body: bpy.types.Object, rig: bpy.types.Object) -> None:
+def segment_weights(body: bpy.types.Object, rig: bpy.types.Object, limb_radius) -> int:
     """
-    Fallback weighting: distance to each limb segment over the limb's radius,
-    blended across the two nearest.
+    Fallback weighting for vertices that have no weight: distance to each limb segment
+    over the limb's radius, blended across the two nearest (one bone: weight 1).
+    Vertices that already carry weight are not touched. `limb_radius` is a float (all
+    limbs) or a dict bone name -> radius; a bone missing from the dict raises.
+    Prints that it ran and returns the number of vertices it rewrote.
     """
     segs = []
     for b in rig.data.bones:
-        p0 = b.head_local
-        if b.children:
-            p1 = b.children[0].head_local
+        if isinstance(limb_radius, dict):
+            if b.name not in limb_radius:
+                raise ValueError(f"segment_weights: no limb radius for bone {b.name!r}")
+            r = float(limb_radius[b.name])
         else:
-            p1 = b.tail_local
-        length = (p1 - p0).length
-        r = max(0.05, length * 0.3)
+            r = float(limb_radius)
+        if r <= 0.0:
+            raise ValueError(f"segment_weights: limb radius for bone {b.name!r} must be positive, got {r}")
+        p0 = b.head_local
+        p1 = b.children[0].head_local if b.children else b.tail_local
         segs.append((b.name, p0, p1, r))
         if b.name not in body.vertex_groups:
             body.vertex_groups.new(name=b.name)
-
     if not segs:
-        return
+        raise ValueError("segment_weights: rig has no bones")
 
-    for v in body.data.vertices:
+    todo = [v for v in body.data.vertices if not any(g.weight > 1e-4 for g in v.groups)]
+    for v in todo:
         ds = []
         for bname, a, b, r in segs:
             ab = b - a
@@ -563,26 +545,33 @@ def segment_weights(body: bpy.types.Object, rig: bpy.types.Object) -> None:
             else:
                 dist = (v.co - a).length
             ds.append((dist / r, bname))
-
         ds.sort(key=lambda item: item[0])
+        if len(ds) == 1:
+            body.vertex_groups[ds[0][1]].add([v.index], 1.0, "REPLACE")
+            continue
         (d0, b0), (d1, b1) = ds[0], ds[1]
         w0 = max(0.01, 1.0 / (d0 + 1e-4))
         w1 = max(0.01, 1.0 / (d1 + 1e-4))
         total_w = w0 + w1
         body.vertex_groups[b0].add([v.index], w0 / total_w, "REPLACE")
         body.vertex_groups[b1].add([v.index], w1 / total_w, "REPLACE")
+    print(f"[figkit] segment_weights ran on {len(todo)} unweighted vertices of {body.name}")
+    return len(todo)
 
 
 def auto_weights(
     body: bpy.types.Object,
     rig: bpy.types.Object,
-    spread_pose=None,
+    limb_radius=None,
 ) -> None:
     """
     Builds a limb-aligned twin of the rig with the same names, runs Blender's
     automatic weights against it, re-binds the body to the world-aligned rig,
     limits to 4 influences and normalises.
-    If any vertex is unweighted it calls segment_weights and prints that it did.
+    If any vertex is unweighted it calls segment_weights(body, rig, limb_radius), which
+    prints that it ran; limb_radius (float or dict bone -> radius) is then required.
+    There is no spread_pose parameter: the plan binds bodies in the reference pose (design
+    6.1.1 rule 3), so there is no re-pose step for it to drive.
     """
     twin_data = bpy.data.armatures.new(f"{rig.name}_twin")
     twin_obj = bpy.data.objects.new(f"{rig.name}_twin", twin_data)
@@ -630,8 +619,11 @@ def auto_weights(
         if not v.groups or sum(g.weight for g in v.groups) < 1e-4
     ]
     if unweighted:
-        print(f"[figkit] Unweighted vertices found ({len(unweighted)}); segment_weights fallback applied")
-        segment_weights(body, rig)
+        if limb_radius is None:
+            raise ValueError(
+                f"auto_weights: {len(unweighted)} vertices of {body.name} are unweighted and no limb_radius was given"
+            )
+        segment_weights(body, rig, limb_radius)
 
     # Re-bind to world-aligned rig
     body.parent = rig
@@ -669,14 +661,23 @@ def hard_weights(part: bpy.types.Object, bone: str | bpy.types.Bone) -> None:
 
 
 def fold_weights(mesh: bpy.types.Object, mapping: dict) -> None:
-    """Sums a source's vertex groups onto the rig's bones and normalises."""
+    """
+    Sums a source's vertex groups onto the rig's bones and normalises.
+    `mapping` is {target bone name: [source group names]}, in that direction only.
+    Raises if a source is listed under two targets or if the mesh has a vertex group
+    that no target lists.
+    """
     src_to_target = {}
-    for k, v in mapping.items():
-        if isinstance(v, (list, tuple, set)):
-            for src in v:
-                src_to_target[src] = k
-        else:
-            src_to_target[k] = v
+    for tgt, sources in mapping.items():
+        if not isinstance(sources, (list, tuple)):
+            raise TypeError(f"fold_weights: mapping[{tgt!r}] must be a list of source groups, got {type(sources).__name__}")
+        for src in sources:
+            if src in src_to_target:
+                raise ValueError(f"fold_weights: source group {src!r} is mapped to both {src_to_target[src]!r} and {tgt!r}")
+            src_to_target[src] = tgt
+    unmapped = [vg.name for vg in mesh.vertex_groups if vg.name not in src_to_target]
+    if unmapped:
+        raise ValueError(f"fold_weights: vertex groups {unmapped} of {mesh.name} are not in the mapping")
 
     num_verts = len(mesh.data.vertices)
     vg_names = {vg.index: vg.name for vg in mesh.vertex_groups}
@@ -684,10 +685,8 @@ def fold_weights(mesh: bpy.types.Object, mapping: dict) -> None:
 
     for v in mesh.data.vertices:
         for g in v.groups:
-            src_name = vg_names.get(g.group)
-            if src_name in src_to_target:
-                tgt = src_to_target[src_name]
-                target_weights[v.index][tgt] = target_weights[v.index].get(tgt, 0.0) + g.weight
+            tgt = src_to_target[vg_names[g.group]]
+            target_weights[v.index][tgt] = target_weights[v.index].get(tgt, 0.0) + g.weight
 
     for vg in list(mesh.vertex_groups):
         mesh.vertex_groups.remove(vg)
@@ -711,6 +710,63 @@ def fold_weights(mesh: bpy.types.Object, mapping: dict) -> None:
     bpy.ops.object.vertex_group_normalize_all(group_select_mode="ALL", lock_active=False)
 
 
+def _srgb_byte(c: float) -> int:
+    """Linear channel to the 0-255 byte three's Color.getHex() gives (sRGB encode, clamp, round)."""
+    c = max(0.0, min(1.0, c))
+    e = 12.92 * c if c <= 0.0031308 else 1.055 * (c ** (1.0 / 2.4)) - 0.055
+    return int(math.floor(max(0.0, min(1.0, e)) * 255.0 + 0.5))
+
+
+def exported_emission(mat) -> tuple[list[float], float] | None:
+    """
+    The emissive factor and KHR_materials_emissive_strength the glTF exporter writes for mat
+    (io_scene_gltf2 material/extensions/emission.py): colour times strength read from the
+    Principled BSDF or Emission node that the active Material Output's Surface is linked to
+    (a node that is not linked to the output does not count); if any channel exceeds 1 the
+    factor is divided by its maximum and that maximum becomes the strength, else the strength
+    is 1 (no extension). Returns None when the exporter writes no emissive factor.
+    A linked colour or strength socket is read as white or 1, as the exporter does without
+    an image. ponytail: only the node directly linked to Surface is followed, no mix shaders.
+    """
+    if mat is None or not mat.use_nodes or mat.node_tree is None:
+        return None
+    outs = [n for n in mat.node_tree.nodes if n.type == "OUTPUT_MATERIAL"]
+    out = next((n for n in outs if n.is_active_output), outs[0] if outs else None)
+    if out is None or not out.inputs["Surface"].links:
+        return None
+    node = out.inputs["Surface"].links[0].from_node
+    if node.type == "BSDF_PRINCIPLED":
+        color_sock, strength_sock = node.inputs["Emission Color"], node.inputs["Emission Strength"]
+    elif node.type == "EMISSION":
+        color_sock, strength_sock = node.inputs["Color"], node.inputs["Strength"]
+    else:
+        return None
+    color = [1.0, 1.0, 1.0] if color_sock.is_linked else [float(c) for c in color_sock.default_value[:3]]
+    strength = 1.0 if strength_sock.is_linked else float(strength_sock.default_value)
+    factor = [c * strength for c in color]
+    if factor == [0.0, 0.0, 0.0]:
+        return None
+    peak = max(factor)
+    if peak > 1.0:
+        return [f / peak for f in factor], peak
+    return factor, 1.0
+
+
+def engine_emissive_hex(mat) -> int | None:
+    """
+    Mirror of extractEmissiveHex in src/engine/blenderMonsters.ts: three reads the exported
+    factor as linear, getHex() sRGB-encodes it, and the engine takes it when hex > 0 and
+    emissiveIntensity (the extension's strength, else 1) > 0.05.
+    """
+    e = exported_emission(mat)
+    if e is None:
+        return None
+    factor, intensity = e
+    r, g, b = (_srgb_byte(c) for c in factor)
+    hex_ = (r << 16) | (g << 8) | b
+    return hex_ if hex_ > 0 and intensity > 0.05 else None
+
+
 def get_material_family(obj: bpy.types.Object) -> str:
     """
     Engine material family rule from blenderMonsters.ts 103-136.
@@ -721,19 +777,7 @@ def get_material_family(obj: bpy.types.Object) -> str:
     mat = obj.data.materials[0] if (obj.data and obj.data.materials) else None
     mat_name = mat.name.lower() if mat else ""
 
-    is_emissive = False
-    if mat and mat.use_nodes and mat.node_tree:
-        for n in mat.node_tree.nodes:
-            if n.type == "EMISSION":
-                is_emissive = True
-                break
-            if n.type == "BSDF_PRINCIPLED":
-                strength = n.inputs.get("Emission Strength")
-                color = n.inputs.get("Emission Color")
-                if strength and strength.default_value > 0.05 and color:
-                    if any(c > 0.0 for c in color.default_value[:3]):
-                        is_emissive = True
-                        break
+    is_emissive = engine_emissive_hex(mat) is not None
 
     if "eye" in mesh_name:
         return "eye"
@@ -827,21 +871,13 @@ def merge_by_family(root=None, keep=TOGGLED) -> list[bpy.types.Object]:
         for k, v in merged_extras.items():
             target[k] = v
 
+        # One material slot per merged family, so one primitive and one draw call.
         if len(target.data.materials) > 1:
-            unique_mats = []
-            mat_map = {}
-            for mat in target.data.materials:
-                if mat and mat.name not in mat_map:
-                    mat_map[mat.name] = len(unique_mats)
-                    unique_mats.append(mat)
-            if len(unique_mats) < len(target.data.materials):
-                for poly in target.data.polygons:
-                    old_mat = target.data.materials[poly.material_index] if poly.material_index < len(target.data.materials) else None
-                    if old_mat and old_mat.name in mat_map:
-                        poly.material_index = mat_map[old_mat.name]
-                target.data.materials.clear()
-                for mat in unique_mats:
-                    target.data.materials.append(mat)
+            first = target.data.materials[0]
+            for poly in target.data.polygons:
+                poly.material_index = 0
+            target.data.materials.clear()
+            target.data.materials.append(first)
 
         result.append(target)
 
@@ -859,46 +895,63 @@ def make_clip(
     Samples a pose table per frame onto pose bones as quaternions (rotation_mode = 'QUATERNION'),
     where the table's rotations are three-space Euler triples read in three's YZX order
     (Blender mode 'XZY'), one NLA track per clip, clears the active action.
+    Bone names are the rig's own bone names (with prefix); a name the rig lacks raises.
+    pose_table forms:
+      callable(u) -> {bone: triple}, u in 0..1
+      {frame: {bone: triple}}                 (int keys)
+      {bone: triple}                          constant on every frame
+      {bone: [triple] * (frames + 1)}         one triple per frame
+      {bone: {frame: triple}}
     """
+    if frames < 1:
+        raise ValueError(f"make_clip: frames must be at least 1, got {frames}")
+
+    def is_triple(v):
+        return isinstance(v, (list, tuple)) and len(v) == 3 and all(isinstance(x, (int, float)) for x in v)
+
+    def pose_at(f):
+        if callable(pose_table):
+            return pose_table(f / frames)
+        if not isinstance(pose_table, dict):
+            raise TypeError(f"make_clip: Unrecognised pose_table type {type(pose_table)}")
+        if pose_table and all(isinstance(k, int) for k in pose_table):
+            return pose_table.get(f, {})
+        pose = {}
+        for b, v in pose_table.items():
+            if not isinstance(b, str):
+                raise TypeError(f"make_clip: pose_table mixes frame and bone keys ({b!r})")
+            if is_triple(v):
+                pose[b] = v
+            elif isinstance(v, dict):
+                if f in v:
+                    pose[b] = v[f]
+            elif isinstance(v, (list, tuple)):
+                if len(v) != frames + 1:
+                    raise ValueError(f"make_clip: bone {b!r} has {len(v)} per-frame triples, expected {frames + 1}")
+                pose[b] = v[f]
+            else:
+                raise TypeError(f"make_clip: bone {b!r} has an unrecognised value {v!r}")
+        return pose
+
+    # Resolve and validate every frame before touching the rig.
+    poses = [pose_at(f) for f in range(frames + 1)]
+    for f, pose in enumerate(poses):
+        for b_name, rot in pose.items():
+            if rig.pose.bones.get(b_name) is None:
+                raise ValueError(f"make_clip: rig {rig.name!r} has no bone {b_name!r} (frame {f}, clip {name!r})")
+            if not is_triple(rot):
+                raise TypeError(f"make_clip: rotation of {b_name!r} at frame {f} must be 3 numbers, got {rot!r}")
+
     if rig.animation_data is None:
         rig.animation_data_create()
-
     action = bpy.data.actions.new(name)
     rig.animation_data.action = action
 
-    for f in range(frames + 1):
-        if callable(pose_table):
-            u = f / frames if frames > 0 else 0.0
-            pose = pose_table(u)
-        elif isinstance(pose_table, dict):
-            if f in pose_table:
-                pose = pose_table[f]
-            else:
-                pose = {}
-                for b, v in pose_table.items():
-                    if isinstance(v, dict) and f in v:
-                        pose[b] = v[f]
-                    elif isinstance(v, (list, tuple)) and f < len(v):
-                        pose[b] = v[f]
-                    elif isinstance(v, (list, tuple)) and len(v) == 3 and isinstance(v[0], (int, float)):
-                        pose[b] = v
-        else:
-            raise TypeError(f"make_clip: Unrecognised pose_table type {type(pose_table)}")
-
-        for b_name, rot in pose.items():
-            pb = rig.pose.bones.get(b_name)
-            if pb is None:
-                for b_cand in rig.pose.bones:
-                    if b_cand.name.endswith(f"_{b_name}"):
-                        pb = b_cand
-                        break
-            if pb is None:
-                continue
-
+    for f, pose in enumerate(poses):
+        for b_name, (rx, ry, rz) in pose.items():
+            pb = rig.pose.bones[b_name]
             pb.rotation_mode = "QUATERNION"
-            rx, ry, rz = rot
-            q = Euler((rx, ry, rz), "XZY").to_quaternion()
-            pb.rotation_quaternion = q
+            pb.rotation_quaternion = Euler((rx, ry, rz), "XZY").to_quaternion()
             pb.keyframe_insert(data_path="rotation_quaternion", frame=f)
 
     track = rig.animation_data.nla_tracks.new()
