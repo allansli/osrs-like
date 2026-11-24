@@ -451,7 +451,7 @@ export function terrainMaterial(loader?: AlbedoLoader): THREE.MeshLambertMateria
   const volcanic = loadAlbedo(biomeAlbedoId('peak-volcanic'), GROUND_REPEAT, loader);
   const cobble = loadAlbedo(biomeAlbedoId('varrock-cobble'), GROUND_REPEAT, loader);
   const cracked = loadAlbedo(biomeAlbedoId('alkharid-sand'), GROUND_REPEAT, loader);
-  const mat = facetMaterial({ vertexColors: true, map: grass });
+  const mat = facetMaterial({ vertexColors: true, map: grass, facetBlend: 0.7 });
   mat.userData.albedoSpace = 'ground';
   const previous = mat.onBeforeCompile;
   mat.onBeforeCompile = (shader, renderer) => {
@@ -475,5 +475,7 @@ export function terrainMaterial(loader?: AlbedoLoader): THREE.MeshLambertMateria
       .replace('#include <map_pars_fragment>', TERRAIN_PARS)
       .replace('#include <map_fragment>', TERRAIN_SAMPLE);
   };
+  const previousKey = mat.customProgramCacheKey();
+  mat.customProgramCacheKey = () => `${previousKey}|terrain`;
   return mat;
 }

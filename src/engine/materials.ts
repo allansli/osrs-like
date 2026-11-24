@@ -106,21 +106,98 @@ export function addCartoonOutline(rootOrMesh: THREE.Object3D, thickness = 0.028,
   });
 }
 
+// Band edges and values of design 5.2, kept as GLSL literal text so LT7 tunes constants only.
+const BAND_WIDTH_HALF = '0.02';
+const CUT_LOW_EDGE = '0.15';
+const CUT_HIGH_EDGE = '0.55';
+const CUT_GRAZE = '0.22';
+const CUT_HALF = '0.62';
+const ROUND_EDGE = '0.35';
+const ROUND_SHADE = '0.62';
+const FOOT_FLOOR = '0.75';
+
+/** three's lights_lambert_pars_fragment with a banded key and no division by pi (design 6.1). */
+const FACET_LIGHT_PARS = `
+varying vec3 vViewPosition;
+
+struct LambertMaterial {
+  vec3 diffuseColor;
+  float specularStrength;
+};
+
+float facetStep(float edge, float x) {
+  return smoothstep(edge - ${BAND_WIDTH_HALF}, edge + ${BAND_WIDTH_HALF}, x);
+}
+
+float facetBand(float x) {
+#ifdef FACET_CUT
+  return mix(mix(${CUT_GRAZE}, ${CUT_HALF}, facetStep(${CUT_LOW_EDGE}, x)), 1.0, facetStep(${CUT_HIGH_EDGE}, x));
+#else
+  return mix(${ROUND_SHADE}, 1.0, facetStep(${ROUND_EDGE}, x));
+#endif
+}
+
+void RE_Direct_Lambert( const in IncidentLight directLight, const in vec3 geometryPosition, const in vec3 geometryNormal, const in vec3 geometryViewDir, const in vec3 geometryClearcoatNormal, const in LambertMaterial material, inout ReflectedLight reflectedLight ) {
+  float dotNL = saturate( dot( geometryNormal, directLight.direction ) );
+  reflectedLight.directDiffuse += facetBand(dotNL) * directLight.color * material.diffuseColor;
+}
+
+void RE_IndirectDiffuse_Lambert( const in vec3 irradiance, const in vec3 geometryPosition, const in vec3 geometryNormal, const in vec3 geometryViewDir, const in vec3 geometryClearcoatNormal, const in LambertMaterial material, inout ReflectedLight reflectedLight ) {
+  reflectedLight.indirectDiffuse += irradiance * material.diffuseColor;
+}
+
+#define RE_Direct RE_Direct_Lambert
+#define RE_IndirectDiffuse RE_IndirectDiffuse_Lambert
+
+#ifdef FACET_BLEND
+uniform float uFacet;
+#endif
+uniform float uFootHeight;
+varying float vFootHeight;
+`;
+
+const FACET_FOOT = `#include <color_fragment>
+diffuseColor.rgb *= uFootHeight > 0.0 ? mix(${FOOT_FLOOR}, 1.0, smoothstep(0.0, uFootHeight, vFootHeight)) : 1.0;`;
+
+const FACET_BLEND_NORMAL = `#include <normal_fragment_begin>
+#ifdef FACET_BLEND
+normal = normalize(mix(normal, normalize(cross(dFdx(vViewPosition), dFdy(vViewPosition))), uFacet));
+#endif`;
+
+export type FacetShade = 'cut' | 'round';
+
 /**
- * Smooth 2-band cartoon albedo. Lit faces stay the material color; shadow faces take one cool step.
- * An optional `map` is sampled by the Lambert `map_fragment` chunk into `diffuseColor` before the cel step,
- * so the texture tints the color token. No normal or roughness maps.
- * Normals interpolate across the surface so spheres and capsules stay round.
- * Pass flatShading: true only for cut gems and crystals.
+ * Banded Lambert albedo (design 6.1). The scene's lights and shadows reach the surface through
+ * three's own Lambert sum; only the key's response is banded.
+ * `shade: 'cut'` (flat normals, three bands) or `'round'` (smooth normals, two bands, the default).
+ * `facetBlend` (terrain) keeps smooth normals and mixes in the face normal by that amount.
+ * `footHeight` darkens the lowest units of the object toward its foot; 0 turns it off.
+ * An optional `map` is sampled by `map_fragment` into `diffuseColor`. No normal or roughness maps.
+ * Every variant is a key in `material.defines`, so three's program cache tells them apart.
  */
 export function facetMaterial(params: Record<string, unknown> = {}): THREE.MeshLambertMaterial {
   const cleaned: Record<string, unknown> = {};
   let flat = false;
+  let shade: FacetShade = 'round';
+  let facetBlend: number | null = null;
+  let footHeight = 0;
   let map: THREE.Texture | null = null;
   for (const [key, value] of Object.entries(params)) {
     if (key === 'metalness' || key === 'roughness') continue;
     if (key === 'flatShading') {
       flat = value === true;
+      continue;
+    }
+    if (key === 'shade') {
+      shade = value as FacetShade;
+      continue;
+    }
+    if (key === 'facetBlend') {
+      facetBlend = value as number;
+      continue;
+    }
+    if (key === 'footHeight') {
+      footHeight = value as number;
       continue;
     }
     if (key === 'map') {
@@ -136,33 +213,42 @@ export function facetMaterial(params: Record<string, unknown> = {}): THREE.MeshL
     map.colorSpace = THREE.SRGBColorSpace;
     cleaned.map = map;
   }
+  const defines: Record<string, string> = {};
+  let cacheKey: string;
+  if (facetBlend !== null) {
+    flat = false;
+    defines.FACET_BLEND = '';
+    cacheKey = 'facet|blend';
+  } else if (shade === 'cut') {
+    flat = true;
+    defines.FACET_CUT = '';
+    cacheKey = 'facet|cut';
+  } else {
+    cacheKey = 'facet|round';
+  }
   cleaned.flatShading = flat;
   if (cleaned.side === undefined) {
     cleaned.side = THREE.DoubleSide;
   }
   const mat = new THREE.MeshLambertMaterial(cleaned as THREE.MeshLambertMaterialParameters);
+  mat.defines = { ...mat.defines, ...defines };
   if (map) mat.userData.albedoSpace = 'prop';
-  const flatNormal = flat
-    ? `#ifdef FLAT_SHADED
-      vCelWorld = normalize((vec4(normal, 0.0) * viewMatrix).xyz);
-    #endif
-    `
-    : '';
+  const facet = { value: facetBlend ?? 0 };
+  const foot = { value: footHeight };
   mat.onBeforeCompile = (shader) => {
-    shader.vertexShader = shader.vertexShader.replace(
-      '#include <beginnormal_vertex>',
-      `#include <beginnormal_vertex>
-      vCelNormal = normalize(mat3(modelMatrix) * objectNormal);`
+    shader.uniforms.uFacet = facet;
+    shader.uniforms.uFootHeight = foot;
+    shader.vertexShader = 'varying float vFootHeight;\n' + shader.vertexShader.replace(
+      '#include <begin_vertex>',
+      `#include <begin_vertex>
+      vFootHeight = transformed.y;`
     );
-    shader.vertexShader = 'varying vec3 vCelNormal;\n' + shader.vertexShader;
-    shader.fragmentShader = 'varying vec3 vCelNormal;\n' + shader.fragmentShader.replace(
-      'vec3 outgoingLight = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse + totalEmissiveRadiance;',
-      `vec3 vCelWorld = normalize(vCelNormal) * (gl_FrontFacing ? 1.0 : -1.0);
-      ${flatNormal}float ndl = dot(normalize(vCelWorld), normalize(vec3(0.52, 0.78, 0.34)));
-      float cel = smoothstep(0.33, 0.38, ndl);
-      vec3 outgoingLight = diffuseColor.rgb * mix(vec3(0.70, 0.72, 0.82), vec3(1.04), cel) + totalEmissiveRadiance;`
-    );
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <lights_lambert_pars_fragment>', FACET_LIGHT_PARS)
+      .replace('#include <color_fragment>', FACET_FOOT)
+      .replace('#include <normal_fragment_begin>', FACET_BLEND_NORMAL);
   };
+  mat.customProgramCacheKey = () => cacheKey;
   return mat;
 }
 
