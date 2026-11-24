@@ -134,7 +134,7 @@ export function dayFrameAt(phase: number): DayFrame {
   const k2 = DAY_KEYS[(idx + 1) % DAY_KEYS.length];
   const p1 = k1.phase;
   const p2 = idx < DAY_KEYS.length - 1 ? k2.phase : 1.0;
-  const t = p2 > p1 ? (p - p1) / (p2 - p1) : 0;
+  const t = (p - p1) / (p2 - p1);
 
   const exposure = (1 - t) * k1.exposure + t * k2.exposure;
 
