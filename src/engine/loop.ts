@@ -5,6 +5,7 @@ import { playerChoseTier } from './photo';
 import { currentDayFrame, updateLighting } from './lighting';
 import { updateAir } from './atmosphere';
 import { updateSky } from './sky';
+import { updateCarpet } from './flora';
 import {
   TICK_SEC,
   commandClocks,
@@ -906,9 +907,7 @@ export function renderFrame(f: FrameState): void {
   }
   G.renderer.info.reset();
 
-  if (G.grassInstanced && G.grassInstanced.material && (G.grassInstanced.material as THREE.ShaderMaterial).uniforms) {
-    (G.grassInstanced.material as THREE.ShaderMaterial).uniforms.uTime.value = f.elapsedSec;
-  }
+  updateCarpet(player.pos.x, player.pos.z, currentQuality);
   output.render();
   stepGovernor(f.dt, f.dt * 1000);
 

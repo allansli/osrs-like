@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { G } from './context';
 import { STATE } from '../state/gameState';
-import { PALETTE, addCartoonOutline, grassMaterial } from './materials';
+import { PALETTE, addCartoonOutline } from './materials';
 import {
   BIOME_COLORS,
   assignGroundUvs,
@@ -13,7 +13,7 @@ import {
 import { getTerrainHeight, onPath, slopeAt, TERRAIN_SEGMENTS, TERRAIN_SIZE } from '../state/terrain';
 import { setPhase } from './lighting';
 import { presetToPhase } from '../state/dayCycle';
-import { isDeepWater } from '../state/collision';
+import { PAVED_PLAZA } from './flora';
 import { loadBlenderWorldTemplate, upgradeWorldPropWithGltf } from './blenderWorld';
 import { el } from '../ui/hud';
 import { GFX_TIERS } from '../data/look';
@@ -26,7 +26,7 @@ export function getBiomeColor(x: number, z: number, h: number): THREE.Color {
   if (h < -0.05) return dirt;
   if (onPath(x, z)) return dirt;
   if (slopeAt(x, z) > 0.55) return new THREE.Color(BIOME_COLORS.crag);
-  if (Math.hypot(x - 78, z + 20) < 18) return dirt;
+  if (Math.hypot(x - PAVED_PLAZA.x, z - PAVED_PLAZA.z) < PAVED_PLAZA.radius) return dirt;
   if (x > 40 && z > 36) return new THREE.Color(BIOME_COLORS.sand);
   if (x < -40 && z > 36) return new THREE.Color(h > 3.1 ? BIOME_COLORS.lava : BIOME_COLORS.crag);
   if (x < -40 && z < 0) return new THREE.Color(BIOME_COLORS.canopy);
@@ -127,32 +127,6 @@ export function buildTerrainAndWater(): void {
 
   // Arched Wooden & Stone Footbridge over the River at (28, 0)
   buildRiverBridge(28, 0);
-
-  const bladeShape = new THREE.Shape();
-  bladeShape.moveTo(-0.09, 0);
-  bladeShape.lineTo(0, 0.85);
-  bladeShape.lineTo(0.09, 0);
-  bladeShape.closePath();
-  const bladeGeo = new THREE.ShapeGeometry(bladeShape, 1);
-  const bladeMat = grassMaterial();
-  const grassCount = 900;
-  G.grassInstanced = new THREE.InstancedMesh(bladeGeo, bladeMat, grassCount);
-  const dummy = new THREE.Object3D();
-  let idx = 0;
-  for (let i = 0; i < grassCount * 3 && idx < grassCount; i++) {
-    const gx = (Math.random() - 0.5) * 215;
-    const gz = (Math.random() - 0.5) * 215;
-    const gy = getTerrainHeight(gx, gz);
-    if (gy < 0.08 || isDeepWater(gx, gz) || (gx < -30 && gz > 25) || (gx > 32 && gz > 28) || onPath(gx, gz) || slopeAt(gx, gz) > 0.55) continue;
-    dummy.position.set(gx, gy, gz);
-    dummy.rotation.set(0, Math.random() * Math.PI * 2, 0);
-    const s = 0.7 + Math.random() * 0.85;
-    dummy.scale.set(s, s * (0.85 + Math.random() * 0.4), s);
-    dummy.updateMatrix();
-    G.grassInstanced.setMatrixAt(idx++, dummy.matrix);
-  }
-  G.grassInstanced.instanceMatrix.needsUpdate = true;
-  G.scene.add(G.grassInstanced);
 }
 
 export function buildRiverBridge(bx: number, bz: number): void {

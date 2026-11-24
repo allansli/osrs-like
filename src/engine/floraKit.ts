@@ -464,3 +464,75 @@ export function buildKitPiece(id: string, rng: () => number): THREE.BufferGeomet
       throw new Error(`Unknown kit piece: ${id}`);
   }
 }
+
+/** The carpet's four variants (design 6.7), one InstancedMesh each; the index is the variant uniform. */
+export const CARPET_VARIANTS = ['tuft', 'flower', 'tussock', 'ember_grass'] as const;
+export type CarpetVariant = (typeof CARPET_VARIANTS)[number];
+
+// Root and tip colour per variant, plus the flower head; tuned at GR7 with the rest of the look.
+const CARPET_TINTS: Record<CarpetVariant, { root: string; tip: string; head?: string }> = {
+  tuft: { root: '#2b3a24', tip: '#6b8550' },
+  flower: { root: '#2b3a24', tip: '#5d7a46', head: '#e8dca0' },
+  tussock: { root: '#4a4130', tip: '#a8956a' },
+  ember_grass: { root: '#2a211d', tip: '#c2582c' },
+};
+
+/**
+ * A carpet tuft of about 8 triangles: blades as two triangles each (the reed's shape), vertex colours
+ * from root to tip, every normal straight up so a tuft is lit like the ground under it (design 6.7).
+ */
+export function buildCarpetTuft(variant: CarpetVariant, rng: () => number): THREE.BufferGeometry {
+  const tint = CARPET_TINTS[variant];
+  const blades = variant === 'flower' ? 3 : 4;
+  const height = variant === 'tussock' ? 0.55 : variant === 'ember_grass' ? 0.5 : 0.42;
+  const width = variant === 'tussock' ? 0.06 : 0.045;
+  const positions: number[] = [];
+  const colors: number[] = [];
+  const root = new THREE.Color(tint.root);
+  const tip = new THREE.Color(tint.tip);
+  const c = new THREE.Color();
+  const push = (x: number, y: number, z: number, col: THREE.Color): void => {
+    positions.push(x, y, z);
+    colors.push(col.r, col.g, col.b);
+  };
+  const shade = (y: number): THREE.Color => c.copy(root).lerp(tip, Math.min(1, y / height));
+  for (let k = 0; k < blades; k++) {
+    const angle = (k / blades) * Math.PI * 2 + (rng() - 0.5) * 0.6;
+    const ox = Math.cos(angle) * 0.06;
+    const oz = Math.sin(angle) * 0.06;
+    const lean = 0.12 + rng() * 0.1;
+    const lx = Math.cos(angle) * lean;
+    const lz = Math.sin(angle) * lean;
+    const h = height * (0.8 + rng() * 0.3);
+    const nx = -Math.sin(angle) * width;
+    const nz = Math.cos(angle) * width;
+    const mx = ox + lx * 0.45;
+    const mz = oz + lz * 0.45;
+    push(ox - nx, 0, oz - nz, shade(0));
+    push(ox + nx, 0, oz + nz, shade(0));
+    push(mx - nx * 0.4, h * 0.55, mz - nz * 0.4, shade(h * 0.55));
+    push(ox + nx, 0, oz + nz, shade(0));
+    push(ox + lx, h, oz + lz, shade(h));
+    push(mx - nx * 0.4, h * 0.55, mz - nz * 0.4, shade(h * 0.55));
+  }
+  if (tint.head) {
+    // Two crossed triangles as a flower head above the tallest stem.
+    const head = new THREE.Color(tint.head);
+    const y = height * 1.05;
+    const r = 0.07;
+    push(-r, y, 0, head);
+    push(r, y, 0, head);
+    push(0, y + r * 1.4, 0, head);
+    push(0, y, -r, head);
+    push(0, y, r, head);
+    push(0, y + r * 1.4, 0, head);
+  }
+  const count = positions.length / 3;
+  const normals = new Float32Array(count * 3);
+  for (let i = 0; i < count; i++) normals[i * 3 + 1] = 1;
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  geo.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
+  return geo;
+}

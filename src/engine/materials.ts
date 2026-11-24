@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { AIR, AIR_GLSL, COLOR_FOOTER, attachAtmosphere } from './atmosphere';
+import { attachAtmosphere } from './atmosphere';
 import { isPlainMode } from './post';
 
 /** Flat Nordic fantasy tokens inspired by Skyrim. */
@@ -284,58 +284,4 @@ export function facetMaterial(params: Record<string, unknown> = {}): THREE.MeshL
   mat.customProgramCacheKey = () => cacheKey;
   attachAtmosphere(mat);
   return mat;
-}
-
-export function grassMaterial(): THREE.ShaderMaterial {
-  return new THREE.ShaderMaterial({
-    side: THREE.DoubleSide,
-    uniforms: {
-      // the grass keeps its own uTime: loop.ts writes it with the elapsed time
-      ...AIR,
-      uTime: { value: 0 },
-      uBase: { value: new THREE.Color(PALETTE.sage) },
-      uLit: { value: new THREE.Color(PALETTE.sageLit) }
-    },
-    vertexShader: `
-      uniform float uTime;
-      varying vec3 vWorld;
-      varying float vH;
-      void main() {
-        vec3 p = position;
-        #ifdef USE_INSTANCING
-          float sway = (sin(uTime * 1.8 + instanceMatrix[3][0] * 0.42 + instanceMatrix[3][2] * 0.28) * 0.18 +
-                        cos(uTime * 3.1 + instanceMatrix[3][0] * 0.85) * 0.06) * p.y;
-          p.x += sway;
-          p.z += sway * 0.4;
-          vec4 world = modelMatrix * instanceMatrix * vec4(p, 1.0);
-        #else
-          float sway = sin(uTime * 1.8 + world.x * 0.42 + world.z * 0.28) * 0.16 * p.y;
-          p.x += sway;
-          vec4 world = modelMatrix * vec4(p, 1.0);
-        #endif
-        vWorld = world.xyz;
-        vH = clamp(position.y, 0.0, 1.0);
-        gl_Position = projectionMatrix * viewMatrix * world;
-      }
-    `,
-    fragmentShader: `
-      uniform vec3 uBase;
-      uniform vec3 uLit;
-      uniform vec3 uKeyColor;
-      ${AIR_GLSL}
-      varying vec3 vWorld;
-      varying float vH;
-      void main() {
-        vec3 n = normalize(cross(dFdx(vWorld), dFdy(vWorld)));
-        float ndl = dot(n, normalize(uSunDir));
-        float cel = smoothstep(0.28, 0.42, ndl);
-        vec3 albedo = mix(uBase, uLit, smoothstep(0.20, 0.85, vH));
-        vec3 col = albedo * mix(vec3(0.64, 0.68, 0.80), uKeyColor, cel);
-        col += vec3(0.12, 0.16, 0.04) * smoothstep(0.60, 1.0, vH) * cel;
-        col = applyAir(col, vWorld);
-        gl_FragColor = vec4(col, 1.0);
-        ${COLOR_FOOTER}
-      }
-    `
-  });
 }
