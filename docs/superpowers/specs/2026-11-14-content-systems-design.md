@@ -17,6 +17,15 @@
 > - what fills the demons' old ground;
 > - what moves in the numbers. Lesser demons are the "best open ground" that 7.6 compares the dungeons' income against (178.5 GP/s), they sit in `CAMPS`, which Stage 3's pacing model reads, and they appear in the diary rows of 7.8.
 
+> **Owner decision, 2026-11-24 (CALL-6.31, decided in direction; details open):** "podemos ter demons lutadores e demons ranged" ("we can have fighting demons and ranged demons"). So the demons come in **two kinds**: the existing Lesser Demon (melee, row untouched as section 3 requires) and **one new ranged demon row**. It reuses the demon model with a tint (the `model` + `tint` pattern of the Saltback Stalker, 6.8), shoots the existing hellfire orb (`spawnHellfireOrb`), and lives with the melee demons in the CALL-6.30 cave, so a player meets both at once. Name, numbers, drops, count and camp come back to the owner with CALL-6.30's details (proposal `docs/superpowers/proposals/2026-11-24-call-6.30-demons-cave.md`, section CALL-6.31) before the plan is revised.
+
+> **Owner approval, 2026-11-24 (CALL-6.30, 6.31 and 6.32 decided):** "aprovo o pacote do fable, e sim à linha de visão". The package is in the proposal's "Approved package" section, and it supersedes the first draft:
+> - a standing cave of two rooms with six demons: 3 Lesser Demons and 3 **Ember Hurlers** (ranged, demon model with an ash tint at about 0.85 scale, `dark_ranger` pattern, no equipment drop);
+> - the four pass sentries stay as they are;
+> - the cave's camps join the 7.6 income test.
+>
+> **CALL-6.32:** monsters fire ranged and magic attacks only with a clear line (`segmentWalkable`), game-wide, in a slice of its own with declared test replacements. The plan revision carries these into 6.4, 6.8, 7.6, 7.8 and 7.13.
+
 Date: 2026-11-14. Branch: `feat/content-systems`, cut from `main` at `5caa597` (Stages 1 and 2 merged). All line numbers refer to that commit. Stages 3, 4 and 5 are approved and land before this stage; their code is not in this tree, so every task in the plan finds symbols by name and the plan opens with a premise re-check (task R0).
 
 Status: proposal, critiqued (`2026-11-14-content-systems-critique.md`, READY-WITH-FIXES; its fixes are applied below and marked "critique"), and **revised on 2026-11-14 for the owner's answers** to its main decisions. Four answers changed the design: arrows (7.4), a real rebalance of the three styles (7.12), aggressive and passive monsters in place of Stage 2's level rule (7.13), and dungeon rewards as drops with quest rewards paid once (7.3, 7.6). Section 15 quotes each answer and lists what is still open; the review log at the end lists what this revision moved. A decision marked **CALL-6.n** that section 15 does not show as decided is still the lead's proposal.
