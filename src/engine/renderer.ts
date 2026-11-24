@@ -144,12 +144,11 @@ export function init3DEngine(): void {
     const log = gl.getProgramInfoLog(program);
     console.error(log);
     enterPlainMode(G.scene);
-    output?.dispose();
+    output.dispose();
     output = createOutput(G.renderer, G.scene, G.camera, currentQuality);
     addChatMessage('Shader compile error: switched to plain mode.', 'skill');
   };
-  const isPlain = typeof location !== 'undefined' ? new URLSearchParams(location.search).has('plain') : false;
-  if (isPlain) {
+  if (new URLSearchParams(location.search).has('plain')) {
     enterPlainMode(G.scene);
   }
   initLighting();

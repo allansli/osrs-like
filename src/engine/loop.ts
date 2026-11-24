@@ -883,7 +883,7 @@ let governorHidden = false;
 
 function stepGovernor(dt: number, frameMs: number): void {
   if (playerChoseTier) return;
-  if (typeof document !== 'undefined' && document.hidden) governorHidden = true;
+  if (document.hidden) governorHidden = true;
   governorWindow.push(frameMs);
   governorElapsed += dt;
   if (governorElapsed >= 4.0) {

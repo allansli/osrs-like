@@ -26,7 +26,7 @@ export function isPlainMode(): boolean {
   return plainMode;
 }
 
-export function enterPlainMode(scene?: THREE.Scene): void {
+export function enterPlainMode(scene: THREE.Scene): void {
   if (plainMode) return;
   plainMode = true;
 
@@ -53,24 +53,11 @@ export function enterPlainMode(scene?: THREE.Scene): void {
     return stock;
   };
 
-  if (scene) {
-    scene.traverse((obj) => {
-      const mesh = obj as THREE.Mesh;
-      if (mesh.isMesh) {
-        if (Array.isArray(mesh.material)) {
-          mesh.material = mesh.material.map(replaceMat);
-        } else if (mesh.material) {
-          mesh.material = replaceMat(mesh.material);
-        }
-      }
-      if (obj instanceof THREE.InstancedMesh) {
-        if (obj.geometry?.type === 'IcosahedronGeometry') {
-          obj.visible = false;
-          obj.count = 0;
-        }
-      }
-    });
-  }
+  scene.traverse((obj) => {
+    const mesh = obj as THREE.Mesh;
+    if (!mesh.isMesh) return;
+    mesh.material = Array.isArray(mesh.material) ? mesh.material.map(replaceMat) : replaceMat(mesh.material);
+  });
 
   refreshFlashMaterials();
 }

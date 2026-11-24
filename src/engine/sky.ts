@@ -5,6 +5,7 @@ import { AIR, AIR_GLSL, COLOR_FOOTER, setAirTier } from './atmosphere';
 import { facetMaterial } from './materials';
 import { buildKitPiece, makeRng } from './floraKit';
 import { currentQuality } from './renderer';
+import { isPlainMode } from './post';
 import type { DayFrame } from '../state/dayCycle';
 
 const uNight = { value: 0 };
@@ -163,7 +164,7 @@ export function updateSky(frame: DayFrame): void {
 
   apronMat.color.copy(AIR.uAirColor.value);
 
-  const cloudsEnabled = GFX_TIERS[currentQuality].clouds;
+  const cloudsEnabled = GFX_TIERS[currentQuality].clouds && !isPlainMode();
   const curTime = AIR.uTime.value;
   const dt = lastCloudTime > 0 ? Math.min(Math.max(curTime - lastCloudTime, 0), 0.1) : 0;
   lastCloudTime = curTime;
