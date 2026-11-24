@@ -245,6 +245,15 @@ What the owner gets: shadows on screen for the first time, a sun that moves, fiv
 ### CP-LT Light checkpoint [OWNER]
 The owner compares `before/` and `light/` at P1, P3 and P5 and watches P12 live. Should see: shadows under every object, long at golden hour; the ridge's shadow at P3; a blue, readable night; planes on rock, trees and ground; round figures. Answers accept, change (back to LT7) or hold.
 
+### LT7b Light re-tune after CP-LT [CLAUDE] (plan amendment, 2026-11-24)
+CP-LT was judged by the main session from the LT7 pictures under the merge-on-green rule: **change**. P1 noon and every night picture pass. P5 noon fails: ash ground went from 50 to 72%, lava from orange to yellow, the whole frame reads as haze. The noon sky top is 94%, almost white. The cause is recorded in `light/values.md`: one global exposure of x3.65 makes up for the dark P1 meadow albedo, and the sky's middle band is drawn from the fill colour, which carries that exposure.
+- **Tier**: opus.
+- **Depends**: LT7.
+- **Files**: `src/data/look.ts` (`DAY_KEYS` values; one new exported constant for a ground albedo gain if used), `src/engine/sky.ts` (the gradient's middle stop only: it stops reading `uFill`), `src/engine/atmosphere.ts` (only if the sky needs one new uniform for its middle colour, filled from the frame), `src/engine/textures.ts` (the ground shader's albedo line only, to apply the gain to the grass weight), `docs/superpowers/baseline/stage5/light/` (pictures and values, replaced).
+- **Change**: lift the meadow albedo where it is dark (a gain on the grass weight of the ground shader, or nothing if the exposure alone can meet the targets), lower the exposure so regions with normal albedo are not lifted, and give the sky a middle colour that does not follow the fill. Re-run CAP over the LT7 set. Targets, measured the way `values.md` measures them (balanced tier): P1 noon lit meadow a/b 55 to 65%, hero shadow 30 to 38%; P1 night lit meadow a/b at least 22%; P1 noon sky top at most 85% luminance and visibly blue (B minus R at least 20); P5 noon ash ground 42 to 60%, lava G/R at most 0.65; P5 night ash at most 30%, lava R at least 150 with G/R at most 0.55. Acne, band flicker and swim as in LT7.
+- **Accept**: SG; LT1 and LT3 tests green with no test file changed; the new values table in `light/values.md` shows every target with before (LT7) and after.
+- **Must not change**: hues' direction (design 5.3), the light logic, the texture filters, the band constants set by LT7.
+
 ---
 
 ## 3. Slice 2, lane AR: air, horizon, clouds, output
