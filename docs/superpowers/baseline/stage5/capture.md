@@ -34,3 +34,8 @@ P1 at noon, `proof/P1-noon-performance.jpg` and `proof/P1-noon-balanced.jpg`, 12
 Captured with the hover-tile step of step 5 (mouse on `#top-left-hud`, confirmed by `elementFromPoint`); no hover tile shows in either picture.
 
 The evidence of the shadow pass is the HUD count: balanced draws about twice the calls and triangles of performance, and since V1b that count includes the shadow pass. No shadow is visible in either picture: before the LT slice no facet surface receives a shadow (design section 1 item 2), so the two pictures differ only in animated monsters and the water strip. Monsters move between frames, so pictures are not byte-stable even with the seeded generator; compare by eye or by the HUD numbers.
+
+
+## Poses in aggressive ground (added by the main session, 2026-11-24, from the V2 repair)
+
+P4 and P5 stand in or near aggressive camps (Cinderstep Pass, the wilderness). A level-3 hero is attacked there and can die during the capture, which puts the death screen, a monster or Lumbridge in the picture and wrong numbers in the table. Before the first P4 or P5 pose: start from a fresh load (`localStorage` cleared in the init script), raise `__DEBUG.STATE.skills` to 99 so no camp threatens the hero, and check each shot for a live player within 1 unit of the pose target and no monster in chase or attack. P11 starts from a fresh save with unmodified skills.
