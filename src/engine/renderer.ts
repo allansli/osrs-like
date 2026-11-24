@@ -7,6 +7,7 @@ import { CAMERA_FAR, GFX_TIERS } from '../data/look';
 import { buildAllCitiesAndLandmarks } from './worldBuild';
 import { buildPlayerCharacter } from './playerMesh';
 import { spawnAllResourcesAndMonsters } from './spawns';
+import { buildFlora } from './flora';
 import { sealAlbedoUvs, setAlbedoAnisotropy } from './textures';
 import { setupInputHandlers } from './input';
 import { buildWalkGrid } from '../state/pathfind';
@@ -162,6 +163,7 @@ export function init3DEngine(): void {
   buildAllCitiesAndLandmarks();
   buildPlayerCharacter();
   spawnAllResourcesAndMonsters();
+  buildFlora(currentQuality);
   sealAlbedoUvs(G.scene);
   // After the build, so the walk reaches the clouds and every facet material.
   if (new URLSearchParams(location.search).has('plain')) goPlain();
