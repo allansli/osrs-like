@@ -21,8 +21,7 @@ export function effectivePixelRatio(
   const targetRatio = Math.min(devicePixelRatio, tierConfig.pixelRatioCap);
   const maxPixels = tierConfig.megapixelCap * 1e6;
   const area = width * height;
-  const maxRatioFromMp = area > 0 ? Math.sqrt(maxPixels / area) : targetRatio;
-  return Math.min(targetRatio, maxRatioFromMp);
+  return Math.min(targetRatio, Math.sqrt(maxPixels / area));
 }
 
 export function createOutput(
@@ -41,9 +40,7 @@ export function createOutput(
     };
   }
 
-  const canHalfFloat = renderer.extensions != null
-    ? (renderer.extensions.has('EXT_color_buffer_half_float') || renderer.extensions.has('EXT_color_buffer_float'))
-    : true;
+  const canHalfFloat = renderer.extensions.has('EXT_color_buffer_half_float') || renderer.extensions.has('EXT_color_buffer_float');
   const targetType = canHalfFloat ? THREE.HalfFloatType : THREE.UnsignedByteType;
 
   const size = renderer.getSize(new THREE.Vector2());

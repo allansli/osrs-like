@@ -39,8 +39,8 @@ export function applyQualityTier(tier: QualityTier): void {
     G.renderer.setSize(window.innerWidth, window.innerHeight);
     applyShadowTier(tier);
 
-    const pathChanged = !output || GFX_TIERS[prevTier].composer !== GFX_TIERS[tier].composer;
-    if (pathChanged) {
+    // rebuild on every tier change: sample counts are baked into the composer targets
+    if (!output || prevTier !== tier) {
       output?.dispose();
       output = createOutput(G.renderer, G.scene, G.camera, tier);
     } else {
@@ -155,10 +155,8 @@ export function init3DEngine(): void {
 export function onWindowResize(): void {
   G.camera.aspect = window.innerWidth / window.innerHeight;
   G.camera.updateProjectionMatrix();
-  const dpr = typeof window !== 'undefined'
-    ? effectivePixelRatio(currentQuality, window.innerWidth, window.innerHeight, window.devicePixelRatio || 1)
-    : 1;
+  const dpr = effectivePixelRatio(currentQuality, window.innerWidth, window.innerHeight, window.devicePixelRatio || 1);
   G.renderer.setSize(window.innerWidth, window.innerHeight);
   G.renderer.setPixelRatio(dpr);
-  output?.setSize(window.innerWidth, window.innerHeight);
+  output.setSize(window.innerWidth, window.innerHeight);
 }
