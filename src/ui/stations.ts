@@ -11,6 +11,7 @@ import { SPELLS } from '../data/magic';
 import { getItemSvg } from './icons';
 import { bridge } from './bridge';
 import type { ItemStack, QtyMode } from '../state/types';
+import { restoreSnapshot, takeSnapshot, type ScrollSnapshot } from './scrollSnapshot';
 
 const QTYS: QtyMode[] = [1, 5, 10, 50, 100, 500, 'all'];
 const STACK_BATCHES = [10, 50, 100, 500, 1000] as const;
@@ -177,10 +178,45 @@ function paintVaultGrid(grid: HTMLElement): void {
   });
 }
 
+function snapshotStation(): ScrollSnapshot {
+  const search = document.getElementById('bank-search') as HTMLInputElement | null;
+  const isSearchFocused = search !== null && document.activeElement === search;
+  const focus = isSearchFocused && search.selectionStart !== null && search.selectionEnd !== null
+    ? { id: search.id, start: search.selectionStart, end: search.selectionEnd }
+    : null;
+  return takeSnapshot(
+    {
+      '#bank-grid': document.getElementById('bank-grid'),
+      '#bank-pack': document.getElementById('bank-pack'),
+      '#shop-pack': document.getElementById('shop-pack'),
+    },
+    focus,
+  );
+}
+
+function restoreStation(snap: ScrollSnapshot): void {
+  const focus = restoreSnapshot(
+    {
+      '#bank-grid': document.getElementById('bank-grid'),
+      '#bank-pack': document.getElementById('bank-pack'),
+      '#shop-pack': document.getElementById('shop-pack'),
+    },
+    snap,
+  );
+  if (focus) {
+    const el = document.getElementById(focus.id) as HTMLInputElement | null;
+    if (el) {
+      el.focus();
+      el.setSelectionRange(focus.start, focus.end);
+    }
+  }
+}
+
 export function renderBankModal(): void {
   const body = document.getElementById('bank-body');
   if (!body) return;
   bridge.hideItemTooltip();
+  const snap = snapshotStation();
 
   body.innerHTML = `
     <div class="station-toolbar">
@@ -236,6 +272,7 @@ export function renderBankModal(): void {
       if (grid) paintVaultGrid(grid);
     };
   }
+  restoreStation(snap);
 }
 
 export function renderShopModal(): void {
@@ -243,6 +280,7 @@ export function renderShopModal(): void {
   if (!body) return;
   bridge.hideItemTooltip();
   const filter = STATE.shopFilter || 'all';
+  const snap = snapshotStation();
   body.innerHTML = `
     <div class="station-toolbar shop-toolbar">
       ${qtyPills()}
@@ -455,6 +493,7 @@ export function renderShopModal(): void {
       bridge.refresh();
     };
   });
+  restoreStation(snap);
 }
 
 let mapHighlight: string | null = null;

@@ -278,11 +278,17 @@ export function toggleXpMultiplier(): void {
   updateAllUI();
 }
 
+let lastActiveElement: HTMLElement | null = null;
+
 export function closeModals(): void {
   document.querySelectorAll('.modal-backdrop').forEach(m => m.classList.remove('open'));
   hideHoverTooltip();
   hideItemTooltip();
   hideContextMenu();
+  if (lastActiveElement) {
+    lastActiveElement.focus();
+    lastActiveElement = null;
+  }
 }
 
 export function hideHoverTooltip(): void {
@@ -292,10 +298,15 @@ export function hideHoverTooltip(): void {
 }
 
 export function openModal(id: string): HTMLElement {
+  const active = document.activeElement as HTMLElement;
+  // A modal opened from inside another modal keeps the original HUD opener.
+  const opener = active.closest('.modal-backdrop') ? lastActiveElement : active;
   closeModals();
+  lastActiveElement = opener;
   const modal = el(id);
   modal.classList.add('open');
   hideHoverTooltip();
+  modal.querySelector<HTMLElement>('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')!.focus();
   return modal;
 }
 

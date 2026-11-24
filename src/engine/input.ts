@@ -52,6 +52,10 @@ export interface PickResult {
   ground: THREE.Intersection | null;
 }
 
+export function isTextInputTarget(t: HTMLElement): boolean {
+  return t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable;
+}
+
 export function setupInputHandlers(): void {
   armAudioOnGesture();
   G.clickMarkerMesh = new THREE.Group();
@@ -76,7 +80,10 @@ export function setupInputHandlers(): void {
       closeModals();
     }
     const t = e.target as HTMLElement;
-    if (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable) {
+    if (isTextInputTarget(t)) {
+      return;
+    }
+    if ((e.code === 'Space' || e.code === 'Enter') && t.closest('button')) {
       return;
     }
     G.keysPressed[e.code] = true;
