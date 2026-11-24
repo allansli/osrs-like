@@ -28,7 +28,8 @@ type Instance = ScatterResult[PieceId][number];
 const MUST_BE_UNDERSTOREY = ['boulder_s', 'bush_a', 'bush_b', 'fern', 'reed', 'log', 'mushrooms'] as const;
 const MUST_BE_CANOPY = ['backdrop_tree_a', 'backdrop_tree_b', 'crag_a', 'crag_b', 'snag'] as const;
 const TIERS = Object.keys(GFX_TIERS) as QualityTier[];
-const FULL: QualityTier = 'high'; // scatterDensity 1
+// The full count: a tier at scatterDensity 1 (whichever, so a tune that thins one tier keeps this file valid).
+const FULL = TIERS.find((t) => GFX_TIERS[t].scatterDensity === 1) as QualityTier;
 
 const SEED = 20261114;
 const UNDERSTOREY_MAX_HEIGHT = 1.2;
@@ -272,7 +273,7 @@ describe('scatter: layers and placement rules', () => {
 describe('scatter: density by tier', () => {
   it('each tier holds scatterDensity times the full count, within 5%', () => {
     expect(TIERS).toHaveLength(4);
-    expect(GFX_TIERS[FULL].scatterDensity).toBe(1);
+    expect(FULL, 'a tier at scatterDensity 1').toBeDefined();
     const full = total(scatter(FULL));
     expect(full).toBeGreaterThan(0);
     for (const tier of TIERS) {
