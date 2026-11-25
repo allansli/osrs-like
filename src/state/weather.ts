@@ -18,9 +18,10 @@ export function weatherAt(
   phase: number,
   regionWeights: Record<string, number>
 ): WeatherState {
-  let heaviestRegion = 'lumbridge';
-  let maxWeight = -Infinity;
-  for (const [region, weight] of Object.entries(regionWeights)) {
+  const entries = Object.entries(regionWeights);
+  if (entries.length === 0) throw new Error('weatherAt: regionWeights has no entries');
+  let [heaviestRegion, maxWeight] = entries[0];
+  for (const [region, weight] of entries) {
     if (weight > maxWeight) {
       maxWeight = weight;
       heaviestRegion = region;
@@ -28,7 +29,7 @@ export function weatherAt(
   }
 
   const allowed = WEATHER.filter((w) => w.regions.includes(heaviestRegion));
-  const bucket = Math.min(9, Math.max(0, Math.floor(phase * 10)));
+  const bucket = Math.floor(phase * 10);
   const h = hashBucket(dayIndex, bucket);
   const id = allowed[h % allowed.length].id;
 
