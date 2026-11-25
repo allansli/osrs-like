@@ -1,6 +1,6 @@
 export const meta = {
   name: 'models-s1d-s2c',
-  description: 'Models pass S1d (skinned outline on hard edges: test, agy, verify) then S2c (the pilot's plane tone and own kit materials: fable, opus verify). No push, no merge, no promote.',
+  description: 'Models pass S1d (skinned outline on hard edges: test, agy, verify) then S2c (the pilot plane tone and own kit materials: fable, opus verify). No push, no merge, no promote.',
   phases: [{ title: 'Lanes', detail: 'S1d then S2c: implement, opus verify, repair' }],
 }
 const MAIN = '/home/rdrosa/gitprojects/allan/osrs-like-wp/MP'
