@@ -246,9 +246,104 @@ export const REGION_LOOK: RegionLook[] = [
   { id: 'wilderness', airTint: '#8e82a0', airWeight: 0.18 },
 ];
 
-// Empty tables populated by later slices
-export const WEATHER: unknown[] = [];
-export const EMITTERS: unknown[] = [];
+export interface WeatherMote {
+  color: string;
+  intensity: number;
+  glow?: boolean;
+}
+
+export interface WeatherFall {
+  color: string;
+}
+
+export interface WeatherDef {
+  id: string;
+  regions: string[];
+  keyScale: number;
+  fogScale: number;
+  motes: WeatherMote[];
+  fall: WeatherFall | null;
+}
+
+export const WEATHER: WeatherDef[] = [
+  {
+    id: 'clear',
+    regions: ['lumbridge', 'varrock', 'desert', 'woods', 'wilderness'],
+    keyScale: 1.0,
+    fogScale: 1.0,
+    motes: [
+      { color: '#d8e8a8', intensity: 0.8 },
+      { color: '#aaff44', intensity: 3.0, glow: true },
+    ],
+    fall: null,
+  },
+  {
+    id: 'overcast',
+    regions: ['lumbridge', 'varrock', 'woods'],
+    keyScale: 0.65,
+    fogScale: 1.3,
+    motes: [
+      { color: '#b0bcc8', intensity: 0.6 },
+    ],
+    fall: null,
+  },
+  {
+    id: 'mist',
+    regions: ['lumbridge', 'varrock', 'woods'],
+    keyScale: 0.8,
+    fogScale: 2.0,
+    motes: [
+      { color: '#c8d8e8', intensity: 0.7 },
+      { color: '#aaff44', intensity: 3.0, glow: true },
+    ],
+    fall: null,
+  },
+  {
+    id: 'rain',
+    regions: ['lumbridge', 'varrock', 'woods'],
+    keyScale: 0.5,
+    fogScale: 1.6,
+    motes: [
+      { color: '#a8c0d8', intensity: 0.7 },
+    ],
+    fall: { color: '#90b8e0' },
+  },
+  {
+    id: 'sand_haze',
+    regions: ['desert'],
+    keyScale: 0.7,
+    fogScale: 1.8,
+    motes: [
+      { color: '#d8b470', intensity: 0.9 },
+    ],
+    fall: { color: '#c8a870' },
+  },
+  {
+    id: 'ash_fall',
+    regions: ['wilderness'],
+    keyScale: 0.6,
+    fogScale: 1.5,
+    motes: [
+      { color: '#ff6622', intensity: 8.0, glow: true },
+      { color: '#888080', intensity: 0.5 },
+    ],
+    fall: { color: '#706868' },
+  },
+];
+
+export interface EmitterDef {
+  node: string;
+  color: string;
+  intensity: number;
+}
+
+export const EMITTERS: EmitterDef[] = [
+  { node: 'World_woods_lantern', color: '#ffbb55', intensity: 4.0 },
+  { node: 'World_forge', color: '#ff7733', intensity: 6.0 },
+  { node: 'World_lava_fissure', color: '#ff5522', intensity: 8.0 },
+  { node: 'World_shrine', color: '#55ddff', intensity: 4.0 },
+  { node: 'World_mystic_mushroom', color: '#66ffaa', intensity: 3.0 },
+];
 
 export type KitPieceId =
   | 'boulder_s'
