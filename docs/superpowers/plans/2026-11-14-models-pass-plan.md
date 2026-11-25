@@ -238,7 +238,10 @@ Kept from the critique (M10) as the cheapest test of whether draw calls hold the
 - **Depends**: M0.
 - **Files**: `public/models/monsters.glb`, `blender/monsters.blend`, `src/engine/blenderMonsters.ts` (the `?v=` key only), `tests/fixtures/model-contract/monsters.json`, `tests/model-cache-key.test.ts` (new: key equals hash prefix for every loader that has one), `docs/superpowers/baseline/models/s0b/`.
 - **Change**: BLEND(monsters), COMPARE, promote, set the key. Captures of the start pose and the goblin camp with the perf HUD's draw calls and frame time, before and after.
-- **Accept**: SG; the two captures and their numbers committed. Then **OM-S0b**: the owner reads the same two numbers on the real machine. The result is written into the design's review log, whichever way it goes.
+- **Accept**: SG; the two captures and their numbers committed.
+  - **Amended 2026-11-24.** The owner moved the Stage 5 GR7 limit here: at P1 noon on balanced, colour-pass calls must be at most 1000 and at most 60% of Stage 5's V2 capture, calls with the shadow pass at most 60% of V2's, and triangles at most 550k. Stage 5 measured 1178, 2170 and 675k, and found 1875 of the 2599 meshes in the monsters (Stage 5 `ground/perf.md`). M0p records these numbers beside the two captures. If the merge alone misses them, the miss is carried to the Slice 8 budgets with its numbers and is not hidden.
+  
+  Then **OM-S0b**: the owner reads the same two numbers on the real machine. The result is written into the design's review log, whichever way it goes.
 - **Must not change**: any other shipped file.
 
 ---
