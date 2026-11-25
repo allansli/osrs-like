@@ -1170,7 +1170,7 @@ GOBLIN_COLOURS = {
     "wood": 0x735238,  # 45% value
     "leather": 0x4D3627,  # 30% value
     "bronze": 0xAA7A2E,  # 67% value
-    "rust": 0x80502C,  # 50% value, 17 points under bronze
+    "rust": 0x80502C,  # 50% value, 16.5 points under bronze
 }
 # The engine multiplies a skin mesh by this tile (textures.ts, 'goblin-hide'), a grey yellow green:
 # the skin's paint is divided by the tile's mean so the game shows the colours above (plan S2c).
@@ -1279,6 +1279,7 @@ def _goblin_skin(ob, name: str, mat, triangles: int, soften: int, keep: tuple = 
         # blade (each ear). It is removed; the check below still stops a real hole.
         loose = [f for f in bm.faces if all(e.is_boundary for e in f.edges)]
         bmesh.ops.delete(bm, geom=loose + [v for f in loose for v in f.verts], context="VERTS")
+        print(f"[Blender] {name}: {len(loose)} loose triangles removed before the closed-skin check")
         bm.faces.index_update()
         open_edges = sum(1 for e in bm.edges if not e.is_manifold)
         assert open_edges == 0, f"{name}: {open_edges} of {len(bm.edges)} edges do not have exactly two faces; the skin must be closed before its hard edges are marked"
