@@ -1,4 +1,12 @@
 import * as THREE from 'three';
+import { output, currentQuality, applyQualityTier } from './renderer';
+import { nextTier, TIER_LABELS } from './post';
+import { playerChoseTier } from './photo';
+import { currentDayFrame, updateLighting } from './lighting';
+import { updateAir } from './atmosphere';
+import { updateSky } from './sky';
+import { updateCarpet } from './flora';
+import { updateParticles } from './particles';
 import {
   TICK_SEC,
   commandClocks,
@@ -63,7 +71,7 @@ import { regenRate, buyVow, altarVowLine } from '../state/sustain';
 import { entityAim, escapeStall, shouldRepath, STALL_SEC, stallTime, walkSpent } from '../state/pathfind';
 import { CAMPS } from '../data/worldMap';
 import { LOW_HEALTH, spinOffset } from '../data/feel';
-import { isHitStopped, isLowHealth, removeCameraOffsets, setLowHealth, updateReactions } from './reactions';
+import { isHitStopped, isLowHealth, prefersReducedMotion, removeCameraOffsets, setLowHealth, updateReactions } from './reactions';
 import {
   addChatMessage,
   el,
@@ -125,9 +133,6 @@ export function updateVitalsAndRegen(f: FrameState): void {
     }
   }
 
-  if (G.waterUniforms) G.waterUniforms.uTime.value = f.elapsedSec;
-  if (G.skyUniforms) G.skyUniforms.uTime.value = f.elapsedSec;
-  if (G.skyDomeMesh) G.skyDomeMesh.position.copy(player.pos);
 
   player.sinceCombat += f.dt;
   const targetingHeroWithWindup = G.monstersList.some(
@@ -613,13 +618,12 @@ export function updateCamera(f: FrameState): void {
   // Micro-Camera Shake Impulse
   if (camState.shake > 0.001) {
     camState.shake *= Math.pow(0.012, f.dt);
-    G.camera.position.x += (Math.random() - 0.5) * camState.shake;
-    G.camera.position.y += (Math.random() - 0.5) * camState.shake;
+    if (!prefersReducedMotion()) {
+      G.camera.position.x += (Math.random() - 0.5) * camState.shake;
+      G.camera.position.y += (Math.random() - 0.5) * camState.shake;
+    }
   }
 
-  G.sunLight.position.set(player.pos.x + 38, player.pos.y + 58, player.pos.z + 28);
-  G.sunLight.target.position.copy(player.pos);
-  G.sunLight.target.updateMatrixWorld();
 }
 
 let monsterLoopOffset = 0;
@@ -868,11 +872,49 @@ export function updateOverlay(f: FrameState): void {
   el('tick-arc').style.strokeDashoffset = String(88 * Math.max(0, Math.min(1, player.actionCooldown / TICK_SEC)));
 }
 
-export function renderFrame(f: FrameState): void {
-  if (G.grassInstanced && G.grassInstanced.material && (G.grassInstanced.material as THREE.ShaderMaterial).uniforms) {
-    (G.grassInstanced.material as THREE.ShaderMaterial).uniforms.uTime.value = f.elapsedSec;
+declare module './context' {
+  interface TelemetryInfo {
+    calls?: number;
+    triangles?: number;
   }
-  G.renderer.render(G.scene, G.camera);
+}
+
+let infoAutoResetConfigured = false;
+let governorWindow: number[] = [];
+let governorElapsed = 0;
+let governorHidden = false;
+
+function stepGovernor(dt: number, frameMs: number): void {
+  if (playerChoseTier) return;
+  if (document.hidden) governorHidden = true;
+  governorWindow.push(frameMs);
+  governorElapsed += dt;
+  if (governorElapsed >= 4.0) {
+    const tier = currentQuality;
+    const next = nextTier(tier, governorWindow, { hidden: governorHidden, playerChose: playerChoseTier });
+    governorWindow = [];
+    governorElapsed = 0;
+    governorHidden = false;
+    if (next !== tier) {
+      applyQualityTier(next);
+      addChatMessage(`Graphics Quality stepped down to <b>${TIER_LABELS[next]}</b>.`, 'skill');
+    }
+  }
+}
+
+export function renderFrame(f: FrameState): void {
+  if (!infoAutoResetConfigured) {
+    G.renderer.info.autoReset = false;
+    infoAutoResetConfigured = true;
+  }
+  G.renderer.info.reset();
+
+  updateCarpet(player.pos.x, player.pos.z, currentQuality);
+  output.render();
+  stepGovernor(f.dt, f.dt * 1000);
+
+  telemetryInfo.calls = G.renderer.info.render.calls;
+  telemetryInfo.triangles = G.renderer.info.render.triangles;
 
   G.frameCounter++;
   if (f.now - G.lastFpsTime >= 500) {
@@ -916,5 +958,10 @@ export function gameLoop(now: number): void {
   updateReactions(f.dt);
   updateWorldTimers(f);
   updateOverlay(f);
+  updateLighting(f.dt);
+  const frame = currentDayFrame();
+  updateAir(frame, f.dt);
+  updateSky(frame);
+  updateParticles(f.dt, G.camera);
   renderFrame(f);
 }

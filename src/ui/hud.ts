@@ -83,7 +83,7 @@ export function getItemReqInfo(it: ItemDef | null | undefined): ItemReqInfo {
     return {
       canEquip: true,
       plain: 'No Level Requirement',
-      badgeHtml: `<div style="font-size:10px; color:#86efac; font-weight:700; margin-top:2px;">Req: None (Ready to Use)</div>`
+      badgeHtml: `<div style="font-size:0.6875rem; color:#86efac; font-weight:700; margin-top:2px;">Req: None (Ready to Use)</div>`
     };
   }
   const parts: Array<{ skillName: string; reqLvl: number; curLvl: number; met: boolean }> = [];
@@ -99,7 +99,7 @@ export function getItemReqInfo(it: ItemDef | null | undefined): ItemReqInfo {
   const badgeHtml = parts.map(p => {
     const col = p.met ? '#4ade80' : '#f87171';
     const status = p.met ? 'Can Equip' : `Your Lv: ${p.curLvl}`;
-    return `<div style="font-size:10px; color:${col}; font-weight:800; margin-top:2px; background:rgba(0,0,0,0.35); padding:2px 5px; border-radius:4px; border-left:2px solid ${col};">Req: Lv ${p.reqLvl} ${p.skillName} (${status})</div>`;
+    return `<div style="font-size:0.6875rem; color:${col}; font-weight:700; margin-top:2px; background:rgba(0,0,0,0.35); padding:2px 5px; border-radius:4px; border-left:2px solid ${col};">Req: Lv ${p.reqLvl} ${p.skillName} (${status})</div>`;
   }).join('');
   return { canEquip: allMet, plain, badgeHtml };
 }
@@ -263,11 +263,13 @@ export function updateAllUI(): void {
   el('inv-count').textContent = String(STATE.inventory.length);
   invGrid.innerHTML = '';
   for (let i = 0; i < 28; i++) {
-    const slotDiv = document.createElement('div');
+    const slotDiv = document.createElement('button');
+    slotDiv.type = 'button';
     slotDiv.className = 'inv-slot';
     const entry = STATE.inventory[i];
     if (entry && (ITEMS as Record<string, ItemDef>)[entry.id]) {
       const it = (ITEMS as Record<string, ItemDef>)[entry.id];
+      slotDiv.setAttribute('aria-label', it.name + (entry.qty > 1 ? ` (${entry.qty})` : ''));
       slotDiv.innerHTML = `<div class="item-svg-wrap">${getItemSvg(it)}</div>`;
       if (isStackableInBackpack(it) || entry.qty > 1) {
         slotDiv.innerHTML += `<span class="qty-badge">${entry.qty}</span>`;
@@ -306,6 +308,8 @@ export function updateAllUI(): void {
         e.stopPropagation();
         showSellChooseMenu(e, i);
       };
+    } else {
+      slotDiv.setAttribute('aria-label', `Empty slot ${i + 1}`);
     }
     invGrid.appendChild(slotDiv);
   }
@@ -345,11 +349,11 @@ export function updateAllUI(): void {
   let pairStatusHtml = '';
   if (bon.matchedSet) {
     if (bon.isFullKit) {
-      pairStatusHtml = `<div style="margin-top:3px; color:#facc15; font-weight:800; text-shadow:0 0 10px rgba(250,204,21,0.6);">★ FULL KIT BONUS: ${bon.matchedSet} (+20% All Stats) ★</div>`;
+      pairStatusHtml = `<div style="margin-top:3px; color:#facc15; font-weight:700; text-shadow:0 0 10px rgba(250,204,21,0.6);">★ FULL KIT BONUS: ${bon.matchedSet} (+20% All Stats) ★</div>`;
     } else if (bon.dominantCount && bon.dominantCount >= 3) {
-      pairStatusHtml = `<div style="margin-top:3px; color:#38bdf8; font-weight:800;">Set Synergy: ${bon.matchedSet} (+15% Stats) · Add 4th piece for Full Kit!</div>`;
+      pairStatusHtml = `<div style="margin-top:3px; color:#38bdf8; font-weight:700;">Set Synergy: ${bon.matchedSet} (+15% Stats) · Add 4th piece for Full Kit!</div>`;
     } else {
-      pairStatusHtml = `<div style="margin-top:3px; color:#4ade80; font-weight:800;">Matched Pair: ${bon.matchedSet} (+10% Set Bonus)</div>`;
+      pairStatusHtml = `<div style="margin-top:3px; color:#4ade80; font-weight:700;">Matched Pair: ${bon.matchedSet} (+10% Set Bonus)</div>`;
     }
   } else {
     const bIt = STATE.equipment.body ? (ITEMS as Record<string, ItemDef>)[STATE.equipment.body] : null;

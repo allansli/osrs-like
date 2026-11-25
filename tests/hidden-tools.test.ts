@@ -38,7 +38,7 @@ describe('hidden tools', () => {
     const end = html.indexOf('<div id="item-tooltip">', start);
     expect(end).toBeGreaterThan(start);
     const inside = html.slice(start, end);
-    for (const needle of ['id="xp-rate-btn"', 'id="cheat-code-input"', 'cheatSkillsPlus10()', 'cheatGold200k()']) {
+    for (const needle of ['id="xp-rate-btn"', 'id="cheat-code-input"', 'data-action="cheatSkillsPlus10"', 'data-action="cheatGold200k"']) {
       expect(inside).toContain(needle);
     }
   });

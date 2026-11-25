@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { G, player, camState, type MonsterEntity, type ResourceNodeEntity } from './context';
 import { noteCheatKey } from './session';
 import { SFX, armAudioOnGesture } from './audio';
+import { isPointerFocused, noteKeyboardNavigation, notePointerDown } from '../ui/pointerFocus';
 import { toggleSpecialAttack, closeModals, hideHoverTooltip } from '../ui/playerActions';
 import { switchTab, addChatMessage, updateTargetHud, getCombatLevel, el } from '../ui/hud';
 import { getTerrainHeight } from '../state/terrain';
@@ -52,6 +53,10 @@ export interface PickResult {
   ground: THREE.Intersection | null;
 }
 
+export function isTextInputTarget(t: HTMLElement): boolean {
+  return t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable;
+}
+
 export function setupInputHandlers(): void {
   armAudioOnGesture();
   G.clickMarkerMesh = new THREE.Group();
@@ -71,13 +76,22 @@ export function setupInputHandlers(): void {
   G.hoverTile.visible = false;
   G.scene.add(G.hoverTile);
 
+  window.addEventListener('pointerdown', (e: PointerEvent) => notePointerDown(e.target), true);
   window.addEventListener('keydown', (e: KeyboardEvent) => {
     if (e.code === 'Escape') {
       closeModals();
     }
     const t = e.target as HTMLElement;
-    if (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable) {
+    if (isTextInputTarget(t)) {
       return;
+    }
+    if (e.code === 'Tab') noteKeyboardNavigation();
+    const btn = e.code === 'Space' || e.code === 'Enter' ? t.closest('button') : null;
+    if (btn) {
+      // A keyboard-focused control takes the key; a button focused by a mouse click gives it back to the game.
+      if (!isPointerFocused(btn)) return;
+      btn.blur();
+      e.preventDefault();
     }
     G.keysPressed[e.code] = true;
     noteCheatKey(e);

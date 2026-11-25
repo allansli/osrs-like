@@ -33,6 +33,7 @@ import { ITEMS } from '../data/items';
 import { WORLD_REGIONS } from '../data/world';
 import { STATE } from '../state/gameState';
 import { loadBlenderGearTemplate } from './blenderGear';
+import { createLookHooks } from './photo';
 import { bridge } from '../ui/bridge';
 import {
   el,
@@ -152,6 +153,23 @@ function wireBridge(): void {
     monstersList: G.monstersList,
     getAnimator: () => player.blenderAnimator,
   };
+
+  document.addEventListener('click', (ev) => {
+    const target = ev.target;
+    if (!(target instanceof Element)) return;
+    const actionEl = target.closest<HTMLElement>('[data-action]');
+    if (!actionEl) return;
+    const action = actionEl.getAttribute('data-action');
+    if (!action || !WINDOW_GLOBALS.includes(action)) {
+      throw new Error(`Unknown action: ${action}`);
+    }
+    const fn = (WINDOW_ACTIONS as Record<string, (...args: unknown[]) => unknown>)[action];
+    const args: string[] = [];
+    if (actionEl.hasAttribute('data-arg')) {
+      args.push(actionEl.getAttribute('data-arg')!);
+    }
+    fn(...args);
+  });
 }
 
 // ============================================================================
@@ -191,7 +209,7 @@ export function boot(): void {
     });
     const startReg = WORLD_REGIONS.find(r => r.id === STATE.currentRegion) || WORLD_REGIONS[0];
     triggerRegionBanner(startReg);
-    (window as unknown as { __DEBUG?: unknown }).__DEBUG = { STATE, player, camState, rebuildPlayerEquipmentMeshes, ITEMS };
+    (window as unknown as { __DEBUG?: unknown }).__DEBUG = { STATE, player, camState, rebuildPlayerEquipmentMeshes, ITEMS, look: createLookHooks() };
     requestAnimationFrame(gameLoop);
   });
 }

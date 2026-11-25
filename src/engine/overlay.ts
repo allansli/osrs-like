@@ -22,16 +22,58 @@ import { el, getCombatLevel } from '../ui/hud';
 // ============================================================================
 // 11. ROTATING MINIMAP & FLOATING LABELS
 // ============================================================================
+let minimapResizeBound = false;
+let minimapColors: {
+  node: string;
+  npc: string;
+  dragon: string;
+  monster: string;
+  player: string;
+  playerStroke: string;
+} | null = null;
+
 export function renderMinimap(): void {
   const canvas = el<HTMLCanvasElement>('minimap-canvas');
   const ctx = canvas.getContext('2d')!;
-  const w = canvas.width;
-  const h = canvas.height;
-  const cx = w / 2;
-  const cy = h / 2;
+
+  if (!minimapResizeBound) {
+    minimapResizeBound = true;
+    sizeMinimap(canvas);
+    if (typeof window !== 'undefined') {
+      window.addEventListener('resize', () => {
+        sizeMinimap(canvas);
+        renderMinimap();
+      });
+    }
+  }
+  const cssW = minimapCssW;
+  const cssH = minimapCssH;
+  const dpr = minimapDpr;
+
+  if (!minimapColors) {
+    // ponytail: no DOM (the node frozen test) leaves the token colours empty; only the NPC dot is fixed.
+    const cs = typeof document === 'undefined' ? null : getComputedStyle(document.documentElement);
+    const tok = (name: string): string => (cs ? cs.getPropertyValue(name).trim() : '');
+    minimapColors = {
+      node: tok('--ui-bone-dim'),
+      // Frozen tests/minimap-place-labels.test.ts asserts this exact fill, so it is not a token.
+      npc: '#c5a059',
+      dragon: tok('--ui-ember'),
+      monster: tok('--ui-amethyst'),
+      player: tok('--ui-bone'),
+      playerStroke: tok('--ui-ink')
+    };
+  }
+  const colors = minimapColors;
+
+  const cx = cssW / 2;
+  const cy = cssH / 2;
   const scale = 1.75;
 
-  ctx.clearRect(0, 0, w, h);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.save();
+  ctx.scale(dpr, dpr);
+
   ctx.save();
   ctx.translate(cx, cy);
   ctx.rotate(camState.yaw - Math.PI);
@@ -96,7 +138,7 @@ export function renderMinimap(): void {
     if (r.depleted) return;
     const px = (r.pos.x - player.pos.x) * scale;
     const pz = (r.pos.z - player.pos.z) * scale;
-    ctx.fillStyle = '#64748b';
+    ctx.fillStyle = colors.node;
     ctx.fillRect(px - 2, pz - 2, 4, 4);
   });
 
@@ -107,7 +149,7 @@ export function renderMinimap(): void {
     const pz = (n.pos.z - player.pos.z) * scale;
     ctx.beginPath();
     ctx.arc(px, pz, 3.5, 0, Math.PI * 2);
-    ctx.fillStyle = '#c5a059';
+    ctx.fillStyle = colors.npc;
     ctx.fill();
   });
 
@@ -118,7 +160,7 @@ export function renderMinimap(): void {
     const pz = (m.pos.z - player.pos.z) * scale;
     ctx.beginPath();
     ctx.arc(px, pz, m.modelKey === 'elvarg_dragon' ? 5.5 : 3.2, 0, Math.PI * 2);
-    ctx.fillStyle = m.modelKey === 'elvarg_dragon' ? '#b91c1c' : '#881337';
+    ctx.fillStyle = m.modelKey === 'elvarg_dragon' ? colors.dragon : colors.monster;
     ctx.fill();
   });
 
@@ -127,11 +169,31 @@ export function renderMinimap(): void {
   // Player Center Dot
   ctx.beginPath();
   ctx.arc(cx, cy, 4.2, 0, Math.PI * 2);
-  ctx.fillStyle = '#ffffff';
+  ctx.fillStyle = colors.player;
   ctx.fill();
-  ctx.strokeStyle = '#000000';
+  ctx.strokeStyle = colors.playerStroke;
   ctx.lineWidth = 1.5;
   ctx.stroke();
+
+  ctx.restore();
+}
+
+// Backing store = CSS size x devicePixelRatio (capped at 3); runs on the first frame and on resize.
+let minimapCssW = 0;
+let minimapCssH = 0;
+let minimapDpr = 1;
+function sizeMinimap(canvas: HTMLCanvasElement): void {
+  if (typeof window === 'undefined') {
+    minimapCssW = canvas.width;
+    minimapCssH = canvas.height;
+    return;
+  }
+  minimapDpr = Math.min(3, window.devicePixelRatio);
+  const rect = canvas.getBoundingClientRect();
+  minimapCssW = rect.width;
+  minimapCssH = rect.height;
+  canvas.width = Math.round(minimapCssW * minimapDpr);
+  canvas.height = Math.round(minimapCssH * minimapDpr);
 }
 
 export function worldToScreenPos(x: number, y: number, z: number): { x: number; y: number; visible: boolean } {

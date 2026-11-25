@@ -13,12 +13,21 @@ const valueOf = (rule: Rule, key: string) =>
   rule.headers.find((h) => h.key.toLowerCase() === key.toLowerCase())?.value;
 
 describe('vercel.json headers', () => {
-  it('sends nosniff, strict-origin-when-cross-origin and the frame-ancestors policy on every path', () => {
+  it('sends nosniff and strict-origin-when-cross-origin on every path', () => {
     const all = rules.find((r) => r.source === '/(.*)');
     expect(all, 'a rule for source "/(.*)"').toBeDefined();
     expect(valueOf(all!, 'X-Content-Type-Options')).toBe('nosniff');
     expect(valueOf(all!, 'Referrer-Policy')).toBe('strict-origin-when-cross-origin');
-    expect(valueOf(all!, 'Content-Security-Policy')).toBe("frame-ancestors 'self'");
+  });
+
+  it('the policy has frame-ancestors, script-src self, object-src none and no unsafe script source', () => {
+    const all = rules.find((r) => r.source === '/(.*)');
+    const csp = valueOf(all!, 'Content-Security-Policy') ?? '';
+    expect(csp).toContain("frame-ancestors 'self'");
+    expect(csp).toContain("script-src 'self'");
+    expect(csp).toContain("object-src 'none'");
+    const scriptSrc = csp.split(';').map((d) => d.trim()).find((d) => d.startsWith('script-src')) ?? '';
+    expect(scriptSrc).not.toMatch(/unsafe-inline|unsafe-eval/);
   });
 
   it('assets under /assets are immutable for one year', () => {

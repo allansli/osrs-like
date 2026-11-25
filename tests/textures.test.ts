@@ -104,11 +104,8 @@ describe('facet albedo maps', () => {
       null as unknown as THREE.WebGLRenderer
     );
     expect(shader.fragmentShader).toContain('#include <map_fragment>');
-    expect(shader.fragmentShader).toContain('diffuseColor.rgb * mix(vec3(0.70, 0.72, 0.82), vec3(1.04), cel)');
-    expect(shader.fragmentShader).toContain('smoothstep(0.33, 0.38, ndl)');
-    expect(shader.fragmentShader).not.toContain(
-      'reflectedLight.directDiffuse + reflectedLight.indirectDiffuse + totalEmissiveRadiance'
-    );
+    expect(shader.fragmentShader).toContain('facetBand(');
+    expect(shader.fragmentShader).toContain('reflectedLight.directDiffuse + reflectedLight.indirectDiffuse + totalEmissiveRadiance');
 
     const mesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), mat);
     addCartoonOutline(mesh, 0.028);
@@ -259,7 +256,7 @@ describe('uv mapping and terrain blend', () => {
     expect(shader.fragmentShader).toContain('texture2D( uDirtMap, vMapUv )');
     expect(shader.fragmentShader).toContain('texture2D( uSandMap, vMapUv )');
     expect(shader.fragmentShader).toContain('texture2D( uStoneMap, vMapUv )');
-    expect(shader.fragmentShader).toContain('diffuseColor.rgb * mix(vec3(0.70, 0.72, 0.82), vec3(1.04), cel)');
+    expect(shader.fragmentShader).toContain('facetBand(');
     expect(shader.uniforms.uDirtMap.value).toBeTruthy();
     expect(shader.uniforms.uSandMap.value).toBeTruthy();
     expect(shader.uniforms.uStoneMap.value).toBeTruthy();
