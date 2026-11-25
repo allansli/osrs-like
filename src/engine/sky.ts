@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { G } from './context';
-import { GFX_TIERS, SKY_DOME_RADIUS } from '../data/look';
+import { CLOUD_INSTANCES_PER_VARIANT, GFX_TIERS, SKY_DOME_RADIUS } from '../data/look';
 import { AIR, AIR_GLSL, COLOR_FOOTER, setAirTier } from './atmosphere';
 import { facetMaterial } from './materials';
 import { buildKitPiece, makeRng } from './floraKit';
@@ -123,18 +123,17 @@ export function buildSky(): void {
   // Clouds: instanced meshes of cloud solids drifting 60 to 90 units up
   const cloudRng = makeRng(0xc100d);
   const CLOUD_IDS = ['cloud_a', 'cloud_b', 'cloud_c'] as const;
-  const INSTANCES_PER_VARIANT = 8;
 
   for (const id of CLOUD_IDS) {
     const geo = buildKitPiece(id, cloudRng);
     const mat = facetMaterial({ shade: 'cut', vertexColors: true, color: 0xffffff });
-    const instMesh = new THREE.InstancedMesh(geo, mat, INSTANCES_PER_VARIANT);
+    const instMesh = new THREE.InstancedMesh(geo, mat, CLOUD_INSTANCES_PER_VARIANT);
     instMesh.castShadow = false;
     instMesh.receiveShadow = false;
     instMesh.frustumCulled = false;
 
     const instances: CloudInstance[] = [];
-    for (let i = 0; i < INSTANCES_PER_VARIANT; i++) {
+    for (let i = 0; i < CLOUD_INSTANCES_PER_VARIANT; i++) {
       const inst: CloudInstance = {
         x: (cloudRng() - 0.5) * 260,
         y: 60 + cloudRng() * 30,

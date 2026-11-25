@@ -224,6 +224,8 @@ export const GFX_TIERS: Record<QualityTier, GfxTier> = {
 
 export const CAMERA_FAR = 460;
 export const SKY_DOME_RADIUS = 440;
+/** Cloud solids per cloud shape (one InstancedMesh per shape). */
+export const CLOUD_INSTANCES_PER_VARIANT = 8;
 export const HORIZON_APRON = { inner: 130, outer: 240 };
 export const CAMERA_LIMITS = { pitchMin: 0.12, pitchMax: 1.15, distanceMin: 3.6, distanceMax: 26 };
 export const WALK_BOUND = 118;
