@@ -10,6 +10,8 @@ const FIXTURE = new URL('./fixtures/s3/content-ids.golden.json', import.meta.url
 
 // Owner's decision of 2026-11-14: the Hazel Staff (task I2) is the one new item.
 const DECLARED_NEW_ITEMS = ['hazel_staff'];
+// Owner's decisions of 2026-11-14 (Stage 4, CALL-4.4 and CALL-4.8): the two shipped monsters and the new boss.
+const DECLARED_NEW_MONSTERS = ['saltback_stalker', 'thornwatch_marksman', 'ashmantle'];
 
 type Names = Record<string, string>;
 const names = (entries: [string, string][]): Names =>
@@ -34,6 +36,7 @@ const want = JSON.parse(readFileSync(FIXTURE, 'utf8')) as Record<string, Names>;
 function comparable(table: string): Names {
   const got = { ...live[table] };
   if (table === 'ITEMS') for (const id of DECLARED_NEW_ITEMS) delete got[id];
+  if (table === 'MONSTER_TYPES') for (const id of DECLARED_NEW_MONSTERS) delete got[id];
   return got;
 }
 

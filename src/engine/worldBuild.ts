@@ -11,21 +11,24 @@ import { shrineWorldPos } from '../state/shrines';
 import { getTerrainHeight } from '../state/terrain';
 import { albedoMaterial, biomeAlbedoId, sealAlbedoUvs } from './textures';
 import { addCartoonOutline, facetMaterial } from './materials';
-import { loadBlenderWorldTemplate, upgradeWorldPropWithGltf } from './blenderWorld';
+import { applyWorldMaterials, loadBlenderWorldTemplate, upgradeWorldPropWithGltf } from './blenderWorld';
+import { mergeByMaterial } from './batching';
 import { buildHumanoidRig, LEAN_RIG } from './humanoid';
 import { loadBlenderHeroTemplate, upgradeHumanoidRigWithGltf } from './blenderHero';
 import { loadBlenderGearTemplate } from './blenderGear';
 import { buildCapeVisual, buildHeadVisual, buildWeaponVisual } from './playerGear';
+import { EMITTERS } from '../data/look';
+import { registerEmitter } from './lighting';
 
 export function buildBiomeLandmarks(): void {
-  const sand = albedoMaterial(0xe7c07a, biomeAlbedoId('alkharid-sand'));
-  const palm = albedoMaterial(0x4ade80, 'grass');
-  const bark = albedoMaterial(0x92400e, 'bark');
-  const moss = albedoMaterial(0x4ade80, biomeAlbedoId('korok-moss'));
-  const stone = albedoMaterial(0xe5e7eb, biomeAlbedoId('varrock-cobble'));
-  const gold = facetMaterial({ color: 0xfacc15 });
-  const obsidian = albedoMaterial(0xa8a29e, biomeAlbedoId('peak-volcanic'));
-  const lava = facetMaterial({ color: 0xf97316, emissive: 0xea580c, emissiveIntensity: 0.85 });
+  const sand = albedoMaterial(0xe7c07a, biomeAlbedoId('alkharid-sand'), { shade: 'cut' });
+  const palm = albedoMaterial(0x4ade80, 'grass', { shade: 'cut' });
+  const bark = albedoMaterial(0x92400e, 'bark', { shade: 'cut' });
+  const moss = albedoMaterial(0x4ade80, biomeAlbedoId('korok-moss'), { shade: 'cut' });
+  const stone = albedoMaterial(0xe5e7eb, biomeAlbedoId('varrock-cobble'), { shade: 'cut' });
+  const gold = facetMaterial({ color: 0xfacc15, shade: 'cut' });
+  const obsidian = albedoMaterial(0xa8a29e, biomeAlbedoId('peak-volcanic'), { shade: 'cut' });
+  const lava = facetMaterial({ color: 0xf97316, emissive: 0xea580c, emissiveIntensity: 0.85, shade: 'cut' });
 
   function place(builder: () => THREE.Group, x: number, z: number, worldAssetName?: string, overrides: Record<string, unknown> = {}): void {
     const grp = builder();
@@ -89,11 +92,11 @@ export function buildBiomeLandmarks(): void {
 
   function mysticMushroom(color: number): THREE.Group {
     const grp = new THREE.Group();
-    const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.32, 1.3, 12), facetMaterial({ color: 0xf8fafc }));
+    const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.32, 1.3, 12), facetMaterial({ color: 0xf8fafc, shade: 'cut' }));
     stem.position.y = 0.65;
     const cap = new THREE.Mesh(
       new THREE.SphereGeometry(0.85, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.55),
-      facetMaterial({ color, emissive: color, emissiveIntensity: 0.45 })
+      facetMaterial({ color, emissive: color, emissiveIntensity: 0.45, shade: 'cut' })
     );
     cap.position.y = 1.35;
     grp.add(stem, cap);
@@ -106,7 +109,7 @@ export function buildBiomeLandmarks(): void {
     post.position.y = 1.1;
     const lamp = new THREE.Mesh(
       new THREE.SphereGeometry(0.28, 12, 10),
-      facetMaterial({ color: 0xfde047, emissive: 0xfacc15, emissiveIntensity: 0.8 })
+      facetMaterial({ color: 0xfde047, emissive: 0xfacc15, emissiveIntensity: 0.8, shade: 'cut' })
     );
     lamp.position.y = 2.3;
     grp.add(post, lamp);
@@ -157,8 +160,8 @@ export function buildAllCitiesAndLandmarks(): void {
     const sy = getTerrainHeight(sx, sz);
     const shrineGroup = new THREE.Group();
     shrineGroup.position.set(sx, sy, sz);
-    const stone = albedoMaterial(0x525c66, 'stone');
-    const slate = albedoMaterial(0x2d333b, 'slate');
+    const stone = albedoMaterial(0x525c66, 'stone', { shade: 'cut' });
+    const slate = albedoMaterial(0x2d333b, 'slate', { shade: 'cut' });
     const stepA = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.28, 2.6), slate);
     stepA.position.y = 0.14;
     const stepB = new THREE.Mesh(new THREE.BoxGeometry(1.85, 0.26, 1.85), stone);
@@ -169,7 +172,7 @@ export function buildAllCitiesAndLandmarks(): void {
     cap.position.y = 2.72;
     const rune = new THREE.Mesh(
       new THREE.OctahedronGeometry(0.34, 0),
-      facetMaterial({ color: 0x5d8096, emissive: 0x2d4857, emissiveIntensity: 0.45, flatShading: true })
+      facetMaterial({ color: 0x5d8096, emissive: 0x2d4857, emissiveIntensity: 0.45, shade: 'cut' })
     );
     rune.position.y = 3.15;
     [stepA, stepB, pillar, cap, rune].forEach((mesh: THREE.Mesh) => {
@@ -241,10 +244,10 @@ export function createCastleStructure(cx: number, cz: number): void {
   const grp = new THREE.Group();
   const y = getTerrainHeight(cx, cz);
   grp.position.set(cx, y, cz);
-  const stoneMat = albedoMaterial(0x525c66, 'stone');
-  const roofMat = albedoMaterial(0x2d333b, 'slate');
-  const goldMat = facetMaterial({ color: 0x8f7d4e });
-  const timberMat = albedoMaterial(0x42352a, 'wood');
+  const stoneMat = albedoMaterial(0x525c66, 'stone', { shade: 'cut' });
+  const roofMat = albedoMaterial(0x2d333b, 'slate', { shade: 'cut' });
+  const goldMat = facetMaterial({ color: 0x8f7d4e, shade: 'cut' });
+  const timberMat = albedoMaterial(0x42352a, 'wood', { shade: 'cut' });
   function box(w: number, h: number, d: number, mat: THREE.Material, x: number, yy: number, z: number): THREE.Mesh {
     const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
     mesh.position.set(x, yy, z);
@@ -304,21 +307,21 @@ export function createPrayerAltar(x: number, z: number, name: string): void {
   const grp = new THREE.Group();
   grp.position.set(x, y, z);
 
-  const marbleMat = albedoMaterial(0x6b7280, 'stone');
+  const marbleMat = albedoMaterial(0x6b7280, 'stone', { shade: 'cut' });
   const base = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.85, 1.15), marbleMat);
   base.position.y = 0.42;
   base.castShadow = true;
   grp.add(base);
-  const slab = new THREE.Mesh(new THREE.BoxGeometry(2.7, 0.18, 1.4), albedoMaterial(0x525c66, 'stone'));
+  const slab = new THREE.Mesh(new THREE.BoxGeometry(2.7, 0.18, 1.4), albedoMaterial(0x525c66, 'stone', { shade: 'cut' }));
   slab.position.y = 0.92;
   grp.add(slab);
-  const goldTrim = new THREE.Mesh(new THREE.BoxGeometry(2.15, 0.08, 0.12), facetMaterial({ color: 0x8f7d4e }));
+  const goldTrim = new THREE.Mesh(new THREE.BoxGeometry(2.15, 0.08, 0.12), facetMaterial({ color: 0x8f7d4e, shade: 'cut' }));
   goldTrim.position.set(0, 0.7, 0.58);
   grp.add(goldTrim);
 
   const crystal = new THREE.Mesh(
     new THREE.OctahedronGeometry(0.32, 0),
-    facetMaterial({ color: 0x5d8096, emissive: 0x2d4857, emissiveIntensity: 0.35, flatShading: true })
+    facetMaterial({ color: 0x5d8096, emissive: 0x2d4857, emissiveIntensity: 0.35, shade: 'cut' })
   );
   crystal.position.y = 1.45;
   grp.add(crystal);
@@ -346,7 +349,7 @@ export function createForgeStation(x: number, z: number, name: string): void {
   grp.position.set(x, y, z);
 
   // Sculpted Blacksmith Horn Anvil (Lathe + Extruded Bevel Top)
-  const ironMat = albedoMaterial(0x334155, 'iron');
+  const ironMat = albedoMaterial(0x334155, 'iron', { shade: 'cut' });
   const anvilBase = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.82, 0.75, 6), ironMat);
   anvilBase.position.set(-1.2, 0.38, 0);
   anvilBase.castShadow = true;
@@ -366,7 +369,7 @@ export function createForgeStation(x: number, z: number, name: string): void {
 
   const furnace = new THREE.Mesh(
     new THREE.BoxGeometry(1.7, 2.4, 1.5),
-    albedoMaterial(0x92400e, 'wood')
+    albedoMaterial(0x92400e, 'wood', { shade: 'cut' })
   );
   furnace.position.set(1.3, 1.2, 0);
   furnace.castShadow = true;
@@ -374,7 +377,7 @@ export function createForgeStation(x: number, z: number, name: string): void {
 
   const fireCore = new THREE.Mesh(
     new THREE.SphereGeometry(0.78, 7, 6),
-    facetMaterial({ color: 0xf97316, emissive: 0xea580c, emissiveIntensity: 0.95 })
+    facetMaterial({ color: 0xf97316, emissive: 0xea580c, emissiveIntensity: 0.95, shade: 'cut' })
   );
   fireCore.position.set(1.3, 0.85, 1.0);
   grp.add(fireCore);
@@ -400,8 +403,8 @@ export function createBankBooth(x: number, z: number): void {
   const y = getTerrainHeight(x, z);
   const grp = new THREE.Group();
   grp.position.set(x, y, z);
-  const wood = albedoMaterial(0x6b4423, 'wood');
-  const gold = facetMaterial({ color: 0xfacc15 });
+  const wood = albedoMaterial(0x6b4423, 'wood', { shade: 'cut' });
+  const gold = facetMaterial({ color: 0xfacc15, shade: 'cut' });
   const counter = new THREE.Mesh(new THREE.BoxGeometry(2.4, 1.05, 0.7), wood);
   counter.position.set(0, 0.55, 0.4);
   counter.castShadow = true;
@@ -589,20 +592,21 @@ export function spawnWorldProp(assetName: string, x: number, z: number, rotY = 0
   if (scale !== 1.0) grp.scale.set(scale, scale, scale);
   G.scene.add(grp);
 
+  const emitter = EMITTERS.find((e) => e.node === assetName);
+  if (emitter) {
+    registerEmitter(grp.position, emitter.color);
+  }
+
   loadBlenderWorldTemplate().then((gltf: GLTF | null) => {
     if (!gltf) return;
     const node = gltf.scene.getObjectByName(assetName);
     if (!node) return;
     const cloned = node.clone(true);
     cloned.position.set(0, 0, 0);
-    cloned.traverse((obj: THREE.Object3D) => {
-      const m = obj as THREE.Mesh;
-      if (m.isMesh) {
-        m.castShadow = true;
-        m.receiveShadow = true;
-      }
-    });
-    grp.add(cloned);
+    applyWorldMaterials(cloned);
+    const propGroup = cloned instanceof THREE.Group ? cloned : new THREE.Group().add(cloned);
+    mergeByMaterial(propGroup);
+    grp.add(propGroup);
     sealAlbedoUvs(grp);
     addCartoonOutline(grp, 0.028);
   });
@@ -615,9 +619,9 @@ export function buildTent(x: number, z: number, rotY = 0, scale = 1.0): THREE.Gr
   grp.rotation.y = rotY;
   if (scale !== 1.0) grp.scale.set(scale, scale, scale);
 
-  const cloth = albedoMaterial(0x92400e, 'cloth');
-  const wood = albedoMaterial(0x78350f, 'wood');
-  const interior = facetMaterial({ color: 0x1c1917 });
+  const cloth = albedoMaterial(0x92400e, 'cloth', { shade: 'cut' });
+  const wood = albedoMaterial(0x78350f, 'wood', { shade: 'cut' });
+  const interior = facetMaterial({ color: 0x1c1917, shade: 'cut' });
 
   const canvas = new THREE.Mesh(new THREE.ConeGeometry(1.6, 2.0, 4), cloth);
   canvas.position.y = 1.0;
@@ -647,10 +651,10 @@ export function buildFireRing(x: number, z: number, rotY = 0, scale = 1.0): THRE
   grp.rotation.y = rotY;
   if (scale !== 1.0) grp.scale.set(scale, scale, scale);
 
-  const stone = albedoMaterial(0x525c66, 'stone');
-  const ashMat = facetMaterial({ color: 0x27272a });
-  const woodMat = albedoMaterial(0x78350f, 'wood');
-  const fireMat = facetMaterial({ color: 0xf97316, emissive: 0xea580c, emissiveIntensity: 0.95 });
+  const stone = albedoMaterial(0x525c66, 'stone', { shade: 'cut' });
+  const ashMat = facetMaterial({ color: 0x27272a, shade: 'cut' });
+  const woodMat = albedoMaterial(0x78350f, 'wood', { shade: 'cut' });
+  const fireMat = facetMaterial({ color: 0xf97316, emissive: 0xea580c, emissiveIntensity: 0.95, shade: 'cut' });
 
   const ash = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.75, 0.08, 10), ashMat);
   ash.position.y = 0.04;
@@ -696,12 +700,12 @@ export function buildCairn(x: number, z: number, rotY = 0, scale = 1.0): THREE.G
   grp.rotation.y = rotY;
   if (scale !== 1.0) grp.scale.set(scale, scale, scale);
 
-  const stone = albedoMaterial(0x525c66, 'stone');
+  const stone = albedoMaterial(0x525c66, 'stone', { shade: 'cut' });
   const wardStone = facetMaterial({
     color: 0x5d8096,
     emissive: 0x2d4857,
     emissiveIntensity: 0.45,
-    flatShading: true
+    shade: 'cut'
   });
 
   const base = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.45, 1.2), stone);
@@ -738,8 +742,8 @@ export function buildSignpost(x: number, z: number, rotY = 0, scale = 1.0): THRE
   grp.rotation.y = rotY;
   if (scale !== 1.0) grp.scale.set(scale, scale, scale);
 
-  const woodPost = albedoMaterial(0x6b4423, 'wood');
-  const woodBoard = albedoMaterial(0x854d0e, 'wood');
+  const woodPost = albedoMaterial(0x6b4423, 'wood', { shade: 'cut' });
+  const woodBoard = albedoMaterial(0x854d0e, 'wood', { shade: 'cut' });
 
   const post = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.11, 2.0, 8), woodPost);
   post.position.y = 1.0;

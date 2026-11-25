@@ -159,7 +159,7 @@ describe('world data', () => {
   });
 
   it('every camp member is inside its camp and on walkable ground', () => {
-    expect(memberCount()).toBe(36);
+    expect(memberCount()).toBe(42);
     for (const c of CAMPS) {
       for (const m of c.members) {
         const at = `${c.id} ${m.type} (${m.x}, ${m.z})`;

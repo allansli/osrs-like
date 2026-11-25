@@ -15,11 +15,13 @@ import {
   isUnequippedGear
 } from '../state/inventory';
 import { tryCraft, isLogId } from '../data/recipes';
-import { noteBury, notePlate, notePrayerOffered } from '../state/quests';
+import { noteBury, notePlate } from '../state/quests';
 import { equippedWeapon, allowedStyles, canCastTeleport } from '../state/combat';
-import { weaponSpecial, claimQuest, assignSlayerTask } from '../state/adventure';
+import { claimQuest, assignSlayerTask } from '../state/adventure';
 import { levelUnlockLines } from '../state/unlocks';
-import { PRAYERS, SPELLS } from '../data/magic';
+import { isPointerFocused } from './pointerFocus';
+import { SPELLS } from '../data/magic';
+import { dispatchCommand } from '../engine/actions';
 import { getSkillSvg } from './icons';
 import {
   renderShopModal as renderShopModalUi,
@@ -38,11 +40,10 @@ import {
   showBanner,
   updateAllUI,
   requestUiRefresh,
-  refreshCombatStyleLocks,
   hideItemTooltip
 } from './hud';
 import { SFX } from '../engine/audio';
-import { spawnLevelUpFireworks, spawnHitSplatOnPlayer } from '../engine/vfx';
+import { spawnLevelUpFireworks } from '../engine/vfx';
 import { rebuildPlayerEquipmentMeshes } from '../engine/playerMesh';
 import { saveGameState } from '../engine/session';
 import { teleportToRegion } from '../engine/actions';
@@ -166,22 +167,11 @@ export function handleInventoryClick(index: number): void {
     return;
   }
   if (item.type === 'food') {
-    removeItem(STATE, item.id, 1);
-    const oldHp = STATE.hp;
-    STATE.hp = Math.min(STATE.maxHp, STATE.hp + (item.heal || 1));
-    const healed = Math.max(1, Math.round(STATE.hp - oldHp));
-    SFX.eat();
-    addChatMessage('You eat the <b>' + item.name + '</b> and restore ' + healed + ' Hitpoints.', 'skill');
-    spawnHitSplatOnPlayer(healed, 'heal');
-    updateAllUI();
+    dispatchCommand({ kind: 'eat', slot: index });
     return;
   }
   if (item.type === 'potion') {
-    removeItem(STATE, item.id, 1);
-    STATE.prayerPts = Math.min(STATE.maxPrayerPts, STATE.prayerPts + (item.restorePrayer || 15));
-    SFX.prayer();
-    addChatMessage('You drink the <b>' + item.name + '</b> and restore your Prayer energy.', 'skill');
-    updateAllUI();
+    dispatchCommand({ kind: 'drink', slot: index });
     return;
   }
   if (item.type === 'bones') {
@@ -236,56 +226,16 @@ export function unequipSlot(slotName: string): void {
 }
 
 export function setCombatStyle(style: string): void {
-  const weapon = equippedWeapon(STATE);
   const normalized = style === 'ranged' ? 'rapid' : style;
-  const allowed = allowedStyles(weapon);
-  if (!allowed.includes(normalized)) {
-    const reason = normalized === 'rapid'
-      ? 'Rapid ranged attacks need a bow or crossbow equipped.'
-      : normalized === 'magic'
-        ? 'Autocast magic needs a staff or wand. A sword cannot sling spells.'
-        : 'Melee styles need a melee weapon, or empty hands.';
-    addChatMessage(reason, 'combat');
-    refreshCombatStyleLocks();
-    return;
-  }
-  STATE.combatStyle = normalized;
-  refreshCombatStyleLocks();
-  updateAllUI();
+  dispatchCommand({ kind: 'style', style: normalized });
 }
 
 export function toggleSpecialAttack(): void {
-  const spec = weaponSpecial(STATE.equipment.weapon);
-  if (STATE.specEnergy < spec.cost && !STATE.specArmed) {
-    addChatMessage(`You need at least ${spec.cost}% Special Attack energy for <b>${spec.name}</b>!`, 'combat');
-    return;
-  }
-  STATE.specArmed = !STATE.specArmed;
-  updateAllUI();
+  dispatchCommand({ kind: 'special' });
 }
 
 export function togglePrayer(prayerId: string): void {
-  const p = PRAYERS.find(x => x.id === prayerId);
-  if (!p) return;
-  if (STATE.activePrayers.has(prayerId)) {
-    STATE.activePrayers.delete(prayerId);
-  } else {
-    if (STATE.skills.prayer.lvl < p.req) {
-      addChatMessage(`You need <b>Prayer Level ${p.req}</b> to activate ${p.name}.`, 'combat');
-      return;
-    }
-    if (STATE.prayerPts <= 0) {
-      addChatMessage('You have no Prayer points left! Recharge at any Sacred Altar.', 'combat');
-      return;
-    }
-    if (p.overhead) {
-      PRAYERS.filter(o => o.overhead && o.id !== prayerId).forEach(o => STATE.activePrayers.delete(o.id));
-    }
-    STATE.activePrayers.add(prayerId);
-    notePrayerOffered(STATE);
-    SFX.prayer();
-  }
-  updateAllUI();
+  dispatchCommand({ kind: 'prayer', id: prayerId });
 }
 
 export function handleSpellClick(spellId: string): void {
@@ -329,11 +279,17 @@ export function toggleXpMultiplier(): void {
   updateAllUI();
 }
 
+let lastActiveElement: HTMLElement | null = null;
+
 export function closeModals(): void {
   document.querySelectorAll('.modal-backdrop').forEach(m => m.classList.remove('open'));
   hideHoverTooltip();
   hideItemTooltip();
   hideContextMenu();
+  if (lastActiveElement) {
+    lastActiveElement.focus();
+    lastActiveElement = null;
+  }
 }
 
 export function hideHoverTooltip(): void {
@@ -343,10 +299,16 @@ export function hideHoverTooltip(): void {
 }
 
 export function openModal(id: string): HTMLElement {
+  const active = document.activeElement as HTMLElement;
+  // A modal opened from inside another modal keeps the original HUD opener.
+  // Focus goes back only to an opener reached by keyboard; a mouse click leaves focus to the game.
+  const opener = active.closest('.modal-backdrop') ? lastActiveElement : isPointerFocused(active) ? null : active;
   closeModals();
+  lastActiveElement = opener;
   const modal = el(id);
   modal.classList.add('open');
   hideHoverTooltip();
+  modal.querySelector<HTMLElement>('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')!.focus();
   return modal;
 }
 

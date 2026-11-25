@@ -59,6 +59,7 @@ export type CampDef = {
   radius: number;
   aggressive: boolean;
   aggroRadius?: number;
+  arenaRadius?: number;
   members: CampMember[];
 };
 
@@ -152,7 +153,7 @@ export const POIS: PoiDef[] = [
 
 // Camp circle: members' centroid, radius = farthest member + 4.5, rounded up (design 6.4).
 // Aggressive camps notice a player within aggroRadius: 9 for melee, 12 for ranged and magic.
-function makeCamp(id: string, members: CampMember[], aggroRadius?: number): CampDef {
+function makeCamp(id: string, members: CampMember[], aggroRadius?: number, arenaRadius?: number): CampDef {
   const count = members.length;
   const cx = members.reduce((s, m) => s + m.x, 0) / count;
   const cz = members.reduce((s, m) => s + m.z, 0) / count;
@@ -164,6 +165,7 @@ function makeCamp(id: string, members: CampMember[], aggroRadius?: number): Camp
     radius: Math.ceil(maxDist + 4.5),
     aggressive: aggroRadius !== undefined,
     aggroRadius,
+    arenaRadius,
     members
   };
 }
@@ -231,7 +233,21 @@ export const CAMPS: CampDef[] = [
   ], MELEE_AGGRO),
   makeCamp('dragon', [
     { type: 'elvarg_dragon', x: -102, z: 100 }
-  ], RANGED_AGGRO)
+  ], RANGED_AGGRO),
+  // Design 6.8: south-east of Tamarisk Pool, and north of Lanternway outside the woods region.
+  makeCamp('saltback_shore', [
+    { type: 'saltback_stalker', x: 103, z: 104 },
+    { type: 'saltback_stalker', x: 109, z: 104 },
+    { type: 'saltback_stalker', x: 106, z: 109 }
+  ], MELEE_AGGRO),
+  makeCamp('thornwatch', [
+    { type: 'thornwatch_marksman', x: -21, z: -48 },
+    { type: 'thornwatch_marksman', x: -15, z: -48 }
+  ], RANGED_AGGRO),
+  // Design 6.4: the boss's arena, far from every other camp's reach.
+  makeCamp('ashmantle', [
+    { type: 'ashmantle', x: -102, z: 54 }
+  ], RANGED_AGGRO, 12)
 ];
 
 export const SAFE_ZONES: SafeZoneDef[] = WORLD_REGIONS.map((reg) => ({

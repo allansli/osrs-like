@@ -32,6 +32,7 @@
 <body>
 
 <div id="game-canvas-container"></div>
+<div id="low-health-vignette" class="low-health-vignette" aria-hidden="true"></div>
 <div id="world-labels"></div>
 <div id="xp-drops-container"></div>
 
@@ -41,8 +42,21 @@
 </div>
 
 <div id="levelup-banner">
-  <div id="levelup-kicker" style="font-size:12px; color:#fde047; font-weight:900; letter-spacing:2px; text-transform:uppercase;">Skill Level Up</div>
-  <div id="levelup-text" style="font-size:16px; font-weight:800; margin-top:3px; color:#fff;">Congratulations, your Attack level is now 2!</div>
+  <div id="levelup-kicker" class="levelup-kicker">Skill Level Up</div>
+  <div id="levelup-text" class="levelup-text">Congratulations, your Attack level is now 2!</div>
+</div>
+
+<div id="boss-bar" class="boss-bar ui-panel" hidden>
+  <div class="boss-bar-header">
+    <span id="boss-name" class="boss-name"></span>
+    <span id="boss-marks" class="boss-marks">Marks: 0</span>
+  </div>
+  <div class="boss-bar-track">
+    <div id="boss-hp-fill" class="boss-bar-fill"></div>
+    <div class="boss-pip boss-pip-66" style="left: 66%;"></div>
+    <div class="boss-pip boss-pip-33" style="left: 33%;"></div>
+    <div id="boss-hp-text" class="boss-bar-text"></div>
+  </div>
 </div>
 
 <div id="onboarding" hidden>
@@ -57,12 +71,12 @@
       <li>You start with <b>nothing</b>. Everything you wear is earned.</li>
       <li>First steps: follow the <b>tracker</b>. Six short tasks in the haven pay your first kit.</li>
     </ul>
-    <button class="hud-btn" type="button" onclick="dismissOnboarding()">Enter Gielinor</button>
+    <button class="hud-btn primary" type="button" data-action="dismissOnboarding">Enter Gielinor</button>
   </div>
 </div>
 
 <div id="death-overlay" hidden>
-  <div class="death-card">
+  <div class="death-card ui-panel">
     <h2 id="death-title">Oh dear, you are dead.</h2>
     <p id="death-body">You keep your gear and coins. You will wake in Lumbridge Haven.</p>
     <div id="death-count">3</div>
@@ -77,7 +91,7 @@
 
 <!-- Top-Left Vitals & Utility Bar -->
 <div id="top-left-hud">
-  <div class="player-vitals-card">
+  <div class="player-vitals-card ui-panel">
     <div class="vitals-header">
       <div class="char-name-badge">
         <span id="hero-crest-icon" class="vital-icon"></span>
@@ -93,6 +107,7 @@
         <div class="vital-bar-fill" id="hp-fill" style="width: 100%;"></div>
         <div class="vital-bar-text" id="hp-text">10 / 10</div>
       </div>
+      <span id="lantern-mark" class="lantern-mark" title="Lantern Vow active: guards experience against one death" hidden>🏮</span>
     </div>
 
     <div class="vital-row">
@@ -113,12 +128,12 @@
   </div>
 
   <div class="quick-top-buttons">
-    <button class="hud-btn" id="btn-world" onclick="openWorldMapModal()">World Map</button>
-    <button class="hud-btn" id="btn-quests" onclick="openQuestsModal()">Quests</button>
-    <button class="hud-btn" id="btn-settings" onclick="openSettingsModal()">Settings</button>
+    <button class="hud-btn" id="btn-world" data-action="openWorldMapModal">World Map</button>
+    <button class="hud-btn" id="btn-quests" data-action="openQuestsModal">Quests</button>
+    <button class="hud-btn" id="btn-settings" data-action="openSettingsModal">Settings</button>
   </div>
 
-  <div id="perf-hud" class="perf-hud" title="Hardware Acceleration & FPS Status (Click to cycle Graphics Quality)" onclick="cycleGraphicsQuality()">
+  <button type="button" id="perf-hud" class="perf-hud ui-panel" aria-label="Performance HUD" title="Hardware Acceleration & FPS Status (Click to cycle Graphics Quality)" data-action="cycleGraphicsQuality">
     <div class="perf-row">
       <span class="perf-status-dot" id="perf-dot"></span>
       <span id="perf-gpu-name">GPU: Detecting...</span>
@@ -130,7 +145,7 @@
       <span class="perf-sep">•</span>
       <span id="perf-dpr">1.25x</span>
     </div>
-  </div>
+  </button>
 
   <div id="quest-tracker" class="quest-tracker">
     <div class="tracker-kicker">Active quest</div>
@@ -144,13 +159,13 @@
     <div id="slayer-widget-detail">Speak with Slayer Master Vannaka</div>
     <div class="tracker-meter"><div id="slayer-widget-fill"></div></div>
   </div>
-  <div id="target-hud">
+  <div id="target-hud" class="ui-panel">
     <div class="target-title">
       <span id="target-name">Goblin Raider</span>
-      <span id="target-lvl-tag" style="color: var(--osrs-yellow);">Lv 2</span>
+      <span id="target-lvl-tag" class="target-lvl-tag">Lv 2</span>
     </div>
     <div class="vital-bar-bg">
-      <div class="vital-bar-fill" id="target-hp-fill" style="width: 100%; background: linear-gradient(90deg, #ef4444, #22c55e);"></div>
+      <div class="vital-bar-fill target-hp-fill-gradient" id="target-hp-fill" style="width: 100%;"></div>
       <div class="vital-bar-text" id="target-hp-text">7 / 7</div>
     </div>
   </div>
@@ -165,7 +180,7 @@
 
 <!-- Top-Right Rotating Minimap & GP Pouch -->
 <div id="minimap-wrapper">
-  <div id="compass-badge" title="Click to reset camera behind character" onclick="event.stopPropagation(); resetCameraBehindPlayer();">N</div>
+  <button type="button" id="compass-badge" aria-label="Reset camera" title="Click to reset camera behind character" data-action="resetCameraBehindPlayer">N</button>
   <div id="minimap-frame" title="Click on minimap to walk there">
     <canvas id="minimap-canvas" width="198" height="198"></canvas>
   </div>
@@ -176,68 +191,68 @@
 </div>
 
 <!-- Right-Side Classic OSRS Tabbed Panel -->
-<div id="right-panel">
+<div id="right-panel" class="ui-panel">
   <div class="tab-bar">
-    <button class="tab-btn" onclick="switchTab('combat')" id="tab-btn-combat" title="Combat Styles & Special Attack"></button>
-    <button class="tab-btn" onclick="switchTab('skills')" id="tab-btn-skills" title="Skills & XP Levels"></button>
-    <button class="tab-btn active" onclick="switchTab('inventory')" id="tab-btn-inventory" title="Backpack Inventory (28 Slots)"></button>
-    <button class="tab-btn" onclick="switchTab('equipment')" id="tab-btn-equipment" title="Worn Equipment (10 Slots) & Stats"></button>
-    <button class="tab-btn" onclick="switchTab('prayer')" id="tab-btn-prayer" title="Prayers"></button>
-    <button class="tab-btn" onclick="switchTab('magic')" id="tab-btn-magic" title="Magic Spellbook & Teleports"></button>
+    <button type="button" class="tab-btn" data-action="switchTab" data-arg="combat" id="tab-btn-combat" aria-label="Combat" title="Combat Styles & Special Attack"></button>
+    <button type="button" class="tab-btn" data-action="switchTab" data-arg="skills" id="tab-btn-skills" aria-label="Skills" title="Skills & XP Levels"></button>
+    <button type="button" class="tab-btn active" data-action="switchTab" data-arg="inventory" id="tab-btn-inventory" aria-label="Inventory" title="Backpack Inventory (28 Slots)"></button>
+    <button type="button" class="tab-btn" data-action="switchTab" data-arg="equipment" id="tab-btn-equipment" aria-label="Equipment" title="Worn Equipment (10 Slots) & Stats"></button>
+    <button type="button" class="tab-btn" data-action="switchTab" data-arg="prayer" id="tab-btn-prayer" aria-label="Prayer" title="Prayers"></button>
+    <button type="button" class="tab-btn" data-action="switchTab" data-arg="magic" id="tab-btn-magic" aria-label="Magic" title="Magic Spellbook & Teleports"></button>
   </div>
 
   <!-- TAB 1: COMBAT -->
   <div class="tab-content" id="tab-combat">
     <div class="panel-header-title" id="equipped-weapon-title">Bronze Scimitar</div>
     <div class="combat-style-list" id="combat-style-list">
-      <div class="style-btn active" onclick="setCombatStyle('accurate')" id="style-accurate">
+      <button type="button" class="style-btn active" data-action="setCombatStyle" data-arg="accurate" id="style-accurate" aria-label="Accurate (Slash)">
         <div>
           <div class="style-name">Accurate (Slash)</div>
           <div class="style-xp">+Attack & Hitpoints XP</div>
         </div>
-        <span style="font-size:11px; color:var(--osrs-gold);">+3 Acc</span>
-      </div>
-      <div class="style-btn" onclick="setCombatStyle('aggressive')" id="style-aggressive">
+        <span class="style-badge style-badge-brass">+3 Acc</span>
+      </button>
+      <button type="button" class="style-btn" data-action="setCombatStyle" data-arg="aggressive" id="style-aggressive" aria-label="Aggressive (Lunge)">
         <div>
           <div class="style-name">Aggressive (Lunge)</div>
           <div class="style-xp">+Strength & Hitpoints XP</div>
         </div>
-        <span style="font-size:11px; color:var(--osrs-red);">+2 Max Hit</span>
-      </div>
-      <div class="style-btn" onclick="setCombatStyle('controlled')" id="style-controlled">
+        <span class="style-badge style-badge-ember">+2 Max Hit</span>
+      </button>
+      <button type="button" class="style-btn" data-action="setCombatStyle" data-arg="controlled" id="style-controlled" aria-label="Controlled">
         <div>
           <div class="style-name">Controlled</div>
           <div class="style-xp">+Attack, Strength & Defence XP</div>
         </div>
-        <span style="font-size:11px; color:#e2e8f0;">+2 Acc</span>
-      </div>
-      <div class="style-btn" onclick="setCombatStyle('defensive')" id="style-defensive">
+        <span class="style-badge style-badge-bone">+2 Acc</span>
+      </button>
+      <button type="button" class="style-btn" data-action="setCombatStyle" data-arg="defensive" id="style-defensive" aria-label="Defensive (Parry)">
         <div>
           <div class="style-name">Defensive (Parry)</div>
           <div class="style-xp">+Defence & Hitpoints XP</div>
         </div>
-        <span style="font-size:11px; color:var(--osrs-cyan);">+3 Def</span>
-      </div>
-      <div class="style-btn" onclick="setCombatStyle('rapid')" id="style-rapid">
+        <span class="style-badge style-badge-tide">+3 Def</span>
+      </button>
+      <button type="button" class="style-btn" data-action="setCombatStyle" data-arg="rapid" id="style-rapid" aria-label="Rapid Ranged">
         <div>
           <div class="style-name">Rapid Ranged</div>
           <div class="style-xp">+Ranged & Hitpoints XP</div>
         </div>
-        <span style="font-size:11px; color:var(--osrs-green);">14m Range</span>
-      </div>
-      <div class="style-btn" onclick="setCombatStyle('magic')" id="style-magic">
+        <span class="style-badge style-badge-moss">14m Range</span>
+      </button>
+      <button type="button" class="style-btn" data-action="setCombatStyle" data-arg="magic" id="style-magic" aria-label="Autocast Spell">
         <div>
           <div class="style-name">Autocast Spell</div>
           <div class="style-xp">+Magic & Hitpoints XP</div>
         </div>
-        <span style="font-size:11px; color:#c084fc;" id="active-spell-badge">Wind Strike</span>
-      </div>
+        <span class="style-badge style-badge-amethyst" id="active-spell-badge">Wind Strike</span>
+      </button>
     </div>
 
-    <div class="spec-attack-btn" id="spec-btn" onclick="toggleSpecialAttack()">
+    <button type="button" class="spec-attack-btn" id="spec-btn" data-action="toggleSpecialAttack" aria-label="Special attack">
       SPECIAL ATTACK: 100% (Hylian Spin-Slash)
-    </div>
-    <div style="margin-top:8px; font-size:11px; color:#aca08a; text-align:center;">
+    </button>
+    <div class="combat-controls-hint">
       Press <b>Space</b> to Jump or <b>F</b> to arm Special Attack
     </div>
   </div>
@@ -248,7 +263,7 @@
     <div class="skills-grid" id="skills-grid"></div>
     <div class="total-level-bar">
       <span>Total Level: <b id="total-lvl-val">12</b></span>
-      <span id="total-xp-val" style="font-size:11px; color:#ccc;">1,154 XP</span>
+      <span id="total-xp-val" class="total-xp-val">1,154 XP</span>
     </div>
   </div>
 
@@ -279,20 +294,20 @@
 </div>
 
 <!-- Chatbox -->
-<div id="chatbox">
+<div id="chatbox" class="ui-panel">
   <div id="chat-messages"></div>
   <div class="chat-footer">
     <span><b>WASD</b>: Move | <b>Click</b>: Walk or interact | <b>F1–F6</b>: Panels | <b>Esc</b>: Close | <b>Space</b>: Jump</span>
-    <span id="current-zone-footer" style="color:var(--osrs-gold); font-weight:700;">Lumbridge Haven</span>
+    <span id="current-zone-footer" class="current-zone-footer">Lumbridge Haven</span>
   </div>
 </div>
 
 <!-- MODAL: GENERAL STORE -->
 <div class="modal-backdrop" id="shop-modal">
-  <div class="modal-window wide">
+  <div class="modal-window wide ui-panel" role="dialog" aria-modal="true" aria-labelledby="shop-modal-title">
     <div class="modal-header">
-      <h2>Lumbridge General Store</h2>
-      <button class="modal-close" onclick="closeModals()">X</button>
+      <h2 id="shop-modal-title">Lumbridge General Store</h2>
+      <button type="button" class="modal-close" data-action="closeModals" aria-label="Close">X</button>
     </div>
     <div class="modal-body" id="shop-body"></div>
   </div>
@@ -300,10 +315,10 @@
 
 <!-- MODAL: BANK -->
 <div class="modal-backdrop" id="bank-modal">
-  <div class="modal-window wide">
+  <div class="modal-window wide ui-panel" role="dialog" aria-modal="true" aria-labelledby="bank-modal-title">
     <div class="modal-header">
-      <h2>Lumbridge Bank Vault</h2>
-      <button class="modal-close" onclick="closeModals()">X</button>
+      <h2 id="bank-modal-title">Lumbridge Bank Vault</h2>
+      <button type="button" class="modal-close" data-action="closeModals" aria-label="Close">X</button>
     </div>
     <div class="modal-body" id="bank-body"></div>
   </div>
@@ -311,13 +326,13 @@
 
 <!-- MODAL 2: FORGE / SMITHING & COOKING -->
 <div class="modal-backdrop" id="smithing-modal">
-  <div class="modal-window">
+  <div class="modal-window ui-panel" role="dialog" aria-modal="true" aria-labelledby="smithing-modal-title">
     <div class="modal-header">
-      <h2>Royal Anvil, Smelting Furnace & Cooking Range</h2>
-      <button class="modal-close" onclick="closeModals()">X</button>
+      <h2 id="smithing-modal-title">Royal Anvil, Smelting Furnace & Cooking Range</h2>
+      <button type="button" class="modal-close" data-action="closeModals" aria-label="Close">X</button>
     </div>
     <div class="modal-body">
-      <div style="margin-bottom:10px; font-size:12px; color:#ccc;">
+      <div class="modal-subtext">
         Smelt mined ores, forge full armor sets (Helms, Platebodies, Platelegs, Boots, Shields, Weapons), or cook raw fish for Hitpoints recovery.
       </div>
       <div class="shop-grid" id="smithing-recipes-grid"></div>
@@ -327,13 +342,13 @@
 
 <!-- MODAL 3: OSRS XP TABLE -->
 <div class="modal-backdrop" id="xptable-modal">
-  <div class="modal-window">
+  <div class="modal-window ui-panel" role="dialog" aria-modal="true" aria-labelledby="xptable-modal-title">
     <div class="modal-header">
-      <h2>Official OldSchool RuneScape Experience Table (Lv 1–99)</h2>
-      <button class="modal-close" onclick="closeModals()">X</button>
+      <h2 id="xptable-modal-title">Official OldSchool RuneScape Experience Table (Lv 1–99)</h2>
+      <button type="button" class="modal-close" data-action="closeModals" aria-label="Close">X</button>
     </div>
     <div class="modal-body">
-      <div id="xptable-skill-summary" style="margin-bottom:10px; padding:8px 12px; background:#19140e; border:1px solid var(--botw-gold); border-radius:6px; font-size:12px;"></div>
+      <div id="xptable-skill-summary" class="xptable-skill-summary"></div>
       <div class="xp-table-grid" id="xptable-grid"></div>
     </div>
   </div>
@@ -341,13 +356,13 @@
 
 <!-- MODAL 4: WORLD MAP & TELEPORT SHRINES -->
 <div class="modal-backdrop" id="worldmap-modal">
-  <div class="modal-window">
+  <div class="modal-window ui-panel" role="dialog" aria-modal="true" aria-labelledby="worldmap-modal-title">
     <div class="modal-header">
-      <h2>Kingdom of Gielinor — Regions & Shrines</h2>
-      <button class="modal-close" onclick="closeModals()">X</button>
+      <h2 id="worldmap-modal-title">Kingdom of Gielinor — Regions & Shrines</h2>
+      <button type="button" class="modal-close" data-action="closeModals" aria-label="Close">X</button>
     </div>
     <div class="modal-body">
-      <div style="margin-bottom:10px; font-size:12px; color:#ccc;">
+      <div class="modal-subtext">
         Explore seamlessly on foot or activate a Sheikah-Rune Shrine below to teleport directly to any city or monster hunting ground:
       </div>
       <div class="shop-grid" id="worldmap-regions-grid" style="grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));"></div>
@@ -356,20 +371,20 @@
 </div>
 
 <div class="modal-backdrop" id="quest-modal">
-  <div class="modal-window">
+  <div class="modal-window ui-panel" role="dialog" aria-modal="true" aria-labelledby="quest-modal-title">
     <div class="modal-header">
-      <h2>Adventure Log</h2>
-      <button class="modal-close" onclick="closeModals()">X</button>
+      <h2 id="quest-modal-title">Adventure Log</h2>
+      <button type="button" class="modal-close" data-action="closeModals" aria-label="Close">X</button>
     </div>
     <div class="modal-body" id="quest-list"></div>
   </div>
 </div>
 
 <div class="modal-backdrop" id="settings-modal">
-  <div class="modal-window">
+  <div class="modal-window ui-panel" role="dialog" aria-modal="true" aria-labelledby="settings-modal-title">
     <div class="modal-header">
-      <h2>Settings</h2>
-      <button class="modal-close" onclick="closeModals()">X</button>
+      <h2 id="settings-modal-title">Settings</h2>
+      <button type="button" class="modal-close" data-action="closeModals" aria-label="Close">X</button>
     </div>
     <div class="modal-body">
       <div class="onboard-list settings-help">
@@ -379,26 +394,26 @@
         <div><b>Credits</b> Dragon by yoji and Kai by uchiha007, both CC-BY 3.0, from Blend Swap. <a href="https://github.com/allansli/osrs-like/blob/main/CREDITS.md" target="_blank" rel="noopener noreferrer">All credits</a></div>
       </div>
       <div class="settings-grid">
-        <button class="hud-btn" id="graphics-quality-btn" onclick="cycleGraphicsQuality()">Graphics: Balanced</button>
-        <button class="hud-btn" id="outlines-toggle-btn" onclick="toggleOutlines()">Outlines: On</button>
-        <button class="hud-btn" id="time-of-day-btn" onclick="cycleTimeOfDay()">Golden Hour</button>
-        <button class="hud-btn active" id="audio-btn" onclick="toggleAudio()">Audio On</button>
-        <button class="hud-btn" id="save-status-btn" onclick="manualSaveToast()">Save</button>
-        <button class="hud-btn" id="reset-save-btn" onclick="resetGameSave()">Reset</button>
-        <button class="hud-btn" onclick="openXpTableModal()">XP Table</button>
-        <button class="hud-btn" type="button" onclick="replayOnboarding()">Show introduction</button>
+        <button class="hud-btn" id="graphics-quality-btn" data-action="cycleGraphicsQuality">Graphics: Balanced</button>
+        <button class="hud-btn" id="outlines-toggle-btn" data-action="toggleOutlines">Outlines: On</button>
+        <button class="hud-btn" id="time-of-day-btn" data-action="cycleTimeOfDay">Golden Hour</button>
+        <button class="hud-btn active" id="audio-btn" data-action="toggleAudio">Audio On</button>
+        <button class="hud-btn" id="save-status-btn" data-action="manualSaveToast">Save</button>
+        <button class="hud-btn" id="reset-save-btn" data-action="resetGameSave">Reset</button>
+        <button class="hud-btn" data-action="openXpTableModal">XP Table</button>
+        <button class="hud-btn" type="button" data-action="replayOnboarding">Show introduction</button>
       </div>
       <div id="hidden-tools" hidden>
-        <button class="hud-btn active" id="xp-rate-btn" onclick="toggleXpMultiplier()">10x League XP</button>
+        <button class="hud-btn active" id="xp-rate-btn" data-action="toggleXpMultiplier">10x League XP</button>
         <div class="cheat-panel">
           <h3>Developer Cheats</h3>
           <div class="cheat-entry">
             <input id="cheat-code-input" type="text" autocomplete="off" spellcheck="false" placeholder="Enter cheat code (skills10, gold200k)..." />
-            <button class="hud-btn" type="button" onclick="applyTypedCheat()">Apply</button>
+            <button class="hud-btn" type="button" data-action="applyTypedCheat">Apply</button>
           </div>
           <div class="cheat-quick">
-            <button class="hud-btn" type="button" onclick="cheatSkillsPlus10()">+10 All Skills (skills10)</button>
-            <button class="hud-btn" type="button" onclick="cheatGold200k()">+200,000 GP (gold200k)</button>
+            <button class="hud-btn" type="button" data-action="cheatSkillsPlus10">+10 All Skills (skills10)</button>
+            <button class="hud-btn" type="button" data-action="cheatGold200k">+200,000 GP (gold200k)</button>
           </div>
         </div>
       </div>

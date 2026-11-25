@@ -1,8 +1,12 @@
 import * as THREE from 'three';
 import { WORLD_REGIONS, type RegionDef } from '../data/world';
 import { regionAt, getTerrainHeight } from '../state/terrain';
-import { player, camState, G, type MonsterEntity, type ResourceNodeEntity } from './context';
+import { player, camState, G, commandClocks, TICK_SEC, type MonsterEntity, type ResourceNodeEntity } from './context';
+import { planWalk, planEntityWalk, showClickMarker } from './input';
+import { applyCommand, type PlayerCommand, type CommandResult } from '../state/commands';
+import { applyDeathLoss, shouldRetaliate } from '../state/sustain';
 import { SFX } from './audio';
+import { bossDownPlan, impactPlan, phasePlan } from '../state/soundPlan';
 import {
   spawnLevelUpFireworks,
   spawnHitSplatWorld,
@@ -19,14 +23,18 @@ import {
   spawnExpandingRing,
   spawnProjectile
 } from './vfx';
-import { addChatMessage, showBanner, updateTargetHud, updateAllUI, requestUiRefresh, el } from '../ui/hud';
+import { addChatMessage, showBanner, updateTargetHud, updateAllUI, updateSkillsPanel, refreshCombatStyleLocks, requestUiRefresh, el } from '../ui/hud';
 import { STATE } from '../state/gameState';
-import { prepareAttack, playerAttackProfile, playerHitChance, rollMonsterHit } from '../state/combat';
+import { prepareAttack, playerAttackProfile, playerHitChance, rollMonsterHit, rollMonsterAttack, addMark, mitigateDamage } from '../state/combat';
 import { creditGp, fishDepletes, gatherChance, rollDrops } from '../state/economy';
 import { addItem, removeItem, canAddItem } from '../state/inventory';
 import { SPELLS } from '../data/magic';
 import { AGGRO_GRACE_MS, isDown, onPlayerHit } from '../state/monsterAi';
 import { ITEMS } from '../data/items';
+import { ATTACKS, BOSSES } from '../data/attacks';
+import { CAMERA, HIT_STOP_MS, KNOCK_BACK } from '../data/feel';
+import { cameraKick, cameraRumble, flash, flinchHero, hitStop, knockBack } from './reactions';
+import { clearTelegraph } from './telegraphs';
 import { SKILLS_META } from '../data/skills';
 import { addItemToInventory, announceUnlocksSince, grantXp, skillLevels } from '../ui/playerActions';
 import {
@@ -78,6 +86,94 @@ export function triggerRegionBanner(reg: RegionDef): void {
   b.classList.add('visible');
   if (bannerTimer) clearTimeout(bannerTimer);
   bannerTimer = setTimeout(() => b.classList.remove('visible'), 3600);
+}
+
+let lastRefusalMonster: MonsterEntity | null = null;
+let lastRefusalReason: string | null = null;
+
+export function handleBossPhase(monster: MonsterEntity, phaseIndex: number): void {
+  const boss = BOSSES[monster.logic.typeKey];
+  const phase = boss.phases[phaseIndex];
+  showBanner(monster.def.name, phase.name);
+  if (phaseIndex === 0) {
+    addChatMessage('Its bolts are magic.', 'combat');
+  }
+  spawnExpandingRing(monster.pos, 0xfde047);
+  cameraRumble(CAMERA.rumbleMs);
+  SFX.play(phasePlan(), false);
+  updateTargetHud();
+}
+
+export function dispatchCommand(cmd: PlayerCommand): CommandResult {
+  if (cmd.kind === 'move') {
+    const path = planWalk([cmd.x, cmd.z]);
+    if (!path) {
+      addChatMessage('You cannot walk there.', 'combat');
+      return { ok: false, reason: 'You cannot walk there.' };
+    }
+    player.targetEntity = null;
+    player.waypoints = path;
+    showClickMarker(cmd.x, cmd.z, 0xfde047);
+    updateTargetHud();
+    return { ok: true, reason: '' };
+  }
+
+  if (cmd.kind === 'attack') {
+    const m = G.monstersList.find((mon) => mon.id === cmd.targetId);
+    if (!m || isDown(m.logic)) {
+      return { ok: false, reason: 'Target is not available.' };
+    }
+    const stopDist =
+      STATE.combatStyle === 'rapid' || STATE.combatStyle === 'ranged' || STATE.combatStyle === 'magic'
+        ? 13.5
+        : 2.9;
+    const path = planEntityWalk([m.pos.x, m.pos.z], stopDist);
+    if (!path) {
+      addChatMessage('You cannot walk there.', 'combat');
+      return { ok: false, reason: 'You cannot walk there.' };
+    }
+    player.targetEntity = { type: 'monster', ref: m, madeAt: [m.pos.x, m.pos.z] };
+    player.waypoints = path;
+    showClickMarker(m.pos.x, m.pos.z, 0xef4444);
+    updateTargetHud();
+    return { ok: true, reason: '' };
+  }
+
+  const now = performance.now() / 1000;
+  const item =
+    cmd.kind === 'eat' || cmd.kind === 'drink'
+      ? ITEMS[STATE.inventory[cmd.slot].id]
+      : null;
+  const res = applyCommand(STATE, cmd, commandClocks, now);
+  if (!res.ok) {
+    addChatMessage(res.reason, 'combat');
+    if (cmd.kind === 'style') {
+      refreshCombatStyleLocks();
+    }
+    return res;
+  }
+
+  if (cmd.kind === 'eat') {
+    player.actionCooldown = Math.max(player.actionCooldown, TICK_SEC);
+    SFX.eat();
+    const healed = res.restored!;
+    addChatMessage(`You eat the <b>${item!.name}</b> and restore ${healed} Hitpoints.`, 'skill');
+    spawnHitSplatOnPlayer(healed, 'heal');
+    updateAllUI();
+  } else if (cmd.kind === 'drink') {
+    SFX.prayer();
+    addChatMessage(`You drink the <b>${item!.name}</b> and restore your Prayer energy.`, 'skill');
+    updateAllUI();
+  } else if (cmd.kind === 'style') {
+    refreshCombatStyleLocks();
+    updateAllUI();
+  } else if (cmd.kind === 'prayer') {
+    if (STATE.activePrayers.has(cmd.id)) SFX.prayer();
+    updateAllUI();
+  } else {
+    updateAllUI();
+  }
+  return res;
 }
 
 export function performPlayerAttack(monster: MonsterEntity): void {
@@ -165,22 +261,53 @@ export function performPlayerAttack(monster: MonsterEntity): void {
     if (!hit.applied) {
       SFX.miss();
       spawnHitSplatWorld(monster.pos, 0, 'miss');
-      // A projectile that lands after the monster turned home. If the player still targets it,
-      // this is the one message and the target goes; otherwise the guard above already said it.
-      if (player.targetEntity?.ref === monster) {
-        addChatMessage(`The ${monster.def.name} has lost interest.`, 'combat');
-        player.targetEntity = null;
+      for (const ev of hit.events) {
+        if (ev.kind === 'phase') handleBossPhase(monster, ev.index);
+      }
+      const refusal = hit.reason === 'shift' ? 'is untouchable.' : hit.reason === 'arena' ? 'is out of the arena.' : null;
+      if (refusal) {
+        if (lastRefusalMonster !== monster || lastRefusalReason !== hit.reason) {
+          addChatMessage(`The ${monster.def.name} ${refusal}`, 'combat');
+          lastRefusalMonster = monster;
+          lastRefusalReason = hit.reason!;
+        }
+      } else {
+        lastRefusalMonster = null;
+        lastRefusalReason = null;
+        if (player.targetEntity?.ref === monster) {
+          addChatMessage(`The ${monster.def.name} has lost interest.`, 'combat');
+          player.targetEntity = null;
+        }
       }
       return;
     }
+    lastRefusalMonster = null;
+    lastRefusalReason = null;
     if (dmg > 0) {
-      SFX.hit();
+      SFX.play(impactPlan(dmg / maxHit), true);
       monster.flinch = 1.0;
       monster.flashTimer = 0.12;
       spawnHitSplatWorld(monster.pos, dmg, isSpec ? 'maxhit' : hitSplatKind(dmg, maxHit));
+      flash(monster);
+
+      const isKilled = hit.events.some((ev) => ev.kind === 'died');
+      const stopMs = isKilled
+        ? HIT_STOP_MS.monsterKill
+        : isSpec || dmg >= maxHit
+          ? HIT_STOP_MS.monsterMaxHit
+          : HIT_STOP_MS.monsterHit;
+      hitStop(monster, stopMs);
+      hitStop(player, stopMs);
+
+      const kbAmount = isSpec || dmg >= maxHit ? KNOCK_BACK.monsterMaxHit.amount : KNOCK_BACK.monsterHit.amount;
+      knockBack(monster, monster.pos.x - player.pos.x, monster.pos.z - player.pos.z, kbAmount);
 
       if (isSpec || wepKind === 'greataxe' || wepKind === 'greatsword' || dmg >= maxHit * 0.75) {
-        camState.shake = Math.min(0.12, 0.04 + (dmg / maxHit) * 0.06);
+        cameraKick(
+          monster.pos.x - player.pos.x,
+          monster.pos.z - player.pos.z,
+          Math.min(CAMERA.kickMax, 0.04 + (dmg / maxHit) * 0.06)
+        );
       }
 
       if (style === 'magic' && STATE.activeSpell === 'blood_barrage') {
@@ -209,16 +336,31 @@ export function performPlayerAttack(monster: MonsterEntity): void {
         grantXp('magic', dmg * 3 + sp.xp * 0.4);
       }
 
-      if (hit.events.some(e => e.kind === 'died')) {
-        handleMonsterDeath(monster);
+      for (const ev of hit.events) {
+        if (ev.kind === 'died') {
+          handleMonsterDeath(monster);
+        } else if (ev.kind === 'phase') {
+          handleBossPhase(monster, ev.index);
+        } else if (ev.kind === 'cancel') {
+          clearTelegraph(monster);
+        }
       }
     } else {
       SFX.miss();
       spawnHitSplatWorld(monster.pos, 0, 'miss');
+      for (const ev of hit.events) {
+        if (ev.kind === 'phase') {
+          handleBossPhase(monster, ev.index);
+        } else if (ev.kind === 'cancel') {
+          clearTelegraph(monster);
+        }
+      }
     }
     updateTargetHud();
     requestUiRefresh();
   };
+
+  player.sinceCombat = 0;
 
   if ((style === 'rapid' || style === 'ranged')) {
     if (wepKind === 'crossbow') SFX.crossbow();
@@ -247,10 +389,16 @@ function wpKindIsChop(kind: string): boolean {
 }
 
 export function handleMonsterDeath(monster: MonsterEntity): void {
+  hitStop(monster, HIT_STOP_MS.monsterKill);
+  clearTelegraph(monster);
   if (player.targetEntity && player.targetEntity.ref === monster) {
     player.targetEntity = null;
   }
   spawnBurst(monster.pos.clone().add(new THREE.Vector3(0, 0.8, 0)), 6, 0x64748b, 0.6, 1.4);
+
+  if (BOSSES[monster.logic.typeKey]) {
+    SFX.play(bossDownPlan(), false);
+  }
 
   addChatMessage(`Defeated <b>${monster.def.name}</b> (Lv-${monster.def.level}).`, 'combat');
   const before = skillLevels();
@@ -283,8 +431,24 @@ export function handleMonsterDeath(monster: MonsterEntity): void {
   requestUiRefresh();
 }
 
+function maybeRetaliate(monster: MonsterEntity): void {
+  const hasTarget = player.targetEntity !== null;
+  const walking = player.isMoving || player.waypoints.length > 0;
+  const keyHeld = ['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowLeft', 'ArrowDown', 'ArrowRight'].some(
+    (k) => !!G.keysPressed[k]
+  );
+  const downed = player.downed;
+  const windupLive = G.monstersList.some(
+    (m) => (m.logic.state === 'chase' || m.logic.state === 'attack') && m.logic.windup !== null
+  );
+  if (shouldRetaliate({ hasTarget, walking, keyHeld, downed, windupLive })) {
+    dispatchCommand({ kind: 'attack', targetId: monster.id });
+  }
+}
+
 export function performMonsterRetaliation(monster: MonsterEntity): void {
   if (isDown(monster.logic) || player.downed || STATE.hp <= 0) return;
+  player.sinceCombat = 0;
   monster.logic.breathCount = (monster.logic.breathCount || 0) + 1;
   const { dmg, dragonfire, absorbed: absorbedBreath } = rollMonsterHit(
     monster.typeKey,
@@ -295,17 +459,26 @@ export function performMonsterRetaliation(monster: MonsterEntity): void {
   monster.attackAnim = 1;
 
   const applyHit = (): void => {
+    player.sinceCombat = 0;
     if (absorbedBreath) {
       addChatMessage("Your shield / prayer absorbs most of Elvarg's dragonfire!", 'skill');
     }
+    const isMitigated = absorbedBreath ||
+      mitigateDamage(monster.def.maxHit, monster.def.style, STATE.activePrayers) < monster.def.maxHit;
     if (dmg > 0) {
       STATE.hp = Math.max(0, STATE.hp - dmg);
-      spawnHitSplatOnPlayer(dmg, hitSplatKind(dmg, monster.def.maxHit));
+      flash(player);
+      spawnHitSplatOnPlayer(dmg, isMitigated ? 'blocked' : hitSplatKind(dmg, monster.def.maxHit));
       if (STATE.hp <= 0) {
         handlePlayerDeath();
+      } else {
+        maybeRetaliate(monster);
       }
     } else {
-      spawnHitSplatOnPlayer(0, 'miss');
+      spawnHitSplatOnPlayer(0, absorbedBreath ? 'blocked' : 'miss');
+      if (absorbedBreath) {
+        maybeRetaliate(monster);
+      }
     }
     requestUiRefresh();
   };
@@ -334,20 +507,61 @@ export function performMonsterRetaliation(monster: MonsterEntity): void {
   }
 }
 
+// Returns the damage dealt, 0 when the heavy missed or the hero or the monster is already down.
+export function performMonsterHeavy(monster: MonsterEntity, attackId: string): number {
+  if (isDown(monster.logic) || player.downed || STATE.hp <= 0) return 0;
+  player.sinceCombat = 0;
+  const attack = ATTACKS[attackId];
+  const marks = player.marks;
+  const boss = BOSSES[monster.logic.typeKey];
+  const { dmg } = rollMonsterAttack(monster.typeKey, attack, STATE, marks, Math.random);
+  monster.attackAnim = 1;
+
+  if (dmg > 0) {
+    if (boss) {
+      addMark(marks, boss);
+    }
+    STATE.hp = Math.max(0, STATE.hp - dmg);
+    flash(player);
+    hitStop(player, HIT_STOP_MS.heroHeavy);
+    hitStop(monster, HIT_STOP_MS.heroHeavy);
+    flinchHero(player.pos.x - monster.pos.x, player.pos.z - monster.pos.z);
+    knockBack(player, player.pos.x - monster.pos.x, player.pos.z - monster.pos.z, KNOCK_BACK.heroHeavy.amount);
+    cameraKick(player.pos.x - monster.pos.x, player.pos.z - monster.pos.z, CAMERA.kickMax);
+    spawnHitSplatOnPlayer(dmg, 'heavy');
+    if (STATE.hp <= 0) {
+      handlePlayerDeath();
+    } else {
+      maybeRetaliate(monster);
+    }
+  } else {
+    spawnHitSplatOnPlayer(0, 'miss');
+  }
+  requestUiRefresh();
+  return dmg;
+}
+
 export function handlePlayerDeath(): void {
   if (player.downed) return;
   player.downed = true;
   player.downedTimer = RESPAWN_SECONDS;
   player.targetEntity = null;
   player.waypoints.length = 0;
+  player.marks.count = 0;
+  player.marks.left = 0;
   STATE.hp = 0;
   STATE.activePrayers.clear();
-  const notice = deathNotice();
+  const outcome = applyDeathLoss(STATE);
+  player.deathOutcome = outcome;
+  const notice = deathNotice(outcome);
   const overlay = el('death-overlay');
   overlay.hidden = false;
   el('death-title').textContent = notice.title;
   el('death-body').textContent = notice.body;
   el('death-count').textContent = String(Math.ceil(RESPAWN_SECONDS));
+  if (outcome.kind === 'lost') {
+    updateSkillsPanel();
+  }
   updateAllUI();
 }
 
@@ -365,7 +579,10 @@ export function finishRespawn(): void {
     camState.manualOffset = 0;
     triggerRegionBanner(reg);
   }
-  addChatMessage(`<b>${deathNotice().title}</b> ${deathNotice().body}`, 'combat');
+  const outcome = player.deathOutcome;
+  const notice = deathNotice(outcome);
+  delete player.deathOutcome;
+  addChatMessage(`<b>${notice.title}</b> ${notice.body}`, 'combat');
   updateAllUI();
 }
 
