@@ -2,7 +2,7 @@
 Headless Blender 5.2 generator for the 10 Gielinor Monster species (`monsters.blend` + `monsters.glb`).
 Sculpts authentic, high-detail OSRS / RuneScape Dragonwilds stylized monsters:
   1. Monster_chicken          - Plump feathered chicken with serrated red comb, wattle, hooked beak, layered wings, fanned tail & talons
-  2. Monster_goblin           - Goblin Raider, skinned on the biped rig: hunched, big ears and underbite, one spiked pauldron, bronze spear & round shield
+  2. Monster_goblin           - Goblin Raider with hunched muscular torso, leather harness, spiked pauldron, barbed bronze war-spear & buckler
   3. Monster_goblin_archer    - Goblin Archer with stitched hood/cowl (ears poking out), bandolier, quiver of arrows & recurve shortbow
   4. Monster_scorpion         - King Scorpion with 5 segmented carapace plates, 8 multi-jointed arachnid legs, serrated chela pincers & arched stinger tail
   5. Monster_dark_wizard      - Dark Wizard in pleated indigo/purple cultist robes, gold/violet rune stole, crooked pointed hat & orb staff
@@ -25,7 +25,6 @@ sys.dont_write_bytecode = True
 sys.path.insert(0, os.path.dirname(__file__))
 import paths
 import figkit
-import rigs
 
 
 # =============================================================================
@@ -1145,10 +1144,12 @@ def build_goblin_base(key: str, grid_pos: tuple[float, float, float], mats: dict
 # 2. Monster_goblin (Goblin Raider): the pilot, rebuilt and skinned (plan S2)
 # =============================================================================
 # One figure, four builds, chosen by two environment variables on the BLEND line:
-#   GOBLIN_BODY=a  body from figkit.organic_body over a stick graph (default)
+#   GOBLIN_BODY=a  body from figkit.organic_body over a stick graph
 #   GOBLIN_BODY=b  body from primitives fused by a voxel remesh
-#   GOBLIN_MATS=3  three engine material families: skin, wood, metal (default)
+#   GOBLIN_MATS=3  three engine material families: skin, wood, metal
 #   GOBLIN_MATS=1  one material, every colour in the paint layer
+# Both are required and neither has a default: a monsters build without them stops, so no
+# build can quietly pick a route or a variant the owner did not choose (OM-P).
 # Head, gear, palette, rig and weight rules are the same in all four. Coordinates are
 # three-space like the rest of this file (+Y up, -Z forward). The figure stands at the
 # file's origin (design 6.1.1 rule 2b).
@@ -1405,10 +1406,14 @@ def _goblin_body_tint(body) -> None:
 
 def build_goblin(grid_pos: tuple[float, float, float], mats: dict):
     # grid_pos is not used: a skinned figure stands at the file's origin (design 6.1.1 rule 2b)
-    route = os.environ.get("GOBLIN_BODY", "a")
-    variant = os.environ.get("GOBLIN_MATS", "3")
+    import rigs  # the biped table; imported here because only this builder is skinned (plan S2)
+
+    route = os.environ.get("GOBLIN_BODY")
+    variant = os.environ.get("GOBLIN_MATS")
     if route not in ("a", "b") or variant not in ("3", "1"):
-        raise SystemExit(f"GOBLIN_BODY must be a or b and GOBLIN_MATS 3 or 1, got {route!r} and {variant!r}")
+        raise SystemExit(
+            f"goblin: set GOBLIN_BODY to a or b and GOBLIN_MATS to 3 or 1 on the BLEND line; got {route!r} and {variant!r} (no default)"
+        )
 
     # White: vertex colour multiplies the material's colour, so the raider's skin colours are all paint
     skin = make_mat("mat_skin_goblin_paint", 0xFFFFFF, roughness=0.58, metallic=0.04)
