@@ -24,7 +24,7 @@ const HELPERS = () => {
     const b = S3.basis();
     const x = b.P.x + b.right.x * rx + b.fwd.x * fz, z = b.P.z + b.right.z * rx + b.fwd.z * fz;
     m.pos.set(x, D.getTerrainHeight(x, z), z);
-    m.rig.group.rotation.set(0, Math.atan2(b.c.x - x, b.c.z - z) + Math.PI, 0);
+    m.rig.group.rotation.set(0, Math.atan2(b.c.x - x, b.c.z - z) + Math.PI + (window.__flip ? Math.PI : 0), 0);
     m.rig.group.visible = true;
     m.__hold = hold;
     m.flinch = 0; m.attackAnim = 0;
@@ -88,6 +88,7 @@ export default async (page) => {
   await page.waitForFunction(() => window.__DEBUG && window.__DEBUG.look && window.__DEBUG.look.ready(), null, { timeout: 60000 });
   await page.evaluate(() => { for (const k of Object.keys(__DEBUG.STATE.skills)) { __DEBUG.STATE.skills[k].lvl = 99; __DEBUG.STATE.skills[k].xp = 13034431; } });
   await page.evaluate(HELPERS);
+  if (process.env.FLIP) await page.evaluate(() => { window.__flip = true; });
   const result = { label: LABEL };
   const shot = async (name, clip) => page.screenshot({ path: `${OUT}/${name}.png`, type: 'png', ...(clip ? { clip } : {}) });
   const pose = async (row, phase) => page.evaluate(([row, phase]) => { const L = __DEBUG.look; L.tier('balanced'); L.pose(row); L.phase(phase); L.weather('clear'); L.hud(false); }, [row, phase]);
@@ -209,8 +210,8 @@ export default async (page) => {
     await setup();
     await page.evaluate(() => { S3.ents().archers.forEach((m) => (m.rig.group.visible = false)); });
     const BD = Number(process.env.BODY_D || 3.0), BP = Number(process.env.BODY_PITCH || 0.12);
-    for (const [name, hold, side] of [['body-front', 'stand', false], ['body-side', 'stand', true], ['body-attack-side', 'attack', true]]) {
-      await pose({ x: 18.5, z: 12.5, yaw: 0, pitch: BP, distance: BD }, 0.5);
+    for (const [name, hold, side, PH] of [['body-front', 'stand', false, 0.5], ['body-front-dusk', 'stand', false, 0.7], ['body-side', 'stand', true, 0.5], ['body-attack-side', 'attack', true, 0.5]]) {
+      await pose({ x: 18.5, z: 12.5, yaw: 0, pitch: BP, distance: BD }, PH);
       await page.evaluate(([BD, BP, DY]) => { __DEBUG.camState.distance = BD; __DEBUG.camState.pitch = BP; window.__lookDy = DY; }, [BD, BP, Number(process.env.BODY_DY || -0.95)]);
       await wait(1500);
       await page.evaluate(([hold, side]) => { const r = S3.ents().raider[0]; S3.place(r, 0, 0, hold); if (side) r.rig.group.rotation.y += Math.PI / 2; }, [hold, side]);

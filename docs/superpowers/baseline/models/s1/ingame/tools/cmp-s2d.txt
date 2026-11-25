@@ -91,6 +91,6 @@ All budget checks passed.
 - Mesh 'goblin_RightLegPivot_foot' removed
 - Mesh 'goblin_RightLegPivot_wrap' removed
 - Mesh 'goblin_torso' removed
-- triangles changed: 98644 -> 95312
-- rawBytes changed: 4848004 -> 4560784
-- brotliBytes changed: 1281976 -> 1418420
+- triangles changed: 98644 -> 94712
+- rawBytes changed: 4848004 -> 4558688
+- brotliBytes changed: 1281976 -> 1401411

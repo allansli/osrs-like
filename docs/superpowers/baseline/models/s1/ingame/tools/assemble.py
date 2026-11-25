@@ -2,10 +2,10 @@ import os, sys
 from PIL import Image, ImageDraw
 MP = "/home/rdrosa/gitprojects/allan/osrs-like-wp/MP"
 OUT = f"{MP}/docs/superpowers/baseline/models/s1/ingame"
-SRC = f"{MP}/scratch/s3c/out"
+SRC = f"{MP}/scratch/s3d/out"
 os.makedirs(OUT, exist_ok=True)
-LABELS = ["base", "a3", "b3", "a1", "b1"]
-NAMES = {"base": "today", "a3": "a3 route a, 3 mats", "b3": "b3 route b, 3 mats", "a1": "a1 route a, 1 mat", "b1": "b1 route b, 1 mat"}
+LABELS = ["base", "s2d"]
+NAMES = {"base": "today", "s2d": "S2d pilot"}
 Q = 80
 ARCH = "archers beside it: today's rigid models"
 
@@ -37,44 +37,43 @@ for l in LABELS:
     box = (360, 340, 940, 700)
     hs = ["stand", "walk", "attack", "flinch", "windup"]
     t = [load(l, f"noon-{h}").crop(box) for h in hs]
-    total += save(grid(t, 3, 216, 135, [f"{NAMES[l]}: {h}" for h in ["standing", "walking", "attack", "flinch", "wind-up"]], f"left figure of each tile: the {'raider (today)' if l=='base' else 'skinned raider'}; " + ARCH), f"{l}-poses-noon.jpg")
+    total += save(grid(t, 3, 330, 206, [f"{NAMES[l]}: {h}" for h in ["standing", "walking", "attack", "flinch", "wind-up"]], f"left figure of each tile: the {'raider (today)' if l=='base' else 'skinned raider'}; " + ARCH), f"{l}-poses-noon.jpg")
     box2 = (240, 330, 1040, 720)
     t = [load(l, n).crop(box2) for n in ["dusk-attack-yaw0", "dusk-attack-yaw2", "dusk-windup-yaw4", "dusk-shadow-top"]]
-    total += save(grid(t, 2, 290, 141, [f"{NAMES[l]}: dusk {c}" for c in ["attack, camera yaw 0", "attack, yaw 2.2", "wind-up, yaw 4.2", "attack, from above"]], ARCH), f"{l}-dusk.jpg")
+    total += save(grid(t, 2, 400, 195, [f"{NAMES[l]}: dusk {c}" for c in ["attack, camera yaw 0", "attack, yaw 2.2", "wind-up, yaw 4.2", "attack, from above"]], ARCH), f"{l}-dusk.jpg")
     t = [load(l, f"shadow-y{y}-{h}").crop((380, 230, 980, 610)) for y in ["0.6", "2.4"] for h in ["stand", "attack", "windup", "flinch"]]
-    total += save(grid(t, 4, 180, 114, [f"{NAMES[l].split()[0]} yaw {y} {h}" for y in ["0.6", "2.4"] for h in ["stand", "attack", "wind-up", "flinch"]], "raider alone, phase 0.62, pitch 1.0, outline on"), f"{l}-shadow.jpg")
+    total += save(grid(t, 4, 240, 152, [f"{NAMES[l].split()[0]} yaw {y} {h}" for y in ["0.6", "2.4"] for h in ["stand", "attack", "wind-up", "flinch"]], "raider alone, phase 0.62, pitch 1.0, outline on"), f"{l}-shadow.jpg")
     if l != "base":
         t = [load(l, f"clip-{c}-{i}").crop((470, 330, 810, 700)) for c in ["Walk", "Slash"] for i in range(6)]
-        total += save(grid(t, 6, 110, 120, [f"{c} {i}" for c in ["Walk", "Slash"] for i in range(6)]), f"{l}-hero-clips.jpg")
+        total += save(grid(t, 6, 190, 207, [f"{c} {i}" for c in ["Walk", "Slash"] for i in range(6)]), f"{l}-hero-clips.jpg")
 edge, caps = [], []
 for l in LABELS:
     edge += [load(l, "edge-in").crop((960, 330, 1280, 720)), load(l, "edge-half").crop((960, 330, 1280, 720)), load(l, "edge-left-half").crop((0, 200, 320, 590))]
     caps += [f"{NAMES[l].split()[0]} right edge", "half off right", "half off left"]
-total += save(grid(edge, 3, 130, 158, caps, "raider alone, attack pose, outline on; archers hidden"), "edge.jpg")
+total += save(grid(edge, 3, 220, 268, caps, "raider alone, attack pose, outline on; archers hidden"), "edge.jpg")
 # distance sheets: rows = builds, columns = standing, attack
 def crop26(im): return im.crop((520, 310, 780, 450)).resize((520, 280), Image.LANCZOS)
 def crop85(im): return im.crop((340, 300, 940, 660))
-for d, fn, tw, th in [("26", crop26, 230, 124), ("8.5", crop85, 220, 132)]:
+for d, fn, tw, th in [("26", crop26, 520, 280), ("8.5", crop85, 520, 312)]:
     t, c = [], []
     for l in LABELS:
         for h in ["stand", "attack"]:
             t.append(fn(load(l, f"dist{d}-{h}"))); c.append(f"{NAMES[l]}: {h}")
-    total += save(grid(t, 2, tw, th, c, ("distance 26, ~85 px, crop 2x; " if d == "26" else "distance 8.5; ") + "left figure: raider; archers: today's"), f"distance-{d}.jpg")
+    total += save(grid(t, 2, tw, th, c, ("distance 26, ~85 px, crop 2x; " if d == "26" else "distance 8.5; ") + "left figure: raider; archers: today's (greyer tile)"), f"distance-{d}.jpg")
 # camp, natural game (perf shot)
 t = [load(l, "../perf-camp") if False else Image.open(f"{SRC}/{l}/perf-camp.png").convert("RGB") for l in LABELS]
-total += save(grid(t, 2, 300, 169, [NAMES[l] for l in LABELS], "three_kettle_camp, balanced, noon, monsters wandering; every goblin on screen is the raider in its build, the archers are today's"), "camp.jpg")
+total += save(grid(t, 2, 640, 360, [NAMES[l] for l in LABELS], "three_kettle_camp, balanced, noon, monsters wandering; every goblin on screen is the raider in its build, the archers are today's"), "camp.jpg")
 # P-e
 heads, hands, caps = [], [], []
 for l in LABELS:
     im = load(l, "close-front")
     heads.append(im.crop((530, 380, 770, 500))); hands.append(im.crop((500, 470, 780, 620))); caps.append(NAMES[l])
-gh = grid(heads, len(heads), 240, 120, caps)
-gd = grid(hands, len(hands), 240, 128, None)
+gh = grid(heads, len(heads), 480, 240, caps)
+gd = grid(hands, len(hands), 480, 256, None)
 g = Image.new("RGB", (gh.width, gh.height + gd.height)); g.paste(gh, (0, 0)); g.paste(gd, (0, gh.height))
 total += save(g, "close-head-hands.jpg")
-# S3c: the outline at full size, 1280x720, a3 and a1
-for l in ["a3", "a1"]:
-    for n in (["body-front", "body-side", "body-attack-side"] if l == "a3" else ["body-front", "body-side"]):
+for l, ns in [("s2d", ["body-front", "body-front-dusk", "body-side", "body-attack-side"]), ("base", ["body-front", "body-side"])]:
+    for n in ns:
         im = load(l, n)
         d = ImageDraw.Draw(im)
         cap = f"{NAMES[l]}: {n.replace('body-', '').replace('-', ' ')}, outline on, 1280x720, raider alone (archers hidden)"

@@ -1,5 +1,5 @@
 {
- "label": "a3",
+ "label": "s2d",
  "skinnedMonsters": 5,
  "monsters": {
   "chicken": 4,
@@ -42,8 +42,8 @@
    "colour": 258,
    "shadow": 558,
    "frames": 60,
-   "hud": "837 calls • 586k tris",
-   "benchMs": 5.947,
+   "hud": "838 calls • 580k tris",
+   "benchMs": 5.266,
    "inView": {
     "goblin": 4,
     "goblin_archer": 1,
@@ -52,11 +52,11 @@
    }
   },
   {
-   "colour": 251,
+   "colour": 252,
    "shadow": 559,
    "frames": 60,
-   "hud": "803 calls • 574k tris",
-   "benchMs": 4.71,
+   "hud": "803 calls • 568k tris",
+   "benchMs": 4.844,
    "inView": {
     "goblin": 3,
     "scorpion": 2,
@@ -67,8 +67,8 @@
    "colour": 247,
    "shadow": 554,
    "frames": 60,
-   "hud": "811 calls • 580k tris",
-   "benchMs": 3.771,
+   "hud": "807 calls • 573k tris",
+   "benchMs": 4.938,
    "inView": {
     "goblin": 5,
     "goblin_archer": 1,
@@ -79,17 +79,17 @@
  ],
  "cost": {
   "withGoblins": {
-   "colour": 213.4,
+   "colour": 213,
    "shadow": 528,
-   "hud": "742 calls • 556k tris",
-   "benchMs": 3.786,
+   "hud": "741 calls • 550k tris",
+   "benchMs": 3.629,
    "goblinsInView": 5
   },
   "withoutGoblins": {
-   "colour": 198.5,
+   "colour": 198,
    "shadow": 513,
-   "hud": "712 calls • 506k tris",
-   "benchMs": 2.601,
+   "hud": "711 calls • 506k tris",
+   "benchMs": 2.681,
    "goblinsInView": 0
   }
  },
@@ -112,25 +112,25 @@
  "leakKills": {
   "kills": 30,
   "before": {
-   "geometries": 2311,
+   "geometries": 2358,
    "textures": 32,
    "programs": 24
   },
   "after": {
-   "geometries": 2311,
+   "geometries": 2358,
    "textures": 32,
    "programs": 24
   },
-  "ms": 6049
+  "ms": 6026
  },
  "leakSpawnDispose": {
   "before": {
-   "geometries": 2311,
+   "geometries": 2358,
    "textures": 32,
    "programs": 24
   },
   "after": {
-   "geometries": 2311,
+   "geometries": 2358,
    "textures": 32,
    "programs": 24
   },
@@ -138,17 +138,17 @@
  },
  "leakControl": {
   "before": {
-   "geometries": 2311,
+   "geometries": 2358,
    "textures": 32,
    "programs": 24
   },
   "undisposed": {
-   "geometries": 2331,
+   "geometries": 2378,
    "textures": 37,
    "programs": 24
   },
   "afterDispose": {
-   "geometries": 2311,
+   "geometries": 2358,
    "textures": 32,
    "programs": 24
   }
@@ -175,49 +175,49 @@
    {
     "name": "goblin_body",
     "shell": false,
-    "verts": 2931,
-    "radius": 1.885,
-    "maxDist": 1.094,
+    "verts": 3277,
+    "radius": 1.884,
+    "maxDist": 1.067,
     "outside": 0
    },
    {
     "name": "",
     "shell": true,
-    "verts": 2931,
-    "radius": 1.968,
-    "maxDist": 1.094,
+    "verts": 3277,
+    "radius": 1.967,
+    "maxDist": 1.067,
     "outside": 0
    },
    {
     "name": "goblin_metal",
     "shell": false,
-    "verts": 264,
-    "radius": 1.714,
-    "maxDist": 1.176,
+    "verts": 316,
+    "radius": 1.706,
+    "maxDist": 1.21,
     "outside": 0
    },
    {
     "name": "",
     "shell": true,
-    "verts": 264,
-    "radius": 1.797,
-    "maxDist": 1.176,
+    "verts": 316,
+    "radius": 1.789,
+    "maxDist": 1.21,
     "outside": 0
    },
    {
     "name": "goblin_wood",
     "shell": false,
     "verts": 64,
-    "radius": 1.782,
-    "maxDist": 1.11,
+    "radius": 1.774,
+    "maxDist": 1.078,
     "outside": 0
    },
    {
     "name": "",
     "shell": true,
     "verts": 64,
-    "radius": 1.865,
-    "maxDist": 1.11,
+    "radius": 1.857,
+    "maxDist": 1.078,
     "outside": 0
    }
   ],
@@ -225,49 +225,49 @@
    {
     "name": "goblin_body",
     "shell": false,
-    "verts": 2931,
-    "radius": 1.885,
-    "maxDist": 1.102,
+    "verts": 3277,
+    "radius": 1.884,
+    "maxDist": 1.075,
     "outside": 0
    },
    {
     "name": "",
     "shell": true,
-    "verts": 2931,
-    "radius": 1.968,
-    "maxDist": 1.102,
+    "verts": 3277,
+    "radius": 1.967,
+    "maxDist": 1.075,
     "outside": 0
    },
    {
     "name": "goblin_metal",
     "shell": false,
-    "verts": 264,
-    "radius": 1.714,
-    "maxDist": 1.189,
+    "verts": 316,
+    "radius": 1.706,
+    "maxDist": 1.216,
     "outside": 0
    },
    {
     "name": "",
     "shell": true,
-    "verts": 264,
-    "radius": 1.797,
-    "maxDist": 1.189,
+    "verts": 316,
+    "radius": 1.789,
+    "maxDist": 1.216,
     "outside": 0
    },
    {
     "name": "goblin_wood",
     "shell": false,
     "verts": 64,
-    "radius": 1.782,
-    "maxDist": 1.102,
+    "radius": 1.774,
+    "maxDist": 1.043,
     "outside": 0
    },
    {
     "name": "",
     "shell": true,
     "verts": 64,
-    "radius": 1.865,
-    "maxDist": 1.102,
+    "radius": 1.857,
+    "maxDist": 1.043,
     "outside": 0
    }
   ],
@@ -275,49 +275,49 @@
    {
     "name": "goblin_body",
     "shell": false,
-    "verts": 2931,
-    "radius": 1.885,
-    "maxDist": 1.118,
+    "verts": 3277,
+    "radius": 1.884,
+    "maxDist": 1.092,
     "outside": 0
    },
    {
     "name": "",
     "shell": true,
-    "verts": 2931,
-    "radius": 1.968,
-    "maxDist": 1.118,
+    "verts": 3277,
+    "radius": 1.967,
+    "maxDist": 1.092,
     "outside": 0
    },
    {
     "name": "goblin_metal",
     "shell": false,
-    "verts": 264,
-    "radius": 1.714,
-    "maxDist": 1.195,
+    "verts": 316,
+    "radius": 1.706,
+    "maxDist": 1.216,
     "outside": 0
    },
    {
     "name": "",
     "shell": true,
-    "verts": 264,
-    "radius": 1.797,
-    "maxDist": 1.195,
+    "verts": 316,
+    "radius": 1.789,
+    "maxDist": 1.216,
     "outside": 0
    },
    {
     "name": "goblin_wood",
     "shell": false,
     "verts": 64,
-    "radius": 1.782,
-    "maxDist": 1.103,
+    "radius": 1.774,
+    "maxDist": 1.031,
     "outside": 0
    },
    {
     "name": "",
     "shell": true,
     "verts": 64,
-    "radius": 1.865,
-    "maxDist": 1.103,
+    "radius": 1.857,
+    "maxDist": 1.031,
     "outside": 0
    }
   ],
@@ -325,49 +325,49 @@
    {
     "name": "goblin_body",
     "shell": false,
-    "verts": 2931,
-    "radius": 1.885,
-    "maxDist": 1.102,
+    "verts": 3277,
+    "radius": 1.884,
+    "maxDist": 1.075,
     "outside": 0
    },
    {
     "name": "",
     "shell": true,
-    "verts": 2931,
-    "radius": 1.968,
-    "maxDist": 1.102,
+    "verts": 3277,
+    "radius": 1.967,
+    "maxDist": 1.075,
     "outside": 0
    },
    {
     "name": "goblin_metal",
     "shell": false,
-    "verts": 264,
-    "radius": 1.714,
-    "maxDist": 1.189,
+    "verts": 316,
+    "radius": 1.706,
+    "maxDist": 1.216,
     "outside": 0
    },
    {
     "name": "",
     "shell": true,
-    "verts": 264,
-    "radius": 1.797,
-    "maxDist": 1.189,
+    "verts": 316,
+    "radius": 1.789,
+    "maxDist": 1.216,
     "outside": 0
    },
    {
     "name": "goblin_wood",
     "shell": false,
     "verts": 64,
-    "radius": 1.782,
-    "maxDist": 1.102,
+    "radius": 1.774,
+    "maxDist": 1.043,
     "outside": 0
    },
    {
     "name": "",
     "shell": true,
     "verts": 64,
-    "radius": 1.865,
-    "maxDist": 1.102,
+    "radius": 1.857,
+    "maxDist": 1.043,
     "outside": 0
    }
   ],
@@ -375,49 +375,49 @@
    {
     "name": "goblin_body",
     "shell": false,
-    "verts": 2931,
-    "radius": 1.885,
-    "maxDist": 1.094,
+    "verts": 3277,
+    "radius": 1.884,
+    "maxDist": 1.067,
     "outside": 0
    },
    {
     "name": "",
     "shell": true,
-    "verts": 2931,
-    "radius": 1.968,
-    "maxDist": 1.094,
+    "verts": 3277,
+    "radius": 1.967,
+    "maxDist": 1.067,
     "outside": 0
    },
    {
     "name": "goblin_metal",
     "shell": false,
-    "verts": 264,
-    "radius": 1.714,
-    "maxDist": 1.176,
+    "verts": 316,
+    "radius": 1.706,
+    "maxDist": 1.21,
     "outside": 0
    },
    {
     "name": "",
     "shell": true,
-    "verts": 264,
-    "radius": 1.797,
-    "maxDist": 1.176,
+    "verts": 316,
+    "radius": 1.789,
+    "maxDist": 1.21,
     "outside": 0
    },
    {
     "name": "goblin_wood",
     "shell": false,
     "verts": 64,
-    "radius": 1.782,
-    "maxDist": 1.11,
+    "radius": 1.774,
+    "maxDist": 1.078,
     "outside": 0
    },
    {
     "name": "",
     "shell": true,
     "verts": 64,
-    "radius": 1.865,
-    "maxDist": 1.11,
+    "radius": 1.857,
+    "maxDist": 1.078,
     "outside": 0
    }
   ],
@@ -425,49 +425,49 @@
    {
     "name": "goblin_body",
     "shell": false,
-    "verts": 2931,
-    "radius": 1.885,
-    "maxDist": 1.114,
+    "verts": 3277,
+    "radius": 1.884,
+    "maxDist": 1.091,
     "outside": 0
    },
    {
     "name": "",
     "shell": true,
-    "verts": 2931,
-    "radius": 1.968,
-    "maxDist": 1.114,
+    "verts": 3277,
+    "radius": 1.967,
+    "maxDist": 1.091,
     "outside": 0
    },
    {
     "name": "goblin_metal",
     "shell": false,
-    "verts": 264,
-    "radius": 1.714,
-    "maxDist": 1.179,
+    "verts": 316,
+    "radius": 1.706,
+    "maxDist": 1.221,
     "outside": 0
    },
    {
     "name": "",
     "shell": true,
-    "verts": 264,
-    "radius": 1.797,
-    "maxDist": 1.179,
+    "verts": 316,
+    "radius": 1.789,
+    "maxDist": 1.221,
     "outside": 0
    },
    {
     "name": "goblin_wood",
     "shell": false,
     "verts": 64,
-    "radius": 1.782,
-    "maxDist": 1.13,
+    "radius": 1.774,
+    "maxDist": 1.127,
     "outside": 0
    },
    {
     "name": "",
     "shell": true,
     "verts": 64,
-    "radius": 1.865,
-    "maxDist": 1.13,
+    "radius": 1.857,
+    "maxDist": 1.127,
     "outside": 0
    }
   ],
@@ -475,49 +475,49 @@
    {
     "name": "goblin_body",
     "shell": false,
-    "verts": 2931,
-    "radius": 1.885,
-    "maxDist": 1.11,
+    "verts": 3277,
+    "radius": 1.884,
+    "maxDist": 1.084,
     "outside": 0
    },
    {
     "name": "",
     "shell": true,
-    "verts": 2931,
-    "radius": 1.968,
-    "maxDist": 1.11,
+    "verts": 3277,
+    "radius": 1.967,
+    "maxDist": 1.084,
     "outside": 0
    },
    {
     "name": "goblin_metal",
     "shell": false,
-    "verts": 264,
-    "radius": 1.714,
-    "maxDist": 1.181,
+    "verts": 316,
+    "radius": 1.706,
+    "maxDist": 1.21,
     "outside": 0
    },
    {
     "name": "",
     "shell": true,
-    "verts": 264,
-    "radius": 1.797,
-    "maxDist": 1.181,
+    "verts": 316,
+    "radius": 1.789,
+    "maxDist": 1.21,
     "outside": 0
    },
    {
     "name": "goblin_wood",
     "shell": false,
     "verts": 64,
-    "radius": 1.782,
-    "maxDist": 1.121,
+    "radius": 1.774,
+    "maxDist": 1.084,
     "outside": 0
    },
    {
     "name": "",
     "shell": true,
     "verts": 64,
-    "radius": 1.865,
-    "maxDist": 1.121,
+    "radius": 1.857,
+    "maxDist": 1.084,
     "outside": 0
    }
   ],
@@ -525,49 +525,49 @@
    {
     "name": "goblin_body",
     "shell": false,
-    "verts": 2931,
-    "radius": 1.885,
-    "maxDist": 1.122,
+    "verts": 3277,
+    "radius": 1.884,
+    "maxDist": 1.095,
     "outside": 0
    },
    {
     "name": "",
     "shell": true,
-    "verts": 2931,
-    "radius": 1.968,
-    "maxDist": 1.122,
+    "verts": 3277,
+    "radius": 1.967,
+    "maxDist": 1.095,
     "outside": 0
    },
    {
     "name": "goblin_metal",
     "shell": false,
-    "verts": 264,
-    "radius": 1.714,
-    "maxDist": 1.179,
+    "verts": 316,
+    "radius": 1.706,
+    "maxDist": 1.23,
     "outside": 0
    },
    {
     "name": "",
     "shell": true,
-    "verts": 264,
-    "radius": 1.797,
-    "maxDist": 1.179,
+    "verts": 316,
+    "radius": 1.789,
+    "maxDist": 1.23,
     "outside": 0
    },
    {
     "name": "goblin_wood",
     "shell": false,
     "verts": 64,
-    "radius": 1.782,
-    "maxDist": 1.202,
+    "radius": 1.774,
+    "maxDist": 1.215,
     "outside": 0
    },
    {
     "name": "",
     "shell": true,
     "verts": 64,
-    "radius": 1.865,
-    "maxDist": 1.202,
+    "radius": 1.857,
+    "maxDist": 1.215,
     "outside": 0
    }
   ],
@@ -575,49 +575,49 @@
    {
     "name": "goblin_body",
     "shell": false,
-    "verts": 2931,
-    "radius": 1.885,
-    "maxDist": 1.13,
+    "verts": 3277,
+    "radius": 1.884,
+    "maxDist": 1.103,
     "outside": 0
    },
    {
     "name": "",
     "shell": true,
-    "verts": 2931,
-    "radius": 1.968,
-    "maxDist": 1.13,
+    "verts": 3277,
+    "radius": 1.967,
+    "maxDist": 1.103,
     "outside": 0
    },
    {
     "name": "goblin_metal",
     "shell": false,
-    "verts": 264,
-    "radius": 1.714,
-    "maxDist": 1.158,
+    "verts": 316,
+    "radius": 1.706,
+    "maxDist": 1.217,
     "outside": 0
    },
    {
     "name": "",
     "shell": true,
-    "verts": 264,
-    "radius": 1.797,
-    "maxDist": 1.158,
+    "verts": 316,
+    "radius": 1.789,
+    "maxDist": 1.217,
     "outside": 0
    },
    {
     "name": "goblin_wood",
     "shell": false,
     "verts": 64,
-    "radius": 1.782,
-    "maxDist": 1.239,
+    "radius": 1.774,
+    "maxDist": 1.277,
     "outside": 0
    },
    {
     "name": "",
     "shell": true,
     "verts": 64,
-    "radius": 1.865,
-    "maxDist": 1.239,
+    "radius": 1.857,
+    "maxDist": 1.277,
     "outside": 0
    }
   ],
@@ -625,49 +625,49 @@
    {
     "name": "goblin_body",
     "shell": false,
-    "verts": 2931,
-    "radius": 1.885,
-    "maxDist": 1.133,
+    "verts": 3277,
+    "radius": 1.884,
+    "maxDist": 1.107,
     "outside": 0
    },
    {
     "name": "",
     "shell": true,
-    "verts": 2931,
-    "radius": 1.968,
-    "maxDist": 1.133,
+    "verts": 3277,
+    "radius": 1.967,
+    "maxDist": 1.107,
     "outside": 0
    },
    {
     "name": "goblin_metal",
     "shell": false,
-    "verts": 264,
-    "radius": 1.714,
-    "maxDist": 1.146,
+    "verts": 316,
+    "radius": 1.706,
+    "maxDist": 1.157,
     "outside": 0
    },
    {
     "name": "",
     "shell": true,
-    "verts": 264,
-    "radius": 1.797,
-    "maxDist": 1.146,
+    "verts": 316,
+    "radius": 1.789,
+    "maxDist": 1.157,
     "outside": 0
    },
    {
     "name": "goblin_wood",
     "shell": false,
     "verts": 64,
-    "radius": 1.782,
-    "maxDist": 1.061,
+    "radius": 1.774,
+    "maxDist": 1.109,
     "outside": 0
    },
    {
     "name": "",
     "shell": true,
     "verts": 64,
-    "radius": 1.865,
-    "maxDist": 1.061,
+    "radius": 1.857,
+    "maxDist": 1.109,
     "outside": 0
    }
   ],
@@ -675,49 +675,49 @@
    {
     "name": "goblin_body",
     "shell": false,
-    "verts": 2931,
-    "radius": 1.885,
-    "maxDist": 1.141,
+    "verts": 3277,
+    "radius": 1.884,
+    "maxDist": 1.115,
     "outside": 0
    },
    {
     "name": "",
     "shell": true,
-    "verts": 2931,
-    "radius": 1.968,
-    "maxDist": 1.141,
+    "verts": 3277,
+    "radius": 1.967,
+    "maxDist": 1.115,
     "outside": 0
    },
    {
     "name": "goblin_metal",
     "shell": false,
-    "verts": 264,
-    "radius": 1.714,
-    "maxDist": 1.115,
+    "verts": 316,
+    "radius": 1.706,
+    "maxDist": 1.112,
     "outside": 0
    },
    {
     "name": "",
     "shell": true,
-    "verts": 264,
-    "radius": 1.797,
-    "maxDist": 1.115,
+    "verts": 316,
+    "radius": 1.789,
+    "maxDist": 1.112,
     "outside": 0
    },
    {
     "name": "goblin_wood",
     "shell": false,
     "verts": 64,
-    "radius": 1.782,
-    "maxDist": 1.168,
+    "radius": 1.774,
+    "maxDist": 1.25,
     "outside": 0
    },
    {
     "name": "",
     "shell": true,
     "verts": 64,
-    "radius": 1.865,
-    "maxDist": 1.168,
+    "radius": 1.857,
+    "maxDist": 1.25,
     "outside": 0
    }
   ],
@@ -725,49 +725,49 @@
    {
     "name": "goblin_body",
     "shell": false,
-    "verts": 2931,
-    "radius": 1.885,
-    "maxDist": 1.113,
+    "verts": 3277,
+    "radius": 1.884,
+    "maxDist": 1.089,
     "outside": 0
    },
    {
     "name": "",
     "shell": true,
-    "verts": 2931,
-    "radius": 1.968,
-    "maxDist": 1.113,
+    "verts": 3277,
+    "radius": 1.967,
+    "maxDist": 1.089,
     "outside": 0
    },
    {
     "name": "goblin_metal",
     "shell": false,
-    "verts": 264,
-    "radius": 1.714,
-    "maxDist": 1.167,
+    "verts": 316,
+    "radius": 1.706,
+    "maxDist": 1.186,
     "outside": 0
    },
    {
     "name": "",
     "shell": true,
-    "verts": 264,
-    "radius": 1.797,
-    "maxDist": 1.167,
+    "verts": 316,
+    "radius": 1.789,
+    "maxDist": 1.186,
     "outside": 0
    },
    {
     "name": "goblin_wood",
     "shell": false,
     "verts": 64,
-    "radius": 1.782,
-    "maxDist": 1.091,
+    "radius": 1.774,
+    "maxDist": 1.022,
     "outside": 0
    },
    {
     "name": "",
     "shell": true,
     "verts": 64,
-    "radius": 1.865,
-    "maxDist": 1.091,
+    "radius": 1.857,
+    "maxDist": 1.022,
     "outside": 0
    }
   ],
@@ -775,49 +775,49 @@
    {
     "name": "goblin_body",
     "shell": false,
-    "verts": 2931,
-    "radius": 1.885,
-    "maxDist": 1.123,
+    "verts": 3277,
+    "radius": 1.884,
+    "maxDist": 1.102,
     "outside": 0
    },
    {
     "name": "",
     "shell": true,
-    "verts": 2931,
-    "radius": 1.968,
-    "maxDist": 1.123,
+    "verts": 3277,
+    "radius": 1.967,
+    "maxDist": 1.102,
     "outside": 0
    },
    {
     "name": "goblin_metal",
     "shell": false,
-    "verts": 264,
-    "radius": 1.714,
-    "maxDist": 1.165,
+    "verts": 316,
+    "radius": 1.706,
+    "maxDist": 1.191,
     "outside": 0
    },
    {
     "name": "",
     "shell": true,
-    "verts": 264,
-    "radius": 1.797,
-    "maxDist": 1.165,
+    "verts": 316,
+    "radius": 1.789,
+    "maxDist": 1.191,
     "outside": 0
    },
    {
     "name": "goblin_wood",
     "shell": false,
     "verts": 64,
-    "radius": 1.782,
-    "maxDist": 1.115,
+    "radius": 1.774,
+    "maxDist": 1.082,
     "outside": 0
    },
    {
     "name": "",
     "shell": true,
     "verts": 64,
-    "radius": 1.865,
-    "maxDist": 1.115,
+    "radius": 1.857,
+    "maxDist": 1.082,
     "outside": 0
    }
   ],
@@ -825,49 +825,49 @@
    {
     "name": "goblin_body",
     "shell": false,
-    "verts": 2931,
-    "radius": 1.885,
-    "maxDist": 1.123,
+    "verts": 3277,
+    "radius": 1.884,
+    "maxDist": 1.102,
     "outside": 0
    },
    {
     "name": "",
     "shell": true,
-    "verts": 2931,
-    "radius": 1.968,
-    "maxDist": 1.123,
+    "verts": 3277,
+    "radius": 1.967,
+    "maxDist": 1.102,
     "outside": 0
    },
    {
     "name": "goblin_metal",
     "shell": false,
-    "verts": 264,
-    "radius": 1.714,
-    "maxDist": 1.16,
+    "verts": 316,
+    "radius": 1.706,
+    "maxDist": 1.192,
     "outside": 0
    },
    {
     "name": "",
     "shell": true,
-    "verts": 264,
-    "radius": 1.797,
-    "maxDist": 1.16,
+    "verts": 316,
+    "radius": 1.789,
+    "maxDist": 1.192,
     "outside": 0
    },
    {
     "name": "goblin_wood",
     "shell": false,
     "verts": 64,
-    "radius": 1.782,
-    "maxDist": 1.136,
+    "radius": 1.774,
+    "maxDist": 1.09,
     "outside": 0
    },
    {
     "name": "",
     "shell": true,
     "verts": 64,
-    "radius": 1.865,
-    "maxDist": 1.136,
+    "radius": 1.857,
+    "maxDist": 1.09,
     "outside": 0
    }
   ],
@@ -875,49 +875,49 @@
    {
     "name": "goblin_body",
     "shell": false,
-    "verts": 2931,
-    "radius": 1.885,
-    "maxDist": 1.123,
+    "verts": 3277,
+    "radius": 1.884,
+    "maxDist": 1.102,
     "outside": 0
    },
    {
     "name": "",
     "shell": true,
-    "verts": 2931,
-    "radius": 1.968,
-    "maxDist": 1.123,
+    "verts": 3277,
+    "radius": 1.967,
+    "maxDist": 1.102,
     "outside": 0
    },
    {
     "name": "goblin_metal",
     "shell": false,
-    "verts": 264,
-    "radius": 1.714,
-    "maxDist": 1.117,
+    "verts": 316,
+    "radius": 1.706,
+    "maxDist": 1.155,
     "outside": 0
    },
    {
     "name": "",
     "shell": true,
-    "verts": 264,
-    "radius": 1.797,
-    "maxDist": 1.117,
+    "verts": 316,
+    "radius": 1.789,
+    "maxDist": 1.155,
     "outside": 0
    },
    {
     "name": "goblin_wood",
     "shell": false,
     "verts": 64,
-    "radius": 1.782,
-    "maxDist": 1.169,
+    "radius": 1.774,
+    "maxDist": 1.254,
     "outside": 0
    },
    {
     "name": "",
     "shell": true,
     "verts": 64,
-    "radius": 1.865,
-    "maxDist": 1.169,
+    "radius": 1.857,
+    "maxDist": 1.254,
     "outside": 0
    }
   ],
@@ -925,49 +925,49 @@
    {
     "name": "goblin_body",
     "shell": false,
-    "verts": 2931,
-    "radius": 1.885,
-    "maxDist": 1.128,
+    "verts": 3277,
+    "radius": 1.884,
+    "maxDist": 1.11,
     "outside": 0
    },
    {
     "name": "",
     "shell": true,
-    "verts": 2931,
-    "radius": 1.968,
-    "maxDist": 1.128,
+    "verts": 3277,
+    "radius": 1.967,
+    "maxDist": 1.11,
     "outside": 0
    },
    {
     "name": "goblin_metal",
     "shell": false,
-    "verts": 264,
-    "radius": 1.714,
-    "maxDist": 1.117,
+    "verts": 316,
+    "radius": 1.706,
+    "maxDist": 1.154,
     "outside": 0
    },
    {
     "name": "",
     "shell": true,
-    "verts": 264,
-    "radius": 1.797,
-    "maxDist": 1.117,
+    "verts": 316,
+    "radius": 1.789,
+    "maxDist": 1.154,
     "outside": 0
    },
    {
     "name": "goblin_wood",
     "shell": false,
     "verts": 64,
-    "radius": 1.782,
-    "maxDist": 1.17,
+    "radius": 1.774,
+    "maxDist": 1.254,
     "outside": 0
    },
    {
     "name": "",
     "shell": true,
     "verts": 64,
-    "radius": 1.865,
-    "maxDist": 1.17,
+    "radius": 1.857,
+    "maxDist": 1.254,
     "outside": 0
    }
   ],
@@ -975,49 +975,49 @@
    {
     "name": "goblin_body",
     "shell": false,
-    "verts": 2931,
-    "radius": 1.885,
-    "maxDist": 1.127,
+    "verts": 3277,
+    "radius": 1.884,
+    "maxDist": 1.109,
     "outside": 0
    },
    {
     "name": "",
     "shell": true,
-    "verts": 2931,
-    "radius": 1.968,
-    "maxDist": 1.127,
+    "verts": 3277,
+    "radius": 1.967,
+    "maxDist": 1.109,
     "outside": 0
    },
    {
     "name": "goblin_metal",
     "shell": false,
-    "verts": 264,
-    "radius": 1.714,
-    "maxDist": 1.167,
+    "verts": 316,
+    "radius": 1.706,
+    "maxDist": 1.182,
     "outside": 0
    },
    {
     "name": "",
     "shell": true,
-    "verts": 264,
-    "radius": 1.797,
-    "maxDist": 1.167,
+    "verts": 316,
+    "radius": 1.789,
+    "maxDist": 1.182,
     "outside": 0
    },
    {
     "name": "goblin_wood",
     "shell": false,
     "verts": 64,
-    "radius": 1.782,
-    "maxDist": 1.077,
+    "radius": 1.774,
+    "maxDist": 0.995,
     "outside": 0
    },
    {
     "name": "",
     "shell": true,
     "verts": 64,
-    "radius": 1.865,
-    "maxDist": 1.077,
+    "radius": 1.857,
+    "maxDist": 0.995,
     "outside": 0
    }
   ]
