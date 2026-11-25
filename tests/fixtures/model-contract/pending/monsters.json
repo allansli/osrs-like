@@ -1085,15 +1085,15 @@
         "translation": [
           0.02448,
           -0.2907,
-          0.0765
+          0.0918
         ]
       },
       "goblin_LeftKneePivot": {
         "parent": "goblin_LeftLegPivot",
         "translation": [
-          -0.1122,
+          -0.09435,
           -0.28152,
-          -0.0765
+          -0.0918
         ]
       },
       "goblin_LeftLegPivot": {
@@ -1109,15 +1109,15 @@
         "translation": [
           -0.02448,
           -0.2907,
-          0.0765
+          0.0918
         ]
       },
       "goblin_RightKneePivot": {
         "parent": "goblin_RightLegPivot",
         "translation": [
-          0.1122,
+          0.09435,
           -0.28152,
-          -0.0765
+          -0.0918
         ]
       },
       "goblin_RightLegPivot": {
@@ -1256,7 +1256,7 @@
     "meshes": 182,
     "materials": 36,
     "rawBytes": 4896485,
-    "brotliBytes": 1417365
+    "brotliBytes": 1415616
   },
   "figures": {
     "Monster_chicken": {
@@ -1291,8 +1291,8 @@
       "triangles": 5000,
       "meshes": 4,
       "materials": 5,
-      "rawBytes": 195726,
-      "brotliBytes": 107056
+      "rawBytes": 198142,
+      "brotliBytes": 107041
     },
     "Monster_goblin_archer": {
       "triangles": 6640,

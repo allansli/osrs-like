@@ -1168,12 +1168,13 @@ GOBLIN_COLOURS = {
     "wood": 0x543C26,  # 33% value
     "leather": 0x4D3627,  # 30% value
     "bronze": 0x9A6E2A,  # 60% value
-    "rust": 0x54381F,  # 33% value
+    "rust": 0x6E4A2C,  # 43% value
 }
 # Vertex colour multiplies a material's colour, so it can only darken it. The three-family builds
 # put wood and metal on the shared mat_wood and mat_bronze, whose colours are not the goblin's to
-# change: there each of these stops at its material's own colour (24% and 48% value).
-GOBLIN_SHARED_CEILING = {"wood": 0x3E2C1C, "bronze": 0x7A5B32}
+# change: there each of these stops at its material's own colour (24% and 48% value), and rust
+# goes down to 33% to stay 15 points under that bronze.
+GOBLIN_SHARED_CEILING = {"wood": 0x3E2C1C, "bronze": 0x7A5B32, "rust": 0x54381F}
 
 
 def goblin_joints() -> dict:
@@ -1194,8 +1195,8 @@ def goblin_joints() -> dict:
         j[f"{tag}ElbowPivot"] = (side * 0.506, 0.968, -0.044)
         j[f"{tag}Hand"] = (side * 0.624, 0.695, -0.131)
         j[f"{tag}LegPivot"] = (side * 0.14, 0.66, 0.03)
-        j[f"{tag}KneePivot"] = (side * 0.25, 0.384, -0.045)
-        j[f"{tag}Foot"] = (side * 0.226, 0.099, 0.03)
+        j[f"{tag}KneePivot"] = (side * 0.2325, 0.384, -0.06)
+        j[f"{tag}Foot"] = (side * 0.2085, 0.099, 0.03)
     j["WeaponPivot"] = j["RightHand"]
     j["OffhandPivot"] = j["LeftHand"]
     return j
@@ -1306,7 +1307,7 @@ def _goblin_body_graph(j: dict) -> tuple[list, list, list, list]:
         d = _goblin_limb_dir(elbow, hand)
         chain(chest, [
             ((side * 0.15, 1.19, -0.08), 0.13),  # collar: the shoulder line slopes instead of squaring off
-            (shoulder, 0.118),
+            (shoulder, 0.105),
             (along(shoulder, elbow, 0.6), 0.078),
             (elbow, 0.092),
             (along(elbow, hand, 0.35), 0.07),
