@@ -12,7 +12,7 @@ import { sealAlbedoUvs, setAlbedoAnisotropy } from './textures';
 import { setupInputHandlers } from './input';
 import { buildWalkGrid } from '../state/pathfind';
 import { applyShadowTier, initLighting } from './lighting';
-import { createOutput, effectivePixelRatio, enterPlainMode, TIER_LABELS, type OutputPipeline } from './post';
+import { createOutput, effectivePixelRatio, enterPlainMode, isPlainMode, TIER_LABELS, type OutputPipeline } from './post';
 import { setAirTier } from './atmosphere';
 import { setWaterTier } from './water';
 import { setPlayerChoseTier } from './photo';
@@ -149,12 +149,14 @@ export function init3DEngine(): void {
   initGpuTelemetry(G.renderer.getContext());
   const goPlain = (): void => {
     enterPlainMode(G.scene);
+    setWaterTier(currentQuality);
     output.dispose();
     output = createOutput(G.renderer, G.scene, G.camera, currentQuality);
   };
   G.renderer.debug.onShaderError = (gl, program) => {
     const log = gl.getProgramInfoLog(program);
     console.error(log);
+    if (isPlainMode()) return;
     goPlain();
     addChatMessage('Shader compile error: switched to plain mode.', 'skill');
   };

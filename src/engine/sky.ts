@@ -31,7 +31,8 @@ interface CloudGroup {
   instances: CloudInstance[];
 }
 
-let apronMat: THREE.MeshLambertMaterial;
+// Plain mode swaps the apron's material, so the colour is written to whichever material the mesh holds.
+let apronMesh: THREE.Mesh<THREE.BufferGeometry, THREE.MeshLambertMaterial>;
 const cloudGroups: CloudGroup[] = [];
 let lastCloudTime = 0;
 const dummy = new THREE.Object3D();
@@ -114,8 +115,7 @@ export function buildSky(): void {
   // Horizon apron: one mesh welded to the terrain square, rising to hills
   const apronRng = makeRng(0x5ca1e);
   const apronGeo = buildKitPiece('horizon_apron', apronRng);
-  apronMat = facetMaterial({ shade: 'cut', color: AIR.uAirColor.value.clone() });
-  const apronMesh = new THREE.Mesh(apronGeo, apronMat);
+  apronMesh = new THREE.Mesh(apronGeo, facetMaterial({ shade: 'cut', color: AIR.uAirColor.value.clone() }));
   apronMesh.castShadow = false;
   apronMesh.receiveShadow = false;
   G.scene.add(apronMesh);
@@ -164,7 +164,7 @@ export function updateSky(frame: DayFrame): void {
   (G.scene.fog as THREE.FogExp2).color.copy(AIR.uAirColor.value);
   (G.scene.fog as THREE.FogExp2).density = AIR.uFogDensity.value;
 
-  apronMat.color.copy(AIR.uAirColor.value).multiplyScalar(APRON_ALBEDO);
+  apronMesh.material.color.copy(AIR.uAirColor.value).multiplyScalar(APRON_ALBEDO);
 
   const cloudsEnabled = GFX_TIERS[currentQuality].clouds;
   const curTime = AIR.uTime.value;

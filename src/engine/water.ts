@@ -4,6 +4,7 @@ import { GFX_TIERS, type QualityTier } from '../data/look';
 import { AIR, AIR_GLSL, COLOR_FOOTER } from './atmosphere';
 import { PALETTE } from './materials';
 import { buildWaterGrid } from '../state/waterGrid';
+import { isPlainMode } from './post';
 
 let waterMaterial: THREE.ShaderMaterial | null = null;
 let currentWaterTier: QualityTier = 'balanced';
@@ -19,7 +20,7 @@ export const waterUniforms = {
 export function setWaterTier(tier: QualityTier): void {
   currentWaterTier = tier;
   if (!waterMaterial) return;
-  if (GFX_TIERS[tier].waterMode === 'ramp') {
+  if (isPlainMode() || GFX_TIERS[tier].waterMode === 'ramp') {
     waterMaterial.defines = { ...waterMaterial.defines, WATER_SIMPLE: '' };
   } else {
     delete waterMaterial.defines.WATER_SIMPLE;
@@ -36,7 +37,7 @@ export function buildWater(): THREE.Mesh {
   geo.setIndex(grid.index);
 
   const defines: Record<string, string> = {};
-  if (GFX_TIERS[currentWaterTier].waterMode === 'ramp') {
+  if (isPlainMode() || GFX_TIERS[currentWaterTier].waterMode === 'ramp') {
     defines.WATER_SIMPLE = '';
   }
 
