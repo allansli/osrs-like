@@ -8,6 +8,7 @@ import { camState, G, player } from './context';
 import { applyQualityTier, type QualityTier } from './renderer';
 import { cycleTimeOfDay } from './worldMesh';
 import { setPhase } from './lighting';
+import { setWeatherOverride } from './particles';
 
 export let playerChoseTier = false;
 
@@ -23,6 +24,7 @@ export interface LookHooks {
   hud(on: boolean): void;
   tier(id: QualityTier): void;
   bench(frames: number): number;
+  weather(id: string): void;
 }
 
 const HUD_ROOT_IDS = [
@@ -131,6 +133,10 @@ export function createLookHooks(): LookHooks {
       gl.finish();
       const elapsed = performance.now() - t0;
       return elapsed / count;
+    },
+
+    weather(id: string): void {
+      setWeatherOverride(id);
     }
   };
 }

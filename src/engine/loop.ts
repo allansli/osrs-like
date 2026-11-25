@@ -6,6 +6,7 @@ import { currentDayFrame, updateLighting } from './lighting';
 import { updateAir } from './atmosphere';
 import { updateSky } from './sky';
 import { updateCarpet } from './flora';
+import { prefersReducedMotion, updateParticles } from './particles';
 import {
   TICK_SEC,
   commandClocks,
@@ -617,8 +618,10 @@ export function updateCamera(f: FrameState): void {
   // Micro-Camera Shake Impulse
   if (camState.shake > 0.001) {
     camState.shake *= Math.pow(0.012, f.dt);
-    G.camera.position.x += (Math.random() - 0.5) * camState.shake;
-    G.camera.position.y += (Math.random() - 0.5) * camState.shake;
+    if (!prefersReducedMotion()) {
+      G.camera.position.x += (Math.random() - 0.5) * camState.shake;
+      G.camera.position.y += (Math.random() - 0.5) * camState.shake;
+    }
   }
 
 }
@@ -959,5 +962,6 @@ export function gameLoop(now: number): void {
   const frame = currentDayFrame();
   updateAir(frame, f.dt);
   updateSky(frame);
+  updateParticles(f.dt, G.camera);
   renderFrame(f);
 }

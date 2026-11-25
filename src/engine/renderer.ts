@@ -16,6 +16,7 @@ import { createOutput, effectivePixelRatio, enterPlainMode, TIER_LABELS, type Ou
 import { setAirTier } from './atmosphere';
 import { setWaterTier } from './water';
 import { setPlayerChoseTier } from './photo';
+import { initParticles, setParticlesTier } from './particles';
 
 export type QualityTier = 'performance' | 'balanced' | 'high' | 'ultra';
 export let currentQuality: QualityTier = 'balanced';
@@ -38,6 +39,7 @@ export function applyQualityTier(tier: QualityTier): void {
   currentQuality = tier;
   setAirTier(tier);
   setWaterTier(tier);
+  setParticlesTier(tier);
   const maxAniso = G.renderer.capabilities.getMaxAnisotropy();
   setAlbedoAnisotropy(Math.min(GFX_TIERS[tier].anisotropy, maxAniso));
   const dpr = effectivePixelRatio(tier, window.innerWidth, window.innerHeight, window.devicePixelRatio);
@@ -166,6 +168,7 @@ export function init3DEngine(): void {
   buildPlayerCharacter();
   spawnAllResourcesAndMonsters();
   buildFlora(currentQuality);
+  initParticles(G.scene, currentQuality);
   sealAlbedoUvs(G.scene);
   // After the build, so the walk reaches the clouds and every facet material.
   if (new URLSearchParams(location.search).has('plain')) goPlain();

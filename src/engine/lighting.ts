@@ -4,11 +4,22 @@ import { STATE } from '../state/gameState';
 import { DAY_CLOCK, GFX_TIERS, type QualityTier, SHADOW_BIAS, SHADOW_NORMAL_BIAS, SHADOW_SUN_STEP_DEG } from '../data/look';
 import { dayFrameAt, phaseToPreset, presetToPhase, stepPhase, type DayFrame, type Vec3 } from '../state/dayCycle';
 import { fitShadow, stepShadowDir } from '../state/shadowFit';
+import { AIR } from './atmosphere';
+import { getWeatherState } from './particles';
 
 let currentPhase = presetToPhase(STATE.timeOfDay);
+let currentDayIndex = 0;
 let isFrozen = false;
 let currentShadowDir: Vec3 = [0, 1, 0]; // set from the first frame in initLighting
 let currentTier: QualityTier = 'balanced';
+
+export function currentDayIndexValue(): number {
+  return currentDayIndex;
+}
+
+export function currentPhaseValue(): number {
+  return currentPhase;
+}
 
 const _camFwd = new THREE.Vector3();
 const _shadowPos = new THREE.Vector3(); // where the shadow camera sits (stepped direction)
@@ -106,13 +117,22 @@ function clampCastDir(sunDir: Vec3): Vec3 {
 }
 
 function updateLightingFrame(phase: number): void {
+  if (!G.sunLight || !G.hemiLight) return;
   const frame = dayFrameAt(phase);
+  const weather = getWeatherState(currentDayIndex, phase);
 
   G.sunLight.color.setRGB(frame.key[0], frame.key[1], frame.key[2]);
-  G.sunLight.intensity = frame.keyIntensity;
+  G.sunLight.intensity = frame.keyIntensity * weather.keyScale;
   G.hemiLight.color.setRGB(frame.fill[0], frame.fill[1], frame.fill[2]);
   G.hemiLight.groundColor.setRGB(frame.bounce[0], frame.bounce[1], frame.bounce[2]);
   G.renderer.toneMappingExposure = frame.exposure;
+
+  const baseFog = 0.0028;
+  const targetFog = baseFog * weather.fogScale;
+  AIR.uFogDensity.value = targetFog;
+  if (G.scene && G.scene.fog && 'density' in G.scene.fog) {
+    (G.scene.fog as THREE.FogExp2).density = targetFog;
+  }
 
   const clampedCastDir = clampCastDir(frame.sunDir);
 
@@ -148,7 +168,11 @@ function updateLightingFrame(phase: number): void {
 
 export function updateLighting(dt: number): void {
   if (!isFrozen) {
+    const prev = currentPhase;
     currentPhase = stepPhase(currentPhase, dt, DAY_CLOCK);
+    if (currentPhase < prev) {
+      currentDayIndex++;
+    }
   }
 
   const preset = phaseToPreset(currentPhase);
