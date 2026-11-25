@@ -27,10 +27,37 @@ export function isSharedOutlineMaterial(m: THREE.Material): boolean {
   return false;
 }
 
-function outlineMaterial(thickness: number, color: number): THREE.ShaderMaterial {
-  const key = `${thickness}:${color}`;
+function outlineMaterial(thickness: number, color: number, skinned = false): THREE.ShaderMaterial {
+  const key = `${thickness}:${color}${skinned ? ':skinned' : ''}`;
   const cached = outlineCache.get(key);
   if (cached) return cached;
+  const vertexShader = skinned
+    ? `
+      uniform float uThickness;
+      #include <skinning_pars_vertex>
+      void main() {
+        #include <beginnormal_vertex>
+        #include <skinbase_vertex>
+        #include <skinnormal_vertex>
+        #include <begin_vertex>
+        #include <skinning_vertex>
+        vec4 viewPos = modelViewMatrix * vec4(transformed, 1.0);
+        vec3 viewNorm = normalize(normalMatrix * objectNormal);
+        viewPos.xy += viewNorm.xy * uThickness;
+        viewPos.z -= uThickness * 2.5 + 0.045;
+        gl_Position = projectionMatrix * viewPos;
+      }
+    `
+    : `
+      uniform float uThickness;
+      void main() {
+        vec4 viewPos = modelViewMatrix * vec4(position, 1.0);
+        vec3 viewNorm = normalize(normalMatrix * normal);
+        viewPos.xy += viewNorm.xy * uThickness;
+        viewPos.z -= uThickness * 2.5 + 0.045;
+        gl_Position = projectionMatrix * viewPos;
+      }
+    `;
   const mat = new THREE.ShaderMaterial({
     side: THREE.BackSide,
     depthWrite: true,
@@ -41,16 +68,7 @@ function outlineMaterial(thickness: number, color: number): THREE.ShaderMaterial
       uColor: { value: new THREE.Color(color) },
       uThickness: { value: thickness }
     },
-    vertexShader: `
-      uniform float uThickness;
-      void main() {
-        vec4 viewPos = modelViewMatrix * vec4(position, 1.0);
-        vec3 viewNorm = normalize(normalMatrix * normal);
-        viewPos.xy += viewNorm.xy * uThickness;
-        viewPos.z -= uThickness * 2.5 + 0.045;
-        gl_Position = projectionMatrix * viewPos;
-      }
-    `,
+    vertexShader,
     fragmentShader: `
       uniform vec3 uColor;
       void main() {
@@ -88,22 +106,34 @@ export function addCartoonOutline(rootOrMesh: THREE.Object3D, thickness = 0.028,
   rootOrMesh.traverse((obj) => {
     if (obj !== rootOrMesh) consider(obj);
   });
-  const mat = outlineMaterial(thickness, color);
   meshes.forEach((mesh) => {
     if (mesh.children.some((child) => child.userData?.isOutline)) return;
-    const shell = new THREE.Mesh(mesh.geometry, mat);
+    const isSkinned = Boolean((mesh as THREE.SkinnedMesh).isSkinnedMesh);
+    const mat = outlineMaterial(thickness, color, isSkinned);
+    let shell: THREE.Mesh;
+    if (isSkinned) {
+      const skinnedMesh = mesh as THREE.SkinnedMesh;
+      const skinnedShell = new THREE.SkinnedMesh(mesh.geometry, mat);
+      skinnedShell.bind(skinnedMesh.skeleton, skinnedMesh.bindMatrix);
+      const margin = thickness * 1.5 + 0.05;
+      const meshSphere = skinnedMesh.boundingSphere;
+      skinnedShell.boundingSphere = new THREE.Sphere(meshSphere!.center.clone(), meshSphere!.radius + margin);
+      shell = skinnedShell;
+    } else {
+      shell = new THREE.Mesh(mesh.geometry, mat);
+      if (!mesh.geometry.boundingSphere) {
+        mesh.geometry.computeBoundingSphere();
+      }
+      if (mesh.geometry.boundingSphere) {
+        shell.geometry.boundingSphere = mesh.geometry.boundingSphere.clone();
+        shell.geometry.boundingSphere.radius += thickness * 1.5 + 0.05;
+      }
+    }
     shell.userData.isOutline = true;
     shell.castShadow = false;
     shell.receiveShadow = false;
     shell.frustumCulled = true;
     shell.visible = false;
-    if (!mesh.geometry.boundingSphere) {
-      mesh.geometry.computeBoundingSphere();
-    }
-    if (mesh.geometry.boundingSphere) {
-      shell.geometry.boundingSphere = mesh.geometry.boundingSphere.clone();
-      shell.geometry.boundingSphere.radius += thickness * 1.5 + 0.05;
-    }
     mesh.add(shell);
   });
 }

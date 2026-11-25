@@ -7,6 +7,7 @@ export function disposeObject3D(
 ): void {
   const geometries = new Set<THREE.BufferGeometry>();
   const materials = new Set<THREE.Material>();
+  const skeletons = new Set<THREE.Skeleton>();
 
   root.traverse((obj) => {
     const mesh = obj as THREE.Mesh;
@@ -22,6 +23,10 @@ export function disposeObject3D(
         materials.add(mesh.material);
       }
     }
+    const skinned = obj as THREE.SkinnedMesh;
+    if (skinned.isSkinnedMesh && skinned.skeleton) {
+      skeletons.add(skinned.skeleton);
+    }
   });
 
   for (const geometry of geometries) {
@@ -32,6 +37,10 @@ export function disposeObject3D(
     if (isSharedOutlineMaterial(material)) continue;
     if (keep && keep(material)) continue;
     material.dispose();
+  }
+
+  for (const skeleton of skeletons) {
+    skeleton.dispose();
   }
 
   if (root.parent) {

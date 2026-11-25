@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { loadGltfOnce } from './gltf';
 import { addCartoonOutline, facetMaterial } from './materials';
+import { cloneFigure, fixCullSpheres, hasSkin, stripBonePrefix } from './skinned';
 import { albedoMaterial, offsetAlbedoPhase, sealAlbedoUvs, speciesAlbedo } from './textures';
 
 export function loadBlenderMonstersTemplate(url = '/models/monsters.glb?v=face_align_v2'): Promise<GLTF | null> {
@@ -81,10 +82,21 @@ export function upgradeMonsterRigWithGltf(mObj: MonsterEntityLike, gltf: GLTF): 
   const template = gltf.scene.getObjectByName(`Monster_${modelKey}`);
   if (!template) return false;
 
-  const cloned = template.clone(true);
+  const isSkinned = hasSkin(template);
+  if (isSkinned) {
+    fixCullSpheres(template);
+  }
+  const cloned = isSkinned ? cloneFigure(template) : template.clone(true);
+  if (!cloned) return false;
+
   cloned.position.set(0, 0, 0);
   cloned.rotation.set(0, 0, 0);
   cloned.scale.set(1, 1, 1);
+
+  if (isSkinned) {
+    const boneKey = (mObj.def as { body?: string }).body ?? modelKey;
+    stripBonePrefix(cloned, boneKey);
+  }
 
   const speciesKey =
     modelKey === 'goblin_archer'
