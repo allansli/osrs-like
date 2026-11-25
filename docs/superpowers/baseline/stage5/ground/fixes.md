@@ -1,10 +1,10 @@
 # GR8: ground and air fixes after CP-GR
 
-Plan task GR8 (amendment 2026-11-24). Four defects seen at P1, P7 and P8 (noon, balanced) in the GR7 pictures. For each: the cause found first, the fix at that cause, and the target's value before (GR7) and after (GR8).
+Plan task GR8 (amendment 2026-11-24, amended again after its first pass). Four defects seen at P1, P7 and P8 (noon, balanced) in the GR7 pictures. For each: the cause found first, the fix at that cause, and the target's value before (GR7) and after (GR8).
 
 ## How the values are measured
 
-Lossless PNG captures of the `balanced` tier on the NVIDIA GPU (`scripts/capture-gpu.mjs`, ANGLE over D3D12, RTX 4070 Laptop), 1280x720, seeded `Math.random`, cleared storage, skills at 99, mouse parked on `#top-left-hud`, the same poses as the pictures here. "Before" is the GR7 head (3ea3660, bundle `index-CqADpu7g.js`, GR7's world code plus the UI lane merge a7296f6, which touches no world rendering; its P1 noon numbers match GR7's). "After" is the GR8 bundle (`index-M8HWa8Lt.js`, 07fa27f). A patch `x,y,r` is the mean of the (2r+1)^2 pixels around that point; a rect `x0,y0-x1,y1` is the mean of every pixel in it. "Lum" is sRGB-encoded relative luminance in percent, as in `light/values.md`.
+Lossless PNG captures of the `balanced` tier on the NVIDIA GPU (`scripts/capture-gpu.mjs`, ANGLE over D3D12, RTX 4070 Laptop), 1280x720, seeded `Math.random`, cleared storage, skills at 99, mouse parked on `#top-left-hud`, the same poses as the pictures here. "Before" is the GR7 head (3ea3660, bundle `index-CqADpu7g.js`, GR7's world code plus the UI lane merge a7296f6, which touches no world rendering; its P1 noon numbers match GR7's). "After" is the GR8 bundle of the first pass (`index-M8HWa8Lt.js`, 07fa27f) for items 1 to 3, and the final GR8 bundle (`index-BVwV2LzT.js`, d1002da, the carpet scramble added) for item 4 and the pictures in this folder. A patch `x,y,r` is the mean of the (2r+1)^2 pixels around that point; a rect `x0,y0-x1,y1` is the mean of every pixel in it. "Lum" is sRGB-encoded relative luminance in percent, as in `light/values.md`.
 
 ## 1. The noon sky reads near white: fixed
 
@@ -51,7 +51,7 @@ The LT7b meadow patches did not move with GR8: P1 noon meadow a (700,620, 12) 54
 
 The carpet is not changed. Its tints are per variant (`CARPET_TINTS` in `floraKit.ts`), shared by every region, and the woods carpet is the tuft and tussock variants chosen by `CARPET_WEIGHTS` in `flora.ts`, outside GR8's files. At P8 it reads as brown tussocks and dark tufts over the moss, not bright green; darkening a variant's tint would also darken the meadow.
 
-## 3. The woods-tree crowns read near black at noon: raised, but the 18% target is not met
+## 3. The woods-tree crowns read near black at noon: raised; the amended target is met
 
 **Cause.** GR5's fix (a5eb463) set the crown colours to an sRGB HSL lightness of 0.085 to 0.125 to stay below the yew's "about 0.148". HSL lightness is the wrong measure for that comparison: the yew's crown is `0x223628` times the grass texture (linear mean 0.705 0.899 0.324), a saturated green with a linear albedo luminance of 0.0266, while the woods crowns at that lightness have a luminance of 0.009 to 0.017, a third to two thirds of the yew's. At P8 the camera looks toward the sun (shadows fall toward the viewer), so the crown faces it sees are the unlit ones, lit only by the fill and bounce, and those render at 2.3 to 3.7%.
 
@@ -72,15 +72,28 @@ The carpet is not changed. Its tints are per variant (`CARPET_TINTS` in `floraKi
 
 **The two crown targets conflict.** Under the light at P8 noon, the yew's own crown renders at 8.6 to 16.3% (yaw 0, the same backlight), so a woods crown that stays darker than the yew cannot reach a mean of 18% there, and no tint or lightness can give it visible bands when every face the camera sees is unlit. Meeting 18% would need a crown albedo about three times the yew's, which breaks design 5.6's rule that a woods tree's crown is darker than any harvestable tree. GR8 keeps the rule and records the target as missed. Lifting the unlit faces is a light-model change (fill or bounce), which GR8 must not touch; the main session decides.
 
-## 4. The desert carpet shows a regular grid at P7: not fixed, the cause is outside GR8's files
+**Amended target (plan, after the first pass).** The main session replaced the 18% mean and the facet bands with: the crown's albedo luminance stays below the yew's (linear luminance, the measure above), and with the sun to the side (P8 at yaw 4.712) the crowns render at least 12%. Both hold at 07fa27f: albedo luminance 0.020 to 0.025 against 0.0266, rendered 12.9, 14.8 and 16.4 at yaw 4.712 (table above). The rule now has a test, `tests/woods-crown.test.ts` (bbe17d6): it decodes `public/textures/grass.png`, takes its linear mean, computes the yew crown's albedo luminance as `0x223628` times that mean (0.02662), and checks every crown vertex of `woods_tree_a` and `woods_tree_b` (the vertices after the 6-sided trunk, each checked to be green) against it. Raising the upper cone's top lightness from 0.155 to 0.17 makes the test fail (0.0296 against 0.0266), so it holds the rule.
 
-**Cause.** `src/engine/flora.ts`, `CARPET_VERTEX`, lines 289 and 290: instance `i` of variant `v` takes cell `k = 4i + v` of a row-major grid `uCarpetGrid` cells wide (`buildCarpet`, line 357: `floor(sqrt(carpetTufts))`, 77 on balanced). Variant `v` therefore owns the cells where `x + 77y` is congruent to `v` mod 4; since 77 is 1 mod 4, those are the cells on every fourth anti-diagonal (`x + y` congruent to `v`). The desert's carpet is almost all one variant (the tussock: weight 1 in the dry family, the tuft 0.3 and ember grass 0.1), so the tussocks stand on parallel diagonal lines 4 cells apart along each axis, about 1.41 units apart across the lines. The jitter (line 293, `0.15 + 0.7 * hash` of a 0.5-unit cell) moves a tuft at most 0.35 units, a quarter of that spacing, so it cannot break the lines. On high and ultra the grid is 118 and 154 cells wide (2 mod 4), which gives a different but still periodic layout.
-
-**Not fixed.** GR8's files allow "`src/state/scatter.ts`: carpet jitter only", but `scatter.ts` holds no carpet code: it places the kit pieces only. The carpet's placement and jitter are in `flora.ts`, which GR8 may not touch. A fix there would hash the variant per cell instead of interleaving it by index (for example: every instance of every variant covers every cell, and a cell keeps the variant a per-cell hash picks), or permute the instance index before the modulo; either is a change to GR6's shader and needs its own task.
-
-| target | GR7 | GR8 | pass |
+| amended target | GR7 | GR8 | pass |
 |---|---|---|---|
-| P7 noon and golden: no row or column of tufts visibly aligned | diagonal lines across the whole desert floor | unchanged | **no** |
+| crown albedo luminance below the yew's 0.0266 (test) | 0.009 to 0.017 | 0.020 to 0.025 | yes |
+| P8 at yaw 4.712, crowns render >= 12 | 6.6, 7.5, 10.0 | 12.9, 14.8, 16.4 | yes |
+
+
+## 4. The desert carpet shows a regular grid at P7: fixed in `flora.ts` (amendment)
+
+**Cause.** `src/engine/flora.ts`, `CARPET_VERTEX`: instance `i` of variant `v` takes cell `k = 4i + v` of a row-major grid `uCarpetGrid` cells wide (`buildCarpet`: `floor(sqrt(carpetTufts))`, 77 on balanced). Variant `v` therefore owns the cells where `x + 77y` is congruent to `v` mod 4; since 77 is 1 mod 4, those are the cells on every fourth anti-diagonal (`x + y` congruent to `v`). The desert's carpet is almost all one variant (the tussock: weight 1 in the dry family, the tuft 0.3 and ember grass 0.1), so the tussocks stand on parallel diagonal lines 4 cells apart along each axis, about 1.41 units apart across the lines. The jitter (`0.15 + 0.7 * hash` of a 0.5-unit cell) moves a tuft at most 0.35 units, a quarter of that spacing, so it cannot break the lines. On high the grid is 118 cells wide (2 mod 4): every variant owns every fourth cell of a row with the phase alternating by row, a different but still periodic layout. `scatter.ts`, first allowed for this item, holds no carpet code; the amendment moved the item to `flora.ts`.
+
+**Fix.** `flora.ts`, `CARPET_VERTEX`, the cell-to-variant assignment only (d1002da): after `k` is split into a grid cell, each row is shifted by a hashed offset (`floor(carpetHash(vec2(row, 61.3)) * grid)`, mod grid), then each column of the result by another (`carpetHash(vec2(column, 23.9))`). A shift within a row is a permutation of that row, and one within a column of that column, so the composed map is a bijection of the grid: every cell still holds exactly one tuft of one variant, the per-tier instance counts and `perVariant` are unchanged, and the `present` test still runs on the unscrambled `k`. The row shift alone would leave each variant on every fourth cell of a row; the column shift then mixes rows, so a variant's cells along a row and a column follow the hashes, not the index. Jitter, the wrap to the cell nearest the hero, the hero fade and the field lookups are untouched, so GR6's tests (`ground-field`, `gfx-tiers`) stay green.
+
+| target (P7, judged on the pictures in this folder) | GR7 and the first pass | GR8 | pass |
+|---|---|---|---|
+| noon, balanced: no row or column of tufts visibly aligned | diagonal lines across the whole desert floor | scattered, no line in any direction | yes |
+| golden, balanced | diagonal lines | scattered | yes |
+| noon, high (grid 118) | not captured (periodic by the same index rule) | scattered (`P7-noon-high.jpg`) | yes |
+| golden, high | not captured | scattered (`P7-golden-high.jpg`) | yes |
+| instance counts per tier | `carpetTufts`, 4 meshes of `ceil(tufts / 4)` | unchanged | yes |
+| P1 noon balanced calls and triangles | 2160 and 672k (GR7 look set) | 2161 and 672k | yes |
 
 ## Summary
 
@@ -88,12 +101,12 @@ The carpet is not changed. Its tints are per variant (`CARPET_TINTS` in `floraKi
 |---|---|---|
 | 1 noon sky near white | sky top Lum <= 85 and B - R >= 20, horizon haze kept | met; the cause was the apron, now 0.45 of the air colour |
 | 2 woods floor meadow green | P8 woods ground >= 15% below the P1 meadow, bluer and greener | met for the ground (-21% to -23%); the carpet is per variant and unchanged |
-| 3 woods crowns near black | mean crown Lum >= 18 with visible bands, darker than the yew | darker than the yew: met by luminance, not by HSL lightness; crown Lum raised from 2.3-3.7 to 5.5-6.9; 18% and bands: not met, in conflict with the yew rule under P8's backlight |
-| 4 desert carpet grid | no aligned rows at P7 | not met: the cause is in `flora.ts`, outside GR8's files |
+| 3 woods crowns near black | amended: albedo luminance below the yew's, >= 12 at P8 yaw 4.712 | met (0.020 to 0.025 against 0.0266; 12.9 to 16.4), held by `tests/woods-crown.test.ts`; the first target (18% with bands at yaw 0) was dropped as in conflict with design 5.6 |
+| 4 desert carpet grid | no aligned rows at P7 noon and golden, balanced and high | met: hashed row then column shift of the carpet cells in `flora.ts` |
 
-P1 balanced calls and triangles stay within 5% of GR7 (`perf.md`).
+P1 balanced calls and triangles stay within 5% of GR7 (`perf.md`: 2161 and 672k against 2160 and 672k).
 
-## Repair round (after GR8's failed verification)
+## Repair round (after GR8's failed verification; superseded by the amendment)
 
 Items 3 and 4 were checked again for a lever inside GR8's files. There is none:
 

@@ -1,6 +1,6 @@
 # GR7 and GR8 ground: perf HUD per picture
 
-GR8 (fixes after CP-GR) replaced the pictures of P1, P3, P5, P7 and P8 and the two tables below with captures of the GR8 bundle (`index-M8HWa8Lt.js`, at 07fa27f), on the same renderer: headless Chromium on the NVIDIA GPU (`scripts/capture-gpu.mjs`, ANGLE over D3D12, RTX 4070 Laptop). The P6, P9 and P10 pictures and rows are still the GR7 bundle's (`index-CuXy7y9D.js`); GR8 changes no file that draws more or fewer meshes, so their counts stand, but their look is GR7's: the apron at its old level in all 16 P10 shots and the P6 sky, and the GR7 woods floor wherever P6 shows it. 1280x720, seeded `Math.random`, cleared storage, mouse parked on `#top-left-hud`, skills at 99 from a fresh load (capture.md, aggressive ground). Every shot: player alive (hp 99, read after the shot), position logged below. Frame times are not recorded: they come only from `look.bench` on the owner's machine (OV-2).
+GR8 (fixes after CP-GR) replaced the pictures of P1, P3, P5, P7 and P8 and the two tables below with captures of the final GR8 bundle (`index-BVwV2LzT.js`, at d1002da, which adds the carpet cell scramble of the amendment to the first pass at 07fa27f, `index-M8HWa8Lt.js`), plus P7 noon and golden on high, on the same renderer: headless Chromium on the NVIDIA GPU (`scripts/capture-gpu.mjs`, ANGLE over D3D12, RTX 4070 Laptop). The P6, P9 and P10 pictures and rows are still the GR7 bundle's (`index-CuXy7y9D.js`); GR8 changes no file that draws more or fewer meshes, so their counts stand, but their look is GR7's: the apron at its old level in all 16 P10 shots and the P6 sky, the GR7 woods floor wherever P6 shows it, and the GR7 carpet layout (on diagonals) wherever a carpet is in frame. 1280x720, seeded `Math.random`, cleared storage, mouse parked on `#top-left-hud`, skills at 99 from a fresh load (capture.md, aggressive ground). Every shot: player alive (hp 99, read after the shot), position logged below. Frame times are not recorded: they come only from `look.bench` on the owner's machine (OV-2).
 
 `look.weather` does not exist yet (lane WX), so P6 is dawn without rain, P7 has no haze and P9 no overcast. `look.phase` sets the time: night 0.00, dawn 0.25, noon 0.50, golden 0.70.
 
@@ -10,40 +10,42 @@ GR8 (fixes after CP-GR) replaced the pictures of P1, P3, P5, P7 and P8 and the t
 
 | pose | time | tier | HUD calls | triangles | colour calls | shadow calls |
 |---|---|---|---|---|---|---|
-| P1 | noon | performance | 1212 | 283k | 1209 | 0 |
+| P1 | noon | performance | 1212 | 283k | 1205 | 0 |
 | P3 | golden | performance | 257 | 223k | 257 | 0 |
-| P5 | noon | performance | 115 | 135k | 112 | 0 |
+| P5 | noon | performance | 115 | 135k | 115 | 0 |
 | P8 | noon | performance | 276 | 228k | 276 | 0 |
-| P1 | noon | balanced | 2101 | 659k | 1178 | 923 |
-| P3 | golden | balanced | 1428 | 616k | 264 | 1167 |
-| P5 | noon | balanced | 284 | 354k | 120 | 168 |
-| P8 | noon | balanced | 625 | 408k | 283 | 376 |
-| P1 | noon | high | 2556 | 803k | - | - |
-| P3 | golden | high | 1965 | 786k | - | - |
+| P1 | noon | balanced | 2161 | 672k | 1214 | 951 |
+| P3 | golden | balanced | 1428 | 592k | 264 | 1161 |
+| P5 | noon | balanced | 284 | 354k | 118 | 166 |
+| P8 | noon | balanced | 618 | 407k | 280 | 335 |
+| P1 | noon | high | 2549 | 802k | - | - |
+| P3 | golden | high | 1975 | 786k | - | - |
 | P5 | noon | high | 365 | 458k | - | - |
-| P8 | noon | high | 1121 | 682k | - | - |
-| P1 | noon | ultra | 3054 | 986k | - | - |
+| P8 | noon | high | 1176 | 690k | - | - |
+| P1 | noon | ultra | 2999 | 979k | - | - |
 | P3 | golden | ultra | 2117 | 905k | - | - |
-| P5 | noon | ultra | 468 | 554k | - | - |
-| P8 | noon | ultra | 1534 | 897k | - | - |
+| P5 | noon | ultra | 462 | 543k | - | - |
+| P8 | noon | ultra | 1592 | 903k | - | - |
 
-GR8 accept, P1 noon balanced within 5% of GR7: tier table 2101 calls and 659k triangles against GR7's 2170 and 675k (-3.2%, -2.4%); look set 2162 and 672k against 2160 and 672k (+0.1%, 0%).
+GR8 accept, P1 noon balanced within 5% of GR7: 2161 calls and 672k triangles (the balanced rows of both tables are one run here) against GR7's tier-table 2170 and 675k (-0.4%, -0.4%) and its look-set 2160 and 672k (+0.0%, 0%). The carpet scramble moves no instance and adds no draw.
 
 ## Look set (balanced), the pictures in this folder
 
 | picture | bundle | HUD calls | triangles | colour calls | shadow calls | player x, z |
 |---|---|---|---|---|---|---|
-| P1-noon-balanced | GR8 | 2162 | 672k | 1214 | 956 | 0.0, 0.0 |
-| P1-golden-balanced | GR8 | 2596 | 747k | 1191 | 1400 | 0.0, 0.0 |
-| P1-night-balanced | GR8 | 2297 | 693k | 1212 | 1085 | 0.0, 0.0 |
-| P3-golden-balanced | GR8 | 1425 | 611k | 264 | 1163 | -8.0, 50.0 |
+| P1-noon-balanced | GR8 | 2161 | 672k | 1214 | 951 | 0.0, 0.0 |
+| P1-golden-balanced | GR8 | 2596 | 747k | 1190 | 1407 | 0.0, 0.0 |
+| P1-night-balanced | GR8 | 2265 | 690k | 1195 | 1069 | 0.0, 0.0 |
+| P3-golden-balanced | GR8 | 1428 | 592k | 264 | 1161 | -8.0, 50.0 |
 | P6-dawn-balanced | GR7 | 1129 | 515k | 316 | 813 | -29.0, -30.0 |
-| P7-noon-balanced | GR8 | 476 | 261k | 174 | 290 | 85.0, 90.0 |
-| P7-golden-balanced | GR8 | 445 | 267k | 173 | 296 | 85.0, 90.0 |
-| P8-noon-balanced | GR8 | 626 | 408k | 283 | 363 | -50.0, -13.0 |
-| P8-night-balanced | GR8 | 620 | 407k | 283 | 337 | -50.0, -13.0 |
-| P8-pitch0.12-noon-balanced | GR8 | 656 | 411k | 308 | 335 | -50.0, -13.0 |
-| P8-pitch1.15-noon-balanced | GR8 | 365 | 257k | 60 | 305 | -50.0, -13.0 |
+| P7-noon-balanced | GR8 | 464 | 259k | 179 | 290 | 85.0, 90.0 |
+| P7-noon-high | GR8 | 598 | 343k | - | - | 85.0, 90.0 |
+| P7-golden-balanced | GR8 | 443 | 266k | 154 | 294 | 85.0, 90.0 |
+| P7-golden-high | GR8 | 671 | 379k | - | - | 85.0, 90.0 |
+| P8-noon-balanced | GR8 | 618 | 407k | 280 | 335 | -50.0, -13.0 |
+| P8-night-balanced | GR8 | 620 | 407k | 283 | 342 | -50.0, -13.0 |
+| P8-pitch0.12-noon-balanced | GR8 | 618 | 407k | 283 | 335 | -50.0, -13.0 |
+| P8-pitch1.15-noon-balanced | GR8 | 388 | 260k | 60 | 337 | -50.0, -13.0 |
 | P9-noon-balanced | GR7 | 1307 | 408k | 880 | 427 | 78.0, -20.0 |
 | P10-y0.0-noon-balanced | GR7 | 2197 | 701k | 1257 | 936 | 13.0, 8.0 |
 | P10c-y0.0-noon-balanced | GR7 | 440 | 242k | 199 | 247 | 116.0, 116.0 |
