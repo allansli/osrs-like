@@ -1092,15 +1092,15 @@
   "clips": {},
   "budget": {
     "triangles": 98644,
-    "meshes": 181,
+    "meshes": 182,
     "materials": 35,
-    "rawBytes": 4847976,
+    "rawBytes": 4848004,
     "brotliBytes": 1360686
   },
   "figures": {
     "Monster_chicken": {
       "triangles": 4680,
-      "meshes": 12,
+      "meshes": 13,
       "materials": 6,
       "rawBytes": 299792,
       "brotliBytes": 56558

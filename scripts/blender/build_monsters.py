@@ -15,6 +15,7 @@ Sculpts authentic, high-detail OSRS / RuneScape Dragonwilds stylized monsters:
 
 import math
 import os
+import re
 import sys
 import bpy
 import bmesh
@@ -2945,8 +2946,10 @@ def main():
     build_elvarg_dragon((6.2, 0.0, 2.6), mats)
 
     # Merge-only pass (plan M0): one merge_parts call per Monster_* root, no shape, name or colour change.
+    # The chicken's wings are meshes the engine flaps by name (findPivot 'LWing'/'RWing'), so they stay alone.
+    keep = re.compile(figkit.TOGGLED.pattern + r"|^chicken_[LR]Wing$")
     for obj in [o for o in bpy.data.objects if o.name.startswith("Monster_") and o.parent is None]:
-        figkit.merge_parts(obj)
+        figkit.merge_parts(obj, keep=keep)
 
     blend_path = paths.blend_path("monsters")
     glb_path = paths.glb_path("monsters")
