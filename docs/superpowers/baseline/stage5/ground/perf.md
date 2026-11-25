@@ -1,68 +1,70 @@
-# GR7 ground: perf HUD per picture
+# GR7 and GR8 ground: perf HUD per picture
 
-Renderer: headless Chromium on the NVIDIA GPU (`scripts/capture-gpu.mjs`, ANGLE over D3D12, RTX 4070 Laptop), bundle `index-CuXy7y9D.js` (after the GR7 tune). 1280x720, seeded `Math.random`, cleared storage, mouse parked on `#top-left-hud`, skills at 99 from a fresh load (capture.md, aggressive ground). Every shot: player alive (hp 99, read after the shot), position logged below. Frame times are not recorded: they come only from `look.bench` on the owner's machine (OV-2).
+GR8 (fixes after CP-GR) replaced the pictures of P1, P3, P5, P7 and P8 and the two tables below with captures of the GR8 bundle (`index-M8HWa8Lt.js`, at 07fa27f), on the same renderer: headless Chromium on the NVIDIA GPU (`scripts/capture-gpu.mjs`, ANGLE over D3D12, RTX 4070 Laptop). The P6, P9 and P10 pictures and rows are still the GR7 bundle's (`index-CuXy7y9D.js`); GR8 changes no file that draws more or fewer meshes. 1280x720, seeded `Math.random`, cleared storage, mouse parked on `#top-left-hud`, skills at 99 from a fresh load (capture.md, aggressive ground). Every shot: player alive (hp 99, read after the shot), position logged below. Frame times are not recorded: they come only from `look.bench` on the owner's machine (OV-2).
 
 `look.weather` does not exist yet (lane WX), so P6 is dawn without rain, P7 has no haze and P9 no overcast. `look.phase` sets the time: night 0.00, dawn 0.25, noon 0.50, golden 0.70.
 
 "HUD" is `#perf-calls` (colour pass plus shadow pass). "Colour" and "shadow" split the same frames by counting WebGL draw calls per frame over 1 s, by the framebuffer bound at the draw: none (the canvas) is the colour pass on the direct-path tiers (performance, balanced), a render target is the shadow pass. On high and ultra the colour pass also renders into the composer's target, so only the total is meaningful there.
 
-## Calls and triangles at P1, P3, P5 and P8 on every tier
+## Calls and triangles at P1, P3, P5 and P8 on every tier (GR8)
 
 | pose | time | tier | HUD calls | triangles | colour calls | shadow calls |
 |---|---|---|---|---|---|---|
-| P1 | noon | performance | 1212 | 283k | 1208 | 0 |
+| P1 | noon | performance | 1212 | 283k | 1209 | 0 |
 | P3 | golden | performance | 257 | 223k | 257 | 0 |
 | P5 | noon | performance | 115 | 135k | 112 | 0 |
 | P8 | noon | performance | 276 | 228k | 276 | 0 |
-| P1 | noon | balanced | 2170 | 675k | 1178 | 976 |
-| P3 | golden | balanced | 1429 | 617k | 264 | 1163 |
+| P1 | noon | balanced | 2101 | 659k | 1178 | 923 |
+| P3 | golden | balanced | 1428 | 616k | 264 | 1167 |
 | P5 | noon | balanced | 284 | 354k | 120 | 168 |
-| P8 | noon | balanced | 619 | 407k | 284 | 372 |
-| P1 | noon | high | 2570 | 806k | - | - |
-| P3 | golden | high | 1939 | 782k | - | - |
+| P8 | noon | balanced | 625 | 408k | 283 | 376 |
+| P1 | noon | high | 2556 | 803k | - | - |
+| P3 | golden | high | 1965 | 786k | - | - |
 | P5 | noon | high | 365 | 458k | - | - |
-| P8 | noon | high | 1123 | 683k | - | - |
-| P1 | noon | ultra | 3029 | 983k | - | - |
+| P8 | noon | high | 1121 | 682k | - | - |
+| P1 | noon | ultra | 3054 | 986k | - | - |
 | P3 | golden | ultra | 2117 | 905k | - | - |
 | P5 | noon | ultra | 468 | 554k | - | - |
-| P8 | noon | ultra | 1589 | 903k | - | - |
+| P8 | noon | ultra | 1534 | 897k | - | - |
+
+GR8 accept, P1 noon balanced within 5% of GR7: tier table 2101 calls and 659k triangles against GR7's 2170 and 675k (-3.2%, -2.4%); look set 2162 and 672k against 2160 and 672k (+0.1%, 0%).
 
 ## Look set (balanced), the pictures in this folder
 
-| picture | HUD calls | triangles | colour calls | shadow calls | player x, z |
-|---|---|---|---|---|---|
-| P1-noon-balanced | 2160 | 672k | 1214 | 954 | 0.0, 0.0 |
-| P1-golden-balanced | 2594 | 747k | 1190 | 1403 | 0.0, 0.0 |
-| P1-night-balanced | 2261 | 689k | 1194 | 1071 | 0.0, 0.0 |
-| P3-golden-balanced | 1445 | 596k | 264 | 1174 | -8.0, 50.0 |
-| P6-dawn-balanced | 1129 | 515k | 316 | 813 | -29.0, -30.0 |
-| P7-noon-balanced | 437 | 255k | 147 | 290 | 85.0, 90.0 |
-| P7-golden-balanced | 477 | 271k | 166 | 299 | 85.0, 90.0 |
-| P8-noon-balanced | 680 | 415k | 321 | 360 | -50.0, -13.0 |
-| P8-night-balanced | 624 | 408k | 283 | 337 | -50.0, -13.0 |
-| P8-pitch0.12-noon-balanced | 660 | 412k | 304 | 350 | -50.0, -13.0 |
-| P8-pitch1.15-noon-balanced | 377 | 259k | 60 | 309 | -50.0, -13.0 |
-| P9-noon-balanced | 1307 | 408k | 880 | 427 | 78.0, -20.0 |
-| P10-y0.0-noon-balanced | 2197 | 701k | 1257 | 936 | 13.0, 8.0 |
-| P10c-y0.0-noon-balanced | 440 | 242k | 199 | 247 | 116.0, 116.0 |
-| P10-y0.785-noon-balanced | 2356 | 695k | 1383 | 977 | 13.0, 8.0 |
-| P10c-y0.785-noon-balanced | 485 | 253k | 238 | 246 | 116.0, 116.0 |
-| P10-y1.571-noon-balanced | 2551 | 740k | 1522 | 1027 | 13.0, 8.0 |
-| P10c-y1.571-noon-balanced | 455 | 245k | 207 | 248 | 116.0, 116.0 |
-| P10-y2.356-noon-balanced | 2071 | 716k | 979 | 1092 | 13.0, 8.0 |
-| P10c-y2.356-noon-balanced | 491 | 256k | 246 | 245 | 116.0, 116.0 |
-| P10-y3.142-noon-balanced | 2025 | 755k | 913 | 1103 | 13.0, 8.0 |
-| P10c-y3.142-noon-balanced | 1960 | 629k | 1751 | 242 | 116.0, 116.0 |
-| P10-y3.927-noon-balanced | 2300 | 790k | 1236 | 1132 | 13.0, 8.0 |
-| P10c-y3.927-noon-balanced | 2727 | 865k | 2484 | 243 | 116.0, 116.0 |
-| P10-y4.712-noon-balanced | 2349 | 898k | 1256 | 1059 | 13.0, 8.0 |
-| P10c-y4.712-noon-balanced | 1633 | 568k | 1404 | 246 | 116.0, 116.0 |
-| P10-y5.498-noon-balanced | 2021 | 731k | 1004 | 1029 | 13.0, 8.0 |
-| P10c-y5.498-noon-balanced | 493 | 256k | 247 | 246 | 116.0, 116.0 |
+| picture | bundle | HUD calls | triangles | colour calls | shadow calls | player x, z |
+|---|---|---|---|---|---|---|
+| P1-noon-balanced | GR8 | 2162 | 672k | 1214 | 956 | 0.0, 0.0 |
+| P1-golden-balanced | GR8 | 2596 | 747k | 1191 | 1400 | 0.0, 0.0 |
+| P1-night-balanced | GR8 | 2297 | 693k | 1212 | 1085 | 0.0, 0.0 |
+| P3-golden-balanced | GR8 | 1425 | 611k | 264 | 1163 | -8.0, 50.0 |
+| P6-dawn-balanced | GR7 | 1129 | 515k | 316 | 813 | -29.0, -30.0 |
+| P7-noon-balanced | GR8 | 476 | 261k | 174 | 290 | 85.0, 90.0 |
+| P7-golden-balanced | GR8 | 445 | 267k | 173 | 296 | 85.0, 90.0 |
+| P8-noon-balanced | GR8 | 626 | 408k | 283 | 363 | -50.0, -13.0 |
+| P8-night-balanced | GR8 | 620 | 407k | 283 | 337 | -50.0, -13.0 |
+| P8-pitch0.12-noon-balanced | GR8 | 656 | 411k | 308 | 335 | -50.0, -13.0 |
+| P8-pitch1.15-noon-balanced | GR8 | 365 | 257k | 60 | 305 | -50.0, -13.0 |
+| P9-noon-balanced | GR7 | 1307 | 408k | 880 | 427 | 78.0, -20.0 |
+| P10-y0.0-noon-balanced | GR7 | 2197 | 701k | 1257 | 936 | 13.0, 8.0 |
+| P10c-y0.0-noon-balanced | GR7 | 440 | 242k | 199 | 247 | 116.0, 116.0 |
+| P10-y0.785-noon-balanced | GR7 | 2356 | 695k | 1383 | 977 | 13.0, 8.0 |
+| P10c-y0.785-noon-balanced | GR7 | 485 | 253k | 238 | 246 | 116.0, 116.0 |
+| P10-y1.571-noon-balanced | GR7 | 2551 | 740k | 1522 | 1027 | 13.0, 8.0 |
+| P10c-y1.571-noon-balanced | GR7 | 455 | 245k | 207 | 248 | 116.0, 116.0 |
+| P10-y2.356-noon-balanced | GR7 | 2071 | 716k | 979 | 1092 | 13.0, 8.0 |
+| P10c-y2.356-noon-balanced | GR7 | 491 | 256k | 246 | 245 | 116.0, 116.0 |
+| P10-y3.142-noon-balanced | GR7 | 2025 | 755k | 913 | 1103 | 13.0, 8.0 |
+| P10c-y3.142-noon-balanced | GR7 | 1960 | 629k | 1751 | 242 | 116.0, 116.0 |
+| P10-y3.927-noon-balanced | GR7 | 2300 | 790k | 1236 | 1132 | 13.0, 8.0 |
+| P10c-y3.927-noon-balanced | GR7 | 2727 | 865k | 2484 | 243 | 116.0, 116.0 |
+| P10-y4.712-noon-balanced | GR7 | 2349 | 898k | 1256 | 1059 | 13.0, 8.0 |
+| P10c-y4.712-noon-balanced | GR7 | 1633 | 568k | 1404 | 246 | 116.0, 116.0 |
+| P10-y5.498-noon-balanced | GR7 | 2021 | 731k | 1004 | 1029 | 13.0, 8.0 |
+| P10c-y5.498-noon-balanced | GR7 | 493 | 256k | 247 | 246 | 116.0, 116.0 |
 
 P10 is Three Kettle Camp at pitch 0.12 and distance 26, eight yaws (`P10-y<yaw>`), and the same eight yaws with the hero moved to (116, 116), the walkable corner used for the "from the corner" set (`P10c-y<yaw>`). P8 is also shot at the two pitch limits (`P8-pitch0.12`, `P8-pitch1.15`) to judge the woods trees.
 
-## GR7 Accept limits at P1 noon, balanced: missed
+## GR7 Accept limits at P1 noon, balanced: missed (GR7 bundle; moved to the models pass, plan amendment 2026-11-24)
 
 | limit | V2 reference | GR7 | pass |
 |---|---|---|---|
