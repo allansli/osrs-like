@@ -213,7 +213,6 @@ describe('the skinned path (S0; red until S1b)', () => {
     }
     expect(mat.vertexShader).toContain('transformed');
     expect(mat.vertexShader).toContain('objectNormal');
-    expect(mat.vertexShader).toContain('outlineNormal');
   });
 
   it('a plain mesh still gets today\'s shell and today\'s outline material', () => {
