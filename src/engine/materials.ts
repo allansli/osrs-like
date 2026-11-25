@@ -91,10 +91,23 @@ function isSkippableOutline(obj: THREE.Object3D): boolean {
   return false;
 }
 
+/**
+ * Skinned outline push direction (plan S1d): per vertex, the normalised sum of the normals of every
+ * vertex at the same position, so the split copies of a hard edge push the same way.
+ * Two documented cases:
+ * - no `normal` attribute: no `outlineNormal` is written. The shader then reads zero and the shell is
+ *   not pushed, as before S1d, when it read the absent `normal` as zero. Every Blender build exports
+ *   NORMAL; only hand-built fixtures (tests/fixtures/models/skinned-pair.glb) lack it.
+ * - copies whose normals cancel (opposed faces at one position, as on goblin_body in the s3b
+ *   one-material builds): the sum has no direction, so each copy keeps its own normal.
+ */
+const OUTLINE_ZERO_SUM = 1e-4;
+
 function computeOutlineNormals(geometry: THREE.BufferGeometry): void {
   if (geometry.getAttribute('outlineNormal')) return;
-  const posAttr = geometry.getAttribute('position');
   const normAttr = geometry.getAttribute('normal');
+  if (!normAttr) return;
+  const posAttr = geometry.getAttribute('position');
   const count = posAttr.count;
   const outlineNormals = new Float32Array(count * 3);
 
@@ -140,9 +153,12 @@ function computeOutlineNormals(geometry: THREE.BufferGeometry): void {
       }
     }
 
-    const len = Math.sqrt(sumX * sumX + sumY * sumY + sumZ * sumZ);
-    if (!(len > 0)) {
-      throw new Error(`addCartoonOutline: coincident vertices at index ${i} have normals summing to zero, so the skinned outline has no push direction`);
+    let len = Math.sqrt(sumX * sumX + sumY * sumY + sumZ * sumZ);
+    if (len < OUTLINE_ZERO_SUM) {
+      sumX = normAttr.getX(i);
+      sumY = normAttr.getY(i);
+      sumZ = normAttr.getZ(i);
+      len = Math.sqrt(sumX * sumX + sumY * sumY + sumZ * sumZ);
     }
     outlineNormals[i * 3] = sumX / len;
     outlineNormals[i * 3 + 1] = sumY / len;

@@ -61,7 +61,6 @@ function buildPair(rootNode: Partial<GltfNode> = {}): Doc {
   const lo = [0, 1, 2].map((k) => Math.min(...VERTS.map((v) => v[k])));
   const hi = [0, 1, 2].map((k) => Math.max(...VERTS.map((v) => v[k])));
   const pos = acc(new Float32Array(flat), F32, 'VEC3', VERTS.length, [lo, hi]);
-  const nrm = acc(new Float32Array(VERTS.flatMap(() => [0, 0, 1])), F32, 'VEC3', VERTS.length);
   const idx = acc(new Uint16Array([0, 1, 2, 2, 3, 4, 1, 2, 4]), U16, 'SCALAR', 9);
   const joints = acc(new Uint8Array([0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0]), U8, 'VEC4', VERTS.length);
   const weights = acc(new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0]), F32, 'VEC4', VERTS.length);
@@ -76,7 +75,7 @@ function buildPair(rootNode: Partial<GltfNode> = {}): Doc {
   const rigidPos = acc(new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]), F32, 'VEC3', 3, [[0, 0, 0], [1, 1, 0]]);
   const rigidIdx = acc(new Uint16Array([0, 1, 2]), U16, 'SCALAR', 3);
   json.meshes.push(
-    { name: 'probe_body', primitives: [{ attributes: { POSITION: pos, NORMAL: nrm, JOINTS_0: joints, WEIGHTS_0: weights }, indices: idx, material: 0 }] },
+    { name: 'probe_body', primitives: [{ attributes: { POSITION: pos, JOINTS_0: joints, WEIGHTS_0: weights }, indices: idx, material: 0 }] },
     { name: 'crate_box', primitives: [{ attributes: { POSITION: rigidPos }, indices: rigidIdx, material: 0 }] }
   );
   // nodes: 0 Monster_probe, 1 Monster_crate, 2 probe_Torso, 3 probe_LeftArmPivot, 4 probe_body, 5 crate_HeadGroup, 6 crate_box

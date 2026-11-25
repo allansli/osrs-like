@@ -77,11 +77,28 @@ describe('skinned outline normals on hard edges', () => {
     }
   });
 
-  it('throws when coincident copies have opposed normals that sum to zero', () => {
+  it('keeps each copy on its own normal when coincident normals sum to zero', () => {
+    // as goblin_body in the s3b one-material builds: two copies at one position, opposed normals
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.Float32BufferAttribute([0, 0, 0, 0, 0, 0, 1, 0, 0], 3));
-    g.setAttribute('normal', new THREE.Float32BufferAttribute([0, 0, 1, 0, 0, -1, 0, 0, 1], 3));
-    expect(() => addCartoonOutline(skinnedOf(g), 0.03)).toThrow(/sum to zero|summing to zero/);
+    g.setAttribute('normal', new THREE.Float32BufferAttribute([0.302, 0.946, -0.121, -0.302, -0.946, 0.121, 0, 0, 1], 3));
+    addCartoonOutline(skinnedOf(g), 0.03);
+    for (let i = 0; i < 3; i++) {
+      const own = at(g, 'normal', i).normalize();
+      const out = at(g, 'outlineNormal', i);
+      expect(out.length()).toBeCloseTo(1, 5);
+      expect(out.distanceTo(own)).toBeLessThan(1e-5);
+    }
+  });
+
+  it('writes no outlineNormal for a skinned geometry without normals, so the shell is not pushed', () => {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute([0, 0, 0, 1, 0, 0, 0, 1, 0], 3));
+    const mesh = skinnedOf(g);
+    addCartoonOutline(mesh, 0.03);
+    expect(g.getAttribute('outlineNormal')).toBeUndefined();
+    expect(g.getAttribute('normal')).toBeUndefined();
+    expect((shellOf(mesh) as THREE.SkinnedMesh).isSkinnedMesh).toBe(true);
   });
 
   it('starts the skinned outline shader from outlineNormal, not beginnormal_vertex', () => {
