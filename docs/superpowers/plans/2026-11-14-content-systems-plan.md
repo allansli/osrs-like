@@ -4,7 +4,7 @@
 
 Date: 2026-11-14. Branch: `feat/content-systems`. Design: `docs/superpowers/specs/2026-11-14-content-systems-design.md` (called "the design" below; section numbers refer to it). Data: `docs/superpowers/research/content-model/content.ts` (called "the content file"): every row a data task adds is written there, and a task that says "as the content file" copies those rows without changing a number or a name. Earlier documents this plan builds on: the foundation design and plan (`2026-11-13-world-foundation-*`), and the approved designs of Stage 3 (start and pacing), Stage 4 (combat with weight) and Stage 5 (visual pass). Source line numbers are at commit `5caa597`.
 
-The design is a proposal. Nothing in this plan starts before owner step **O-6.1**, and before Stages 3, 4 and 5 are merged to `main` (section 0.5). The first task, **R0**, re-checks every premise the design takes from those three stages and stops the stage if one fails. Critiqued on 2026-11-14 (`../specs/2026-11-14-content-systems-critique.md`); its fixes are applied below. **Revised on 2026-11-14 for the owner's answers** (design section 15.1): aggressive and passive monsters (tasks G1, G2 in slice 0), the style rebalance and arrow grades (a new slice 6, tasks S1 to S4, replacing the old last slice), dungeon drop tables and quest rewards paid once (Z1 to Z5, U0 to U3), and the diary without "peace" (Y1, Y2, Y5). The review log at the end lists what moved.
+The design is a proposal. Nothing in this plan starts before owner step **O-6.1**, and before Stages 3, 4 and 5 are merged to `main` (section 0.5). The first task, **R0**, re-checks every premise the design takes from those three stages and stops the stage if one fails. Critiqued on 2026-11-14 (`../specs/2026-11-14-content-systems-critique.md`); its fixes are applied below. **Revised on 2026-11-14 for the owner's answers** (design section 15.1): aggressive and passive monsters (tasks G1, G2 in slice 0), the style rebalance and arrow grades (a new slice 6, tasks S1 to S4, replacing the old last slice), dungeon drop tables and quest rewards paid once (Z1 to Z5, U0 to U3), and the diary without "peace" (Y1, Y2, Y5). The review log at the end lists what moved. **Revised on 2026-11-25 for the owner's approval of CALL-6.30 to 6.32** (the demons' cave, the Ember Hurler, line of sight): new slices 3a and 3b, the owner step O-6.33, and the tasks the last entry of the review log names. Where a task gives a line number "on `87f18e7`", it is the merged tree of Stages 1 to 5 on this branch.
 
 ---
 
@@ -18,7 +18,7 @@ These are the conventions of the earlier plans, restated so this plan can be rea
 - **[CLAUDE]**: tests that define acceptance, the premise re-check, tuning against a test, every piece of written content (dialogue, journal text, quest text), governance text, and every verification. Tests that define acceptance for an [AGY] task are their own [CLAUDE] task and come first.
 - **[OWNER]** and **[HUMAN]**: a decision only the owner can make, or something a person has to look at in the running game. These are not agent tasks.
 - Agents never merge, tag, push or open pull requests. The main session merges after verification. No commit carries an AI attribution trailer (owner's global rule).
-- Tiers used in this plan: haiku for running agy; sonnet for tests written from a stated spec, for fully specified implementation and for doc sync; opus for the premise re-check (R0), the fight tests and their tuning (B1 to B3), the two tests that replace frozen assertions after an owner's rule change (G1, S1: each has to judge that its replacement is at least as strict as what it replaces), the written content (Q6, Z5, K4, N4, U3) and every verify. No task needs a higher tier: the design is done and each task is bounded.
+- Tiers used in this plan: haiku for running agy; sonnet for tests written from a stated spec, for fully specified implementation and for doc sync; opus for the premise re-check (R0), the fight tests and their tuning (B1 to B3), the three tests that replace frozen assertions after an owner's rule change (G1, S1, L1: each has to judge that its replacement is at least as strict as what it replaces), the written content (Q6, Z5, K4, N4, U3) and every verify. No task needs a higher tier: the design is done and each task is bounded.
 
 ### 0.2 Commands
 
@@ -42,11 +42,11 @@ Run every command from the worktree root, in a shell started with an allowlisted
 
 1. **Allowlist.** A task touches only the files listed for it. The opus verify rejects a diff with any other file in it.
 2. **Line numbers go stale.** Three stages land between `5caa597` and the first task. Every task names the symbols it changes; find them by name. R0 records their current lines.
-3. **Existing tests are frozen.** No edit to any file that exists under `tests/` or `src/__tests__/` when R0 records the baseline: the 103 original tests and every test of Stages 1 to 5. A new test goes in a new file under `tests/`. Stage 6 declares the replacements of design 11.3 and no other. Seven are additive: the declared lists of `tests/content-freeze.test.ts` (D1 adds `DECLARED_NEW_NODES` and `DECLARED_NEW_RECIPES` beside Stage 3's item list and Stage 4's monster list; D1, Z3, K1, N1, S3, U0 each append exactly the ids their slice adds); the two Stage 3 save goldens, regenerated once per new skill (K1, N1); Stage 2's `tests/fixtures/save-relocation/v4-loaded.json`, one added `saved.skills` entry per new skill (K1, N1); the overworld monster counts of `tests/world-budget.test.ts` and `tests/world-data.test.ts` 162, 42 to 48 (D3); the monster type-key count of `src/__tests__/blender-hero.test.ts` as Stage 4 leaves it, 13 to 16, 18, 19 (D3, Z3, U0). Four follow the owner's two rule changes of 2026-11-14, each made by the opus test task named and each replaced by an assertion at least as strict about the new rule: one test of Stage 2's `tests/monster-territory.test.ts`, "an aggressive camp ignores a player whose combat level is above the monster's" (G1); one expression and one import of Stage 3's `tests/support/pacingModel.ts`, the `attackers` line (G1; `tests/pacing.test.ts` itself is not edited; the second pass dropped the `largestAggressive` filter, which changes no number); five expected max hits of Stage 3's `tests/combat-profile.test.ts` (S1); one expected profile of Stage 3's `tests/entry-staff.test.ts` (S1). Design 11.3 items 8 to 11 give the exact old and new assertions. If R0 finds a Stage 4 or Stage 5 test that pins a number of skills, commands or interactive actions, it names it and the owner is asked before any code. If any other existing test goes red, the change is wrong, not the test: stop and report.
+3. **Existing tests are frozen.** No edit to any file that exists under `tests/` or `src/__tests__/` when R0 records the baseline: the 103 original tests and every test of Stages 1 to 5. A new test goes in a new file under `tests/`. Stage 6 declares the replacements of design 11.3 and no other. These are additive: the declared lists of `tests/content-freeze.test.ts` (D1 adds `DECLARED_NEW_NODES` and `DECLARED_NEW_RECIPES` beside Stage 3's item list and Stage 4's monster list; D1, Z3, K1, N1, S3, U0 each append exactly the ids their slice adds); the two Stage 3 save goldens, regenerated once per new skill (K1, N1); Stage 2's `tests/fixtures/save-relocation/v4-loaded.json`, one added `saved.skills` entry per new skill (K1, N1); the overworld monster counts of `tests/world-budget.test.ts` 41 and `tests/world-data.test.ts` 162, 42 to 48 (D3) and then 46 (C1); the monster type-key count of `src/__tests__/blender-hero.test.ts` 138, 13 to 16, 18, 19, 20 (D3, Z3, C1, U0); Stage 5's camp counts, `tests/scatter.test.ts` 176 and 178 and `tests/woods-trees.test.ts` 134 and 240, 15 camps and 42 members to 18 and 48 (D3) and then 17 and 46 (C1) (design 11.3 item 13); the `NEW` list of `tests/new-monsters.test.ts` 125, which gains each Stage 6 type when its row lands (D3, Z3, C1, U0; item 14). Four follow the owner's two rule changes of 2026-11-14, each made by the opus test task named and each replaced by an assertion at least as strict about the new rule: one test of Stage 2's `tests/monster-territory.test.ts`, "an aggressive camp ignores a player whose combat level is above the monster's" (G1); one expression and one import of Stage 3's `tests/support/pacingModel.ts`, the `attackers` line (G1; `tests/pacing.test.ts` itself is not edited; the second pass dropped the `largestAggressive` filter, which changes no number); five expected max hits of Stage 3's `tests/combat-profile.test.ts` (S1); one expected profile of Stage 3's `tests/entry-staff.test.ts` (S1). Design 11.3 items 8 to 11 give the exact old and new assertions. One follows the owner's decision of 2026-11-24 on line of sight (CALL-6.32): the `monsters` key of `tests/fixtures/size-refactor-golden.json`, made by L1 (item 15). If R0 finds a Stage 4 or Stage 5 test that pins a number of skills, commands or interactive actions, it names it and the owner is asked before any code. If any other existing test goes red, the change is wrong, not the test: stop and report.
 4. **Test-first pairs.** A [CLAUDE] test task may leave the suite red until the [AGY] task that implements it lands on the same branch. Allowed in that window: SUITE failures only in the new test files and in the one frozen file the test task is authorised to edit; TYPES and BUILD errors only in the new test files and only because a module, export, field or union member that the paired task adds does not exist yet. The opus verify of the test task lists them. The paired task's accept restores full SG.
 5. **Commit kinds, never mixed.** *Test*. *Data*: rows in a table. *Rule*: a pure module under `src/state`. *Engine*. *UI*. *Text*: dialogue and quest wording. *Docs*. Every commit message names its kind and task: `test(Q1): dialogue rules`, `data(D2): coal, steel, blacksteel`, `rule(Z2): zone walk and dungeon run`.
 6. **Content comes from the content file.** Every id, name and number of a data task is in `docs/superpowers/research/content-model/content.ts` or in the design's tables. A task that seems to need another name or number stops and reports. New ids are added to the declared lists of the freeze test by the test task of the same slice, never by the data task.
-7. **No formula edits, with two named exceptions the owner decided.** The XP table, the XP of existing actions, the hit and damage formulas, the price, requirement and stats of existing items, existing recipes' inputs, existing monsters' stats, `QUEST_DEFS`, `STARTER_QUESTS` and every existing quest's reward do not change. The exceptions, each in one task and nowhere else: the acquisition rule of `stepMonster` (G2, design 7.13); and the three style constants of `playerAttackProfile`, the arrow term, and the rune counts of ice burst and blood barrage (S2 and S4, design 7.12). Melee's branch of `playerAttackProfile`, `playerHitChance`, `monsterHitChance` and `rollMonsterHit` are never edited.
+7. **No formula edits, with three named exceptions the owner decided.** The XP table, the XP of existing actions, the hit and damage formulas, the price, requirement and stats of existing items, existing recipes' inputs, existing monsters' stats, `QUEST_DEFS`, `STARTER_QUESTS` and every existing quest's reward do not change. The exceptions, each in one task and nowhere else: the acquisition rule of `stepMonster` (G2, design 7.13); and the three style constants of `playerAttackProfile`, the arrow term, and the rune counts of ice burst and blood barrage (S2 and S4, design 7.12); and the line-of-sight test of `stepMonster` (L2, design 7.13, CALL-6.32). Melee's branch of `playerAttackProfile`, `playerHitChance`, `monsterHitChance` and `rollMonsterHit` are never edited.
 8. **Pure rules.** A new module under `src/state` takes time and randomness as parameters and never calls `Math.random`, `Date.now` or `performance.now`. `src/state` and `src/data` import nothing from the engine or the UI and contain neither of the two words the architecture test forbids, in code, comments or strings: say "the log" or "the panel" in text.
 9. **No save string as markup.** New UI modules write text with `textContent`. No new `innerHTML` assignment takes a value that came from the save or from a dialogue table. No inline handler attribute is added to `index.html`.
 10. **No new runtime dependency.** No change to `package.json` or `package-lock.json`.
@@ -68,6 +68,7 @@ Run every command from the worktree root, in a shell started with an allowlisted
 | O-6.1b | Only if R0 reports a failed premise: decide how the design changes. | Everything after R0 |
 | H-n | [HUMAN] the play check at the end of slice n (design 11.2). | The slice's pull request |
 | O-6.2 | [HUMAN] a web search for each new name. | The first pull request that carries the name |
+| O-6.33 | Decide the demons' cave income bound (design 15.2, CALL-6.33): against the package's 0.9, the front hall measures 0.94, the back hall 0.87, both halls in turn 0.73. | C1, C2, C3 |
 | O-6.6 | Re-approve the rebalance numbers (CALL-6.24) on the band table that R0's MODEL prints against the merged code, with the level-28 exception. | S1 |
 | O-6.3 | Accept Stage 6, or stop after any slice. | Nothing after it |
 
@@ -90,6 +91,10 @@ If the owner answers a CALL with the alternative, only the named task changes:
 | CALL-6.13: monsters inside the ridge | D3 and D4 take new coordinates from a re-run of MODEL; the task stops if no spot passes. |
 | CALL-6.14: count from the moment a quest is taken | Return to the design: a tally per quest in the save. |
 | CALL-6.16: the owner writes the text | Q6, Z5, K4, N4, U3 deliver the trees with placeholder lines marked as such; the data tests are the same. |
+| CALL-6.33 (a): a longer respawn in the cave | The owner sets the seconds (13.4 s from death to return reaches 0.9; design 7.6). C1 asserts the cave row's `respawnSecs` and that `campRate` with that wait holds 0.9; `campRate` gains a wait argument (Z3's file, one parameter). C2 adds `respawnSecs` to the `Zone` type and the row, and `createMonsterLogic` takes it through Z2's options (add `src/state/monsterAi.ts`, that option only, to C2's files); C3 passes it at spawn. |
+| CALL-6.33 (b) or another change to the Hurler's numbers | C1's Hurler assertions and C2's row take the owner's numbers; design 7.5 and 7.6 follow. |
+| CALL-6.33 (c): the bound read for the cave as a whole | C1 asserts 0.9 for both halls in turn with the walk only, and prints each hall's ratio. No other task changes. |
+| CALL-6.33 (d): the cave's bound is 1.0 | C1 asserts at most 1.0 for each hall and for both in turn; the dungeons keep 0.9. No other task changes. |
 | Other names | The data task uses them; the freeze lists and the names test pin them. |
 
 ---
@@ -227,9 +232,9 @@ The owner approves or amends the CALLs of design section 15 and the names. An am
 ### D3 Roster and camp tests [CLAUDE]
 - **Tier**: sonnet.
 - **Depends**: D2.
-- **Files**: `tests/roster-s6.test.ts` (new); the declared edits to `tests/world-budget.test.ts` and `tests/world-data.test.ts` 162 (the overworld monster count, 42 to 48) and to `src/__tests__/blender-hero.test.ts` (the type-key count, 13 to 16).
+- **Files**: `tests/roster-s6.test.ts` (new); the declared edits to `tests/world-budget.test.ts` 41 and `tests/world-data.test.ts` 162 (the overworld monster count, 42 to 48; design 11.3 items 4, 5), to `src/__tests__/blender-hero.test.ts` 138 (the type-key count, 13 to 16; item 6), to `tests/scatter.test.ts` 176 and 178 and `tests/woods-trees.test.ts` 134 and 240 (15 camps to 18, 42 members to 48; item 13), and to `tests/new-monsters.test.ts` 125 (`NEW` gains `cinder_adept`, `slag_brute`, `marrowjaw`; item 14).
 - **Change**: the three new rows have the stats of design 7.5 and a `model` that is an existing mesh key; `cinder_circle` and `brute_shelf` pass every rule Stage 2's world-data test applies to a camp (members inside, on open cells, no safe zone, no path, no node inside), are clear of every other camp's leash, and of Ashmantle's arena plus 6; `tollmaster` passes Stage 4's arena criteria (design of Stage 4, 6.4) with radius 9 on the real grid; `BOSSES.marrowjaw` is the row of design 7.7 and passes Stage 4's attack-table test; the Adept's coin drop is 230 to 550 (critique H1); `tollmaster` carries `keepsSight` and the two other new camps do not; Marrowjaw's table ends with one Runite Bar at 0.125 (design 7.6); Marrowjaw's coins plus its non-bone, non-food drops at sale value, every entry at its chance, divided by its 180 s return, are at most 0.9 times the GP per second of the best open ground at its level, by Z3's arithmetic (about 9 GP/s against moss guardians' 79 by the content file; second pass: D1's 25% rule exempts bosses, and nothing else held this one).
-- **Accept**: red until D4.
+- **Accept**: red until D4. The verify confirms each of the five frozen files' diffs is exactly the count or list edit named (revision of 2026-11-25: the Stage 5 and Stage 4 pins were found by running the suite on `87f18e7`).
 - **Must not change**: `src/`.
 
 ### D4 Cinder Adepts, Slag Brutes, Marrowjaw [AGY]
@@ -237,7 +242,7 @@ The owner approves or amends the CALLs of design section 15 and the names. An am
 - **Depends**: D3.
 - **Files**: `src/data/world.ts`, `src/data/worldMap.ts`, `src/data/attacks.ts`.
 - **Change**: Data commit, as the content file (with R0's corrections): three monster rows with `model`, `tint`, `modelScale`, `pattern` and drops (the Adept's Cinder Silk and the Brute's Slagscale Hide are left out until K2; Marrowjaw's Tough Hide likewise); three camps (`tollmaster` with `keepsSight: true`); `toll_slam` and `camp_sweep` in `ATTACKS`; `BOSSES.marrowjaw` with `respawnSecs` 180, `arenaRadius` 9, title unset.
-- **Accept**: `ONE(tests/roster-s6.test.ts)`; `ONE(tests/world-budget.test.ts)`; ECON; SG. Marrowjaw is the one boss in `CAMPS` that Stage 3's model fighter might choose (design section 17). The verify prints the pacing model's chosen target per tier. If ECON fails or the table shows Marrowjaw being farmed, the declared fallback (critique H2) is to move Marrowjaw's camp out of `CAMPS` into a `BOSS_CAMPS` list in `worldMap.ts` that `spawns.ts` also spawns (add `src/engine/spawns.ts` to this task's allowlist for that case only), with D3's world-data rules applied to it by name, and to restore the counts of design 11.3 item 4 and 5 to 47. Never edit the pacing test or its fighter. If ECON fails because of the Adept or the Brute, their coins move down along the moss-to-demon line, written back to the content file.
+- **Accept**: `ONE(tests/roster-s6.test.ts)`; `ONE(tests/world-budget.test.ts)`; `ONE(tests/scatter.test.ts)`, `ONE(tests/woods-trees.test.ts)` and `ONE(tests/new-monsters.test.ts)` with D3's edits and every other assertion unedited (a clearance that fails moves a camp, never the test); ECON; SG. Marrowjaw is the one boss in `CAMPS` that Stage 3's model fighter might choose (design section 17). The verify prints the pacing model's chosen target per tier. If ECON fails or the table shows Marrowjaw being farmed, the declared fallback (critique H2) is to move Marrowjaw's camp out of `CAMPS` into a `BOSS_CAMPS` list in `worldMap.ts` that `spawns.ts` also spawns (add `src/engine/spawns.ts` to this task's allowlist for that case only), with D3's world-data rules applied to it by name, and to restore the counts of design 11.3 items 4, 5 and 13 to 47 members (17 camps); the cave (C1) then takes them to 45 and 16. Never edit the pacing test or its fighter. If ECON fails because of the Adept or the Brute, their coins move down along the moss-to-demon line, written back to the content file.
 - **Must not change**: any existing camp, monster or attack row; any Stage 3 test.
 
 ### B1 Marrowjaw's fight test [CLAUDE]
@@ -372,8 +377,8 @@ The owner approves or amends the CALLs of design section 15 and the names. An am
 ### Z3 Dungeon data test and slice 3 content tests [CLAUDE]
 - **Tier**: sonnet.
 - **Depends**: Z2.
-- **Files**: `tests/dungeon-data.test.ts` (new); declared edits to `tests/content-freeze.test.ts` (ids of slice 3: `adamantite_ore`, `adamant_bar`, `adamantite_rock`, `smelt_adamant`, the three adamant forging recipes, `scree_skitter`, `saltfang`), to the "closed later" list of `tests/content-s6.test.ts`, and to `src/__tests__/blender-hero.test.ts` (type keys 16 to 18).
-- **Change**: `dungeon-data.test.ts` reads `DUNGEONS`: rooms inside the zone with a 2-cell margin and at least 6 wide; every member inside its room and of a known type; with gates open every open cell is reachable from the entry; with gates shut neither the boss's cell nor the chest is; the arena fits its room; the zone is at least 400 from the overworld's bound and from every other zone; the door is on an open overworld cell, outside every camp's leash and every arena plus 6, at least 3 from every node; every node in a zone is on an open cell; every id of the chest's `loot` exists, every chance is above 0 and at most 1, an entry whose item is equipment has a chance of at most 0.05 (Stage 3's boss cap), and no dungeon row has a reward field other than `loot`; no monster of a zone or boss row drops equipment; every zone camp is aggressive (`zoneCamps` gives it `keepsSight`); the ratio of a run's pay to the best open ground's, for the model fighter, is at most 0.9, by the arithmetic of design 7.6 and `model.ts` section 8 (the same fighter and no rests on both sides; every non-bone drop counted at sale value on both sides, the boss's included, and every chance entry of a boss or a chest at its chance; open-ground candidates up to ten levels above the fighter's skills; open ground pays per kill with 1.5 s to the next monster or the camp's shared respawn wait, whichever is longer; the dungeon pays its monsters and chest over the fights plus the walk between room centres times 1.5). The test asserts the dimensionless ratio, never a duration (Stage 3's rule 10). Every zone node is created without respawn.
+- **Files**: `tests/dungeon-data.test.ts` (new); declared edits to `tests/content-freeze.test.ts` (ids of slice 3: `adamantite_ore`, `adamant_bar`, `adamantite_rock`, `smelt_adamant`, the three adamant forging recipes, `scree_skitter`, `saltfang`), to the "closed later" list of `tests/content-s6.test.ts`, to `src/__tests__/blender-hero.test.ts` 138 (type keys 16 to 18), and to `tests/new-monsters.test.ts` 125 (`NEW` gains `scree_skitter`, `saltfang`); `tests/support/income.ts` (new).
+- **Change**: `dungeon-data.test.ts` reads `DUNGEONS`: rooms inside the zone with a 2-cell margin and at least 6 wide; every member inside its room and of a known type; with gates open every open cell is reachable from the entry; with gates shut neither the boss's cell nor the chest is; the arena fits its room; the zone is at least 400 from the overworld's bound and from every other zone; the door is on an open overworld cell, outside every camp's leash and every arena plus 6, at least 3 from every node; every node in a zone is on an open cell; every id of the chest's `loot` exists, every chance is above 0 and at most 1, an entry whose item is equipment has a chance of at most 0.05 (Stage 3's boss cap), and no dungeon row has a reward field other than `loot`; no monster of a zone or boss row drops equipment; every zone camp is aggressive (`zoneCamps` gives it `keepsSight`); the ratio of a run's pay to the best open ground's, for the model fighter, is at most 0.9, by the arithmetic of design 7.6 and `model.ts` section 8 (the same fighter and no rests on both sides; every non-bone drop counted at sale value on both sides, the boss's included, and every chance entry of a boss or a chest at its chance; open-ground candidates up to ten levels above the fighter's skills; open ground pays per kill with 1.5 s to the next monster or the camp's shared respawn wait, whichever is longer; the dungeon pays its monsters and chest over the fights plus the walk between room centres times 1.5). The test asserts the dimensionless ratio, never a duration (Stage 3's rule 10). Every zone node is created without respawn. The income arithmetic is written once, in `tests/support/income.ts`: `openGroundBest(level)` (the best open-ground type and its GP per second, by the rule above) and `campRate(types, level)` (a camp of those member types killed in turn: its coins and goods over the longer of the summed kill times plus 1.5 s each, and the respawn wait plus the slowest kill). The cave's test (C1) reads the same two functions.
 - **Accept**: passes vacuously until Z4.
 - **Must not change**: `src/`.
 
@@ -424,13 +429,114 @@ The owner approves or amends the CALLs of design section 15 and the names. An am
 
 ---
 
+## 6.3a Slice 3a: the demons' cave
+
+Design 7.5 (the Ember Hurler), 7.6 ("The demons' cave") and the "Approved package" of `docs/superpowers/proposals/2026-11-24-call-6.30-demons-cave.md` (owner, 2026-11-24). It needs slice 3's zone mechanism (Z2, Z6, Z7) and Z3's income arithmetic. Every line number "on `87f18e7`" is the merged tree of Stages 1 to 5.
+
+### O-6.33 The cave's income bound [OWNER]
+The main session shows the owner design 7.6's measurement (against the package's 0.9 of the best open ground at level 70: the front hall 0.94, the back hall 0.87, both halls in turn 0.73) and CALL-6.33's four options. The answer sets C1's bound and what C2 adds (table 0.5). Nothing of slice 3a starts before it.
+
+### C1 Cave and Ember Hurler tests, and the declared count edits [CLAUDE]
+- **Tier**: sonnet (written from design 7.5, 7.6 and the owner's answer to CALL-6.33).
+- **Depends**: G-6.3, O-6.33.
+- **Files**: `tests/cave.test.ts` (new). Declared edits (design 11.3): `tests/content-freeze.test.ts` (`DECLARED_NEW_MONSTERS` gains `ember_hurler`; item 1); `tests/world-budget.test.ts` 41 and `tests/world-data.test.ts` 162 (48 to 46; items 4, 5); `src/__tests__/blender-hero.test.ts` 138 (18 to 19; item 6); `tests/scatter.test.ts` 176 and 178 and `tests/woods-trees.test.ts` 134 and 240 (18 camps to 17, 48 members to 46; item 13); `tests/new-monsters.test.ts` 125 (`NEW` gains `ember_hurler`; item 14).
+- **Change**: `cave.test.ts`, against `CAVES` and `DUNGEONS` (`src/data/dungeons.ts`), `zoneWalk`, `zoneCamps`, `zoneSafe`, `canEnter`, `zoneRespawns` (`src/state/dungeon.ts`), `buildWalkGrid` and `findPath` with Z2's signatures, `stepMonster`, `CAMPS`, `POIS`, `MONSTER_TYPES`, `PATTERNS`, and `openGroundBest`, `campRate` from `tests/support/income.ts` (Z3):
+  - **The row.** `CAVES` holds one row, `slagfall_cave`, named "Slagfall Terrace", origin (1000, 600), size 96, door (-84, 98), entry (12, 34), and the rooms, camps, members and `solid` rectangles of design 7.6's table, written out in the test. `needs` is `{ all: [] }`, and `canEnter` is true for a new game. The row has no `gates`, `nodes`, `chest` or `loot` field.
+  - **The package's rules.** Each camp holds at most 4. The cave holds 3 `lesser_demon` and 3 `ember_hurler`: camp `front` 2 and 1, camp `back` 1 and 2. Every Hurler's home is more than 12 from `entry`. Every home of one camp is more than 12 from every home of the other.
+  - **Walking.** On `buildWalkGrid(zoneWalk(cave, []), 1000, 600, 96)`: every open cell is reachable from the entry by `findPath`; no point inside a `solid` rectangle is walkable, and a dungeon fixture with a `solid` rectangle is not walkable inside it either; every member's home is on an open cell inside its room; every room lies inside the zone with a 2-cell margin and is at least 6 wide. The door (-84, 98) passes Z3's door rules (an open overworld cell, outside every camp's leash and every arena plus 6, at least 3 from every node). The cave's origin is at least 400 from every `DUNGEONS` origin. `zoneSafe(cave, 1012, 634)` is true, and false 6.1 from the entry.
+  - **Rules.** `zoneRespawns(cave)` is true, and false for both rows of `DUNGEONS`. `zoneCamps(cave)` returns two aggressive camps, `slagfall_cave:front` and `slagfall_cave:back`, with `keepsSight: true` and no `aggroRadius`. Through `stepMonster` with the cave grid and those camps: an idle Lesser Demon acquires a combat-126 hero standing 8.9 away and not one standing 9.1 away; an idle Ember Hurler acquires one at 11.9 and not at 12.1. A member created with `respawn: zoneRespawns(cave)` is back at home and `idle` after `DYING_SECS` plus `DEAD_SECS` of steps.
+  - **The overworld.** `CAMPS` has no camp `slagfall_terrace` and no member within 12 of (-84, 98). `pass_sentries` holds the four Lesser Demons at (-42, 55), (-37, 55), (-27, 55) and (-22, 55), each with `wander` 1. `POIS` still holds `slagfall_terrace` (the cave mouth).
+  - **The Ember Hurler.** `MONSTER_TYPES.ember_hurler`: name "Ember Hurler", level 66, hp 105, maxHit 19, atk 64, def 44, style `ranged`, pattern `dark_ranger` (whose fourth entry is `pinning_volley`), model `lesser_demon`, tint `0xb8b2a7`, modelScale 0.85, and the Lesser Demon's `scale`, `bodyColor`, `accentColor`, `weaponColor` and `kind`. Its drops, in order: `dragon_bones` 1; coins 340 to 760 at 1; `shark` 0.5; 2 `ashes` 0.5. (Slagscale Hide 0.10 is appended by K2, and K1 asserts it.) No drop is an item of type `equip`. `MONSTER_TYPES.lesser_demon` deep-equals its row before the task.
+  - **The orb.** A source scan of `src/engine/actions.ts`: the branch that calls `spawnHellfireOrb` tests `monster.typeKey === 'lesser_demon' || monster.typeKey === 'ember_hurler'`, and no other line names `ember_hurler`.
+  - **The income bound**, as the owner answered CALL-6.33 (table 0.5): with every fighting skill at 70, `campRate` of camp `front`, of camp `back`, and of both in turn with the walk between the halls' centres (32 units, times 1.5, both ways, at 11.5 units a second, as Z3 walks a dungeon), each divided by `openGroundBest(70).rate`. The test prints the three ratios (0.94, 0.87 and 0.73 on `87f18e7` with the Hurler's hide counted) and asserts the bound the owner set. Until K2 the hide is absent and each ratio is a little lower; the test reads the tables, so K2's slice gate checks it again.
+  - **The cave's light.** `CAVE_LIGHT` (`src/data/look.ts`) is exactly: `phase` 0, `sunElevationDeg` 90, `key` `'#ff7a3a'`, `keyIntensity` 0.3, `zenith` `'#2a120c'`, `horizon` `'#2a120c'`, `air` `'#3b1a12'`, `fill` `'#120a1a'`, `bounce` `'#ff6a1f'`, `exposure` 1.2 (design 7.6's words, as the lead's starting values; H-3a may ask to retune them, and the retune is a [CLAUDE] data edit of this row and this assertion only). `frameOf(key)` (`src/state/dayCycle.ts`) gives `sunDir` [0, 1, 0], `keyIsMoon` false and the key's exposure and intensity, and for `DAY_KEYS[2]` and `DAY_KEYS[3]` it equals `dayFrameAt` at their phases within 1e-6 in every colour. `DAY_KEYS` still has six rows.
+- **Accept**: red until C2 and C3 (the missing table, functions, row and branch). The verify lists the errors, and confirms each frozen file's diff is exactly the edit named above.
+- **Must not change**: `src/`; any other assertion of the seven edited files; `tests/gate-simulation.test.ts`, `tests/monster-patterns.test.ts`, `tests/sustain.test.ts` (the sentries).
+
+### C2 The cave and the Ember Hurler, as rules and data [AGY]
+- **Tier**: sonnet.
+- **Depends**: C1.
+- **Files**: `src/state/dungeon.ts`, `src/data/dungeons.ts`, `src/data/world.ts`, `src/data/worldMap.ts`.
+- **Change**: Rule commit, then Data commit.
+  - `dungeon.ts`: the type `Zone` (`id`, `name`, `origin`, `size`, `door`, `entry`, `rooms`, `camps`, `needs`, `solid?: [number, number, number, number][]`) and `Dungeon = Zone & { gates, nodes, chest, loot }`. `zoneWalk`, `zoneCamps`, `zoneSafe`, `canEnter` and `savedPose` take a `Zone`. `zoneWalk` treats a zone without `gates` as having none and returns false inside a `solid` rectangle. A zone camp row's `aggro` becomes optional; without it, `zoneCamps` leaves `aggroRadius` unset (the camp is still aggressive). `zoneRespawns(zone)` returns `!('chest' in zone)`.
+  - `dungeons.ts`: `export const CAVES: Zone[]` with the one row of design 7.6.
+  - `world.ts`: the `ember_hurler` row, placed after `thornwatch_marksman`, as C1 asserts. The 2 ashes are written as D4 writes the Cinder Adept's (`{ id: 'ashes', chance: 0.5, qty: 2 }`).
+  - `worldMap.ts`: delete the `makeCamp('slagfall_terrace', ...)` entry (lines 230-233 on `87f18e7`). Nothing else.
+- **Accept**: `ONE(tests/cave.test.ts)` except the orb scan and the light cases (C3); `ONE(tests/zone-rules.test.ts)` and `ONE(tests/dungeon-data.test.ts)` unchanged; `ONE(tests/gate-simulation.test.ts)`, `ONE(tests/world-data.test.ts)`, `ONE(tests/monster-patterns.test.ts)`, `ONE(tests/sustain.test.ts)`, `ONE(tests/scatter.test.ts)`, `ONE(tests/woods-trees.test.ts)`, `ONE(tests/new-monsters.test.ts)`, `ONE(tests/content-s6.test.ts)`, `ONE(tests/names-s6.test.ts)`; ECON; MODEL; SG except those C3 cases.
+- **Must not change**: the `lesser_demon` row; `pass_sentries` and every other camp; `POIS`; the rows of `DUNGEONS`; `runStep`, `openChest`; `createMonsterLogic` (unless the owner chose CALL-6.33 (a), table 0.5).
+
+### C3 The cave in the engine [AGY]
+- **Tier**: sonnet.
+- **Depends**: C2, Z6, Z7, O-6.33.
+- **Files**: `src/engine/zones.ts`, `src/engine/spawns.ts`, `src/engine/loop.ts`, `src/engine/worldBuild.ts`, `src/engine/actions.ts`, `src/engine/lighting.ts`, `src/engine/particles.ts`, `src/state/commands.ts`, `src/state/dayCycle.ts`, `src/data/look.ts`.
+- **Change**: Engine commit. The engine treats a zone as a cave when its row is in `CAVES`.
+  - `actions.ts`, `performMonsterRetaliation`, line 495 on `87f18e7`: `} else if (monster.typeKey === 'lesser_demon') {` becomes `} else if (monster.typeKey === 'lesser_demon' || monster.typeKey === 'ember_hurler') {`. No other line of the function.
+  - The door: `worldBuild.ts` builds a door object at each `CAVES` row's `door`, as Z7 builds the Underkiln's (the signpost builder's posts, charcoal), with `action: 'door'`. Its prompt names "Slagfall Terrace" and says nothing is needed. `commands.ts`: Z7's `enterDungeon` command accepts a `CAVES` id; a cave makes no `DungeonRun`.
+  - `zones.ts`: `enterZone(def)` for a cave builds as Z6 does, with walls 6 high in charcoal (`0x2b2622`), the floor textured with `loadAlbedo(biomeAlbedoId('peak-volcanic'), GROUND_REPEAT)` (`src/engine/textures.ts`, the volcanic ground tile), a `World_obsidian_spire` on each `solid` rectangle's centre, and a `World_lava_fissure` every 8 units along each wall's inner face, its material emissive ember. On the first entry in a session it spawns the members through `spawnMonster` (`spawns.ts`) with the prefixed camp ids and `respawn: zoneRespawns(def)`. `leaveZone()` from a cave hides the cave's group and its monsters and keeps them (no dispose); a later entry shows them again. Nothing of the cave is saved.
+  - `loop.ts`: `updateMonsters` steps the cave's monsters only while the hero is in the cave (Z7's rule; they keep their timers while hidden). `updateCamera`: while in a cave, the arm's horizontal length shrinks in steps of 0.25, not below `CAMERA_LIMITS.distanceMin` times the cosine of the pitch, until `G.walkGrid.walkable(camTargetX, camTargetZ)` is true.
+  - `look.ts`: `export const CAVE_LIGHT: DayKey` with the values C1 asserts. It is not added to `DAY_KEYS`.
+  - `dayCycle.ts`: `export function frameOf(k: DayKey): DayFrame`, each colour through `hexToLinear`, `keyIntensity` and `exposure` as given, `sunDir` [0, 1, 0], `keyIsMoon` false. `dayFrameAt` is not edited.
+  - `lighting.ts`: one function returns the frame to apply: inside a cave `frameOf(CAVE_LIGHT)`, built once; elsewhere `dayFrameAt(currentPhase)`. `currentDayFrame` (line 114 on `87f18e7`) and the frames `updateLighting` applies (lines 66 and 204) read it; line 157 (the first shadow direction) does not. The phase keeps stepping, so the saved clock runs on.
+  - `particles.ts`: `export function setCaveWeather(on: boolean)`. While on, `getWeatherState` returns `{ id: 'ash_fall', blend: 1, curr, prev, keyScale: 1, fogScale: 1 }` with `curr` and `prev` the `ash_fall` row of `WEATHER` (its glowing ember motes and grey motes), and the fall mesh is hidden. `zones.ts` calls it on entering and leaving a cave. `WEATHER` gains no row.
+- **Accept**: `ONE(tests/cave.test.ts)` whole; `ONE(tests/architecture.test.ts)`; SG; BUILD's chunk size recorded against design section 10. [HUMAN] in H-3a.
+- **Must not change**: dungeon zones' behaviour (Z6, Z7: they are still built per run and disposed); `dayFrameAt`; the saved clock; overworld lighting, fog and weather; every other branch of `performMonsterRetaliation`.
+
+### G-6.3a Slice 3a gate [CLAUDE] + H-3a [HUMAN]
+- **Tier**: opus (verification).
+- **Change**: the slice gate of 0.2 with PACE (`CAMPS` changed): the pacing table's chosen target per tier is printed and compared with R0's, and the sentries' 4 are still the largest Lesser Demon camp; the diff of the slice against its tasks' allowlists; the seven frozen files' diffs are exactly C1's declared edits.
+- **H-3a**: design 11.2, the cave item: enter at the terrace, fight both rooms, step out and back in, die inside, reload inside, teleport out. The light, the seams and the camera at every yaw and pitch. Perf HUD inside. O-6.2 searches "Ember Hurler".
+
+---
+
+## 6.3b Slice 3b: line of sight
+
+Design 7.13, "Line of sight" (CALL-6.32, owner, 2026-11-24): a monster fires a ranged or magic attack only if `segmentWalkable` holds from it to the hero; otherwise it closes in. A slice of its own, after the cave, so the cover can be tested on the cave's pillars and checked by a person standing behind one.
+
+### L1 Line-of-sight tests and the declared replacement [CLAUDE]
+- **Tier**: opus (it replaces a frozen digest after the owner's rule change, and must show the replacement is at least as strict).
+- **Depends**: G-6.3a.
+- **Files**: `tests/line-of-sight.test.ts` (new); `tests/fixtures/size-refactor-golden.json` (the `monsters` key only; design 11.3 item 15).
+- **Change**:
+  - **Before writing**, on the branch as it stands: copy the scene of `monsterTrace` in `tests/size-refactor-golden.test.ts` (the wall `Math.abs(x) < 0.6 && Math.abs(z) <= 8`, the five monsters, the 1,800 steps) into the new test as a function that returns one digest per monster. Write the goblin's, scorpion's, dark wizard's and hill giant's digests into the new test as constants, with the commit they were taken on. Then, on a scratch copy of the branch with exactly L2's four edits, compute the whole trace's digest with `GOLDEN_WRITE=1`, and put it into the fixture's `monsters` key (on `87f18e7` it is `5e5eb89906dbee5772c106f4fadefa7dff1087d586f021600d920f57e4f283f8`, from `f3c2f70d9ac992a39e6d7d52fcf1e181935e1f249dabbd25a4f65d78dd69e957`). `plans` and `telegraphs` stay byte-identical.
+  - `line-of-sight.test.ts`, on a walk grid with the same wall inside ±118, `dt` 1/60, a seeded `rand`:
+    1. **No shot through a wall.** For each of `goblin_archer`, `dark_ranger`, `thornwatch_marksman`, `dark_wizard`, `elvarg_dragon`, `cinder_adept`, `ember_hurler`, and `ashmantle` (camp id `ashmantle`, the hero inside its arena circle of its home): the monster at (-4, 0) is pulled by `onPlayerHit(m, 0)` and the hero stands at (4, 0), 8 away, across the wall. No step emits `attack` or `windup` while `segmentWalkable(grid, [m.x, m.z], [4, 0])` is false. Within 900 steps the monster emits `attack` or `windup`, and on that step the segment is walkable.
+    2. **Open ground as today.** The same eight with no wall: `attack` or `windup` within 120 steps, Ashmantle within 240 (its 2 s opening shift and 1 s first entry).
+    3. **Melee does not need the line.** `goblin` and `lesser_demon` at (-1.2, 0), the hero at (1.2, 0), the wall between: `attack` within 120 steps.
+    4. **No grid, no rule.** A goblin archer at (-4, 0), the hero at (4, 0), `world.grid` absent: `attack` within 120 steps.
+    5. **A started wind-up resolves.** A `dark_ranger` with no wall, `patternIdx` 3 and `attackCooldown` 0, emits `windup` for `pinning_volley`; the following steps use the grid with the wall and the hero does not move; the `resolve` event comes with `hit: true`.
+    6. **Acquisition.** An idle `dark_wizard` in an aggressive test camp (radius 12, `keepsSight`) at (-4, 0), the hero at (4, 0) across the wall at combat 1: the step emits `aggro` and not `attack`.
+    7. **The cave's pillar.** On the cave's grid (C1), an Ember Hurler at its home (1074, 628), pulled; the hero at (1066.8, 633.4), 9 away, with the pillar [1069, 630, 1071, 632] between (the test first asserts the segment is not walkable): no `attack` or `windup` while the segment is blocked, and one within 900 steps once it is clear.
+    8. **The golden's four.** The per-monster digests of the goblin, scorpion, dark wizard and hill giant equal the constants above; in that scene Ashmantle emits no `attack` or `windup` on a step where its segment to the hero is not walkable.
+- **Accept**: red until L2. Cases 1 to 6 were run on a scratch copy of `87f18e7` with L2's edits for the six types that exist there (2026-11-25): every type held its fire while the wall cut the line and fired within 144 steps (Ashmantle 179); with no wall all fired at once (Ashmantle at 179); melee, no grid, the wind-up and the acquisition held. The verify runs the file on the code before L2 and lists the failures: cases 1, 6, 7, and the Ashmantle half of case 8, and `tests/size-refactor-golden.test.ts` ("every monster step on a walk grid is unchanged"). Cases 2 to 5 and the four digests pass before and after. The fixture's diff is the one key.
+- **Must not change**: `src/`; `tests/size-refactor-golden.test.ts`; the fixture's `plans` and `telegraphs`; any other test.
+
+### L2 Line of sight [AGY]
+- **Tier**: sonnet.
+- **Depends**: L1.
+- **Files**: `src/state/monsterAi.ts`.
+- **Change**: Rule commit, exactly these four edits (lines on `87f18e7`; find them by the expressions quoted):
+  1. After `attackRange` (line 165), a module function, not exported:
+     `function lineClear(m: MonsterLogic, world: StepWorld): boolean { return attackRange(m) === MELEE_RANGE || !world.grid || segmentWalkable(world.grid, [m.x, m.z], [world.playerX, world.playerZ]); }`
+  2. The chase branch (line 355): `if (distToPlayer > attackRange(m)) {` becomes `if (distToPlayer > attackRange(m) || !lineClear(m, world)) {`.
+  3. The repath (line 392): the fourth argument of `entityGoal(world.grid, start, [world.playerX, world.playerZ], attackRange(m))` becomes `attackRange(m) > MELEE_RANGE ? MELEE_RANGE : attackRange(m)`.
+  4. The first strike on acquisition (line 465): `if (distToPlayer <= attackRange(m)) {` becomes `if (distToPlayer <= attackRange(m) && lineClear(m, world)) {`.
+- **Accept**: `ONE(tests/line-of-sight.test.ts)`; `ONE(tests/size-refactor-golden.test.ts)` with L1's fixture; unedited and green: `ONE(tests/monster-territory.test.ts)`, `ONE(tests/monster-routes.test.ts)`, `ONE(tests/monster-patterns.test.ts)`, `ONE(tests/monster-ai.test.ts)`, `ONE(tests/boss-phases.test.ts)`, `ONE(tests/stage2-review-fixes.test.ts)`, `ONE(tests/gate-simulation.test.ts)`, `ONE(tests/aggression.test.ts)`, `ONE(tests/cave.test.ts)`; ECON; MODEL; SG.
+- **Must not change**: `attackRange`, `MELEE_RANGE`, `FAR_RANGE`; `segmentWalkable`, `entityGoal` (`pathfind.ts`); the acquisition test G2 wrote; `stepWindupAndRecovery`, `patternAttack`; any file but `monsterAi.ts`.
+
+### G-6.3b Slice 3b gate [CLAUDE] + H-3b [HUMAN]
+- **Tier**: opus (verification).
+- **Change**: the slice gate of 0.2; the slice's diff is `src/state/monsterAi.ts`, the new test and the fixture's one key; L2's diff is exactly the four edits; the four per-monster digests hold.
+- **H-3b**: design 11.2, the cover item: stand behind a cave pillar and a wall corner from a Hurler, behind the castle wall from a dark wizard, across the river from goblin archers. Judged for: they walk round to get a shot and never shoot through.
+
+---
+
 ## 6.4 Slice 4: Crafting
 
 ### K1 Crafting tests [CLAUDE]
 - **Tier**: sonnet.
 - **Depends**: G-6.3.
 - **Files**: `tests/crafting.test.ts` (new); declared edits: `tests/content-freeze.test.ts` (8 materials, 16 recipes), the "closed later" list, the two Stage 3 goldens regenerated with `UPDATE_GOLDEN=1` after K2, and Stage 2's `tests/fixtures/save-relocation/v4-loaded.json` edited by hand (the verify confirms each of the three diffs is one added `crafting` entry under `skills`).
-- **Change**: `SKILLS_META.crafting` exists; a new game and a loaded version-4 save have Crafting 1 with 0 XP; each of the sixteen recipes can be made at its level with its inputs and not one level below; `recipesFor('bench')` returns exactly the recipes of kind `craft`, `recipesFor('forge')` what the forge shows today plus the new smithing and cooking rows, and no recipe is in two stations; `unlocksAt('crafting', n)` returns the row of design 7.4 at each level; the actions-to-level table of `results.txt` section 4 within one action; the material drops are the last entries of their tables; Stage 3's `forgeHint` for a green hide body names its bench recipe (3 Chitin Plate at Crafting 20), and for an item with no recipe is unchanged.
+- **Change**: `SKILLS_META.crafting` exists; a new game and a loaded version-4 save have Crafting 1 with 0 XP; each of the sixteen recipes can be made at its level with its inputs and not one level below; `recipesFor('bench')` returns exactly the recipes of kind `craft`, `recipesFor('forge')` what the forge shows today plus the new smithing and cooking rows, and no recipe is in two stations; `unlocksAt('crafting', n)` returns the row of design 7.4 at each level; the actions-to-level table of `results.txt` section 4 within one action; the material drops are the last entries of their tables, the Ember Hurler's Slagscale Hide at 0.10 among them (design 7.4, 7.5); Stage 3's `forgeHint` for a green hide body names its bench recipe (3 Chitin Plate at Crafting 20), and for an item with no recipe is unchanged.
 - **Accept**: red until K2.
 - **Must not change**: `src/`.
 
@@ -438,7 +544,7 @@ The owner approves or amends the CALLs of design section 15 and the names. An am
 - **Tier**: sonnet.
 - **Depends**: K1.
 - **Files**: `src/data/catalog.ts` (one row in `SKILLS_META`), `src/data/extras.ts`, `src/data/world.ts`, `src/data/recipes.ts`, `src/state/unlocks.ts`.
-- **Change**: Data commit, as the content file. `RecipeDef.kind` gains `'craft'`; `recipesFor(station)` in `recipes.ts`; `forgeHint` also finds a recipe of kind `craft` and says "at a bench". The eight materials; the sixteen recipes; the appended drops of design 7.4 (including the three D4 left out).
+- **Change**: Data commit, as the content file. `RecipeDef.kind` gains `'craft'`; `recipesFor(station)` in `recipes.ts`; `forgeHint` also finds a recipe of kind `craft` and says "at a bench". The eight materials; the sixteen recipes; the appended drops of design 7.4 (including the three D4 left out, and the Ember Hurler's Slagscale Hide at 0.10 that C2 left out, design 7.5).
 - **Accept**: `ONE(tests/crafting.test.ts)`, `ONE(tests/content-s6.test.ts)`; ECON; `ONE(tests/save-compat-s3.test.ts)` and `ONE(tests/save-relocation.test.ts)` with the edited goldens; SG.
 - **Must not change**: `combatLevel`; any other row of `catalog.ts`.
 
@@ -560,7 +666,7 @@ The main session shows the owner the band table that R0's MODEL printed on the m
 ### U0 Slice 7 content tests [CLAUDE]
 - **Tier**: sonnet.
 - **Depends**: G-6.6.
-- **Files**: `tests/wyrmsteel.test.ts` (new); the declared edits to `tests/content-freeze.test.ts` (`kiln_shard`, `wyrmsteel_ingot`, `smelt_wyrmsteel`, the three dragon forging recipes, `kiln_warden`), to the "closed later" list of `tests/content-s6.test.ts`, and to `src/__tests__/blender-hero.test.ts` (type keys 18 to 19).
+- **Files**: `tests/wyrmsteel.test.ts` (new); the declared edits to `tests/content-freeze.test.ts` (`kiln_shard`, `wyrmsteel_ingot`, `smelt_wyrmsteel`, the three dragon forging recipes, `kiln_warden`), to the "closed later" list of `tests/content-s6.test.ts`, to `src/__tests__/blender-hero.test.ts` 138 (type keys 19 to 20: the cave's Ember Hurler is the nineteenth), and to `tests/new-monsters.test.ts` 125 (`NEW` gains `kiln_warden`).
 - **Change**: `wyrmsteel.test.ts`: an ingot needs one runite bar and one Kilnglass Shard at Smithing 60; the three forging recipes make the existing dragon scimitar, platelegs and platebody from 4, 4 and 5 ingots at 60, 62 and 65; Kilnglass comes from the Kiln Warden's table and the Underkiln's `loot` and from nothing else; the chest's fixed part holds at least one shard (base loot, design 7.6 and CALL-6.25; with it the kit takes 13 clears at worst and chapter 6's shard step always follows its chest step); from the rows, by the exact distribution and not by sampling, the mean per clear is 2.2 within 0.05 and the expected clears for 4 and for 13 ingots are 2.3 and 6.4 within 0.1 (design 7.6; an ingot from the boss counts as a shard). Z3's `dungeon-data.test.ts` reads the table and needs no edit.
 - **Accept**: red until U1 (missing ids). The verify confirms the freeze test's diff only adds ids.
 - **Must not change**: `src/`, any other existing test.
@@ -602,7 +708,7 @@ The main session shows the owner the band table that R0's MODEL printed on the m
 - **Tier**: sonnet (from design 7.8).
 - **Depends**: G-6.7.
 - **Files**: `tests/diary.test.ts`, `tests/diary-data.test.ts` (new).
-- **Change**: rules, on a fixture tier: `diaryView` marks tasks and counts; `claimTier` is refused until five are done, pays the ember and the easy tier's 500 GP once, is refused when the ember does not fit, and records the tier; `perks(state)` returns exactly the perk of each claimed tier (design 7.8's table): a deposit box at a region's shrine from its middle tier, a bank from its hard tier, the two start-town perks. `shrineBank(state, regionId)` is `'none'`, `'deposit'` or `'bank'`; `shrineTransfer(state, regionId, action, itemId, mode)` (design 7.8): at `'deposit'` a deposit moves exactly what today's `deposit` moves and a withdrawal is refused with a reason and moves nothing; at `'bank'` both behave exactly as today's `deposit` and `withdraw`; at `'none'` both are refused; the bank's capacity rule is today's (a full bank refuses a shrine deposit with today's reason). No perk concerns aggression: a scan finds no read of `perks` in `src/state/monsterAi.ts`. Data: 15 tiers of 5 tasks; every condition valid by `evalCond`'s vocabulary and ids; each stat family (`kill`, `gather`, `craft`, `talk`, `clear`, `bury`, `vows`) and each of Crafting and Runebinding read by at least one task; no task is true for a new game.
+- **Change**: rules, on a fixture tier: `diaryView` marks tasks and counts; `claimTier` is refused until every task of the tier is done (five; six in the volcanic medium tier), pays the ember and the easy tier's 500 GP once, is refused when the ember does not fit, and records the tier; `perks(state)` returns exactly the perk of each claimed tier (design 7.8's table): a deposit box at a region's shrine from its middle tier, a bank from its hard tier, the two start-town perks. `shrineBank(state, regionId)` is `'none'`, `'deposit'` or `'bank'`; `shrineTransfer(state, regionId, action, itemId, mode)` (design 7.8): at `'deposit'` a deposit moves exactly what today's `deposit` moves and a withdrawal is refused with a reason and moves nothing; at `'bank'` both behave exactly as today's `deposit` and `withdraw`; at `'none'` both are refused; the bank's capacity rule is today's (a full bank refuses a shrine deposit with today's reason). No perk concerns aggression: a scan finds no read of `perks` in `src/state/monsterAi.ts`. Data: 15 tiers, fourteen of 5 tasks and the volcanic corner's medium tier of 6, 76 tasks in all; that tier holds "Kill 10 Ember Hurlers" with the condition `{ stat: ['kill:ember_hurler', 10] }` (CALL-6.31); every condition valid by `evalCond`'s vocabulary and ids; each stat family (`kill`, `gather`, `craft`, `talk`, `clear`, `bury`, `vows`) and each of Crafting and Runebinding read by at least one task; no task is true for a new game.
 - **Accept**: red until Y2 and Y3.
 - **Must not change**: `src/`, any existing test.
 
@@ -614,11 +720,11 @@ The main session shows the owner the band table that R0's MODEL printed on the m
 - **Accept**: `ONE(tests/diary.test.ts)`; SG.
 - **Must not change**: `normalizeProgress`'s rules for the other fields; `finishQuest`.
 
-### Y3 The 75 tasks [AGY]
+### Y3 The 76 tasks [AGY]
 - **Tier**: sonnet (the table of design 7.8, one condition per task; where a task says "or", an `any`).
 - **Depends**: Y2.
 - **Files**: `src/data/diary.ts`.
-- **Change**: Data commit. Each task's text is the design's wording; its condition uses counters, skills, flags, shrines, coin and claimed quests only.
+- **Change**: Data commit. Each task's text is the design's wording; its condition uses counters, skills, flags, shrines, coin and claimed quests only. The volcanic medium tier has six tasks: design 7.8's five and "Kill 10 Ember Hurlers", `{ stat: ['kill:ember_hurler', 10] }`, last.
 - **Accept**: `ONE(tests/diary-data.test.ts)`, Q5's data tests; ECON; SG.
 - **Must not change**: the wording, tier or region of a task in design 7.8; `evalCond`.
 
@@ -672,14 +778,14 @@ The main session shows the owner the band table that R0's MODEL printed on the m
 Run in order, from a clean checkout of the stage's head:
 
 1. SG, ECON, MODEL, PACE.
-2. `git diff <R0 baseline> --stat -- tests/ src/__tests__/` lists, among files that existed at the baseline, only `tests/content-freeze.test.ts`, `tests/world-budget.test.ts`, `tests/world-data.test.ts`, `src/__tests__/blender-hero.test.ts`, the two Stage 3 goldens, `tests/fixtures/save-relocation/v4-loaded.json`, and the four of the owner's rule changes: `tests/monster-territory.test.ts` (one test), `tests/support/pacingModel.ts` (one expression, one import), `tests/combat-profile.test.ts` (five values), `tests/entry-staff.test.ts` (one value); each diff is exactly what design 11.3 declares.
+2. `git diff <R0 baseline> --stat -- tests/ src/__tests__/` lists, among files that existed at the baseline, only `tests/content-freeze.test.ts`, `tests/world-budget.test.ts`, `tests/world-data.test.ts`, `src/__tests__/blender-hero.test.ts`, `tests/scatter.test.ts`, `tests/woods-trees.test.ts`, `tests/new-monsters.test.ts`, the two Stage 3 goldens, `tests/fixtures/save-relocation/v4-loaded.json`, and the four of the owner's rule changes: `tests/monster-territory.test.ts` (one test), `tests/support/pacingModel.ts` (one expression, one import), `tests/combat-profile.test.ts` (five values), `tests/entry-staff.test.ts` (one value), and the one of line of sight: `tests/fixtures/size-refactor-golden.json` (the `monsters` key); each diff is exactly what design 11.3 declares.
 3. `grep -rn "Math.random\|Date.now\|performance.now" src/state` shows no line in a module this stage created.
 4. `grep -rn "innerHTML" src/ui/dialogue.ts src/ui/journal.ts` prints nothing.
-5. The walk test finishes all thirteen quests; the three fight tests pass; the dungeon, dialogue, story, diary and placement data tests pass.
+5. The walk test finishes all thirteen quests; the three fight tests pass; the dungeon, cave, line-of-sight, dialogue, story, diary and placement data tests pass.
 6. `serializeState(createDefaultState())` differs from the R0 golden only by the two skills.
 7. The JS chunk is within design section 10's budget of the R0 baseline; the report gives the number per slice.
 8. No commit on the branch carries an attribution trailer; no agent branch was pushed.
-9. Every human check H-0 to H-8 is recorded in its pull request.
+9. Every human check H-0 to H-8, H-3a and H-3b is recorded in its pull request.
 
 ---
 
@@ -694,12 +800,12 @@ Run in order, from a clean checkout of the stage's head:
 | G6.3 starter chain's voice | Q1, Q6 | `dialogue-rules` (`claimStarter`), Stage 3's tests unedited |
 | G6.4 loops closed | D1, D2, Z4, K2, N2, U1, S4 | the loop audit in `content-s6` |
 | G6.5 two skills | K1 to K3, N1 to N3 | `crafting`, `runebinding` |
-| G6.6 dungeons | Z1 to Z7, U0, U1 | `zone-rules`, `dungeon-data`, H-3, H-7 |
-| G6.7 roster and bosses | D3, D4, Z4, U1, B1 to B3 | `roster-s6`, the three fight tests |
+| G6.6 dungeons | Z1 to Z7, U0, U1; the cave C1 to C3 | `zone-rules`, `dungeon-data`, `cave`, H-3, H-3a, H-7 |
+| G6.7 roster and bosses | D3, D4, Z4, C1, C2, U1, B1 to B3 | `roster-s6`, `cave` (the Ember Hurler), the three fight tests |
 | G6.8 diary | Y1 to Y5; embers in Q3, Q4, Q6, Q9 | `diary`, `diary-data`, `story-rules` |
 | G6.9 Stage 3's economy holds | every slice gate | ECON, the pacing test unedited (its model: G1) |
 | G6.13 the three styles in one band | S1 to S4 | `style-balance`, `arrows`; the fight tests unedited on both sides; H-6 |
-| G6.14 aggressive and passive monsters | G1, G2; Z1, Z2 for dungeon camps | `aggression`, the gate simulation unedited, PACE; H-0 |
+| G6.14 aggressive and passive monsters; line of sight | G1, G2; Z1, Z2 for dungeon camps; C1, C2 for the cave's camps; L1, L2 for line of sight | `aggression`, the gate simulation unedited, PACE; H-0 |
 | G6.10 save | F1, F2 | `save-progress`, the goldens |
 | G6.11 debts | F3 to F6 | `save-recovery`, `boss-timer` |
 | G6.12 ready for co-op | rule 0.3.8; the commands in Q8, Z7, Y2 | final verification step 3; the architecture test |
@@ -739,6 +845,10 @@ Run in order, from a clean checkout of the stage's head:
 | 6.15 | Q6, Z5, N4, U3 |
 | 6.16 | Q6, Z5, K4, N4, U3 |
 | 6.9 | D1 (`names-s6`), O-6.2 |
+| 6.30 (decided 2026-11-24) | Z3 (`income.ts`), C1, C2, C3, G-6.3a |
+| 6.31 (decided 2026-11-24) | C1, C2, C3 (the orb), K1, K2 (the hide), U0 (type keys), Y1, Y3 |
+| 6.32 (decided 2026-11-24) | L1, L2, G-6.3b |
+| 6.33 (open) | O-6.33; C1, C2 as 0.5 says |
 
 ---
 
@@ -754,7 +864,10 @@ Run in order, from a clean checkout of the stage's head:
 - **PACE was run on Stage 3's world only** (now read from `origin/main`). With Stage 4's and this stage's overworld camps the fighter's choices under the new rule are unrun; R0, G2 and D4 run them.
 - **The high-tree case** (design 7.13, CALL-6.29) was measured on `main`'s `stepMonster` patched with the rule, not on Stage 4's; whether Stage 4's auto-retaliation still skips a gathering hero is R0 4c's to confirm.
 - **The deposit-only bank window** (Y5) is described, not designed against Stage 5's components.
-- **No suite, type check or build was run** while writing this plan. The commands of 0.2 are the earlier plans', which were run on this machine.
+- **The cave's income bound misses in one hall** (design 7.6, measured 2026-11-25: the front hall 0.94 against 0.9): slice 3a cannot start before O-6.33.
+- **The cave's geometry was checked by hand**, not on a zone grid: Z2's grid builder does not exist yet. C1 proves reachability around the pillars; if it fails, C2 stops and the design's table changes, never a rule of the package.
+- **The line-of-sight digest** (`5e5eb899...`) was computed on `87f18e7` with L2's edits. Z2 and G2 land before L1 and may move other lines of `stepMonster`; L1 recomputes it on the tree of its day, on a scratch copy with exactly L2's edits, and the four untouched monsters' digests must not move.
+- **No suite, type check or build was run** while writing this plan, except the runs of the 2026-11-25 revision (design 17). The commands of 0.2 are the earlier plans', which were run on this machine.
 
 ---
 
@@ -767,3 +880,23 @@ Run in order, from a clean checkout of the stage's head:
   - **Dungeon drops and quests**: `openChest` rolls a `loot` table with rare entries and keeps its roll; no first-clear reward (Z1, Z2, Z3, Z4, U0, U1); the quest-pays-once proof (Z1); chapter 3's and 6's rewards and chapter 6's chest step (Z5, U3); boss tables with chance entries (D3, D4, Z4, U1); D1's 25% rule excludes boss rows.
   - Tables 0.5, 4.1, 4.2, 4.3 and section 5 follow.
 - 2026-11-14, **second pass** (critique file, "Second pass"), one commit: R0 4c gains the attack-path order, Stage 4's boss model and the gatherer check; G1 keeps `packAttackers` in `tests/support`, edits one expression of the pacing model (the `largestAggressive` filter changes no number) and names the passive camps by id; G2 waits for CALL-6.29; D1's boss exemption and D3's Marrowjaw bound; O-6.6 (the owner re-approves the rebalance on the merged code) before S1; S1 plays bronze and asserts every level 20 to 70 within 1.45; S2's Accept no longer leaves a red test; S3 and S4: `AMMO_GRADES` instead of an item field, the arrow's power handed from `prepareAttack` through `performPlayerAttack` (`src/engine/actions.ts` added to S4), the last-arrow case, the log line; Y1, Y2, Y5: `shrineTransfer`, and `input.ts` and `loop.ts` added to Y5; U0's shard reworded as base loot; 0.5 gains CALL-6.28, CALL-6.29 and O-6.6, and loses the counter option; PACE reads `origin/main`.
+
+## Revision 2026-11-25: CALL-6.30 to 6.32
+
+The owner approved the package of `docs/superpowers/proposals/2026-11-24-call-6.30-demons-cave.md` ("aprovo o pacote do fable, e sim à linha de visão"). This revision carries it, grounded on the merged tree at `87f18e7`: the whole suite was run on a scratch copy with the cave's data changes and, separately, with the line-of-sight edits, and `model.ts` section 8's arithmetic was run on the cave. One commit with the design (its review log lists the design sections).
+
+- **Header**: the revision named; line numbers "on `87f18e7`" defined.
+- **0.1**: L1 joins the opus tasks that replace a frozen assertion.
+- **0.3.3**: the counts follow the cave (42 to 48, then 46; type keys to 20); Stage 5's camp counts in `tests/scatter.test.ts` and `tests/woods-trees.test.ts` and Stage 4's `NEW` list in `tests/new-monsters.test.ts` declared (design 11.3 items 13, 14; found by running the suite, they also break D3 as first written); the line-of-sight digest declared (item 15).
+- **0.3.7**: a third named exception, the line-of-sight test of `stepMonster` (L2).
+- **0.5**: owner step O-6.33 (against the package's 0.9, the front hall measures 0.94, the back hall 0.87, both halls in turn 0.73); four answer rows for CALL-6.33.
+- **D3**: the five frozen files and their exact edits (two Stage 2 counts, the type-key count, Stage 5's two camp counts, the `NEW` list). **D4**: its Accept runs the three Stage 4 and Stage 5 files; its fallback counts follow the cave.
+- **Z3**: `tests/support/income.ts` (new), so the cave's camps join the same income test (owner); the `NEW` list gains the two Warren types.
+- **New slice 3a, the demons' cave**: O-6.33, C1 (cave and Ember Hurler tests, seven declared count and list edits), C2 (the `Zone` type, `solid`, `zoneRespawns`, `CAVES`, the `ember_hurler` row, the terrace camp removed from `CAMPS`), C3 (the hellfire-orb branch in `actions.ts`, the door, the standing zone kept across leave and enter, `CAVE_LIGHT` and `frameOf`, the camera arm, `setCaveWeather`), G-6.3a and H-3a.
+- **New slice 3b, line of sight**: L1 (the test and the declared `monsters` digest of `tests/fixtures/size-refactor-golden.json`), L2 (four edits of `monsterAi.ts`), G-6.3b and H-3b.
+- **K1, K2**: K1 asserts, and K2 appends, the Ember Hurler's Slagscale Hide (0.10), as for the Slag Brute's.
+- **U0**: the type-key count 19 to 20; the `NEW` list gains `kiln_warden`.
+- **Y1, Y3**: "Kill 10 Ember Hurlers" (`kill:ember_hurler`, 10) in the volcanic medium tier, which now has six tasks; 76 tasks; a tier is claimed when every one of its tasks is done.
+- **Section 3** (final verification): steps 2, 5 and 9 follow.
+- **4.1, 4.3**: G6.6, G6.7 and G6.14 rows; CALL-6.30 to 6.33 rows.
+- **Section 5**: the failed income bound, the hand-checked cave geometry, and how L1 recomputes the digest.
