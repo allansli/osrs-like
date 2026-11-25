@@ -598,6 +598,7 @@ Only if CALL-V13 is taken:
 
 3. `tests/globals.test.ts`: "finds onclick calls in index.html" becomes "index.html has no inline handler attribute", and the second test checks `data-action` names against `WINDOW_GLOBALS`.
 4. `tests/vercel-headers.test.ts`: the exact-string check of the policy becomes "the policy contains `frame-ancestors 'self'`, `script-src 'self'`, `object-src 'none'`, and no `unsafe-inline` or `unsafe-eval` in `script-src`".
+5. `tests/hidden-tools.test.ts`, "the 10x button and the cheat panel are inside the block" (41): the needles `cheatSkillsPlus10()` and `cheatGold200k()` are replaced by `data-action="cheatSkillsPlus10"` and `data-action="cheatGold200k"`, because the inline handlers they matched are gone. The other needles and every other test in the file stay. (Added in the UI8b repair; the owner approves with CP-UI.)
 
 Every other existing test stays as it is, including the 256-pixel tile tests: tile resolution does not change (CALL-V7).
 

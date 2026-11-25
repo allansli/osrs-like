@@ -153,6 +153,23 @@ function wireBridge(): void {
     monstersList: G.monstersList,
     getAnimator: () => player.blenderAnimator,
   };
+
+  document.addEventListener('click', (ev) => {
+    const target = ev.target;
+    if (!(target instanceof Element)) return;
+    const actionEl = target.closest<HTMLElement>('[data-action]');
+    if (!actionEl) return;
+    const action = actionEl.getAttribute('data-action');
+    if (!action || !WINDOW_GLOBALS.includes(action)) {
+      throw new Error(`Unknown action: ${action}`);
+    }
+    const fn = (WINDOW_ACTIONS as Record<string, (...args: unknown[]) => unknown>)[action];
+    const args: string[] = [];
+    if (actionEl.hasAttribute('data-arg')) {
+      args.push(actionEl.getAttribute('data-arg')!);
+    }
+    fn(...args);
+  });
 }
 
 // ============================================================================

@@ -71,7 +71,7 @@
       <li>You start with <b>nothing</b>. Everything you wear is earned.</li>
       <li>First steps: follow the <b>tracker</b>. Six short tasks in the haven pay your first kit.</li>
     </ul>
-    <button class="hud-btn primary" type="button" onclick="dismissOnboarding()">Enter Gielinor</button>
+    <button class="hud-btn primary" type="button" data-action="dismissOnboarding">Enter Gielinor</button>
   </div>
 </div>
 
@@ -128,12 +128,12 @@
   </div>
 
   <div class="quick-top-buttons">
-    <button class="hud-btn" id="btn-world" onclick="openWorldMapModal()">World Map</button>
-    <button class="hud-btn" id="btn-quests" onclick="openQuestsModal()">Quests</button>
-    <button class="hud-btn" id="btn-settings" onclick="openSettingsModal()">Settings</button>
+    <button class="hud-btn" id="btn-world" data-action="openWorldMapModal">World Map</button>
+    <button class="hud-btn" id="btn-quests" data-action="openQuestsModal">Quests</button>
+    <button class="hud-btn" id="btn-settings" data-action="openSettingsModal">Settings</button>
   </div>
 
-  <button type="button" id="perf-hud" class="perf-hud ui-panel" aria-label="Performance HUD" title="Hardware Acceleration & FPS Status (Click to cycle Graphics Quality)" onclick="cycleGraphicsQuality()">
+  <button type="button" id="perf-hud" class="perf-hud ui-panel" aria-label="Performance HUD" title="Hardware Acceleration & FPS Status (Click to cycle Graphics Quality)" data-action="cycleGraphicsQuality">
     <div class="perf-row">
       <span class="perf-status-dot" id="perf-dot"></span>
       <span id="perf-gpu-name">GPU: Detecting...</span>
@@ -180,7 +180,7 @@
 
 <!-- Top-Right Rotating Minimap & GP Pouch -->
 <div id="minimap-wrapper">
-  <button type="button" id="compass-badge" aria-label="Reset camera" title="Click to reset camera behind character" onclick="event.stopPropagation(); resetCameraBehindPlayer();">N</button>
+  <button type="button" id="compass-badge" aria-label="Reset camera" title="Click to reset camera behind character" data-action="resetCameraBehindPlayer">N</button>
   <div id="minimap-frame" title="Click on minimap to walk there">
     <canvas id="minimap-canvas" width="198" height="198"></canvas>
   </div>
@@ -193,54 +193,54 @@
 <!-- Right-Side Classic OSRS Tabbed Panel -->
 <div id="right-panel" class="ui-panel">
   <div class="tab-bar">
-    <button type="button" class="tab-btn" onclick="switchTab('combat')" id="tab-btn-combat" aria-label="Combat" title="Combat Styles & Special Attack"></button>
-    <button type="button" class="tab-btn" onclick="switchTab('skills')" id="tab-btn-skills" aria-label="Skills" title="Skills & XP Levels"></button>
-    <button type="button" class="tab-btn active" onclick="switchTab('inventory')" id="tab-btn-inventory" aria-label="Inventory" title="Backpack Inventory (28 Slots)"></button>
-    <button type="button" class="tab-btn" onclick="switchTab('equipment')" id="tab-btn-equipment" aria-label="Equipment" title="Worn Equipment (10 Slots) & Stats"></button>
-    <button type="button" class="tab-btn" onclick="switchTab('prayer')" id="tab-btn-prayer" aria-label="Prayer" title="Prayers"></button>
-    <button type="button" class="tab-btn" onclick="switchTab('magic')" id="tab-btn-magic" aria-label="Magic" title="Magic Spellbook & Teleports"></button>
+    <button type="button" class="tab-btn" data-action="switchTab" data-arg="combat" id="tab-btn-combat" aria-label="Combat" title="Combat Styles & Special Attack"></button>
+    <button type="button" class="tab-btn" data-action="switchTab" data-arg="skills" id="tab-btn-skills" aria-label="Skills" title="Skills & XP Levels"></button>
+    <button type="button" class="tab-btn active" data-action="switchTab" data-arg="inventory" id="tab-btn-inventory" aria-label="Inventory" title="Backpack Inventory (28 Slots)"></button>
+    <button type="button" class="tab-btn" data-action="switchTab" data-arg="equipment" id="tab-btn-equipment" aria-label="Equipment" title="Worn Equipment (10 Slots) & Stats"></button>
+    <button type="button" class="tab-btn" data-action="switchTab" data-arg="prayer" id="tab-btn-prayer" aria-label="Prayer" title="Prayers"></button>
+    <button type="button" class="tab-btn" data-action="switchTab" data-arg="magic" id="tab-btn-magic" aria-label="Magic" title="Magic Spellbook & Teleports"></button>
   </div>
 
   <!-- TAB 1: COMBAT -->
   <div class="tab-content" id="tab-combat">
     <div class="panel-header-title" id="equipped-weapon-title">Bronze Scimitar</div>
     <div class="combat-style-list" id="combat-style-list">
-      <button type="button" class="style-btn active" onclick="setCombatStyle('accurate')" id="style-accurate" aria-label="Accurate (Slash)">
+      <button type="button" class="style-btn active" data-action="setCombatStyle" data-arg="accurate" id="style-accurate" aria-label="Accurate (Slash)">
         <div>
           <div class="style-name">Accurate (Slash)</div>
           <div class="style-xp">+Attack & Hitpoints XP</div>
         </div>
         <span class="style-badge style-badge-brass">+3 Acc</span>
       </button>
-      <button type="button" class="style-btn" onclick="setCombatStyle('aggressive')" id="style-aggressive" aria-label="Aggressive (Lunge)">
+      <button type="button" class="style-btn" data-action="setCombatStyle" data-arg="aggressive" id="style-aggressive" aria-label="Aggressive (Lunge)">
         <div>
           <div class="style-name">Aggressive (Lunge)</div>
           <div class="style-xp">+Strength & Hitpoints XP</div>
         </div>
         <span class="style-badge style-badge-ember">+2 Max Hit</span>
       </button>
-      <button type="button" class="style-btn" onclick="setCombatStyle('controlled')" id="style-controlled" aria-label="Controlled">
+      <button type="button" class="style-btn" data-action="setCombatStyle" data-arg="controlled" id="style-controlled" aria-label="Controlled">
         <div>
           <div class="style-name">Controlled</div>
           <div class="style-xp">+Attack, Strength & Defence XP</div>
         </div>
         <span class="style-badge style-badge-bone">+2 Acc</span>
       </button>
-      <button type="button" class="style-btn" onclick="setCombatStyle('defensive')" id="style-defensive" aria-label="Defensive (Parry)">
+      <button type="button" class="style-btn" data-action="setCombatStyle" data-arg="defensive" id="style-defensive" aria-label="Defensive (Parry)">
         <div>
           <div class="style-name">Defensive (Parry)</div>
           <div class="style-xp">+Defence & Hitpoints XP</div>
         </div>
         <span class="style-badge style-badge-tide">+3 Def</span>
       </button>
-      <button type="button" class="style-btn" onclick="setCombatStyle('rapid')" id="style-rapid" aria-label="Rapid Ranged">
+      <button type="button" class="style-btn" data-action="setCombatStyle" data-arg="rapid" id="style-rapid" aria-label="Rapid Ranged">
         <div>
           <div class="style-name">Rapid Ranged</div>
           <div class="style-xp">+Ranged & Hitpoints XP</div>
         </div>
         <span class="style-badge style-badge-moss">14m Range</span>
       </button>
-      <button type="button" class="style-btn" onclick="setCombatStyle('magic')" id="style-magic" aria-label="Autocast Spell">
+      <button type="button" class="style-btn" data-action="setCombatStyle" data-arg="magic" id="style-magic" aria-label="Autocast Spell">
         <div>
           <div class="style-name">Autocast Spell</div>
           <div class="style-xp">+Magic & Hitpoints XP</div>
@@ -249,7 +249,7 @@
       </button>
     </div>
 
-    <button type="button" class="spec-attack-btn" id="spec-btn" onclick="toggleSpecialAttack()" aria-label="Special attack">
+    <button type="button" class="spec-attack-btn" id="spec-btn" data-action="toggleSpecialAttack" aria-label="Special attack">
       SPECIAL ATTACK: 100% (Hylian Spin-Slash)
     </button>
     <div class="combat-controls-hint">
@@ -307,7 +307,7 @@
   <div class="modal-window wide ui-panel" role="dialog" aria-modal="true" aria-labelledby="shop-modal-title">
     <div class="modal-header">
       <h2 id="shop-modal-title">Lumbridge General Store</h2>
-      <button type="button" class="modal-close" onclick="closeModals()" aria-label="Close">X</button>
+      <button type="button" class="modal-close" data-action="closeModals" aria-label="Close">X</button>
     </div>
     <div class="modal-body" id="shop-body"></div>
   </div>
@@ -318,7 +318,7 @@
   <div class="modal-window wide ui-panel" role="dialog" aria-modal="true" aria-labelledby="bank-modal-title">
     <div class="modal-header">
       <h2 id="bank-modal-title">Lumbridge Bank Vault</h2>
-      <button type="button" class="modal-close" onclick="closeModals()" aria-label="Close">X</button>
+      <button type="button" class="modal-close" data-action="closeModals" aria-label="Close">X</button>
     </div>
     <div class="modal-body" id="bank-body"></div>
   </div>
@@ -329,7 +329,7 @@
   <div class="modal-window ui-panel" role="dialog" aria-modal="true" aria-labelledby="smithing-modal-title">
     <div class="modal-header">
       <h2 id="smithing-modal-title">Royal Anvil, Smelting Furnace & Cooking Range</h2>
-      <button type="button" class="modal-close" onclick="closeModals()" aria-label="Close">X</button>
+      <button type="button" class="modal-close" data-action="closeModals" aria-label="Close">X</button>
     </div>
     <div class="modal-body">
       <div class="modal-subtext">
@@ -345,7 +345,7 @@
   <div class="modal-window ui-panel" role="dialog" aria-modal="true" aria-labelledby="xptable-modal-title">
     <div class="modal-header">
       <h2 id="xptable-modal-title">Official OldSchool RuneScape Experience Table (Lv 1–99)</h2>
-      <button type="button" class="modal-close" onclick="closeModals()" aria-label="Close">X</button>
+      <button type="button" class="modal-close" data-action="closeModals" aria-label="Close">X</button>
     </div>
     <div class="modal-body">
       <div id="xptable-skill-summary" class="xptable-skill-summary"></div>
@@ -359,7 +359,7 @@
   <div class="modal-window ui-panel" role="dialog" aria-modal="true" aria-labelledby="worldmap-modal-title">
     <div class="modal-header">
       <h2 id="worldmap-modal-title">Kingdom of Gielinor — Regions & Shrines</h2>
-      <button type="button" class="modal-close" onclick="closeModals()" aria-label="Close">X</button>
+      <button type="button" class="modal-close" data-action="closeModals" aria-label="Close">X</button>
     </div>
     <div class="modal-body">
       <div class="modal-subtext">
@@ -374,7 +374,7 @@
   <div class="modal-window ui-panel" role="dialog" aria-modal="true" aria-labelledby="quest-modal-title">
     <div class="modal-header">
       <h2 id="quest-modal-title">Adventure Log</h2>
-      <button type="button" class="modal-close" onclick="closeModals()" aria-label="Close">X</button>
+      <button type="button" class="modal-close" data-action="closeModals" aria-label="Close">X</button>
     </div>
     <div class="modal-body" id="quest-list"></div>
   </div>
@@ -384,7 +384,7 @@
   <div class="modal-window ui-panel" role="dialog" aria-modal="true" aria-labelledby="settings-modal-title">
     <div class="modal-header">
       <h2 id="settings-modal-title">Settings</h2>
-      <button type="button" class="modal-close" onclick="closeModals()" aria-label="Close">X</button>
+      <button type="button" class="modal-close" data-action="closeModals" aria-label="Close">X</button>
     </div>
     <div class="modal-body">
       <div class="onboard-list settings-help">
@@ -394,26 +394,26 @@
         <div><b>Credits</b> Dragon by yoji and Kai by uchiha007, both CC-BY 3.0, from Blend Swap. <a href="https://github.com/allansli/osrs-like/blob/main/CREDITS.md" target="_blank" rel="noopener noreferrer">All credits</a></div>
       </div>
       <div class="settings-grid">
-        <button class="hud-btn" id="graphics-quality-btn" onclick="cycleGraphicsQuality()">Graphics: Balanced</button>
-        <button class="hud-btn" id="outlines-toggle-btn" onclick="toggleOutlines()">Outlines: On</button>
-        <button class="hud-btn" id="time-of-day-btn" onclick="cycleTimeOfDay()">Golden Hour</button>
-        <button class="hud-btn active" id="audio-btn" onclick="toggleAudio()">Audio On</button>
-        <button class="hud-btn" id="save-status-btn" onclick="manualSaveToast()">Save</button>
-        <button class="hud-btn" id="reset-save-btn" onclick="resetGameSave()">Reset</button>
-        <button class="hud-btn" onclick="openXpTableModal()">XP Table</button>
-        <button class="hud-btn" type="button" onclick="replayOnboarding()">Show introduction</button>
+        <button class="hud-btn" id="graphics-quality-btn" data-action="cycleGraphicsQuality">Graphics: Balanced</button>
+        <button class="hud-btn" id="outlines-toggle-btn" data-action="toggleOutlines">Outlines: On</button>
+        <button class="hud-btn" id="time-of-day-btn" data-action="cycleTimeOfDay">Golden Hour</button>
+        <button class="hud-btn active" id="audio-btn" data-action="toggleAudio">Audio On</button>
+        <button class="hud-btn" id="save-status-btn" data-action="manualSaveToast">Save</button>
+        <button class="hud-btn" id="reset-save-btn" data-action="resetGameSave">Reset</button>
+        <button class="hud-btn" data-action="openXpTableModal">XP Table</button>
+        <button class="hud-btn" type="button" data-action="replayOnboarding">Show introduction</button>
       </div>
       <div id="hidden-tools" hidden>
-        <button class="hud-btn active" id="xp-rate-btn" onclick="toggleXpMultiplier()">10x League XP</button>
+        <button class="hud-btn active" id="xp-rate-btn" data-action="toggleXpMultiplier">10x League XP</button>
         <div class="cheat-panel">
           <h3>Developer Cheats</h3>
           <div class="cheat-entry">
             <input id="cheat-code-input" type="text" autocomplete="off" spellcheck="false" placeholder="Enter cheat code (skills10, gold200k)..." />
-            <button class="hud-btn" type="button" onclick="applyTypedCheat()">Apply</button>
+            <button class="hud-btn" type="button" data-action="applyTypedCheat">Apply</button>
           </div>
           <div class="cheat-quick">
-            <button class="hud-btn" type="button" onclick="cheatSkillsPlus10()">+10 All Skills (skills10)</button>
-            <button class="hud-btn" type="button" onclick="cheatGold200k()">+200,000 GP (gold200k)</button>
+            <button class="hud-btn" type="button" data-action="cheatSkillsPlus10">+10 All Skills (skills10)</button>
+            <button class="hud-btn" type="button" data-action="cheatGold200k">+200,000 GP (gold200k)</button>
           </div>
         </div>
       </div>
