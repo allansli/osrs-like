@@ -479,6 +479,13 @@ albedoTex = mix(albedoTex, texture2D(uKorokMap, vMapUv).rgb, korokBiome);
 albedoTex = mix(albedoTex, texture2D(uVolcanicMap, vMapUv).rgb, peakBiome);
 albedoTex = mix(albedoTex, texture2D(uCrackedSandMap, vMapUv).rgb, desertBiome);
 albedoTex = mix(albedoTex, texture2D(uCobbleMap, vMapUv).rgb, plazaBiome);
+// Dark moss in the woods (design 5.5). The woods vertex colour (uCanopy) is a saturated green, and its weight took
+// the meadow's grass gain, so the woods ground read bright meadow green. The woods share is the moss texture tinted
+// to a dark blue-green, divided by vColor because color_fragment multiplies vColor in after this chunk. The share
+// comes from how far vColor is toward uCanopy (green minus red, linear in the vertex blend), saturated at halfway,
+// so the blend triangles at the region's edge do not keep the bright canopy green.
+float woodsW = smoothstep(0.0, 0.5, clamp((vColor.g - vColor.r - 0.05) / (uCanopy.g - uCanopy.r - 0.05), 0.0, 1.0));
+albedoTex = mix(albedoTex, texture2D(uKorokMap, vMapUv).rgb * vec3(0.022, 0.06, 0.075) / max(vColor, vec3(0.004)), woodsW);
 diffuseColor *= vec4(albedoTex, 1.0);
 `;
 
