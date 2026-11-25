@@ -80,12 +80,16 @@ Thinning the flora cannot meet these limits, so `scatterDensity` and `carpetTuft
 
 ## Repair re-measurement on the GR7 head (P1 noon balanced)
 
-Re-run on the GR7 bundle itself (`index-CuXy7y9D.js`, BUILD at 4504e4b), same renderer (ANGLE over D3D12, RTX 4070 Laptop), seeded `Math.random`, cleared storage, skills 99, mouse on `#top-left-hud`. HUD counts, two runs:
+This run used the GR7 bundle itself (`index-CuXy7y9D.js`, built at 4504e4b) on the same renderer (ANGLE over D3D12, RTX 4070 Laptop), with seeded `Math.random`, cleared storage, skills at 99 and the mouse on `#top-left-hud`. The colour and shadow columns count WebGL draws per frame over 1 s, split by the bound framebuffer, and they add up to the HUD total within frame-to-frame variation.
 
-| state | HUD calls | triangles | colour calls (est.) |
-|---|---|---|---|
-| everything shown | 2161 / 2162 | 672k | about 1213 |
-| every kit, woods-tree and carpet mesh hidden | 2117 / 2149 | 592k / 596k | about 1178 |
-| monsters hidden as well | 593 | 369k | about 256 |
+| state | HUD calls | triangles | colour calls | shadow calls |
+|---|---|---|---|---|
+| everything shown | 2162 | 672k | 1215 | 951 |
+| every kit, woods-tree and carpet mesh hidden | 2157 | 598k | 1176 | 961 |
+| monsters hidden as well | 593 | 369k | 256 | 337 |
 
-The HUD totals reproduce the table above. In this run the raw per-frame WebGL draw count came out about 1.7 times the HUD total, so the colour column is the HUD total multiplied by the colour share of the raw draws, which makes it an estimate. With no flora at all, P1 balanced is still over every limit: about 1178 colour calls (limits 887 and 1000), 2117 or more total calls (limit 1924) and 592k triangles or more (limit 550k). Thinning `scatterDensity` or `carpetTufts`, the only remedy GR7 allows, cannot meet the limits, so neither was changed. V2's reference (`before/perf.md`, P1 noon: 1479 performance, 3207/593k balanced) was shot at the same pose with the same monster spawns. It has totals only, and its performance row (no shadow pass) stands in for the colour pass. Which remedy to take is open for the main session: merge the monster models (outside GR7's files) or have the owner amend the limit.
+With no flora at all, P1 on balanced is still over every limit: 1176 colour calls (limits 887 and 1000), 2157 total calls (limit 1924) and 598k triangles (limit 550k). With the flora hidden, the triangle count equals V2's own 593k, so the 550k limit sits below the scene before any flora was added. Thinning `scatterDensity` or `carpetTufts`, the only remedy GR7 allows, cannot meet these limits, so neither was changed.
+
+V2's reference is `before/perf.md`, P1 noon: 1479 calls on performance and 3207 calls with 593k triangles on balanced. It was shot at the same pose. The monster spawn code has not changed since that capture: the only change to `spawns.ts`, 4b08a85, touches resource nodes. V2 recorded totals only, so its performance row, which has no shadow pass, stands in for the colour pass.
+
+Which remedy to take is open for the main session: merge the monster models, which lie outside GR7's files, or have the owner amend the limit.
