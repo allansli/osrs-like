@@ -102,20 +102,19 @@ export function upgradeMonsterRigWithGltf(mObj: MonsterEntityLike, gltf: GLTF): 
 
   if (mObj.def.kit) {
     const kitTemplate = gltf.scene.getObjectByName(`Kit_${mObj.def.kit}`);
-    if (kitTemplate) {
-      for (const child of kitTemplate.children) {
-        const clonedChild = child.clone(true);
-        let bone: THREE.Bone | null = null;
-        cloned.traverse((obj) => {
-          if (!bone && (obj as THREE.Bone).isBone && obj.name === child.name) {
-            bone = obj as THREE.Bone;
-          }
-        });
-        if (bone) {
-          (bone as THREE.Bone).add(clonedChild);
-        } else {
-          cloned.add(clonedChild);
+    if (!kitTemplate) return false;
+    for (const child of kitTemplate.children) {
+      const clonedChild = child.clone(true);
+      let bone: THREE.Bone | null = null;
+      cloned.traverse((obj) => {
+        if (!bone && (obj as THREE.Bone).isBone && obj.name === child.name) {
+          bone = obj as THREE.Bone;
         }
+      });
+      if (bone) {
+        (bone as THREE.Bone).add(clonedChild);
+      } else {
+        cloned.add(clonedChild);
       }
     }
   }
