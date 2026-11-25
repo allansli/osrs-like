@@ -77,3 +77,15 @@ Thinning the flora cannot meet these limits, so `scatterDensity` and `carpetTuft
 - `FLORA_RULES`: `woods` clusterDensity 1.2 to 1.6 (a denser woods floor of ferns, logs, mushrooms and saplings), `varrock` 0.6 to 0.8 (more planters and weeds around the plaza). No other rule, piece list or tint family changed.
 - Woods trees: kept at 150 (no `tune(ground): woods tree count` commit). At P8 pitch 0.12 the wood reads as a forest wall with open lanes around the hollow; at pitch 1.15 no crown hides the hero; at P6 the wood is already thick. A new table would also move the cells `tests/pathfind-budget.test.ts` draws, and the fixture's one authorized regeneration was TR2's.
 - Outside GR7's files, for the owner at CP-GR: the woods ground and carpet read bright meadow green, not the dark moss of design 5.5 (ground shader and carpet tints); the woods-tree crowns are near black at noon (`floraKit.ts` tint); the desert carpet looks gridded at P7; the Tamarisk Pool pillar fills the P7 frame at this pose.
+
+## Repair re-measurement on the GR7 head (P1 noon balanced)
+
+Re-run on the GR7 bundle itself (`index-CuXy7y9D.js`, BUILD at 4504e4b), same renderer (ANGLE over D3D12, RTX 4070 Laptop), seeded `Math.random`, cleared storage, skills 99, mouse on `#top-left-hud`. HUD counts, two runs:
+
+| state | HUD calls | triangles | colour calls (est.) |
+|---|---|---|---|
+| everything shown | 2161 / 2162 | 672k | about 1213 |
+| every kit, woods-tree and carpet mesh hidden | 2117 / 2149 | 592k / 596k | about 1178 |
+| monsters hidden as well | 593 | 369k | about 256 |
+
+The HUD totals reproduce the table above. In this run the raw per-frame WebGL draw count came out about 1.7 times the HUD total, so the colour column is the HUD total multiplied by the colour share of the raw draws, which makes it an estimate. With no flora at all, P1 balanced is still over every limit: about 1178 colour calls (limits 887 and 1000), 2117 or more total calls (limit 1924) and 592k triangles or more (limit 550k). Thinning `scatterDensity` or `carpetTufts`, the only remedy GR7 allows, cannot meet the limits, so neither was changed. V2's reference (`before/perf.md`, P1 noon: 1479 performance, 3207/593k balanced) was shot at the same pose with the same monster spawns. It has totals only, and its performance row (no shadow pass) stands in for the colour pass. Which remedy to take is open for the main session: merge the monster models (outside GR7's files) or have the owner amend the limit.
