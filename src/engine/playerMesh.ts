@@ -4,7 +4,7 @@ import { G, player } from './context';
 import { getTerrainHeight } from '../state/terrain';
 import { STATE } from '../state/gameState';
 import { ITEMS, type ItemDef } from '../data/items';
-import { buildHumanoidRig, LEAN_RIG } from './humanoid';
+import { buildHumanoidRig, LEAN_RIG, type HumanoidRig } from './humanoid';
 import { loadBlenderHeroTemplate, upgradeHumanoidRigWithGltf } from './blenderHero';
 import { loadBlenderGearTemplate } from './blenderGear';
 import {
@@ -92,14 +92,18 @@ export function syncWhipGeometry(rig: WhipRig | null | undefined, stretch: numbe
   });
 }
 
-export function rebuildPlayerEquipmentMeshes(): void {
-  if (!player.parts || !player.parts.rightArmPivot) return;
-  const rArm = player.parts.rightArmPivot;
-  const lArm = player.parts.leftArmPivot;
-  const headG = player.parts.headGroup;
-  const torso = player.parts.torso;
-  const lLeg = player.parts.leftLegPivot;
-  const rLeg = player.parts.rightLegPivot;
+export type LoadoutItems =
+  | Record<string, string | ItemDef | null | undefined>
+  | (ItemDef | string | null | undefined)[];
+
+export function mountLoadout(rig: HumanoidRig, items: LoadoutItems): void {
+  if (!rig || !rig.rightArmPivot) return;
+  const rArm = rig.rightArmPivot;
+  const lArm = rig.leftArmPivot;
+  const headG = rig.headGroup;
+  const torso = rig.torso;
+  const lLeg = rig.leftLegPivot;
+  const rLeg = rig.rightLegPivot;
 
   const gearKeys = [
     'wepMesh', 'shieldMesh', 'helmMesh', 'capeMesh', 'amuletMesh', 'ringMesh',
@@ -108,102 +112,123 @@ export function rebuildPlayerEquipmentMeshes(): void {
     'feetMeshL', 'feetMeshR', 'handsMeshL', 'handsMeshR', 'setBonusCue'
   ];
   gearKeys.forEach((key) => {
-    const node = player.parts[key];
+    const node = (rig as any)[key];
     // Gear geometry is per-node (blender clones are geometry.clone()d) and materials are
     // per-call; textures and the outline material are cached and the helper keeps them.
     if (node) disposeObject3D(node);
-    player.parts[key] = null;
+    (rig as any)[key] = null;
   });
-  player.parts.whipRig = null;
+  (rig as any).whipRig = null;
 
   const mount = (parent: THREE.Object3D | null | undefined, node: THREE.Object3D | null | undefined, key: string): void => {
     if (!parent || !node) return;
     parent.add(node);
-    player.parts[key] = node;
+    (rig as any)[key] = node;
+  };
+
+  const equip = (slot: string): ItemDef | null => {
+    if (!items) return null;
+    let val: any;
+    if (Array.isArray(items)) {
+      val = items.find((it) => (typeof it === 'string' ? ITEMS[it]?.slot === slot : it?.slot === slot));
+    } else {
+      val = (items as Record<string, any>)[slot];
+    }
+    if (!val) return null;
+    if (typeof val === 'string') return ITEMS[val] ?? null;
+    return val as ItemDef;
+  };
+
+  const hasSlot = (slot: string): boolean => {
+    if (!items) return false;
+    if (Array.isArray(items)) {
+      return items.some((it) => (typeof it === 'string' ? ITEMS[it]?.slot === slot : it?.slot === slot));
+    }
+    return slot in items;
   };
 
   // 1. Body Armor Material
-  const bodyId = STATE.equipment.body;
-  if (bodyId && ITEMS[bodyId]) {
-    player.parts.tunicMat.color.setHex(ITEMS[bodyId].color || 0x586436);
-    player.parts.tunicMat.metalness = bodyId === 'champion_tunic' ? 0.1 : 0.65;
-    player.parts.tunicMat.roughness = bodyId === 'champion_tunic' ? 0.5 : 0.28;
-    applyAlbedo(player.parts.tunicMat, albedoForItem(ITEMS[bodyId]));
-  } else {
-    player.parts.tunicMat.color.setHex(0x586436);
-    player.parts.tunicMat.metalness = 0.08;
-    player.parts.tunicMat.roughness = 0.52;
-    applyAlbedo(player.parts.tunicMat, 'gear:cloth');
+  const tunicMat = rig.tunicMat as any;
+  const bodyItem = equip('body');
+  if (bodyItem) {
+    tunicMat.color.setHex(bodyItem.color || 0x586436);
+    tunicMat.metalness = bodyItem.id === 'champion_tunic' ? 0.1 : 0.65;
+    tunicMat.roughness = bodyItem.id === 'champion_tunic' ? 0.5 : 0.28;
+    applyAlbedo(tunicMat, albedoForItem(bodyItem));
+  } else if (hasSlot('body')) {
+    tunicMat.color.setHex(0x586436);
+    tunicMat.metalness = 0.08;
+    tunicMat.roughness = 0.52;
+    applyAlbedo(tunicMat, 'gear:cloth');
   }
 
   // 2. Leg Armor Material (Platelegs / Tassets / Trousers)
-  const legsId = STATE.equipment.legs;
-  if (legsId && ITEMS[legsId]) {
-    player.parts.legsMat.color.setHex(ITEMS[legsId].color || 0x505c30);
-    player.parts.legsMat.metalness = legsId === 'hylian_trousers' ? 0.05 : 0.65;
-    player.parts.legsMat.roughness = legsId === 'hylian_trousers' ? 0.65 : 0.28;
-    applyAlbedo(player.parts.legsMat, albedoForItem(ITEMS[legsId]));
-  } else {
-    player.parts.legsMat.color.setHex(0x505c30);
-    player.parts.legsMat.metalness = 0.05;
-    applyAlbedo(player.parts.legsMat, 'gear:cloth');
+  const legsMat = rig.legsMat as any;
+  const legsItem = equip('legs');
+  if (legsItem) {
+    legsMat.color.setHex(legsItem.color || 0x505c30);
+    legsMat.metalness = legsItem.id === 'hylian_trousers' ? 0.05 : 0.65;
+    legsMat.roughness = legsItem.id === 'hylian_trousers' ? 0.65 : 0.28;
+    applyAlbedo(legsMat, albedoForItem(legsItem));
+  } else if (hasSlot('legs')) {
+    legsMat.color.setHex(0x505c30);
+    legsMat.metalness = 0.05;
+    applyAlbedo(legsMat, 'gear:cloth');
   }
 
   // 3. Boots Material (Feet)
-  const feetId = STATE.equipment.feet;
-  if (feetId && ITEMS[feetId]) {
-    player.parts.bootMat.color.setHex(ITEMS[feetId].color || 0x342418);
-    player.parts.bootMat.metalness = feetId === 'leather_boots' ? 0.1 : 0.65;
-    applyAlbedo(player.parts.bootMat, albedoForItem(ITEMS[feetId]));
-  } else {
-    player.parts.bootMat.color.setHex(0x342418);
-    player.parts.bootMat.metalness = 0.1;
-    applyAlbedo(player.parts.bootMat, 'gear:leather');
+  const bootMat = rig.bootMat as any;
+  const feetItem = equip('feet');
+  if (feetItem) {
+    bootMat.color.setHex(feetItem.color || 0x342418);
+    bootMat.metalness = feetItem.id === 'leather_boots' ? 0.1 : 0.65;
+    applyAlbedo(bootMat, albedoForItem(feetItem));
+  } else if (hasSlot('feet')) {
+    bootMat.color.setHex(0x342418);
+    bootMat.metalness = 0.1;
+    applyAlbedo(bootMat, 'gear:leather');
   }
 
   // 4. Gauntlets Material (Hands & Bracers)
-  const handsId = STATE.equipment.hands;
-  if (handsId && ITEMS[handsId]) {
-    player.parts.gloveMat.color.setHex(ITEMS[handsId].color || 0x78350f);
-    player.parts.gloveMat.metalness = handsId === 'leather_gloves' ? 0.1 : 0.6;
-    applyAlbedo(player.parts.gloveMat, albedoForItem(ITEMS[handsId]));
-    if (player.parts.bracerMat) {
-      player.parts.bracerMat.color.setHex(ITEMS[handsId].color || 0x78350f);
-      player.parts.bracerMat.metalness = handsId === 'leather_gloves' ? 0.1 : 0.65;
-      player.parts.bracerMat.roughness = handsId === 'leather_gloves' ? 0.65 : 0.3;
-      applyAlbedo(player.parts.bracerMat, albedoForItem(ITEMS[handsId]));
+  const gloveMat = rig.gloveMat as any;
+  const bracerMat = rig.bracerMat as any;
+  const handsItem = equip('hands');
+  if (handsItem) {
+    gloveMat.color.setHex(handsItem.color || 0x78350f);
+    gloveMat.metalness = handsItem.id === 'leather_gloves' ? 0.1 : 0.6;
+    applyAlbedo(gloveMat, albedoForItem(handsItem));
+    if (bracerMat) {
+      bracerMat.color.setHex(handsItem.color || 0x78350f);
+      bracerMat.metalness = handsItem.id === 'leather_gloves' ? 0.1 : 0.65;
+      bracerMat.roughness = handsItem.id === 'leather_gloves' ? 0.65 : 0.3;
+      applyAlbedo(bracerMat, albedoForItem(handsItem));
     }
-  } else {
-    player.parts.gloveMat.color.setHex(0xf5d8c2);
-    player.parts.gloveMat.metalness = 0.05;
-    applyAlbedo(player.parts.gloveMat, 'creature:skin');
-    if (player.parts.bracerMat) {
-      player.parts.bracerMat.color.setHex(0x4e3524);
-      player.parts.bracerMat.metalness = 0.1;
-      player.parts.bracerMat.roughness = 0.65;
-      applyAlbedo(player.parts.bracerMat, 'gear:leather');
+  } else if (hasSlot('hands')) {
+    gloveMat.color.setHex(0xf5d8c2);
+    gloveMat.metalness = 0.05;
+    applyAlbedo(gloveMat, 'creature:skin');
+    if (bracerMat) {
+      bracerMat.color.setHex(0x4e3524);
+      bracerMat.metalness = 0.1;
+      bracerMat.roughness = 0.65;
+      applyAlbedo(bracerMat, 'gear:leather');
     }
   }
 
-  const equip = (slot: string): ItemDef | null => {
-    const id = STATE.equipment[slot];
-    return id && ITEMS[id] ? ITEMS[id] : null;
-  };
-
-  const isBlenderHero = !!player.parts.leftElbowPivot;
+  const isBlenderHero = !!rig.leftElbowPivot || !!rig.group?.userData?.isBlenderHero;
 
   const weapon = equip('weapon');
   if (weapon) {
     const visual = buildWeaponVisual(weapon);
-    if (player.parts.rightElbowPivot) {
+    if (rig.rightElbowPivot) {
       visual.group.position.set(0.19, -0.32, 0.08);
       visual.group.rotation.set(-0.2, 0.0, 0.1);
-      mount(player.parts.rightElbowPivot, visual.group, 'wepMesh');
+      mount(rig.rightElbowPivot, visual.group, 'wepMesh');
     } else {
       visual.group.position.set(0, LEAN_RIG.handY, -0.08);
       mount(rArm, visual.group, 'wepMesh');
     }
-    player.parts.whipRig = visual.whipRig;
+    (rig as any).whipRig = visual.whipRig;
     if (visual.whipRig) syncWhipGeometry(visual.whipRig, 0);
   }
 
@@ -211,7 +236,7 @@ export function rebuildPlayerEquipmentMeshes(): void {
   if (shieldItem) {
     const shield = buildShieldVisual(shieldItem);
     const defender = shield.userData.silhouette === 'defender';
-    if (player.parts.leftElbowPivot) {
+    if (rig.leftElbowPivot) {
       if (defender) {
         shield.position.set(-0.19, -0.31, 0.08);
         shield.rotation.set(0, 0, 0);
@@ -219,7 +244,7 @@ export function rebuildPlayerEquipmentMeshes(): void {
         shield.position.set(-0.20, -0.22, 0.08);
         shield.rotation.set(0, -Math.PI / 2, 0);
       }
-      mount(player.parts.leftElbowPivot, shield, 'shieldMesh');
+      mount(rig.leftElbowPivot, shield, 'shieldMesh');
     } else {
       shield.position.set(defender ? 0.0 : -0.08, defender ? LEAN_RIG.handY + 0.04 : -0.46, defender ? -0.1 : -0.05);
       mount(lArm, shield, 'shieldMesh');
@@ -228,7 +253,7 @@ export function rebuildPlayerEquipmentMeshes(): void {
 
   const headItem = equip('head');
   const showHair = headShowsHair(headItem);
-  if (player.parts.hairCap) player.parts.hairCap.visible = showHair;
+  if (rig.hairCap) rig.hairCap.visible = showHair;
   if (headG) {
     headG.traverse((ch: THREE.Object3D) => {
       if (
@@ -250,7 +275,6 @@ export function rebuildPlayerEquipmentMeshes(): void {
     mount(headG, helmVisual, 'helmMesh');
   }
 
-  const bodyItem = equip('body');
   if (bodyItem) {
     const body = buildBodyVisual(bodyItem);
     mount(torso, body.torso, 'bodyArmorMesh');
@@ -272,7 +296,6 @@ export function rebuildPlayerEquipmentMeshes(): void {
     });
   }
 
-  const legsItem = equip('legs');
   if (legsItem) {
     const legs = buildLegsVisual(legsItem);
     mount(torso, legs.torso, 'legsArmorMesh');
@@ -302,25 +325,24 @@ export function rebuildPlayerEquipmentMeshes(): void {
   const ring = equip('ring');
   if (ring) {
     const ringMesh = buildRingVisual(ring);
-    if (player.parts.rightElbowPivot) {
+    if (rig.rightElbowPivot) {
       ringMesh.position.set(0.19, -0.32, 0.08);
       ringMesh.scale.set(1.0, 1.0, 1.0);
-      mount(player.parts.rightElbowPivot, ringMesh, 'ringMesh');
+      mount(rig.rightElbowPivot, ringMesh, 'ringMesh');
     } else {
       ringMesh.position.set(0, 0, 0);
       mount(rArm, ringMesh, 'ringMesh');
     }
   }
 
-  const feet = equip('feet');
-  if (feet) {
-    const bootL = buildBootVisual(feet, true);
-    const bootR = buildBootVisual(feet, false);
-    if (player.parts.leftKneePivot && player.parts.rightKneePivot) {
+  if (feetItem) {
+    const bootL = buildBootVisual(feetItem, true);
+    const bootR = buildBootVisual(feetItem, false);
+    if (rig.leftKneePivot && rig.rightKneePivot) {
       bootL.position.set(-0.11, 0.38, -0.01);
       bootR.position.set(0.085, 0.38, -0.01);
-      mount(player.parts.leftKneePivot, bootL, 'feetMeshL');
-      mount(player.parts.rightKneePivot, bootR, 'feetMeshR');
+      mount(rig.leftKneePivot, bootL, 'feetMeshL');
+      mount(rig.rightKneePivot, bootR, 'feetMeshR');
     } else {
       mount(lLeg, bootL, 'feetMeshL');
       mount(rLeg, bootR, 'feetMeshR');
@@ -335,21 +357,20 @@ export function rebuildPlayerEquipmentMeshes(): void {
           ch.name.startsWith('BootSole_') ||
           ch.name.startsWith('BootHeel_')
         ) {
-          ch.visible = !feet;
+          ch.visible = !feetItem;
         }
       });
     });
   }
 
-  const hands = equip('hands');
-  if (hands) {
-    const gloveL = buildGloveVisual(hands, true);
-    const gloveR = buildGloveVisual(hands, false);
-    if (player.parts.leftElbowPivot && player.parts.rightElbowPivot) {
+  if (handsItem) {
+    const gloveL = buildGloveVisual(handsItem, true);
+    const gloveR = buildGloveVisual(handsItem, false);
+    if (rig.leftElbowPivot && rig.rightElbowPivot) {
       gloveL.position.set(-0.18, 0.32, 0.08);
       gloveR.position.set(0.18, 0.32, 0.08);
-      mount(player.parts.leftElbowPivot, gloveL, 'handsMeshL');
-      mount(player.parts.rightElbowPivot, gloveR, 'handsMeshR');
+      mount(rig.leftElbowPivot, gloveL, 'handsMeshL');
+      mount(rig.rightElbowPivot, gloveR, 'handsMeshR');
     } else {
       mount(lArm, gloveL, 'handsMeshL');
       mount(rArm, gloveR, 'handsMeshR');
@@ -359,7 +380,7 @@ export function rebuildPlayerEquipmentMeshes(): void {
     [lArm, rArm].forEach((arm) => {
       arm.traverse((ch: THREE.Object3D) => {
         if (ch.name.startsWith('Bracer_') || ch.name.startsWith('BracerLace_')) {
-          ch.visible = !hands;
+          ch.visible = !handsItem;
         }
       });
     });
@@ -377,7 +398,13 @@ export function rebuildPlayerEquipmentMeshes(): void {
     }
     mount(torso, cape, 'capeMesh');
   }
+}
 
+export function rebuildPlayerEquipmentMeshes(): void {
+  if (!player.parts || !player.parts.rightArmPivot) return;
+  mountLoadout(player.parts, STATE.equipment);
+
+  const torso = player.parts.torso;
   const currentBon = getEquipmentBonuses(STATE);
   if (currentBon.matchedSet && torso) {
     const isFull = currentBon.isFullKit;
@@ -393,7 +420,8 @@ export function rebuildPlayerEquipmentMeshes(): void {
     cue.position.y = LEAN_RIG.beltY - LEAN_RIG.torsoY;
     cue.userData.setBonusCue = true;
     cue.userData.noOutline = true;
-    mount(torso, cue, 'setBonusCue');
+    torso.add(cue);
+    player.parts.setBonusCue = cue;
   }
 
   if (player.meshGroup) {
