@@ -281,13 +281,18 @@ float carpetWeight(vec4 w, float family) {
 `;
 
 /*
- * Instance k of variant v is grid cell k * 4 + v of a uCarpetGrid-square grid. Its world cell is the one
- * congruent to it nearest the hero, so a tuft stays put until it wraps to the far side, where it is faded out.
+ * Instance k of variant v is grid cell k * 4 + v of a uCarpetGrid-square grid, scrambled by a hashed shift of
+ * each row and then of each column (a bijection, so every cell still holds one tuft): unscrambled, a variant
+ * owned every fourth diagonal, and a one-variant region (the desert's tussocks) stood in rows. Its world cell
+ * is the one congruent to it nearest the hero, so a tuft stays put until it wraps to the far side, where it is
+ * faded out.
  */
 const CARPET_VERTEX = `#include <begin_vertex>
 {
   float k = float(gl_InstanceID) * 4.0 + uCarpetVariant;
   vec2 local = vec2(mod(k, uCarpetGrid), floor(k / uCarpetGrid));
+  local.x = mod(local.x + floor(carpetHash(vec2(local.y, 61.3)) * uCarpetGrid), uCarpetGrid);
+  local.y = mod(local.y + floor(carpetHash(vec2(local.x, 23.9)) * uCarpetGrid), uCarpetGrid);
   vec2 heroCell = floor(uHeroXZ / uCarpetSpacing);
   vec2 cell = local + uCarpetGrid * floor((heroCell - local) / uCarpetGrid + 0.5);
   vec2 xz = (cell + 0.15 + 0.7 * vec2(carpetHash(cell), carpetHash(cell + 17.31))) * uCarpetSpacing;
