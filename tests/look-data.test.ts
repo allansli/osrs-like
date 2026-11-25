@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BLOOM, CAMERA_FAR, CAMERA_LIMITS, DAY_KEYS, HORIZON_APRON, REGION_LOOK, SHADOW_SUN_STEP_DEG, SKY_DOME_RADIUS, WALK_BOUND } from '../src/data/look';
+import { BLOOM, CAMERA_FAR, CAMERA_LIMITS, DAY_KEYS, EMITTERS, HORIZON_APRON, REGION_LOOK, WEATHER, SHADOW_SUN_STEP_DEG, SKY_DOME_RADIUS, WALK_BOUND } from '../src/data/look';
 import { WORLD_REGIONS } from '../src/data/world';
 import { dayFrameAt, litGroundValue } from '../src/state/dayCycle';
 import { TERRAIN_SIZE } from '../src/state/terrain';
@@ -103,5 +103,42 @@ describe('look data: bloom (design 6.10)', () => {
   it('sets the threshold at least 15 percent above the brightest lit surface under any key', () => {
     expect(brightestLit).toBeGreaterThan(0);
     expect(BLOOM.threshold).toBeGreaterThanOrEqual(1.15 * brightestLit);
+  });
+});
+
+// Plan WX1, design 8.1 G5.4 (emitters) and 6.8. Pinned for WX2: every `EMITTERS` row is
+// `{ node, color: '#rrggbb', intensity }` and every glowing mote kind of a `WEATHER` row is
+// `{ color: '#rrggbb', intensity, glow: true }`. The luminance is of the linear colour times `intensity`, the same
+// space as BLOOM.threshold, so a glowing thing sits above the bloom threshold.
+describe('look data: glowing colours (design 6.8)', () => {
+  const toLinear = (c: number) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+  const lum = (hex: string, intensity: number) => {
+    const n = [1, 3, 5].map((i) => toLinear(parseInt(hex.slice(i, i + 2), 16) / 255));
+    return intensity * (0.2126 * n[0] + 0.7152 * n[1] + 0.0722 * n[2]);
+  };
+  const emitters = EMITTERS as unknown as Array<{ node: string; color: string; intensity: number }>;
+  const glowing = (WEATHER as unknown as Array<{ id: string; motes: Array<{ color: string; intensity: number; glow?: boolean }> }>)
+    .flatMap((w) => w.motes.filter((m) => m.glow).map((m) => ({ id: w.id, ...m })));
+
+  it('lists the five emitting world nodes', () => {
+    expect(emitters.map((e) => e.node).sort()).toEqual(
+      ['World_forge', 'World_lava_fissure', 'World_mystic_mushroom', 'World_shrine', 'World_woods_lantern']
+    );
+  });
+
+  it('keeps every emitter at least 1.2 times the bloom threshold', () => {
+    expect(emitters).toHaveLength(5);
+    for (const e of emitters) {
+      expect(e.color, e.node).toMatch(HEX);
+      expect(lum(e.color, e.intensity), e.node).toBeGreaterThanOrEqual(1.2 * BLOOM.threshold);
+    }
+  });
+
+  it('keeps every glowing mote at least 1.2 times the bloom threshold, and has some (fireflies, embers)', () => {
+    expect(glowing.length).toBeGreaterThanOrEqual(2);
+    for (const m of glowing) {
+      expect(m.color, m.id).toMatch(HEX);
+      expect(lum(m.color, m.intensity), m.id).toBeGreaterThanOrEqual(1.2 * BLOOM.threshold);
+    }
   });
 });
