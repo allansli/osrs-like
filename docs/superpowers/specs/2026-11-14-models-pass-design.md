@@ -971,3 +971,7 @@ Plan task R0, run against `feat/models-pass` at `0a1d0dc` (main with Stages 4 an
 | 15 | `blender-hero.test.ts` lines named in design 8.3 | Confirmed | `blender-hero.test.ts` 39-42, 49, 53-61, 66, 70 | None |
 | 16 | File where Stage 4 handles a heavy hit taken; shared with the monster cluster | Amended (named; not shared) | `actions.ts` 511-542 (`performMonsterHeavy`), 449, 544, 568; caller `loop.ts` 690 | Plan 0.4, H5b, second-pass review row |
 | 17 | `addCartoonOutline` callers that add a shell mid-pose | Confirmed (only line numbers moved) | `materials.ts` 80-109, 94; `playerMesh.ts` 400; `blenderMonsters.ts` 172 | Design 1 fact 3, K4 |
+
+### OM-1 (2026-11-25)
+
+The owner answered "segue" (go on) to the art-direction question at the baseline sheets and the in-engine captures. CALL-M1 and CALL-M12 are confirmed as written; section 5 is unchanged.

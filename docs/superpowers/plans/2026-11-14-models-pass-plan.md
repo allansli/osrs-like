@@ -219,6 +219,8 @@ If N-1 is answered "the hero" or "the dragon", S2 builds that figure instead and
 ### OM-1 [OWNER]
 Look at V3 and V4 and, if possible, the same places in the game on the owner's machine. Confirm the art direction or change it. The design's section 5 is amended before slice 1 if anything changes.
 
+**Answered 2026-11-25**: the owner said "segue" (go on) to the question "confirm the carved-figures art direction or change something?". The essence list (CALL-M1) and section 5 (CALL-M12) stand unchanged; slice 0b starts.
+
 ---
 
 ## Slice 0b: merge-only pass over the monsters
