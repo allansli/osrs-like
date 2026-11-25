@@ -11,9 +11,7 @@ import { BLOOM } from '../data/look';
 function bloomColor(color: THREE.ColorRepresentation): THREE.Color {
   const c = new THREE.Color(color);
   const lum = 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
-  if (lum > 0) {
-    c.multiplyScalar((1.2 * BLOOM.threshold) / lum);
-  }
+  c.multiplyScalar((1.2 * BLOOM.threshold) / lum);
   return c;
 }
 
