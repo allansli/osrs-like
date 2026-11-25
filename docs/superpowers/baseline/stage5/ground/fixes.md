@@ -92,3 +92,11 @@ The carpet is not changed. Its tints are per variant (`CARPET_TINTS` in `floraKi
 | 4 desert carpet grid | no aligned rows at P7 | not met: the cause is in `flora.ts`, outside GR8's files |
 
 P1 balanced calls and triangles stay within 5% of GR7 (`perf.md`).
+
+## Repair round (after GR8's failed verification)
+
+Items 3 and 4 were checked again for a lever inside GR8's files. There is none:
+
+- **Item 3, crown luminance.** `REGION_LOOK` (look.ts) holds only `airTint` and `airWeight`. `blendRegionTint` (atmosphere.ts) normalises the tint by its luminance, so the woods row changes the air's hue but not its level. It cannot lift unlit crown faces. The fill and bounce are light-model terms that GR8 must not change. Item 3 stays open: the 18% target needs a lower target, or the main session allows a fill or bounce change.
+- **Item 3, the yew rule.** `grep -rniE "yew|crown|lightness|getHSL|darker" tests src/__tests__` finds no test that compares a crown with the yew. a5eb463 changed only `floraKit.ts`. Measured against the yew, the rule holds by linear albedo luminance (0.020 to 0.025 against 0.0266) and by rendered luminance (section 3). It does not hold by sRGB HSL lightness: the tops are 0.15 and 0.155, the yew is 0.139. The main session decides which measure stands, and whether a new test in `tests/` (outside GR8's files) enforces it.
+- **Item 4, carpet grid.** `scatter.ts` exports only `buildScatter` (kit pieces). The interleave `k = 4i + v`, the jitter and `CARPET_WEIGHTS` are all in `flora.ts`, which is not in GR8's files. Item 4 stays open: `flora.ts` needs to be added to the allowlist, or the fix needs its own task.
