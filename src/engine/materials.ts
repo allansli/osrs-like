@@ -93,12 +93,8 @@ function isSkippableOutline(obj: THREE.Object3D): boolean {
 
 function computeOutlineNormals(geometry: THREE.BufferGeometry): void {
   if (geometry.getAttribute('outlineNormal')) return;
-  if (!geometry.getAttribute('normal')) {
-    geometry.computeVertexNormals();
-  }
   const posAttr = geometry.getAttribute('position');
   const normAttr = geometry.getAttribute('normal');
-  if (!posAttr || !normAttr) return;
   const count = posAttr.count;
   const outlineNormals = new Float32Array(count * 3);
 
