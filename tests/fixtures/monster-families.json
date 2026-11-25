@@ -22,7 +22,8 @@
     "plain",
     "skin"
    ]
-  }
+  },
+  "floor": 12
  },
  "dark_ranger": {
   "meshes": 37,
@@ -65,7 +66,8 @@
     "eyes",
     "iron"
    ]
-  }
+  },
+  "floor": 23
  },
  "dark_wizard": {
   "meshes": 24,
@@ -105,7 +107,8 @@
     "iron",
     "plain"
    ]
-  }
+  },
+  "floor": 18
  },
  "elvarg_dragon": {
   "meshes": 5,
@@ -120,7 +123,8 @@
     "plain",
     "skin"
    ]
-  }
+  },
+  "floor": 3
  },
  "goblin": {
   "meshes": 59,
@@ -167,7 +171,8 @@
     "plain",
     "skin"
    ]
-  }
+  },
+  "floor": 29
  },
  "goblin_archer": {
   "meshes": 58,
@@ -214,7 +219,8 @@
     "plain",
     "skin"
    ]
-  }
+  },
+  "floor": 28
  },
  "hill_giant": {
   "meshes": 45,
@@ -259,7 +265,8 @@
     "plain",
     "skin"
    ]
-  }
+  },
+  "floor": 20
  },
  "lesser_demon": {
   "meshes": 24,
@@ -289,7 +296,8 @@
     "leather",
     "plain"
    ]
-  }
+  },
+  "floor": 10
  },
  "moss_guardian": {
   "meshes": 43,
@@ -335,7 +343,8 @@
     "grass",
     "wood"
    ]
-  }
+  },
+  "floor": 20
  },
  "scorpion": {
   "meshes": 68,
@@ -368,6 +377,7 @@
     "plain",
     "skin"
    ]
-  }
+  },
+  "floor": 19
  }
 }

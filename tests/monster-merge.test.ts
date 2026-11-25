@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest';
 
 const ROOT = path.resolve(__dirname, '..');
 type Json = {
-  nodes: { name?: string; mesh?: number; children?: number[] }[];
+  nodes: { name?: string; mesh?: number; children?: number[]; extras?: { noOutline?: unknown } }[];
   meshes: { name?: string; primitives: { material?: number; indices?: number; attributes: Record<string, number> }[] }[];
   materials?: { name?: string; emissiveFactor?: number[]; extensions?: { KHR_materials_emissive_strength?: { emissiveStrength?: number } } }[];
   accessors: { count: number }[];
@@ -48,6 +48,8 @@ export interface Figure {
   meshes: number;
   triangles: Record<string, number>;
   pivots: Record<string, string[]>;
+  /** Meshes left by a perfect `figkit.merge_parts`: one per (pivot, material, noOutline, name class), TOGGLED names alone. */
+  floor: number;
 }
 
 /** Per `Monster_*` figure: meshes (primitives), triangles per family, and the families under each pivot. */
@@ -58,7 +60,8 @@ function figures(file: string): Record<string, Figure> {
   const out: Record<string, Figure> = {};
   json.nodes.forEach((root, ri) => {
     if (!root.name?.startsWith('Monster_') || parent.has(ri)) return;
-    const fig: Figure = { meshes: 0, triangles: {}, pivots: {} };
+    const fig: Figure = { meshes: 0, triangles: {}, pivots: {}, floor: 0 };
+    const groups = new Set<string>();
     const stack = [ri];
     while (stack.length) {
       const i = stack.pop()!;
@@ -73,11 +76,17 @@ function figures(file: string): Record<string, Figure> {
         const fam = familyOf(json, node.name ?? '', mesh.name ?? '', prim.material);
         const tris = Math.floor(json.accessors[prim.indices ?? prim.attributes.POSITION].count / 3);
         fig.meshes++;
+        // figkit.merge_parts: group by (parent, material, noOutline, name class); TOGGLED names never merge.
+        const nm = node.name ?? '';
+        const cls = ['eye', 'glow', 'gem', 'orb', 'string'].find((c) => nm.toLowerCase().includes(c)) ?? 'other';
+        const toggled = /^(Hair|CrownSpike_|BackSpike_|Sideburn_|TorsoCoat$|OuterCoat_|CoatTrim_|CoatTail_|CoatTailTrim_|InnerCollar$)|_leg[LR]_04_/.test(nm);
+        groups.add(toggled ? `#${i}.${fig.meshes}` : `${p}|${prim.material}|${node.extras?.noOutline ? 1 : 0}|${cls}`);
         fig.triangles[fam] = (fig.triangles[fam] ?? 0) + tris;
         const set = (fig.pivots[json.nodes[p].name ?? `#${p}`] ??= []);
         if (!set.includes(fam)) set.push(fam);
       }
     }
+    fig.floor = groups.size;
     for (const k of Object.keys(fig.pivots)) fig.pivots[k].sort();
     out[root.name.slice('Monster_'.length)] = fig;
   });
@@ -98,10 +107,10 @@ describe('monster merge keeps everything but the mesh grouping', () => {
   it.each(keys)('%s: every pivot keeps its meshes\' families', (k) => {
     expect(built[k].pivots).toEqual(today[k].pivots);
   });
-  // Red until the merge exists (plan M0). A figure with fewer meshes than twice its floor
-  // (one per family under each pivot) cannot halve; its limit is that floor.
-  it.each(keys)('%s: at most half of today\'s meshes', (k) => {
-    const floor = Object.values(today[k].pivots).reduce((s, f) => s + f.length, 0);
-    expect(built[k].meshes).toBeLessThanOrEqual(Math.max(Math.floor(today[k].meshes / 2), floor));
+  // Red until the merge exists (plan M0). Plan: at most half of today's meshes. A figure whose
+  // merge-only floor (one mesh per pivot, material, noOutline and name class, which is all
+  // merge_parts may join without changing a material) exceeds half is limited to that floor.
+  it.each(keys)('%s: at most half of today\'s meshes, or the merge-only floor', (k) => {
+    expect(built[k].meshes).toBeLessThanOrEqual(Math.max(Math.floor(today[k].meshes / 2), today[k].floor));
   });
 });
