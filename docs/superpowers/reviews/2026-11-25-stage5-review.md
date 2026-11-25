@@ -24,7 +24,7 @@ Two read-only opus reviews of `feat/visual-pass`: engine (src/engine, src/state,
 | UI-4: dialogs do not trap focus (`inert`) | low | Stage 7 | same |
 | UI-6: CSP logs Vercel toolbar violations on previews | low | UI8c note | vercel.live errors on a preview are expected and are not the app's |
 | EN-6: weather snaps when the heaviest region changes | low | Stage 6 | weather by region weight comes with the regions Stage 6 adds |
-| EN-7: falling particles jump when the fall speed changes | low | models pass polish | visible only on a weather change after long sessions |
+| EN-7: falling particles jump when the fall speed changes | low | fixed | closed by the CP-WX rain change (offsets accumulated per frame) |
 | EN-8: carpet tuft normals unrotated | low | models pass polish | lighting nuance on tufts |
 | EN-9: cloud shadows also dim point lights | low | models pass polish | high and ultra only, at night |
 | EN-10: facet material registry never shrinks | low | models pass | the monster merge (M0) rebuilds materials and is where the registry is reworked |

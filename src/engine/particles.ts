@@ -204,6 +204,8 @@ uniform float uOpacity;
 uniform float uWindMultiplier;
 uniform vec3 uFallColor;
 uniform float uFallShape;
+uniform float uFallOffset;
+uniform vec2 uWindOffset;
 
 varying vec3 vColor;
 varying float vAlpha;
@@ -217,8 +219,8 @@ void main() {
 
   vec3 baseOffset = aSeed.xyz * uBoxSize;
   vec3 move = vec3(0.0);
-  move.xz += uWind * (uPTime * aSpeed.x * uWindMultiplier);
-  move.y -= uFallSpeed * aSpeed.y * uPTime;
+  move.xz += uWindOffset * aSpeed.x;
+  move.y -= uFallOffset * aSpeed.y;
   move.x += sin(uPTime * 1.5 + aSeed.w * 6.28) * uWobble;
   move.z += cos(uPTime * 1.3 + aSeed.w * 6.28) * uWobble;
 
@@ -234,9 +236,11 @@ void main() {
   vWorld = centerPos;
 
   vec4 viewCenter = viewMatrix * vec4(centerPos, 1.0);
-  vec2 viewWind = (viewMatrix * vec4(uWind.x, 0.0, uWind.y, 0.0)).xy * uWindMultiplier;
   vec2 vert = position.xy * aScale;
-  vert.x += vert.y * viewWind.x * 0.35;
+  // Each piece leans along its own screen-space velocity, so rain slants with the wind the grass leans in.
+  vec3 vel = vec3(uWind.x * uWindMultiplier * aSpeed.x, -uFallSpeed * aSpeed.y, uWind.y * uWindMultiplier * aSpeed.x);
+  vec2 vv = (viewMatrix * vec4(vel, 0.0)).xy;
+  vert.x += vert.y * clamp(vv.x / min(vv.y, -0.001), -1.5, 1.5);
   viewCenter.xy += vert;
   gl_Position = projectionMatrix * viewCenter;
 
@@ -257,6 +261,8 @@ void main() {
 }
 `;
 
+// About 18 degrees of slant at rain speed with the base wind.
+const RAIN_WIND_MULTIPLIER = 11;
 const BASE_WIND_X = AIR.uWind.value.x; // read once at load, before reduced motion scales it
 const BASE_WIND_Y = AIR.uWind.value.y;
 
@@ -394,6 +400,8 @@ export function initParticles(scene: THREE.Scene, tier: QualityTier): void {
       uWobble: { value: 0.15 },
       uOpacity: { value: 0.0 },
       uWindMultiplier: { value: 1.8 },
+      uFallOffset: { value: 0 },
+      uWindOffset: { value: new THREE.Vector2() },
       uFallColor: { value: new THREE.Color(0xffffff) },
       uFallShape: { value: 2 },
     },
@@ -564,6 +572,12 @@ export function updateParticles(dt: number, camera: THREE.Camera): void {
   fallMaterial.uniforms.uFallColor.value.setRGB(fallR, fallG, fallB);
   fallMaterial.uniforms.uOpacity.value = fallOpacity * 0.85;
   fallMaterial.uniforms.uFallSpeed.value = fallSpeed;
+  // Rain is driven hard by the wind; ash and sand drift.
+  const windMul = weather.id === 'rain' ? RAIN_WIND_MULTIPLIER : 1.8;
+  fallMaterial.uniforms.uWindMultiplier.value = windMul;
+  // Offsets accumulate per frame, so a change of speed or wind never jumps the field.
+  fallMaterial.uniforms.uFallOffset.value += fallSpeed * dt;
+  fallMaterial.uniforms.uWindOffset.value.addScaledVector(AIR.uWind.value, windMul * dt);
   // Rain is thin slivers (shape 2); ash and sand fall as flakes (shape 3).
   fallMaterial.uniforms.uFallShape.value = (curr.fall ? curr.id : prev.id) === 'rain' ? 2 : 3;
 

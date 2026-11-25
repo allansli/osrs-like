@@ -645,7 +645,7 @@ The owner fights with melee, ranged and magic, gains a level and gets a rare dro
 - **Check**:
   1. SUITE: all pass. `git diff main -- tests src/__tests__` shows edits to existing files only in `tests/textures.test.ts` (four assertions) and, if UI8 ran, `tests/globals.test.ts` and `tests/vercel-headers.test.ts`.
   2. TYPES: clean.
-  3. BUILD: the JS chunk is at most the V2 chunk plus 80 kB; CSS at most 45 kB; fonts at most 120 kB.
+  3. BUILD: the JS chunk is at most the V2 chunk plus 91 kB (owner, 2026-11-25; was 80 kB); CSS at most 45 kB; fonts at most 120 kB.
   4. `git diff main -- package.json` shows no `dependencies` change. `git diff --stat main -- public/models public/textures` is empty.
   5. `npm audit --audit-level=high` exits 0.
   6. Every goal G5.1 to G5.14 maps to a passing test (section 10.2).
@@ -842,3 +842,9 @@ These are not decided here; each names the task that cannot start without an ans
 ### A12. Names this plan cites that do not exist yet
 
 Every other backticked name in this plan (for example `look.ts`, `GFX_TIERS`, `dayFrameAt`, `fitShadow`, `attachAtmosphere`, `mergeByMaterial`, `isWalkableGround`, `WOODS_TREES`, `buildScatter`, `buildWaterGrid`, `weatherAt`, `createLookHooks`, `enterPlainMode`, the new test files) is created by the task that cites it, and R0 has no line to record for it.
+
+## Amendment after G-5 (2026-11-25, owner)
+
+- JS budget raised to the V2 chunk plus 91 kB (1,083.73 kB); G-5 measured 1,082.9 kB.
+- CP-WT accepted. CP-WX: change, rain slants with the wind (done: rain aligned to its screen-space velocity, fall and wind offsets accumulated per frame, which also closes review finding EN-7). CP-FX: judged by the owner in play after the merge.
+- Particle shapes were back-facing (found at CP-WX, fixed in 6167863).

@@ -11,3 +11,16 @@ describe('particles', () => {
     for (const m of materials) expect(m.slice(0, m.indexOf('\n  });'))).toContain('side: THREE.DoubleSide');
   });
 });
+
+describe('falling weather', () => {
+  it('moves by offsets accumulated per frame, so a change of speed or wind never jumps the field', () => {
+    expect(src).toContain('move.y -= uFallOffset * aSpeed.y;');
+    expect(src).not.toMatch(/uFallSpeed \* aSpeed\.y \* uPTime/);
+    expect(src).toContain('uFallOffset.value += fallSpeed * dt');
+  });
+
+  it('rain leans along its own screen-space velocity', () => {
+    expect(src).toContain('vert.x += vert.y * clamp(vv.x / min(vv.y, -0.001), -1.5, 1.5);');
+    expect(src).toMatch(/weather\.id === 'rain' \? RAIN_WIND_MULTIPLIER/);
+  });
+});
