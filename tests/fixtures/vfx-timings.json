@@ -159,5 +159,186 @@
     "spawnShadowBolt",
     "spawnHellfireOrb",
     "spawnLevelUpFireworks"
+  ],
+  "wrapperLifetimes": [
+    {
+      "fn": "spawnMeleeSlashEffect",
+      "callee": "spawnBurst",
+      "life": "0.48"
+    },
+    {
+      "fn": "spawnMeleeSlashEffect",
+      "callee": "spawnBurst",
+      "life": "0.4"
+    },
+    {
+      "fn": "spawnMeleeSlashEffect",
+      "callee": "spawnBurst",
+      "life": "0.4"
+    },
+    {
+      "fn": "spawnMeleeSlashEffect",
+      "callee": "spawnBurst",
+      "life": "0.5"
+    },
+    {
+      "fn": "spawnMeleeSlashEffect",
+      "callee": "spawnBurst",
+      "life": "0.42"
+    },
+    {
+      "fn": "spawnMeleeSlashEffect",
+      "callee": "spawnBurst",
+      "life": "0.45"
+    },
+    {
+      "fn": "spawnMeleeSlashEffect",
+      "callee": "spawnBurst",
+      "life": "0.35"
+    },
+    {
+      "fn": "spawnSpellImpact",
+      "callee": "spawnBurst",
+      "life": "0.45"
+    },
+    {
+      "fn": "spawnSpellImpact",
+      "callee": "spawnBurst",
+      "life": "0.55"
+    },
+    {
+      "fn": "spawnSpellImpact",
+      "callee": "spawnBurst",
+      "life": "0.45"
+    },
+    {
+      "fn": "spawnSpellImpact",
+      "callee": "spawnBurst",
+      "life": "0.7"
+    },
+    {
+      "fn": "spawnPiercingBeam",
+      "callee": "spawnBurst",
+      "life": "0.4"
+    },
+    {
+      "fn": "spawnDragonfireEffect",
+      "callee": "spawnBurst",
+      "life": "0.6"
+    },
+    {
+      "fn": "spawnDragonfireEffect",
+      "callee": "spawnBurst",
+      "life": "0.45"
+    },
+    {
+      "fn": "spawnMeleeSlashEffect",
+      "callee": "spawnExpandingRing",
+      "life": "isSpec ? 0.8 : 0.55"
+    },
+    {
+      "fn": "spawnMeleeSlashEffect",
+      "callee": "spawnExpandingRing",
+      "life": "0.6"
+    },
+    {
+      "fn": "spawnMeleeSlashEffect",
+      "callee": "spawnExpandingRing",
+      "life": "isSpec ? 0.85 : 0.6"
+    },
+    {
+      "fn": "spawnSpellImpact",
+      "callee": "spawnExpandingRing",
+      "life": "1.25"
+    },
+    {
+      "fn": "spawnSpellImpact",
+      "callee": "spawnExpandingRing",
+      "life": "1.05"
+    },
+    {
+      "fn": "spawnSpellImpact",
+      "callee": "spawnExpandingRing",
+      "life": "0.8"
+    },
+    {
+      "fn": "spawnDragonfireEffect",
+      "callee": "spawnExpandingRing",
+      "life": "1.05"
+    },
+    {
+      "fn": "spawnDragonfireEffect",
+      "callee": "spawnExpandingRing",
+      "life": "0.85"
+    },
+    {
+      "fn": "spawnShadowBolt",
+      "callee": "spawnExpandingRing",
+      "life": "0.6"
+    },
+    {
+      "fn": "spawnSpellProjectile",
+      "callee": "spawnRunicCircle",
+      "life": "0.8"
+    },
+    {
+      "fn": "spawnMeleeSlashEffect",
+      "callee": "spawnSlashArc",
+      "life": "0.85"
+    },
+    {
+      "fn": "spawnMeleeSlashEffect",
+      "callee": "spawnSlashArc",
+      "life": "0.46"
+    },
+    {
+      "fn": "spawnMeleeSlashEffect",
+      "callee": "spawnSlashArc",
+      "life": "0.7"
+    },
+    {
+      "fn": "spawnMeleeSlashEffect",
+      "callee": "spawnSlashArc",
+      "life": "0.55"
+    },
+    {
+      "fn": "spawnMeleeSlashEffect",
+      "callee": "spawnSlashArc",
+      "life": "0.46"
+    },
+    {
+      "fn": "spawnMeleeSlashEffect",
+      "callee": "spawnSlashArc",
+      "life": "0.55"
+    },
+    {
+      "fn": "spawnMeleeSlashEffect",
+      "callee": "spawnSlashArc",
+      "life": "0.48"
+    },
+    {
+      "fn": "spawnMeleeSlashEffect",
+      "callee": "spawnSlashArc",
+      "life": "0.58"
+    },
+    {
+      "fn": "spawnMeleeSlashEffect",
+      "callee": "spawnSlashArc",
+      "life": "0.4"
+    }
+  ],
+  "lifeDefaults": [
+    {
+      "fn": "spawnBurst",
+      "value": "0.5"
+    },
+    {
+      "fn": "spawnExpandingRing",
+      "value": "0.7"
+    },
+    {
+      "fn": "spawnRunicCircle",
+      "value": "0.85"
+    }
   ]
 }

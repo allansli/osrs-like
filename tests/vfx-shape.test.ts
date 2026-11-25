@@ -7,6 +7,8 @@ const fixture = JSON.parse(readFileSync(new URL('./fixtures/vfx-timings.json', i
   spawnVfx: { fn: string; life: string }[];
   launchProjectile: { fn: string; speed: string }[];
   speedAssignments: { fn: string; value: string }[];
+  wrapperLifetimes: { fn: string; callee: string; life: string }[];
+  lifeDefaults: { fn: string; value: string }[];
   exports: string[];
 };
 
@@ -51,6 +53,17 @@ function extract() {
       const fns = [...src.slice(0, m.index).matchAll(/^(?:export )?function (\w+)/gm)];
       return { fn: fns[fns.length - 1][1], value: m[1] };
     }),
+    // Lifetimes that reach spawnVfx through the wrapper functions: spawnBurst arg 4, spawnExpandingRing and spawnRunicCircle arg 3, spawnSlashArc life option.
+    wrapperLifetimes: [
+      ...calls('spawnBurst').map((c) => ({ fn: c.fn, callee: 'spawnBurst', life: c.args[3] ?? 'default' })),
+      ...calls('spawnExpandingRing').map((c) => ({ fn: c.fn, callee: 'spawnExpandingRing', life: c.args[2] ?? 'default' })),
+      ...calls('spawnRunicCircle').map((c) => ({ fn: c.fn, callee: 'spawnRunicCircle', life: c.args[2] ?? 'default' })),
+      ...calls('spawnSlashArc').map((c) => ({ fn: c.fn, callee: 'spawnSlashArc', life: /\blife\s*:\s*([^,}\n]+)/.exec(c.args[c.args.length - 1])?.[1]?.trim() ?? 'default' })),
+    ],
+    lifeDefaults: [...src.matchAll(/^\s*life\s*=\s*([\d.]+)/gm)].map((m) => {
+      const fns = [...src.slice(0, m.index).matchAll(/^(?:export )?function (\w+)/gm)];
+      return { fn: fns[fns.length - 1][1], value: m[1] };
+    }),
     exports: [...src.matchAll(/^export function (\w+)/gm)].map((m) => m[1]),
   };
 }
@@ -62,8 +75,9 @@ describe('vfx shapes and timings', () => {
 
   it('has no ring or cylinder with more than 10 radial segments', () => {
     const over: string[] = [];
-    for (const c of calls('THREE.RingGeometry')) if (Number(c.args[2]) > 10) over.push(`${c.fn}: Ring ${c.args[2]}`);
-    for (const c of calls('THREE.CylinderGeometry')) if (Number(c.args[3]) > 10) over.push(`${c.fn}: Cylinder ${c.args[3]}`);
+    // A missing or non-numeric segment argument falls back to the three.js default of 32, so it fails too.
+    for (const c of calls('THREE.RingGeometry')) if (!(Number(c.args[2]) <= 10)) over.push(`${c.fn}: Ring ${c.args[2]}`);
+    for (const c of calls('THREE.CylinderGeometry')) if (!(Number(c.args[3]) <= 10)) over.push(`${c.fn}: Cylinder ${c.args[3]}`);
     expect(over).toEqual([]);
   });
 
@@ -77,6 +91,9 @@ describe('vfx shapes and timings', () => {
     expect(now.spawnVfx).toEqual(fixture.spawnVfx);
     expect(now.launchProjectile).toEqual(fixture.launchProjectile);
     expect(now.speedAssignments).toEqual(fixture.speedAssignments);
+    expect(now.wrapperLifetimes.length).toBeGreaterThan(30);
+    expect(now.wrapperLifetimes).toEqual(fixture.wrapperLifetimes);
+    expect(now.lifeDefaults).toEqual(fixture.lifeDefaults);
   });
 
   it('still exports every function of vfx.ts at FX1', () => {
