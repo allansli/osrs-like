@@ -693,8 +693,6 @@ def build_materials() -> dict:
         "skin_chicken_wing": make_mat("mat_skin_chicken_wing", 0xD6C8AE, roughness=0.60, metallic=0.02),
         "skin_chicken_tail": make_mat("mat_skin_chicken_tail", 0x9E7846, roughness=0.58, metallic=0.04),
         "skin_goblin": make_mat("mat_skin_goblin", 0x4A5D3B, roughness=0.58, metallic=0.04),
-        # White: the rebuilt raider's colours are in its paint layer (plan S2)
-        "skin_goblin_paint": make_mat("mat_skin_goblin_paint", 0xFFFFFF, roughness=0.58, metallic=0.04),
         "skin_goblin_dark": make_mat("mat_skin_goblin_dark", 0x324227, roughness=0.62, metallic=0.04),
         "skin_scorpion": make_mat("mat_skin_scorpion", 0x3A2416, roughness=0.38, metallic=0.15),
         "skin_scorpion_plate": make_mat("mat_skin_scorpion_plate", 0x24170E, roughness=0.32, metallic=0.20),
@@ -1162,6 +1160,7 @@ GOBLIN_COLOURS = {
     "bone": 0xBDB39C,
     "rust_cloth": 0x8A4A2C,
     "iris": 0xE6B820,
+    "mouth": 0x3B2018,
     "wood": 0x3E2C1C,
     "leather": 0x33241A,
     "bronze": 0x7A5B32,
@@ -1361,13 +1360,15 @@ def _goblin_body_tint(body) -> None:
     body.data.color_attributes.new("Tint", "FLOAT_COLOR", "POINT").data.foreach_set("color", cols)
 
 
-def build_goblin(mats: dict):
+def build_goblin(grid_pos: tuple[float, float, float], mats: dict):
+    # grid_pos is not used: a skinned figure stands at the file's origin (design 6.1.1 rule 2b)
     route = os.environ.get("GOBLIN_BODY", "a")
     variant = os.environ.get("GOBLIN_MATS", "3")
     if route not in ("a", "b") or variant not in ("3", "1"):
         raise SystemExit(f"GOBLIN_BODY must be a or b and GOBLIN_MATS 3 or 1, got {route!r} and {variant!r}")
 
-    skin = mats["skin_goblin_paint"]
+    # White: vertex colour multiplies the material's colour, so the raider's skin colours are all paint
+    skin = make_mat("mat_skin_goblin_paint", 0xFFFFFF, roughness=0.58, metallic=0.04)
     wood = mats["wood"] if variant == "3" else skin
     metal = mats["bronze"] if variant == "3" else skin
     col = GOBLIN_COLOURS
@@ -1386,9 +1387,9 @@ def build_goblin(mats: dict):
             "HeadGroup",
             col["iris"],
         )
-        # Underbite tusks ride the jaw
+        # Underbite tusks rise from the jaw's front corners, outside the iris column and ending under it
         add(
-            add_cone_spike(f"gob_fang_{tag}", None, skin, base_r=0.034, length=0.13, tx=side * 0.105, ty=1.39, tz=-0.52, rx=-0.15, segs=6),
+            add_cone_spike(f"gob_fang_{tag}", None, skin, base_r=0.036, length=0.10, tx=side * 0.17, ty=1.33, tz=-0.585, rx=-0.10, rz=-side * 0.18, segs=6),
             "Jaw",
             col["bone"],
         )
@@ -1398,7 +1399,10 @@ def build_goblin(mats: dict):
             "LeftArmPivot",
             col["bone"],
         )
-    add(add_sphere("gob_jaw", None, skin, 0.20, 0.085, 0.18, tx=0.0, ty=1.355, tz=-0.38, segs=12, rings=8), "Jaw", col["skin_dark"])
+    # Lantern jaw: wider than the skull above it and 0.11 in front of the upper lip, so its top is a shelf
+    # seen from the game's camera. The mouth is a dark slab between lip and jaw; it stays with the head.
+    add(add_sphere("gob_jaw", None, skin, 0.23, 0.10, 0.20, tx=0.0, ty=1.30, tz=-0.44, segs=14, rings=9), "Jaw", col["skin"])
+    add(add_sphere("gob_mouth", None, skin, 0.185, 0.03, 0.15, tx=0.0, ty=1.395, tz=-0.44, segs=10, rings=6), "HeadGroup", col["mouth"])
 
     # Loincloth and belt hang from the hips, never from the legs
     add(add_box("gob_cloth_front", None, skin, 0.20, 0.30, 0.05, tx=0.0, ty=0.53, tz=-0.16, rx=-0.10, bevel=0.0), "Hips", col["rust_cloth"])
@@ -1500,6 +1504,8 @@ def build_goblin(mats: dict):
         attrs["Tint"].data.foreach_get("color", tint)
         attrs["Col"].data.foreach_set("color", [a * b for a, b in zip(baked, tint)])
         attrs.remove(attrs["Tint"])
+        while ob.data.uv_layers:  # no figure reads GLB UVs (design 6.3)
+            ob.data.uv_layers.remove(ob.data.uv_layers[0])
         attrs.active_color = attrs["Col"]
         attrs.render_color_index = attrs.active_color_index
         ob.modifiers.new("Armature", "ARMATURE").object = rig
@@ -3149,7 +3155,7 @@ def main():
     # Build all 10 Monster species on a 2-row showcase grid (Three.js X, Y=0, Z)
     # Front row (Z = -1.6 -> Blender Y = +1.6, closer to camera at Y = +12.8)
     build_chicken((-5.2, 0.0, -2.0), mats)
-    goblin = build_goblin(mats)  # skinned: at the origin, not on the grid
+    build_goblin((-3.0, 0.0, -2.0), mats)
     build_goblin_archer((-0.8, 0.0, -2.0), mats)
     build_scorpion((1.8, 0.0, -2.0), mats)
     build_dark_wizard((4.4, 0.0, -2.0), mats)
@@ -3164,25 +3170,20 @@ def main():
     # Merge-only pass (plan M0): one merge_parts call per Monster_* root, no shape, name or colour change.
     # The chicken's wings are meshes the engine flaps by name (findPivot 'LWing'/'RWing'), so they stay alone.
     keep = re.compile(figkit.TOGGLED.pattern + r"|^chicken_[LR]Wing$")
-    # The skinned goblin is merged by family in its own builder.
-    for obj in [o for o in bpy.data.objects if o.name.startswith("Monster_") and o.parent is None and o.type != "ARMATURE"]:
+    for obj in [o for o in bpy.data.objects if o.name.startswith("Monster_") and o.parent is None]:
         figkit.merge_parts(obj, keep=keep)
-
-    # COLOR_0 is all or none per file (manifest rule), so the figures not painted yet carry white,
-    # which multiplies to no change in the engine. Keeping their TEXCOORD_0 beside it would put the
-    # file over the total byte ceilings; figkit.export_glb writes none (no figure reads GLB UVs,
-    # design 6.3), which leaves every triangle's positions and normals as they were.
-    for mesh in {o.data for o in bpy.data.objects if o.type == "MESH" and o.parent is not goblin}:
-        while mesh.color_attributes:
-            mesh.color_attributes.remove(mesh.color_attributes[0])
-        white = mesh.color_attributes.new("Col", "FLOAT_COLOR", "POINT")
-        white.data.foreach_set("color", [1.0] * (4 * len(mesh.vertices)))
 
     blend_path = paths.blend_path("monsters")
     glb_path = paths.glb_path("monsters")
 
     # Export clean glTF binary before adding studio camera/lights/floor
-    figkit.export_glb(glb_path)
+    bpy.ops.export_scene.gltf(
+        filepath=paths.glb_path("monsters"),
+        export_format="GLB",
+        export_yup=True,
+        export_extras=True,
+        export_vertex_color="ACTIVE",  # the goblin's paint layer; no other figure has a colour layer (plan S2)
+    )
     print(f"[Blender] Exported glTF binary: {glb_path}")
 
     setup_studio_and_render(render_path)
