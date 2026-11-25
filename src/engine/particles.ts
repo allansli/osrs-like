@@ -378,6 +378,7 @@ export function initParticles(scene: THREE.Scene, tier: QualityTier): void {
     transparent: true,
     depthWrite: false,
     depthTest: true,
+    side: THREE.DoubleSide, // the shapes are wound clockwise as seen from the camera
   });
 
   fallMaterial = new THREE.ShaderMaterial({
@@ -399,6 +400,7 @@ export function initParticles(scene: THREE.Scene, tier: QualityTier): void {
     transparent: true,
     depthWrite: false,
     depthTest: true,
+    side: THREE.DoubleSide, // the shapes are wound clockwise as seen from the camera
   });
 
   // Motes mesh setup
