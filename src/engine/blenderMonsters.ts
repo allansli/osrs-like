@@ -113,7 +113,11 @@ export function upgradeMonsterRigWithGltf(mObj: MonsterEntityLike, gltf: GLTF): 
     mesh.receiveShadow = false;
 
     const hasColor = Boolean(mesh.geometry.getAttribute('color'));
-    const extra = hasColor ? { vertexColors: true } : {};
+    const isSkinned = Boolean((mesh as THREE.SkinnedMesh).isSkinnedMesh);
+    const extra: Record<string, unknown> = {
+      ...(hasColor ? { vertexColors: true } : {}),
+      ...(hasColor && isSkinned ? { shade: 'cut' } : {}),
+    };
 
     const origMat = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material;
     const matName = (origMat?.name || '').toLowerCase();
