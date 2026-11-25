@@ -24,7 +24,7 @@ export function disposeObject3D(
       }
     }
     const skinned = obj as THREE.SkinnedMesh;
-    if (skinned.isSkinnedMesh && skinned.skeleton) {
+    if (skinned.isSkinnedMesh) {
       skeletons.add(skinned.skeleton);
     }
   });

@@ -94,8 +94,7 @@ export function upgradeMonsterRigWithGltf(mObj: MonsterEntityLike, gltf: GLTF): 
   cloned.scale.set(1, 1, 1);
 
   if (isSkinned) {
-    const boneKey = (mObj.def as { body?: string }).body ?? modelKey;
-    stripBonePrefix(cloned, boneKey);
+    stripBonePrefix(cloned, modelKey);
   }
 
   const speciesKey =
