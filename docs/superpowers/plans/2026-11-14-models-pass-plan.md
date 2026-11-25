@@ -800,3 +800,33 @@ The art read's two engine notes are for the owner at OM-P, not tasks: skinned fi
 
 OM-P runs now (design review log, "S3c and the way to OM-P"). **S2d** (fable, after OM-P, on the chosen route and variant only): the S3c art read's builder list (`GOBLIN_PLANE_TONE` about (-0.25, 0.15); skin about 42 to 44% value and warmer, `skin_dark` about 30%; wood about 45% and rust lifted; route (a)'s foot one solid slab at `skin_dark`; the head's hard edges and plane tones if bytes allow; jaw, pauldron and boss faceted; the loincloth shorter and tapered; a thumb; the spear clear of the face side-on; `GOBLIN_PLANE_MIN` about 0.01). Its files, accept and must-not-change are S2c's. S4 then promotes. The outline's view-space z push is an engine item for Slice 8.
 
+### After OM-P (2026-11-25)
+
+The owner chose route (a), three families, accept, and both engine options (design review log, "OM-P"). Route (b) and the one-material variant are dropped: S4 promotes `a3` only, and `pending/monsters.one-material.json` and the `one-material` entry of the staged families file are deleted there. From S4 on, `GOBLIN_BODY` and `GOBLIN_MATS` are no longer read: the builder takes route (a) and three families as its only path (S2d removes the switch and the other branches), so the plan's 0.2 BLEND line works again as written.
+
+#### E2 The goblin-hide tile greyer [CLAUDE, main session] (done)
+`public/textures/creatures/goblin-hide.png`: chroma kept at 45% around each pixel's luma, written with unfiltered rows as `tests/textures.test.ts` reads it; that test passes unedited.
+
+#### S1e Painted skinned figures take the `cut` shade [AGY]
+- **Tier**: sonnet writes the test first ([CLAUDE] part); agy implements; opus verifies.
+- **Depends**: S1d.
+- **Files**: `tests/skinned-cut-shade.test.ts` (new, the [CLAUDE] part), `src/engine/blenderMonsters.ts` (`upgradeMonsterRigWithGltf`'s material `extra` only).
+- **Change**: for a mesh that is a `SkinnedMesh` and whose geometry has a `color` attribute, `extra` also carries `shade: 'cut'`, so every material that mesh gets goes through `facetMaterial` with the three-band cut shade; every other mesh is unchanged.
+- **Accept**: the test loads a fixture with a painted skinned mesh, an unpainted skinned mesh and a painted rigid mesh through the loader's material step and asserts the first gets a material with `defines.FACET_CUT` and `flatShading` true, and the other two do not. SG.
+- **Must not change**: `facetMaterial`, `albedoMaterial`, every other branch of the material step.
+
+#### S2d The pilot's last builder round [CLAUDE]
+- **Tier**: fable; opus verifies.
+- **Depends**: E2, S1e.
+- **Files**: as S2c, plus deleting `tests/fixtures/model-contract/pending/monsters.one-material.json`'s use in the README.
+- **Change**: route (a) and three families become the builder's only path (the two variables and the route (b) and one-material code removed); the S3c art read's list (plan "After S3c"); the skin paint divided by the new tile's mean (209, 215, 174 in sRGB) in place of the old one; judged with the `cut` shade (S1e), which bands each plane by its own normal, so the plane tone of S2c may be narrowed if the two together band too hard.
+- **Accept**: BG with the plain BLEND line; sheets of `a3` re-rendered; bytes and ceilings; README updated.
+
+#### S3d The pilot in the game with the owner's choices [CLAUDE, main session]
+- **Tier**: sonnet runs; opus judges; fable reads the art.
+- **Depends**: S2d.
+- **Change**: S3c's captures for the one chosen build, beside today's goblin, with the `cut` shade and the greyer tile.
+- **Accept**: as S3c for one build.
+
+S4 then promotes, as written, with the S2 amendments' extra steps.
+
