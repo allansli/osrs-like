@@ -123,14 +123,16 @@ describe('weatherAt', () => {
   it('changes state no more often than every 0.08 of phase', () => {
     const STEP = 0.001;
     for (const region of REGION_IDS) {
+      // One continuous timeline across days: the clock does not reset at phase 0 of a new day.
+      let last = -Infinity;
+      let prev = weatherAt(0, 0, only(region)).id;
       for (let day = 0; day < 60; day++) {
-        let last = -Infinity;
-        let prev = weatherAt(day, 0, only(region)).id;
-        for (let p = STEP; p < 1; p += STEP) {
+        for (let p = day === 0 ? STEP : 0; p < 1; p += STEP) {
           const id = weatherAt(day, p, only(region)).id;
           if (id !== prev) {
-            expect(p - last, `${region} day ${day} at ${p.toFixed(3)}`).toBeGreaterThanOrEqual(0.08 - 2 * STEP);
-            last = p;
+            const t = day + p;
+            expect(t - last, `${region} day ${day} at ${p.toFixed(3)}`).toBeGreaterThanOrEqual(0.08 - 2 * STEP);
+            last = t;
             prev = id;
           }
         }
