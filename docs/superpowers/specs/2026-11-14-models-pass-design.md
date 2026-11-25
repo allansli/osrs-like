@@ -982,3 +982,7 @@ The owner added, the same day (translated): "the models must make sense; the 3D 
 
 The merge-only monsters are promoted (6a225a5, key 2251dd7a): 399 meshes to 182, triangles unchanged. At P1 noon balanced the frame drops from 2241 to 1307 draw calls (colour 1197 to 691). Against the GR7 limits: colour calls pass (691, 58.7% of V2); calls with the shadow pass miss by 5 (1307 against 1302); triangles miss (677k against 550k), and the merge cannot move them. Both misses are carried to Slice 8 (`baseline/models/s0b/perf.md`). OM-S0b, the owner's reading of the same numbers and the frame time on the real machine, is open.
 
+### S2 (2026-11-25)
+
+The pilot goblin is built on both routes and in both material variants (plan S2, `baseline/models/README.md`). `COLOR_0` is now all or none **per figure** in a file whose manifest lists figures (6.3, 7.1 and the table's row amended by this entry): monster meshes each get their own material, so the per-file rule only protects the hero's shared role materials, which keep it. A painted organic figure costs about 100 kB on the wire for 4,960 triangles; the whole monsters file is 7% smaller raw and 5 to 7% larger in Brotli than the merge-only file.
+

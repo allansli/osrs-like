@@ -334,32 +334,35 @@ function run() {
     }
   }
 
-  // 4. Vertex color: all or none
-  let totalPrimitives = 0;
-  let colorPrimitives = 0;
-  for (const mesh of built.json.meshes || []) {
-    for (const prim of mesh.primitives || []) {
-      totalPrimitives++;
-      if (prim.attributes && prim.attributes.COLOR_0 !== undefined) {
-        colorPrimitives++;
-      }
+  // 4. Vertex color: all or none per unit. The unit is the file when manifest.vertexColor is 'all' or 'none'; with
+  // { figures: { <root>: 'all' | 'none' } } each listed figure is its own unit and every mesh outside them carries none
+  // (monster meshes each get their own material, so a painted figure beside unpainted ones is safe; design 6.3 as amended at S2).
+  const colorUnits = new Map(); // unit name -> { rule, total, color }
+  const unitOfNode = new Map();
+  const perFigure = manifest.vertexColor !== null && typeof manifest.vertexColor === 'object';
+  if (perFigure) {
+    for (const [root, rule] of Object.entries(manifest.vertexColor.figures ?? {})) {
+      if (rule !== 'all' && rule !== 'none') contractErrors.push(`Manifest vertexColor of figure '${root}' must be 'all' or 'none'`);
+      const idx = nodeIndexMap.get(root);
+      if (idx === undefined) { contractErrors.push(`Manifest vertexColor names figure '${root}', which is missing`); continue; }
+      colorUnits.set(root, { rule, total: 0, color: 0 });
+      const stack = [idx];
+      while (stack.length) { const i = stack.pop(); unitOfNode.set(i, root); stack.push(...(built.json.nodes[i].children || [])); }
     }
   }
-
-  if (colorPrimitives > 0 && colorPrimitives < totalPrimitives) {
-    contractErrors.push(
-      `COLOR_0 on ${colorPrimitives} of ${totalPrimitives} mesh primitives (must be all or none)`
-    );
-  }
-  if (manifest.vertexColor === 'all' && colorPrimitives !== totalPrimitives) {
-    contractErrors.push(
-      `Manifest requires vertexColor 'all', but COLOR_0 is present on ${colorPrimitives}/${totalPrimitives} primitives`
-    );
-  }
-  if (manifest.vertexColor === 'none' && colorPrimitives > 0) {
-    contractErrors.push(
-      `Manifest requires vertexColor 'none', but COLOR_0 is present on ${colorPrimitives} primitives`
-    );
+  const fileUnit = { rule: perFigure ? 'none' : manifest.vertexColor, total: 0, color: 0 };
+  (built.json.nodes || []).forEach((node, i) => {
+    if (node.mesh === undefined) return;
+    const unit = colorUnits.get(unitOfNode.get(i)) ?? fileUnit;
+    for (const prim of built.json.meshes[node.mesh].primitives || []) {
+      unit.total++;
+      if (prim.attributes && prim.attributes.COLOR_0 !== undefined) unit.color++;
+    }
+  });
+  for (const [name, u] of [[perFigure ? 'outside the listed figures' : 'the file', fileUnit], ...[...colorUnits].map(([k, u]) => [`figure '${k}'`, u])]) {
+    if (u.color > 0 && u.color < u.total) contractErrors.push(`COLOR_0 on ${u.color} of ${u.total} mesh primitives of ${name} (must be all or none)`);
+    if (u.rule === 'all' && u.color !== u.total) contractErrors.push(`Manifest requires vertexColor 'all' for ${name}, but COLOR_0 is present on ${u.color}/${u.total} primitives`);
+    if (u.rule === 'none' && u.color > 0) contractErrors.push(`Manifest requires vertexColor 'none' for ${name}, but COLOR_0 is present on ${u.color} primitives`);
   }
 
   // 5. Animations / clips

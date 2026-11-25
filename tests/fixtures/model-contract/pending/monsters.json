@@ -983,7 +983,11 @@
     "^scorpion_telson_bulb$"
   ],
   "extras": {},
-  "vertexColor": "none",
+  "vertexColor": {
+    "figures": {
+      "Monster_goblin": "all"
+    }
+  },
   "clips": {},
   "skin": {
     "skeleton": "biped",
@@ -1250,9 +1254,9 @@
   "budget": {
     "triangles": 98644,
     "meshes": 182,
-    "materials": 35,
+    "materials": 36,
     "rawBytes": 4896485,
-    "brotliBytes": 1294796
+    "brotliBytes": 1400849
   },
   "figures": {
     "Monster_chicken": {
@@ -1295,7 +1299,7 @@
       "meshes": 28,
       "materials": 11,
       "rawBytes": 415176,
-      "brotliBytes": 74363
+      "brotliBytes": 76896
     },
     "Monster_hill_giant": {
       "triangles": 7288,

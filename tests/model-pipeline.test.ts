@@ -282,6 +282,17 @@ describe('models-compare: Contract is the built file against its manifest', () =
       expect(section(r.stdout, 'Contract'), vertexColor).toContain('COLOR_0');
     }
   });
+
+  it('COLOR_0 per figure: all or none inside each listed figure, none outside them', () => {
+    const perFigure = (colorMeshes: string[], rule = 'all') =>
+      compare({ built: buildTiny({ colorMeshes }), manifest: { ...tinyManifest(), vertexColor: { figures: { HeadGroup: rule } } } });
+    expect(perFigure(['Head', 'Hair']).status).toBe(0);
+    for (const [colorMeshes, rule] of [[['Head'], 'all'], [['Head', 'Hair', 'Torso_Body'], 'all'], [['Head', 'Hair'], 'none'], [[], 'all']] as const) {
+      const r = perFigure([...colorMeshes], rule);
+      expect(r.status, `${colorMeshes} ${rule}`).toBe(1);
+      expect(section(r.stdout, 'Contract')).toContain('COLOR_0');
+    }
+  });
 });
 
 describe('models-compare: skin rules on a tiny skinned fixture', () => {

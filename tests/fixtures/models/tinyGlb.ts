@@ -6,7 +6,7 @@
 //                translation within 0.0001, scale within 0.0001; parent by name
 //   materials:   [material names]  (exact set)
 //   toggled:     [node or mesh names the engine hides by]  (each must exist as a node name or a mesh name)
-//   vertexColor: 'all' | 'none'    (COLOR_0 on every mesh primitive or on none; a mix always fails)
+//   vertexColor: 'all' | 'none' | { figures: { <root>: 'all' | 'none' } }   (per file, or per listed figure with none outside; a mix inside a unit always fails)
 //   clips:       { <clip name>: { moves: [node names the clip has a channel for] } }
 //   skin?:       { skeleton, bones: { <bone>: { parent: <bone> | null, translation } }, skinnedRoots: [node names],
 //                  sharedClips: [clip names], limbs: [{ bone, child, direction: [x,y,z] }], maxLimbDegrees: number }
@@ -33,7 +33,7 @@ export type Manifest = {
   nodes: Record<string, { parent: string | null; translation: number[]; scale: number[] }>;
   materials: string[];
   toggled: string[];
-  vertexColor: string;
+  vertexColor: string | { figures: Record<string, string> };
   clips: Record<string, { moves: string[] }>;
   skin?: {
     skeleton: string;
