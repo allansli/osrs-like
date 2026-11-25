@@ -2,7 +2,7 @@
 Headless Blender 5.2 generator for the 10 Gielinor Monster species (`monsters.blend` + `monsters.glb`).
 Sculpts authentic, high-detail OSRS / RuneScape Dragonwilds stylized monsters:
   1. Monster_chicken          - Plump feathered chicken with serrated red comb, wattle, hooked beak, layered wings, fanned tail & talons
-  2. Monster_goblin           - Goblin Raider with hunched muscular torso, leather harness, spiked pauldron, barbed bronze war-spear & buckler
+  2. Monster_goblin           - Goblin Raider, skinned on the biped rig: hunched, big ears and underbite, one spiked pauldron, bronze spear & round shield
   3. Monster_goblin_archer    - Goblin Archer with stitched hood/cowl (ears poking out), bandolier, quiver of arrows & recurve shortbow
   4. Monster_scorpion         - King Scorpion with 5 segmented carapace plates, 8 multi-jointed arachnid legs, serrated chela pincers & arched stinger tail
   5. Monster_dark_wizard      - Dark Wizard in pleated indigo/purple cultist robes, gold/violet rune stole, crooked pointed hat & orb staff
@@ -25,6 +25,7 @@ sys.dont_write_bytecode = True
 sys.path.insert(0, os.path.dirname(__file__))
 import paths
 import figkit
+import rigs
 
 
 # =============================================================================
@@ -692,6 +693,8 @@ def build_materials() -> dict:
         "skin_chicken_wing": make_mat("mat_skin_chicken_wing", 0xD6C8AE, roughness=0.60, metallic=0.02),
         "skin_chicken_tail": make_mat("mat_skin_chicken_tail", 0x9E7846, roughness=0.58, metallic=0.04),
         "skin_goblin": make_mat("mat_skin_goblin", 0x4A5D3B, roughness=0.58, metallic=0.04),
+        # White: the rebuilt raider's colours are in its paint layer (plan S2)
+        "skin_goblin_paint": make_mat("mat_skin_goblin_paint", 0xFFFFFF, roughness=0.58, metallic=0.04),
         "skin_goblin_dark": make_mat("mat_skin_goblin_dark", 0x324227, roughness=0.62, metallic=0.04),
         "skin_scorpion": make_mat("mat_skin_scorpion", 0x3A2416, roughness=0.38, metallic=0.15),
         "skin_scorpion_plate": make_mat("mat_skin_scorpion_plate", 0x24170E, roughness=0.32, metallic=0.20),
@@ -1141,158 +1144,371 @@ def build_goblin_base(key: str, grid_pos: tuple[float, float, float], mats: dict
 
 
 # =============================================================================
-# 2. Monster_goblin (Goblin Raider)
+# 2. Monster_goblin (Goblin Raider): the pilot, rebuilt and skinned (plan S2)
 # =============================================================================
-def build_goblin(grid_pos: tuple[float, float, float], mats: dict):
-    root, head_piv, left_arm, right_arm = build_goblin_base("goblin", grid_pos, mats, is_archer=False)
+# One figure, four builds, chosen by two environment variables on the BLEND line:
+#   GOBLIN_BODY=a  body from figkit.organic_body over a stick graph (default)
+#   GOBLIN_BODY=b  body from primitives fused by a voxel remesh
+#   GOBLIN_MATS=3  three engine material families: skin, wood, metal (default)
+#   GOBLIN_MATS=1  one material, every colour in the paint layer
+# Head, gear, palette, rig and weight rules are the same in all four. Coordinates are
+# three-space like the rest of this file (+Y up, -Z forward). The figure stands at the
+# file's origin (design 6.1.1 rule 2b).
+GOBLIN_TRIANGLES = 5000
+GOBLIN_SCALE = 1.02  # the numbers below build a figure 1.752 tall; the shipped goblin is 1.785
+GOBLIN_COLOURS = {
+    "skin": 0x62733A,  # olive, 45% value
+    "skin_dark": 0x4E5C30,  # under-side, hands and feet, 36% value
+    "bone": 0xBDB39C,
+    "rust_cloth": 0x8A4A2C,
+    "iris": 0xE6B820,
+    "wood": 0x3E2C1C,
+    "leather": 0x33241A,
+    "bronze": 0x7A5B32,
+    "rust": 0x6E4A2C,
+}
 
-    # Spiked iron left shoulder pauldron with 3 cones
-    add_sphere(
-        "goblin_pauldron_L",
-        left_arm,
-        mats["iron"],
-        0.13,
-        0.10,
-        0.13,
-        tx=-0.02,
-        ty=0.05,
-        tz=0.0,
-        rz=0.35,
-    )
-    for s_i, s_ang in enumerate((-0.45, 0.0, 0.45)):
-        add_cone_spike(
-            f"goblin_pauldron_spike_{s_i}",
-            left_arm,
-            mats["bone"],
-            base_r=0.024,
-            length=0.10,
-            tx=-0.04,
-            ty=0.11,
-            tz=math.sin(s_ang) * 0.08,
-            rx=s_ang * 0.7,
-            rz=0.45,
+
+def goblin_joints() -> dict:
+    """
+    Joints of the biped rig. The bind pose is the goblin's stance, each limb within 20 degrees
+    of the biped reference (design 6.1.1 rule 3): spine and neck lean forward, arms held out
+    from the body, knees bent and bowed.
+    """
+    j = {
+        "Root": (0.0, 0.0, 0.0),
+        "Hips": (0.0, 0.68, 0.04),
+        "Torso": (0.0, 0.87, -0.025),
+        "HeadGroup": (0.0, 1.31, -0.175),
+        "Jaw": (0.0, 1.40, -0.26),
+    }
+    for side, tag in ((-1.0, "Left"), (1.0, "Right")):
+        j[f"{tag}ArmPivot"] = (side * 0.30, 1.22, -0.10)
+        j[f"{tag}ElbowPivot"] = (side * 0.506, 0.968, -0.044)
+        j[f"{tag}Hand"] = (side * 0.624, 0.695, -0.131)
+        j[f"{tag}LegPivot"] = (side * 0.14, 0.66, 0.03)
+        j[f"{tag}KneePivot"] = (side * 0.215, 0.384, -0.06)
+        j[f"{tag}Foot"] = (side * 0.191, 0.099, 0.03)
+    j["WeaponPivot"] = j["RightHand"]
+    j["OffhandPivot"] = j["LeftHand"]
+    return j
+
+
+def _goblin_tint(obj, hex_colour: int) -> None:
+    """A constant 'Tint' colour on every vertex: the wanted colour over the material's own, which the paint layer multiplies."""
+    base = obj.data.materials[0].diffuse_color
+    want = hex_to_rgba(hex_colour)
+    tint = [want[c] / base[c] for c in range(3)]
+    if max(tint) > 1.0005:
+        raise ValueError(f"goblin: colour {hex_colour:#08x} of {obj.name} is lighter than its material {obj.data.materials[0].name}")
+    ca = obj.data.color_attributes.new("Tint", "FLOAT_COLOR", "POINT")
+    ca.data.foreach_set("color", [*tint, 1.0] * len(obj.data.vertices))
+
+
+def _goblin_skin(ob, name: str, mat, triangles: int, soften: int):
+    """Rounds a voxel skin (soften smoothing passes), decimates it to its triangle count, validates, names it and gives it its one material."""
+    bpy.context.view_layer.objects.active = ob
+    smooth = ob.modifiers.new("Soften", "SMOOTH")
+    smooth.factor = 0.5
+    smooth.iterations = soften
+    bpy.ops.object.modifier_apply(modifier="Soften")
+    tris = sum(len(p.vertices) - 2 for p in ob.data.polygons)
+    if tris > triangles:
+        dec = ob.modifiers.new("Decimate", "DECIMATE")
+        dec.ratio = triangles / tris
+        bpy.ops.object.modifier_apply(modifier="Decimate")
+    ob.data.validate()
+    ob.name = ob.data.name = name
+    ob.data.materials.clear()
+    ob.data.materials.append(mat)
+    for p in ob.data.polygons:
+        p.use_smooth = True
+    return ob
+
+
+def _goblin_fuse(objs: list, name: str, mat, voxel: float, triangles: int, soften: int):
+    """Closed primitives fused into one continuous skin: join, voxel remesh, soften, decimate (body route b; the head)."""
+    bpy.ops.object.select_all(action="DESELECT")
+    for o in objs:
+        o.select_set(True)
+    ob = objs[0]
+    bpy.context.view_layer.objects.active = ob
+    bpy.ops.object.join()
+    ob.data.remesh_voxel_size = voxel
+    bpy.ops.object.voxel_remesh()
+    return _goblin_skin(ob, name, mat, triangles, soften)
+
+
+def _goblin_limb_dir(a: tuple, b: tuple) -> Vector:
+    return (Vector(b) - Vector(a)).normalized()
+
+
+def _goblin_body_graph(j: dict) -> tuple[list, list, list]:
+    """Route a: the stick graph and radii for figkit.organic_body, in Blender space."""
+    pts, radii, edges = [], [], []
+
+    def chain(start, nodes):
+        prev = start
+        for p, r in nodes:
+            pts.append(t2b(*p))
+            radii.append(r)
+            if prev is not None:
+                edges.append((prev, len(pts) - 1))
+            prev = len(pts) - 1
+        return prev
+
+    pelvis = chain(None, [((0.0, 0.66, 0.04), (0.17, 0.15))])
+    chest = chain(pelvis, [((0.0, 0.85, -0.04), 0.21), ((0.0, 1.10, -0.07), 0.24)])
+    chain(chest, [((0.0, 1.24, -0.17), 0.14), ((0.0, 1.40, -0.27), 0.12)])  # neck, thrust forward into the head
+    chain(chest, [((0.0, 1.22, 0.05), 0.17)])  # the hump of the hunched back
+    for side, tag in ((-1.0, "Left"), (1.0, "Right")):
+        elbow, hand = Vector(j[f"{tag}ElbowPivot"]), Vector(j[f"{tag}Hand"])
+        d = _goblin_limb_dir(elbow, hand)
+        chain(chest, [
+            ((side * 0.15, 1.19, -0.08), 0.14),  # collar: the shoulder line slopes instead of squaring off
+            (j[f"{tag}ArmPivot"], 0.125),
+            (tuple(elbow), 0.09),
+            (tuple(hand - d * 0.04), 0.072),
+            (tuple(hand + d * 0.07), 0.09),
+        ])
+        chain(pelvis, [
+            ((side * 0.14, 0.64, 0.03), 0.125),
+            (j[f"{tag}KneePivot"], 0.092),
+            (j[f"{tag}Foot"], 0.072),
+            ((side * 0.20, 0.06, -0.15), 0.06),
+        ])
+    return pts, edges, radii
+
+
+def _goblin_body_primitives(j: dict, mat) -> list:
+    """Route b: the same body as closed primitives, to be fused."""
+    parts = [
+        add_lathe(
+            "gob_torso",
+            None,
+            mat,
+            [
+                (0.56, 0.13, 0.12, 0.0, 0.04, 0.2),
+                (0.66, 0.18, 0.15, 0.0, 0.04, 0.2),
+                (0.84, 0.20, 0.19, 0.0, -0.04, 0.1),
+                (1.00, 0.23, 0.19, 0.0, -0.05, 0.15),
+                (1.12, 0.29, 0.20, 0.0, -0.05, 0.2),
+                (1.22, 0.30, 0.19, 0.0, -0.04, 0.2),
+                (1.30, 0.17, 0.15, 0.0, -0.12, 0.1),
+                (1.42, 0.12, 0.12, 0.0, -0.27, 0.0),
+            ],
+            segs=20,
+        ),
+        add_sphere("gob_hump", None, mat, 0.17, tx=0.0, ty=1.22, tz=0.05),
+    ]
+    for side, tag in ((-1.0, "Left"), (1.0, "Right")):
+        sh, el, ha = j[f"{tag}ArmPivot"], j[f"{tag}ElbowPivot"], j[f"{tag}Hand"]
+        palm = Vector(ha) + _goblin_limb_dir(el, ha) * 0.05
+        kn, an = j[f"{tag}KneePivot"], j[f"{tag}Foot"]
+        parts += [
+            add_sphere("gob_shoulder", None, mat, 0.115, tx=sh[0], ty=sh[1], tz=sh[2]),
+            add_limb_tube("gob_upper_arm", None, mat, sh, el, 0.105, 0.075),
+            add_limb_tube("gob_forearm", None, mat, el, ha, 0.075, 0.06),
+            add_sphere("gob_hand", None, mat, 0.08, 0.09, 0.065, tx=palm.x, ty=palm.y, tz=palm.z),
+            add_limb_tube("gob_thigh", None, mat, (side * 0.14, 0.66, 0.03), kn, 0.11, 0.08),
+            add_limb_tube("gob_calf", None, mat, kn, an, 0.08, 0.062),
+            add_sphere("gob_foot", None, mat, 0.07, 0.05, 0.13, tx=side * 0.196, ty=0.05, tz=-0.06),
+        ]
+    return parts
+
+
+def _goblin_head(mat):
+    """The head both routes share: skull, heavy brow, hooked nose and big ears fused into one form."""
+    parts = [
+        add_sphere("gob_skull", None, mat, 0.24, 0.24, 0.25, tx=0.0, ty=1.50, tz=-0.30, segs=16, rings=12),
+        add_curved_tube(
+            "gob_brow",
+            None,
+            mat,
+            [
+                (-0.20, 1.60, -0.43, 0.04),
+                (-0.09, 1.585, -0.525, 0.05),
+                (0.0, 1.57, -0.545, 0.042),
+                (0.09, 1.585, -0.525, 0.05),
+                (0.20, 1.60, -0.43, 0.04),
+            ],
             segs=8,
+        ),
+        add_cone_spike(
+            "gob_nose", None, mat, base_r=0.068, length=0.23, tx=0.0, ty=1.50, tz=-0.52,
+            rx=-math.pi * 0.56, curve_bend=-0.05, segs=10, flatten_x=0.75,
+        ),
+    ]
+    for side in (-1.0, 1.0):
+        # flatten_x above 1: the ear is a blade seen broad from the front, 0.06 thick
+        parts.append(
+            add_cone_spike(
+                "gob_ear", None, mat, base_r=0.03, length=0.52, tx=side * 0.19, ty=1.53, tz=-0.24,
+                rx=0.30, rz=-side * 1.15, curve_bend=0.06, segs=10, flatten_x=3.2,
+            )
         )
+    return _goblin_fuse(parts, "gob_head", mat, 0.012, 1100, soften=3)
 
-    # Left Arm + Hand + Wooden Plank Buckler Shield with Bronze Boss & Iron Rim Studs
-    l_elbow = (-0.06, -0.24, -0.04)
-    l_hand = (-0.04, -0.42, -0.20)
-    add_limb_tube("goblin_upper_arm_L", left_arm, mats["skin_goblin"], (0.10, 0.04, 0.0), l_elbow, 0.095, 0.064, segs=12)
-    add_limb_tube("goblin_forearm_L", left_arm, mats["skin_goblin"], l_elbow, l_hand, 0.064, 0.052, segs=12)
-    add_sphere("goblin_hand_L", left_arm, mats["skin_goblin_dark"], 0.058, 0.055, 0.062, tx=l_hand[0], ty=l_hand[1], tz=l_hand[2])
 
-    # Wooden buckler shield mounted on left forearm
-    sh_x, sh_y, sh_z = -0.14, -0.36, -0.24
-    add_lathe(
-        "goblin_buckler_rim",
-        left_arm,
-        mats["iron"],
-        [
-            (-0.02, 0.30, 0.30),
-            (0.02, 0.30, 0.30),
-        ],
-        segs=20,
-        tx=sh_x,
-        ty=sh_y,
-        tz=sh_z,
-        rz=math.pi * 0.44,
-        ry=0.32,
-    )
-    add_lathe(
-        "goblin_buckler_wood",
-        left_arm,
-        mats["wood"],
-        [
-            (-0.025, 0.27, 0.27),
-            (0.025, 0.27, 0.27),
-        ],
-        segs=20,
-        tx=sh_x,
-        ty=sh_y,
-        tz=sh_z,
-        rz=math.pi * 0.44,
-        ry=0.32,
-    )
-    add_sphere(
-        "goblin_buckler_boss",
-        left_arm,
-        mats["bronze"],
-        0.085,
-        0.085,
-        0.085,
-        tx=sh_x - 0.03,
-        ty=sh_y,
-        tz=sh_z - 0.03,
-    )
-    for stud_i in range(6):
-        ang = (stud_i / 6.0) * math.pi * 2.0
-        add_sphere(
-            f"goblin_buckler_stud_{stud_i}",
-            left_arm,
-            mats["iron"],
-            0.020,
-            tx=sh_x - 0.02,
-            ty=sh_y + math.sin(ang) * 0.23,
-            tz=sh_z + math.cos(ang) * 0.23,
-            no_outline=True,
+def _goblin_body_tint(body) -> None:
+    """Paint rule of the body: olive, going to the darker olive on faces turned to the ground and on hands and feet."""
+    main, dark = hex_to_rgba(GOBLIN_COLOURS["skin"]), hex_to_rgba(GOBLIN_COLOURS["skin_dark"])
+    ends = {g.index for g in body.vertex_groups if g.name.endswith(("Hand", "Foot"))}
+    cols = []
+    for v in body.data.vertices:
+        t = max(sum(g.weight for g in v.groups if g.group in ends), min(1.0, max(0.0, -v.normal.z * 1.5)))
+        cols += [main[c] + (dark[c] - main[c]) * t for c in range(3)] + [1.0]
+    body.data.color_attributes.new("Tint", "FLOAT_COLOR", "POINT").data.foreach_set("color", cols)
+
+
+def build_goblin(mats: dict):
+    route = os.environ.get("GOBLIN_BODY", "a")
+    variant = os.environ.get("GOBLIN_MATS", "3")
+    if route not in ("a", "b") or variant not in ("3", "1"):
+        raise SystemExit(f"GOBLIN_BODY must be a or b and GOBLIN_MATS 3 or 1, got {route!r} and {variant!r}")
+
+    skin = mats["skin_goblin_paint"]
+    wood = mats["wood"] if variant == "3" else skin
+    metal = mats["bronze"] if variant == "3" else skin
+    col = GOBLIN_COLOURS
+    j = goblin_joints()
+    hard = []  # (object, bone): rigid parts, weight 1 on one bone
+
+    def add(obj, bone: str, colour: int):
+        _goblin_tint(obj, colour)
+        hard.append((obj, f"goblin_{bone}"))
+
+    # Head: rigid with the head bone. The irises are their own vertices, so the paint stays crisp.
+    add(_goblin_head(skin), "HeadGroup", col["skin"])
+    for side, tag in ((-1.0, "L"), (1.0, "R")):
+        add(
+            add_sphere(f"gob_iris_{tag}", None, skin, 0.055, 0.04, 0.022, tx=side * 0.10, ty=1.505, tz=-0.522, rz=side * -0.25, segs=8, rings=6),
+            "HeadGroup",
+            col["iris"],
         )
+        # Underbite tusks ride the jaw
+        add(
+            add_cone_spike(f"gob_fang_{tag}", None, skin, base_r=0.034, length=0.13, tx=side * 0.105, ty=1.39, tz=-0.52, rx=-0.15, segs=6),
+            "Jaw",
+            col["bone"],
+        )
+        # Two bone spikes on the one pauldron
+        add(
+            add_cone_spike(f"gob_spike_{tag}", None, skin, base_r=0.035, length=0.13, tx=-0.37, ty=1.35, tz=-0.10 + side * 0.07, rz=0.5, segs=6),
+            "LeftArmPivot",
+            col["bone"],
+        )
+    add(add_sphere("gob_jaw", None, skin, 0.20, 0.085, 0.18, tx=0.0, ty=1.355, tz=-0.38, segs=12, rings=8), "Jaw", col["skin_dark"])
 
-    # Right Arm + Hand + Barbed Bronze War-Spear with leather grip wraps and side hook
-    r_elbow = (0.06, -0.24, -0.02)
-    r_hand = (0.04, -0.40, -0.22)
-    add_limb_tube("goblin_upper_arm_R", right_arm, mats["skin_goblin"], (-0.10, 0.04, 0.0), r_elbow, 0.095, 0.064, segs=12)
-    add_limb_tube("goblin_forearm_R", right_arm, mats["skin_goblin"], r_elbow, r_hand, 0.064, 0.052, segs=12)
-    add_sphere("goblin_hand_R", right_arm, mats["skin_goblin_dark"], 0.058, 0.055, 0.062, tx=r_hand[0], ty=r_hand[1], tz=r_hand[2])
+    # Loincloth and belt hang from the hips, never from the legs
+    add(add_box("gob_cloth_front", None, skin, 0.20, 0.30, 0.05, tx=0.0, ty=0.53, tz=-0.16, rx=-0.10, bevel=0.0), "Hips", col["rust_cloth"])
+    add(add_box("gob_cloth_back", None, skin, 0.20, 0.30, 0.05, tx=0.0, ty=0.53, tz=0.19, rx=0.10, bevel=0.0), "Hips", col["rust_cloth"])
+    add(
+        add_lathe("gob_belt", None, wood, [(0.66, 0.20, 0.165, 0.0, 0.03, 0.2), (0.75, 0.205, 0.17, 0.0, 0.02, 0.2)], segs=16),
+        "Hips",
+        col["leather"],
+    )
+    add(add_sphere("gob_pauldron", None, metal, 0.15, 0.10, 0.15, tx=-0.33, ty=1.28, tz=-0.10, rz=0.35, segs=12, rings=7), "LeftArmPivot", col["rust"])
 
-    # War-spear shaft & barbed bronze blade
-    add_limb_tube(
-        "goblin_spear_shaft",
-        right_arm,
-        mats["wood"],
-        (0.06, -0.78, 0.38),
-        (0.06, 0.22, -0.95),
-        0.026,
-        0.024,
-        segs=10,
+    # Spear in the right hand: butt on the ground outside the foot, head up and out, clear of the body outline
+    hand = Vector(j["RightHand"])
+    d = Vector((0.30, 0.94, -0.12)).normalized()
+    butt, top = hand - d * 0.69, hand + d * 0.80
+    add(add_limb_tube("gob_spear_shaft", None, wood, tuple(butt), tuple(top), 0.028, 0.026, r_mid=0.027, segs=8, steps=3), "WeaponPivot", col["wood"])
+    add(
+        add_limb_tube("gob_spear_collar", None, metal, tuple(top - d * 0.10), tuple(top + d * 0.02), 0.042, 0.042, r_mid=0.042, segs=8, steps=2),
+        "WeaponPivot",
+        col["rust"],
     )
-    add_limb_tube(
-        "goblin_spear_grip",
-        right_arm,
-        mats["leather"],
-        (0.06, -0.48, -0.08),
-        (0.06, -0.28, -0.34),
-        0.032,
-        0.032,
-        segs=10,
-    )
-    add_cone_spike(
-        "goblin_spear_tip",
-        right_arm,
-        mats["bronze"],
-        base_r=0.058,
-        length=0.38,
-        tx=0.06,
-        ty=0.20,
-        tz=-0.92,
-        rx=-0.92,
-        segs=8,
-        flatten_x=0.38,
-    )
-    add_cone_spike(
-        "goblin_spear_barb",
-        right_arm,
-        mats["bronze"],
-        base_r=0.026,
-        length=0.14,
-        tx=0.06,
-        ty=0.22,
-        tz=-0.96,
-        rx=2.15,
-        rz=0.45,
-        segs=6,
+    add(
+        add_cone_spike(
+            "gob_spear_head", None, metal, base_r=0.03, length=0.32, tx=top.x, ty=top.y, tz=top.z,
+            rx=math.asin(d.z), rz=-math.atan2(d.x, d.y), segs=8, flatten_x=2.6,
+        ),
+        "WeaponPivot",
+        col["bronze"],
     )
 
-    return root
+    # Round shield on the left forearm, facing out and forward
+    n = Vector((-0.80, 0.10, -0.59)).normalized()
+    c = (Vector(j["LeftElbowPivot"]) + Vector(j["LeftHand"])) / 2.0 + n * 0.085
+    face = {"rx": math.asin(n.z), "rz": -math.atan2(n.x, n.y)}
+    add(add_lathe("gob_shield_rim", None, metal, [(-0.02, 0.30, 0.30), (0.02, 0.30, 0.30)], segs=18, tx=c.x, ty=c.y, tz=c.z, **face), "OffhandPivot", col["rust"])
+    add(add_lathe("gob_shield_wood", None, wood, [(-0.026, 0.27, 0.27), (0.026, 0.27, 0.27)], segs=18, tx=c.x, ty=c.y, tz=c.z, **face), "OffhandPivot", col["wood"])
+    boss = c + n * 0.03
+    add(add_sphere("gob_shield_boss", None, metal, 0.09, tx=boss.x, ty=boss.y, tz=boss.z, segs=10, rings=7), "OffhandPivot", col["bronze"])
+
+    # Body: what is left of the triangle budget
+    hard_tris = sum(len(p.vertices) - 2 for obj, _ in hard for p in obj.data.polygons)
+    body_tris = GOBLIN_TRIANGLES - 40 - hard_tris
+    if route == "a":
+        pts, edges, radii = _goblin_body_graph(j)
+        # organic_body's own decimate is left out (a ceiling it never reaches): the skin is softened first.
+        # The skin modifier gives square limbs, so route a takes forty passes and radii about 15% over the wanted ones.
+        body = _goblin_skin(figkit.organic_body((pts, edges), radii, 0.02, 10**9), "gob_body", skin, body_tris, soften=40)
+    else:
+        body = _goblin_fuse(_goblin_body_primitives(j, skin), "gob_body", skin, 0.02, body_tris, soften=8)
+
+    for obj in [body] + [obj for obj, _ in hard]:
+        obj.data.transform(Matrix.Scale(GOBLIN_SCALE, 4))
+    j = {k: tuple(c * GOBLIN_SCALE for c in p) for k, p in j.items()}
+    rig = figkit.make_rig("Monster_goblin", rigs.BIPED_TABLE, {k: t2b(*p) for k, p in j.items()}, prefix="goblin")
+
+    # Weight rule 1: the body takes automatic weights from the sixteen limb bones only. Jaw and the
+    # two hand mounts hold rigid parts, and a Root bone standing from the ground to the hips would
+    # take the inner legs, so the weighting rig leaves the three out and starts Root inside the pelvis.
+    core = {k: t2b(*p) for k, p in j.items() if k not in ("Jaw", "WeaponPivot", "OffhandPivot")}
+    core["Root"] = t2b(0.0, 0.64 * GOBLIN_SCALE, 0.04 * GOBLIN_SCALE)
+    weight_rig = figkit.make_rig("goblin_weight_rig", rigs.BIPED_TABLE, core, prefix="goblin")
+    figkit.auto_weights(body, weight_rig, limb_radius=0.12 * GOBLIN_SCALE)
+    # Weight rule 2: Root deforms nothing; its share goes to Hips.
+    figkit.fold_weights(
+        body,
+        {b.name: ([b.name, "goblin_Root"] if b.name == "goblin_Hips" else [b.name]) for b in weight_rig.data.bones if b.name != "goblin_Root"},
+    )
+    for m in list(body.modifiers):
+        body.modifiers.remove(m)
+    weight_data = weight_rig.data
+    bpy.data.objects.remove(weight_rig, do_unlink=True)
+    bpy.data.armatures.remove(weight_data)
+    _goblin_body_tint(body)
+
+    # Weight rule 3: every other part is rigid on one bone.
+    for obj, bone in hard:
+        figkit.hard_weights(obj, bone)
+    for obj in [body] + [obj for obj, _ in hard]:
+        obj.parent = rig
+
+    merged = figkit.merge_by_family(rig)
+    names = {"skin": "goblin_body", "wood": "goblin_wood", "metal": "goblin_metal"}
+    for ob in merged:
+        ob.name = ob.data.name = names[figkit.get_material_family(ob)]
+
+    # Paint: the baked layer (occlusion, height gradient, warm to cool) times each part's colour.
+    # Nothing else is in the bake, so no neighbour on the grid shades the goblin.
+    others = [o for o in bpy.data.objects if o not in merged and not o.hide_render]
+    for o in others:
+        o.hide_render = True
+    figkit.bake_paint(rig)
+    for o in others:
+        o.hide_render = False
+    for ob in merged:
+        attrs = ob.data.color_attributes
+        count = 4 * len(ob.data.vertices)
+        baked, tint = [0.0] * count, [0.0] * count
+        attrs["Col"].data.foreach_get("color", baked)
+        attrs["Tint"].data.foreach_get("color", tint)
+        attrs["Col"].data.foreach_set("color", [a * b for a, b in zip(baked, tint)])
+        attrs.remove(attrs["Tint"])
+        attrs.active_color = attrs["Col"]
+        attrs.render_color_index = attrs.active_color_index
+        ob.modifiers.new("Armature", "ARMATURE").object = rig
+
+    tris = sum(len(p.vertices) - 2 for ob in merged for p in ob.data.polygons)
+    if tris > GOBLIN_TRIANGLES:
+        raise ValueError(f"goblin: {tris} triangles, over the budget of {GOBLIN_TRIANGLES}")
+    print(f"[Blender] goblin body route {route}, materials {variant}: {tris} triangles in {len(merged)} meshes")
+    return rig
 
 
 # =============================================================================
@@ -2933,7 +3149,7 @@ def main():
     # Build all 10 Monster species on a 2-row showcase grid (Three.js X, Y=0, Z)
     # Front row (Z = -1.6 -> Blender Y = +1.6, closer to camera at Y = +12.8)
     build_chicken((-5.2, 0.0, -2.0), mats)
-    build_goblin((-3.0, 0.0, -2.0), mats)
+    goblin = build_goblin(mats)  # skinned: at the origin, not on the grid
     build_goblin_archer((-0.8, 0.0, -2.0), mats)
     build_scorpion((1.8, 0.0, -2.0), mats)
     build_dark_wizard((4.4, 0.0, -2.0), mats)
@@ -2948,19 +3164,25 @@ def main():
     # Merge-only pass (plan M0): one merge_parts call per Monster_* root, no shape, name or colour change.
     # The chicken's wings are meshes the engine flaps by name (findPivot 'LWing'/'RWing'), so they stay alone.
     keep = re.compile(figkit.TOGGLED.pattern + r"|^chicken_[LR]Wing$")
-    for obj in [o for o in bpy.data.objects if o.name.startswith("Monster_") and o.parent is None]:
+    # The skinned goblin is merged by family in its own builder.
+    for obj in [o for o in bpy.data.objects if o.name.startswith("Monster_") and o.parent is None and o.type != "ARMATURE"]:
         figkit.merge_parts(obj, keep=keep)
+
+    # COLOR_0 is all or none per file (manifest rule), so the figures not painted yet carry white,
+    # which multiplies to no change in the engine. Keeping their TEXCOORD_0 beside it would put the
+    # file over the total byte ceilings; figkit.export_glb writes none (no figure reads GLB UVs,
+    # design 6.3), which leaves every triangle's positions and normals as they were.
+    for mesh in {o.data for o in bpy.data.objects if o.type == "MESH" and o.parent is not goblin}:
+        while mesh.color_attributes:
+            mesh.color_attributes.remove(mesh.color_attributes[0])
+        white = mesh.color_attributes.new("Col", "FLOAT_COLOR", "POINT")
+        white.data.foreach_set("color", [1.0] * (4 * len(mesh.vertices)))
 
     blend_path = paths.blend_path("monsters")
     glb_path = paths.glb_path("monsters")
 
     # Export clean glTF binary before adding studio camera/lights/floor
-    bpy.ops.export_scene.gltf(
-        filepath=paths.glb_path("monsters"),
-        export_format="GLB",
-        export_yup=True,
-        export_extras=True,
-    )
+    figkit.export_glb(glb_path)
     print(f"[Blender] Exported glTF binary: {glb_path}")
 
     setup_studio_and_render(render_path)

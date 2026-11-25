@@ -1,0 +1,30 @@
+{
+ "three-families": {
+  "meshes": 3,
+  "triangles": {
+   "wood": 184,
+   "iron": 508,
+   "skin": 4268
+  },
+  "pivots": {
+   "Monster_goblin": [
+    "iron",
+    "skin",
+    "wood"
+   ]
+  },
+  "floor": 3
+ },
+ "one-material": {
+  "meshes": 1,
+  "triangles": {
+   "skin": 4960
+  },
+  "pivots": {
+   "Monster_goblin": [
+    "skin"
+   ]
+  },
+  "floor": 1
+ }
+}
