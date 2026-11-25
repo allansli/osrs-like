@@ -6,7 +6,7 @@ import { currentDayFrame, updateLighting } from './lighting';
 import { updateAir } from './atmosphere';
 import { updateSky } from './sky';
 import { updateCarpet } from './flora';
-import { prefersReducedMotion, updateParticles } from './particles';
+import { updateParticles } from './particles';
 import {
   TICK_SEC,
   commandClocks,
@@ -71,7 +71,7 @@ import { regenRate, buyVow, altarVowLine } from '../state/sustain';
 import { entityAim, escapeStall, shouldRepath, STALL_SEC, stallTime, walkSpent } from '../state/pathfind';
 import { CAMPS } from '../data/worldMap';
 import { LOW_HEALTH, spinOffset } from '../data/feel';
-import { isHitStopped, isLowHealth, removeCameraOffsets, setLowHealth, updateReactions } from './reactions';
+import { isHitStopped, isLowHealth, prefersReducedMotion, removeCameraOffsets, setLowHealth, updateReactions } from './reactions';
 import {
   addChatMessage,
   el,

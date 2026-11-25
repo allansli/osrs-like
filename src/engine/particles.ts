@@ -1,12 +1,14 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { GFX_TIERS, WEATHER, type QualityTier, type WeatherDef } from '../data/look';
+import { GFX_TIERS, WEATHER, type QualityTier, type WeatherDef, type WeatherMote } from '../data/look';
 import { WORLD_REGIONS } from '../data/world';
 import { player } from './context';
-import { AIR } from './atmosphere';
+import { AIR, AIR_GLSL, BASE_WIND, COLOR_FOOTER } from './atmosphere';
 import { isPlainMode } from './post';
 import { weatherAt } from '../state/weather';
+import { dayFrameAt } from '../state/dayCycle';
 import { currentDayIndexValue, currentPhaseValue } from './lighting';
+import { prefersReducedMotion } from './reactions';
 
 /** Seeded PRNG (Mulberry32). */
 function makeRng(seed: number): () => number {
@@ -17,11 +19,6 @@ function makeRng(seed: number): () => number {
     t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
-}
-
-export function prefersReducedMotion(): boolean {
-  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false;
-  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
 function hexToLinearRgb(hex: string): [number, number, number] {
@@ -136,7 +133,7 @@ attribute float aSpinSpeed;
 uniform vec3 uBoxSize;
 uniform vec3 uBoxHalf;
 uniform vec3 uCameraPos;
-uniform float uTime;
+uniform float uPTime;
 uniform vec2 uWind;
 uniform float uFallSpeed;
 uniform float uWobble;
@@ -144,9 +141,12 @@ uniform float uOpacity;
 uniform float uWindMultiplier;
 uniform vec3 uMoteColor0;
 uniform vec3 uMoteColor1;
+uniform float uKindGate0;
+uniform float uKindGate1;
 
 varying vec3 vColor;
 varying float vAlpha;
+varying vec3 vWorld;
 
 void main() {
   if (abs(aShapeId - aInstanceShape) > 0.5) {
@@ -156,11 +156,11 @@ void main() {
 
   vec3 baseOffset = aSeed.xyz * uBoxSize;
   vec3 move = vec3(0.0);
-  move.xz += uWind * (uTime * aSpeed.x * uWindMultiplier);
-  move.y -= uFallSpeed * aSpeed.y * uTime;
-  move.x += sin(uTime * 1.5 + aSeed.w * 6.28) * uWobble;
-  move.z += cos(uTime * 1.3 + aSeed.w * 6.28) * uWobble;
-  move.y += sin(uTime * 2.1 + aSeed.w * 6.28) * (uWobble * 0.5);
+  move.xz += uWind * (uPTime * aSpeed.x * uWindMultiplier);
+  move.y -= uFallSpeed * aSpeed.y * uPTime;
+  move.x += sin(uPTime * 1.5 + aSeed.w * 6.28) * uWobble;
+  move.z += cos(uPTime * 1.3 + aSeed.w * 6.28) * uWobble;
+  move.y += sin(uPTime * 2.1 + aSeed.w * 6.28) * (uWobble * 0.5);
 
   vec3 wrapped = mod(mod(baseOffset + move, uBoxSize) + uBoxSize, uBoxSize);
   vec3 relPos = wrapped - uBoxHalf;
@@ -171,8 +171,9 @@ void main() {
                smoothstep(1.0, 0.7, faceDist.y) *
                smoothstep(1.0, 0.7, faceDist.z);
   vAlpha = fade * uOpacity;
+  vWorld = centerPos;
 
-  float spin = uTime * aSpinSpeed + aSeed.y * 6.28;
+  float spin = uPTime * aSpinSpeed + aSeed.y * 6.28;
   float c = cos(spin);
   float s = sin(spin);
   vec2 rotated = vec2(c * position.x - s * position.y, s * position.x + c * position.y) * aScale;
@@ -181,13 +182,13 @@ void main() {
   viewCenter.xy += rotated;
   gl_Position = projectionMatrix * viewCenter;
 
+  vAlpha *= mix(uKindGate0, uKindGate1, aMoteKind);
   vColor = mix(uMoteColor0, uMoteColor1, aMoteKind);
 }
 `;
 
 const FALL_VERTEX_SHADER = `
 attribute float aShapeId;
-attribute float aInstanceShape;
 attribute vec4 aSeed;
 attribute vec2 aSpeed;
 attribute float aScale;
@@ -195,29 +196,31 @@ attribute float aScale;
 uniform vec3 uBoxSize;
 uniform vec3 uBoxHalf;
 uniform vec3 uCameraPos;
-uniform float uTime;
+uniform float uPTime;
 uniform vec2 uWind;
 uniform float uFallSpeed;
 uniform float uWobble;
 uniform float uOpacity;
 uniform float uWindMultiplier;
 uniform vec3 uFallColor;
+uniform float uFallShape;
 
 varying vec3 vColor;
 varying float vAlpha;
+varying vec3 vWorld;
 
 void main() {
-  if (abs(aShapeId - aInstanceShape) > 0.5) {
+  if (abs(aShapeId - uFallShape) > 0.5) {
     gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
     return;
   }
 
   vec3 baseOffset = aSeed.xyz * uBoxSize;
   vec3 move = vec3(0.0);
-  move.xz += uWind * (uTime * aSpeed.x * uWindMultiplier);
-  move.y -= uFallSpeed * aSpeed.y * uTime;
-  move.x += sin(uTime * 1.5 + aSeed.w * 6.28) * uWobble;
-  move.z += cos(uTime * 1.3 + aSeed.w * 6.28) * uWobble;
+  move.xz += uWind * (uPTime * aSpeed.x * uWindMultiplier);
+  move.y -= uFallSpeed * aSpeed.y * uPTime;
+  move.x += sin(uPTime * 1.5 + aSeed.w * 6.28) * uWobble;
+  move.z += cos(uPTime * 1.3 + aSeed.w * 6.28) * uWobble;
 
   vec3 wrapped = mod(mod(baseOffset + move, uBoxSize) + uBoxSize, uBoxSize);
   vec3 relPos = wrapped - uBoxHalf;
@@ -228,6 +231,7 @@ void main() {
                smoothstep(1.0, 0.7, faceDist.y) *
                smoothstep(1.0, 0.7, faceDist.z);
   vAlpha = fade * uOpacity;
+  vWorld = centerPos;
 
   vec4 viewCenter = viewMatrix * vec4(centerPos, 1.0);
   vec2 viewWind = (viewMatrix * vec4(uWind.x, 0.0, uWind.y, 0.0)).xy * uWindMultiplier;
@@ -241,13 +245,15 @@ void main() {
 `;
 
 const PARTICLE_FRAGMENT_SHADER = `
-precision mediump float;
 varying vec3 vColor;
 varying float vAlpha;
+varying vec3 vWorld;
+${AIR_GLSL}
 
 void main() {
   if (vAlpha < 0.01) discard;
-  gl_FragColor = vec4(vColor, vAlpha);
+  gl_FragColor = vec4(applyAir(vColor, vWorld), vAlpha);
+  ${COLOR_FOOTER}
 }
 `;
 
@@ -257,8 +263,10 @@ export function setWeatherOverride(id: string | null): void {
   if (!id || id === 'auto') {
     weatherOverride = null;
   } else {
-    const match = WEATHER.find((w) => w.id === id) || WEATHER.find((w) => w.id.includes(id));
-    weatherOverride = match ? match.id : id;
+    if (!WEATHER.some((w) => w.id === id)) {
+      throw new Error(`setWeatherOverride: unknown weather '${id}', expected 'auto' or one of ${WEATHER.map((w) => w.id).join(', ')}`);
+    }
+    weatherOverride = id;
   }
 }
 
@@ -275,58 +283,38 @@ export interface ResolvedWeather {
   fogScale: number;
 }
 
-export function getWeatherState(dayIndex: number, phase: number): ResolvedWeather {
-  if (weatherOverride) {
-    const def = WEATHER.find((w) => w.id === weatherOverride) ?? WEATHER[0];
-    return {
-      id: def.id,
-      blend: 1.0,
-      curr: def,
-      prev: def,
-      keyScale: def.keyScale,
-      fogScale: def.fogScale,
-    };
-  }
+const weatherDef = (id: string): WeatherDef => WEATHER.find((w) => w.id === id)!;
 
+function regionWeights(): Record<string, number> {
   const weights: Record<string, number> = {};
   for (const reg of WORLD_REGIONS) {
     weights[reg.id] = 1 / ((player.pos.x - reg.x) ** 2 + (player.pos.z - reg.z) ** 2 + 1);
   }
-  const state = weatherAt(dayIndex, phase, weights);
-  const curr = WEATHER.find((w) => w.id === state.id) ?? WEATHER[0];
+  return weights;
+}
 
-  let maxW = -1;
-  let heaviest = WORLD_REGIONS[0].id;
-  for (const [r, wt] of Object.entries(weights)) {
-    if (wt > maxW) {
-      maxW = wt;
-      heaviest = r;
-    }
+export function getWeatherState(dayIndex: number, phase: number): ResolvedWeather {
+  if (weatherOverride) {
+    const def = weatherDef(weatherOverride);
+    return { id: def.id, blend: 1.0, curr: def, prev: def, keyScale: def.keyScale, fogScale: def.fogScale };
   }
 
-  const allowed = WEATHER.filter((w) => w.regions.includes(heaviest));
-  const bucket = Math.floor(phase * 10);
-  const prevBucket = bucket === 0 ? 9 : bucket - 1;
-  const prevDay = bucket === 0 ? dayIndex - 1 : dayIndex;
+  const weights = regionWeights();
+  const state = weatherAt(dayIndex, phase, weights);
+  const curr = weatherDef(state.id);
 
-  let x = (prevDay * 10 + prevBucket) >>> 0;
-  x = Math.imul(x ^ (x >>> 15), 1 | x);
-  x = (x + Math.imul(x ^ (x >>> 7), 61 | x)) ^ x;
-  const prevH = (x ^ (x >>> 14)) >>> 0;
-  const prevDef = allowed[prevH % allowed.length] ?? curr;
+  const bucket = Math.floor(phase * 10);
+  const prev = weatherDef(
+    bucket === 0
+      ? weatherAt(dayIndex - 1, 0.9, weights).id
+      : weatherAt(dayIndex, (bucket - 1) * 0.1, weights).id,
+  );
 
   const blend = state.blend;
-  const keyScale = curr.id === prevDef.id ? curr.keyScale : prevDef.keyScale * (1 - blend) + curr.keyScale * blend;
-  const fogScale = curr.id === prevDef.id ? curr.fogScale : prevDef.fogScale * (1 - blend) + curr.fogScale * blend;
+  const keyScale = prev.keyScale * (1 - blend) + curr.keyScale * blend;
+  const fogScale = prev.fogScale * (1 - blend) + curr.fogScale * blend;
 
-  return {
-    id: state.id,
-    blend,
-    curr,
-    prev: prevDef,
-    keyScale,
-    fogScale,
-  };
+  return { id: state.id, blend, curr, prev, keyScale, fogScale };
 }
 
 let currentTier: QualityTier = 'balanced';
@@ -373,19 +361,20 @@ export function initParticles(scene: THREE.Scene, tier: QualityTier): void {
       uBoxSize: { value: moteBox },
       uBoxHalf: { value: moteBox.clone().multiplyScalar(0.5) },
       uCameraPos: { value: new THREE.Vector3() },
-      uTime: { value: 0 },
-      uWind: { value: new THREE.Vector2(0.6, 0.25) },
+      ...AIR,
+      uPTime: { value: 0 },
       uFallSpeed: { value: 0.4 },
       uWobble: { value: 0.6 },
       uOpacity: { value: 0.8 },
       uWindMultiplier: { value: 1.0 },
       uMoteColor0: { value: new THREE.Color(0xffffff) },
       uMoteColor1: { value: new THREE.Color(0xffffff) },
+      uKindGate0: { value: 1 },
+      uKindGate1: { value: 1 },
     },
     transparent: true,
     depthWrite: false,
     depthTest: true,
-    toneMapped: false,
   });
 
   fallMaterial = new THREE.ShaderMaterial({
@@ -395,18 +384,18 @@ export function initParticles(scene: THREE.Scene, tier: QualityTier): void {
       uBoxSize: { value: fallBox },
       uBoxHalf: { value: fallBox.clone().multiplyScalar(0.5) },
       uCameraPos: { value: new THREE.Vector3() },
-      uTime: { value: 0 },
-      uWind: { value: new THREE.Vector2(0.6, 0.25) },
+      ...AIR,
+      uPTime: { value: 0 },
       uFallSpeed: { value: 16.0 },
       uWobble: { value: 0.15 },
       uOpacity: { value: 0.0 },
       uWindMultiplier: { value: 1.8 },
       uFallColor: { value: new THREE.Color(0xffffff) },
+      uFallShape: { value: 2 },
     },
     transparent: true,
     depthWrite: false,
     depthTest: true,
-    toneMapped: false,
   });
 
   // Motes mesh setup
@@ -444,13 +433,11 @@ export function initParticles(scene: THREE.Scene, tier: QualityTier): void {
 
   // Fall mesh setup
   const fallGeo = baseGeo.clone();
-  const fallShapes = new Float32Array(maxFall);
   const fallSeeds = new Float32Array(maxFall * 4);
   const fallSpeeds = new Float32Array(maxFall * 2);
   const fallScales = new Float32Array(maxFall);
 
   for (let i = 0; i < maxFall; i++) {
-    fallShapes[i] = rng() < 0.65 ? 2 : 3;
     fallSeeds[i * 4 + 0] = rng();
     fallSeeds[i * 4 + 1] = rng();
     fallSeeds[i * 4 + 2] = rng();
@@ -460,7 +447,6 @@ export function initParticles(scene: THREE.Scene, tier: QualityTier): void {
     fallScales[i] = rng() * 0.4 + 0.8;
   }
 
-  fallGeo.setAttribute('aInstanceShape', new THREE.InstancedBufferAttribute(fallShapes, 1));
   fallGeo.setAttribute('aSeed', new THREE.InstancedBufferAttribute(fallSeeds, 4));
   fallGeo.setAttribute('aSpeed', new THREE.InstancedBufferAttribute(fallSpeeds, 2));
   fallGeo.setAttribute('aScale', new THREE.InstancedBufferAttribute(fallScales, 1));
@@ -484,17 +470,15 @@ export function initParticles(scene: THREE.Scene, tier: QualityTier): void {
 export function updateParticles(dt: number, camera: THREE.Camera): void {
   if (!motesMesh || !fallMesh || !motesMaterial || !fallMaterial) return;
 
-  motesMaterial.uniforms.uTime.value += dt;
-  fallMaterial.uniforms.uTime.value += dt;
+  motesMaterial.uniforms.uPTime.value += dt;
+  fallMaterial.uniforms.uPTime.value += dt;
 
   motesMaterial.uniforms.uCameraPos.value.copy(camera.position);
   fallMaterial.uniforms.uCameraPos.value.copy(camera.position);
 
   const redMotion = prefersReducedMotion();
   const windScale = redMotion ? 1 / 3 : 1;
-  AIR.uWind.value.set(0.6 * windScale, 0.25 * windScale);
-  motesMaterial.uniforms.uWind.value.copy(AIR.uWind.value);
-  fallMaterial.uniforms.uWind.value.copy(AIR.uWind.value);
+  AIR.uWind.value.set(BASE_WIND[0] * windScale, BASE_WIND[1] * windScale);
 
   const baseFall = GFX_TIERS[currentTier].weatherParticles;
   const targetFallCount = redMotion ? Math.floor(baseFall / 2) : baseFall;
@@ -526,6 +510,18 @@ export function updateParticles(dt: number, camera: THREE.Camera): void {
   const r1 = (linPrev1[0] * prevM1.intensity) * (1 - blend) + (linCurr1[0] * currM1.intensity) * blend;
   const g1 = (linPrev1[1] * prevM1.intensity) * (1 - blend) + (linCurr1[1] * currM1.intensity) * blend;
   const b1 = (linPrev1[2] * prevM1.intensity) * (1 - blend) + (linCurr1[2] * currM1.intensity) * blend;
+
+  // Glowing motes (fireflies) only in the woods at night; rows whose weather is not a woods weather (embers) always glow.
+  const woodsShare = (() => {
+    const w = regionWeights();
+    let sum = 0;
+    for (const v of Object.values(w)) sum += v;
+    return w.woods / sum;
+  })();
+  const fireflyGate = dayFrameAt(currentPhaseValue()).keyIsMoon ? woodsShare : 0;
+  const gate = (def: WeatherDef, m: WeatherMote) => (m.glow && def.regions.includes('woods') ? fireflyGate : 1);
+  motesMaterial.uniforms.uKindGate0.value = gate(prev, prevM0) * (1 - blend) + gate(curr, currM0) * blend;
+  motesMaterial.uniforms.uKindGate1.value = gate(prev, prevM1) * (1 - blend) + gate(curr, currM1) * blend;
 
   motesMaterial.uniforms.uMoteColor0.value.setRGB(r0, g0, b0);
   motesMaterial.uniforms.uMoteColor1.value.setRGB(r1, g1, b1);
@@ -563,6 +559,8 @@ export function updateParticles(dt: number, camera: THREE.Camera): void {
   fallMaterial.uniforms.uFallColor.value.setRGB(fallR, fallG, fallB);
   fallMaterial.uniforms.uOpacity.value = fallOpacity * 0.85;
   fallMaterial.uniforms.uFallSpeed.value = fallSpeed;
+  // Rain is thin slivers (shape 2); ash and sand fall as flakes (shape 3).
+  fallMaterial.uniforms.uFallShape.value = (curr.fall ? curr.id : prev.id) === 'rain' ? 2 : 3;
 
   const motesCount = GFX_TIERS[currentTier].motes;
   motesMesh.visible = motesCount > 0 && !isPlainMode();

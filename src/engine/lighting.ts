@@ -4,7 +4,7 @@ import { STATE } from '../state/gameState';
 import { DAY_CLOCK, GFX_TIERS, type QualityTier, SHADOW_BIAS, SHADOW_NORMAL_BIAS, SHADOW_SUN_STEP_DEG } from '../data/look';
 import { dayFrameAt, phaseToPreset, presetToPhase, stepPhase, type DayFrame, type Vec3 } from '../state/dayCycle';
 import { fitShadow, stepShadowDir } from '../state/shadowFit';
-import { AIR } from './atmosphere';
+import { AIR, BASE_FOG_DENSITY } from './atmosphere';
 import { getWeatherState } from './particles';
 
 let currentPhase = presetToPhase(STATE.timeOfDay);
@@ -117,7 +117,6 @@ function clampCastDir(sunDir: Vec3): Vec3 {
 }
 
 function updateLightingFrame(phase: number): void {
-  if (!G.sunLight || !G.hemiLight) return;
   const frame = dayFrameAt(phase);
   const weather = getWeatherState(currentDayIndex, phase);
 
@@ -127,12 +126,7 @@ function updateLightingFrame(phase: number): void {
   G.hemiLight.groundColor.setRGB(frame.bounce[0], frame.bounce[1], frame.bounce[2]);
   G.renderer.toneMappingExposure = frame.exposure;
 
-  const baseFog = 0.0028;
-  const targetFog = baseFog * weather.fogScale;
-  AIR.uFogDensity.value = targetFog;
-  if (G.scene && G.scene.fog && 'density' in G.scene.fog) {
-    (G.scene.fog as THREE.FogExp2).density = targetFog;
-  }
+  AIR.uFogDensity.value = BASE_FOG_DENSITY * weather.fogScale;
 
   const clampedCastDir = clampCastDir(frame.sunDir);
 

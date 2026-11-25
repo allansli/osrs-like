@@ -13,7 +13,7 @@ import { setupInputHandlers } from './input';
 import { buildWalkGrid } from '../state/pathfind';
 import { applyShadowTier, initLighting } from './lighting';
 import { createOutput, effectivePixelRatio, enterPlainMode, TIER_LABELS, type OutputPipeline } from './post';
-import { setAirTier } from './atmosphere';
+import { BASE_FOG_DENSITY, setAirTier } from './atmosphere';
 import { setWaterTier } from './water';
 import { setPlayerChoseTier } from './photo';
 import { initParticles, setParticlesTier } from './particles';
@@ -125,7 +125,7 @@ export function initGpuTelemetry(gl: WebGLRenderingContext | WebGL2RenderingCont
 export function init3DEngine(): void {
   const container = el('game-canvas-container');
   G.scene = new THREE.Scene();
-  G.scene.fog = new THREE.FogExp2(0x9ab0c2, 0.0028);
+  G.scene.fog = new THREE.FogExp2(0x9ab0c2, BASE_FOG_DENSITY);
 
   G.camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.5, CAMERA_FAR);
 
