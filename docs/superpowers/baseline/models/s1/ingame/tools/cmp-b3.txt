@@ -1,0 +1,96 @@
+# Model Compare Report: monsters
+
+## Contract
+All contract checks passed.
+
+## Budget
+All budget checks passed.
+
+## Drift
+- Node 'goblin_Jaw' added
+- Node 'goblin_HeadGroup' translation changed: [0, 1.4800000190734863, -0.07999992370605469] -> [0, 0.4488000273704529, -0.15299999713897705]
+- Node 'goblin_OffhandPivot' added
+- Node 'goblin_LeftHand' added
+- Node 'goblin_LeftElbowPivot' added
+- Node 'goblin_LeftArmPivot' translation changed: [-0.46000003814697266, 1.2799999713897705, -0.07999992370605469] -> [-0.3059999942779541, 0.35700005292892456, -0.07649999856948853]
+- Node 'goblin_WeaponPivot' added
+- Node 'goblin_RightHand' added
+- Node 'goblin_RightElbowPivot' added
+- Node 'goblin_RightArmPivot' translation changed: [0.46000003814697266, 1.2799999713897705, -0.07999992370605469] -> [0.3059999942779541, 0.35700005292892456, -0.07649999856948853]
+- Node 'goblin_Torso' added
+- Node 'goblin_LeftFoot' added
+- Node 'goblin_LeftKneePivot' added
+- Node 'goblin_LeftLegPivot' translation changed: [-0.16000008583068848, 0.699999988079071, 0] -> [-0.1428000032901764, -0.02039998769760132, -0.010200001299381256]
+- Node 'goblin_RightFoot' added
+- Node 'goblin_RightKneePivot' added
+- Node 'goblin_RightLegPivot' translation changed: [0.16000008583068848, 0.699999988079071, 0] -> [0.1428000032901764, -0.02039998769760132, -0.010200001299381256]
+- Node 'goblin_Hips' added
+- Node 'goblin_Root' added
+- Node 'goblin_body' added
+- Node 'goblin_metal' added
+- Node 'goblin_wood' added
+- Node 'Monster_goblin' translation changed: [-3, 0, -2] -> [0, 0, 0]
+- Node 'goblin_belt' removed
+- Node 'goblin_buckle' removed
+- Node 'goblin_brow_ridge' removed
+- Node 'goblin_ear_L' removed
+- Node 'goblin_eye_L' removed
+- Node 'goblin_fang_L' removed
+- Node 'goblin_buckler_boss' removed
+- Node 'goblin_buckler_rim' removed
+- Node 'goblin_buckler_stud_0' removed
+- Node 'goblin_buckler_wood' removed
+- Node 'goblin_forearm_L' removed
+- Node 'goblin_hand_L' removed
+- Node 'goblin_pauldron_spike_0' removed
+- Node 'goblin_LeftLegPivot_calf' removed
+- Node 'goblin_LeftLegPivot_claw_0' removed
+- Node 'goblin_LeftLegPivot_foot' removed
+- Node 'goblin_LeftLegPivot_wrap' removed
+- Node 'goblin_loincloth_back' removed
+- Node 'goblin_rib_0_L' removed
+- Node 'goblin_forearm_R' removed
+- Node 'goblin_hand_R' removed
+- Node 'goblin_spear_barb' removed
+- Node 'goblin_spear_grip' removed
+- Node 'goblin_spear_shaft' removed
+- Node 'goblin_RightLegPivot_calf' removed
+- Node 'goblin_RightLegPivot_claw_0' removed
+- Node 'goblin_RightLegPivot_foot' removed
+- Node 'goblin_RightLegPivot_wrap' removed
+- Node 'goblin_torso' removed
+- Mesh 'goblin_body' added
+- Mesh 'goblin_metal' added
+- Mesh 'goblin_wood' added
+- Mesh 'goblin_belt' removed
+- Mesh 'goblin_buckle' removed
+- Mesh 'goblin_brow_ridge' removed
+- Mesh 'goblin_ear_L' removed
+- Mesh 'goblin_eye_L' removed
+- Mesh 'goblin_fang_L' removed
+- Mesh 'goblin_buckler_boss' removed
+- Mesh 'goblin_buckler_rim' removed
+- Mesh 'goblin_buckler_stud_0' removed
+- Mesh 'goblin_buckler_wood' removed
+- Mesh 'goblin_forearm_L' removed
+- Mesh 'goblin_hand_L' removed
+- Mesh 'goblin_pauldron_spike_0' removed
+- Mesh 'goblin_LeftLegPivot_calf' removed
+- Mesh 'goblin_LeftLegPivot_claw_0' removed
+- Mesh 'goblin_LeftLegPivot_foot' removed
+- Mesh 'goblin_LeftLegPivot_wrap' removed
+- Mesh 'goblin_loincloth_back' removed
+- Mesh 'goblin_rib_0_L' removed
+- Mesh 'goblin_forearm_R' removed
+- Mesh 'goblin_hand_R' removed
+- Mesh 'goblin_spear_barb' removed
+- Mesh 'goblin_spear_grip' removed
+- Mesh 'goblin_spear_shaft' removed
+- Mesh 'goblin_RightLegPivot_calf' removed
+- Mesh 'goblin_RightLegPivot_claw_0' removed
+- Mesh 'goblin_RightLegPivot_foot' removed
+- Mesh 'goblin_RightLegPivot_wrap' removed
+- Mesh 'goblin_torso' removed
+- triangles changed: 98644 -> 95312
+- rawBytes changed: 4848004 -> 4560784
+- brotliBytes changed: 1281976 -> 1418420

@@ -205,6 +205,20 @@ export default async (page) => {
     }
   }
 
+  if (STEPS.includes('body')) {
+    await setup();
+    await page.evaluate(() => { S3.ents().archers.forEach((m) => (m.rig.group.visible = false)); });
+    const BD = Number(process.env.BODY_D || 3.0), BP = Number(process.env.BODY_PITCH || 0.12);
+    for (const [name, hold, side] of [['body-front', 'stand', false], ['body-side', 'stand', true], ['body-attack-side', 'attack', true]]) {
+      await pose({ x: 18.5, z: 12.5, yaw: 0, pitch: BP, distance: BD }, 0.5);
+      await page.evaluate(([BD, BP, DY]) => { __DEBUG.camState.distance = BD; __DEBUG.camState.pitch = BP; window.__lookDy = DY; }, [BD, BP, Number(process.env.BODY_DY || -0.95)]);
+      await wait(1500);
+      await page.evaluate(([hold, side]) => { const r = S3.ents().raider[0]; S3.place(r, 0, 0, hold); if (side) r.rig.group.rotation.y += Math.PI / 2; }, [hold, side]);
+      await wait(900); await shot(`${LABEL}-${name}`);
+    }
+    await page.evaluate(() => { window.__lookDy = 0; });
+  }
+
   if (STEPS.includes('leak')) {
     // unhold everything, run the real logic: 30 kills and respawns of one goblin
     await page.evaluate(() => { for (const m of __DEBUG.G.monstersList) { m.__hold = undefined; m.rig.group.visible = true; } });
