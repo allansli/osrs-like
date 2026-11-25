@@ -127,52 +127,20 @@
   "floor": 3
  },
  "goblin": {
-  "meshes": 59,
+  "meshes": 3,
   "triangles": {
-   "skin": 3248,
-   "cloth": 456,
-   "plain": 912,
-   "iron": 2596,
-   "wood": 200,
-   "leather": 320,
-   "eyes": 560
+   "wood": 120,
+   "iron": 308,
+   "skin": 3932
   },
   "pivots": {
    "Monster_goblin": [
-    "cloth",
     "iron",
-    "leather",
-    "skin"
-   ],
-   "goblin_RightLegPivot": [
-    "cloth",
-    "plain",
-    "skin"
-   ],
-   "goblin_RightArmPivot": [
-    "iron",
-    "leather",
     "skin",
     "wood"
-   ],
-   "goblin_LeftLegPivot": [
-    "cloth",
-    "plain",
-    "skin"
-   ],
-   "goblin_LeftArmPivot": [
-    "iron",
-    "plain",
-    "skin",
-    "wood"
-   ],
-   "goblin_HeadGroup": [
-    "eyes",
-    "plain",
-    "skin"
    ]
   },
-  "floor": 29
+  "floor": 3
  },
  "goblin_archer": {
   "meshes": 58,

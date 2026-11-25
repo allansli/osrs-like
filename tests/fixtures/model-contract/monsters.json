@@ -299,77 +299,12 @@
         1
       ]
     },
-    "goblin_HeadGroup": {
-      "parent": "Monster_goblin",
-      "translation": [
-        0,
-        1.48,
-        -0.08
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ]
-    },
-    "goblin_LeftArmPivot": {
-      "parent": "Monster_goblin",
-      "translation": [
-        -0.46,
-        1.28,
-        -0.08
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ]
-    },
-    "goblin_LeftLegPivot": {
-      "parent": "Monster_goblin",
-      "translation": [
-        -0.16,
-        0.7,
-        0
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ]
-    },
-    "goblin_RightArmPivot": {
-      "parent": "Monster_goblin",
-      "translation": [
-        0.46,
-        1.28,
-        -0.08
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ]
-    },
-    "goblin_RightLegPivot": {
-      "parent": "Monster_goblin",
-      "translation": [
-        0.16,
-        0.7,
-        0
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ]
-    },
     "Monster_goblin": {
       "parent": null,
       "translation": [
-        -3,
         0,
-        -2
+        0,
+        0
       ],
       "scale": [
         1,
@@ -785,6 +720,7 @@
     "mat_bark",
     "mat_bone",
     "mat_bronze",
+    "mat_bronze_goblin_paint",
     "mat_cloth",
     "mat_cloth_comb",
     "mat_cloth_dark",
@@ -810,13 +746,15 @@
     "mat_skin_elvarg_dragon",
     "mat_skin_goblin",
     "mat_skin_goblin_dark",
+    "mat_skin_goblin_paint",
     "mat_skin_hill_giant",
     "mat_skin_lesser_demon",
     "mat_skin_scorpion",
     "mat_skin_scorpion_plate",
     "mat_stone",
     "mat_wing",
-    "mat_wood"
+    "mat_wood",
+    "mat_wood_goblin_paint"
   ],
   "toggled": [],
   "meshClasses": [
@@ -896,16 +834,6 @@
     "^elvarg_dragon_body$",
     "^elvarg_dragon_eye_-?\\d+$",
     "^elvarg_dragon_teeth_-?\\d+$",
-    "^goblin_LeftLegPivot_calf$",
-    "^goblin_LeftLegPivot_claw_-?\\d+$",
-    "^goblin_LeftLegPivot_foot$",
-    "^goblin_LeftLegPivot_thigh$",
-    "^goblin_LeftLegPivot_wrap$",
-    "^goblin_RightLegPivot_calf$",
-    "^goblin_RightLegPivot_claw_-?\\d+$",
-    "^goblin_RightLegPivot_foot$",
-    "^goblin_RightLegPivot_thigh$",
-    "^goblin_RightLegPivot_wrap$",
     "^goblin_archer_LeftLegPivot_calf$",
     "^goblin_archer_LeftLegPivot_claw_-?\\d+$",
     "^goblin_archer_LeftLegPivot_foot$",
@@ -948,40 +876,9 @@
     "^goblin_archer_torso$",
     "^goblin_archer_uarm_L$",
     "^goblin_archer_uarm_R$",
-    "^goblin_belt$",
-    "^goblin_brow_ridge$",
-    "^goblin_buckle$",
-    "^goblin_buckler_boss$",
-    "^goblin_buckler_rim$",
-    "^goblin_buckler_stud_-?\\d+$",
-    "^goblin_buckler_wood$",
-    "^goblin_ear_L$",
-    "^goblin_ear_R$",
-    "^goblin_eye_L$",
-    "^goblin_eye_R$",
-    "^goblin_fang_L$",
-    "^goblin_fang_R$",
-    "^goblin_forearm_L$",
-    "^goblin_forearm_R$",
-    "^goblin_hand_L$",
-    "^goblin_hand_R$",
-    "^goblin_harness_strap$",
-    "^goblin_jaw$",
-    "^goblin_loincloth_back$",
-    "^goblin_loincloth_front$",
-    "^goblin_nose$",
-    "^goblin_pauldron_L$",
-    "^goblin_pauldron_spike_-?\\d+$",
-    "^goblin_rib_-?\\d+_L$",
-    "^goblin_rib_-?\\d+_R$",
-    "^goblin_skull$",
-    "^goblin_spear_barb$",
-    "^goblin_spear_grip$",
-    "^goblin_spear_shaft$",
-    "^goblin_spear_tip$",
-    "^goblin_torso$",
-    "^goblin_upper_arm_L$",
-    "^goblin_upper_arm_R$",
+    "^goblin_body$",
+    "^goblin_metal$",
+    "^goblin_wood$",
     "^hill_giant_LeftLegPivot_bare_foot$",
     "^hill_giant_LeftLegPivot_shin_wrap$",
     "^hill_giant_LeftLegPivot_thigh$",
@@ -1088,14 +985,280 @@
     "^scorpion_telson_bulb$"
   ],
   "extras": {},
-  "vertexColor": "none",
+  "vertexColor": {
+    "figures": {
+      "Monster_goblin": "all"
+    }
+  },
   "clips": {},
+  "skin": {
+    "skeleton": "biped",
+    "bones": {
+      "goblin_Jaw": {
+        "parent": "goblin_HeadGroup",
+        "translation": [
+          0,
+          0.0918,
+          -0.0867
+        ]
+      },
+      "goblin_HeadGroup": {
+        "parent": "goblin_Torso",
+        "translation": [
+          0,
+          0.4488,
+          -0.153
+        ]
+      },
+      "goblin_OffhandPivot": {
+        "parent": "goblin_LeftHand",
+        "translation": [
+          0,
+          0,
+          0
+        ]
+      },
+      "goblin_LeftHand": {
+        "parent": "goblin_LeftElbowPivot",
+        "translation": [
+          -0.12036,
+          -0.27846,
+          -0.08874
+        ]
+      },
+      "goblin_LeftElbowPivot": {
+        "parent": "goblin_LeftArmPivot",
+        "translation": [
+          -0.21012,
+          -0.25704,
+          0.05712
+        ]
+      },
+      "goblin_LeftArmPivot": {
+        "parent": "goblin_Torso",
+        "translation": [
+          -0.306,
+          0.357,
+          -0.0765
+        ]
+      },
+      "goblin_WeaponPivot": {
+        "parent": "goblin_RightHand",
+        "translation": [
+          0,
+          0,
+          0
+        ]
+      },
+      "goblin_RightHand": {
+        "parent": "goblin_RightElbowPivot",
+        "translation": [
+          0.12036,
+          -0.27846,
+          -0.08874
+        ]
+      },
+      "goblin_RightElbowPivot": {
+        "parent": "goblin_RightArmPivot",
+        "translation": [
+          0.21012,
+          -0.25704,
+          0.05712
+        ]
+      },
+      "goblin_RightArmPivot": {
+        "parent": "goblin_Torso",
+        "translation": [
+          0.306,
+          0.357,
+          -0.0765
+        ]
+      },
+      "goblin_Torso": {
+        "parent": "goblin_Hips",
+        "translation": [
+          0,
+          0.1938,
+          -0.0663
+        ]
+      },
+      "goblin_LeftFoot": {
+        "parent": "goblin_LeftKneePivot",
+        "translation": [
+          0.02448,
+          -0.2907,
+          0.0918
+        ]
+      },
+      "goblin_LeftKneePivot": {
+        "parent": "goblin_LeftLegPivot",
+        "translation": [
+          -0.09435,
+          -0.28152,
+          -0.0918
+        ]
+      },
+      "goblin_LeftLegPivot": {
+        "parent": "goblin_Hips",
+        "translation": [
+          -0.1428,
+          -0.0204,
+          -0.0102
+        ]
+      },
+      "goblin_RightFoot": {
+        "parent": "goblin_RightKneePivot",
+        "translation": [
+          -0.02448,
+          -0.2907,
+          0.0918
+        ]
+      },
+      "goblin_RightKneePivot": {
+        "parent": "goblin_RightLegPivot",
+        "translation": [
+          0.09435,
+          -0.28152,
+          -0.0918
+        ]
+      },
+      "goblin_RightLegPivot": {
+        "parent": "goblin_Hips",
+        "translation": [
+          0.1428,
+          -0.0204,
+          -0.0102
+        ]
+      },
+      "goblin_Hips": {
+        "parent": "goblin_Root",
+        "translation": [
+          0,
+          0.6936,
+          0.0408
+        ]
+      },
+      "goblin_Root": {
+        "parent": null,
+        "translation": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "skinnedRoots": [
+      "Monster_goblin"
+    ],
+    "limbs": [
+      {
+        "bone": "goblin_Root",
+        "child": "goblin_Hips",
+        "direction": [
+          0,
+          1,
+          0
+        ]
+      },
+      {
+        "bone": "goblin_Hips",
+        "child": "goblin_Torso",
+        "direction": [
+          0,
+          1,
+          0
+        ]
+      },
+      {
+        "bone": "goblin_Torso",
+        "child": "goblin_HeadGroup",
+        "direction": [
+          0,
+          1,
+          0
+        ]
+      },
+      {
+        "bone": "goblin_LeftArmPivot",
+        "child": "goblin_LeftElbowPivot",
+        "direction": [
+          -0.468,
+          -0.884,
+          0
+        ]
+      },
+      {
+        "bone": "goblin_LeftElbowPivot",
+        "child": "goblin_LeftHand",
+        "direction": [
+          -0.528,
+          -0.849,
+          0
+        ]
+      },
+      {
+        "bone": "goblin_LeftLegPivot",
+        "child": "goblin_LeftKneePivot",
+        "direction": [
+          -0.183,
+          -0.983,
+          0
+        ]
+      },
+      {
+        "bone": "goblin_LeftKneePivot",
+        "child": "goblin_LeftFoot",
+        "direction": [
+          0,
+          -1,
+          0
+        ]
+      },
+      {
+        "bone": "goblin_RightArmPivot",
+        "child": "goblin_RightElbowPivot",
+        "direction": [
+          0.468,
+          -0.884,
+          0
+        ]
+      },
+      {
+        "bone": "goblin_RightElbowPivot",
+        "child": "goblin_RightHand",
+        "direction": [
+          0.528,
+          -0.849,
+          0
+        ]
+      },
+      {
+        "bone": "goblin_RightLegPivot",
+        "child": "goblin_RightKneePivot",
+        "direction": [
+          0.183,
+          -0.983,
+          0
+        ]
+      },
+      {
+        "bone": "goblin_RightKneePivot",
+        "child": "goblin_RightFoot",
+        "direction": [
+          0,
+          -1,
+          0
+        ]
+      }
+    ],
+    "maxLimbDegrees": 20
+  },
   "budget": {
     "triangles": 98644,
     "meshes": 182,
-    "materials": 35,
+    "materials": 38,
     "rawBytes": 4896485,
-    "brotliBytes": 1294796
+    "brotliBytes": 1415426
   },
   "figures": {
     "Monster_chicken": {
@@ -1127,18 +1290,18 @@
       "brotliBytes": 669660
     },
     "Monster_goblin": {
-      "triangles": 8292,
-      "meshes": 29,
-      "materials": 10,
-      "rawBytes": 523952,
-      "brotliBytes": 94478
+      "triangles": 5000,
+      "meshes": 4,
+      "materials": 5,
+      "rawBytes": 219716,
+      "brotliBytes": 115540
     },
     "Monster_goblin_archer": {
       "triangles": 6640,
       "meshes": 28,
       "materials": 11,
       "rawBytes": 415176,
-      "brotliBytes": 74363
+      "brotliBytes": 76896
     },
     "Monster_hill_giant": {
       "triangles": 7288,

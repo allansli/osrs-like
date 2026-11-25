@@ -5,7 +5,7 @@ import { addCartoonOutline, facetMaterial } from './materials';
 import { cloneFigure, fixCullSpheres, hasSkin, stripBonePrefix } from './skinned';
 import { albedoMaterial, offsetAlbedoPhase, sealAlbedoUvs, speciesAlbedo } from './textures';
 
-export function loadBlenderMonstersTemplate(url = '/models/monsters.glb?v=2251dd7a'): Promise<GLTF | null> {
+export function loadBlenderMonstersTemplate(url = '/models/monsters.glb?v=aa89cd4a'): Promise<GLTF | null> {
   if (typeof window === 'undefined' || typeof document === 'undefined') {
     return Promise.resolve(null);
   }
