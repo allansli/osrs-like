@@ -83,8 +83,12 @@ export function setupInputHandlers(): void {
     if (isTextInputTarget(t)) {
       return;
     }
-    if ((e.code === 'Space' || e.code === 'Enter') && t.closest('button')) {
-      return;
+    const btn = e.code === 'Space' || e.code === 'Enter' ? t.closest('button') : null;
+    if (btn) {
+      // A keyboard-focused control takes the key; a button focused by a mouse click gives it back to the game.
+      if (btn.matches(':focus-visible')) return;
+      btn.blur();
+      e.preventDefault();
     }
     G.keysPressed[e.code] = true;
     noteCheatKey(e);

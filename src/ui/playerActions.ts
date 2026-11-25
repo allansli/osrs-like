@@ -300,7 +300,8 @@ export function hideHoverTooltip(): void {
 export function openModal(id: string): HTMLElement {
   const active = document.activeElement as HTMLElement;
   // A modal opened from inside another modal keeps the original HUD opener.
-  const opener = active.closest('.modal-backdrop') ? lastActiveElement : active;
+  // Focus goes back only to an opener reached by keyboard; a mouse click leaves focus to the game.
+  const opener = active.closest('.modal-backdrop') ? lastActiveElement : active.matches(':focus-visible') ? active : null;
   closeModals();
   lastActiveElement = opener;
   const modal = el(id);
