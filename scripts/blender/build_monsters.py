@@ -1250,8 +1250,10 @@ def _goblin_skin(ob, name: str, mat, triangles: int, soften: int, keep: tuple = 
     if crease is not None:
         bm = bmesh.new()
         bm.from_mesh(ob.data)
+        open_edges = sum(1 for e in bm.edges if not e.is_manifold)
+        assert open_edges == 0, f"{name}: {open_edges} of {len(bm.edges)} edges do not have exactly two faces; the skin must be closed before its hard edges are marked"
         for e in bm.edges:
-            e.smooth = e.calc_face_angle(math.pi) < crease
+            e.smooth = e.calc_face_angle() < crease
         bm.to_mesh(ob.data)
         bm.free()
     return ob
