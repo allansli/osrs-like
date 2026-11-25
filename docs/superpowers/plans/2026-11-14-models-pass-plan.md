@@ -724,3 +724,12 @@ Plan task R0, run against `feat/models-pass` at `0a1d0dc` (main with Stages 4 an
 | 15 | `blender-hero.test.ts` lines named in design 8.3 | Confirmed | `blender-hero.test.ts` 39-42, 49, 53-61, 66, 70 | None |
 | 16 | File where Stage 4 handles a heavy hit taken; shared with the monster cluster | Amended (named; not shared) | `actions.ts` 511-542 (`performMonsterHeavy`), 449, 544, 568; caller `loop.ts` 690 | Plan 0.4, H5b, second-pass review row |
 | 17 | `addCartoonOutline` callers that add a shell mid-pose | Confirmed (only line numbers moved) | `materials.ts` 80-109, 94; `playerMesh.ts` 400; `blenderMonsters.ts` 172 | Design 1 fact 3, K4 |
+
+### M0 amendments (2026-11-25, main session)
+
+- `tests/model-contract.test.ts` (added on this branch at P4, not frozen) joins M0's allowlist: the shipped-file contract check reads the live manifests only, so a pending manifest no longer turns the suite red before its promotion (rule 0.3.5). No assertion is removed; `tests/model-pipeline.test.ts` still checks that COMPARE prefers a pending manifest.
+- M0's mesh limit reads "at most half of today's meshes, or the merge-only floor" (one mesh per engine material family, outline flag and kept pivot). dark_ranger (23 of 37), dark_wizard (18 of 24) and elvarg_dragon (3 of 5) sit at their floor. Total 182 against 399.
+- The chicken's two wing meshes stay out of the merge, since `findPivot` looks them up by name for the flap.
+- Brotli grows with the merge (1,266,221 to 1,281,976 bytes, scorpion about 40%) at equal triangles; the pending ceilings follow the built file by the manifest's own margins (file 1%, figure 2%).
+- Not done in M0: the goblin-camp CAPTURE. GPU captures are taken by the main session at M0p.
+

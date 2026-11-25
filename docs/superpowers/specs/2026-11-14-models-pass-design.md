@@ -975,3 +975,6 @@ Plan task R0, run against `feat/models-pass` at `0a1d0dc` (main with Stages 4 an
 ### OM-1 (2026-11-25)
 
 The owner answered "segue" (go on) to the art-direction question at the baseline sheets and the in-engine captures. CALL-M1 and CALL-M12 are confirmed as written; section 5 is unchanged.
+
+The owner added, the same day (translated): "the models must make sense; the 3D can be old school, but with good definition", and "that retro-gaming view, with the technology we can ship today". This is read as section 5 unchanged: the three-read rule is the test of "make sense", and "good definition" is the close read (5.1) and the painted depth (5.4). The owner judges both at OM-P on the pilot. The owner also allowed fable as a support stage where it changes the outcome; S2 already uses it, and an art-judgement stage on fable, with an opus critic, may be added to each figure slice's review.
+
