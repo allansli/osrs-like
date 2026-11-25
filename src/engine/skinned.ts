@@ -28,6 +28,18 @@ export function cloneFigure(node: THREE.Object3D): THREE.Object3D | null {
     return null;
   }
   const cloned = clone(node);
+  const src: THREE.SkinnedMesh[] = [];
+  const dst: THREE.SkinnedMesh[] = [];
+  node.traverse((o) => { if ((o as THREE.SkinnedMesh).isSkinnedMesh) src.push(o as THREE.SkinnedMesh); });
+  cloned.traverse((o) => { if ((o as THREE.SkinnedMesh).isSkinnedMesh) dst.push(o as THREE.SkinnedMesh); });
+  // SkeletonUtils.clone gives each skinned mesh its own Skeleton; re-share the first one per source Skeleton.
+  const shared = new Map<THREE.Skeleton, THREE.Skeleton>();
+  dst.forEach((m, i) => {
+    const key = src[i].skeleton;
+    const first = shared.get(key);
+    if (!first) shared.set(key, m.skeleton);
+    else m.bind(first, m.bindMatrix.clone());
+  });
   cloned.traverse((obj) => {
     const b = obj as THREE.Bone;
     if (b.isBone && b.quaternion.x === 0 && b.quaternion.y === 0 && b.quaternion.z === 0 && b.quaternion.w === 1) {
