@@ -10,7 +10,7 @@ Lossless PNG captures of the `balanced` tier on the NVIDIA GPU (`scripts/capture
 
 **Cause.** Not the dome. LT7b's target point (640,20) still holds on the GR7 head: Lum 70.6, RGB 155 184 212, B - R 57. The pale, faceted shapes in the upper half of the P1 picture are the horizon apron (design 6.4), not sky. Hiding the apron in the capture drops the patch at (640,90) from 90.7 to 75.4 (the dome behind it); hiding the clouds changes nothing at either patch. The apron is a `cut` facet material whose colour `sky.ts` sets to the air colour every frame. The facet shader lights it with the key and fill, and the exposure raises it, so the air colour (`#a8c6e0` at noon) renders near white, brighter than the sky behind the hills.
 
-**Fix.** `sky.ts`: the apron's albedo is `APRON_ALBEDO` (0.45) times the air colour. It still follows the air colour at every phase, so its hue and the horizon haze stay those of design 6.3. `AIR_GLSL`, the dome shader and its air weight are unchanged.
+**Fix.** `sky.ts`: the apron's albedo is `APRON_ALBEDO` (0.45) times the air colour. It still follows the air colour, so its hue stays the air's at every phase; its level was tuned at noon only. `AIR_GLSL`, the dome shader and its air weight are unchanged, so the dome's horizon haze (design 6.3) is unchanged.
 
 | target (P1 noon) | patch | GR7 | GR8 | pass |
 |---|---|---|---|---|
@@ -20,6 +20,17 @@ Lossless PNG captures of the `balanced` tier on the NVIDIA GPU (`scripts/capture
 | upper sky over the apron, B - R >= 20 | 640,90, 10 | 16 | 33 | yes |
 | apron at the right, Lum | 1100,40, 10 | 83.2 (197 215 229) | 72.7 (164 189 210) | |
 | apron hidden (the dome alone) | 640,90, 10 | 75.4 | | |
+
+At the other times the apron gets darker against the sky by the same factor (measured on the JPEGs of this folder, GR7 from 3ea3660):
+
+| P1 | patch | GR7 | GR8 |
+|---|---|---|---|
+| golden, sky top | 640,20, 10 | 73.7 (204 184 175) | 73.7 (204 184 175) |
+| golden, apron | 640,90, 10 | 61.6 (172 153 155) | 41.0 (120 101 101) |
+| night, sky top | 640,20, 10 | 7.7 (6 20 52) | 7.7 (6 20 52) |
+| night, apron | 640,90, 10 | 5.0 (0 12 53) | 1.8 (0 4 27) |
+
+At golden the hills now read as dark mauve under a warm sky, and at night as a near-black navy silhouette under the stars. Both were already darker than the sky in GR7; GR8 deepens it. If the owner wants lighter hills at golden or night, the apron needs a level per phase, which is a `DAY_KEYS` column and not a value GR8 can add.
 
 The LT7b meadow patches did not move with GR8: P1 noon meadow a (700,620, 12) 54.7 before and after, meadow b (1050,650, 12) 44.8 before and after. They are lower than LT7b's 58.3 and 57.7 because GR6's carpet now covers those patches; GR8 does not change that.
 
@@ -51,10 +62,13 @@ The carpet is not changed. Its tints are per variant (`CARPET_TINTS` in `floraKi
 | P8 noon crown, mean Lum >= 18 | 640,120, 12 | 2.3 (2 7 5) | 5.5 (4 17 12) | **no** |
 | | 790,120, 10 | 2.5 (2 8 6) | 5.8 (5 18 13) | **no** |
 | | 1070,140, 10 | 3.7 (4 11 10) | 6.9 (7 21 16) | **no** |
-| darker than the yew crown, same light (hero at -90,-24, yaw 0, toward the sun) | yew 1050,210, 10 and 920,230, 8: 10.9 and 8.6 | woods 520,150 2.3; 230,180 3.3; 750,140 4.9 | woods 5.4; 6.5; 7.9 | yes |
+| darker than the yew crown, same light (hero at -90,-24, yaw 0, toward the sun) | yew 1050,210, 10 and 920,230, 8: 10.9 and 8.6 (patch spread 2.5 to 3.0) | woods 520,150 2.3; 230,180 3.3; 750,140 4.9 | woods 5.4; 6.5; 7.9 | yes, by a thin margin (7.9 against 8.6) |
 | darker than the yew crown, same light (yaw 4.712, sun to the side) | yew 600,140, 8 and 580,210, 6: 21.5 and 20.8 | woods 340,200 6.6; 760,200 7.5; 920,120 10.0 | woods 12.9; 14.8; 16.4 | yes |
 | albedo luminance below the yew's 0.0266 | vertex colours | 0.009 to 0.017 | 0.020 to 0.025 | yes |
+| HSL lightness below the yew's (a5eb463's measure) | vertex colours; the yew is sRGB 27 51 20, lightness 0.139 (a5eb463 used about 0.148) | 0.085 to 0.125 | 0.135 to 0.155 | **no**: the tops (0.15, 0.155) are above both 0.139 and 0.148 |
 | visible facet bands at P8 noon | | one band per face seen (all unlit) | the same | **no** |
+
+"Darker than the yew" holds by luminance, the measure GR8 uses (a desaturated colour has a higher HSL lightness than a saturated one of the same luminance), and not by a5eb463's HSL lightness. The plan says an existing test requires the crown to stay darker than the yew; no file under `tests/` holds that rule (searched for crown, yew and woods_tree), so it is held only by this measurement and the comment in `floraKit.ts`. The main session decides which measure stands.
 
 **The two crown targets conflict.** Under the light at P8 noon, the yew's own crown renders at 8.6 to 16.3% (yaw 0, the same backlight), so a woods crown that stays darker than the yew cannot reach a mean of 18% there, and no tint or lightness can give it visible bands when every face the camera sees is unlit. Meeting 18% would need a crown albedo about three times the yew's, which breaks design 5.6's rule that a woods tree's crown is darker than any harvestable tree. GR8 keeps the rule and records the target as missed. Lifting the unlit faces is a light-model change (fill or bounce), which GR8 must not touch; the main session decides.
 
@@ -74,7 +88,7 @@ The carpet is not changed. Its tints are per variant (`CARPET_TINTS` in `floraKi
 |---|---|---|
 | 1 noon sky near white | sky top Lum <= 85 and B - R >= 20, horizon haze kept | met; the cause was the apron, now 0.45 of the air colour |
 | 2 woods floor meadow green | P8 woods ground >= 15% below the P1 meadow, bluer and greener | met for the ground (-21% to -23%); the carpet is per variant and unchanged |
-| 3 woods crowns near black | mean crown Lum >= 18 with visible bands, darker than the yew | darker than the yew: met; crown Lum raised from 2.3-3.7 to 5.5-6.9; 18% and bands: not met, in conflict with the yew rule under P8's backlight |
+| 3 woods crowns near black | mean crown Lum >= 18 with visible bands, darker than the yew | darker than the yew: met by luminance, not by HSL lightness; crown Lum raised from 2.3-3.7 to 5.5-6.9; 18% and bands: not met, in conflict with the yew rule under P8's backlight |
 | 4 desert carpet grid | no aligned rows at P7 | not met: the cause is in `flora.ts`, outside GR8's files |
 
 P1 balanced calls and triangles stay within 5% of GR7 (`perf.md`).
