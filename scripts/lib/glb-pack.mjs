@@ -43,6 +43,15 @@ export function packGlb(buffer) {
     return buffer;
   }
 
+  // Accessor (and image) references per bufferView: a view to be packed is replaced whole, so it must have one user.
+  const viewRefs = new Map();
+  const ref = (bv) => { if (bv !== undefined) viewRefs.set(bv, (viewRefs.get(bv) || 0) + 1); };
+  for (const a of json.accessors) {
+    ref(a.bufferView);
+    if (a.sparse) { ref(a.sparse.indices.bufferView); ref(a.sparse.values.bufferView); }
+  }
+  for (const img of json.images || []) ref(img.bufferView);
+
   const replBufferViews = new Map();
 
   for (const mesh of json.meshes) {
@@ -53,7 +62,7 @@ export function packGlb(buffer) {
 
         if (name === 'NORMAL') {
           if (acc.componentType === 5120 && acc.normalized) continue;
-          if (replBufferViews.has(acc.bufferView)) throw new Error(`glb-pack: accessor ${accIdx} (${name}) shares bufferView ${acc.bufferView} with an already packed accessor`);
+          if (viewRefs.get(acc.bufferView) > 1) throw new Error(`glb-pack: accessor ${accIdx} (${name}) shares bufferView ${acc.bufferView} with ${viewRefs.get(acc.bufferView) - 1} other user(s); packing would replace the whole view`);
 
           const vals = readAccessor(doc, accIdx);
           const count = acc.count;
@@ -76,7 +85,7 @@ export function packGlb(buffer) {
           json.bufferViews[acc.bufferView].byteStride = 4;
         } else if (/^WEIGHTS_\d+$/.test(name)) {
           if (acc.componentType === 5121 && acc.normalized) continue;
-          if (replBufferViews.has(acc.bufferView)) throw new Error(`glb-pack: accessor ${accIdx} (${name}) shares bufferView ${acc.bufferView} with an already packed accessor`);
+          if (viewRefs.get(acc.bufferView) > 1) throw new Error(`glb-pack: accessor ${accIdx} (${name}) shares bufferView ${acc.bufferView} with ${viewRefs.get(acc.bufferView) - 1} other user(s); packing would replace the whole view`);
 
           const vals = readAccessor(doc, accIdx);
           const count = acc.count;
@@ -112,7 +121,7 @@ export function packGlb(buffer) {
           delete json.bufferViews[acc.bufferView].byteStride;
         } else if (/^COLOR_\d+$/.test(name)) {
           if (acc.componentType === 5121 && acc.normalized) continue;
-          if (replBufferViews.has(acc.bufferView)) throw new Error(`glb-pack: accessor ${accIdx} (${name}) shares bufferView ${acc.bufferView} with an already packed accessor`);
+          if (viewRefs.get(acc.bufferView) > 1) throw new Error(`glb-pack: accessor ${accIdx} (${name}) shares bufferView ${acc.bufferView} with ${viewRefs.get(acc.bufferView) - 1} other user(s); packing would replace the whole view`);
 
           const vals = readAccessor(doc, accIdx);
           const count = acc.count;

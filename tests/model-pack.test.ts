@@ -192,6 +192,33 @@ describe('the 8-bit attribute step (Q1)', () => {
     });
   });
 
+  it('a NORMAL interleaved with POSITION in one bufferView is refused, not replaced', () => {
+    // One triangle, POSITION and NORMAL interleaved in one view (stride 24): valid glTF that packing the view whole would corrupt.
+    const bin = Buffer.alloc(3 * 24);
+    [[0, 0, 0], [1, 0, 0], [0, 1, 0]].forEach((p, i) => p.forEach((v, k) => { bin.writeFloatLE(v, i * 24 + k * 4); bin.writeFloatLE(k === 2 ? 1 : 0, i * 24 + 12 + k * 4); }));
+    const json = {
+      asset: { version: '2.0' },
+      buffers: [{ byteLength: bin.length }],
+      bufferViews: [{ buffer: 0, byteOffset: 0, byteLength: bin.length, byteStride: 24 }],
+      accessors: [
+        { bufferView: 0, byteOffset: 0, componentType: 5126, count: 3, type: 'VEC3', min: [0, 0, 0], max: [1, 1, 0] },
+        { bufferView: 0, byteOffset: 12, componentType: 5126, count: 3, type: 'VEC3' },
+      ],
+      meshes: [{ primitives: [{ attributes: { POSITION: 0, NORMAL: 1 } }] }],
+    };
+    let js = Buffer.from(JSON.stringify(json));
+    js = Buffer.concat([js, Buffer.alloc((4 - (js.length % 4)) % 4, 0x20)]);
+    const head = Buffer.alloc(12);
+    head.writeUInt32LE(0x46546c67, 0);
+    head.writeUInt32LE(2, 4);
+    head.writeUInt32LE(12 + 8 + js.length + 8 + bin.length, 8);
+    const chunk = (len: number, type: number) => { const c = Buffer.alloc(8); c.writeUInt32LE(len, 0); c.writeUInt32LE(type, 4); return c; };
+    const glb = Buffer.concat([head, chunk(js.length, 0x4e4f534a), js, chunk(bin.length, 0x004e4942), bin]);
+    const copy = Buffer.from(glb);
+    expect(() => packGlb(glb)).toThrow(/shares bufferView 0/);
+    expect(glb.equals(copy)).toBe(true);
+  });
+
   it('packing twice changes nothing', () => {
     expect(packGlb(monstersPacked).equals(monstersPacked)).toBe(true);
     expect(packGlb(rigidPacked).equals(rigidPacked)).toBe(true);
