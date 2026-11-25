@@ -4,6 +4,8 @@ import { loadGltfOnce } from './gltf';
 import { addCartoonOutline, facetMaterial } from './materials';
 import { albedoMaterial, biomeAlbedoId, biomeGroundId, sealAlbedoUvs } from './textures';
 import { mergeByMaterial } from './batching';
+import { EMITTERS } from '../data/look';
+import { registerEmitter } from './lighting';
 
 export function loadBlenderWorldTemplate(url = '/models/world.glb'): Promise<GLTF | null> {
   if (typeof window === 'undefined' || typeof document === 'undefined') {
@@ -256,6 +258,11 @@ export function upgradeWorldPropWithGltf(
 ): boolean {
   const cloned = cloneWorldNode(gltf, assetName, opts.overrides || {});
   if (!cloned) return false;
+
+  const emitter = EMITTERS.find((e) => e.node === assetName);
+  if (emitter) {
+    registerEmitter(targetGroup.position, emitter.color);
+  }
 
   const uData = targetGroup.userData && targetGroup.userData.type ? targetGroup.userData : null;
 

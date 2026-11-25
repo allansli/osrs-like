@@ -17,6 +17,8 @@ import { buildHumanoidRig, LEAN_RIG } from './humanoid';
 import { loadBlenderHeroTemplate, upgradeHumanoidRigWithGltf } from './blenderHero';
 import { loadBlenderGearTemplate } from './blenderGear';
 import { buildCapeVisual, buildHeadVisual, buildWeaponVisual } from './playerGear';
+import { EMITTERS } from '../data/look';
+import { registerEmitter } from './lighting';
 
 export function buildBiomeLandmarks(): void {
   const sand = albedoMaterial(0xe7c07a, biomeAlbedoId('alkharid-sand'), { shade: 'cut' });
@@ -589,6 +591,11 @@ export function spawnWorldProp(assetName: string, x: number, z: number, rotY = 0
   grp.rotation.y = rotY;
   if (scale !== 1.0) grp.scale.set(scale, scale, scale);
   G.scene.add(grp);
+
+  const emitter = EMITTERS.find((e) => e.node === assetName);
+  if (emitter) {
+    registerEmitter(grp.position, emitter.color);
+  }
 
   loadBlenderWorldTemplate().then((gltf: GLTF | null) => {
     if (!gltf) return;

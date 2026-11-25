@@ -14,6 +14,75 @@ let isFrozen = false;
 let currentShadowDir: Vec3 = [0, 1, 0]; // set from the first frame in initLighting
 let currentTier: QualityTier = 'balanced';
 
+export interface RegisteredEmitter {
+  position: THREE.Vector3;
+  color: THREE.Color;
+}
+
+const registeredEmitters: RegisteredEmitter[] = [];
+const pointLightsPool: THREE.PointLight[] = [];
+let pointLightTimer = 0.25;
+
+export function registerEmitter(
+  position: THREE.Vector3 | { x: number; y: number; z: number },
+  colorHex: string | number
+): void {
+  registeredEmitters.push({
+    position: position instanceof THREE.Vector3 ? position.clone() : new THREE.Vector3(position.x, position.y, position.z),
+    color: new THREE.Color(colorHex),
+  });
+}
+
+function syncPointLightsPool(tier: QualityTier): void {
+  const targetCount = GFX_TIERS[tier].pointLights;
+  for (let i = 0; i < pointLightsPool.length; i++) {
+    const pl = pointLightsPool[i];
+    if (i < targetCount) {
+      if (!pl.parent && G.scene) {
+        G.scene.add(pl);
+      }
+    } else {
+      if (pl.parent && G.scene) {
+        G.scene.remove(pl);
+      }
+      pl.intensity = 0;
+    }
+  }
+  assignPointLights();
+}
+
+function assignPointLights(): void {
+  const activeCount = GFX_TIERS[currentTier].pointLights;
+  if (activeCount === 0 || registeredEmitters.length === 0) {
+    for (let i = 0; i < pointLightsPool.length; i++) {
+      pointLightsPool[i].intensity = 0;
+    }
+    return;
+  }
+
+  const frame = dayFrameAt(currentPhase);
+  const intensity = Math.min(Math.max(0, 1 - frame.keyIntensity / 0.9), 1);
+
+  if (G.camera) {
+    const camPos = G.camera.position;
+    registeredEmitters.sort(
+      (a, b) => camPos.distanceToSquared(a.position) - camPos.distanceToSquared(b.position)
+    );
+  }
+
+  for (let i = 0; i < activeCount; i++) {
+    const pl = pointLightsPool[i];
+    if (i < registeredEmitters.length) {
+      const e = registeredEmitters[i];
+      pl.position.copy(e.position);
+      pl.color.copy(e.color);
+      pl.intensity = intensity;
+    } else {
+      pl.intensity = 0;
+    }
+  }
+}
+
 export function currentDayIndexValue(): number {
   return currentDayIndex;
 }
@@ -72,6 +141,17 @@ export function initLighting(): void {
     light.target.matrixWorld.setPosition(_keepTarget);
   };
 
+  for (const pl of pointLightsPool) {
+    if (pl.parent) pl.parent.remove(pl);
+  }
+  pointLightsPool.length = 0;
+  const maxPointLights = Math.max(...Object.values(GFX_TIERS).map((t) => t.pointLights));
+  for (let i = 0; i < maxPointLights; i++) {
+    const pl = new THREE.PointLight(0xffffff, 0, 9, 2);
+    pointLightsPool.push(pl);
+  }
+  syncPointLightsPool(currentTier);
+
   currentPhase = presetToPhase(STATE.timeOfDay);
   currentShadowDir = clampCastDir(dayFrameAt(currentPhase).sunDir);
   updateLightingFrame(currentPhase);
@@ -80,6 +160,8 @@ export function initLighting(): void {
 export function applyShadowTier(tier: QualityTier): void {
   currentTier = tier;
   const cfg = GFX_TIERS[tier];
+
+  syncPointLightsPool(tier);
 
   G.renderer.shadowMap.type = THREE.PCFShadowMap;
 
@@ -176,4 +258,10 @@ export function updateLighting(dt: number): void {
   }
 
   updateLightingFrame(currentPhase);
+
+  pointLightTimer += dt;
+  if (pointLightTimer >= 0.25) {
+    pointLightTimer = 0;
+    assignPointLights();
+  }
 }
