@@ -1,0 +1,49 @@
+import { MONSTER_TYPES } from '../data/world';
+import type { GameState } from './types';
+
+export const MAX_GP = 2147483647;
+export const MAX_STACK = 2147483647;
+
+export function creditGp(state: GameState, amount: number): number {
+  if (!Number.isFinite(amount)) return 0;
+  const oldGp = state.gp;
+  const newGp = Math.min(MAX_GP, Math.max(0, state.gp + Math.floor(amount)));
+  state.gp = newGp;
+  return newGp - oldGp;
+}
+
+export type DropResult =
+  | { kind: 'gp'; amount: number }
+  | { kind: 'item'; id: string; qty: number };
+
+export const HP_REGEN_PER_SEC = 0.25;
+
+/** Share of successful catches that empty a fishing spot (design D4: every catch). */
+export const FISH_DEPLETION_CHANCE = 1;
+
+export function fishDepletes(rand: number): boolean {
+  return rand < FISH_DEPLETION_CHANCE;
+}
+
+export function rollDrops(typeKey: string, rand: () => number): DropResult[] {
+  const def = MONSTER_TYPES[typeKey];
+  if (!def.drops) return [];
+  const results: DropResult[] = [];
+  for (const d of def.drops) {
+    if (rand() <= d.chance) {
+      if (d.gp) {
+        const coinDraw = rand();
+        const amount = d.gp[0] + Math.floor(coinDraw * (d.gp[1] - d.gp[0] + 1));
+        results.push({ kind: 'gp', amount });
+      } else if (d.id) {
+        const qty = (d as { qty?: number }).qty || 1;
+        results.push({ kind: 'item', id: d.id, qty });
+      }
+    }
+  }
+  return results;
+}
+
+export function gatherChance(level: number, req: number): number {
+  return Math.min(0.92, 0.50 + (level - req) * 0.02);
+}

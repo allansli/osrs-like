@@ -17,6 +17,7 @@ import { addCartoonOutline, facetMaterial } from './materials';
 import { createMonsterMesh } from './monsterMeshes';
 import { loadBlenderMonstersTemplate, upgradeMonsterRigWithGltf } from './blenderMonsters';
 import { loadBlenderWorldTemplate, upgradeResourceNodeWithGltf } from './blenderWorld';
+import { collectFlashMaterials } from './reactions';
 import { el } from '../ui/hud';
 
 interface ResourceNodeDef {
@@ -33,15 +34,19 @@ interface ResourceNodeDef {
   scale?: number;
 }
 
+let nextMonsterId = 1;
+
 export function spawnMonster(
   typeKey: string,
   x: number,
   z: number,
   opts?: { campId?: string; wander?: number }
 ): void {
-  const def: MonsterDef | undefined = MONSTER_TYPES[typeKey];
+  const def: (MonsterDef & { model?: string; tint?: number; modelScale?: number }) | undefined =
+    MONSTER_TYPES[typeKey];
   if (!def) return;
   const rig = createMonsterMesh(def, typeKey);
+  rig.group.scale.multiplyScalar(def.modelScale ?? 1);
   const phase = ((Math.abs(x) * 12.9898 + Math.abs(z) * 78.233) % 1);
   offsetAlbedoPhase(rig.group, phase, (phase * 1.618) % 1);
   const y = getTerrainHeight(x, z);
@@ -55,10 +60,14 @@ export function spawnMonster(
   `;
   el('world-labels').appendChild(labelEl);
 
+  const id = `monster_${nextMonsterId++}`;
   const logic = createMonsterLogic(typeKey, x, z, opts);
   logic.wanderTimer = Math.random() * 3;
+  const modelKey = def.model ?? typeKey;
   const mObj: MonsterEntity = {
+    id,
     typeKey,
+    modelKey,
     def,
     rig,
     pos: rig.group.position,
@@ -75,9 +84,11 @@ export function spawnMonster(
   G.worldInteractiveObjects.push(rig.hitbox);
   G.scene.add(rig.group);
   G.monstersList.push(mObj);
+  collectFlashMaterials(mObj);
   loadBlenderMonstersTemplate().then((gltf: GLTF | null) => {
     if (!gltf) return;
     upgradeMonsterRigWithGltf(mObj, gltf);
+    collectFlashMaterials(mObj);
   });
 }
 
@@ -97,7 +108,7 @@ export function spawnResourceNode(nodeKey: string, x: number, z: number): void {
     grp.scale.set(s, s, s);
     visualMesh = new THREE.Group();
 
-    const barkMat = albedoMaterial(def.trunkColor || 0x92400e, 'bark');
+    const barkMat = albedoMaterial(def.trunkColor || 0x92400e, 'bark', { shade: 'cut' });
     const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.36, 2.2, 12), barkMat);
     trunk.position.y = 1.1;
     trunk.castShadow = true;
@@ -112,7 +123,7 @@ export function spawnResourceNode(nodeKey: string, x: number, z: number): void {
       magic_tree: 0x35545b
     };
     const foliageHex = foliageHexMap[nodeKey] || def.foliageColor || 0x334835;
-    const fMat = albedoMaterial(foliageHex, 'grass');
+    const fMat = albedoMaterial(foliageHex, 'grass', { shade: 'cut' });
     const puffs: [number, number, number, number][] = [
       [0, 2.55, 0, 1.25],
       [0.72, 2.15, 0.28, 0.82],
@@ -135,7 +146,7 @@ export function spawnResourceNode(nodeKey: string, x: number, z: number): void {
   } else if (def.kind === 'rock') {
     visualMesh = new THREE.Group();
     const rockBiome = biomeGroundId(x, z);
-    const rockMat = albedoMaterial(0x94a3b8, rockBiome ? biomeAlbedoId(rockBiome) : 'stone');
+    const rockMat = albedoMaterial(0x94a3b8, rockBiome ? biomeAlbedoId(rockBiome) : 'stone', { shade: 'cut' });
     const baseRock = new THREE.Mesh(new THREE.SphereGeometry(0.95, 16, 12), rockMat);
     baseRock.position.y = 0.7;
     baseRock.scale.set(1.18, 0.78, 1.05);
@@ -143,7 +154,7 @@ export function spawnResourceNode(nodeKey: string, x: number, z: number): void {
     sideRock.position.set(0.78, 0.42, 0.2);
     sideRock.scale.set(1.1, 0.8, 0.95);
     visualMesh.add(baseRock, sideRock);
-    const oreMat = facetMaterial({ color: def.oreColor, emissive: def.oreColor, emissiveIntensity: 0.2, flatShading: true });
+    const oreMat = facetMaterial({ color: def.oreColor, emissive: def.oreColor, emissiveIntensity: 0.2, shade: 'cut' });
     const veins: [number, number, number][] = [
       [0.15, 0.95, 0.72],
       [-0.35, 0.7, -0.55]
@@ -157,7 +168,7 @@ export function spawnResourceNode(nodeKey: string, x: number, z: number): void {
 
     depletedMesh = new THREE.Mesh(
       new THREE.DodecahedronGeometry(0.85, 0),
-      albedoMaterial(0x64748b, 'stone')
+      albedoMaterial(0x64748b, 'stone', { shade: 'cut' })
     );
     depletedMesh.scale.set(0.95, 0.75, 0.95);
     depletedMesh.visible = false;
@@ -175,6 +186,13 @@ export function spawnResourceNode(nodeKey: string, x: number, z: number): void {
     grp.add(visualMesh);
 
     depletedMesh = new THREE.Group();
+    const depletedRing = new THREE.Mesh(
+      new THREE.TorusGeometry(1.15, 0.03, 5, 8),
+      new THREE.MeshBasicMaterial({ color: 0x7a96a3, transparent: true, opacity: 0.35 })
+    );
+    depletedRing.rotation.x = Math.PI / 2;
+    depletedRing.position.y = 0.05;
+    depletedMesh.add(depletedRing);
     depletedMesh.visible = false;
     grp.add(depletedMesh);
   }

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { PALETTE, facetMaterial } from './materials';
+import { GROUND_GRASS_GAIN } from '../data/look';
 
 /** Painted gouache atlases in /public/textures. Phase 1 is albedo only. */
 export const ALBEDO_IDS = [
@@ -92,7 +93,18 @@ export interface AlbedoLoader {
   load(url: string): THREE.Texture;
 }
 
-const cache = new Map<string, THREE.Texture>();
+const baseCache = new Map<string, THREE.Texture>();
+const cloneCache = new Map<string, THREE.Texture>();
+let currentAnisotropy = 1;
+
+export function setAlbedoAnisotropy(n: number): void {
+  currentAnisotropy = n;
+  for (const tex of [...baseCache.values(), ...cloneCache.values()]) {
+    if (tex.anisotropy === n) continue;
+    tex.anisotropy = n;
+    tex.needsUpdate = true; // three applies anisotropy only on upload
+  }
+}
 
 function fallbackTexture(url: string): THREE.Texture {
   const tex = new THREE.DataTexture(new Uint8Array([255, 255, 255, 255]), 1, 1);
@@ -122,22 +134,48 @@ export function albedoUrl(id: string): string {
 }
 
 export function loadAlbedo(id: string, repeat = PROP_REPEAT, loader?: AlbedoLoader): THREE.Texture {
-  const key = `${id}:${repeat}`;
-  if (!loader) {
-    const cached = cache.get(key);
-    if (cached) return cached;
+  if (loader) {
+    const url = albedoUrl(id);
+    const tex = loader.load(url);
+    tex.name = url;
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.wrapT = THREE.RepeatWrapping;
+    tex.magFilter = THREE.LinearFilter;
+    tex.minFilter = THREE.LinearMipmapLinearFilter;
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.repeat.set(repeat, repeat);
+    tex.anisotropy = currentAnisotropy;
+    return tex;
   }
-  const url = albedoUrl(id);
-  const tex = (loader ?? defaultLoader).load(url);
-  tex.name = url;
-  tex.wrapS = THREE.RepeatWrapping;
-  tex.wrapT = THREE.RepeatWrapping;
-  tex.magFilter = THREE.LinearFilter;
-  tex.minFilter = THREE.LinearMipmapLinearFilter;
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.repeat.set(repeat, repeat);
-  if (!loader) cache.set(key, tex);
-  return tex;
+
+  const key = `${id}:${repeat}`;
+  const cachedClone = cloneCache.get(key);
+  if (cachedClone) return cachedClone;
+
+  let baseTex = baseCache.get(id);
+  if (!baseTex) {
+    const url = albedoUrl(id);
+    baseTex = defaultLoader.load(url);
+    baseTex.name = url;
+    baseTex.wrapS = THREE.RepeatWrapping;
+    baseTex.wrapT = THREE.RepeatWrapping;
+    baseTex.magFilter = THREE.LinearFilter;
+    baseTex.minFilter = THREE.LinearMipmapLinearFilter;
+    baseTex.colorSpace = THREE.SRGBColorSpace;
+    baseTex.anisotropy = currentAnisotropy;
+    baseCache.set(id, baseTex);
+  }
+
+  const clone = baseTex.clone();
+  clone.wrapS = baseTex.wrapS;
+  clone.wrapT = baseTex.wrapT;
+  clone.magFilter = baseTex.magFilter;
+  clone.minFilter = baseTex.minFilter;
+  clone.colorSpace = baseTex.colorSpace;
+  clone.anisotropy = baseTex.anisotropy;
+  clone.repeat.set(repeat, repeat);
+  cloneCache.set(key, clone);
+  return clone;
 }
 
 /** Material-tier tiles in /public/textures/gear. Trims and gems stay flat. */
@@ -248,6 +286,8 @@ export function applyAlbedo(material: THREE.MeshLambertMaterial, id: string | nu
   else delete material.userData.albedoSpace;
 }
 
+const projectedGeometries = new WeakSet<THREE.BufferGeometry>();
+
 /**
  * Project UVs from face direction so a tile covers `metersPerTile` world units
  * once Texture.repeat is applied. Small props are scaled up to at least `minSpan`
@@ -259,7 +299,7 @@ export function assignProjectedUvs(
   textureRepeat: number,
   minSpan = 1
 ): void {
-  if (geometry.userData.albedoUv) return;
+  if (projectedGeometries.has(geometry)) return;
   const pos = geometry.getAttribute('position') as THREE.BufferAttribute | undefined;
   if (!pos) return;
   let uv = geometry.getAttribute('uv') as THREE.BufferAttribute | undefined;
@@ -309,7 +349,7 @@ export function assignProjectedUvs(
   }
   stitchUvWraps(geometry, metersPerTile);
   uv.needsUpdate = true;
-  geometry.userData.albedoUv = true;
+  projectedGeometries.add(geometry);
 }
 
 /**
@@ -377,7 +417,7 @@ export function assignGroundUvs(geometry: THREE.BufferGeometry): void {
     uv.setXY(i, pos.getX(i) / divisor, pos.getZ(i) / divisor);
   }
   uv.needsUpdate = true;
-  geometry.userData.albedoUv = true;
+  projectedGeometries.add(geometry);
 }
 
 export function sealAlbedoUvs(root: THREE.Object3D): void {
@@ -429,7 +469,7 @@ if (weightSum < 0.2) {
   else stoneW = 1.0;
   weightSum = grassW + dirtW + sandW + stoneW;
 }
-vec3 albedoTex = (grassTex * grassW + dirtTex * dirtW + sandTex * sandW + stoneTex * stoneW) / max(weightSum, 0.0001);
+vec3 albedoTex = (grassTex * grassW * ${GROUND_GRASS_GAIN.toFixed(3)} + dirtTex * dirtW + sandTex * sandW + stoneTex * stoneW) / max(weightSum, 0.0001);
 vec2 worldXZ = vMapUv * uMetersPerTile;
 float desertBiome = smoothstep(32.0, 46.0, worldXZ.y) * smoothstep(32.0, 48.0, worldXZ.x);
 float peakBiome = smoothstep(28.0, 42.0, worldXZ.y) * smoothstep(-32.0, -46.0, worldXZ.x);
@@ -439,6 +479,13 @@ albedoTex = mix(albedoTex, texture2D(uKorokMap, vMapUv).rgb, korokBiome);
 albedoTex = mix(albedoTex, texture2D(uVolcanicMap, vMapUv).rgb, peakBiome);
 albedoTex = mix(albedoTex, texture2D(uCrackedSandMap, vMapUv).rgb, desertBiome);
 albedoTex = mix(albedoTex, texture2D(uCobbleMap, vMapUv).rgb, plazaBiome);
+// Dark moss in the woods (design 5.5). The woods vertex colour (uCanopy) is a saturated green, and its weight took
+// the meadow's grass gain, so the woods ground read bright meadow green. The woods share is the moss texture tinted
+// to a dark blue-green, divided by vColor because color_fragment multiplies vColor in after this chunk. The share
+// comes from how far vColor is toward uCanopy (green minus red, linear in the vertex blend), saturated at halfway,
+// so the blend triangles at the region's edge do not keep the bright canopy green.
+float woodsW = smoothstep(0.0, 0.5, clamp((vColor.g - vColor.r - 0.05) / (uCanopy.g - uCanopy.r - 0.05), 0.0, 1.0));
+albedoTex = mix(albedoTex, texture2D(uKorokMap, vMapUv).rgb * vec3(0.022, 0.06, 0.075) / max(vColor, vec3(0.004)), woodsW);
 diffuseColor *= vec4(albedoTex, 1.0);
 `;
 
@@ -451,7 +498,7 @@ export function terrainMaterial(loader?: AlbedoLoader): THREE.MeshLambertMateria
   const volcanic = loadAlbedo(biomeAlbedoId('peak-volcanic'), GROUND_REPEAT, loader);
   const cobble = loadAlbedo(biomeAlbedoId('varrock-cobble'), GROUND_REPEAT, loader);
   const cracked = loadAlbedo(biomeAlbedoId('alkharid-sand'), GROUND_REPEAT, loader);
-  const mat = facetMaterial({ vertexColors: true, map: grass });
+  const mat = facetMaterial({ vertexColors: true, map: grass, facetBlend: 0.7 });
   mat.userData.albedoSpace = 'ground';
   const previous = mat.onBeforeCompile;
   mat.onBeforeCompile = (shader, renderer) => {
@@ -475,5 +522,7 @@ export function terrainMaterial(loader?: AlbedoLoader): THREE.MeshLambertMateria
       .replace('#include <map_pars_fragment>', TERRAIN_PARS)
       .replace('#include <map_fragment>', TERRAIN_SAMPLE);
   };
+  const previousKey = mat.customProgramCacheKey();
+  mat.customProgramCacheKey = () => `${previousKey}|terrain`;
   return mat;
 }

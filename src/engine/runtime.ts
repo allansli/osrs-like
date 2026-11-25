@@ -7,6 +7,7 @@ export { worldToScreen };
 import {
   saveGameState,
   loadGameState,
+  startNewGame,
   manualSaveToast,
   resetGameSave,
   cheatSkillsPlus10,
@@ -32,6 +33,7 @@ import { ITEMS } from '../data/items';
 import { WORLD_REGIONS } from '../data/world';
 import { STATE } from '../state/gameState';
 import { loadBlenderGearTemplate } from './blenderGear';
+import { createLookHooks } from './photo';
 import { bridge } from '../ui/bridge';
 import {
   el,
@@ -72,6 +74,7 @@ import {
   toggleAudio
 } from '../ui/playerActions';
 import { gameLoop } from './loop';
+import { bootNotices, type BootNotice } from '../state/bootNotices';
 
 const WINDOW_ACTIONS = {
   cheatSkillsPlus10,
@@ -150,6 +153,23 @@ function wireBridge(): void {
     monstersList: G.monstersList,
     getAnimator: () => player.blenderAnimator,
   };
+
+  document.addEventListener('click', (ev) => {
+    const target = ev.target;
+    if (!(target instanceof Element)) return;
+    const actionEl = target.closest<HTMLElement>('[data-action]');
+    if (!actionEl) return;
+    const action = actionEl.getAttribute('data-action');
+    if (!action || !WINDOW_GLOBALS.includes(action)) {
+      throw new Error(`Unknown action: ${action}`);
+    }
+    const fn = (WINDOW_ACTIONS as Record<string, (...args: unknown[]) => unknown>)[action];
+    const args: string[] = [];
+    if (actionEl.hasAttribute('data-arg')) {
+      args.push(actionEl.getAttribute('data-arg')!);
+    }
+    fn(...args);
+  });
 }
 
 // ============================================================================
@@ -166,18 +186,20 @@ export function boot(): void {
     wireBridge();
     initStaticSvgIcons();
     const hadSave = loadGameState();
+    if (!hadSave) startNewGame();
     init3DEngine();
     applyLoadedStateToHud();
     updateAllUI();
     maybeShowOnboarding();
     addChatMessage('Welcome to <b>Gielinor Hero</b>.', 'lvlup');
-    if (hadSave) {
-      addChatMessage('Restored your saved progress & world state from <b>localStorage</b>.', 'skill');
-    } else {
-      addChatMessage('Use <b>WASD / Arrows</b> or <b>Click</b> anywhere to move, fight monsters, chop trees, mine ores, or fish.', 'skill');
-    }
+    const BOOT_TEXT: Record<BootNotice, string> = {
+      restored: 'Restored your saved progress & world state from <b>localStorage</b>.',
+      xp10: 'This character earns experience at <b>10x</b>.',
+      controls: 'Use <b>WASD / Arrows</b> or <b>Click</b> anywhere to move, fight monsters, chop trees, mine ores, or fish.',
+      'first-task': 'You arrive with nothing. The tracker under your health shows your first task: speak with the <b>task master</b> in the courtyard.'
+    };
+    for (const id of bootNotices(hadSave, STATE)) addChatMessage(BOOT_TEXT[id], 'skill');
     addChatMessage('The courtyard holds the <b>Bank booth</b>, the <b>General Store</b>, and the <b>Anvil</b>. Walk up to use them. Press <b>F1–F6</b> to switch panels and <b>Esc</b> to close a window.', 'loot');
-    addChatMessage('Cheat codes: type <b>skills10</b> to raise every skill by 10, or <b>gold200k</b> for 200,000 GP. Both are also in Settings.', 'skill');
     const cheatInput = el<HTMLInputElement>('cheat-code-input');
     cheatInput.addEventListener('keydown', (ev) => {
       if (ev.key === 'Enter') {
@@ -187,7 +209,7 @@ export function boot(): void {
     });
     const startReg = WORLD_REGIONS.find(r => r.id === STATE.currentRegion) || WORLD_REGIONS[0];
     triggerRegionBanner(startReg);
-    (window as unknown as { __DEBUG?: unknown }).__DEBUG = { STATE, player, camState, rebuildPlayerEquipmentMeshes, ITEMS };
+    (window as unknown as { __DEBUG?: unknown }).__DEBUG = { STATE, player, camState, rebuildPlayerEquipmentMeshes, ITEMS, look: createLookHooks() };
     requestAnimationFrame(gameLoop);
   });
 }

@@ -3,11 +3,12 @@ import { PRAYERS, SPELLS } from '../data/magic';
 import { getLevelForXp, SKILL_KEYS } from '../data/skills';
 import { WORLD_REGIONS } from '../data/world';
 import { createDefaultState } from './gameState';
+import { MAX_GP } from './economy';
 import { compactSlots } from './inventory';
 import { normalizeStyle } from './combat';
 import { normalizeQuests } from './quests';
 import { initialShrines } from './shrines';
-import { QUEST_DEFS, SLAYER_BANDS } from './adventure';
+import { QUEST_DEFS, SLAYER_BANDS, STARTER_QUESTS } from './adventure';
 import { isWalkable } from './collision';
 import type { GameState, SavedCam, SavedPose } from './types';
 
@@ -31,7 +32,7 @@ export function migrateLegacySave(raw: unknown, source: string | null = null): M
   const data = (raw && typeof raw === 'object' ? raw : {}) as Record<string, any>;
   const state = createDefaultState();
 
-  if (typeof data.gp === 'number' && Number.isFinite(data.gp)) state.gp = Math.max(0, Math.min(2147483647, Math.floor(data.gp)));
+  if (typeof data.gp === 'number' && Number.isFinite(data.gp)) state.gp = Math.max(0, Math.min(MAX_GP, Math.floor(data.gp)));
   if (typeof data.xpMultiplier === 'number') state.xpMultiplier = data.xpMultiplier === 1 ? 1 : 10;
   if (typeof data.combatStyle === 'string') state.combatStyle = normalizeStyle(data.combatStyle);
   if (typeof data.activeSpell === 'string' && SPELLS.some((s) => s.id === data.activeSpell && s.type === 'combat')) {
@@ -85,7 +86,7 @@ export function migrateLegacySave(raw: unknown, source: string | null = null): M
   state.shrines.lumbridge = true;
 
   state.quests = normalizeQuests(data.quests);
-  const validQuestIds = new Set(QUEST_DEFS.map((q) => q.id));
+  const validQuestIds = new Set([...QUEST_DEFS.map((q) => q.id), ...STARTER_QUESTS.map((q) => q.id)]);
   state.quests.claimed = Array.from(new Set(state.quests.claimed.filter((id) => validQuestIds.has(id))));
   if (state.quests.slayer) {
     const band = SLAYER_BANDS.find((b) => b.monster === state.quests.slayer?.monster);

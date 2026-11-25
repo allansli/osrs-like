@@ -1,5 +1,7 @@
-import { ITEMS, isStackableInBackpack, isStackableInBank, unitSellPrice } from '../data/items';
+import { ITEMS, isStackableInBackpack, isStackableInBank, shopPrice, unitSellPrice, type ItemDef } from '../data/items';
+import { MAX_GP, MAX_STACK, creditGp } from './economy';
 import { BACKPACK_SIZE, BANK_CAPACITY } from './gameState';
+import { notePurchase, noteSale } from './quests';
 import type { GameState, ItemStack, QtyMode } from './types';
 
 export function resolveQty(mode: QtyMode, available: number): number {
@@ -72,7 +74,7 @@ export function compactSlots(raw: ItemStack[] | undefined, bank: boolean): ItemS
     if (!slot || typeof slot.id !== 'string' || !Object.hasOwn(ITEMS, slot.id)) continue;
     const rawQty = Number(slot.qty);
     if (rawQty === Infinity || rawQty === -Infinity) continue;
-    const qty = Math.max(1, Math.min(2147483647, Math.floor(rawQty || 1)));
+    const qty = Math.max(1, Math.min(MAX_STACK, Math.floor(rawQty || 1)));
     const item = ITEMS[slot.id];
     const stackable = bank ? isStackableInBank(item) : isStackableInBackpack(item);
     place(out, slot.id, qty, stackable, capacity);
@@ -167,6 +169,7 @@ export function buyRunePack(state: GameState, perRuneQty = 500): TransferResult 
   }
   state.gp -= cost;
   for (const it of runes) addItem(state, it.id, qty);
+  notePurchase(state);
   return { ok: true, moved: qty * runes.length, gp: cost };
 }
 
@@ -174,7 +177,7 @@ export function buyItem(state: GameState, itemId: string, mode: QtyMode): Transf
   const item = ITEMS[itemId];
   if (!item) return { ok: false, moved: 0, reason: 'Unknown item.' };
   if (isGatheredGood(itemId)) return { ok: false, moved: 0, reason: 'The store only buys that.' };
-  const price = item.price || 0;
+  const price = shopPrice(item);
   if (price <= 0) return { ok: false, moved: 0, reason: 'That cannot be bought.' };
   const affordable = Math.floor(state.gp / price);
   let want = resolveQty(mode, affordable);
@@ -188,6 +191,7 @@ export function buyItem(state: GameState, itemId: string, mode: QtyMode): Transf
   if (want <= 0) return { ok: false, moved: 0, reason: 'Your backpack is full.' };
   state.gp -= price * want;
   place(state.inventory, itemId, want, stackable, BACKPACK_SIZE);
+  notePurchase(state);
   return { ok: true, moved: want, gp: price * want, unit: price };
 }
 
@@ -198,10 +202,14 @@ export function sellItem(state: GameState, itemId: string, mode: QtyMode): Trans
   const n = resolveQty(mode, have);
   if (n <= 0) return { ok: false, moved: 0, reason: 'Nothing to sell.' };
   const unit = unitSellPrice(item);
+  const gp = unit * n;
+  if (state.gp + gp > MAX_GP) {
+    return { ok: false, moved: 0, reason: 'Your coin pouch is full.' };
+  }
   // removeFrom walks every slot, so unstackable copies of the same item sell together.
   const removed = removeFrom(state.inventory, itemId, n);
-  const gp = unit * removed;
-  state.gp += gp;
+  creditGp(state, gp);
+  noteSale(state);
   return { ok: true, moved: removed, gp, unit };
 }
 
@@ -211,6 +219,11 @@ const GATHERED_TYPES = new Set(['resource', 'bones', 'bar']);
 export function isGatheredGood(itemId: string): boolean {
   const item = ITEMS[itemId];
   return !!item && GATHERED_TYPES.has(item.type);
+}
+
+/** What the store charges for an item, or null for the goods it only buys. */
+export function buyPrice(item: ItemDef): number | null {
+  return GATHERED_TYPES.has(item.type) ? null : shopPrice(item);
 }
 
 export function isUnequippedGear(itemId: string): boolean {

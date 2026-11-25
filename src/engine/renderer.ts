@@ -1,17 +1,28 @@
 import * as THREE from 'three';
 import { G, telemetryInfo } from './context';
 import { addChatMessage, el } from '../ui/hud';
-import { buildSkyDomeShader, buildTerrainAndWater } from './worldMesh';
+import { buildTerrainAndWater } from './worldMesh';
+import { buildSky } from './sky';
+import { CAMERA_FAR, GFX_TIERS } from '../data/look';
 import { buildAllCitiesAndLandmarks } from './worldBuild';
 import { buildPlayerCharacter } from './playerMesh';
 import { spawnAllResourcesAndMonsters } from './spawns';
-import { sealAlbedoUvs } from './textures';
+import { buildFlora } from './flora';
+import { sealAlbedoUvs, setAlbedoAnisotropy } from './textures';
 import { setupInputHandlers } from './input';
 import { buildWalkGrid } from '../state/pathfind';
+import { applyShadowTier, initLighting } from './lighting';
+import { createOutput, effectivePixelRatio, enterPlainMode, isPlainMode, TIER_LABELS, type OutputPipeline } from './post';
+import { setAirTier } from './atmosphere';
+import { setWaterTier } from './water';
+import { setPlayerChoseTier } from './photo';
+import { initParticles, setParticlesTier } from './particles';
 
 export type QualityTier = 'performance' | 'balanced' | 'high' | 'ultra';
 export let currentQuality: QualityTier = 'balanced';
 export let outlinesEnabled = false;
+export let output!: OutputPipeline;
+export { TIER_LABELS };
 
 export function getQualityDpr(tier: QualityTier): number {
   const dpr = typeof window !== 'undefined' ? (window.devicePixelRatio || 1) : 1;
@@ -24,19 +35,25 @@ export function getQualityDpr(tier: QualityTier): number {
 }
 
 export function applyQualityTier(tier: QualityTier): void {
+  const prevTier = currentQuality;
   currentQuality = tier;
-  const dpr = getQualityDpr(tier);
+  setAirTier(tier);
+  setWaterTier(tier);
+  setParticlesTier(tier);
+  const maxAniso = G.renderer.capabilities.getMaxAnisotropy();
+  setAlbedoAnisotropy(Math.min(GFX_TIERS[tier].anisotropy, maxAniso));
+  const dpr = effectivePixelRatio(tier, window.innerWidth, window.innerHeight, window.devicePixelRatio);
   if (G.renderer && typeof window !== 'undefined') {
     G.renderer.setPixelRatio(dpr);
     G.renderer.setSize(window.innerWidth, window.innerHeight);
-    if (tier === 'performance') {
-      G.renderer.shadowMap.enabled = false;
+    applyShadowTier(tier);
+
+    // rebuild on every tier change: sample counts are baked into the composer targets
+    if (!output || prevTier !== tier) {
+      output?.dispose();
+      output = createOutput(G.renderer, G.scene, G.camera, tier);
     } else {
-      G.renderer.shadowMap.enabled = true;
-      G.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-      if (G.sunLight) {
-        G.sunLight.castShadow = true;
-      }
+      output.setSize(window.innerWidth, window.innerHeight);
     }
   }
   const dprEl = el('perf-dpr');
@@ -45,10 +62,11 @@ export function applyQualityTier(tier: QualityTier): void {
 }
 
 export function cycleGraphicsQuality(): void {
+  setPlayerChoseTier(true);
   const tiers: QualityTier[] = ['performance', 'balanced', 'high', 'ultra'];
   const nextIdx = (tiers.indexOf(currentQuality) + 1) % tiers.length;
   applyQualityTier(tiers[nextIdx]);
-  addChatMessage(`Graphics Quality set to <b>${tiers[nextIdx].toUpperCase()}</b> (${getQualityDpr(tiers[nextIdx]).toFixed(2)}x DPR).`, 'skill');
+  addChatMessage(`Graphics Quality set to <b>${TIER_LABELS[tiers[nextIdx]]}</b> (${getQualityDpr(tiers[nextIdx]).toFixed(2)}x DPR).`, 'skill');
 }
 
 export function toggleOutlines(): void {
@@ -66,7 +84,7 @@ export function toggleOutlines(): void {
 
 export function syncGraphicsButtons(): void {
   const gBtn = el('graphics-quality-btn');
-  gBtn.textContent = `Graphics: ${currentQuality.charAt(0).toUpperCase() + currentQuality.slice(1)}`;
+  gBtn.textContent = `Graphics: ${TIER_LABELS[currentQuality]}`;
   const oBtn = el('outlines-toggle-btn');
   oBtn.textContent = outlinesEnabled ? 'Outlines: On' : 'Outlines: Off';
 }
@@ -109,7 +127,7 @@ export function init3DEngine(): void {
   G.scene = new THREE.Scene();
   G.scene.fog = new THREE.FogExp2(0x9ab0c2, 0.0028);
 
-  G.camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.5, 360);
+  G.camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.5, CAMERA_FAR);
 
   G.renderer = new THREE.WebGLRenderer({
     antialias: true,
@@ -121,7 +139,7 @@ export function init3DEngine(): void {
   G.renderer.setSize(window.innerWidth, window.innerHeight);
   G.renderer.setPixelRatio(getQualityDpr(currentQuality));
   G.renderer.shadowMap.enabled = true;
-  G.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  G.renderer.shadowMap.type = THREE.PCFShadowMap;
   G.renderer.outputColorSpace = THREE.SRGBColorSpace;
   G.renderer.toneMapping = THREE.ACESFilmicToneMapping;
   G.renderer.toneMappingExposure = 1.05;
@@ -129,37 +147,33 @@ export function init3DEngine(): void {
   container.appendChild(G.renderer.domElement);
 
   initGpuTelemetry(G.renderer.getContext());
+  const goPlain = (): void => {
+    enterPlainMode(G.scene);
+    setWaterTier(currentQuality);
+    output.dispose();
+    output = createOutput(G.renderer, G.scene, G.camera, currentQuality);
+  };
+  G.renderer.debug.onShaderError = (gl, program) => {
+    const log = gl.getProgramInfoLog(program);
+    console.error(log);
+    if (isPlainMode()) return;
+    goPlain();
+    addChatMessage('Shader compile error: switched to plain mode.', 'skill');
+  };
+  initLighting();
   applyQualityTier('balanced');
 
-  G.hemiLight = new THREE.HemisphereLight(0xa5b8c9, 0x333d32, 0.52);
-  G.scene.add(G.hemiLight);
-
-  G.ambientLight = new THREE.AmbientLight(0x617282, 0.28);
-  G.scene.add(G.ambientLight);
-
-  G.sunLight = new THREE.DirectionalLight(0xf8f5ed, 1.15);
-  G.sunLight.position.set(45, 68, 35);
-  G.sunLight.castShadow = true;
-  G.sunLight.shadow.mapSize.width = 2048;
-  G.sunLight.shadow.mapSize.height = 2048;
-  G.sunLight.shadow.camera.near = 5;
-  G.sunLight.shadow.camera.far = 170;
-  const d = 54;
-  G.sunLight.shadow.camera.left = -d;
-  G.sunLight.shadow.camera.right = d;
-  G.sunLight.shadow.camera.top = d;
-  G.sunLight.shadow.camera.bottom = -d;
-  G.sunLight.shadow.bias = -0.0004;
-  G.scene.add(G.sunLight);
-  G.scene.add(G.sunLight.target);
-
   G.walkGrid = buildWalkGrid();
-  buildSkyDomeShader();
+  buildSky();
   buildTerrainAndWater();
   buildAllCitiesAndLandmarks();
   buildPlayerCharacter();
   spawnAllResourcesAndMonsters();
+  buildFlora(currentQuality);
+  initParticles(G.scene, currentQuality);
   sealAlbedoUvs(G.scene);
+  // After the build, so the walk reaches the clouds and every facet material.
+  if (new URLSearchParams(location.search).has('plain')) goPlain();
 
   window.addEventListener('resize', onWindowResize);
   setupInputHandlers();
@@ -168,6 +182,8 @@ export function init3DEngine(): void {
 export function onWindowResize(): void {
   G.camera.aspect = window.innerWidth / window.innerHeight;
   G.camera.updateProjectionMatrix();
+  const dpr = effectivePixelRatio(currentQuality, window.innerWidth, window.innerHeight, window.devicePixelRatio);
   G.renderer.setSize(window.innerWidth, window.innerHeight);
-  G.renderer.setPixelRatio(getQualityDpr(currentQuality));
+  G.renderer.setPixelRatio(dpr);
+  output.setSize(window.innerWidth, window.innerHeight);
 }

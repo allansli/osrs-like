@@ -5,18 +5,27 @@ import type { BlenderHeroAnimator } from './blenderHero';
 import type { MonsterDef } from '../data/world';
 import type { MonsterLogic } from '../state/monsterAi';
 import type { WalkGrid } from '../state/pathfind';
+import type { TelegraphInstance } from './telegraphs';
+import { COMBAT_REST_SECS, type DeathOutcome } from '../state/sustain';
+import type { CommandClocks } from '../state/commands';
 
 export const TICK_SEC = 0.6;
+
+export const commandClocks: CommandClocks = {
+  food: { readyAt: 0 },
+  potion: { readyAt: 0 }
+};
 
 export type PlayerTargetEntity =
   | { type: 'monster'; ref: MonsterEntity; pos?: THREE.Vector3; madeAt: [number, number] }
   | { type: 'resource'; ref: ResourceNodeEntity; pos?: THREE.Vector3 }
-  | { type: 'interactive'; ref: THREE.Object3D['userData']; pos?: THREE.Vector3 };
+  | { type: 'interactive'; ref: THREE.Object3D['userData']; pos?: THREE.Vector3; intent?: string };
 
 export interface PlayerState {
   pos: THREE.Vector3;
   vel: THREE.Vector3;
   yaw: number;
+  baseYaw: number;
   waypoints: [number, number][];
   targetEntity: PlayerTargetEntity | null;
   isMoving: boolean;
@@ -26,6 +35,7 @@ export interface PlayerState {
   attackAnim: number;
   spinAnim: number;
   actionCooldown: number;
+  sinceCombat: number;
   downed: boolean;
   downedTimer: number;
   meshGroup: THREE.Group | null;
@@ -38,12 +48,15 @@ export interface PlayerState {
   activeWeaponKind: string;
   parts: any;
   blenderAnimator?: BlenderHeroAnimator | null;
+  marks: { count: number; left: number };
+  deathOutcome?: DeathOutcome;
 }
 
 export const player: PlayerState = {
   pos: new THREE.Vector3(-4, 0, -3),
   vel: new THREE.Vector3(0, 0, 0),
   yaw: 0.48,
+  baseYaw: 0.48 + Math.PI,
   waypoints: [],
   targetEntity: null,
   isMoving: false,
@@ -53,6 +66,7 @@ export const player: PlayerState = {
   attackAnim: 0,
   spinAnim: 0,
   actionCooldown: 0,
+  sinceCombat: COMBAT_REST_SECS + 1,
   downed: false,
   downedTimer: 0,
   meshGroup: null,
@@ -63,7 +77,8 @@ export const player: PlayerState = {
   capeAngleY: 0,
   capeAngleZ: 0,
   activeWeaponKind: 'scimitar',
-  parts: {}
+  parts: {},
+  marks: { count: 0, left: 0 }
 };
 
 export interface CamState {
@@ -114,6 +129,7 @@ export const telemetryInfo: TelemetryInfo = {
 };
 
 export interface MonsterEntity extends MonsterEntityLike {
+  id: string;
   def: Omit<MonsterDef, 'drops'> & MonsterEntityLike['def'] & {
     drops: Array<{ id?: string; chance: number; gp?: [number, number]; qty?: number }>;
   };
@@ -122,6 +138,7 @@ export interface MonsterEntity extends MonsterEntityLike {
   flashTimer: number;
   attackAnim: number;
   labelEl: HTMLElement;
+  telegraph?: TelegraphInstance | null;
 }
 
 export interface ResourceNodeEntity extends ResourceNodeLike {
@@ -186,9 +203,6 @@ export interface EngineContext {
   terrainMesh: THREE.Mesh;
   waterMesh: THREE.Mesh;
   skyDomeMesh: THREE.Mesh;
-  grassInstanced: THREE.InstancedMesh;
-  waterUniforms: Record<string, THREE.IUniform>;
-  skyUniforms: Record<string, THREE.IUniform>;
   worldInteractiveObjects: THREE.Object3D[];
   monstersList: MonsterEntity[];
   resourceNodesList: ResourceNodeEntity[];
@@ -227,9 +241,6 @@ export const G: EngineContext = {
   terrainMesh: null as unknown as THREE.Mesh,
   waterMesh: null as unknown as THREE.Mesh,
   skyDomeMesh: null as unknown as THREE.Mesh,
-  grassInstanced: null as unknown as THREE.InstancedMesh,
-  waterUniforms: null as unknown as Record<string, THREE.IUniform>,
-  skyUniforms: null as unknown as Record<string, THREE.IUniform>,
   worldInteractiveObjects: [],
   monstersList: [],
   resourceNodesList: [],

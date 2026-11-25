@@ -1,4 +1,5 @@
 import { OSRS_XP_TABLE } from '../data/skills';
+import { creditGp } from './economy';
 import type { GameState } from './types';
 
 /** Typed on the keyboard, or into the Settings box with an optional :: prefix. */
@@ -7,6 +8,13 @@ export const GOLD_CHEAT_CODES = ['motherlode', 'gold200k', 'gp200k', '200k'] as 
 
 export function normalizeCheatText(raw: string): string {
   return String(raw || '').trim().toLowerCase().replace(/^::/, '');
+}
+
+// Typed during play: shows the 10x button and the cheat panel in Settings until reload. Not shown anywhere in the game.
+export const TOOLS_CODE = 'backroom';
+
+export function matchToolsCode(raw: string): boolean {
+  return normalizeCheatText(raw).endsWith(TOOLS_CODE);
 }
 
 /** Longest codes first so a short alias cannot swallow a longer one. */
@@ -42,5 +50,5 @@ export function applySkillsPlus10(state: GameState): void {
 }
 
 export function applyGold200k(state: GameState): void {
-  state.gp += 200000;
+  creditGp(state, 200000);
 }

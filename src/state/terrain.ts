@@ -4,6 +4,8 @@ import { BASIN_WET_FRACTION, gapDistance, nearestOnPolyline, riverCenterX } from
 
 /** Terrain mesh segments per side (design 6.2). */
 export const TERRAIN_SEGMENTS = 160;
+/** Side length of the terrain mesh, centred on the origin. */
+export const TERRAIN_SIZE = 260;
 
 const WATER_PLANE = -0.34;
 const PATH_SHOULDER = 3;

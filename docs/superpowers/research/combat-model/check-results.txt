@@ -1,0 +1,148 @@
+2000 seeded fights per row; positions, the click back onto the boss and the walk back are modelled.
+Ranged and magic heroes stand 11 from the boss (its own reach) and attack from anywhere within 13.5.
+The level-50 rows have no ward, no protection prayer and 10 lobsters. "Never moves" ignores every shape.
+
+== 1. Baseline: the first draft's fight (existing dragon, 1,200 HP), no regeneration in the fight
+   (the critique's committed rows were A 99.5, B 0.1, C 98.0, D 96.8, F 41.5, G 0.0; this run steps out of a
+   cone across its edge, not across its axis, which moves them slightly)
+fighter                                 win%  mean s (wins)  one-hit deaths from >=70% HP  heavies dodged  damage taken per fight, by source
+A melee, prepared, moves                99.5         78                   80%                 91%   basic 12, cinder_fall 3, ember_cone 3, tail_sweep 6
+B melee, prepared, never moves           0.1         39                   90%                  0%   basic 5, ember_cone 16, tail_sweep 121, cinder_fall 29
+C melee, prepared, +300 ms (trackpad)   98.3         90                   79%                 86%   basic 13, cinder_fall 11, ember_cone 3, tail_sweep 12, ashen_nova 0
+D melee, prepared, no food              97.0         77                   10%                 91%   basic 12, cinder_fall 3, ember_cone 3, tail_sweep 6
+F melee, level 50 rune, unprepared      44.3        142                   54%                 94%   basic 110, ember_cone 17, cinder_fall 20, tail_sweep 10
+G melee, level 50, never moves           0.0          0                   89%                  0%   basic 15, ember_cone 47, tail_sweep 30
+
+== 2. The same fight with hitpoints regenerating at 0.25 HP/s during it, and with ranged and magic heroes
+fighter                                 win%  mean s (wins)  one-hit deaths from >=70% HP  heavies dodged  damage taken per fight, by source
+A melee, prepared, moves                99.8         78                   80%                 91%   basic 12, cinder_fall 3, ember_cone 3, tail_sweep 6
+A, auto-retaliation re-engages          99.7        103                  100%                 93%   basic 16, ember_cone 3, cinder_fall 5, tail_sweep 8
+B melee, prepared, never moves           0.1         46                   88%                  0%   basic 5, ember_cone 16, tail_sweep 126, cinder_fall 31
+C melee, prepared, +300 ms (trackpad)   98.9         90                   95%                 86%   basic 13, cinder_fall 11, ember_cone 3, tail_sweep 12, ashen_nova 0
+C2 melee, prepared, +500 ms             88.9        100                   89%                 75%   basic 15, cinder_fall 33, ember_cone 6, tail_sweep 32, ashen_nova 1
+D melee, prepared, no food              99.1         77                   16%                 91%   basic 12, cinder_fall 3, ember_cone 3, tail_sweep 6
+E melee, level 60, dragon kit           98.4         84                   82%                 92%   basic 13, cinder_fall 3, ember_cone 3, tail_sweep 6
+F melee, level 50 rune, unprepared      55.6        142                   57%                 93%   basic 115, cinder_fall 21, tail_sweep 11, ember_cone 18
+G melee, level 50, never moves           0.0          0                   87%                  0%   basic 15, ember_cone 47, tail_sweep 32
+R ranged, prepared, moves              100.0         39                  100%                 84%   basic 7, cinder_fall 1, ember_cone 1, ashen_nova 2
+R ranged, +300 ms                       99.9         39                  100%                 80%   basic 7, cinder_fall 3, ember_cone 1, ashen_nova 2
+R ranged, never moves                   29.5         27                   96%                  7%   basic 5, ember_cone 30, cinder_fall 24, ashen_nova 73
+M magic, prepared, moves               100.0         32                    0%                 83%   basic 6, ember_cone 0, cinder_fall 1, ashen_nova 1
+M magic, +300 ms                       100.0         32                    0%                 78%   basic 6, cinder_fall 3, ember_cone 0, ashen_nova 0
+M magic, never moves                    78.3         23                  100%                  1%   basic 4, ember_cone 25, cinder_fall 15, ashen_nova 22
+FR ranged, level 50, unprepared         90.5         70                   75%                 91%   basic 81, ember_cone 2, cinder_fall 12, ashen_nova 4
+FM magic, level 50, unprepared          97.3         43                   85%                 86%   basic 66, ember_cone 2, cinder_fall 6, ashen_nova 2
+
+== 3. The new boss: Ashmantle the Slag Wyrm, 1400 HP, basic max hit 72 (magic), attack 120, defence 78; mark step 0.25
+   I Grounded       until 66%  cadence x1  basic, basic, ember_cone, basic, tail_sweep
+   II Rain of Slag  until 33%  cadence x1  slag_rain, slag_rain, slag_rain, tail_sweep, basic, ember_cone, basic
+   III Fury         until  0%  cadence x0.8  ashen_nova, slagburst, basic, ember_cone, basic, slag_rain, slag_rain
+   ember_cone  {"type":"cone","length":16,"halfAngleDeg":45}        wind-up 1800 ms, power 50, fire
+   tail_sweep  {"type":"circle","anchor":"self","radius":5}         wind-up 1700 ms, power 46, melee
+   slag_rain   {"type":"circle","anchor":"target","radius":2.5}     wind-up 1500 ms, power 30, pure
+   ashen_nova  {"type":"ring","inner":8,"outer":20}                 wind-up 2000 ms, power 60, pure
+   slagburst   {"type":"circle","anchor":"self","radius":8}         wind-up 2000 ms, power 52, melee
+   regeneration 0.25 HP/s throughout; food cooldown 1.8 s
+   thresholds: prepared heroes who move win at least 85% (the +300 ms melee row at least 65%); heroes who never move
+   win at most 5%; unprepared level-50 heroes win at most 15%
+fighter                                 win%  mean s (wins)  one-hit deaths from >=70% HP  heavies dodged  damage taken per fight, by source
+A melee, prepared, moves                99.1        104                   56%                 93%   basic 41, ember_cone 3, slagburst 7, slag_rain 19, tail_sweep 3
+A, auto-retaliation re-engages          98.7        123                   54%                 93%   basic 51, slag_rain 23, ember_cone 4, tail_sweep 5, slagburst 9
+B melee, prepared, never moves           0.0          0                   20%                  0%   basic 13, ember_cone 18, tail_sweep 56, slag_rain 81
+C melee, prepared, +300 ms (trackpad)   97.0        106                   67%                 88%   basic 42, slag_rain 51, slagburst 8, ember_cone 4, tail_sweep 6
+C2 melee, prepared, +500 ms             78.6        105                   40%                 75%   basic 39, slag_rain 138, ember_cone 6, tail_sweep 15, slagburst 13
+D melee, prepared, no food              73.0        102                    0%                 93%   basic 38, ember_cone 3, slag_rain 17, slagburst 5, tail_sweep 3
+E melee, level 60, dragon kit           94.6        115                   70%                 93%   basic 46, ember_cone 4, slag_rain 21, slagburst 8, tail_sweep 4
+F melee, level 50 rune, unprepared       0.1        173                   89%                 95%   basic 91, tail_sweep 3, slag_rain 2, ember_cone 4, slagburst 0
+G melee, level 50, never moves           0.0          0                   78%                  0%   basic 36, ember_cone 34, tail_sweep 19
+R ranged, prepared, moves               98.8         63                   88%                 91%   basic 24, ember_cone 2, slag_rain 11, slagburst 4, ashen_nova 3
+R ranged, +300 ms                       96.9         64                   89%                 85%   basic 25, slag_rain 30, ashen_nova 4, ember_cone 4, slagburst 4
+R ranged, never moves                    0.0          0                   18%                  9%   basic 8, ember_cone 11, slag_rain 113, ashen_nova 18
+M magic, prepared, moves                99.8         49                  100%                 89%   basic 20, slag_rain 7, ember_cone 1, slagburst 3, ashen_nova 3
+M magic, +300 ms                        99.2         50                   82%                 83%   basic 21, ember_cone 3, slag_rain 20, slagburst 3, ashen_nova 4
+M magic, never moves                     0.2         25                   99%                 13%   basic 8, ember_cone 9, slag_rain 110, ashen_nova 100
+FR ranged, level 50, unprepared          1.1        111                   90%                 94%   basic 91, ember_cone 4, slag_rain 3, slagburst 1, ashen_nova 0
+FM magic, level 50, unprepared          10.4         69                   95%                 92%   basic 96, ember_cone 3, slag_rain 4, ashen_nova 1, slagburst 1
+
+== 4. The new boss without regeneration in the fight (what constant regeneration is worth)
+fighter                                 win%  mean s (wins)  one-hit deaths from >=70% HP  heavies dodged  damage taken per fight, by source
+A melee, prepared, moves                98.5        105                   58%                 93%   basic 42, ember_cone 4, slag_rain 19, tail_sweep 3, slagburst 7
+C melee, prepared, +300 ms (trackpad)   96.2        107                   61%                 88%   basic 42, slag_rain 53, ember_cone 4, slagburst 8, tail_sweep 6
+D melee, prepared, no food              51.9        102                    0%                 93%   basic 35, ember_cone 3, slag_rain 16, slagburst 5, tail_sweep 3
+F melee, level 50 rune, unprepared       0.1        190                   89%                 95%   basic 88, tail_sweep 2, ember_cone 4, slag_rain 1, slagburst 0
+R ranged, prepared, moves               97.6         63                   69%                 91%   basic 24, ember_cone 2, slag_rain 11, slagburst 4, ashen_nova 3
+M magic, prepared, moves                99.8         49                  100%                 89%   basic 20, slag_rain 7, ember_cone 1, slagburst 3, ashen_nova 3
+FR ranged, level 50, unprepared          0.7        115                   91%                 94%   basic 88, ember_cone 3, slag_rain 3, slagburst 1, ashen_nova 0
+FM magic, level 50, unprepared          10.1         69                   95%                 92%   basic 96, ember_cone 3, slag_rain 4, ashen_nova 1, slagburst 1
+
+== 5. The new boss with no food cooldown (food eaten the moment it is needed, as today): does standing still win?
+fighter                                 win%  mean s (wins)  one-hit deaths from >=70% HP  heavies dodged  damage taken per fight, by source
+B melee, prepared, never moves           0.0          0                   85%                  0%   basic 12, ember_cone 18, tail_sweep 96, slag_rain 106
+R ranged, never moves                    0.0          0                   93%                 17%   basic 11, ember_cone 18, slag_rain 117, ashen_nova 100
+M magic, never moves                     0.1         26                  100%                 14%   basic 8, ember_cone 9, slag_rain 111, ashen_nova 101
+G melee, level 50, never moves           0.0          0                   98%                  0%   basic 37, ember_cone 35, tail_sweep 23
+F melee, level 50 rune, unprepared       0.2        182                   98%                 95%   basic 93, tail_sweep 3, ember_cone 4, slag_rain 2, slagburst 0
+FR ranged, level 50, unprepared          2.1        108                   98%                 94%   basic 93, ember_cone 4, slag_rain 4, slagburst 0, ashen_nova 0
+FM magic, level 50, unprepared          10.6         71                  100%                 93%   basic 99, ember_cone 3, slag_rain 4, ashen_nova 1, slagburst 1
+
+== 6. The new boss with any single heavy blow capped at 45% of maximum hitpoints (CALL-4.14)
+fighter                                 win%  mean s (wins)  one-hit deaths from >=70% HP  heavies dodged  damage taken per fight, by source
+A melee, prepared, moves               100.0        104                    0%                 93%   basic 41, ember_cone 3, slagburst 5, slag_rain 19, tail_sweep 2
+B melee, prepared, never moves          81.5         65                    0%                  9%   basic 23, ember_cone 57, tail_sweep 74, slag_rain 195, slagburst 37
+C melee, prepared, +300 ms (trackpad)  100.0        106                    0%                 88%   basic 42, slag_rain 51, slagburst 6, ember_cone 4, tail_sweep 4
+R ranged, never moves                  100.0         39                    0%                 23%   basic 15, ember_cone 30, slag_rain 99, ashen_nova 31
+M magic, never moves                   100.0         30                    0%                 22%   basic 10, ember_cone 13, slag_rain 90, ashen_nova 31
+
+== 7. The new boss with the existing dragon's basic max hit (32) instead of 72: why the bolt is the preparation check
+fighter                                 win%  mean s (wins)  one-hit deaths from >=70% HP  heavies dodged  damage taken per fight, by source
+A melee, prepared, moves                99.4        103                   69%                 93%   basic 17, ember_cone 4, slag_rain 19, slagburst 7, tail_sweep 3
+F melee, level 50 rune, unprepared      24.1        188                   40%                 94%   basic 143, slag_rain 23, tail_sweep 8, ember_cone 20, slagburst 7
+FR ranged, level 50, unprepared         62.2        113                   62%                 93%   basic 118, slag_rain 19, ember_cone 14, slagburst 6, ashen_nova 2
+FM magic, level 50, unprepared          89.7         71                   72%                 92%   basic 93, ember_cone 8, slag_rain 12, slagburst 5, ashen_nova 2
+
+== 8. The bolt's max hit swept with the opening roar in (2000 seeds): what lowering it does (design 6.4, "The bolt against the stage's promise")
+   max hit 32
+A melee, prepared, moves                99.4        103                   69%                 93%   basic 17, ember_cone 4, slag_rain 19, slagburst 7, tail_sweep 3
+R ranged, prepared, moves               99.3         63                   93%                 91%   basic 10, ember_cone 2, slag_rain 11, slagburst 4, ashen_nova 3
+M magic, prepared, moves                99.8         49                  100%                 89%   basic 8, slag_rain 7, ember_cone 1, slagburst 3, ashen_nova 3
+FM magic, level 50, unprepared          89.7         71                   72%                 92%   basic 93, ember_cone 8, slag_rain 12, slagburst 5, ashen_nova 2
+   max hit 52
+A melee, prepared, moves                99.1        104                   84%                 93%   basic 29, ember_cone 4, slagburst 7, slag_rain 19, tail_sweep 3
+R ranged, prepared, moves               99.2         63                   94%                 91%   basic 17, ember_cone 2, slag_rain 11, slagburst 4, ashen_nova 3
+M magic, prepared, moves                99.8         49                  100%                 89%   basic 14, slag_rain 7, ember_cone 1, slagburst 3, ashen_nova 3
+FM magic, level 50, unprepared          55.5         71                   83%                 92%   basic 127, slag_rain 10, ember_cone 7, ashen_nova 2, slagburst 3
+   max hit 56
+A melee, prepared, moves                98.9        104                   61%                 93%   basic 31, ember_cone 4, slag_rain 19, tail_sweep 3, slagburst 7
+R ranged, prepared, moves               99.0         63                   86%                 91%   basic 19, ember_cone 2, slag_rain 11, slagburst 4, ashen_nova 3
+M magic, prepared, moves                99.8         49                  100%                 89%   basic 15, slag_rain 7, ember_cone 1, slagburst 3, ashen_nova 3
+FM magic, level 50, unprepared          37.0         71                   90%                 92%   basic 115, slag_rain 8, ember_cone 5, ashen_nova 2, slagburst 2
+   max hit 60
+A melee, prepared, moves                98.9        104                   65%                 93%   basic 34, ember_cone 4, slag_rain 19, tail_sweep 3, slagburst 7
+R ranged, prepared, moves               98.9         63                   83%                 91%   basic 20, ember_cone 2, slag_rain 11, slagburst 4, ashen_nova 3
+M magic, prepared, moves                99.8         49                  100%                 89%   basic 17, slag_rain 7, ember_cone 1, slagburst 3, ashen_nova 3
+FM magic, level 50, unprepared          26.8         71                   92%                 92%   basic 109, slag_rain 7, ember_cone 5, ashen_nova 1, slagburst 1
+   max hit 64
+A melee, prepared, moves                99.1        104                   68%                 93%   basic 36, ember_cone 3, slagburst 7, slag_rain 19, tail_sweep 3
+R ranged, prepared, moves               98.9         63                   82%                 91%   basic 21, ember_cone 2, slag_rain 11, slagburst 4, ashen_nova 3
+M magic, prepared, moves                99.8         49                  100%                 89%   basic 18, slag_rain 7, ember_cone 1, slagburst 3, ashen_nova 3
+FM magic, level 50, unprepared          17.9         70                   93%                 92%   basic 104, slag_rain 5, ember_cone 4, ashen_nova 1, slagburst 1
+   max hit 68
+A melee, prepared, moves                99.4        104                   50%                 93%   basic 39, ember_cone 3, slagburst 7, slag_rain 19, tail_sweep 3
+R ranged, prepared, moves               99.0         63                   90%                 91%   basic 23, ember_cone 2, slag_rain 11, slagburst 4, ashen_nova 3
+M magic, prepared, moves                99.8         49                  100%                 89%   basic 19, slag_rain 7, ember_cone 1, slagburst 3, ashen_nova 3
+FM magic, level 50, unprepared          13.1         69                   94%                 92%   basic 99, ember_cone 4, slag_rain 5, ashen_nova 1, slagburst 1
+   max hit 72
+A melee, prepared, moves                99.1        104                   56%                 93%   basic 41, ember_cone 3, slagburst 7, slag_rain 19, tail_sweep 3
+R ranged, prepared, moves               98.8         63                   88%                 91%   basic 24, ember_cone 2, slag_rain 11, slagburst 4, ashen_nova 3
+M magic, prepared, moves                99.8         49                  100%                 89%   basic 20, slag_rain 7, ember_cone 1, slagburst 3, ashen_nova 3
+FM magic, level 50, unprepared          10.4         69                   95%                 92%   basic 96, ember_cone 3, slag_rain 4, ashen_nova 1, slagburst 1
+
+== 9. A level-50 hero who heeds the roar and has the prayer: the F, FR and FM kits and food, no ward, Protect from Magic on, no potions (CALL-4.18)
+fighter                                 win%  mean s (wins)  one-hit deaths from >=70% HP  heavies dodged  damage taken per fight, by source
+F level 50, Prayer 25, prays magic       3.9        183                   92%                 95%   basic 113, slag_rain 18, ember_cone 7, tail_sweep 8, slagburst 3
+FR level 50, Prayer 25, prays magic     25.1        106                   94%                 93%   basic 91, slagburst 5, slag_rain 17, ember_cone 6, ashen_nova 3
+FM level 50, Prayer 25, prays magic     88.5         67                   97%                 92%   basic 43, slag_rain 12, slagburst 4, ember_cone 2, ashen_nova 3
+fighter                                 win%  mean s (wins)  one-hit deaths from >=70% HP  heavies dodged  damage taken per fight, by source
+F level 50, Prayer 43, prays magic      13.5        180                   90%                 95%   basic 113, slag_rain 26, ember_cone 8, slagburst 7, tail_sweep 8
+FR level 50, Prayer 43, prays magic     83.2        109                   94%                 93%   basic 55, slagburst 7, slag_rain 20, ember_cone 4, ashen_nova 3
+FM level 50, Prayer 43, prays magic     93.7         67                  100%                 92%   basic 38, slag_rain 12, slagburst 4, ember_cone 2, ashen_nova 3

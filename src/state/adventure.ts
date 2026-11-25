@@ -1,7 +1,10 @@
+import { BOSSES } from '../data/attacks';
 import { getLevelForXp } from '../data/skills';
+import { creditGp } from './economy';
 import { addItem, canAddItem } from './inventory';
 import { noteGather as markGather, noteSmelt as markSmelt } from './quests';
 import type { GameState, SlayerTask } from './types';
+import type { DeathOutcome } from './sustain';
 
 export const RARE_TIERS = ['rune', 'gilded', 'dragon', 'barrows', 'bandos', 'raids', 'botw'] as const;
 
@@ -23,11 +26,11 @@ export interface SlayerBand {
 
 export const SLAYER_BANDS: SlayerBand[] = [
   { monster: 'goblin', name: 'Goblin Raider', count: 6, minCombat: 3, maxCombat: 15, bountyGp: 400, bountyXp: 80, killXp: 12 },
-  { monster: 'scorpion', name: 'King Scorpion', count: 5, minCombat: 10, maxCombat: 22, bountyGp: 900, bountyXp: 160, killXp: 20 },
-  { monster: 'dark_wizard', name: 'Dark Wizard', count: 5, minCombat: 16, maxCombat: 30, bountyGp: 1200, bountyXp: 220, killXp: 28 },
-  { monster: 'hill_giant', name: 'Hill Giant', count: 5, minCombat: 24, maxCombat: 42, bountyGp: 1800, bountyXp: 320, killXp: 36 },
-  { monster: 'moss_guardian', name: 'Moss Guardian', count: 4, minCombat: 40, maxCombat: 60, bountyGp: 3200, bountyXp: 480, killXp: 48 },
-  { monster: 'lesser_demon', name: 'Lesser Demon', count: 4, minCombat: 55, maxCombat: 99, bountyGp: 5500, bountyXp: 700, killXp: 64 }
+  { monster: 'scorpion', name: 'King Scorpion', count: 5, minCombat: 10, maxCombat: 22, bountyGp: 300, bountyXp: 160, killXp: 20 },
+  { monster: 'dark_wizard', name: 'Dark Wizard', count: 5, minCombat: 16, maxCombat: 30, bountyGp: 400, bountyXp: 220, killXp: 28 },
+  { monster: 'hill_giant', name: 'Hill Giant', count: 5, minCombat: 24, maxCombat: 42, bountyGp: 600, bountyXp: 320, killXp: 36 },
+  { monster: 'moss_guardian', name: 'Moss Guardian', count: 4, minCombat: 40, maxCombat: 60, bountyGp: 1100, bountyXp: 480, killXp: 48 },
+  { monster: 'lesser_demon', name: 'Lesser Demon', count: 4, minCombat: 55, maxCombat: 99, bountyGp: 1800, bountyXp: 700, killXp: 64 }
 ];
 
 export interface QuestStep {
@@ -216,6 +219,140 @@ function plateWorn(state: GameState): boolean {
   return id.includes('plate') || id.includes('chain');
 }
 
+export const STARTER_QUESTS: QuestDef[] = [
+  {
+    id: 'arrival',
+    name: 'Arrival',
+    region: 'lumbridge',
+    lore: 'You arrived with nothing.',
+    rewardText: 'Nothing.',
+    steps: [],
+    gp: 0,
+    xp: {},
+    items: []
+  },
+  {
+    id: 'sq_ledger',
+    name: 'A Name in the Ledger',
+    region: 'lumbridge',
+    lore: "Nobody here knows you yet. Put your name in the task master's ledger and take the work on offer.",
+    rewardText: 'A Bronze Scimitar.',
+    steps: [
+      {
+        label: 'Speak with the task master and accept a task',
+        met: (s) => s.quests.slayer !== null || s.quests.slayerTasksCompleted > 0
+      }
+    ],
+    gp: 0,
+    xp: {},
+    items: [{ id: 'bronze_scimitar', qty: 1 }]
+  },
+  {
+    id: 'sq_quarrel',
+    name: 'First Quarrel',
+    region: 'lumbridge',
+    lore: 'The camp across the green has been raiding the hen yard. Settle one quarrel.',
+    rewardText: '3 Cooked Shrimp and 25 GP.',
+    steps: [
+      {
+        label: 'Defeat a goblin',
+        met: (s) => s.quests.killedGoblin
+      }
+    ],
+    gp: 25,
+    xp: {},
+    items: [{ id: 'shrimp', qty: 3 }]
+  },
+  {
+    id: 'sq_gather',
+    name: 'Stone, Timber, Tide',
+    region: 'lumbridge',
+    lore: 'Everything in the haven is dug, cut or caught by somebody. Try all three.',
+    rewardText: 'A Bronze Full Helm.',
+    steps: [
+      {
+        label: 'Mine copper ore',
+        met: (s) => s.skills.mining.xp > 0
+      },
+      {
+        label: 'Chop a tree',
+        met: (s) => s.skills.woodcutting.xp > 0
+      },
+      {
+        label: 'Net a raw fish',
+        met: (s) => s.quests.caughtFish
+      }
+    ],
+    gp: 0,
+    xp: {},
+    items: [{ id: 'bronze_helm', qty: 1 }]
+  },
+  {
+    id: 'sq_forge',
+    name: 'Fire and Hammer',
+    region: 'lumbridge',
+    lore: 'Cook what you caught. Then smelt five bronze bars at the anvil: two make platelegs, three make a platebody.',
+    rewardText: 'A Wooden Kiteshield.',
+    steps: [
+      {
+        label: 'Cook a fish',
+        met: (s) => s.quests.cookedMeal
+      },
+      {
+        label: 'Smelt a bronze bar',
+        met: (s) => s.quests.smeltedBar
+      },
+      {
+        label: 'Forge a platebody and wear it',
+        met: (s) => s.quests.worePlate || plateWorn(s)
+      }
+    ],
+    gp: 0,
+    xp: {},
+    items: [{ id: 'wooden_shield', qty: 1 }]
+  },
+  {
+    id: 'sq_keeping',
+    name: 'Left in Keeping',
+    region: 'lumbridge',
+    lore: 'The bank keeps what you cannot carry. A traveller before you left something in keeping.',
+    rewardText: 'A Hazel Staff, 30 Air Runes and 30 Mind Runes.',
+    steps: [
+      {
+        label: 'Open the bank',
+        met: (s) => s.quests.openedBank
+      }
+    ],
+    gp: 0,
+    xp: {},
+    items: [
+      { id: 'hazel_staff', qty: 1 },
+      { id: 'air_rune', qty: 30 },
+      { id: 'mind_rune', qty: 30 }
+    ]
+  },
+  {
+    id: 'sq_coin',
+    name: 'Fair Coin',
+    region: 'lumbridge',
+    lore: 'Sell what you do not need and buy what you do. That is how the next kit is paid for.',
+    rewardText: 'Traveler Boots. Next: iron gear needs Attack and Defence 5. Buy it at the store, or mine iron and forge it.',
+    steps: [
+      {
+        label: 'Sell an item to a merchant',
+        met: (s) => s.quests.soldWares
+      },
+      {
+        label: 'Buy an item from a shop',
+        met: (s) => s.quests.boughtWares
+      }
+    ],
+    gp: 0,
+    xp: {},
+    items: [{ id: 'leather_boots', qty: 1 }]
+  }
+];
+
 export interface WeaponSpec {
   name: string;
   cost: number;
@@ -227,10 +364,30 @@ export interface WeaponSpec {
 
 export const RESPAWN_SECONDS = 3.2;
 
-export function deathNotice(): { title: string; body: string } {
+export function deathNotice(outcome?: DeathOutcome): { title: string; body: string } {
+  const title = 'Oh dear, you are dead.';
+  if (!outcome || outcome.kind === 'none') {
+    return {
+      title,
+      body: 'You keep your gear and coins. You will wake in Lumbridge Haven.'
+    };
+  }
+  if (outcome.kind === 'vow') {
+    return {
+      title,
+      body: 'You keep your gear and coins. Your Lantern Vow held: no experience was lost, and the vow is spent. You will wake in Lumbridge Haven.'
+    };
+  }
+  if (outcome.kind === 'waived') {
+    return {
+      title,
+      body: 'You keep your gear and coins. Your loss was small enough to be waived: no experience was lost. You will wake in Lumbridge Haven.'
+    };
+  }
+  const totalLost = Object.values(outcome.amounts).reduce((a, n) => a + n, 0);
   return {
-    title: 'Oh dear, you are dead.',
-    body: 'You keep your gear and coins. You will wake in Lumbridge Haven.'
+    title,
+    body: `You keep your gear and coins. You lost ${totalLost} experience across your fighting skills; no level was lost. A Lantern Vow, taken at an altar, would have kept it. You will wake in Lumbridge Haven.`
   };
 }
 
@@ -283,7 +440,7 @@ export function isRareLoot(item: { tier?: string } | null | undefined): boolean 
 }
 
 export function isBossLoot(typeKey: string): boolean {
-  return typeKey === 'elvarg_dragon';
+  return typeKey === 'elvarg_dragon' || Object.hasOwn(BOSSES, typeKey);
 }
 
 export function gatherVerb(kind: string, itemId: string): string {
@@ -391,6 +548,51 @@ export interface QuestView {
   claimed: boolean;
 }
 
+function buildQuestCard(def: QuestDef, state: GameState): QuestView {
+  const steps = def.steps.map((step) => ({ label: step.label, met: step.met(state) }));
+  const done = steps.filter((step) => step.met).length;
+  return {
+    id: def.id,
+    name: def.name,
+    region: def.region,
+    lore: def.lore,
+    rewardText: def.rewardText,
+    steps,
+    done,
+    total: steps.length,
+    complete: done === steps.length,
+    claimed: state.quests.claimed.includes(def.id)
+  };
+}
+
+function starterOpen(state: GameState): QuestDef | null {
+  if (!state.quests.claimed.includes(STARTER_QUESTS[0].id)) return null;
+  for (let i = 1; i < STARTER_QUESTS.length; i++) {
+    const cur = STARTER_QUESTS[i];
+    const prev = STARTER_QUESTS[i - 1];
+    if (!state.quests.claimed.includes(cur.id) && state.quests.claimed.includes(prev.id)) {
+      return cur;
+    }
+  }
+  return null;
+}
+
+export function starterView(state: GameState): QuestView[] {
+  if (!state.quests.claimed.includes(STARTER_QUESTS[0].id)) return [];
+  const cards: QuestView[] = [];
+  for (let i = 1; i < STARTER_QUESTS.length; i++) {
+    const def = STARTER_QUESTS[i];
+    if (state.quests.claimed.includes(def.id)) {
+      cards.push(buildQuestCard(def, state));
+    }
+  }
+  const open = starterOpen(state);
+  if (open) {
+    cards.push(buildQuestCard(open, state));
+  }
+  return cards;
+}
+
 export function questView(state: GameState): QuestView[] {
   return QUEST_DEFS.map((def) => {
     const steps = def.steps.map((step) => ({ label: step.label, met: step.met(state) }));
@@ -428,14 +630,21 @@ function canHoldRewards(state: GameState, items: QuestRewardItem[]): boolean {
 }
 
 export function claimQuest(state: GameState, questId: string): ClaimResult {
-  const def = QUEST_DEFS.find((quest) => quest.id === questId);
+  const isStarter = STARTER_QUESTS.some((quest) => quest.id === questId);
+  const def = QUEST_DEFS.find((quest) => quest.id === questId) || STARTER_QUESTS.find((quest) => quest.id === questId);
   if (!def) return { ok: false, reason: 'Unknown quest.' };
   if (state.quests.claimed.includes(def.id)) return { ok: false, reason: 'You already claimed that reward.' };
+  if (isStarter) {
+    const open = starterOpen(state);
+    if (!open || open.id !== def.id) {
+      return { ok: false, reason: 'That quest is not open yet.' };
+    }
+  }
   const complete = def.steps.every((step) => step.met(state));
   if (!complete) return { ok: false, reason: 'Finish every objective before claiming the reward.' };
   if (!canHoldRewards(state, def.items)) return { ok: false, reason: 'Your backpack is full.' };
 
-  state.gp += def.gp;
+  creditGp(state, def.gp);
   for (const [skill, amount] of Object.entries(def.xp)) grantExactXp(state, skill, amount);
   for (const item of def.items) addItem(state, item.id, item.qty);
   if (def.ward) state.quests.dragonfireWard = true;
@@ -468,6 +677,8 @@ export interface KillResult {
 
 export function registerKill(state: GameState, typeKey: string): KillResult {
   const quests = state.quests;
+  const boss = BOSSES[typeKey];
+  if (boss?.title) quests.title = boss.title;
   if (typeKey === 'goblin' || typeKey === 'goblin_archer') quests.killedGoblin = true;
   if (typeKey === 'dark_wizard' || typeKey === 'dark_ranger') quests.killedArcane = true;
   if (typeKey === 'scorpion') quests.killedScorpion = true;
@@ -496,7 +707,7 @@ export function registerKill(state: GameState, typeKey: string): KillResult {
     result.slayerCompleted = true;
     result.bountyGp = band?.bountyGp ?? 0;
     result.bountyXp = band?.bountyXp ?? 0;
-    state.gp += result.bountyGp;
+    creditGp(state, result.bountyGp);
     grantExactXp(state, 'attack', result.bountyXp);
     quests.slayerTasksCompleted += 1;
     quests.slayerStreak += 1;
@@ -525,26 +736,38 @@ export interface TrackerLine {
   total: number;
 }
 
-/** The earliest open quest, or a claim prompt when its steps are finished. */
-export function adventureTracker(state: GameState): TrackerLine {
-  const views = questView(state);
-  for (const quest of views) {
-    if (quest.claimed) continue;
-    if (quest.complete) {
-      return {
-        title: quest.name,
-        detail: 'Claim the reward in the Adventure Log',
-        done: quest.done,
-        total: quest.total
-      };
-    }
-    const step = quest.steps.find((entry) => !entry.met);
+function trackerLineFromQuest(quest: QuestView): TrackerLine {
+  if (quest.complete) {
     return {
       title: quest.name,
-      detail: step ? step.label : 'Continue the quest',
+      detail: 'Claim the reward in the Adventure Log',
       done: quest.done,
       total: quest.total
     };
+  }
+  const step = quest.steps.find((entry) => !entry.met);
+  return {
+    title: quest.name,
+    detail: step ? step.label : 'Continue the quest',
+    done: quest.done,
+    total: quest.total
+  };
+}
+
+/** The earliest open quest, or a claim prompt when its steps are finished. */
+export function adventureTracker(state: GameState): TrackerLine {
+  const open = starterOpen(state);
+  if (open) {
+    return trackerLineFromQuest(buildQuestCard(open, state));
+  }
+  const views = questView(state);
+  const discovered = views.find((quest) => !quest.claimed && !!state.shrines[quest.region]);
+  if (discovered) {
+    return trackerLineFromQuest(discovered);
+  }
+  const unclaimed = views.find((quest) => !quest.claimed);
+  if (unclaimed) {
+    return trackerLineFromQuest(unclaimed);
   }
   return { title: 'Adventure log', detail: 'Every quest is claimed', done: views.length, total: views.length };
 }

@@ -45,6 +45,7 @@ export interface QuestFlags {
   slayerStreak: number;
   dragonfireWard: boolean;
   title: string;
+  lanternVow?: true;
 }
 
 export interface GameState {
