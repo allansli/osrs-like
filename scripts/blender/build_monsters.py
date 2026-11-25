@@ -23,6 +23,7 @@ from mathutils import Vector, Euler, Matrix
 sys.dont_write_bytecode = True
 sys.path.insert(0, os.path.dirname(__file__))
 import paths
+import figkit
 
 
 # =============================================================================
@@ -2942,6 +2943,10 @@ def main():
     build_moss_guardian((-0.6, 0.0, 2.2), mats)
     build_lesser_demon((2.2, 0.0, 2.2), mats)
     build_elvarg_dragon((6.2, 0.0, 2.6), mats)
+
+    # Merge-only pass (plan M0): one merge_parts call per Monster_* root, no shape, name or colour change.
+    for obj in [o for o in bpy.data.objects if o.name.startswith("Monster_") and o.parent is None]:
+        figkit.merge_parts(obj)
 
     blend_path = paths.blend_path("monsters")
     glb_path = paths.glb_path("monsters")

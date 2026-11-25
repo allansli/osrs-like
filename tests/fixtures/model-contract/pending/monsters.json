@@ -1,0 +1,1172 @@
+{
+  "nodes": {
+    "chicken_LeftLegPivot": {
+      "parent": "Monster_chicken",
+      "translation": [
+        -0.1,
+        0.24,
+        0.04
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "chicken_RightLegPivot": {
+      "parent": "Monster_chicken",
+      "translation": [
+        0.1,
+        0.24,
+        0.04
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Monster_chicken": {
+      "parent": null,
+      "translation": [
+        -5.2,
+        0,
+        -2
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "dark_ranger_HeadGroup": {
+      "parent": "Monster_dark_ranger",
+      "translation": [
+        0,
+        1.86,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "dark_ranger_LeftArmPivot": {
+      "parent": "Monster_dark_ranger",
+      "translation": [
+        -0.42,
+        1.5,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "dark_ranger_LeftLegPivot": {
+      "parent": "Monster_dark_ranger",
+      "translation": [
+        -0.15,
+        0.78,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "dark_ranger_RightArmPivot": {
+      "parent": "Monster_dark_ranger",
+      "translation": [
+        0.42,
+        1.5,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "dark_ranger_RightLegPivot": {
+      "parent": "Monster_dark_ranger",
+      "translation": [
+        0.15,
+        0.78,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Monster_dark_ranger": {
+      "parent": null,
+      "translation": [
+        -6,
+        0,
+        2.2
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "dark_wizard_HeadGroup": {
+      "parent": "Monster_dark_wizard",
+      "translation": [
+        0,
+        1.92,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "dark_wizard_LeftArmPivot": {
+      "parent": "Monster_dark_wizard",
+      "translation": [
+        -0.38,
+        1.5,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "dark_wizard_LeftLegPivot": {
+      "parent": "Monster_dark_wizard",
+      "translation": [
+        -0.16,
+        0.22,
+        0.04
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "dark_wizard_RightArmPivot": {
+      "parent": "Monster_dark_wizard",
+      "translation": [
+        0.38,
+        1.5,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "dark_wizard_RightLegPivot": {
+      "parent": "Monster_dark_wizard",
+      "translation": [
+        0.16,
+        0.22,
+        0.04
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Monster_dark_wizard": {
+      "parent": null,
+      "translation": [
+        4.4,
+        0,
+        -2
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "elvarg_dragon_HeadGroup": {
+      "parent": "Monster_elvarg_dragon",
+      "translation": [
+        0,
+        1.56,
+        -3.18
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "elvarg_dragon_LeftArmPivot": {
+      "parent": "Monster_elvarg_dragon",
+      "translation": [
+        -1.1,
+        0.95,
+        -1.4
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "elvarg_dragon_LeftLegPivot": {
+      "parent": "Monster_elvarg_dragon",
+      "translation": [
+        -1.25,
+        0.95,
+        1.2
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "elvarg_dragon_LWing": {
+      "parent": "Monster_elvarg_dragon",
+      "translation": [
+        -2.73,
+        2.44,
+        -0.53
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "elvarg_dragon_RightArmPivot": {
+      "parent": "Monster_elvarg_dragon",
+      "translation": [
+        1.1,
+        0.95,
+        -1.4
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "elvarg_dragon_RightLegPivot": {
+      "parent": "Monster_elvarg_dragon",
+      "translation": [
+        1.25,
+        0.95,
+        1.2
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "elvarg_dragon_RWing": {
+      "parent": "Monster_elvarg_dragon",
+      "translation": [
+        2.73,
+        2.44,
+        -0.53
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Monster_elvarg_dragon": {
+      "parent": null,
+      "translation": [
+        6.2,
+        0,
+        2.6
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "goblin_HeadGroup": {
+      "parent": "Monster_goblin",
+      "translation": [
+        0,
+        1.48,
+        -0.08
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "goblin_LeftArmPivot": {
+      "parent": "Monster_goblin",
+      "translation": [
+        -0.46,
+        1.28,
+        -0.08
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "goblin_LeftLegPivot": {
+      "parent": "Monster_goblin",
+      "translation": [
+        -0.16,
+        0.7,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "goblin_RightArmPivot": {
+      "parent": "Monster_goblin",
+      "translation": [
+        0.46,
+        1.28,
+        -0.08
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "goblin_RightLegPivot": {
+      "parent": "Monster_goblin",
+      "translation": [
+        0.16,
+        0.7,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Monster_goblin": {
+      "parent": null,
+      "translation": [
+        -3,
+        0,
+        -2
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "goblin_archer_HeadGroup": {
+      "parent": "Monster_goblin_archer",
+      "translation": [
+        0,
+        1.48,
+        -0.08
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "goblin_archer_LeftArmPivot": {
+      "parent": "Monster_goblin_archer",
+      "translation": [
+        -0.46,
+        1.28,
+        -0.08
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "goblin_archer_LeftLegPivot": {
+      "parent": "Monster_goblin_archer",
+      "translation": [
+        -0.16,
+        0.7,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "goblin_archer_RightArmPivot": {
+      "parent": "Monster_goblin_archer",
+      "translation": [
+        0.46,
+        1.28,
+        -0.08
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "goblin_archer_RightLegPivot": {
+      "parent": "Monster_goblin_archer",
+      "translation": [
+        0.16,
+        0.7,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Monster_goblin_archer": {
+      "parent": null,
+      "translation": [
+        -0.8,
+        0,
+        -2
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "hill_giant_HeadGroup": {
+      "parent": "Monster_hill_giant",
+      "translation": [
+        0,
+        2.02,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "hill_giant_LeftArmPivot": {
+      "parent": "Monster_hill_giant",
+      "translation": [
+        -0.58,
+        1.58,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "hill_giant_LeftLegPivot": {
+      "parent": "Monster_hill_giant",
+      "translation": [
+        -0.22,
+        0.78,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "hill_giant_RightArmPivot": {
+      "parent": "Monster_hill_giant",
+      "translation": [
+        0.58,
+        1.58,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "hill_giant_RightLegPivot": {
+      "parent": "Monster_hill_giant",
+      "translation": [
+        0.22,
+        0.78,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Monster_hill_giant": {
+      "parent": null,
+      "translation": [
+        -3.4,
+        0,
+        2.2
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "lesser_demon_HeadGroup": {
+      "parent": "Monster_lesser_demon",
+      "translation": [
+        0,
+        1.88,
+        -0.73
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "lesser_demon_LeftArmPivot": {
+      "parent": "Monster_lesser_demon",
+      "translation": [
+        -0.65,
+        1.45,
+        -0.25
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "lesser_demon_LeftLegPivot": {
+      "parent": "Monster_lesser_demon",
+      "translation": [
+        -0.25,
+        0.95,
+        0.05
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "lesser_demon_LWing": {
+      "parent": "Monster_lesser_demon",
+      "translation": [
+        -0.28,
+        1.5,
+        0.18
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "lesser_demon_RightArmPivot": {
+      "parent": "Monster_lesser_demon",
+      "translation": [
+        0.65,
+        1.45,
+        -0.25
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "lesser_demon_RightLegPivot": {
+      "parent": "Monster_lesser_demon",
+      "translation": [
+        0.25,
+        0.95,
+        0.05
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "lesser_demon_RWing": {
+      "parent": "Monster_lesser_demon",
+      "translation": [
+        0.28,
+        1.5,
+        0.18
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Monster_lesser_demon": {
+      "parent": null,
+      "translation": [
+        2.2,
+        0,
+        2.2
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "moss_guardian_HeadGroup": {
+      "parent": "Monster_moss_guardian",
+      "translation": [
+        0.02,
+        1.62,
+        -0.18
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "moss_guardian_LeftArmPivot": {
+      "parent": "Monster_moss_guardian",
+      "translation": [
+        -0.62,
+        1.4,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "moss_guardian_LeftLegPivot": {
+      "parent": "Monster_moss_guardian",
+      "translation": [
+        -0.24,
+        0.78,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "moss_guardian_RightArmPivot": {
+      "parent": "Monster_moss_guardian",
+      "translation": [
+        0.58,
+        1.38,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "moss_guardian_RightLegPivot": {
+      "parent": "Monster_moss_guardian",
+      "translation": [
+        0.26,
+        0.78,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Monster_moss_guardian": {
+      "parent": null,
+      "translation": [
+        -0.6,
+        0,
+        2.2
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "scorpion_LeftArmPivot": {
+      "parent": "Monster_scorpion",
+      "translation": [
+        -0.28,
+        0.52,
+        -0.82
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "scorpion_LeftLegPivot": {
+      "parent": "Monster_scorpion",
+      "translation": [
+        -0.22,
+        0.5,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "scorpion_RightArmPivot": {
+      "parent": "Monster_scorpion",
+      "translation": [
+        0.28,
+        0.52,
+        -0.82
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "scorpion_RightLegPivot": {
+      "parent": "Monster_scorpion",
+      "translation": [
+        0.22,
+        0.5,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Monster_scorpion": {
+      "parent": null,
+      "translation": [
+        1.8,
+        0,
+        -2
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    }
+  },
+  "materials": [
+    "mat_bark",
+    "mat_bone",
+    "mat_bronze",
+    "mat_cloth",
+    "mat_cloth_comb",
+    "mat_cloth_dark",
+    "mat_fur",
+    "mat_glow_crimson",
+    "mat_glow_emerald",
+    "mat_glow_orange",
+    "mat_glow_purple",
+    "mat_glow_yellow",
+    "mat_gold",
+    "mat_gold_beak",
+    "mat_horn",
+    "mat_iron",
+    "mat_iron_obsidian",
+    "mat_leather",
+    "mat_leather_dragonhide",
+    "mat_moss",
+    "mat_robe",
+    "mat_robe_trim",
+    "mat_skin_chicken",
+    "mat_skin_chicken_tail",
+    "mat_skin_chicken_wing",
+    "mat_skin_elvarg_dragon",
+    "mat_skin_goblin",
+    "mat_skin_goblin_dark",
+    "mat_skin_hill_giant",
+    "mat_skin_lesser_demon",
+    "mat_skin_scorpion",
+    "mat_skin_scorpion_plate",
+    "mat_stone",
+    "mat_wing",
+    "mat_wood"
+  ],
+  "toggled": [],
+  "meshClasses": [
+    "^chicken_LWing$",
+    "^chicken_LWing_feather_-?\\d+$",
+    "^chicken_LeftLegPivot_drumstick$",
+    "^chicken_LeftLegPivot_shank$",
+    "^chicken_LeftLegPivot_talon_-?\\d+$",
+    "^chicken_LeftLegPivot_toe_-?\\d+$",
+    "^chicken_RWing$",
+    "^chicken_RWing_feather_-?\\d+$",
+    "^chicken_RightLegPivot_drumstick$",
+    "^chicken_RightLegPivot_shank$",
+    "^chicken_RightLegPivot_talon_-?\\d+$",
+    "^chicken_RightLegPivot_toe_-?\\d+$",
+    "^chicken_beak_lower$",
+    "^chicken_beak_upper$",
+    "^chicken_body$",
+    "^chicken_comb$",
+    "^chicken_eye_L$",
+    "^chicken_eye_R$",
+    "^chicken_neck_head$",
+    "^chicken_tail_feather_-?\\d+$",
+    "^chicken_wattle_L$",
+    "^chicken_wattle_R$",
+    "^dark_ranger_LeftLegPivot_boot$",
+    "^dark_ranger_LeftLegPivot_greave$",
+    "^dark_ranger_LeftLegPivot_thigh$",
+    "^dark_ranger_RightLegPivot_boot$",
+    "^dark_ranger_RightLegPivot_greave$",
+    "^dark_ranger_RightLegPivot_thigh$",
+    "^dark_ranger_arrow_fletch_-?\\d+$",
+    "^dark_ranger_belt$",
+    "^dark_ranger_bowstring$",
+    "^dark_ranger_bracer_L$",
+    "^dark_ranger_bracer_R$",
+    "^dark_ranger_brigandine$",
+    "^dark_ranger_buckle$",
+    "^dark_ranger_cloak$",
+    "^dark_ranger_cowl$",
+    "^dark_ranger_eye_L$",
+    "^dark_ranger_eye_R$",
+    "^dark_ranger_glove_L$",
+    "^dark_ranger_glove_R$",
+    "^dark_ranger_longbow$",
+    "^dark_ranger_mask$",
+    "^dark_ranger_pauldron_L$",
+    "^dark_ranger_pauldron_R$",
+    "^dark_ranger_pauldron_spike_L$",
+    "^dark_ranger_pauldron_spike_R$",
+    "^dark_ranger_quiver$",
+    "^dark_ranger_scale_-?\\d+_L$",
+    "^dark_ranger_scale_-?\\d+_R$",
+    "^dark_ranger_uarm_L$",
+    "^dark_ranger_uarm_R$",
+    "^dark_wizard_LeftLegPivot_boot$",
+    "^dark_wizard_RightLegPivot_boot$",
+    "^dark_wizard_cape$",
+    "^dark_wizard_eye_L$",
+    "^dark_wizard_eye_R$",
+    "^dark_wizard_hand_L$",
+    "^dark_wizard_hand_R$",
+    "^dark_wizard_hat_band$",
+    "^dark_wizard_hat_brim$",
+    "^dark_wizard_hat_cone$",
+    "^dark_wizard_hem_trim$",
+    "^dark_wizard_mantle$",
+    "^dark_wizard_orb$",
+    "^dark_wizard_orb_ring$",
+    "^dark_wizard_robe$",
+    "^dark_wizard_sleeve_L$",
+    "^dark_wizard_sleeve_R$",
+    "^dark_wizard_staff$",
+    "^dark_wizard_stole$",
+    "^dark_wizard_stole_rune_-?\\d+$",
+    "^dark_wizard_void_skull$",
+    "^elvarg_dragon_body$",
+    "^elvarg_dragon_eye_-?\\d+$",
+    "^elvarg_dragon_teeth_-?\\d+$",
+    "^goblin_LeftLegPivot_calf$",
+    "^goblin_LeftLegPivot_claw_-?\\d+$",
+    "^goblin_LeftLegPivot_foot$",
+    "^goblin_LeftLegPivot_thigh$",
+    "^goblin_LeftLegPivot_wrap$",
+    "^goblin_RightLegPivot_calf$",
+    "^goblin_RightLegPivot_claw_-?\\d+$",
+    "^goblin_RightLegPivot_foot$",
+    "^goblin_RightLegPivot_thigh$",
+    "^goblin_RightLegPivot_wrap$",
+    "^goblin_archer_LeftLegPivot_calf$",
+    "^goblin_archer_LeftLegPivot_claw_-?\\d+$",
+    "^goblin_archer_LeftLegPivot_foot$",
+    "^goblin_archer_LeftLegPivot_thigh$",
+    "^goblin_archer_LeftLegPivot_wrap$",
+    "^goblin_archer_RightLegPivot_calf$",
+    "^goblin_archer_RightLegPivot_claw_-?\\d+$",
+    "^goblin_archer_RightLegPivot_foot$",
+    "^goblin_archer_RightLegPivot_thigh$",
+    "^goblin_archer_RightLegPivot_wrap$",
+    "^goblin_archer_arrow_-?\\d+$",
+    "^goblin_archer_belt$",
+    "^goblin_archer_bow$",
+    "^goblin_archer_bowstring$",
+    "^goblin_archer_bracer_L$",
+    "^goblin_archer_bracer_R$",
+    "^goblin_archer_brow_ridge$",
+    "^goblin_archer_buckle$",
+    "^goblin_archer_ear_L$",
+    "^goblin_archer_ear_R$",
+    "^goblin_archer_eye_L$",
+    "^goblin_archer_eye_R$",
+    "^goblin_archer_fang_L$",
+    "^goblin_archer_fang_R$",
+    "^goblin_archer_farm_L$",
+    "^goblin_archer_farm_R$",
+    "^goblin_archer_fletch_-?\\d+$",
+    "^goblin_archer_hand_L$",
+    "^goblin_archer_hand_R$",
+    "^goblin_archer_harness_strap$",
+    "^goblin_archer_hood$",
+    "^goblin_archer_jaw$",
+    "^goblin_archer_loincloth_back$",
+    "^goblin_archer_loincloth_front$",
+    "^goblin_archer_nose$",
+    "^goblin_archer_quiver$",
+    "^goblin_archer_rib_-?\\d+_L$",
+    "^goblin_archer_rib_-?\\d+_R$",
+    "^goblin_archer_skull$",
+    "^goblin_archer_torso$",
+    "^goblin_archer_uarm_L$",
+    "^goblin_archer_uarm_R$",
+    "^goblin_belt$",
+    "^goblin_brow_ridge$",
+    "^goblin_buckle$",
+    "^goblin_buckler_boss$",
+    "^goblin_buckler_rim$",
+    "^goblin_buckler_stud_-?\\d+$",
+    "^goblin_buckler_wood$",
+    "^goblin_ear_L$",
+    "^goblin_ear_R$",
+    "^goblin_eye_L$",
+    "^goblin_eye_R$",
+    "^goblin_fang_L$",
+    "^goblin_fang_R$",
+    "^goblin_forearm_L$",
+    "^goblin_forearm_R$",
+    "^goblin_hand_L$",
+    "^goblin_hand_R$",
+    "^goblin_harness_strap$",
+    "^goblin_jaw$",
+    "^goblin_loincloth_back$",
+    "^goblin_loincloth_front$",
+    "^goblin_nose$",
+    "^goblin_pauldron_L$",
+    "^goblin_pauldron_spike_-?\\d+$",
+    "^goblin_rib_-?\\d+_L$",
+    "^goblin_rib_-?\\d+_R$",
+    "^goblin_skull$",
+    "^goblin_spear_barb$",
+    "^goblin_spear_grip$",
+    "^goblin_spear_shaft$",
+    "^goblin_spear_tip$",
+    "^goblin_torso$",
+    "^goblin_upper_arm_L$",
+    "^goblin_upper_arm_R$",
+    "^hill_giant_LeftLegPivot_bare_foot$",
+    "^hill_giant_LeftLegPivot_shin_wrap$",
+    "^hill_giant_LeftLegPivot_thigh$",
+    "^hill_giant_RightLegPivot_bare_foot$",
+    "^hill_giant_RightLegPivot_shin_wrap$",
+    "^hill_giant_RightLegPivot_thigh$",
+    "^hill_giant_armband_L$",
+    "^hill_giant_armband_R$",
+    "^hill_giant_beard_bead_-?\\d+$",
+    "^hill_giant_beard_braid_-?\\d+$",
+    "^hill_giant_beard_main$",
+    "^hill_giant_brow$",
+    "^hill_giant_buckle_horn_L$",
+    "^hill_giant_buckle_horn_R$",
+    "^hill_giant_buckle_socket_L$",
+    "^hill_giant_buckle_socket_R$",
+    "^hill_giant_club_spike_-?\\d+$",
+    "^hill_giant_club_strap_-?\\d+$",
+    "^hill_giant_club_wood$",
+    "^hill_giant_eye_L$",
+    "^hill_giant_eye_R$",
+    "^hill_giant_farm_L$",
+    "^hill_giant_farm_R$",
+    "^hill_giant_fist_L$",
+    "^hill_giant_fist_R$",
+    "^hill_giant_fur_strap$",
+    "^hill_giant_head$",
+    "^hill_giant_nose$",
+    "^hill_giant_pelt_skirt$",
+    "^hill_giant_skull_buckle$",
+    "^hill_giant_torso$",
+    "^hill_giant_uarm_L$",
+    "^hill_giant_uarm_R$",
+    "^lesser_demon_LWing_finger_-?\\d+$",
+    "^lesser_demon_LWing_strut_root$",
+    "^lesser_demon_LWing_web_-?\\d+$",
+    "^lesser_demon_RWing_finger_-?\\d+$",
+    "^lesser_demon_RWing_strut_root$",
+    "^lesser_demon_RWing_web_-?\\d+$",
+    "^lesser_demon_body$",
+    "^lesser_demon_cleaver_blade$",
+    "^lesser_demon_cleaver_hilt$",
+    "^lesser_demon_cleaver_lava_edge$",
+    "^lesser_demon_eye_l$",
+    "^lesser_demon_eye_r$",
+    "^lesser_demon_teeth_lower$",
+    "^lesser_demon_teeth_upper$",
+    "^moss_guardian_LeftLegPivot_knee_stone$",
+    "^moss_guardian_LeftLegPivot_root_claw_-?\\d+$",
+    "^moss_guardian_LeftLegPivot_trunk$",
+    "^moss_guardian_RightLegPivot_knee_stone$",
+    "^moss_guardian_RightLegPivot_root_claw_-?\\d+$",
+    "^moss_guardian_RightLegPivot_trunk$",
+    "^moss_guardian_antler_L$",
+    "^moss_guardian_antler_R$",
+    "^moss_guardian_antler_tine_L$",
+    "^moss_guardian_antler_tine_R$",
+    "^moss_guardian_bark_mask$",
+    "^moss_guardian_bark_torso$",
+    "^moss_guardian_boulder_gauntlet$",
+    "^moss_guardian_claw_L_-?\\d+$",
+    "^moss_guardian_crown_moss$",
+    "^moss_guardian_eye_L$",
+    "^moss_guardian_eye_R$",
+    "^moss_guardian_farm_L$",
+    "^moss_guardian_gauntlet_moss$",
+    "^moss_guardian_heart_core$",
+    "^moss_guardian_leaf_cluster_L$",
+    "^moss_guardian_leaf_cluster_R$",
+    "^moss_guardian_pauldron_moss_L$",
+    "^moss_guardian_pauldron_moss_R$",
+    "^moss_guardian_pauldron_stone_L$",
+    "^moss_guardian_pauldron_stone_R$",
+    "^moss_guardian_shroom_cap_-?\\d+$",
+    "^moss_guardian_shroom_stem_-?\\d+$",
+    "^moss_guardian_stone_slab_-?\\d+$",
+    "^moss_guardian_uarm_L$",
+    "^moss_guardian_uarm_R$",
+    "^scorpion_LeftArmPivot_chela_palm$",
+    "^scorpion_LeftArmPivot_pedipalp_-?\\d+$",
+    "^scorpion_LeftArmPivot_pincer_inner$",
+    "^scorpion_LeftArmPivot_pincer_outer$",
+    "^scorpion_LeftArmPivot_tooth_-?\\d+$",
+    "^scorpion_LeftLegPivot_femur_-?\\d+$",
+    "^scorpion_LeftLegPivot_tarsus_-?\\d+$",
+    "^scorpion_LeftLegPivot_tibia_-?\\d+$",
+    "^scorpion_RightArmPivot_chela_palm$",
+    "^scorpion_RightArmPivot_pedipalp_-?\\d+$",
+    "^scorpion_RightArmPivot_pincer_inner$",
+    "^scorpion_RightArmPivot_pincer_outer$",
+    "^scorpion_RightArmPivot_tooth_-?\\d+$",
+    "^scorpion_RightLegPivot_femur_-?\\d+$",
+    "^scorpion_RightLegPivot_tarsus_-?\\d+$",
+    "^scorpion_RightLegPivot_tibia_-?\\d+$",
+    "^scorpion_carapace_plate_-?\\d+$",
+    "^scorpion_eye_L_-?\\d+$",
+    "^scorpion_eye_R_-?\\d+$",
+    "^scorpion_mandible_L$",
+    "^scorpion_mandible_R$",
+    "^scorpion_prosoma$",
+    "^scorpion_stinger_barb$",
+    "^scorpion_tail_ring_-?\\d+$",
+    "^scorpion_tail_seg_-?\\d+$",
+    "^scorpion_telson_bulb$"
+  ],
+  "extras": {},
+  "vertexColor": "none",
+  "clips": {},
+  "budget": {
+    "triangles": 98644,
+    "meshes": 181,
+    "materials": 35,
+    "rawBytes": 4847976,
+    "brotliBytes": 1360686
+  },
+  "figures": {
+    "Monster_chicken": {
+      "triangles": 4680,
+      "meshes": 12,
+      "materials": 6,
+      "rawBytes": 299792,
+      "brotliBytes": 56558
+    },
+    "Monster_dark_ranger": {
+      "triangles": 5340,
+      "meshes": 23,
+      "materials": 8,
+      "rawBytes": 330096,
+      "brotliBytes": 58346
+    },
+    "Monster_dark_wizard": {
+      "triangles": 3980,
+      "meshes": 18,
+      "materials": 9,
+      "rawBytes": 244704,
+      "brotliBytes": 44023
+    },
+    "Monster_elvarg_dragon": {
+      "triangles": 34750,
+      "meshes": 3,
+      "materials": 3,
+      "rawBytes": 879924,
+      "brotliBytes": 669660
+    },
+    "Monster_goblin": {
+      "triangles": 8292,
+      "meshes": 29,
+      "materials": 10,
+      "rawBytes": 523952,
+      "brotliBytes": 94478
+    },
+    "Monster_goblin_archer": {
+      "triangles": 6640,
+      "meshes": 28,
+      "materials": 11,
+      "rawBytes": 415176,
+      "brotliBytes": 74363
+    },
+    "Monster_hill_giant": {
+      "triangles": 7288,
+      "meshes": 20,
+      "materials": 9,
+      "rawBytes": 464520,
+      "brotliBytes": 78835
+    },
+    "Monster_lesser_demon": {
+      "triangles": 10218,
+      "meshes": 9,
+      "materials": 7,
+      "rawBytes": 501836,
+      "brotliBytes": 164537
+    },
+    "Monster_moss_guardian": {
+      "triangles": 6968,
+      "meshes": 20,
+      "materials": 6,
+      "rawBytes": 435920,
+      "brotliBytes": 70540
+    },
+    "Monster_scorpion": {
+      "triangles": 10488,
+      "meshes": 19,
+      "materials": 6,
+      "rawBytes": 669168,
+      "brotliBytes": 120432
+    }
+  }
+}
