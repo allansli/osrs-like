@@ -30,6 +30,18 @@ function at(g: THREE.BufferGeometry, name: string, i: number): THREE.Vector3 {
   return new THREE.Vector3().fromBufferAttribute(g.getAttribute(name), i);
 }
 
+// Snapshot of the rigid outline vertex shader before S1d; the rigid path must not change.
+const RIGID_OUTLINE_VERTEX_SHADER = `
+      uniform float uThickness;
+      void main() {
+        vec4 viewPos = modelViewMatrix * vec4(position, 1.0);
+        vec3 viewNorm = normalize(normalMatrix * normal);
+        viewPos.xy += viewNorm.xy * uThickness;
+        viewPos.z -= uThickness * 2.5 + 0.045;
+        gl_Position = projectionMatrix * viewPos;
+      }
+    `;
+
 describe('skinned outline normals on hard edges', () => {
   it('gives split vertices one shared outlineNormal, the normalised sum of their normals', () => {
     const g = new THREE.BoxGeometry(1, 1, 1); // 24 vertices, each corner split three ways
@@ -72,8 +84,10 @@ describe('skinned outline normals on hard edges', () => {
     expect((shell as THREE.SkinnedMesh).isSkinnedMesh).toBe(true);
     const vs = (shell.material as THREE.ShaderMaterial).vertexShader;
     expect(vs).toContain('attribute vec3 outlineNormal;');
-    expect(vs).toContain('outlineNormal');
+    expect(vs).toContain('vec3 objectNormal = outlineNormal;');
     expect(vs).not.toContain('beginnormal_vertex');
+    expect(vs.indexOf('vec3 objectNormal = outlineNormal;')).toBeLessThan(vs.indexOf('#include <skinbase_vertex>'));
+    expect(vs.indexOf('vec3 objectNormal = outlineNormal;')).toBeLessThan(vs.indexOf('#include <skinnormal_vertex>'));
     expect(vs).toContain('skinnormal_vertex');
   });
 
@@ -84,9 +98,15 @@ describe('skinned outline normals on hard edges', () => {
     const shell = shellOf(mesh);
     expect((shell as THREE.SkinnedMesh).isSkinnedMesh).toBeFalsy();
     expect(g.getAttribute('outlineNormal')).toBeUndefined();
-    const vs = (shell.material as THREE.ShaderMaterial).vertexShader;
-    expect(vs).not.toContain('outlineNormal');
-    expect(vs).toContain('normalize(normalMatrix * normal)');
+    const mat = shell.material as THREE.ShaderMaterial;
+    expect(mat.vertexShader).toBe(RIGID_OUTLINE_VERTEX_SHADER);
+    expect(mat.side).toBe(THREE.BackSide);
+    expect(mat.depthWrite).toBe(true);
+    expect(mat.polygonOffset).toBe(true);
+    expect(mat.polygonOffsetFactor).toBe(2);
+    expect(mat.polygonOffsetUnits).toBe(2);
+    expect(Object.keys(mat.uniforms).sort()).toEqual(['uColor', 'uThickness']);
+    expect(mat.uniforms.uThickness.value).toBe(0.03);
   });
 
   it('adds nothing on a second call', () => {

@@ -208,11 +208,12 @@ describe('the skinned path (S0; red until S1b)', () => {
     expect(shell.geometry).toBe(mesh.geometry);
     const mat = shell.material as THREE.ShaderMaterial;
     expect(isSharedOutlineMaterial(mat)).toBe(true);
-    for (const chunk of ['skinning_pars_vertex', 'beginnormal_vertex', 'skinbase_vertex', 'skinnormal_vertex', 'begin_vertex', 'skinning_vertex']) {
+    for (const chunk of ['skinning_pars_vertex', 'skinbase_vertex', 'skinnormal_vertex', 'begin_vertex', 'skinning_vertex']) {
       expect(mat.vertexShader, chunk).toContain(`#include <${chunk}>`);
     }
     expect(mat.vertexShader).toContain('transformed');
     expect(mat.vertexShader).toContain('objectNormal');
+    expect(mat.vertexShader).toContain('outlineNormal');
   });
 
   it('a plain mesh still gets today\'s shell and today\'s outline material', () => {
