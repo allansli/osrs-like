@@ -384,7 +384,7 @@ Gear bands, gear to budget and bending gear moved to the follow-up stage (decisi
 - **Tier**: sonnet.
 - **Depends**: P4.
 - **Files**: `tests/gear-merge.test.ts` (new), `tests/fixtures/gear-families.json` (new: triangles per engine material family per node, computed from today's file by the rule of `blenderGear.ts` 93-116).
-- **Change**: for every `Gear_*` node of the shipped file, triangles per material family equal the fixture; meshes per node at most 4, except nodes whose fixture has more than 4 families.
+- **Change**: for every `Gear_*` node of the shipped file, triangles per material family equal the fixture; meshes per node at most 4 plus each kept toggled `_leg[LR]_04_` mesh (F1 never joins those), except nodes whose fixture has more than 4 families (then one per family plus the kept ones).
 - **Accept**: the family case passes today; the mesh-count case is red until G6.
 - **Must not change**: `src/`.
 

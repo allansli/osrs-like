@@ -33,11 +33,14 @@ function familyOf(matName: string, meshName: string): string {
   return 'primary';
 }
 
+// F1: merge_parts never joins the toggled leg meshes (the engine hides them by name), so each stays alone.
+const KEPT = /_leg[LR]_04_/;
+
 /** Per `Gear_*` root node: meshes (primitives) and triangles per family. */
-function roots(file: string): Record<string, { meshes: number; triangles: Record<string, number> }> {
+function roots(file: string): Record<string, { meshes: number; kept: number; triangles: Record<string, number> }> {
   const { json } = readGlb(file);
-  const out: Record<string, { meshes: number; triangles: Record<string, number> }> = {};
-  const walk = (i: number, acc: { meshes: number; triangles: Record<string, number> }) => {
+  const out: Record<string, { meshes: number; kept: number; triangles: Record<string, number> }> = {};
+  const walk = (i: number, acc: { meshes: number; kept: number; triangles: Record<string, number> }) => {
     const node = json.nodes[i];
     if (node.mesh !== undefined) {
       for (const p of json.meshes[node.mesh].primitives) {
@@ -45,6 +48,7 @@ function roots(file: string): Record<string, { meshes: number; triangles: Record
         if (p.indices === undefined) throw new Error(`${file}: primitive in ${node.name} has no indices (merge dropped them?)`);
         const tris = json.accessors[p.indices].count / 3;
         acc.meshes += 1;
+        if (KEPT.test(node.name ?? '')) acc.kept += 1;
         acc.triangles[fam] = (acc.triangles[fam] ?? 0) + tris;
       }
     }
@@ -53,7 +57,7 @@ function roots(file: string): Record<string, { meshes: number; triangles: Record
   for (let i = 0; i < json.nodes.length; i++) {
     const name = json.nodes[i].name ?? '';
     if (!name.startsWith('Gear_') || json.nodes[i].mesh !== undefined) continue;
-    const acc = { meshes: 0, triangles: {} as Record<string, number> };
+    const acc = { meshes: 0, kept: 0, triangles: {} as Record<string, number> };
     walk(i, acc);
     out[name] = acc;
   }
@@ -72,8 +76,8 @@ describe('gear merge (a merge changes grouping, never triangles)', () => {
   });
 
   // Red until G6: today's file has up to 24 meshes per root.
-  it.each(Object.keys(fixture))('%s has at most 4 meshes, or one per family when it has more than 4 families', (name) => {
+  it.each(Object.keys(fixture))('%s has at most 4 meshes, or one per family when it has more than 4 families, plus each kept toggled leg mesh', (name) => {
     const families = Object.keys(fixture[name]).length;
-    expect(built[name].meshes).toBeLessThanOrEqual(Math.max(4, families));
+    expect(built[name].meshes).toBeLessThanOrEqual(Math.max(4, families) + built[name].kept);
   });
 });
