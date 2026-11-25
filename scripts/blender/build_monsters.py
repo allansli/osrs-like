@@ -1153,6 +1153,7 @@ def build_goblin_base(key: str, grid_pos: tuple[float, float, float], mats: dict
 # three-space like the rest of this file (+Y up, -Z forward). The figure stands at the
 # file's origin (design 6.1.1 rule 2b).
 GOBLIN_TRIANGLES = 5000
+GOBLIN_BELT_SEGS = 16  # the belt is three bands of this many quads
 GOBLIN_SCALE = 1.02  # the numbers below build a figure 1.752 tall; the shipped goblin is 1.785
 GOBLIN_COLOURS = {
     "skin": 0x62733A,  # olive, 45% value
@@ -1204,10 +1205,21 @@ def _goblin_tint(obj, hex_colour: int) -> None:
     ca.data.foreach_set("color", [*tint, 1.0] * len(obj.data.vertices))
 
 
-def _goblin_skin(ob, name: str, mat, triangles: int, soften: int):
-    """Rounds a voxel skin (soften smoothing passes), decimates it to its triangle count, validates, names it and gives it its one material."""
+def _goblin_skin(ob, name: str, mat, triangles: int, soften: int, keep: tuple = ()):
+    """
+    Rounds a voxel skin (soften smoothing passes), decimates it to its triangle count, validates,
+    names it and gives it its one material. keep is (centre, radius) balls in Blender space whose
+    inside takes a fifth of the smoothing, rising to all of it at 1.6 radii: forty passes shrink a
+    limb's end to a stump, and a hand has to stay a hand.
+    """
     bpy.context.view_layer.objects.active = ob
     smooth = ob.modifiers.new("Soften", "SMOOTH")
+    if keep:
+        group = ob.vertex_groups.new(name="Soften")
+        for v in ob.data.vertices:
+            t = min(max(0.0, min(((v.co - c).length / r - 1.0) / 0.6 for c, r in keep)), 1.0)
+            group.add([v.index], 0.2 + 0.8 * t * t * (3.0 - 2.0 * t), "REPLACE")
+        smooth.vertex_group = group.name
     smooth.factor = 0.5
     smooth.iterations = soften
     bpy.ops.object.modifier_apply(modifier="Soften")
@@ -1217,6 +1229,7 @@ def _goblin_skin(ob, name: str, mat, triangles: int, soften: int):
         dec.ratio = triangles / tris
         bpy.ops.object.modifier_apply(modifier="Decimate")
     ob.data.validate()
+    ob.vertex_groups.clear()
     ob.name = ob.data.name = name
     ob.data.materials.clear()
     ob.data.materials.append(mat)
@@ -1242,9 +1255,9 @@ def _goblin_limb_dir(a: tuple, b: tuple) -> Vector:
     return (Vector(b) - Vector(a)).normalized()
 
 
-def _goblin_body_graph(j: dict) -> tuple[list, list, list]:
-    """Route a: the stick graph and radii for figkit.organic_body, in Blender space."""
-    pts, radii, edges = [], [], []
+def _goblin_body_graph(j: dict) -> tuple[list, list, list, list]:
+    """Route a: the stick graph and radii for figkit.organic_body, and the hands' keep balls for _goblin_skin, in Blender space."""
+    pts, radii, edges, hands = [], [], [], []
 
     def chain(start, nodes):
         prev = start
@@ -1267,16 +1280,46 @@ def _goblin_body_graph(j: dict) -> tuple[list, list, list]:
             ((side * 0.15, 1.19, -0.08), 0.14),  # collar: the shoulder line slopes instead of squaring off
             (j[f"{tag}ArmPivot"], 0.125),
             (tuple(elbow), 0.09),
-            (tuple(hand - d * 0.04), 0.072),
-            (tuple(hand + d * 0.07), 0.09),
+            (tuple(hand - d * 0.08), 0.062),  # wrist
+            (tuple(hand - d * 0.02), 0.10),  # the hand: a fist a third wider than the wrist, around the hand joint
+            (tuple(hand + d * 0.10), 0.09),
         ])
+        hands.append((Vector(t2b(*(hand + d * 0.04))), 0.15))
         chain(pelvis, [
             ((side * 0.14, 0.64, 0.03), 0.125),
             (j[f"{tag}KneePivot"], 0.092),
             (j[f"{tag}Foot"], 0.072),
             ((side * 0.20, 0.06, -0.15), 0.06),
         ])
-    return pts, edges, radii
+    return pts, edges, radii, hands
+
+
+def _goblin_belt(body, mat):
+    """
+    The belt, laid on the finished body: sixteen rays from the body's axis at two heights find its
+    surface, and the band stands 0.02 outside it, with a lip turned in above and below. A lathe of
+    fixed radii sinks into the belly on one body route and floats on the other.
+    """
+    from mathutils.bvhtree import BVHTree
+
+    tree = BVHTree.FromPolygons([v.co for v in body.data.vertices], [tuple(p.vertices) for p in body.data.polygons])
+    bm = bmesh.new()
+    rings = []
+    for y, gap in ((0.655, -0.012), (0.66, 0.02), (0.75, 0.02), (0.755, -0.012)):
+        ring = []
+        for i in range(GOBLIN_BELT_SEGS):
+            a = i / GOBLIN_BELT_SEGS * math.pi * 2.0
+            out = Vector((math.cos(a), math.sin(a), 0.0))
+            hit = tree.ray_cast(Vector(t2b(0.0, y, 0.03)), out)[0]
+            if hit is None:
+                raise ValueError(f"goblin: the belt's ray at height {y}, angle {a:.2f} leaves the body without a hit")
+            ring.append(bm.verts.new(hit + out * gap))
+        rings.append(ring)
+    for lo, hi in zip(rings, rings[1:]):
+        for i in range(GOBLIN_BELT_SEGS):
+            k = (i + 1) % GOBLIN_BELT_SEGS
+            bm.faces.new((lo[i], lo[k], hi[k], hi[i]))
+    return finalize_obj("gob_belt", bm, None, mat)
 
 
 def _goblin_body_primitives(j: dict, mat) -> list:
@@ -1407,11 +1450,6 @@ def build_goblin(grid_pos: tuple[float, float, float], mats: dict):
     # Loincloth and belt hang from the hips, never from the legs
     add(add_box("gob_cloth_front", None, skin, 0.20, 0.30, 0.05, tx=0.0, ty=0.53, tz=-0.16, rx=-0.10, bevel=0.0), "Hips", col["rust_cloth"])
     add(add_box("gob_cloth_back", None, skin, 0.20, 0.30, 0.05, tx=0.0, ty=0.53, tz=0.19, rx=0.10, bevel=0.0), "Hips", col["rust_cloth"])
-    add(
-        add_lathe("gob_belt", None, wood, [(0.66, 0.20, 0.165, 0.0, 0.03, 0.2), (0.75, 0.205, 0.17, 0.0, 0.02, 0.2)], segs=16),
-        "Hips",
-        col["leather"],
-    )
     add(add_sphere("gob_pauldron", None, metal, 0.15, 0.10, 0.15, tx=-0.33, ty=1.28, tz=-0.10, rz=0.35, segs=12, rings=7), "LeftArmPivot", col["rust"])
 
     # Spear in the right hand: butt on the ground outside the foot, head up and out, clear of the body outline
@@ -1444,14 +1482,16 @@ def build_goblin(grid_pos: tuple[float, float, float], mats: dict):
 
     # Body: what is left of the triangle budget
     hard_tris = sum(len(p.vertices) - 2 for obj, _ in hard for p in obj.data.polygons)
-    body_tris = GOBLIN_TRIANGLES - 40 - hard_tris
+    body_tris = GOBLIN_TRIANGLES - 40 - hard_tris - GOBLIN_BELT_SEGS * 6
     if route == "a":
-        pts, edges, radii = _goblin_body_graph(j)
+        pts, edges, radii, hands = _goblin_body_graph(j)
         # organic_body's own decimate is left out (a ceiling it never reaches): the skin is softened first.
         # The skin modifier gives square limbs, so route a takes forty passes and radii about 15% over the wanted ones.
-        body = _goblin_skin(figkit.organic_body((pts, edges), radii, 0.02, 10**9), "gob_body", skin, body_tris, soften=40)
+        body = _goblin_skin(figkit.organic_body((pts, edges), radii, 0.02, 10**9), "gob_body", skin, body_tris, soften=40, keep=tuple(hands))
     else:
         body = _goblin_fuse(_goblin_body_primitives(j, skin), "gob_body", skin, 0.02, body_tris, soften=8)
+    # The belt hangs from the hips like the loincloth, and is laid on whichever body was built
+    add(_goblin_belt(body, wood), "Hips", col["leather"])
 
     for obj in [body] + [obj for obj, _ in hard]:
         obj.data.transform(Matrix.Scale(GOBLIN_SCALE, 4))

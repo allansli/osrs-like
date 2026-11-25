@@ -1250,9 +1250,9 @@
   "budget": {
     "triangles": 98644,
     "meshes": 182,
-    "materials": 36,
+    "materials": 35,
     "rawBytes": 4896485,
-    "brotliBytes": 1402228
+    "brotliBytes": 1294796
   },
   "figures": {
     "Monster_chicken": {
@@ -1287,15 +1287,15 @@
       "triangles": 5000,
       "meshes": 4,
       "materials": 5,
-      "rawBytes": 165580,
-      "brotliBytes": 101826
+      "rawBytes": 166315,
+      "brotliBytes": 102339
     },
     "Monster_goblin_archer": {
       "triangles": 6640,
       "meshes": 28,
       "materials": 11,
       "rawBytes": 415176,
-      "brotliBytes": 76896
+      "brotliBytes": 74363
     },
     "Monster_hill_giant": {
       "triangles": 7288,
