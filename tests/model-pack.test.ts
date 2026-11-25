@@ -4,7 +4,8 @@
 //   NORMAL -> normalised signed bytes, WEIGHTS_n -> normalised unsigned bytes (each vertex's four sum to 255),
 //   COLOR_n -> normalised unsigned bytes, `KHR_mesh_quantization` in extensionsUsed and extensionsRequired
 //   (only when something was packed), everything else (POSITION, JOINTS, indices, UVs, animation, skins) untouched.
-// Fixtures are the shipped files, read only: `monsters.glb` (skinned, COLOR_0) and `hero.glb` (no skin, no colour).
+// Fixtures: `tests/fixtures/models/monsters-float.glb` (a committed copy of the unpacked, float monsters.glb: skinned, COLOR_0, so the
+// conversion stays testable after the pilot is promoted through the pack step) and the shipped `gear.glb` (rigid, no colour; Q1 never packs it).
 import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -32,6 +33,7 @@ const mod = (name: string) => import(/* @vite-ignore */ pathToFileURL(path.join(
 const { readGlb, readAccessor } = (await mod('glb.mjs')) as { readGlb: ReadGlb; readAccessor: ReadAccessor };
 const { packGlb } = (await mod('glb-pack.mjs')) as { packGlb: (b: Buffer) => Buffer };
 
+const fixture = (name: string) => fs.readFileSync(path.join(ROOT, 'tests', 'fixtures', 'models', name));
 const shipped = (name: string) => fs.readFileSync(path.join(ROOT, 'public', 'models', name));
 const parse = (b: Buffer): Promise<GLTF> =>
   new Promise((resolve, reject) =>
@@ -47,18 +49,18 @@ const sameArray = (a: ArrayLike<number>, b: ArrayLike<number>) => a.length === b
 
 let monsters: Buffer;
 let monstersPacked: Buffer;
-let hero: Buffer;
-let heroPacked: Buffer;
+let rigid: Buffer;
+let rigidPacked: Buffer;
 beforeAll(() => {
-  monsters = shipped('monsters.glb');
+  monsters = fixture('monsters-float.glb');
   monstersPacked = packGlb(monsters);
-  hero = shipped('hero.glb');
-  heroPacked = packGlb(hero);
+  rigid = shipped('gear.glb');
+  rigidPacked = packGlb(rigid);
 });
 
 describe('the 8-bit attribute step (Q1)', () => {
   it('normals become normalised signed bytes and the file lists KHR_mesh_quantization as used and required', () => {
-    for (const buf of [monstersPacked, heroPacked]) {
+    for (const buf of [monstersPacked, rigidPacked]) {
       const d = readGlb(buf);
       const normals = attrs(d).filter((a) => a.name === 'NORMAL');
       expect(normals.length).toBeGreaterThan(0);
@@ -90,7 +92,7 @@ describe('the 8-bit attribute step (Q1)', () => {
   });
 
   it('positions, joints, indices and animation data are byte-identical', () => {
-    for (const [before, after] of [[monsters, monstersPacked], [hero, heroPacked]]) {
+    for (const [before, after] of [[monsters, monstersPacked], [rigid, rigidPacked]]) {
       const a = readGlb(before);
       const b = readGlb(after);
       expect(b.json.meshes.length).toBe(a.json.meshes.length);
@@ -147,14 +149,16 @@ describe('the 8-bit attribute step (Q1)', () => {
       g.scene.traverse((o) => {
         if ((o as THREE.SkinnedMesh).isSkinnedMesh) list.push(o as THREE.SkinnedMesh);
       });
-      list.forEach((sm) => {
-        // The same pose on both: every bone turned by a different fixed amount about x, then z.
-        sm.skeleton.bones.forEach((bone, i) => {
+      // The same pose on both: every bone turned by a different fixed amount about x, then z. Each shared skeleton once.
+      new Set(list.map((sm) => sm.skeleton)).forEach((sk) =>
+        sk.bones.forEach((bone, i) => {
           bone.rotation.x += 0.4 + 0.07 * (i % 5);
           bone.rotation.z += 0.2 - 0.05 * (i % 3);
-        });
-        sm.updateMatrixWorld(true);
-      });
+        })
+      );
+      // The bones are siblings of the skinned meshes, so the whole scene's world matrices must be updated.
+      g.scene.updateMatrixWorld(true);
+      list.forEach((sm) => sm.skeleton.update());
       return list;
     };
     const A = await skinnedOf(monsters);
@@ -177,8 +181,8 @@ describe('the 8-bit attribute step (Q1)', () => {
   });
 
   it('a file with no skin and no colour only has its normals packed', () => {
-    const a = readGlb(hero);
-    const b = readGlb(heroPacked);
+    const a = readGlb(rigid);
+    const b = readGlb(rigidPacked);
     expect(a.json.skins).toBeUndefined();
     expect(attrs(a).some((x) => /^(WEIGHTS|JOINTS|COLOR)_/.test(x.name))).toBe(false);
     attrs(b).forEach((x) => {
@@ -190,6 +194,6 @@ describe('the 8-bit attribute step (Q1)', () => {
 
   it('packing twice changes nothing', () => {
     expect(packGlb(monstersPacked).equals(monstersPacked)).toBe(true);
-    expect(packGlb(heroPacked).equals(heroPacked)).toBe(true);
+    expect(packGlb(rigidPacked).equals(rigidPacked)).toBe(true);
   });
 });
