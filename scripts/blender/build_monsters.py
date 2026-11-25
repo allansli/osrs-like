@@ -1165,7 +1165,7 @@ GOBLIN_BELT_SEGS = 16  # the belt is three bands of this many quads
 GOBLIN_SCALE = 1.02  # the numbers below build a figure 1.752 tall; the shipped goblin is 1.785
 GOBLIN_COLOURS = {
     "skin": 0x505C3E,  # grey olive, 36% value: apart from lit grass
-    "skin_dark": 0x383F2C,  # under-side, hands and feet, 25% value
+    "skin_dark": 0x383F2C,  # hands and feet, 25% value
     "bone": 0xBDB39C,
     "rust_cloth": 0x8A4A2C,
     "iris": 0xE6B820,
@@ -1243,8 +1243,9 @@ def _goblin_skin(ob, name: str, mat, triangles: int, soften: int, keep: tuple = 
     triangle count, validates, names it and gives it its one material. keep is (centre, radius)
     balls in Blender space whose inside takes a fifth of the smoothing, rising to all of it at
     1.6 radii: the passes shrink a limb's end to a stump, and a hand or a foot has to keep its
-    shape. crease is an angle: every edge whose faces meet more sharply is marked hard, so the
-    exporter splits its vertices and the form reads as carved planes; None leaves all smooth.
+    shape. crease is an angle: every edge whose faces meet more sharply is marked hard, and so is
+    every edge between two planes of _goblin_planes, so the exporter splits its vertices and the
+    form reads as carved planes; None leaves all smooth.
     """
     bpy.context.view_layer.objects.active = ob
     smooth = ob.modifiers.new("Soften", "SMOOTH")
@@ -1317,7 +1318,7 @@ def _goblin_planes(bm, crease: float) -> list:
     total = sum(areas)
     for small in sorted(range(len(areas)), key=lambda i: areas[i]):
         if areas[small] >= GOBLIN_PLANE_MIN * total:
-            break
+            continue  # large from the start, or grown past the limit by the planes that joined it
         faces = [f for f in bm.faces if plane[f.index] == small]
         near = {plane[g.index] for f in faces for e in f.edges for g in e.link_faces} - {small}
         into = max(near, key=lambda i: normals[i].dot(normals[small]))

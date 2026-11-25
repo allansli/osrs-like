@@ -1258,7 +1258,7 @@
     "meshes": 182,
     "materials": 38,
     "rawBytes": 4896485,
-    "brotliBytes": 1436052
+    "brotliBytes": 1432605
   },
   "figures": {
     "Monster_chicken": {
@@ -1293,8 +1293,8 @@
       "triangles": 5000,
       "meshes": 4,
       "materials": 5,
-      "rawBytes": 223404,
-      "brotliBytes": 121307
+      "rawBytes": 221829,
+      "brotliBytes": 120740
     },
     "Monster_goblin_archer": {
       "triangles": 6640,
