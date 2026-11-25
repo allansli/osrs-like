@@ -741,3 +741,30 @@ Plan task R0, run against `feat/models-pass` at `0a1d0dc` (main with Stages 4 an
 - **S4 also**: copies the chosen variant's entry of `pending/monster-families.goblin.json` over the `goblin` entry of `tests/fixtures/monster-families.json` and deletes the staged file; updates `tests/fixtures/model-contract/totals.json` by its rule; and replaces the assertion of `tests/model-vertex-colour.test.ts` "today's GLBs produce no material with vertexColors" with "the goblin's materials have `vertexColors` true and every other monster's false" (declared: the shipped goblin is painted from S4 on).
 - `main()`'s one export argument (`export_vertex_color="ACTIVE"`) outside the goblin's builder is accepted; the README says why it cannot move.
 
+### S3 follow-ups before OM-P (2026-11-25, main session)
+
+S3 (5909b6c) met P-a, P-b, P-d and the draw-call half of P-c on all four builds (`baseline/models/s1/README.md`). The opus judge and a fable art read (the owner allowed fable as support, design review log OM-1) agree the figure makes sense and the head has good definition, but the body reads as smooth clay in the game on both routes, not as carved planes (design 5), and the skin has the lit grass's value. The owner asked for "good definition", so three tasks run before OM-P. Route and material variant stay the owner's choice; the art read recommends route (a) with three families.
+
+#### S1c One skeleton per skinned figure [AGY]
+- **Tier**: sonnet writes the test first ([CLAUDE] part); agy implements; opus verifies.
+- **Depends**: S1b.
+- **Files**: `tests/skinned-shared-skeleton.test.ts` (new, the [CLAUDE] part), `src/engine/skinned.ts` (`cloneFigure` only).
+- **Change**: `SkeletonUtils.clone` gives every cloned `SkinnedMesh` its own `Skeleton` (three's `SkeletonUtils.js`, `clonedMesh.skeleton = sourceMesh.skeleton.clone()`), so a figure of three skinned meshes keeps three bone textures and updates three skeletons a frame. After the clone, the cloned meshes whose source meshes shared one `Skeleton` share one cloned `Skeleton` (the first one's), each keeping its own `bindMatrix`.
+- **Accept**: the test builds, in memory, a figure of two `SkinnedMesh` bound to one `Skeleton` and asserts after `cloneFigure`: the two clones share one `Skeleton`, it is not the template's, its bones are the clone's bones, each clone's `bindMatrix` equals its source's, and posing a cloned bone moves a vertex of both meshes and none of the template's; and that `disposeObject3D` disposes the shared skeleton once. SG.
+- **Must not change**: `stripBonePrefix`, `stripClipPrefix`, `fixCullSpheres`, every other file.
+
+#### S2b The pilot's planes, joints and colours [CLAUDE]
+- **Tier**: fable; opus verifies.
+- **Depends**: S3.
+- **Files**: as S2 (`scripts/blender/build_monsters.py`, the goblin's builder only; `tests/fixtures/model-contract/pending/monsters.json`, the goblin's entry and the file ceilings it moves; `tests/fixtures/model-contract/pending/monster-families.goblin.json`; `docs/superpowers/baseline/models/README.md`; sheets under `docs/superpowers/baseline/models/s1/`).
+- **Change**, from the S3 art read, on both routes where it applies: (1) chosen hard edges on the body (smooth only under a crease angle of about 30 to 35 degrees; route (a)'s smoothing passes cut from 40 to about 10 to 15; a smaller body, about 2,500 to 3,000 triangles, to pay for the split vertices); (2) one chest-to-waist break and the hump as its own plane; (3) knees, elbows and real feet on route (a) (feet in the keep balls, 15% over life, flat on the ground); (4) the knees and feet 0.03 to 0.04 further apart; (5) the skin 8 to 10 points lower in value and greyer, apart from lit grass, with a wider gap to its dark tone; (6) wood and leather to about 30 to 35% value; (7) bronze lighter and more saturated, at least 15 points from rust; (8) a socket or pupil on each eye, no thinner than 0.044; (9) the spear shaft at radius about 0.034.
+- **Accept**: BG on all four builds; the sheets of S2 re-rendered; Brotli bytes measured and the goblin's ceilings set from them by the manifest's margins; the README's pattern updated.
+- **Must not change**: as S2.
+
+#### S3b The pilot in the game, again [CLAUDE, main session]
+- **Tier**: sonnet runs; opus judges; fable reads the art.
+- **Depends**: S1c, S2b.
+- **Files**: as S3 (`docs/superpowers/baseline/models/s1/ingame/`, `s1/README.md`).
+- **Change**: S3's captures again on the S2b builds with the S1c engine, plus what S3 left out: a capture at distance 26 (about 85 px) and at 8.5; the shadow sheet of every build; a per-mesh check that each posed skinned mesh's vertices stay inside its own `boundingSphere` in the attack, wind-up and Slash poses; the cull sweep on all four builds; raw rows JSON per build; the sheets say which neighbours are still today's models.
+- **Accept**: as S3, with the bone-texture count per goblin equal to one per figure.
+
