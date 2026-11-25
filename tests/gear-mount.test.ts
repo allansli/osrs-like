@@ -74,9 +74,9 @@ function referencePose(rig: HumanoidRig): void {
   });
   for (const [name, p] of Object.entries(REST)) {
     const node = rig.group.getObjectByName(name);
-    if (!node) continue;
-    node.quaternion.identity();
-    if (!skinned) node.position.set(...p);
+    expect(node, `reference-pose node ${name}`).toBeTruthy();
+    node!.quaternion.identity();
+    if (!skinned) node!.position.set(...p);
   }
   rig.group.updateMatrixWorld(true);
 }

@@ -135,7 +135,10 @@ describe('hero skin (design 6.1.2)', () => {
     LeftArmPivot: ['Torso', 'LeftShoulder'], RightArmPivot: ['Torso', 'RightShoulder'],
     LeftElbowPivot: ['LeftArmPivot'], LeftHand: ['LeftElbowPivot'], RightElbowPivot: ['RightArmPivot'], RightHand: ['RightElbowPivot'],
     LeftLegPivot: ['Hips'], LeftKneePivot: ['LeftLegPivot'], LeftFoot: ['LeftKneePivot'],
-    RightLegPivot: ['Hips'], RightKneePivot: ['RightLegPivot'], RightFoot: ['RightKneePivot']
+    RightLegPivot: ['Hips'], RightKneePivot: ['RightLegPivot'], RightFoot: ['RightKneePivot'],
+    LeftShoulder: ['Torso'], RightShoulder: ['Torso'], Jaw: ['HeadGroup'],
+    WeaponPivot: ['RightHand', 'RightElbowPivot'], OffhandPivot: ['LeftHand', 'LeftElbowPivot'],
+    LWing: ['Torso'], RWing: ['Torso'], TailPivot: ['Hips'], TailPivot2: ['TailPivot']
   };
 
   const skinned = (): THREE.SkinnedMesh[] => meshes().filter((m) => (m as THREE.SkinnedMesh).isSkinnedMesh) as THREE.SkinnedMesh[];
@@ -154,7 +157,7 @@ describe('hero skin (design 6.1.2)', () => {
     expect(sk.length, 'skinned meshes').toBeGreaterThan(0);
     for (const b of sk[0].skeleton.bones) {
       if (b.name === 'Root') continue;
-      expect(PARENT[b.name] ?? [], b.name).toContain(b.parent?.name);
+      expect(PARENT[b.name], b.name).toContain(b.parent?.name);
     }
   });
 
