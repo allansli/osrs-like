@@ -978,3 +978,7 @@ The owner answered "segue" (go on) to the art-direction question at the baseline
 
 The owner added, the same day (translated): "the models must make sense; the 3D can be old school, but with good definition", and "that retro-gaming view, with the technology we can ship today". This is read as section 5 unchanged: the three-read rule is the test of "make sense", and "good definition" is the close read (5.1) and the painted depth (5.4). The owner judges both at OM-P on the pilot. The owner also allowed fable as a support stage where it changes the outcome; S2 already uses it, and an art-judgement stage on fable, with an opus critic, may be added to each figure slice's review.
 
+### M0p and OM-S0b (2026-11-25)
+
+The merge-only monsters are promoted (6a225a5, key 2251dd7a): 399 meshes to 182, triangles unchanged. At P1 noon balanced the frame drops from 2241 to 1307 draw calls (colour 1197 to 691). Against the GR7 limits: colour calls pass (691, 58.7% of V2); calls with the shadow pass miss by 5 (1307 against 1302); triangles miss (677k against 550k), and the merge cannot move them. Both misses are carried to Slice 8 (`baseline/models/s0b/perf.md`). OM-S0b, the owner's reading of the same numbers and the frame time on the real machine, is open.
+
