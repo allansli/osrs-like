@@ -720,6 +720,7 @@
     "mat_bark",
     "mat_bone",
     "mat_bronze",
+    "mat_bronze_goblin_paint",
     "mat_cloth",
     "mat_cloth_comb",
     "mat_cloth_dark",
@@ -752,7 +753,8 @@
     "mat_skin_scorpion_plate",
     "mat_stone",
     "mat_wing",
-    "mat_wood"
+    "mat_wood",
+    "mat_wood_goblin_paint"
   ],
   "toggled": [],
   "meshClasses": [
@@ -1254,9 +1256,9 @@
   "budget": {
     "triangles": 98644,
     "meshes": 182,
-    "materials": 36,
+    "materials": 38,
     "rawBytes": 4896485,
-    "brotliBytes": 1415616
+    "brotliBytes": 1436052
   },
   "figures": {
     "Monster_chicken": {
@@ -1291,8 +1293,8 @@
       "triangles": 5000,
       "meshes": 4,
       "materials": 5,
-      "rawBytes": 198142,
-      "brotliBytes": 107041
+      "rawBytes": 223404,
+      "brotliBytes": 121307
     },
     "Monster_goblin_archer": {
       "triangles": 6640,
