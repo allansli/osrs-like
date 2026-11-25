@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { G, player, camState, type MonsterEntity, type ResourceNodeEntity } from './context';
 import { noteCheatKey } from './session';
 import { SFX, armAudioOnGesture } from './audio';
+import { isPointerFocused, noteKeyboardNavigation, notePointerDown } from '../ui/pointerFocus';
 import { toggleSpecialAttack, closeModals, hideHoverTooltip } from '../ui/playerActions';
 import { switchTab, addChatMessage, updateTargetHud, getCombatLevel, el } from '../ui/hud';
 import { getTerrainHeight } from '../state/terrain';
@@ -75,6 +76,7 @@ export function setupInputHandlers(): void {
   G.hoverTile.visible = false;
   G.scene.add(G.hoverTile);
 
+  window.addEventListener('pointerdown', (e: PointerEvent) => notePointerDown(e.target), true);
   window.addEventListener('keydown', (e: KeyboardEvent) => {
     if (e.code === 'Escape') {
       closeModals();
@@ -83,10 +85,11 @@ export function setupInputHandlers(): void {
     if (isTextInputTarget(t)) {
       return;
     }
+    if (e.code === 'Tab') noteKeyboardNavigation();
     const btn = e.code === 'Space' || e.code === 'Enter' ? t.closest('button') : null;
     if (btn) {
       // A keyboard-focused control takes the key; a button focused by a mouse click gives it back to the game.
-      if (btn.matches(':focus-visible')) return;
+      if (!isPointerFocused(btn)) return;
       btn.blur();
       e.preventDefault();
     }

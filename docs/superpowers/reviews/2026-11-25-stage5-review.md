@@ -30,3 +30,14 @@ Two read-only opus reviews of `feat/visual-pass`: engine (src/engine, src/state,
 | EN-10: facet material registry never shrinks | low | models pass | the monster merge (M0) rebuilds materials and is where the registry is reworked |
 | EN-11: plain mode drops emissive intensity | low | models pass polish | plain mode is the failure fallback |
 | EN-12: time-of-day button label goes stale | low | Stage 6 | UI text pass |
+
+## Pre-merge verification of the fixes (2026-11-25)
+
+G-5 re-run with the +91 kB budget: all ten checks pass. The adversarial check of the post-review fixes found:
+
+| Finding | Severity | Outcome |
+|---|---|---|
+| The Space fix read `:focus-visible`, which Chrome sets on the first key press, so it did nothing in a real browser; the test stubbed the selector | high | fixed: `src/ui/pointerFocus.ts` records the button a pointer press focused, Tab clears it; the test now stubs `:focus-visible` as always true, as Chrome reports it, and fails on the old fix; checked in Chrome through Playwright (Space after a click jumps, Space on a tabbed button presses it) |
+| Rain lost its slant the moment rain gave way to a weather with no fall | medium | fixed: speed, lean and shape follow the weather whose fall is drawn |
+| Fall and wind offsets grow without bound (float32 steps of 0.125 after about 24 h in one session) | low | accepted: the old speed × time term had the same size; a per-instance speed factor prevents wrapping on the host |
+| Particle, apron and chat-line fixes are proved by source checks or not at all | low | accepted for this stage; the plain-mode water fix has a behaviour test |

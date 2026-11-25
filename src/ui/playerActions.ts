@@ -19,6 +19,7 @@ import { noteBury, notePlate } from '../state/quests';
 import { equippedWeapon, allowedStyles, canCastTeleport } from '../state/combat';
 import { claimQuest, assignSlayerTask } from '../state/adventure';
 import { levelUnlockLines } from '../state/unlocks';
+import { isPointerFocused } from './pointerFocus';
 import { SPELLS } from '../data/magic';
 import { dispatchCommand } from '../engine/actions';
 import { getSkillSvg } from './icons';
@@ -301,7 +302,7 @@ export function openModal(id: string): HTMLElement {
   const active = document.activeElement as HTMLElement;
   // A modal opened from inside another modal keeps the original HUD opener.
   // Focus goes back only to an opener reached by keyboard; a mouse click leaves focus to the game.
-  const opener = active.closest('.modal-backdrop') ? lastActiveElement : active.matches(':focus-visible') ? active : null;
+  const opener = active.closest('.modal-backdrop') ? lastActiveElement : isPointerFocused(active) ? null : active;
   closeModals();
   lastActiveElement = opener;
   const modal = el(id);

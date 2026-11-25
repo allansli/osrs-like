@@ -6,32 +6,50 @@ import { setupInputHandlers } from '../src/engine/input';
 type Handler = (e: unknown) => void;
 const handlers: Record<string, Handler> = {};
 const node = { addEventListener: () => {}, classList: { contains: () => false } };
+class FakeElement {}
+vi.stubGlobal('Element', FakeElement);
 vi.stubGlobal('window', { addEventListener: (type: string, fn: Handler) => { handlers[type] = fn; } });
 vi.stubGlobal('document', { addEventListener: () => {}, getElementById: () => node });
 afterAll(() => vi.unstubAllGlobals());
 
-function buttonTarget(focusVisible: boolean) {
-  const button = { blurred: false, matches: (q: string) => q === ':focus-visible' && focusVisible, blur() { button.blurred = true; } };
-  return { button, target: { tagName: 'BUTTON', isContentEditable: false, closest: (q: string) => (q === 'button' ? button : null) } };
+// Chrome reports :focus-visible as true for any focused button once a key is down, so the stub always says true.
+function makeButton() {
+  const button = Object.assign(new FakeElement(), {
+    tagName: 'BUTTON',
+    isContentEditable: false,
+    blurred: false,
+    matches: (q: string) => q === ':focus-visible',
+    blur() { button.blurred = true; },
+    closest: (q: string) => (q === 'button' ? button : null)
+  });
+  return button;
 }
 
-it('Space on a button focused by a mouse click blurs it and jumps; on a keyboard-focused button it is left to the button', () => {
+function space(target: unknown) {
+  const ev = { code: 'Space', key: ' ', target, prevented: false, preventDefault() { ev.prevented = true; } };
+  handlers.keydown(ev);
+  return ev;
+}
+
+it('Space after a mouse click on a button jumps; on a button reached by Tab it is left to the button', () => {
   G.scene = new THREE.Scene();
   G.renderer = { domElement: node } as unknown as THREE.WebGLRenderer;
   setupInputHandlers();
-  player.isGrounded = true;
   player.downed = false;
 
-  const kb = buttonTarget(true);
-  let prevented = false;
-  handlers.keydown({ code: 'Space', key: ' ', target: kb.target, preventDefault() { prevented = true; } });
-  expect(player.isGrounded).toBe(true);
-  expect(kb.button.blurred).toBe(false);
-  expect(prevented).toBe(false);
-
-  const mouse = buttonTarget(false);
-  handlers.keydown({ code: 'Space', key: ' ', target: mouse.target, preventDefault() { prevented = true; } });
-  expect(mouse.button.blurred).toBe(true);
-  expect(prevented).toBe(true);
+  const clicked = makeButton();
+  handlers.pointerdown({ target: clicked });
+  player.isGrounded = true;
+  const ev = space(clicked);
+  expect(clicked.blurred).toBe(true);
+  expect(ev.prevented).toBe(true);
   expect(player.isGrounded).toBe(false);
+
+  handlers.keydown({ code: 'Tab', key: 'Tab', target: clicked, preventDefault() {} });
+  const tabbed = makeButton();
+  player.isGrounded = true;
+  const ev2 = space(tabbed);
+  expect(tabbed.blurred).toBe(false);
+  expect(ev2.prevented).toBe(false);
+  expect(player.isGrounded).toBe(true);
 });

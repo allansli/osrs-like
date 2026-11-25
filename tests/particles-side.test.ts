@@ -22,6 +22,6 @@ describe('falling weather', () => {
 
   it('rain leans along its own screen-space velocity', () => {
     expect(src).toContain('vert.x += vert.y * clamp(vv.x / min(vv.y, -0.001), -1.5, 1.5);');
-    expect(src).toMatch(/weather\.id === 'rain' \? RAIN_WIND_MULTIPLIER/);
+    expect(src).toMatch(/drawnId === 'rain' \? RAIN_WIND_MULTIPLIER/);
   });
 });

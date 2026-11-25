@@ -561,11 +561,13 @@ export function updateParticles(dt: number, camera: THREE.Camera): void {
     fallR = cPrev[0]; fallG = cPrev[1]; fallB = cPrev[2];
   }
 
-  if (weather.id === 'rain') {
+  // Speed, lean and shape follow the weather whose fall is drawn, so a fading rain keeps its slant.
+  const drawnId = curr.fall ? curr.id : prev.id;
+  if (drawnId === 'rain') {
     fallSpeed = 22.0;
-  } else if (weather.id === 'sand_haze') {
+  } else if (drawnId === 'sand_haze') {
     fallSpeed = 5.0;
-  } else if (weather.id === 'ash_fall') {
+  } else if (drawnId === 'ash_fall') {
     fallSpeed = 7.0;
   }
 
@@ -573,13 +575,13 @@ export function updateParticles(dt: number, camera: THREE.Camera): void {
   fallMaterial.uniforms.uOpacity.value = fallOpacity * 0.85;
   fallMaterial.uniforms.uFallSpeed.value = fallSpeed;
   // Rain is driven hard by the wind; ash and sand drift.
-  const windMul = weather.id === 'rain' ? RAIN_WIND_MULTIPLIER : 1.8;
+  const windMul = drawnId === 'rain' ? RAIN_WIND_MULTIPLIER : 1.8;
   fallMaterial.uniforms.uWindMultiplier.value = windMul;
   // Offsets accumulate per frame, so a change of speed or wind never jumps the field.
   fallMaterial.uniforms.uFallOffset.value += fallSpeed * dt;
   fallMaterial.uniforms.uWindOffset.value.addScaledVector(AIR.uWind.value, windMul * dt);
   // Rain is thin slivers (shape 2); ash and sand fall as flakes (shape 3).
-  fallMaterial.uniforms.uFallShape.value = (curr.fall ? curr.id : prev.id) === 'rain' ? 2 : 3;
+  fallMaterial.uniforms.uFallShape.value = drawnId === 'rain' ? 2 : 3;
 
   const motesCount = GFX_TIERS[currentTier].motes;
   motesMesh.visible = motesCount > 0 && !isPlainMode();
