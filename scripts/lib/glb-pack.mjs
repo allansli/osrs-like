@@ -18,7 +18,7 @@ export function packGlb(buffer) {
 
   // Check if anything needs packing
   let needsPacking = false;
-  for (const mesh of json.meshes || []) {
+  for (const mesh of json.meshes) {
     for (const prim of mesh.primitives) {
       for (const [name, accIdx] of Object.entries(prim.attributes)) {
         const acc = json.accessors[accIdx];
@@ -45,15 +45,15 @@ export function packGlb(buffer) {
 
   const replBufferViews = new Map();
 
-  for (const mesh of json.meshes || []) {
+  for (const mesh of json.meshes) {
     for (const prim of mesh.primitives) {
       for (const [name, accIdx] of Object.entries(prim.attributes)) {
         const acc = json.accessors[accIdx];
-        if (acc.bufferView === undefined) continue;
+        if (acc.bufferView === undefined) throw new Error(`glb-pack: accessor ${accIdx} (${name}) has no bufferView`);
 
         if (name === 'NORMAL') {
           if (acc.componentType === 5120 && acc.normalized) continue;
-          if (replBufferViews.has(acc.bufferView)) continue;
+          if (replBufferViews.has(acc.bufferView)) throw new Error(`glb-pack: accessor ${accIdx} (${name}) shares bufferView ${acc.bufferView} with an already packed accessor`);
 
           const vals = readAccessor(doc, accIdx);
           const count = acc.count;
@@ -76,7 +76,7 @@ export function packGlb(buffer) {
           json.bufferViews[acc.bufferView].byteStride = 4;
         } else if (/^WEIGHTS_\d+$/.test(name)) {
           if (acc.componentType === 5121 && acc.normalized) continue;
-          if (replBufferViews.has(acc.bufferView)) continue;
+          if (replBufferViews.has(acc.bufferView)) throw new Error(`glb-pack: accessor ${accIdx} (${name}) shares bufferView ${acc.bufferView} with an already packed accessor`);
 
           const vals = readAccessor(doc, accIdx);
           const count = acc.count;
@@ -112,7 +112,7 @@ export function packGlb(buffer) {
           delete json.bufferViews[acc.bufferView].byteStride;
         } else if (/^COLOR_\d+$/.test(name)) {
           if (acc.componentType === 5121 && acc.normalized) continue;
-          if (replBufferViews.has(acc.bufferView)) continue;
+          if (replBufferViews.has(acc.bufferView)) throw new Error(`glb-pack: accessor ${accIdx} (${name}) shares bufferView ${acc.bufferView} with an already packed accessor`);
 
           const vals = readAccessor(doc, accIdx);
           const count = acc.count;
