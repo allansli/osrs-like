@@ -5,6 +5,8 @@
 // `tests/fixtures/hero-mounts.json` was written from TODAY's hero by `writeFixture` below:
 //   HERO_MOUNTS_WRITE=1 npx vitest run tests/gear-mount.test.ts
 // It must pass on today's hero and, unchanged, on the skinned hero (the joints move, the mesh does not).
+// Nothing here reads a mesh by its node name: hide checks go by the engine's hide rules (Hair*, TorsoCoat and
+// InnerCollar) and the hand, foot and head centres by `extras.part`, so a role-joined mesh plan passes too.
 import fs from 'node:fs';
 import path from 'node:path';
 import * as THREE from 'three';
@@ -32,6 +34,12 @@ const LOADOUTS: Record<string, Record<string, string>> = {
     weapon: 'twisted_bow', shield: 'rune_shield', head: 'dragon_helm', body: 'torva_body',
     legs: 'torva_legs', neck: 'amulet_fury', ring: 'berserker_ring', feet: 'rune_boots',
     hands: 'rune_gloves', cape: 'fire_cape'
+  },
+  // A robe top is the only body item whose gear.glb nodes carry arm pieces, so bodyArmL and bodyArmR
+  // (mounted on the arm pivots, the joint that moves most) are pinned here.
+  robeStaff: {
+    weapon: 'fire_staff', head: 'wizard_hat', body: 'wizard_top', legs: 'wizard_bottom',
+    neck: 'amulet_glory', feet: 'wizard_boots', hands: 'wizard_gloves'
   }
 };
 
@@ -40,7 +48,13 @@ const PIECE_KEYS = [
   'bodyArmorMesh', 'bodyArmL', 'bodyArmR', 'legsArmorMesh', 'legsArmorL', 'legsArmorR',
   'feetMeshL', 'feetMeshR', 'handsMeshL', 'handsMeshR', 'setBonusCue'
 ] as const;
-const CENTRE_NAMES = ['Hand_L', 'Hand_R', 'Boot_L', 'Boot_R', 'Head'] as const;
+// Fixture key -> the `extras.part` that carries it and the sign of its x side (0 = the whole part).
+const CENTRES: Record<string, [string, number]> = {
+  Hand_L: ['hand', -1], Hand_R: ['hand', 1], Boot_L: ['boot', -1], Boot_R: ['boot', 1], Head: ['head', 0]
+};
+const CENTRE_NAMES = Object.keys(CENTRES);
+const isHairName = (n: string) => n.startsWith('Hair');
+const isCoatName = (n: string) => n === 'TorsoCoat' || n === 'InnerCollar';
 
 // The builder's rest values (scripts/blender/build_hero.py `create_empty_pivot` calls), parent-relative.
 const REST: Record<string, [number, number, number]> = {
@@ -121,15 +135,26 @@ function snapshot(rig: HumanoidRig) {
   return { pieces, hidden: hidden.sort() };
 }
 
+/** Centre of the bounding box of the posed vertices of every mesh whose `extras.part` is `part`, per x side. */
 function centres(rig: HumanoidRig): Record<string, number[]> {
+  rig.group.updateMatrixWorld(true);
+  const toFigure = new THREE.Matrix4().copy(rig.group.matrixWorld).invert();
   const out: Record<string, number[]> = {};
-  for (const name of CENTRE_NAMES) {
-    const mesh = rig.group.getObjectByName(name) as THREE.Mesh | undefined;
-    expect(mesh, `mesh ${name}`).toBeDefined();
-    mesh!.geometry.computeBoundingBox();
-    const rel = inFigure(rig, mesh!);
-    const box = mesh!.geometry.boundingBox!.clone().applyMatrix4(new THREE.Matrix4().compose(rel.p, rel.q, rel.s));
-    out[name] = box.getCenter(new THREE.Vector3()).toArray().map(r6);
+  for (const [key, [part, side]] of Object.entries(CENTRES)) {
+    const box = new THREE.Box3();
+    const v = new THREE.Vector3();
+    rig.group.traverse((o) => {
+      const m = o as THREE.Mesh;
+      if (!m.isMesh || m.userData?.part !== part) return;
+      const toFig = new THREE.Matrix4().multiplyMatrices(toFigure, m.matrixWorld);
+      const n = m.geometry.attributes.position.count;
+      for (let i = 0; i < n; i++) {
+        m.getVertexPosition(i, v).applyMatrix4(toFig); // skinned meshes are posed here
+        if (side === 0 || Math.sign(v.x) === side) box.expandByPoint(v);
+      }
+    });
+    expect(box.isEmpty(), `vertices of part ${part} on side ${side}`).toBe(false);
+    out[key] = box.getCenter(new THREE.Vector3()).toArray().map(r6);
   }
   return out;
 }
@@ -164,16 +189,31 @@ describe('gear mount contract at the reference pose', () => {
       const want = fixture.loadouts[name];
       expect(want.equipment).toEqual(LOADOUTS[name]);
       for (const item of Object.values(want.equipment)) expect(ITEMS[item], item).toBeDefined();
-      const got = snapshot(await dressed(LOADOUTS[name], heroGltf));
+      const rig = await dressed(LOADOUTS[name], heroGltf);
+      const got = snapshot(rig);
       expect(Object.keys(got.pieces).sort()).toEqual(Object.keys(want.pieces).sort());
-      expect(Object.keys(want.pieces).length).toBeGreaterThanOrEqual(15);
+      if (name !== 'robeStaff') expect(Object.keys(want.pieces).length).toBeGreaterThanOrEqual(15);
+      else for (const k of ['bodyArmL', 'bodyArmR']) expect(want.pieces[k], `${k} is pinned`).toBeDefined();
       for (const [key, w] of Object.entries(want.pieces)) {
         const g = got.pieces[key];
         expect(new THREE.Vector3(...g.p).distanceTo(new THREE.Vector3(...w.p)), `${key} position`).toBeLessThanOrEqual(0.01);
         expect(new THREE.Quaternion(...(g.q as [number, number, number, number])).angleTo(new THREE.Quaternion(...(w.q as [number, number, number, number]))), `${key} rotation`).toBeLessThanOrEqual(0.02);
         expect(new THREE.Vector3(...g.s).distanceTo(new THREE.Vector3(...w.s)), `${key} scale`).toBeLessThanOrEqual(0.01);
       }
-      expect(got.hidden, 'hidden meshes').toEqual(want.hidden);
+      // Hidden meshes go by the engine's hide rules: whatever the fixture hid of the Hair* and
+      // TorsoCoat/InnerCollar families is hidden in full (every mesh of the family the figure has), and nothing else is hidden.
+      const present: string[] = [];
+      rig.group.traverse((o) => {
+        if (o.name) present.push(o.name);
+      });
+      const ruled = (n: string) => isHairName(n) || isCoatName(n);
+      const expectHidden = [
+        ...(want.hidden.some(isHairName) ? present.filter(isHairName) : []),
+        ...(want.hidden.some(isCoatName) ? present.filter(isCoatName) : [])
+      ];
+      expect(want.hidden.some(ruled), 'the fixture hides a ruled family').toBe(true);
+      expect(got.hidden.filter(ruled).sort(), 'hidden by the hide rules').toEqual([...new Set(expectHidden)].sort());
+      expect(got.hidden.filter((n) => !ruled(n)), 'other hidden meshes').toEqual(want.hidden.filter((n) => !ruled(n)));
     });
   }
 
@@ -205,8 +245,8 @@ describe('gear mount contract at the reference pose', () => {
       });
       return out;
     };
-    const isHair = (n: string) => n.startsWith('Hair');
-    const isCoat = (n: string) => n === 'TorsoCoat' || n === 'InnerCollar';
+    const isHair = isHairName;
+    const isCoat = isCoatName;
 
     const bare = await dressed({}, heroGltf);
     expect(find(bare, isHair).length).toBeGreaterThan(0);

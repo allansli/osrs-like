@@ -161,7 +161,7 @@ describe('hero skin (design 6.1.2)', () => {
     }
   });
 
-  it('every skinned mesh is skinned on the same bones and no mesh is rigid next to them', () => {
+  it('every skinned mesh shares one skeleton with the same bone list', () => {
     const sk = skinned();
     expect(sk.length, 'skinned meshes').toBeGreaterThan(0);
     const first = sk[0].skeleton.bones.map((b) => b.name).join();
