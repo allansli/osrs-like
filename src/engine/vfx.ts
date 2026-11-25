@@ -6,6 +6,16 @@ import { worldToScreen } from './runtime';
 import { el } from '../ui/hud';
 import type { ItemDef } from '../data/items';
 import type { SpellDef } from '../data/magic';
+import { BLOOM } from '../data/look';
+
+function bloomColor(color: THREE.ColorRepresentation): THREE.Color {
+  const c = new THREE.Color(color);
+  const lum = 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
+  if (lum > 0) {
+    c.multiplyScalar((1.2 * BLOOM.threshold) / lum);
+  }
+  return c;
+}
 
 // ============================================================================
 // 10. COMBAT HIT SPLATS, PROJECTILES & SKILLING EXECUTION
@@ -92,8 +102,8 @@ export function spawnProjectile(
   onImpact?: (() => void) | null
 ): void {
   const orb = new THREE.Mesh(
-    new THREE.SphereGeometry(0.22, 12, 10),
-    new THREE.MeshBasicMaterial({ color: colorHex })
+    new THREE.IcosahedronGeometry(0.22, 0),
+    new THREE.MeshBasicMaterial({ color: bloomColor(colorHex) })
   );
   launchProjectile(orb, fromPos, toPos, onImpact, { speed: 3.5, arc: 1.4 });
 }
@@ -106,7 +116,7 @@ export function spawnBurst(
   speed = 3.2
 ): void {
   for (let i = 0; i < count; i++) {
-    const mote = new THREE.Mesh(new THREE.SphereGeometry(0.055, 8, 6), glowMaterial(color, 1));
+    const mote = new THREE.Mesh(new THREE.OctahedronGeometry(0.055, 0), glowMaterial(color, 1));
     mote.position.copy(origin);
     const ang = (i / count) * Math.PI * 2 + Math.random() * 0.4;
     const vel = new THREE.Vector3(Math.cos(ang) * speed, 1.2 + Math.random() * 2.4, Math.sin(ang) * speed);
@@ -128,7 +138,7 @@ export function spawnExpandingRing(
   outer = 0.52
 ): THREE.Mesh {
   const ring = new THREE.Mesh(
-    new THREE.RingGeometry(inner, outer, 32),
+    new THREE.RingGeometry(inner, outer, 8),
     glowMaterial(color, 0.9)
   );
   ring.rotation.x = -Math.PI / 2;
@@ -161,7 +171,7 @@ export function spawnSlashArc(
   opts: SlashArcOptions = {}
 ): void {
   const arc = new THREE.Mesh(
-    new THREE.RingGeometry(opts.inner ?? 0.5, opts.outer ?? 0.78, 28, 1, opts.theta0 ?? 0.25, opts.thetaLen ?? 1.65),
+    new THREE.RingGeometry(opts.inner ?? 0.5, opts.outer ?? 0.78, 8, 1, opts.theta0 ?? 0.25, opts.thetaLen ?? 1.65),
     glowMaterial(color, opts.opacity ?? 0.95)
   );
   arc.position.copy(origin);
@@ -211,10 +221,10 @@ export function spawnMeleeSlashEffect(
     const curve = new THREE.CatmullRomCurve3([start, p1, p2, end]);
     const grp = new THREE.Group();
     grp.add(new THREE.Mesh(
-      new THREE.TubeGeometry(curve, 28, 0.1, 8, false),
+      new THREE.TubeGeometry(curve, 10, 0.1, 5, false),
       new THREE.MeshBasicMaterial({ color: 0x1c1917, transparent: true, opacity: 0.95, side: THREE.DoubleSide })
     ));
-    grp.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 28, 0.05, 8, false), glowMaterial(0xf87171, 1)));
+    grp.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 10, 0.05, 5, false), glowMaterial(0xf87171, 1)));
     spawnVfx(grp, 0.75, (v) => {
       const t = v.age / v.life;
       v.mesh.traverse((obj) => {
@@ -231,8 +241,8 @@ export function spawnMeleeSlashEffect(
       p2b.y += 0.12;
       const twin = new THREE.CatmullRomCurve3([start, p1b, p2b, end]);
       const twinGrp = new THREE.Group();
-      twinGrp.add(new THREE.Mesh(new THREE.TubeGeometry(twin, 28, 0.08, 8, false), glowMaterial(0x6d28d9, 0.9)));
-      twinGrp.add(new THREE.Mesh(new THREE.TubeGeometry(twin, 28, 0.04, 8, false), glowMaterial(0xf87171, 1)));
+      twinGrp.add(new THREE.Mesh(new THREE.TubeGeometry(twin, 10, 0.08, 5, false), glowMaterial(0x6d28d9, 0.9)));
+      twinGrp.add(new THREE.Mesh(new THREE.TubeGeometry(twin, 10, 0.04, 5, false), glowMaterial(0xf87171, 1)));
       spawnVfx(twinGrp, 0.75, (v) => {
         const t = v.age / v.life;
         v.mesh.traverse((obj) => {
@@ -243,7 +253,7 @@ export function spawnMeleeSlashEffect(
         });
       });
     }
-    const crack = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.06, 8, 20), glowMaterial(0x7c3aed, 0.9));
+    const crack = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.06, 5, 8), glowMaterial(0x7c3aed, 0.9));
     crack.position.copy(end);
     crack.lookAt(end.x, end.y + 1, end.z);
     spawnVfx(crack, 0.48, (v) => {
@@ -298,13 +308,13 @@ export function spawnMeleeSlashEffect(
     spawnSlashArc(color, origin, playerYaw, { scale: 1.45 * specScale, inner: 0.7, outer: 1.05, life: 0.58, roll: 0.3 });
     const pillarH = isSpec ? (id === 'bandos_godsword' ? 7.2 : 6.4) : 3.5;
     const column = new THREE.Mesh(
-      new THREE.CylinderGeometry(isSpec ? 0.28 : 0.16, isSpec ? 0.7 : 0.42, pillarH, 16, 1, true),
+      new THREE.CylinderGeometry(isSpec ? 0.28 : 0.16, isSpec ? 0.7 : 0.42, pillarH, 6, 1, true),
       glowMaterial(color, 0.8)
     );
     column.position.set(targetPos.x, targetPos.y + pillarH * 0.5, targetPos.z);
     if (isSpec && sacred) {
       const goldBeam = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.08, 0.2, pillarH + 1.2, 12, 1, true),
+        new THREE.CylinderGeometry(0.08, 0.2, pillarH + 1.2, 6, 1, true),
         glowMaterial(0xfde047, 0.85)
       );
       goldBeam.position.set(targetPos.x, targetPos.y + (pillarH + 1.2) * 0.5, targetPos.z);
@@ -336,7 +346,7 @@ export function spawnSpellImpact(
     spawnExpandingRing(ground, 0xe0f2fe, 1.25, 3.2, 0.28, 0.5);
     spawnExpandingRing(ground, 0x38bdf8, 1.05, 2.2, 0.15, 0.28);
     const gust = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.08, 0.42, 1.7, 16, 1, true),
+      new THREE.CylinderGeometry(0.08, 0.42, 1.7, 6, 1, true),
       glowMaterial(0xf8fafc, 0.8)
     );
     gust.position.set(targetPos.x, targetPos.y + 0.9, targetPos.z);
@@ -382,12 +392,12 @@ export function spawnSpellImpact(
   }
   if (id === 'blood_barrage') {
     const pillar = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.42, 0.9, 4.2, 18, 1, true),
+      new THREE.CylinderGeometry(0.42, 0.9, 4.2, 6, 1, true),
       glowMaterial(0xdc2626, 0.88)
     );
     pillar.position.set(targetPos.x, targetPos.y + 2.1, targetPos.z);
     for (let i = 0; i < 6; i++) {
-      const drop = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 6), glowMaterial(0xfb7185, 1));
+      const drop = new THREE.Mesh(new THREE.IcosahedronGeometry(0.12, 0), glowMaterial(0xfb7185, 1));
       const ang = (i / 6) * Math.PI * 2;
       drop.position.set(Math.cos(ang) * 0.72, -1.3 + i * 0.55, Math.sin(ang) * 0.72);
       pillar.add(drop);
@@ -399,7 +409,7 @@ export function spawnSpellImpact(
       v.mesh.rotation.y += dt * 5;
       (pillar.material as THREE.MeshBasicMaterial).opacity = 0.88 * (1 - Math.max(0, t - 0.45) / 0.55);
     });
-    const sigil = new THREE.Mesh(new THREE.RingGeometry(0.55, 0.78, 28), glowMaterial(0xbe123c, 0.95));
+    const sigil = new THREE.Mesh(new THREE.RingGeometry(0.55, 0.78, 8), glowMaterial(0xbe123c, 0.95));
     sigil.rotation.x = -Math.PI / 2;
     sigil.position.set(targetPos.x, targetPos.y + 0.1, targetPos.z);
     spawnVfx(sigil, 1.2, (v) => {
@@ -412,7 +422,7 @@ export function spawnSpellImpact(
     const from = targetPos.clone().add(new THREE.Vector3(0, 1.4, 0));
     const to = (casterPos || player.pos).clone().add(new THREE.Vector3(0, 1.35, 0));
     for (let i = 0; i < 3; i++) {
-      const wisp = new THREE.Mesh(new THREE.SphereGeometry(0.18, 10, 8), glowMaterial(0xf43f5e, 1));
+      const wisp = new THREE.Mesh(new THREE.IcosahedronGeometry(0.18, 0), glowMaterial(bloomColor(0xf43f5e), 1));
       const start = from.clone();
       const end = to.clone();
       const side = new THREE.Vector3((i - 1) * 0.7, 0, (1 - i) * 0.35);
@@ -438,11 +448,11 @@ export function spawnRunicCircle(
   const grp = new THREE.Group();
   grp.position.set(pos.x, getTerrainHeight(pos.x, pos.z) + 0.05, pos.z);
 
-  const outerRing = new THREE.Mesh(new THREE.RingGeometry(0.72 * scale, 0.82 * scale, 32), glowMaterial(colorHex, 0.9));
+  const outerRing = new THREE.Mesh(new THREE.RingGeometry(0.72 * scale, 0.82 * scale, 8), glowMaterial(colorHex, 0.9));
   outerRing.rotation.x = -Math.PI / 2;
   grp.add(outerRing);
 
-  const innerRing = new THREE.Mesh(new THREE.RingGeometry(0.36 * scale, 0.42 * scale, 24), glowMaterial(colorHex, 0.95));
+  const innerRing = new THREE.Mesh(new THREE.RingGeometry(0.36 * scale, 0.42 * scale, 8), glowMaterial(colorHex, 0.95));
   innerRing.rotation.x = -Math.PI / 2;
   grp.add(innerRing);
 
@@ -485,16 +495,16 @@ export function spawnSpellProjectile(
   let onTick: ((p: ProjectileEntry, dt: number) => void) | null = null;
 
   if (id === 'wind_strike') {
-    grp.add(new THREE.Mesh(new THREE.SphereGeometry(0.16, 14, 12), glowMaterial(0xf8fafc, 1)));
-    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.28, 0.028, 8, 20), glowMaterial(0xbae6fd, 0.95));
+    grp.add(new THREE.Mesh(new THREE.IcosahedronGeometry(0.16, 0), glowMaterial(bloomColor(0xf8fafc), 1)));
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.28, 0.028, 5, 8), glowMaterial(0xbae6fd, 0.95));
     ring.rotation.x = 1.1;
     grp.add(ring);
     speed = 6.2;
     arc = 0.35;
     onTick = (_p, dt) => { ring.rotation.z += dt * 9; };
   } else if (id === 'fire_bolt') {
-    grp.add(new THREE.Mesh(new THREE.SphereGeometry(0.2, 14, 12), glowMaterial(0xf97316, 1)));
-    const core = new THREE.Mesh(new THREE.SphereGeometry(0.1, 12, 10), glowMaterial(0xfde047, 1));
+    grp.add(new THREE.Mesh(new THREE.IcosahedronGeometry(0.2, 0), glowMaterial(0xf97316, 1)));
+    const core = new THREE.Mesh(new THREE.IcosahedronGeometry(0.1, 0), glowMaterial(bloomColor(0xfde047), 1));
     grp.add(core);
     speed = 4.4;
     arc = 0.65;
@@ -502,7 +512,7 @@ export function spawnSpellProjectile(
       p.trailAcc = (p.trailAcc ?? 0) + dt;
       if (p.trailAcc < 0.03) return;
       p.trailAcc = 0;
-      const ember = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 6), glowMaterial(Math.random() > 0.5 ? 0xf97316 : 0xfde047, 0.9));
+      const ember = new THREE.Mesh(new THREE.OctahedronGeometry(0.06, 0), glowMaterial(Math.random() > 0.5 ? 0xf97316 : 0xfde047, 0.9));
       ember.position.copy(p.mesh.position);
       spawnVfx(ember, 0.32, (v) => {
         v.mesh.scale.setScalar(1 - v.age / v.life);
@@ -510,17 +520,17 @@ export function spawnSpellProjectile(
       });
     };
   } else if (id === 'ice_burst') {
-    const comet = new THREE.Mesh(new THREE.SphereGeometry(0.18, 12, 10), glowMaterial(0x38bdf8, 1));
+    const comet = new THREE.Mesh(new THREE.IcosahedronGeometry(0.18, 0), glowMaterial(bloomColor(0x38bdf8), 1));
     comet.scale.set(0.75, 1.45, 0.75);
     grp.add(comet);
     speed = 3.8;
     arc = 0.45;
   } else if (id === 'blood_barrage') {
-    const shell = new THREE.Mesh(new THREE.SphereGeometry(0.32, 16, 14), glowMaterial(0x7f1d1d, 0.85));
-    const core = new THREE.Mesh(new THREE.SphereGeometry(0.18, 14, 12), glowMaterial(0xdc2626, 1));
+    const shell = new THREE.Mesh(new THREE.IcosahedronGeometry(0.32, 0), glowMaterial(0x7f1d1d, 0.85));
+    const core = new THREE.Mesh(new THREE.IcosahedronGeometry(0.18, 0), glowMaterial(bloomColor(0xdc2626), 1));
     grp.add(shell, core);
     const drops = [0, 1, 2].map((i) => {
-      const drop = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6), glowMaterial(0xfb7185, 1));
+      const drop = new THREE.Mesh(new THREE.OctahedronGeometry(0.07, 0), glowMaterial(0xfb7185, 1));
       drop.userData.orbit = i;
       grp.add(drop);
       return drop;
@@ -536,7 +546,7 @@ export function spawnSpellProjectile(
       });
     };
   } else {
-    grp.add(new THREE.Mesh(new THREE.SphereGeometry(0.2, 12, 10), new THREE.MeshBasicMaterial({ color: spell?.color || 0xffffff })));
+    grp.add(new THREE.Mesh(new THREE.IcosahedronGeometry(0.2, 0), new THREE.MeshBasicMaterial({ color: bloomColor(spell?.color || 0xffffff) })));
   }
 
   const orient = id === 'ice_burst';
@@ -554,11 +564,11 @@ export function spawnArrowProjectile(
 ): void {
   const grp = new THREE.Group();
   const shaft = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.012, 0.015, 0.72, 8),
+    new THREE.CylinderGeometry(0.012, 0.015, 0.72, 6),
     new THREE.MeshBasicMaterial({ color: 0xe7e5e4 })
   );
   const head = new THREE.Mesh(
-    new THREE.ConeGeometry(0.04, 0.16, 8),
+    new THREE.ConeGeometry(0.04, 0.16, 6),
     new THREE.MeshBasicMaterial({ color: 0xf8fafc })
   );
   head.position.y = 0.42;
@@ -584,7 +594,7 @@ export function spawnArrowProjectile(
       p.trailAcc = (p.trailAcc ?? 0) + dt;
       if (p.trailAcc < 0.025) return;
       p.trailAcc = 0;
-      const spark = new THREE.Mesh(new THREE.SphereGeometry(0.035, 6, 6), glowMaterial(trail, 0.85));
+      const spark = new THREE.Mesh(new THREE.OctahedronGeometry(0.035, 0), glowMaterial(trail, 0.85));
       spark.position.copy(p.mesh.position);
       spawnVfx(spark, 0.22, (v) => {
         (spark.material as THREE.MeshBasicMaterial).opacity = 0.85 * (1 - v.age / v.life);
@@ -602,7 +612,7 @@ export function spawnPiercingBeam(
   const end = toPos.clone().add(new THREE.Vector3(0, 1.15, 0));
   const delta = end.clone().sub(start);
   const len = Math.max(0.2, delta.length());
-  const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, len, 10), glowMaterial(color, 0.95));
+  const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, len, 6), glowMaterial(color, 0.95));
   beam.position.copy(start.clone().add(delta.clone().multiplyScalar(0.5)));
   beam.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), delta.clone().normalize());
   spawnVfx(beam, 0.45, (v) => {
@@ -616,9 +626,9 @@ export function spawnPiercingBeam(
 
 export function spawnRareLootBeam(worldPos: THREE.Vector3): void {
   const grp = new THREE.Group();
-  const gold = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.42, 6.5, 16, 1, true), glowMaterial(0xfde047, 0.88));
+  const gold = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.42, 6.5, 6, 1, true), glowMaterial(0xfde047, 0.88));
   gold.position.y = 3.25;
-  const purple = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.16, 6.8, 12, 1, true), glowMaterial(0xa855f7, 0.75));
+  const purple = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.16, 6.8, 6, 1, true), glowMaterial(bloomColor(0xa855f7), 0.75));
   purple.position.y = 3.4;
   grp.add(gold, purple);
   grp.position.set(worldPos.x, worldPos.y, worldPos.z);
@@ -630,7 +640,7 @@ export function spawnRareLootBeam(worldPos: THREE.Vector3): void {
     (purple.material as THREE.MeshBasicMaterial).opacity = 0.75 * fade;
   });
   for (let i = 0; i < 14; i++) {
-    const spark = new THREE.Mesh(new THREE.SphereGeometry(0.055, 6, 6), glowMaterial(i % 2 ? 0xfde047 : 0xc084fc, 1));
+    const spark = new THREE.Mesh(new THREE.OctahedronGeometry(0.055, 0), glowMaterial(i % 2 ? 0xfde047 : 0xc084fc, 1));
     spark.position.set(worldPos.x, worldPos.y + 0.4, worldPos.z);
     const ang = (i / 14) * Math.PI * 2;
     const vel = new THREE.Vector3(Math.cos(ang) * 0.7, 1.5 + (i % 4) * 0.35, Math.sin(ang) * 0.7);
@@ -650,9 +660,9 @@ export function spawnDragonfireEffect(
   const to = player.pos.clone();
   spawnExpandingRing(to, 0xf97316, 1.05, 2.6, 0.45, 0.75);
   const grp = new THREE.Group();
-  const cone = new THREE.Mesh(new THREE.ConeGeometry(0.62, 2.6, 14), glowMaterial(0xf97316, 0.92));
+  const cone = new THREE.Mesh(new THREE.ConeGeometry(0.62, 2.6, 6), glowMaterial(0xf97316, 0.92));
   cone.rotation.x = Math.PI / 2;
-  const core = new THREE.Mesh(new THREE.ConeGeometry(0.28, 2.2, 12), glowMaterial(0xfde047, 1));
+  const core = new THREE.Mesh(new THREE.ConeGeometry(0.28, 2.2, 6), glowMaterial(bloomColor(0xfde047), 1));
   core.rotation.x = Math.PI / 2;
   grp.add(cone, core);
   launchProjectile(grp, from, to, () => {
@@ -669,8 +679,8 @@ export function spawnShadowBolt(
   onImpact?: (() => void) | null
 ): void {
   const grp = new THREE.Group();
-  const shell = new THREE.Mesh(new THREE.SphereGeometry(0.28, 12, 10), glowMaterial(0x1c1917, 0.95));
-  const core = new THREE.Mesh(new THREE.SphereGeometry(0.14, 10, 8), glowMaterial(0x7c3aed, 1));
+  const shell = new THREE.Mesh(new THREE.IcosahedronGeometry(0.28, 0), glowMaterial(0x1c1917, 0.95));
+  const core = new THREE.Mesh(new THREE.IcosahedronGeometry(0.14, 0), glowMaterial(bloomColor(0x7c3aed), 1));
   grp.add(shell, core);
   launchProjectile(grp, fromPos, toPos, () => {
     spawnExpandingRing(toPos, 0x4c1d95, 0.6, 3.1, 0.32, 0.55);
@@ -693,8 +703,8 @@ export function spawnHellfireOrb(
   onImpact?: (() => void) | null
 ): void {
   const grp = new THREE.Group();
-  grp.add(new THREE.Mesh(new THREE.SphereGeometry(0.3, 12, 10), glowMaterial(0xef4444, 1)));
-  grp.add(new THREE.Mesh(new THREE.SphereGeometry(0.14, 10, 8), glowMaterial(0xf97316, 1)));
+  grp.add(new THREE.Mesh(new THREE.IcosahedronGeometry(0.3, 0), glowMaterial(0xef4444, 1)));
+  grp.add(new THREE.Mesh(new THREE.IcosahedronGeometry(0.14, 0), glowMaterial(bloomColor(0xf97316), 1)));
   launchProjectile(grp, fromPos, toPos, onImpact, {
     speed: 3.3,
     arc: 0.7,
@@ -704,7 +714,7 @@ export function spawnHellfireOrb(
       p.trailAcc = (p.trailAcc ?? 0) + dt;
       if (p.trailAcc < 0.04) return;
       p.trailAcc = 0;
-      const ember = new THREE.Mesh(new THREE.SphereGeometry(0.05, 6, 6), glowMaterial(0xf97316, 0.95));
+      const ember = new THREE.Mesh(new THREE.OctahedronGeometry(0.05, 0), glowMaterial(0xf97316, 0.95));
       ember.position.copy(p.mesh.position);
       spawnVfx(ember, 0.32, (v) => {
         (ember.material as THREE.MeshBasicMaterial).opacity = 0.95 * (1 - v.age / v.life);
@@ -716,7 +726,7 @@ export function spawnHellfireOrb(
 export function spawnLevelUpFireworks(colorHex: THREE.ColorRepresentation = 0xfde047): void {
   for (let i = 0; i < 16; i++) {
     const p = new THREE.Mesh(
-      new THREE.SphereGeometry(0.14, 7, 6),
+      new THREE.IcosahedronGeometry(0.14, 0),
       new THREE.MeshBasicMaterial({ color: colorHex })
     );
     const ang = (i / 16) * Math.PI * 2;
