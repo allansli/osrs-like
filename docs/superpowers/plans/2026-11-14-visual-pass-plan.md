@@ -430,6 +430,37 @@ This slice edits one Stage 2 file, `src/state/collision.ts`, in TR2 only. Every 
 ### CP-GR Ground checkpoint [OWNER]
 The owner compares `before/` and `ground/` at P1, P3, P6, P7, P8 and P10, and looks closely at props for finding 23's texture change. Should see: a meadow with a verge along the road; reeds only at water; a dense woods floor inside a tall frame; crags along the ridge; no straight map edge at any yaw; nothing in front of a node, a station or the pass. In the woods, the owner should see a forest of tall trunks with open lanes along Lanternway and around Lampwright's Hollow, Reedglass Tarn and the guardians' clearing, and decorative trees that do not look choppable. The owner also walks the woods live: clicked routes bend around trunks, keyboard movement slides along them, and a moss guardian's chase behaves as CALL-V21 decided. The owner also runs `look.bench` on their GPU at P1 and P8. Here the owner answers CALL-V8 again if the crags or backdrop trees do not convince. **Once CP-GR accepts, `WOODS_TREES` is frozen.** Any later change is a game-rule change and goes back to the owner.
 
+**CP-GR result and GR7 limit (plan amendment, 2026-11-24).** GR7 missed its P1 balanced limits: 1178 to 1214 colour-pass calls, about 2170 with the shadow pass, and 672k to 675k triangles. Its four verification rounds agreed the work was otherwise done. `ground/perf.md` measures where the excess comes from:
+- 1875 of the 2599 visible meshes at P1 belong to 42 monster groups, each built from about 45 unmerged meshes (Stage 2 to 4 code).
+- With every flora mesh hidden, P1 is still at 2099 calls and 589k triangles.
+- With the monsters hidden as well, it drops to 593 calls and 369k triangles.
+
+The owner approved deferring the limit ("aprovo"). GR7's call and triangle limits move to the models pass, which rebuilds each monster as one skinned mesh per material family. That pass measures them again at its own gate, on the same pose and tier against the same V2 reference. GR7 is accepted as committed (51131a8).
+
+The main session judged CP-GR from `ground/` against `before/`: **change**. The owner agreed ("pode"). The fixes are GR8.
+
+### GR8 Ground and air fixes after CP-GR [CLAUDE] (plan amendment, 2026-11-24)
+- **Tier**: opus (a look tuned against pictures).
+- **Depends**: GR7.
+- **Files**:
+  - `src/data/look.ts`: `DAY_KEYS` sky and air values, `REGION_LOOK` values, and the tints of `FLORA_RULES` and `KIT_PIECES` only.
+  - `src/engine/sky.ts` and `src/engine/atmosphere.ts`: values and the sky's air weight only.
+  - `src/engine/textures.ts`: the ground shader's woods weight or tint only.
+  - `src/engine/floraKit.ts`: tints and the crown lightness only.
+  - `src/state/scatter.ts`: carpet jitter only.
+  - `docs/superpowers/baseline/stage5/ground/`: replaced pictures, `perf.md`, and a new `fixes.md`.
+- **Change**: four defects seen in CAP at P1, P7 and P8 (noon, balanced). For each one, find the cause first, record it in `fixes.md`, and fix it at that cause.
+  1. **The noon sky reads near white.** Its faceted upper sky is pale grey-blue. AR2 put `applyAir` into the sky shader, and since then LT7b's sky target no longer holds (sky top at most 85% luminance, B minus R at least 20). Restore that target and keep the horizon haze of design 6.3.
+  2. **The woods floor and carpet read bright meadow green.** Design 5.5 asks for dark moss. At P8 noon, the woods ground's mean lightness must be at least 15% below the P1 meadow's, and visibly bluer and greener.
+  3. **The woods-tree crowns read near black at noon.** At P8 noon they must keep visible facet bands, have a mean crown luminance of at least 18%, and stay darker than the yew crown (as the existing test requires).
+  4. **The desert carpet shows a regular grid at P7.** Its placement jitter must break the rows: no row or column of tufts visibly aligned at P7 noon or golden.
+- **Accept**:
+  - SG, with the `scatter`, `woods-trees`, `facet-light`, `day-cycle`, `textures` and `air` tests green and no test file changed.
+  - CAP at P1, P3, P5, P7 and P8 is replaced.
+  - `fixes.md` gives each target's value before (GR7) and after.
+  - P1 balanced calls and triangles stay within 5% of GR7's `perf.md`.
+- **Must not change**: the light logic; the air function's shape (only its sky weight and values may change); the woods-tree table; the clearance constants; collision; any rule a frozen test holds.
+
 ---
 
 ## 5. Slice 4, lane WT: water
