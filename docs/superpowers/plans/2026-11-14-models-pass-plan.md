@@ -768,3 +768,31 @@ S3 (5909b6c) met P-a, P-b, P-d and the draw-call half of P-c on all four builds 
 - **Change**: S3's captures again on the S2b builds with the S1c engine, plus what S3 left out: a capture at distance 26 (about 85 px) and at 8.5; the shadow sheet of every build; a per-mesh check that each posed skinned mesh's vertices stay inside its own `boundingSphere` in the attack, wind-up and Slash poses; the cull sweep on all four builds; raw rows JSON per build; the sheets say which neighbours are still today's models.
 - **Accept**: as S3, with the bone-texture count per goblin equal to one per figure.
 
+### S3b follow-ups before OM-P (2026-11-25, main session)
+
+S3b (9ce44ba) met P-a and P-d, the draw-call half of P-c, one skeleton and one bone texture per goblin, no posed vertex outside its sphere and no cull gap on all four builds. The opus judge found one correctness fault (P-b): the skinned outline shell pushes each vertex along its own normal, so on S2b's hard edges the split vertices part and the outline opens (upper arm, outer forearm, hand, feet). The fable art read found the figure makes sense at all three reads and is carved in Blender, but in the game the planes do not reach the screen: the figure's two-band shade gives adjoining lit planes one tone, the paint is per vertex and cannot change across a hard edge, the goblin-hide tile pulls the skin back to the grass's hue, and in the three-family builds the shared `mat_wood` and `mat_bronze` keep the kit dark. One more round, then OM-P whatever it shows.
+
+#### S1d The skinned outline holds on hard edges [AGY]
+- **Tier**: sonnet writes the test first ([CLAUDE] part); agy implements; opus verifies.
+- **Depends**: S1c.
+- **Files**: `tests/skinned-outline-normals.test.ts` (new, the [CLAUDE] part), `src/engine/materials.ts` (`addCartoonOutline`'s skinned branch and the skinned variant of `outlineMaterial` only).
+- **Change**: for a `SkinnedMesh`, `addCartoonOutline` gives the mesh's geometry an `outlineNormal` attribute: for each vertex, the normalised sum of the normals of every vertex at the same position (positions matched to 1e-5), so split vertices of a hard edge share one push direction. The skinned outline shader declares `attribute vec3 outlineNormal;` and starts its normal from it (`vec3 objectNormal = outlineNormal;` in place of `beginnormal_vertex`), then skins it as today. The attribute is computed once per geometry (skip if present). The rigid path is unchanged.
+- **Accept**: the test builds a skinned box with split normals on a shared skeleton, runs `addCartoonOutline`, and asserts: the geometry has `outlineNormal`; the two copies of a corner vertex carry the same `outlineNormal`, equal to the normalised sum; a vertex with no twin keeps its own normal; the skinned outline material's vertex shader contains `outlineNormal` and not `beginnormal_vertex`; the rigid shell and its material are unchanged; a second call adds nothing. SG.
+- **Must not change**: the rigid outline path, `facetMaterial`, every other file.
+
+#### S2c The pilot's planes in the paint, and its own kit materials [CLAUDE]
+- **Tier**: fable; opus verifies.
+- **Depends**: S2b.
+- **Files**: as S2b.
+- **Change**, from the S3b art read: (1) **plane tone**: the body's faces grouped into regions bounded by the hard edges, each region one tone from its averaged normal (about +8% up and forward to about -12% down and back), multiplied into the colour layer stored per face corner (one tone per region, never per triangle); first confirm on an exported file that the glTF exporter writes a corner-domain colour layer by splitting at those edges and costs no vertex the hard edges did not already split; (2) `bake_paint` occlusion about 0.5 for the goblin, and the ground-facing darkening replaced by (1); (3) route (a)'s chest as wide flat ellipses (about 0.26 by 0.19 and 0.27 by 0.19), waist about 0.125, collar about 0.18; (4) **goblin-own white wood and metal materials** (names containing `wood` and `bronze`, made inside `build_goblin` like `mat_skin_goblin_paint`) so the paint carries wood 33%, bronze 60% and rust 43%, on the three-family builds; the pending manifest's material set and `budget.materials` follow (38), and the one-material builds keep their set, so COMPARE's material rule is read per build: the pending manifest serves the three-family builds and a second one, `pending/monsters.one-material.json`, the one-material builds (S4 promotes only the owner's choice and deletes the other); (5) the shield's rim bronze; (6) route (a)'s foot one flat slab from heel to toe, toe box about 0.075; (7) the skin paint divided by the goblin-hide tile's mean in linear space so the skin shows grey olive in the game (the tile is the engine's; tusks, cloth and eyes on the skin mesh are left as they are); (8) hard edges on the head only if the bytes stay under the ceiling.
+- **Accept**: BG on all four builds against their manifests; sheets re-rendered; bytes measured and ceilings set by the manifest's margins; README pattern updated.
+- **Must not change**: as S2.
+
+#### S3c The pilot in the game, last capture before OM-P [CLAUDE, main session]
+- **Tier**: sonnet runs; opus judges; fable reads the art.
+- **Depends**: S1d, S2c.
+- **Change**: S3b's captures on the S2c builds with the S1d engine, plus a capture at 1280x720 of the a3 body close with the outline on, front and side, judged at full size for gaps. `ingame/` replaced; README updated.
+- **Accept**: as S3b, with the outline unbroken on hard edges.
+
+The art read's two engine notes are for the owner at OM-P, not tasks: skinned figures could use the three-band `cut` shade, and the goblin-hide tile could be greyer or left off a painted figure.
+
