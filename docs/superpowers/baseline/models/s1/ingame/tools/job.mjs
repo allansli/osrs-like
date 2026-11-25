@@ -43,6 +43,18 @@ const HELPERS = () => {
   S3.hero = (v) => { if (D.player.meshGroup) D.player.meshGroup.visible = v; };
   S3.outline = (on) => G.scene.traverse((o) => { if (o.userData?.isOutline) o.visible = on; });
   S3.front = (m) => { const f = (n) => { let o = null; m.rig.group.traverse((x) => { if (x.name === n || x.name.endsWith('_' + n)) o = o || x; }); if (!o) return null; const v = new T.Vector3(); o.getWorldPosition(v); v.project(G.camera); return v.x; }; const l = f('LeftArmPivot'), r = f('RightArmPivot'); return l === null || r === null ? null : l > r; };
+  S3.sphere = (m) => {
+    m.rig.group.updateMatrixWorld(true);
+    const out = []; const v = new T.Vector3();
+    m.rig.group.traverse((o) => {
+      if (!o.isSkinnedMesh) return;
+      o.skeleton.update();
+      const sp = o.boundingSphere; const pos = o.geometry.attributes.position; let maxD = 0, outside = 0;
+      for (let i = 0; i < pos.count; i++) { o.getVertexPosition(i, v); const d = v.distanceTo(sp.center); if (d > maxD) maxD = d; if (d > sp.radius + 1e-4) outside++; }
+      out.push({ name: o.name, shell: !!o.userData.isOutline, verts: pos.count, radius: +sp.radius.toFixed(3), maxDist: +maxD.toFixed(3), outside });
+    });
+    return out;
+  };
   S3.mem = () => { const i = G.renderer.info; return { geometries: i.memory.geometries, textures: i.memory.textures, programs: i.programs.length }; };
   S3.visible = () => G.monstersList.filter((m) => {
     const f = new T.Frustum(); f.setFromProjectionMatrix(new T.Matrix4().multiplyMatrices(G.camera.projectionMatrix, G.camera.matrixWorldInverse));
@@ -92,7 +104,7 @@ export default async (page) => {
         if (o.isSkinnedMesh) skels.add(o.skeleton);
       });
       for (const s of skels) { s.update(); }
-      out[key] = { meshes, skinnedBodyMeshes: skinned, outlineShells: shells, outlineShellsVisibleAtLoad: shellsVisible, skinnedShells: shellsSkinned, distinctSkeletons: skels.size };
+      out[key] = { meshes, skinnedBodyMeshes: skinned, outlineShells: shells, outlineShellsVisibleAtLoad: shellsVisible, skinnedShells: shellsSkinned, distinctSkeletons: skels.size, boneTextures: new Set([...skels].map((k) => k.boneTexture).filter(Boolean)).size };
     }
     return out;
   });
@@ -282,7 +294,72 @@ export default async (page) => {
           const a = S.mixer.clipAction(S.clips[clip]); a.play(); a.paused = true; a.time = u * S.clips[clip].duration; S.mixer.update(0);
         }, [clip, u]);
         await wait(250); await shot(`${LABEL}-clip-${clip}-${i}`);
+        (result.sphere = result.sphere || {})[`${clip}-${i}`] = await page.evaluate(() => S3.sphere(window.S3.raider));
       }
+    }
+  }
+  if (STEPS.includes('shadow')) {
+    await setup();
+    await page.evaluate(() => { const e = S3.ents(); e.archers.forEach((m) => (m.rig.group.visible = false)); });
+    for (const yaw of [0.6, 2.4]) {
+      await pose({ x: 18.5, z: 12.5, yaw, pitch: 1.0, distance: 5 }, 0.62); await wait(900);
+      for (const hold of ['stand', 'attack', 'windup', 'flinch']) {
+        await page.evaluate((h) => S3.place(S3.ents().raider[0], 0, 0, h), hold); await wait(700);
+        await shot(`${LABEL}-shadow-y${yaw}-${hold}`);
+      }
+    }
+  }
+
+  if (STEPS.includes('cull')) {
+    await setup();
+    await page.evaluate(() => { S3.ents().archers.forEach((m) => (m.rig.group.visible = false)); });
+    await pose({ x: 18.5, z: 12.5, yaw: 0, pitch: 0.25, distance: 6.5 }, 0.5); await wait(800);
+    result.cull = {};
+    for (const hold of ['attack', 'windup', 'stand']) {
+      const bad = [], rows = [];
+      for (const side of [1, -1]) {
+        for (let d = -200; d <= 700; d += 25) {
+          const px = side > 0 ? 1280 + d : -d;
+          const r = await page.evaluate(([px, hold]) => {
+            const m = S3.ents().raider[0]; S3.setRaiderAtScreen(m, px, hold);
+            return new Promise((res) => requestAnimationFrame(() => requestAnimationFrame(() => {
+              const D = __DEBUG, G = D.G, T = D.THREE; G.camera.updateMatrixWorld(); m.rig.group.updateMatrixWorld(true);
+              const f = new T.Frustum(); f.setFromProjectionMatrix(new T.Matrix4().multiplyMatrices(G.camera.projectionMatrix, G.camera.matrixWorldInverse));
+              let boneIn = false, meshIn = false, nb = 0; const v = new T.Vector3();
+              m.rig.group.traverse((o) => {
+                if (o.isSkinnedMesh && !o.userData.isOutline) { if (f.intersectsObject(o)) meshIn = true; for (const b of o.skeleton.bones) { b.getWorldPosition(v); nb++; if (f.containsPoint(v)) boneIn = true; } }
+              });
+              res({ boneIn, meshIn, nb });
+            })));
+          }, [px, hold]);
+          rows.push(r.boneIn === r.meshIn || (!r.boneIn && r.meshIn) ? 0 : 1);
+          if (r.boneIn && !r.meshIn) bad.push([side, px]);
+        }
+      }
+      result.cull[hold] = { samples: rows.length, boneVisibleButMeshCulled: bad };
+    }
+  }
+
+
+  if (STEPS.includes('dist')) {
+    await setup();
+    const lay = (hold) => page.evaluate((hold) => { const e = S3.ents(); const r = e.raider[0], a = e.archers.slice(0, 2); S3.place(r, -1.3, -0.6, hold); S3.place(a[0], 0, -0.6, hold); S3.place(a[1], 1.3, -0.6, hold); }, hold);
+    for (const d of [26, 8.5]) {
+      for (const hold of ['stand', 'attack']) {
+        await pose({ x: 18.5, z: 12.5, yaw: 0, pitch: 0.25, distance: d }, 0.5); await wait(800);
+        await lay(hold); await wait(700); await shot(`${LABEL}-dist${d}-${hold}`);
+      }
+    }
+    result.distPx = await page.evaluate(() => { const r = S3.ents().raider[0]; return S3.screenX(r); });
+  }
+  if (STEPS.includes('sphere')) {
+    await setup();
+    await page.evaluate(() => { S3.ents().archers.forEach((m) => (m.rig.group.visible = false)); });
+    await pose({ x: 18.5, z: 12.5, yaw: 0, pitch: 0.25, distance: 6.5 }, 0.5); await wait(800);
+    result.sphere = result.sphere || {};
+    for (const hold of ['stand', 'walk', 'attack', 'windup', 'flinch']) {
+      await page.evaluate((h) => S3.place(S3.ents().raider[0], 0, 0, h), hold); await wait(500);
+      result.sphere[hold] = await page.evaluate(() => S3.sphere(S3.ents().raider[0]));
     }
   }
   if (STEPS.includes('facing')) {
