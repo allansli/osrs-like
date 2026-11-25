@@ -95,9 +95,9 @@ function isSkippableOutline(obj: THREE.Object3D): boolean {
  * Skinned outline push direction (plan S1d): per vertex, the normalised sum of the normals of every
  * vertex at the same position, so the split copies of a hard edge push the same way.
  * Two documented cases:
- * - no `normal` attribute: no `outlineNormal` is written. The shader then reads zero and the shell is
- *   not pushed, as before S1d, when it read the absent `normal` as zero. Every Blender build exports
- *   NORMAL; only hand-built fixtures (tests/fixtures/models/skinned-pair.glb) lack it.
+ * - no `normal` attribute: no `outlineNormal` is written, so the shader reads the absent attribute
+ *   as zero, exactly as it read the absent `normal` before S1d. Every skinned primitive of the four
+ *   s3b builds carries NORMAL; only the hand-built fixture tests/fixtures/models/skinned-pair.glb lacks it.
  * - copies whose normals cancel (opposed faces at one position, as on goblin_body in the s3b
  *   one-material builds): the sum has no direction, so each copy keeps its own normal.
  */

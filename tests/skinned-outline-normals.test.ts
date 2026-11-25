@@ -91,7 +91,7 @@ describe('skinned outline normals on hard edges', () => {
     }
   });
 
-  it('writes no outlineNormal for a skinned geometry without normals, so the shell is not pushed', () => {
+  it('writes no outlineNormal for a skinned geometry without normals, as the shell read the absent normal before S1d', () => {
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.Float32BufferAttribute([0, 0, 0, 1, 0, 0, 0, 1, 0], 3));
     const mesh = skinnedOf(g);
