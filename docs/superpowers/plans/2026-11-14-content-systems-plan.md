@@ -437,6 +437,8 @@ Design 7.5 (the Ember Hurler), 7.6 ("The demons' cave") and the "Approved packag
 ### O-6.33 The cave's income bound [OWNER]
 The main session shows the owner design 7.6's measurement (against the package's 0.9 of the best open ground at level 70: the front hall 0.94, the back hall 0.87, both halls in turn 0.73) and CALL-6.33's four options. The answer sets C1's bound and what C2 adds (table 0.5). Nothing of slice 3a starts before it.
 
+**Answered 2026-11-25: option (a)**, a 13.5 s wait from death to return inside the cave (design 15.1). Table 0.5's row (a) applies; C1 asserts at most 0.9 for each hall with that wait.
+
 ### C1 Cave and Ember Hurler tests, and the declared count edits [CLAUDE]
 - **Tier**: sonnet (written from design 7.5, 7.6 and the owner's answer to CALL-6.33).
 - **Depends**: G-6.3, O-6.33.
@@ -850,7 +852,7 @@ Run in order, from a clean checkout of the stage's head:
 | 6.30 (decided 2026-11-24) | Z3 (`income.ts`), C1, C2, C3, G-6.3a |
 | 6.31 (decided 2026-11-24) | C1, C2, C3 (the orb), K1, K2 (the hide), U0 (type keys), Y1, Y3 |
 | 6.32 (decided 2026-11-24) | L1, L2, G-6.3b |
-| 6.33 (open) | O-6.33; C1, C2 as 0.5 says |
+| 6.33 (decided 2026-11-25: (a), 13.5 s) | C1, C2, C3 as 0.5 row (a) says |
 
 ---
 
@@ -866,7 +868,7 @@ Run in order, from a clean checkout of the stage's head:
 - **PACE was run on Stage 3's world only** (now read from `origin/main`). With Stage 4's and this stage's overworld camps the fighter's choices under the new rule are unrun; R0, G2 and D4 run them.
 - **The high-tree case** (design 7.13, CALL-6.29) was measured on `main`'s `stepMonster` patched with the rule, not on Stage 4's; whether Stage 4's auto-retaliation still skips a gathering hero is R0 4c's to confirm.
 - **The deposit-only bank window** (Y5) is described, not designed against Stage 5's components.
-- **The cave's income bound misses in one hall** (design 7.6, measured 2026-11-25: the front hall 0.94 against 0.9): slice 3a cannot start before O-6.33.
+- **The cave's income bound misses in one hall** (design 7.6, measured 2026-11-25: the front hall 0.94 against 0.9): resolved by O-6.33 (a), 13.5 s.
 - **The cave's geometry was checked by hand**, not on a zone grid: Z2's grid builder does not exist yet. C1 proves reachability around the pillars; if it fails, C2 stops and the design's table changes, never a rule of the package.
 - **The line-of-sight digest** (`5e5eb899...`) was computed on `87f18e7` with L2's edits. Z2 and G2 land before L1 and may move other lines of `stepMonster`; L1 recomputes it on the tree of its day, on a scratch copy with exactly L2's edits, and the four untouched monsters' digests must not move.
 - **No suite, type check or build was run** while writing this plan, except the runs of the 2026-11-25 revision (design 17). The commands of 0.2 are the earlier plans', which were run on this machine.
@@ -908,3 +910,4 @@ The owner approved the package of `docs/superpowers/proposals/2026-11-24-call-6.
 - Critique, low: design 7.13 said "the three edits of plan L2". Confirmed (L2 lists four) and applied.
 - Critique, low: C3 mixed a Rule, a Data and an Engine change in one commit (rule 0.3.5). Applied: Rule commit (`frameOf`), Data commit (`CAVE_LIGHT`, `CAVE_FOG_SCALE`), then Engine commit.
 - Critique, low: design 11.3 item 1 counted 6 monster types and 0.3.3's appender list left out C1. Applied: item 1 reads 7 monster types, the Ember Hurler by C1; 0.3.3 lists D1, Z3, C1, K1, N1, S3, U0. Item 1 has no appender list of its own, so only 0.3.3 changed there.
+- 2026-11-25, O-6.33 answered (a): the cave row's `respawnSecs` is 13.5; table 0.5 row (a) applies to C1, C2, C3.
