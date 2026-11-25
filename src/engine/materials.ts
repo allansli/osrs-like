@@ -34,9 +34,10 @@ function outlineMaterial(thickness: number, color: number, skinned = false): THR
   const vertexShader = skinned
     ? `
       uniform float uThickness;
+      attribute vec3 outlineNormal;
       #include <skinning_pars_vertex>
       void main() {
-        #include <beginnormal_vertex>
+        vec3 objectNormal = outlineNormal;
         #include <skinbase_vertex>
         #include <skinnormal_vertex>
         #include <begin_vertex>
@@ -90,6 +91,74 @@ function isSkippableOutline(obj: THREE.Object3D): boolean {
   return false;
 }
 
+function computeOutlineNormals(geometry: THREE.BufferGeometry): void {
+  if (geometry.getAttribute('outlineNormal')) return;
+  if (!geometry.getAttribute('normal')) {
+    geometry.computeVertexNormals();
+  }
+  const posAttr = geometry.getAttribute('position');
+  const normAttr = geometry.getAttribute('normal');
+  if (!posAttr || !normAttr) return;
+  const count = posAttr.count;
+  const outlineNormals = new Float32Array(count * 3);
+
+  const order = new Int32Array(count);
+  for (let i = 0; i < count; i++) order[i] = i;
+  order.sort((a, b) => posAttr.getX(a) - posAttr.getX(b));
+
+  const EPS = 1e-5;
+
+  for (let k = 0; k < count; k++) {
+    const i = order[k];
+    const xi = posAttr.getX(i);
+    const yi = posAttr.getY(i);
+    const zi = posAttr.getZ(i);
+
+    let sumX = 0;
+    let sumY = 0;
+    let sumZ = 0;
+
+    for (let back = k; back >= 0; back--) {
+      const j = order[back];
+      const dx = posAttr.getX(j) - xi;
+      if (Math.abs(dx) > EPS) break;
+      const dy = posAttr.getY(j) - yi;
+      const dz = posAttr.getZ(j) - zi;
+      if (Math.sqrt(dx * dx + dy * dy + dz * dz) < EPS) {
+        sumX += normAttr.getX(j);
+        sumY += normAttr.getY(j);
+        sumZ += normAttr.getZ(j);
+      }
+    }
+
+    for (let fwd = k + 1; fwd < count; fwd++) {
+      const j = order[fwd];
+      const dx = posAttr.getX(j) - xi;
+      if (Math.abs(dx) > EPS) break;
+      const dy = posAttr.getY(j) - yi;
+      const dz = posAttr.getZ(j) - zi;
+      if (Math.sqrt(dx * dx + dy * dy + dz * dz) < EPS) {
+        sumX += normAttr.getX(j);
+        sumY += normAttr.getY(j);
+        sumZ += normAttr.getZ(j);
+      }
+    }
+
+    const len = Math.sqrt(sumX * sumX + sumY * sumY + sumZ * sumZ);
+    if (len > 0) {
+      outlineNormals[i * 3] = sumX / len;
+      outlineNormals[i * 3 + 1] = sumY / len;
+      outlineNormals[i * 3 + 2] = sumZ / len;
+    } else {
+      outlineNormals[i * 3] = normAttr.getX(i);
+      outlineNormals[i * 3 + 1] = normAttr.getY(i);
+      outlineNormals[i * 3 + 2] = normAttr.getZ(i);
+    }
+  }
+
+  geometry.setAttribute('outlineNormal', new THREE.Float32BufferAttribute(outlineNormals, 3));
+}
+
 /**
  * Inverted-hull ink outline. Skips invisible colliders and meshes already outlined.
  * Pushes silhouette outward in view XY and biases view Z back so internal intersecting
@@ -113,6 +182,7 @@ export function addCartoonOutline(rootOrMesh: THREE.Object3D, thickness = 0.028,
     let shell: THREE.Mesh;
     if (isSkinned) {
       const skinnedMesh = mesh as THREE.SkinnedMesh;
+      computeOutlineNormals(skinnedMesh.geometry);
       const skinnedShell = new THREE.SkinnedMesh(mesh.geometry, mat);
       skinnedShell.bind(skinnedMesh.skeleton, skinnedMesh.bindMatrix);
       const margin = thickness * 1.5 + 0.05;
