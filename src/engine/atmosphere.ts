@@ -10,10 +10,6 @@ export const COLOR_FOOTER = `
 #include <colorspace_fragment>
 `;
 
-/** Base wind and fog density: AIR's defaults, the lighting and particle scalers and the FogExp2 all start here. */
-export const BASE_WIND: [number, number] = [0.6, 0.25];
-export const BASE_FOG_DENSITY = 0.0028;
-
 export const AIR = {
   uSunDir: { value: new THREE.Vector3(0, 1, 0) },
   uKeyColor: { value: new THREE.Color(0xffffff) },
@@ -23,8 +19,8 @@ export const AIR = {
   uHorizon: { value: new THREE.Color(0xffffff) },
   uFill: { value: new THREE.Color(0xffffff) },
   uTime: { value: 0 },
-  uWind: { value: new THREE.Vector2(...BASE_WIND) },
-  uFogDensity: { value: BASE_FOG_DENSITY },
+  uWind: { value: new THREE.Vector2(0.6, 0.25) },
+  uFogDensity: { value: 0.0028 },
   uFogHeightFalloff: { value: 0 },
   uFogBase: { value: 0 },
   uRegionTint: { value: new THREE.Color(0xffffff) },

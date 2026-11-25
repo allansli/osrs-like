@@ -4,9 +4,10 @@ import { STATE } from '../state/gameState';
 import { DAY_CLOCK, GFX_TIERS, type QualityTier, SHADOW_BIAS, SHADOW_NORMAL_BIAS, SHADOW_SUN_STEP_DEG } from '../data/look';
 import { dayFrameAt, phaseToPreset, presetToPhase, stepPhase, type DayFrame, type Vec3 } from '../state/dayCycle';
 import { fitShadow, stepShadowDir } from '../state/shadowFit';
-import { AIR, BASE_FOG_DENSITY } from './atmosphere';
+import { AIR } from './atmosphere';
 import { getWeatherState } from './particles';
 
+const BASE_FOG_DENSITY = AIR.uFogDensity.value; // read once at load, before any scaling
 let currentPhase = presetToPhase(STATE.timeOfDay);
 let currentDayIndex = 0;
 let isFrozen = false;

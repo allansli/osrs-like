@@ -3,7 +3,7 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import { GFX_TIERS, WEATHER, type QualityTier, type WeatherDef, type WeatherMote } from '../data/look';
 import { WORLD_REGIONS } from '../data/world';
 import { player } from './context';
-import { AIR, AIR_GLSL, BASE_WIND, COLOR_FOOTER } from './atmosphere';
+import { AIR, AIR_GLSL, COLOR_FOOTER } from './atmosphere';
 import { isPlainMode } from './post';
 import { weatherAt } from '../state/weather';
 import { dayFrameAt } from '../state/dayCycle';
@@ -257,10 +257,13 @@ void main() {
 }
 `;
 
+const BASE_WIND_X = AIR.uWind.value.x; // read once at load, before reduced motion scales it
+const BASE_WIND_Y = AIR.uWind.value.y;
+
 let weatherOverride: string | null = null;
 
 export function setWeatherOverride(id: string | null): void {
-  if (!id || id === 'auto') {
+  if (id === null || id === 'auto') {
     weatherOverride = null;
   } else {
     if (!WEATHER.some((w) => w.id === id)) {
@@ -468,7 +471,7 @@ export function initParticles(scene: THREE.Scene, tier: QualityTier): void {
 }
 
 export function updateParticles(dt: number, camera: THREE.Camera): void {
-  if (!motesMesh || !fallMesh || !motesMaterial || !fallMaterial) return;
+  if (!motesMesh || !fallMesh || !motesMaterial || !fallMaterial) throw new Error('updateParticles: initParticles has not run');
 
   motesMaterial.uniforms.uPTime.value += dt;
   fallMaterial.uniforms.uPTime.value += dt;
@@ -478,7 +481,7 @@ export function updateParticles(dt: number, camera: THREE.Camera): void {
 
   const redMotion = prefersReducedMotion();
   const windScale = redMotion ? 1 / 3 : 1;
-  AIR.uWind.value.set(BASE_WIND[0] * windScale, BASE_WIND[1] * windScale);
+  AIR.uWind.value.set(BASE_WIND_X * windScale, BASE_WIND_Y * windScale);
 
   const baseFall = GFX_TIERS[currentTier].weatherParticles;
   const targetFallCount = redMotion ? Math.floor(baseFall / 2) : baseFall;
