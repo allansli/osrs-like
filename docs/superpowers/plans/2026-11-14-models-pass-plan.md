@@ -796,3 +796,7 @@ S3b (9ce44ba) met P-a and P-d, the draw-call half of P-c, one skeleton and one b
 
 The art read's two engine notes are for the owner at OM-P, not tasks: skinned figures could use the three-band `cut` shade, and the goblin-hide tile could be greyer or left off a painted figure.
 
+### After S3c (2026-11-25)
+
+OM-P runs now (design review log, "S3c and the way to OM-P"). **S2d** (fable, after OM-P, on the chosen route and variant only): the S3c art read's builder list (`GOBLIN_PLANE_TONE` about (-0.25, 0.15); skin about 42 to 44% value and warmer, `skin_dark` about 30%; wood about 45% and rust lifted; route (a)'s foot one solid slab at `skin_dark`; the head's hard edges and plane tones if bytes allow; jaw, pauldron and boss faceted; the loincloth shorter and tapered; a thumb; the spear clear of the face side-on; `GOBLIN_PLANE_MIN` about 0.01). Its files, accept and must-not-change are S2c's. S4 then promotes. The outline's view-space z push is an engine item for Slice 8.
+
