@@ -14,6 +14,10 @@ const uNight = { value: 0 };
 const AIR_SKY_CEILING = '40.0';
 const AIR_SKY_RADIUS = SKY_DOME_RADIUS.toFixed(1);
 
+// The apron's albedo as a fraction of the air colour: lit by the key and fill and raised by the exposure,
+// the air colour itself renders near white, brighter than the sky behind the hills.
+const APRON_ALBEDO = 0.45;
+
 interface CloudInstance {
   x: number;
   y: number;
@@ -161,7 +165,7 @@ export function updateSky(frame: DayFrame): void {
   (G.scene.fog as THREE.FogExp2).color.copy(AIR.uAirColor.value);
   (G.scene.fog as THREE.FogExp2).density = AIR.uFogDensity.value;
 
-  apronMat.color.copy(AIR.uAirColor.value);
+  apronMat.color.copy(AIR.uAirColor.value).multiplyScalar(APRON_ALBEDO);
 
   const cloudsEnabled = GFX_TIERS[currentQuality].clouds;
   const curTime = AIR.uTime.value;
