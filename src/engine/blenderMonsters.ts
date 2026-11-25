@@ -101,6 +101,9 @@ export function upgradeMonsterRigWithGltf(mObj: MonsterEntityLike, gltf: GLTF): 
     mesh.castShadow = true;
     mesh.receiveShadow = false;
 
+    const hasColor = Boolean(mesh.geometry.getAttribute('color'));
+    const extra = hasColor ? { vertexColors: true } : {};
+
     const origMat = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material;
     const matName = (origMat?.name || '').toLowerCase();
     const meshName = (mesh.name || '').toLowerCase();
@@ -116,28 +119,29 @@ export function upgradeMonsterRigWithGltf(mObj: MonsterEntityLike, gltf: GLTF): 
         mesh.material = facetMaterial({
           color: colorHex,
           emissive: eHex,
-          emissiveIntensity: 0.75
+          emissiveIntensity: 0.75,
+          ...extra
         });
       }
     } else {
       if (matName.includes('skin') || matName.includes('scale') || matName.includes('chitin') || matName.includes('feather')) {
-        mesh.material = bodyAlbedo ? albedoMaterial(colorHex, bodyAlbedo) : facetMaterial({ color: colorHex });
+        mesh.material = bodyAlbedo ? albedoMaterial(colorHex, bodyAlbedo, extra) : facetMaterial({ color: colorHex, ...extra });
       } else if (matName.includes('cloth') || matName.includes('robe')) {
-        mesh.material = albedoMaterial(colorHex, 'cloth', { side: THREE.DoubleSide });
+        mesh.material = albedoMaterial(colorHex, 'cloth', { side: THREE.DoubleSide, ...extra });
       } else if (matName.includes('leather') || matName.includes('fur') || matName.includes('wing') || matName.includes('hoof')) {
-        mesh.material = albedoMaterial(colorHex, 'leather', { side: THREE.DoubleSide });
+        mesh.material = albedoMaterial(colorHex, 'leather', { side: THREE.DoubleSide, ...extra });
       } else if (matName.includes('wood')) {
-        mesh.material = albedoMaterial(colorHex, 'wood');
+        mesh.material = albedoMaterial(colorHex, 'wood', extra);
       } else if (matName.includes('bark')) {
-        mesh.material = albedoMaterial(colorHex, 'bark');
+        mesh.material = albedoMaterial(colorHex, 'bark', extra);
       } else if (matName.includes('moss') || matName.includes('grass') || matName.includes('leaf')) {
-        mesh.material = albedoMaterial(colorHex, 'grass');
+        mesh.material = albedoMaterial(colorHex, 'grass', extra);
       } else if (matName.includes('stone')) {
-        mesh.material = albedoMaterial(colorHex, 'stone');
+        mesh.material = albedoMaterial(colorHex, 'stone', extra);
       } else if (matName.includes('iron') || matName.includes('bronze') || matName.includes('steel')) {
-        mesh.material = albedoMaterial(colorHex, 'iron');
+        mesh.material = albedoMaterial(colorHex, 'iron', extra);
       } else {
-        mesh.material = facetMaterial({ color: colorHex });
+        mesh.material = facetMaterial({ color: colorHex, ...extra });
       }
       if (tintColor) {
         (mesh.material as THREE.MeshLambertMaterial).color.multiply(tintColor);

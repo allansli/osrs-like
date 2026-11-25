@@ -172,20 +172,31 @@ export function upgradeHumanoidRigWithGltf(
     return null;
   }
 
+  let hasVertexColors = false;
+  clonedScene.traverse((obj) => {
+    if (hasVertexColors) return;
+    const mesh = obj as THREE.Mesh;
+    if (mesh.isMesh && mesh.geometry?.getAttribute('color')) {
+      hasVertexColors = true;
+    }
+  });
+
+  const extra = hasVertexColors ? { vertexColors: true } : {};
+
   const skinColor = opts.skinHex ?? 0xf5d8c2;
-  const skinMat = albedoMaterial(skinColor, creatureAlbedoId('skin'));
-  const lipsMat = albedoMaterial(0xd08878, creatureAlbedoId('skin'));
-  const tunicMat = albedoMaterial(opts.tunicHex ?? tunicHex, 'gear:cloth');
-  const innerTunicMat = albedoMaterial(0x282b2e, 'gear:cloth');
-  const tunicTrimMat = albedoMaterial(0xeee5d2, 'gear:cloth');
-  const waistSashMat = albedoMaterial(0x1e2022, 'gear:cloth');
-  const bracerMat = albedoMaterial(0x4e3524, 'gear:leather');
-  const legsMat = albedoMaterial(opts.legsHex ?? legsHex, 'gear:cloth');
-  const hairMat = albedoMaterial(hairHex, creatureAlbedoId('hair'));
-  const bootMat = albedoMaterial(opts.bootHex ?? 0x342418, 'gear:leather');
-  const gloveMat = albedoMaterial(skinColor, creatureAlbedoId('skin'));
-  const beltLeatherMat = albedoMaterial(0x1e2022, 'gear:leather');
-  const goldMat = facetMaterial({ color: 0x8f7d4e, emissive: 0x5e4f2b, emissiveIntensity: 0.12 });
+  const skinMat = albedoMaterial(skinColor, creatureAlbedoId('skin'), extra);
+  const lipsMat = albedoMaterial(0xd08878, creatureAlbedoId('skin'), extra);
+  const tunicMat = albedoMaterial(opts.tunicHex ?? tunicHex, 'gear:cloth', extra);
+  const innerTunicMat = albedoMaterial(0x282b2e, 'gear:cloth', extra);
+  const tunicTrimMat = albedoMaterial(0xeee5d2, 'gear:cloth', extra);
+  const waistSashMat = albedoMaterial(0x1e2022, 'gear:cloth', extra);
+  const bracerMat = albedoMaterial(0x4e3524, 'gear:leather', extra);
+  const legsMat = albedoMaterial(opts.legsHex ?? legsHex, 'gear:cloth', extra);
+  const hairMat = albedoMaterial(hairHex, creatureAlbedoId('hair'), extra);
+  const bootMat = albedoMaterial(opts.bootHex ?? 0x342418, 'gear:leather', extra);
+  const gloveMat = albedoMaterial(skinColor, creatureAlbedoId('skin'), extra);
+  const beltLeatherMat = albedoMaterial(0x1e2022, 'gear:leather', extra);
+  const goldMat = facetMaterial({ color: 0x8f7d4e, emissive: 0x5e4f2b, emissiveIntensity: 0.12, ...extra });
   const eyeWhiteMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
   const pupilMat = new THREE.MeshBasicMaterial({ color: 0x227cd4 });
 
