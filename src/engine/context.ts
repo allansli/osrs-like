@@ -203,7 +203,6 @@ export interface EngineContext {
   terrainMesh: THREE.Mesh;
   waterMesh: THREE.Mesh;
   skyDomeMesh: THREE.Mesh;
-  waterUniforms: Record<string, THREE.IUniform>;
   worldInteractiveObjects: THREE.Object3D[];
   monstersList: MonsterEntity[];
   resourceNodesList: ResourceNodeEntity[];
@@ -242,7 +241,6 @@ export const G: EngineContext = {
   terrainMesh: null as unknown as THREE.Mesh,
   waterMesh: null as unknown as THREE.Mesh,
   skyDomeMesh: null as unknown as THREE.Mesh,
-  waterUniforms: null as unknown as Record<string, THREE.IUniform>,
   worldInteractiveObjects: [],
   monstersList: [],
   resourceNodesList: [],

@@ -18,7 +18,7 @@ import { loadBlenderWorldTemplate, upgradeWorldPropWithGltf } from './blenderWor
 import { el } from '../ui/hud';
 import { GFX_TIERS } from '../data/look';
 import { currentQuality } from './renderer';
-import { AIR, AIR_GLSL, COLOR_FOOTER } from './atmosphere';
+import { buildWater } from './water';
 
 export function getBiomeColor(x: number, z: number, h: number): THREE.Color {
   const dirt = new THREE.Color(PALETTE.dirt);
@@ -77,53 +77,7 @@ export function buildTerrainAndWater(): void {
   G.scene.add(G.terrainMesh);
   G.worldInteractiveObjects.push(G.terrainMesh);
 
-  // Custom GLSL Animated Water Shader with Specular Sun Glint & Ripples
-  // the water keeps its own uTime: loop.ts writes it with the elapsed time
-  G.waterUniforms = {
-    ...AIR,
-    uTime: { value: 0 },
-    uDeepColor: { value: new THREE.Color(PALETTE.water) },
-    uShallowColor: { value: new THREE.Color(PALETTE.foam) }
-  };
-
-  const waterGeo = new THREE.PlaneGeometry(size, size, 24, 24);
-  waterGeo.rotateX(-Math.PI / 2);
-  const waterMat = new THREE.ShaderMaterial({
-    uniforms: G.waterUniforms,
-    transparent: true,
-    vertexShader: `
-      uniform float uTime;
-      varying vec3 vWorldPos;
-      varying float vWave;
-      void main() {
-        vec3 p = position;
-        float w = sin(p.x * 0.22 + uTime * 1.2) * 0.02;
-        p.y += w;
-        vWave = w;
-        vec4 wp = modelMatrix * vec4(p, 1.0);
-        vWorldPos = wp.xyz;
-        gl_Position = projectionMatrix * viewMatrix * wp;
-      }
-    `,
-    fragmentShader: `
-      uniform vec3 uDeepColor;
-      uniform vec3 uShallowColor;
-      varying vec3 vWorldPos;
-      varying float vWave;
-      ${AIR_GLSL}
-      void main() {
-        float rip = sin(vWorldPos.x * 0.45 + uTime * 0.7) * cos(vWorldPos.z * 0.32);
-        float foam = smoothstep(0.48, 0.78, rip);
-        vec3 col = mix(uDeepColor, uShallowColor, foam);
-        col = applyAir(col, vWorldPos);
-        gl_FragColor = vec4(col, 0.94);
-        ${COLOR_FOOTER}
-      }
-    `
-  });
-  G.waterMesh = new THREE.Mesh(waterGeo, waterMat);
-  G.waterMesh.position.y = -0.34;
-  G.scene.add(G.waterMesh);
+  buildWater();
 
   // Arched Wooden & Stone Footbridge over the River at (28, 0)
   buildRiverBridge(28, 0);

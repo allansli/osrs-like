@@ -132,7 +132,6 @@ export function updateVitalsAndRegen(f: FrameState): void {
     }
   }
 
-  if (G.waterUniforms) G.waterUniforms.uTime.value = f.elapsedSec;
 
   player.sinceCombat += f.dt;
   const targetingHeroWithWindup = G.monstersList.some(

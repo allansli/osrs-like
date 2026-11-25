@@ -14,6 +14,7 @@ import { buildWalkGrid } from '../state/pathfind';
 import { applyShadowTier, initLighting } from './lighting';
 import { createOutput, effectivePixelRatio, enterPlainMode, TIER_LABELS, type OutputPipeline } from './post';
 import { setAirTier } from './atmosphere';
+import { setWaterTier } from './water';
 import { setPlayerChoseTier } from './photo';
 
 export type QualityTier = 'performance' | 'balanced' | 'high' | 'ultra';
@@ -36,6 +37,7 @@ export function applyQualityTier(tier: QualityTier): void {
   const prevTier = currentQuality;
   currentQuality = tier;
   setAirTier(tier);
+  setWaterTier(tier);
   const maxAniso = G.renderer.capabilities.getMaxAnisotropy();
   setAlbedoAnisotropy(Math.min(GFX_TIERS[tier].anisotropy, maxAniso));
   const dpr = effectivePixelRatio(tier, window.innerWidth, window.innerHeight, window.devicePixelRatio);
