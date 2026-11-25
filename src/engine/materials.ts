@@ -141,15 +141,12 @@ function computeOutlineNormals(geometry: THREE.BufferGeometry): void {
     }
 
     const len = Math.sqrt(sumX * sumX + sumY * sumY + sumZ * sumZ);
-    if (len > 0) {
-      outlineNormals[i * 3] = sumX / len;
-      outlineNormals[i * 3 + 1] = sumY / len;
-      outlineNormals[i * 3 + 2] = sumZ / len;
-    } else {
-      outlineNormals[i * 3] = normAttr.getX(i);
-      outlineNormals[i * 3 + 1] = normAttr.getY(i);
-      outlineNormals[i * 3 + 2] = normAttr.getZ(i);
+    if (!(len > 0)) {
+      throw new Error(`addCartoonOutline: coincident vertices at index ${i} have normals summing to zero, so the skinned outline has no push direction`);
     }
+    outlineNormals[i * 3] = sumX / len;
+    outlineNormals[i * 3 + 1] = sumY / len;
+    outlineNormals[i * 3 + 2] = sumZ / len;
   }
 
   geometry.setAttribute('outlineNormal', new THREE.Float32BufferAttribute(outlineNormals, 3));

@@ -77,6 +77,13 @@ describe('skinned outline normals on hard edges', () => {
     }
   });
 
+  it('throws when coincident copies have opposed normals that sum to zero', () => {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute([0, 0, 0, 0, 0, 0, 1, 0, 0], 3));
+    g.setAttribute('normal', new THREE.Float32BufferAttribute([0, 0, 1, 0, 0, -1, 0, 0, 1], 3));
+    expect(() => addCartoonOutline(skinnedOf(g), 0.03)).toThrow(/sum to zero|summing to zero/);
+  });
+
   it('starts the skinned outline shader from outlineNormal, not beginnormal_vertex', () => {
     const mesh = skinnedOf(new THREE.BoxGeometry(1, 1, 1));
     addCartoonOutline(mesh, 0.03);
