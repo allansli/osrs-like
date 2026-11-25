@@ -1092,81 +1092,81 @@
   "clips": {},
   "budget": {
     "triangles": 98644,
-    "meshes": 399,
+    "meshes": 182,
     "materials": 35,
-    "rawBytes": 4927960,
-    "brotliBytes": 1278884
+    "rawBytes": 4896485,
+    "brotliBytes": 1294796
   },
   "figures": {
     "Monster_chicken": {
       "triangles": 4680,
-      "meshes": 38,
+      "meshes": 13,
       "materials": 6,
-      "rawBytes": 285248,
-      "brotliBytes": 42975
+      "rawBytes": 299120,
+      "brotliBytes": 56059
     },
     "Monster_dark_ranger": {
       "triangles": 5340,
-      "meshes": 37,
+      "meshes": 23,
       "materials": 8,
-      "rawBytes": 318264,
-      "brotliBytes": 50483
+      "rawBytes": 330096,
+      "brotliBytes": 58346
     },
     "Monster_dark_wizard": {
       "triangles": 3980,
-      "meshes": 24,
+      "meshes": 18,
       "materials": 9,
-      "rawBytes": 238104,
-      "brotliBytes": 39706
+      "rawBytes": 244704,
+      "brotliBytes": 44023
     },
     "Monster_elvarg_dragon": {
       "triangles": 34750,
-      "meshes": 5,
+      "meshes": 3,
       "materials": 3,
       "rawBytes": 879924,
-      "brotliBytes": 668805
+      "brotliBytes": 669660
     },
     "Monster_goblin": {
       "triangles": 8292,
-      "meshes": 59,
+      "meshes": 29,
       "materials": 10,
-      "rawBytes": 498584,
-      "brotliBytes": 75652
+      "rawBytes": 523952,
+      "brotliBytes": 94478
     },
     "Monster_goblin_archer": {
       "triangles": 6640,
-      "meshes": 58,
+      "meshes": 28,
       "materials": 11,
-      "rawBytes": 400944,
-      "brotliBytes": 65050
+      "rawBytes": 415176,
+      "brotliBytes": 74363
     },
     "Monster_hill_giant": {
       "triangles": 7288,
-      "meshes": 45,
+      "meshes": 20,
       "materials": 9,
-      "rawBytes": 441264,
-      "brotliBytes": 66204
+      "rawBytes": 464520,
+      "brotliBytes": 78835
     },
     "Monster_lesser_demon": {
       "triangles": 10218,
-      "meshes": 22,
+      "meshes": 9,
       "materials": 7,
-      "rawBytes": 498740,
-      "brotliBytes": 161835
+      "rawBytes": 501836,
+      "brotliBytes": 164537
     },
     "Monster_moss_guardian": {
       "triangles": 6968,
-      "meshes": 43,
+      "meshes": 20,
       "materials": 6,
-      "rawBytes": 421568,
-      "brotliBytes": 59694
+      "rawBytes": 435920,
+      "brotliBytes": 70540
     },
     "Monster_scorpion": {
       "triangles": 10488,
-      "meshes": 68,
+      "meshes": 19,
       "materials": 6,
-      "rawBytes": 632352,
-      "brotliBytes": 85712
+      "rawBytes": 669168,
+      "brotliBytes": 120432
     }
   }
 }
