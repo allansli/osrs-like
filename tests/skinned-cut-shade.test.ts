@@ -17,17 +17,19 @@ const U8 = 5121;
 function buildFigure(): Doc {
   const parts: Buffer[] = [];
   let len = 0;
+  // tinyGlb's material type has no emissiveFactor: widen it locally (a non-fresh value passes the assignment).
+  const materials: Array<Doc['json']['materials'][number] & { emissiveFactor?: number[] }> = [
+    { name: 'skin', pbrMetallicRoughness: { baseColorFactor: [0.4, 0.6, 0.3, 1] } },
+    { name: 'cloth', pbrMetallicRoughness: { baseColorFactor: [0.5, 0.3, 0.2, 1] } },
+    { name: 'glow', pbrMetallicRoughness: { baseColorFactor: [0.9, 0.8, 0.1, 1] }, emissiveFactor: [0.9, 0.8, 0.1] }
+  ];
   const json: Doc['json'] = {
     asset: { version: '2.0', generator: 'skinned-cut-shade-fixture' },
     scene: 0,
     scenes: [{ nodes: [0] }],
     nodes: [],
     meshes: [],
-    materials: [
-      { name: 'skin', pbrMetallicRoughness: { baseColorFactor: [0.4, 0.6, 0.3, 1] } },
-      { name: 'cloth', pbrMetallicRoughness: { baseColorFactor: [0.5, 0.3, 0.2, 1] } },
-      { name: 'glow', pbrMetallicRoughness: { baseColorFactor: [0.9, 0.8, 0.1, 1] }, emissiveFactor: [0.9, 0.8, 0.1] }
-    ],
+    materials,
     accessors: [],
     bufferViews: [],
     animations: []
