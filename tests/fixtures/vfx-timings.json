@@ -1,0 +1,163 @@
+{
+  "spawnVfx": [
+    {
+      "fn": "spawnBurst",
+      "life": "life"
+    },
+    {
+      "fn": "spawnExpandingRing",
+      "life": "life"
+    },
+    {
+      "fn": "spawnSlashArc",
+      "life": "opts.life ?? 0.48"
+    },
+    {
+      "fn": "spawnMeleeSlashEffect",
+      "life": "0.75"
+    },
+    {
+      "fn": "spawnMeleeSlashEffect",
+      "life": "0.75"
+    },
+    {
+      "fn": "spawnMeleeSlashEffect",
+      "life": "0.48"
+    },
+    {
+      "fn": "spawnMeleeSlashEffect",
+      "life": "0.85"
+    },
+    {
+      "fn": "spawnMeleeSlashEffect",
+      "life": "0.7"
+    },
+    {
+      "fn": "spawnSpellImpact",
+      "life": "0.7"
+    },
+    {
+      "fn": "spawnSpellImpact",
+      "life": "1.45"
+    },
+    {
+      "fn": "spawnSpellImpact",
+      "life": "1.35"
+    },
+    {
+      "fn": "spawnSpellImpact",
+      "life": "1.2"
+    },
+    {
+      "fn": "spawnSpellImpact",
+      "life": "0.9"
+    },
+    {
+      "fn": "spawnRunicCircle",
+      "life": "life"
+    },
+    {
+      "fn": "spawnSpellProjectile",
+      "life": "0.32"
+    },
+    {
+      "fn": "spawnArrowProjectile",
+      "life": "0.22"
+    },
+    {
+      "fn": "spawnPiercingBeam",
+      "life": "0.45"
+    },
+    {
+      "fn": "spawnRareLootBeam",
+      "life": "3.5"
+    },
+    {
+      "fn": "spawnRareLootBeam",
+      "life": "3.5"
+    },
+    {
+      "fn": "spawnHellfireOrb",
+      "life": "0.32"
+    },
+    {
+      "fn": "spawnLevelUpFireworks",
+      "life": "0.9"
+    }
+  ],
+  "launchProjectile": [
+    {
+      "fn": "spawnProjectile",
+      "speed": "3.5"
+    },
+    {
+      "fn": "spawnSpellProjectile",
+      "speed": "speed"
+    },
+    {
+      "fn": "spawnArrowProjectile",
+      "speed": "7.2"
+    },
+    {
+      "fn": "spawnDragonfireEffect",
+      "speed": "1.7"
+    },
+    {
+      "fn": "spawnShadowBolt",
+      "speed": "4.1"
+    },
+    {
+      "fn": "spawnHellfireOrb",
+      "speed": "3.3"
+    }
+  ],
+  "speedAssignments": [
+    {
+      "fn": "spawnBurst",
+      "value": "3.2"
+    },
+    {
+      "fn": "spawnSpellProjectile",
+      "value": "4.2"
+    },
+    {
+      "fn": "spawnSpellProjectile",
+      "value": "6.2"
+    },
+    {
+      "fn": "spawnSpellProjectile",
+      "value": "4.4"
+    },
+    {
+      "fn": "spawnSpellProjectile",
+      "value": "3.8"
+    },
+    {
+      "fn": "spawnSpellProjectile",
+      "value": "2.6"
+    }
+  ],
+  "exports": [
+    "spawnHitSplatWorld",
+    "spawnHitSplatOnPlayer",
+    "glowMaterial",
+    "spawnVfx",
+    "launchProjectile",
+    "spawnProjectile",
+    "spawnBurst",
+    "spawnExpandingRing",
+    "spawnSlashArc",
+    "metalSlashTint",
+    "spawnMeleeSlashEffect",
+    "spawnSpellImpact",
+    "spawnRunicCircle",
+    "spawnSpellProjectile",
+    "spawnArrowProjectile",
+    "spawnPiercingBeam",
+    "spawnRareLootBeam",
+    "spawnDragonfireEffect",
+    "spawnShadowBolt",
+    "spawnHellfireOrb",
+    "spawnLevelUpFireworks"
+  ]
+}
