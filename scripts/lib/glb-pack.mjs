@@ -19,10 +19,9 @@ export function packGlb(buffer) {
   // Check if anything needs packing
   let needsPacking = false;
   for (const mesh of json.meshes || []) {
-    for (const prim of mesh.primitives || []) {
-      for (const [name, accIdx] of Object.entries(prim.attributes || {})) {
-        const acc = json.accessors?.[accIdx];
-        if (!acc) continue;
+    for (const prim of mesh.primitives) {
+      for (const [name, accIdx] of Object.entries(prim.attributes)) {
+        const acc = json.accessors[accIdx];
         if (name === 'NORMAL') {
           if (acc.componentType !== 5120 || !acc.normalized) {
             needsPacking = true;
@@ -47,10 +46,10 @@ export function packGlb(buffer) {
   const replBufferViews = new Map();
 
   for (const mesh of json.meshes || []) {
-    for (const prim of mesh.primitives || []) {
-      for (const [name, accIdx] of Object.entries(prim.attributes || {})) {
-        const acc = json.accessors?.[accIdx];
-        if (!acc || acc.bufferView === undefined) continue;
+    for (const prim of mesh.primitives) {
+      for (const [name, accIdx] of Object.entries(prim.attributes)) {
+        const acc = json.accessors[accIdx];
+        if (acc.bufferView === undefined) continue;
 
         if (name === 'NORMAL') {
           if (acc.componentType === 5120 && acc.normalized) continue;
@@ -162,7 +161,7 @@ export function packGlb(buffer) {
   // Assemble BIN chunk
   const parts = [];
   let off = 0;
-  for (let i = 0; i < (json.bufferViews || []).length; i++) {
+  for (let i = 0; i < json.bufferViews.length; i++) {
     const bv = json.bufferViews[i];
     let data;
     if (replBufferViews.has(i)) {
@@ -182,9 +181,7 @@ export function packGlb(buffer) {
     }
   }
 
-  if (json.buffers && json.buffers[0]) {
-    json.buffers[0].byteLength = off;
-  }
+  json.buffers[0].byteLength = off;
 
   // Assemble GLB
   let js = Buffer.from(JSON.stringify(json));
