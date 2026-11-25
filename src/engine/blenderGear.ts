@@ -59,7 +59,7 @@ export function cloneBlenderGearNode(
   cloned.traverse((obj) => {
     if (hasVertexColors) return;
     const mesh = obj as THREE.Mesh;
-    if (mesh.isMesh && mesh.geometry?.getAttribute('color')) {
+    if (mesh.isMesh && mesh.geometry.getAttribute('color')) {
       hasVertexColors = true;
     }
   });
