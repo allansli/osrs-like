@@ -1094,16 +1094,16 @@
     "triangles": 98644,
     "meshes": 182,
     "materials": 35,
-    "rawBytes": 4848004,
-    "brotliBytes": 1360686
+    "rawBytes": 4896485,
+    "brotliBytes": 1294796
   },
   "figures": {
     "Monster_chicken": {
       "triangles": 4680,
       "meshes": 13,
       "materials": 6,
-      "rawBytes": 299792,
-      "brotliBytes": 56558
+      "rawBytes": 299120,
+      "brotliBytes": 56059
     },
     "Monster_dark_ranger": {
       "triangles": 5340,
