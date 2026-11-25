@@ -3,8 +3,8 @@
   "meshes": 3,
   "triangles": {
    "wood": 120,
-   "iron": 508,
-   "skin": 4332
+   "iron": 308,
+   "skin": 3932
   },
   "pivots": {
    "Monster_goblin": [

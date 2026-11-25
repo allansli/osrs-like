@@ -1143,40 +1143,36 @@ def build_goblin_base(key: str, grid_pos: tuple[float, float, float], mats: dict
 # =============================================================================
 # 2. Monster_goblin (Goblin Raider): the pilot, rebuilt and skinned (plan S2)
 # =============================================================================
-# One figure, four builds, chosen by two environment variables on the BLEND line:
-#   GOBLIN_BODY=a  body from figkit.organic_body over a stick graph
-#   GOBLIN_BODY=b  body from primitives fused by a voxel remesh
-#   GOBLIN_MATS=3  three engine material families: skin, wood, metal
-#   GOBLIN_MATS=1  one material, every colour in the paint layer
-# Both are required and neither has a default: a monsters build without them stops, so no
-# build can quietly pick a route or a variant the owner did not choose (OM-P).
-# Head, gear, palette, rig and weight rules are the same in all four. Coordinates are
-# three-space like the rest of this file (+Y up, -Z forward). The figure stands at the
-# file's origin (design 6.1.1 rule 2b).
-GOBLIN_TRIANGLES = 5000
+# One build, the owner's choice at OM-P (2026-11-25): the body from figkit.organic_body over a
+# stick graph (route a) and three engine material families (skin, wood, metal). Coordinates are
+# three-space like the rest of this file (+Y up, -Z forward). The figure stands at the file's
+# origin (design 6.1.1 rule 2b).
+GOBLIN_TRIANGLES = 4400  # the builder's own budget (S2d), under the manifest's 5,000: what keeps the figure under 115 kB on the wire with the head's planes
 GOBLIN_OCCLUSION = 0.5  # bake_paint's occlusion strength for the goblin (0.35 by default)
 GOBLIN_PLANE_SPREAD = math.radians(40.0)  # a plane holds the faces within this angle of its first face
-GOBLIN_PLANE_MIN = 0.004  # a plane under this share of the skin's area joins a neighbour
+GOBLIN_PLANE_MIN = 0.01  # a plane under this share of the skin's area joins a neighbour
 GOBLIN_CREASE = math.radians(32.0)  # body edges sharper than this are hard; the rest stay smooth
-# Plane tone (plan S2c): a plane facing GOBLIN_PLANE_LIGHT is 8% lighter, one facing away 12% darker
-GOBLIN_PLANE_TONE = (-0.12, 0.08)
+# Plane tone (plan S2c, widened at S2d): a plane facing GOBLIN_PLANE_LIGHT is 15% lighter, one facing
+# away 25% darker. The engine's cut shade bands only the planes the key reaches; on the shade side
+# the tone is all that parts one plane from the next.
+GOBLIN_PLANE_TONE = (-0.25, 0.15)
 GOBLIN_PLANE_LIGHT = Vector(t2b(0.0, 1.0, -1.0)).normalized()  # up and forward
 GOBLIN_BELT_SEGS = 16  # the belt is three bands of this many quads
 GOBLIN_SCALE = 1.02  # the numbers below build a figure 1.752 tall; the shipped goblin is 1.785
 GOBLIN_COLOURS = {
-    "skin": 0x505C3E,  # grey olive, 36% value: apart from lit grass
-    "skin_dark": 0x383F2C,  # hands and feet, 25% value
+    "skin": 0x666E46,  # warm grey olive, 43% value
+    "skin_dark": 0x474D32,  # hands and feet, 30% value
     "bone": 0xBDB39C,
     "rust_cloth": 0x8A4A2C,
     "iris": 0xE6B820,
     "pupil": 0x1E1410,
     "mouth": 0x3B2018,
-    "wood": 0x543C26,  # 33% value
+    "wood": 0x735238,  # 45% value
     "leather": 0x4D3627,  # 30% value
-    "bronze": 0x9A6E2A,  # 60% value
-    "rust": 0x6E4A2C,  # 43% value
+    "bronze": 0xAA7A2E,  # 67% value
+    "rust": 0x80502C,  # 50% value, 17 points under bronze
 }
-# The engine multiplies a skin mesh by this tile (textures.ts, 'goblin-hide'), which is yellow green:
+# The engine multiplies a skin mesh by this tile (textures.ts, 'goblin-hide'), a grey yellow green:
 # the skin's paint is divided by the tile's mean so the game shows the colours above (plan S2c).
 GOBLIN_HIDE_TILE = "public/textures/creatures/goblin-hide.png"
 
@@ -1226,15 +1222,19 @@ def _goblin_skin_paint(hex_colour: int, tile: list) -> list:
     return paint
 
 
-def _goblin_tint(obj, colour) -> None:
+def _goblin_tint(obj, colour, planes: bool = False) -> None:
     """
-    A constant 'Tint' colour on every face corner, which the paint layer multiplies. All the
-    goblin's materials are white, so the tint is the colour itself: a hex colour, or linear
-    RGB for the skin (the colour over the hide tile's mean).
+    A 'Tint' colour on every face corner, which the paint layer multiplies. All the goblin's
+    materials are white, so the tint is the colour itself: a hex colour, or linear RGB for the
+    skin (the colour over the hide tile's mean). With planes, each face's corners also take the
+    tone of the face's plane (_goblin_plane_tones).
     """
     tint = list(hex_to_rgba(colour)[:3]) if isinstance(colour, int) else colour
-    ca = obj.data.color_attributes.new("Tint", "FLOAT_COLOR", "CORNER")
-    ca.data.foreach_set("color", [*tint, 1.0] * len(obj.data.loops))
+    tones = _goblin_plane_tones(obj) if planes else [1.0] * len(obj.data.polygons)
+    cols = []
+    for p, tone in zip(obj.data.polygons, tones):
+        cols += [*(c * tone for c in tint), 1.0] * len(p.vertices)
+    obj.data.color_attributes.new("Tint", "FLOAT_COLOR", "CORNER").data.foreach_set("color", cols)
 
 
 def _goblin_skin(ob, name: str, mat, triangles: int, soften: int, keep: tuple = (), crease: float | None = None):
@@ -1275,6 +1275,11 @@ def _goblin_skin(ob, name: str, mat, triangles: int, soften: int, keep: tuple = 
     if crease is not None:
         bm = bmesh.new()
         bm.from_mesh(ob.data)
+        # The decimate leaves a loose sliver, one triangle joined to nothing, off the tip of a thin
+        # blade (each ear). It is removed; the check below still stops a real hole.
+        loose = [f for f in bm.faces if all(e.is_boundary for e in f.edges)]
+        bmesh.ops.delete(bm, geom=loose + [v for f in loose for v in f.verts], context="VERTS")
+        bm.faces.index_update()
         open_edges = sum(1 for e in bm.edges if not e.is_manifold)
         assert open_edges == 0, f"{name}: {open_edges} of {len(bm.edges)} edges do not have exactly two faces; the skin must be closed before its hard edges are marked"
         euler = len(bm.verts) - len(bm.edges) + len(bm.faces)
@@ -1331,7 +1336,7 @@ def _goblin_planes(bm, crease: float) -> list:
 
 
 def _goblin_fuse(objs: list, name: str, mat, voxel: float, triangles: int, soften: int, crease: float | None = None):
-    """Closed primitives fused into one continuous skin: join, voxel remesh, soften, decimate (body route b; the head)."""
+    """Closed primitives fused into one continuous skin: join, voxel remesh, soften, decimate (the head)."""
     bpy.ops.object.select_all(action="DESELECT")
     for o in objs:
         o.select_set(True)
@@ -1349,7 +1354,7 @@ def _goblin_limb_dir(a: tuple, b: tuple) -> Vector:
 
 def _goblin_body_graph(j: dict) -> tuple[list, list, list, list]:
     """
-    Route a: the stick graph and radii for figkit.organic_body, and the keep balls of hands and feet
+    The stick graph and radii for figkit.organic_body, and the keep balls of hands and feet
     for _goblin_skin, in Blender space. Each limb narrows between its joints, so shoulder, elbow,
     hip and knee stand out as forms after the smoothing.
     """
@@ -1412,7 +1417,7 @@ def _goblin_belt(body, mat):
     """
     The belt, laid on the finished body: sixteen rays from the body's axis at two heights find its
     surface, and the band stands 0.02 outside it, with a lip turned in above and below. A lathe of
-    fixed radii sinks into the belly on one body route and floats on the other.
+    fixed radii sank into the belly and could not be seen.
     """
     from mathutils.bvhtree import BVHTree
 
@@ -1436,50 +1441,8 @@ def _goblin_belt(body, mat):
     return finalize_obj("gob_belt", bm, None, mat)
 
 
-def _goblin_body_primitives(j: dict, mat) -> list:
-    """Route b: the same body as closed primitives, to be fused."""
-    parts = [
-        add_lathe(
-            "gob_torso",
-            None,
-            mat,
-            [
-                (0.56, 0.13, 0.12, 0.0, 0.04, 0.2),
-                (0.66, 0.18, 0.15, 0.0, 0.04, 0.2),
-                (0.80, 0.165, 0.15, 0.0, -0.01, 0.1),
-                (0.90, 0.17, 0.155, 0.0, -0.035, 0.1),  # waist
-                (0.96, 0.25, 0.20, 0.0, -0.05, 0.15),  # the ribs stand out over it: one break
-                (1.12, 0.29, 0.20, 0.0, -0.05, 0.2),
-                (1.22, 0.30, 0.19, 0.0, -0.04, 0.2),
-                (1.30, 0.17, 0.15, 0.0, -0.12, 0.1),
-                (1.42, 0.12, 0.12, 0.0, -0.27, 0.0),
-            ],
-            segs=10,
-        ),
-        # The hump: a ball of six sides and five rings, so it stands on the back as planes
-        add_sphere("gob_hump", None, mat, 0.21, 0.17, 0.17, tx=0.0, ty=1.21, tz=0.06, segs=6, rings=5),
-    ]
-    for side, tag in ((-1.0, "Left"), (1.0, "Right")):
-        sh, el, ha = j[f"{tag}ArmPivot"], j[f"{tag}ElbowPivot"], j[f"{tag}Hand"]
-        palm = Vector(ha) + _goblin_limb_dir(el, ha) * 0.05
-        kn, an = j[f"{tag}KneePivot"], j[f"{tag}Foot"]
-        parts += [
-            add_sphere("gob_shoulder", None, mat, 0.115, tx=sh[0], ty=sh[1], tz=sh[2]),
-            add_limb_tube("gob_upper_arm", None, mat, sh, el, 0.105, 0.075, segs=6),
-            add_sphere("gob_elbow", None, mat, 0.088, tx=el[0], ty=el[1], tz=el[2]),
-            add_limb_tube("gob_forearm", None, mat, el, ha, 0.075, 0.06, segs=6),
-            add_sphere("gob_hand", None, mat, 0.08, 0.09, 0.065, tx=palm.x, ty=palm.y, tz=palm.z),
-            add_limb_tube("gob_thigh", None, mat, (side * 0.14, 0.66, 0.03), kn, 0.11, 0.08, segs=6),
-            add_sphere("gob_knee", None, mat, 0.096, tx=kn[0], ty=kn[1], tz=kn[2]),
-            add_limb_tube("gob_calf", None, mat, kn, an, 0.08, 0.062, segs=6),
-            # 0.30 long and 0.13 wide (15% over life); it reaches under the ground and is cut flat there
-            add_sphere("gob_foot", None, mat, 0.066, 0.06, 0.15, tx=an[0] * 1.02, ty=0.045, tz=-0.07),
-        ]
-    return parts
-
-
 def _goblin_head(mat):
-    """The head both routes share: skull, heavy brow, hooked nose and big ears fused into one form."""
+    """The head: skull, heavy brow, hooked nose and big ears fused into one form, with hard edges round its planes like the body."""
     parts = [
         add_sphere("gob_skull", None, mat, 0.24, 0.24, 0.25, tx=0.0, ty=1.50, tz=-0.30, segs=16, rings=12),
         add_curved_tube(
@@ -1508,15 +1471,16 @@ def _goblin_head(mat):
                 rx=0.30, rz=-side * 1.15, curve_bend=0.06, segs=10, flatten_x=3.2,
             )
         )
-    return _goblin_fuse(parts, "gob_head", mat, 0.012, 1100, soften=3)
+    return _goblin_fuse(parts, "gob_head", mat, 0.012, 800, soften=3, crease=GOBLIN_CREASE)
 
 
 def _goblin_plane_tones(body) -> list:
     """
-    One tone per face of the body, the same for every face of a plane (plan S2c). A plane is the
-    faces joined by edges that are not hard; its tone comes from its area-weighted normal against
-    GOBLIN_PLANE_LIGHT. Two corners of one vertex in different planes are parted by hard edges, which
-    the exporter splits anyway, so the tone costs no vertex.
+    One tone per face of a part, the same for every face of a plane (plan S2c). A plane is the
+    smooth faces joined by edges that are not hard, or one flat face of a faceted part; its tone
+    comes from its area-weighted normal against GOBLIN_PLANE_LIGHT. Two corners of one vertex in
+    different planes are parted by hard edges or flat faces, which the exporter splits anyway, so
+    the tone costs no vertex.
     """
     bm = bmesh.new()
     bm.from_mesh(body.data)
@@ -1533,9 +1497,9 @@ def _goblin_plane_tones(body) -> list:
             normal += f.normal * a
             area += a
             for e in f.edges:
-                if e.smooth:
+                if e.smooth and f.smooth:
                     for g in e.link_faces:
-                        if plane[g.index] < 0:
+                        if plane[g.index] < 0 and g.smooth:
                             plane[g.index] = len(tones)
                             stack.append(g)
         s = normal.dot(GOBLIN_PLANE_LIGHT) / area  # a plane that wraps round a form averages to no tone
@@ -1545,18 +1509,22 @@ def _goblin_plane_tones(body) -> list:
     total = sum(areas)
     top = sorted(areas, reverse=True)
     print(
-        f"[Blender] goblin planes: {len(tones)} on {len(plane)} faces; largest {top[0] / total:.1%} of the area, "
+        f"[Blender] goblin planes of {body.name}: {len(tones)} on {len(plane)} faces; largest {top[0] / total:.1%} of the area, "
         f"five largest {sum(top[:5]) / total:.1%}; tones {min(tones):.3f} to {max(tones):.3f}"
     )
     return [tones[i] for i in plane]
 
 
 def _goblin_body_tint(body, main: list, dark: list) -> None:
-    """Paint rule of the body: olive, going to the darker olive on hands and feet, times each plane's tone."""
+    """
+    Paint rule of the body: olive, going to the darker olive on hands and feet, times each plane's
+    tone. A vertex that a hand or foot bone holds by half or more is all dark, so a foot is one slab
+    of the dark tone and the change to olive lies on the shin.
+    """
     ends = {g.index for g in body.vertex_groups if g.name.endswith(("Hand", "Foot"))}
     base = []
     for v in body.data.vertices:
-        t = min(1.0, sum(g.weight for g in v.groups if g.group in ends))
+        t = min(1.0, 2.0 * sum(g.weight for g in v.groups if g.group in ends))
         base.append([main[c] + (dark[c] - main[c]) * t for c in range(3)])
     cols = []
     for p, tone in zip(body.data.polygons, _goblin_plane_tones(body)):
@@ -1569,31 +1537,29 @@ def build_goblin(grid_pos: tuple[float, float, float], mats: dict):
     # grid_pos is not used: a skinned figure stands at the file's origin (design 6.1.1 rule 2b)
     import rigs  # the biped table; imported here because only this builder is skinned (plan S2)
 
-    route = os.environ.get("GOBLIN_BODY")
-    variant = os.environ.get("GOBLIN_MATS")
-    if route not in ("a", "b") or variant not in ("3", "1"):
-        raise SystemExit(
-            f"goblin: set GOBLIN_BODY to a or b and GOBLIN_MATS to 3 or 1 on the BLEND line; got {route!r} and {variant!r} (no default)"
-        )
-
     # White: vertex colour multiplies the material's colour and can only darken it, so every colour
-    # of the raider is paint. The three-family builds have a white material of their own in the wood
-    # and the metal family too (the engine picks a family by 'wood' and 'bronze' in the name): on the
-    # shared mat_wood and mat_bronze, wood stopped at 24% value and bronze at 48%.
+    # of the raider is paint. The wood and the metal family have a white material of the goblin's own
+    # too (the engine picks a family by 'wood' and 'bronze' in the name): on the shared mat_wood and
+    # mat_bronze, wood stopped at 24% value and bronze at 48%.
     skin = make_mat("mat_skin_goblin_paint", 0xFFFFFF, roughness=0.58, metallic=0.04)
-    wood = make_mat("mat_wood_goblin_paint", 0xFFFFFF, roughness=0.70, metallic=0.02) if variant == "3" else skin
-    metal = make_mat("mat_bronze_goblin_paint", 0xFFFFFF, roughness=0.45, metallic=0.65) if variant == "3" else skin
+    wood = make_mat("mat_wood_goblin_paint", 0xFFFFFF, roughness=0.70, metallic=0.02)
+    metal = make_mat("mat_bronze_goblin_paint", 0xFFFFFF, roughness=0.45, metallic=0.65)
     tile = _goblin_hide_mean()
     col = dict(GOBLIN_COLOURS, skin=_goblin_skin_paint(GOBLIN_COLOURS["skin"], tile), skin_dark=_goblin_skin_paint(GOBLIN_COLOURS["skin_dark"], tile))
     j = goblin_joints()
     hard = []  # (object, bone): rigid parts, weight 1 on one bone
 
-    def add(obj, bone: str, colour: int):
-        _goblin_tint(obj, colour)
+    def add(obj, bone: str, colour: int, planes: bool = False):
+        _goblin_tint(obj, colour, planes)
         hard.append((obj, f"goblin_{bone}"))
 
-    # Head: rigid with the head bone. The irises are their own vertices, so the paint stays crisp.
-    add(_goblin_head(skin), "HeadGroup", col["skin"])
+    def aim(d) -> dict:
+        """The rx and rz that turn a primitive's own +Y axis to the unit vector d."""
+        return {"rx": math.asin(d.z), "rz": -math.atan2(d.x, d.y)}
+
+    # Head: rigid with the head bone, its planes toned like the body's. The irises are their own
+    # vertices, so the paint stays crisp.
+    add(_goblin_head(skin), "HeadGroup", col["skin"], planes=True)
     for side, tag in ((-1.0, "L"), (1.0, "R")):
         add(
             add_sphere(f"gob_iris_{tag}", None, skin, 0.055, 0.04, 0.022, tx=side * 0.10, ty=1.505, tz=-0.522, rz=side * -0.25, segs=8, rings=6),
@@ -1620,17 +1586,43 @@ def build_goblin(grid_pos: tuple[float, float, float], mats: dict):
         )
     # Lantern jaw: wider than the skull above it and 0.11 in front of the upper lip, so its top is a shelf
     # seen from the game's camera. The mouth is a dark slab between lip and jaw; it stays with the head.
-    add(add_sphere("gob_jaw", None, skin, 0.23, 0.10, 0.20, tx=0.0, ty=1.30, tz=-0.44, segs=14, rings=9), "Jaw", col["skin"])
+    # Jaw, pauldron and boss are faceted (S2d): few flat faces, each with its own plane tone.
+    add(add_sphere("gob_jaw", None, skin, 0.23, 0.10, 0.20, tx=0.0, ty=1.30, tz=-0.44, segs=8, rings=6, smooth=False), "Jaw", col["skin"], planes=True)
     add(add_sphere("gob_mouth", None, skin, 0.185, 0.03, 0.15, tx=0.0, ty=1.395, tz=-0.44, segs=10, rings=6), "HeadGroup", col["mouth"])
 
     # Loincloth and belt hang from the hips, never from the legs
-    add(add_box("gob_cloth_front", None, skin, 0.20, 0.30, 0.05, tx=0.0, ty=0.53, tz=-0.16, rx=-0.10, bevel=0.0), "Hips", col["rust_cloth"])
-    add(add_box("gob_cloth_back", None, skin, 0.20, 0.30, 0.05, tx=0.0, ty=0.53, tz=0.19, rx=0.10, bevel=0.0), "Hips", col["rust_cloth"])
-    add(add_sphere("gob_pauldron", None, metal, 0.15, 0.10, 0.15, tx=-0.33, ty=1.28, tz=-0.10, rz=0.35, segs=12, rings=7), "LeftArmPivot", col["rust"])
+    # Each flap is 0.22 long (0.30 before S2d) from the same top edge, and tapers to 0.6 of its width
+    for name, tz, rx in (("gob_cloth_front", -0.16, -0.10), ("gob_cloth_back", 0.19, 0.10)):
+        flap = add_box(name, None, skin, 0.20, 0.22, 0.05, tx=0.0, ty=0.57, tz=tz, rx=rx, bevel=0.0)
+        heights = [v.co.z for v in flap.data.vertices]
+        for v in flap.data.vertices:
+            v.co.x *= 0.6 + 0.4 * (v.co.z - min(heights)) / (max(heights) - min(heights))
+        add(flap, "Hips", col["rust_cloth"])
+    add(
+        add_sphere("gob_pauldron", None, metal, 0.15, 0.10, 0.15, tx=-0.33, ty=1.28, tz=-0.10, rz=0.35, segs=6, rings=5, smooth=False),
+        "LeftArmPivot",
+        col["rust"],
+        planes=True,
+    )
 
-    # Spear in the right hand: butt on the ground outside the foot, head up and out, clear of the body outline
+    # A thumb on each fist: a blunt flat-faced block on the hand bone, lying up along the shaft on the
+    # fist's inner front, half of it standing out of the fist
+    for side, tag in ((-1.0, "Left"), (1.0, "Right")):
+        h = Vector(j[f"{tag}Hand"])
+        add(
+            add_box(
+                f"gob_thumb_{tag[0]}", None, skin, 0.055, 0.13, 0.06, tx=h.x - side * 0.075, ty=h.y + 0.045, tz=h.z - 0.10,
+                bevel=0.0, **aim(Vector((-side * 0.15, 0.80, -0.58)).normalized()),
+            ),
+            f"{tag}Hand",
+            col["skin_dark"],
+            planes=True,
+        )
+
+    # Spear in the right hand: butt on the ground outside the foot, head up, out and back, clear of the
+    # body outline and, side-on, behind the skull instead of across the face (S2d)
     hand = Vector(j["RightHand"])
-    d = Vector((0.30, 0.94, -0.12)).normalized()
+    d = Vector((0.30, 0.94, 0.20)).normalized()
     butt, top = hand - d * 0.69, hand + d * 0.80
     add(add_limb_tube("gob_spear_shaft", None, wood, tuple(butt), tuple(top), 0.034, 0.032, r_mid=0.033, segs=8, steps=3), "WeaponPivot", col["wood"])
     add(
@@ -1641,7 +1633,7 @@ def build_goblin(grid_pos: tuple[float, float, float], mats: dict):
     add(
         add_cone_spike(
             "gob_spear_head", None, metal, base_r=0.03, length=0.32, tx=top.x, ty=top.y, tz=top.z,
-            rx=math.asin(d.z), rz=-math.atan2(d.x, d.y), segs=8, flatten_x=2.6,
+            segs=8, flatten_x=2.6, **aim(d),
         ),
         "WeaponPivot",
         col["bronze"],
@@ -1653,31 +1645,28 @@ def build_goblin(grid_pos: tuple[float, float, float], mats: dict):
     n = Vector((-0.80, 0.10, -0.59))
     n = (n - f * n.dot(f)).normalized()
     c = (Vector(j["LeftElbowPivot"]) + Vector(j["LeftHand"])) / 2.0 + n * 0.15
-    face = {"rx": math.asin(n.z), "rz": -math.atan2(n.x, n.y)}
+    face = aim(n)
     add(add_lathe("gob_shield_rim", None, metal, [(-0.02, 0.30, 0.30), (0.02, 0.30, 0.30)], segs=18, tx=c.x, ty=c.y, tz=c.z, **face), "OffhandPivot", col["bronze"])
     add(add_lathe("gob_shield_wood", None, wood, [(-0.026, 0.27, 0.27), (0.026, 0.27, 0.27)], segs=18, tx=c.x, ty=c.y, tz=c.z, **face), "OffhandPivot", col["wood"])
     boss = c + n * 0.03
-    add(add_sphere("gob_shield_boss", None, metal, 0.09, tx=boss.x, ty=boss.y, tz=boss.z, segs=10, rings=7), "OffhandPivot", col["bronze"])
+    add(add_sphere("gob_shield_boss", None, metal, 0.09, tx=boss.x, ty=boss.y, tz=boss.z, segs=6, rings=4, smooth=False), "OffhandPivot", col["bronze"], planes=True)
 
     # Body: what is left of the triangle budget, with hard edges so its planes read (plan S2b)
     hard_tris = sum(len(p.vertices) - 2 for obj, _ in hard for p in obj.data.polygons)
     body_tris = GOBLIN_TRIANGLES - 40 - hard_tris - GOBLIN_BELT_SEGS * 6
-    if route == "a":
-        pts, edges, radii, keep = _goblin_body_graph(j)
-        # organic_body's own decimate is left out (a ceiling it never reaches): the skin is softened first.
-        # Fourteen passes round the skin modifier's square limbs and leave the joints standing.
-        body = _goblin_skin(
-            figkit.organic_body((pts, edges), radii, 0.02, 10**9), "gob_body", skin, body_tris, soften=14, keep=tuple(keep), crease=GOBLIN_CREASE
-        )
-    else:
-        body = _goblin_fuse(_goblin_body_primitives(j, skin), "gob_body", skin, 0.02, body_tris, soften=1, crease=GOBLIN_CREASE)
-    # No skin in front of the shield's planks: the fist stays behind them on either route
+    pts, edges, radii, keep = _goblin_body_graph(j)
+    # organic_body's own decimate is left out (a ceiling it never reaches): the skin is softened first.
+    # Fourteen passes round the skin modifier's square limbs and leave the joints standing.
+    body = _goblin_skin(
+        figkit.organic_body((pts, edges), radii, 0.02, 10**9), "gob_body", skin, body_tris, soften=14, keep=tuple(keep), crease=GOBLIN_CREASE
+    )
+    # No skin in front of the shield's planks: the fist stays behind them
     cb, nb = Vector(t2b(*c)), Vector(t2b(*n))
     through = sum(1 for v in body.data.vertices if (v.co - cb).dot(nb) > 0.026 and ((v.co - cb) - nb * (v.co - cb).dot(nb)).length < 0.27)
     if through:
         raise ValueError(f"goblin: {through} body vertices stand in front of the shield's planks")
     # The belt hangs from the hips like the loincloth, on the paint material like it (leather is
-    # lighter than the shared mat_wood), and is laid on whichever body was built
+    # lighter than the shared mat_wood), and is laid on the finished body
     add(_goblin_belt(body, skin), "Hips", col["leather"])
 
     for obj in [body] + [obj for obj, _ in hard]:
@@ -1745,7 +1734,7 @@ def build_goblin(grid_pos: tuple[float, float, float], mats: dict):
     tris = sum(len(p.vertices) - 2 for ob in merged for p in ob.data.polygons)
     if tris > GOBLIN_TRIANGLES:
         raise ValueError(f"goblin: {tris} triangles, over the budget of {GOBLIN_TRIANGLES}")
-    print(f"[Blender] goblin body route {route}, materials {variant}: {tris} triangles in {len(merged)} meshes")
+    print(f"[Blender] goblin: {tris} triangles in {len(merged)} meshes")
     return rig
 
 
