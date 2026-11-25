@@ -41,8 +41,9 @@ function roots(file: string): Record<string, { meshes: number; triangles: Record
     const node = json.nodes[i];
     if (node.mesh !== undefined) {
       for (const p of json.meshes[node.mesh].primitives) {
-        const fam = familyOf(p.material === undefined ? '' : (json.materials?.[p.material]?.name ?? ''), node.name ?? '');
-        const tris = (p.indices === undefined ? 0 : json.accessors[p.indices].count) / 3;
+        const fam = familyOf(p.material === undefined ? '' : (json.materials![p.material].name ?? ''), node.name ?? '');
+        if (p.indices === undefined) throw new Error(`${file}: primitive in ${node.name} has no indices (merge dropped them?)`);
+        const tris = json.accessors[p.indices].count / 3;
         acc.meshes += 1;
         acc.triangles[fam] = (acc.triangles[fam] ?? 0) + tris;
       }
@@ -67,12 +68,12 @@ describe('gear merge (a merge changes grouping, never triangles)', () => {
   });
 
   it.each(Object.keys(fixture))('%s keeps its triangles per material family', (name) => {
-    expect(built[name]?.triangles).toEqual(fixture[name]);
+    expect(built[name].triangles).toEqual(fixture[name]);
   });
 
   // Red until G6: today's file has up to 24 meshes per root.
   it.each(Object.keys(fixture))('%s has at most 4 meshes, or one per family when it has more than 4 families', (name) => {
     const families = Object.keys(fixture[name]).length;
-    expect(built[name]?.meshes).toBeLessThanOrEqual(Math.max(4, families));
+    expect(built[name].meshes).toBeLessThanOrEqual(Math.max(4, families));
   });
 });
