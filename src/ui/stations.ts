@@ -126,7 +126,7 @@ function slotButton(stack: ItemStack, action: string): HTMLButtonElement {
   const it = ITEMS[stack.id];
   const btn = document.createElement('button');
   btn.className = 'stack-slot';
-  btn.dataset.action = action;
+  btn.dataset.transfer = action;
   btn.dataset.item = stack.id;
   bindItemTooltip(btn, it);
   const tier = it?.tier && (TIER_COLORS as Record<string, string>)[it.tier];
@@ -157,9 +157,9 @@ function bindTransfer(btn: HTMLButtonElement): void {
   btn.onclick = () => {
     const id = btn.dataset.item || '';
     const mode = STATE.transferQty;
-    const result = btn.dataset.action === 'withdraw' ? withdraw(STATE, id, mode) : deposit(STATE, id, mode);
+    const result = btn.dataset.transfer === 'withdraw' ? withdraw(STATE, id, mode) : deposit(STATE, id, mode);
     if (!result.ok) bridge.chat(result.reason || 'Transfer failed.', 'combat');
-    else bridge.chat(`${btn.dataset.action === 'withdraw' ? 'Withdrew' : 'Deposited'} ${result.moved} × ${ITEMS[id]?.name}.`, 'loot');
+    else bridge.chat(`${btn.dataset.transfer === 'withdraw' ? 'Withdrew' : 'Deposited'} ${result.moved} × ${ITEMS[id]?.name}.`, 'loot');
     bridge.refresh();
   };
 }
@@ -407,7 +407,7 @@ export function renderShopModal(): void {
     const main = document.createElement('button');
     main.type = 'button';
     main.className = 'sell-card-main';
-    main.dataset.action = 'sell';
+    main.dataset.transfer = 'sell';
     main.dataset.item = slot.id;
     const mode = STATE.transferQty;
     const cardGp = sellGp(slot.id, mode);

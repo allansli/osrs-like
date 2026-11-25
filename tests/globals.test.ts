@@ -21,4 +21,10 @@ describe('window globals', () => {
     const missing = [...actions].filter((n) => !WINDOW_GLOBALS.includes(n));
     expect(missing).toEqual([]);
   });
+
+  it('no script under src/ui sets data-action, which the delegated click listener would read as a window global', () => {
+    const stations = readFileSync(fileURLToPath(new URL('../src/ui/stations.ts', import.meta.url)), 'utf8');
+    expect(stations).toContain('dataset.transfer');
+    expect(stations.match(/dataset\.action|data-action/g) ?? []).toEqual([]);
+  });
 });
