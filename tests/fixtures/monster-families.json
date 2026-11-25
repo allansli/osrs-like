@@ -1,0 +1,373 @@
+{
+ "chicken": {
+  "meshes": 38,
+  "triangles": {
+   "cloth": 720,
+   "skin": 1984,
+   "plain": 1416,
+   "eyes": 560
+  },
+  "pivots": {
+   "Monster_chicken": [
+    "cloth",
+    "eyes",
+    "plain",
+    "skin"
+   ],
+   "chicken_RightLegPivot": [
+    "plain",
+    "skin"
+   ],
+   "chicken_LeftLegPivot": [
+    "plain",
+    "skin"
+   ]
+  }
+ },
+ "dark_ranger": {
+  "meshes": 37,
+  "triangles": {
+   "leather": 3032,
+   "iron": 624,
+   "cloth": 596,
+   "bark": 168,
+   "plain": 72,
+   "eyes": 560,
+   "glow": 288
+  },
+  "pivots": {
+   "Monster_dark_ranger": [
+    "cloth",
+    "glow",
+    "iron",
+    "leather"
+   ],
+   "dark_ranger_RightLegPivot": [
+    "iron",
+    "leather"
+   ],
+   "dark_ranger_RightArmPivot": [
+    "bark",
+    "cloth",
+    "leather",
+    "plain"
+   ],
+   "dark_ranger_LeftLegPivot": [
+    "iron",
+    "leather"
+   ],
+   "dark_ranger_LeftArmPivot": [
+    "cloth",
+    "leather"
+   ],
+   "dark_ranger_HeadGroup": [
+    "cloth",
+    "eyes",
+    "iron"
+   ]
+  }
+ },
+ "dark_wizard": {
+  "meshes": 24,
+  "triangles": {
+   "plain": 1240,
+   "cloth": 1260,
+   "leather": 216,
+   "bark": 144,
+   "glow": 280,
+   "iron": 280,
+   "eyes": 560
+  },
+  "pivots": {
+   "Monster_dark_wizard": [
+    "cloth",
+    "plain"
+   ],
+   "dark_wizard_RightLegPivot": [
+    "leather"
+   ],
+   "dark_wizard_RightArmPivot": [
+    "bark",
+    "cloth",
+    "glow",
+    "plain"
+   ],
+   "dark_wizard_LeftLegPivot": [
+    "leather"
+   ],
+   "dark_wizard_LeftArmPivot": [
+    "cloth",
+    "plain"
+   ],
+   "dark_wizard_HeadGroup": [
+    "cloth",
+    "eyes",
+    "iron",
+    "plain"
+   ]
+  }
+ },
+ "elvarg_dragon": {
+  "meshes": 5,
+  "triangles": {
+   "plain": 8928,
+   "eyes": 640,
+   "skin": 25182
+  },
+  "pivots": {
+   "Monster_elvarg_dragon": [
+    "eyes",
+    "plain",
+    "skin"
+   ]
+  }
+ },
+ "goblin": {
+  "meshes": 59,
+  "triangles": {
+   "skin": 3248,
+   "cloth": 456,
+   "plain": 912,
+   "iron": 2596,
+   "wood": 200,
+   "leather": 320,
+   "eyes": 560
+  },
+  "pivots": {
+   "Monster_goblin": [
+    "cloth",
+    "iron",
+    "leather",
+    "skin"
+   ],
+   "goblin_RightLegPivot": [
+    "cloth",
+    "plain",
+    "skin"
+   ],
+   "goblin_RightArmPivot": [
+    "iron",
+    "leather",
+    "skin",
+    "wood"
+   ],
+   "goblin_LeftLegPivot": [
+    "cloth",
+    "plain",
+    "skin"
+   ],
+   "goblin_LeftArmPivot": [
+    "iron",
+    "plain",
+    "skin",
+    "wood"
+   ],
+   "goblin_HeadGroup": [
+    "eyes",
+    "plain",
+    "skin"
+   ]
+  }
+ },
+ "goblin_archer": {
+  "meshes": 58,
+  "triangles": {
+   "skin": 3608,
+   "cloth": 672,
+   "plain": 696,
+   "leather": 496,
+   "wood": 500,
+   "eyes": 560,
+   "iron": 108
+  },
+  "pivots": {
+   "Monster_goblin_archer": [
+    "cloth",
+    "iron",
+    "leather",
+    "skin",
+    "wood"
+   ],
+   "goblin_archer_RightLegPivot": [
+    "cloth",
+    "plain",
+    "skin"
+   ],
+   "goblin_archer_RightArmPivot": [
+    "leather",
+    "plain",
+    "skin",
+    "wood"
+   ],
+   "goblin_archer_LeftLegPivot": [
+    "cloth",
+    "plain",
+    "skin"
+   ],
+   "goblin_archer_LeftArmPivot": [
+    "leather",
+    "skin"
+   ],
+   "goblin_archer_HeadGroup": [
+    "cloth",
+    "eyes",
+    "plain",
+    "skin"
+   ]
+  }
+ },
+ "hill_giant": {
+  "meshes": 45,
+  "triangles": {
+   "skin": 2620,
+   "plain": 1368,
+   "leather": 1284,
+   "wood": 192,
+   "iron": 688,
+   "stone": 576,
+   "eyes": 560
+  },
+  "pivots": {
+   "Monster_hill_giant": [
+    "iron",
+    "leather",
+    "plain",
+    "skin"
+   ],
+   "hill_giant_RightLegPivot": [
+    "leather",
+    "skin"
+   ],
+   "hill_giant_RightArmPivot": [
+    "iron",
+    "plain",
+    "skin",
+    "stone",
+    "wood"
+   ],
+   "hill_giant_LeftLegPivot": [
+    "leather",
+    "skin"
+   ],
+   "hill_giant_LeftArmPivot": [
+    "leather",
+    "skin"
+   ],
+   "hill_giant_HeadGroup": [
+    "eyes",
+    "leather",
+    "plain",
+    "skin"
+   ]
+  }
+ },
+ "lesser_demon": {
+  "meshes": 24,
+  "triangles": {
+   "plain": 2926,
+   "leather": 144,
+   "glow": 108,
+   "iron": 228,
+   "eyes": 1920,
+   "skin": 4892
+  },
+  "pivots": {
+   "Monster_lesser_demon": [
+    "eyes",
+    "plain",
+    "skin"
+   ],
+   "lesser_demon_RWing": [
+    "leather",
+    "plain"
+   ],
+   "lesser_demon_RightArmPivot": [
+    "glow",
+    "iron"
+   ],
+   "lesser_demon_LWing": [
+    "leather",
+    "plain"
+   ]
+  }
+ },
+ "moss_guardian": {
+  "meshes": 43,
+  "triangles": {
+   "stone": 1424,
+   "plain": 192,
+   "glow": 840,
+   "bark": 1200,
+   "wood": 1072,
+   "grass": 1680,
+   "eyes": 560
+  },
+  "pivots": {
+   "Monster_moss_guardian": [
+    "bark",
+    "glow",
+    "grass",
+    "plain",
+    "stone"
+   ],
+   "moss_guardian_RightLegPivot": [
+    "bark",
+    "stone",
+    "wood"
+   ],
+   "moss_guardian_RightArmPivot": [
+    "bark",
+    "grass",
+    "stone"
+   ],
+   "moss_guardian_LeftLegPivot": [
+    "bark",
+    "stone",
+    "wood"
+   ],
+   "moss_guardian_LeftArmPivot": [
+    "bark",
+    "wood"
+   ],
+   "moss_guardian_HeadGroup": [
+    "bark",
+    "eyes",
+    "grass",
+    "wood"
+   ]
+  }
+ },
+ "scorpion": {
+  "meshes": 68,
+  "triangles": {
+   "skin": 6744,
+   "glow": 144,
+   "plain": 1920,
+   "eyes": 1680
+  },
+  "pivots": {
+   "Monster_scorpion": [
+    "eyes",
+    "glow",
+    "plain",
+    "skin"
+   ],
+   "scorpion_RightLegPivot": [
+    "plain",
+    "skin"
+   ],
+   "scorpion_RightArmPivot": [
+    "plain",
+    "skin"
+   ],
+   "scorpion_LeftLegPivot": [
+    "plain",
+    "skin"
+   ],
+   "scorpion_LeftArmPivot": [
+    "plain",
+    "skin"
+   ]
+  }
+ }
+}
