@@ -1154,20 +1154,26 @@ def build_goblin_base(key: str, grid_pos: tuple[float, float, float], mats: dict
 # three-space like the rest of this file (+Y up, -Z forward). The figure stands at the
 # file's origin (design 6.1.1 rule 2b).
 GOBLIN_TRIANGLES = 5000
+GOBLIN_CREASE = math.radians(32.0)  # body edges sharper than this are hard; the rest stay smooth
 GOBLIN_BELT_SEGS = 16  # the belt is three bands of this many quads
 GOBLIN_SCALE = 1.02  # the numbers below build a figure 1.752 tall; the shipped goblin is 1.785
 GOBLIN_COLOURS = {
-    "skin": 0x62733A,  # olive, 45% value
-    "skin_dark": 0x4E5C30,  # under-side, hands and feet, 36% value
+    "skin": 0x505C3E,  # grey olive, 36% value: apart from lit grass
+    "skin_dark": 0x383F2C,  # under-side, hands and feet, 25% value
     "bone": 0xBDB39C,
     "rust_cloth": 0x8A4A2C,
     "iris": 0xE6B820,
+    "pupil": 0x1E1410,
     "mouth": 0x3B2018,
-    "wood": 0x3E2C1C,
-    "leather": 0x33241A,
-    "bronze": 0x7A5B32,
-    "rust": 0x6E4A2C,
+    "wood": 0x543C26,  # 33% value
+    "leather": 0x4D3627,  # 30% value
+    "bronze": 0x9A6E2A,  # 60% value
+    "rust": 0x54381F,  # 33% value
 }
+# Vertex colour multiplies a material's colour, so it can only darken it. The three-family builds
+# put wood and metal on the shared mat_wood and mat_bronze, whose colours are not the goblin's to
+# change: there each of these stops at its material's own colour (24% and 48% value).
+GOBLIN_SHARED_CEILING = {"wood": 0x3E2C1C, "bronze": 0x7A5B32}
 
 
 def goblin_joints() -> dict:
@@ -1188,8 +1194,8 @@ def goblin_joints() -> dict:
         j[f"{tag}ElbowPivot"] = (side * 0.506, 0.968, -0.044)
         j[f"{tag}Hand"] = (side * 0.624, 0.695, -0.131)
         j[f"{tag}LegPivot"] = (side * 0.14, 0.66, 0.03)
-        j[f"{tag}KneePivot"] = (side * 0.215, 0.384, -0.06)
-        j[f"{tag}Foot"] = (side * 0.191, 0.099, 0.03)
+        j[f"{tag}KneePivot"] = (side * 0.25, 0.384, -0.045)
+        j[f"{tag}Foot"] = (side * 0.226, 0.099, 0.03)
     j["WeaponPivot"] = j["RightHand"]
     j["OffhandPivot"] = j["LeftHand"]
     return j
@@ -1206,12 +1212,14 @@ def _goblin_tint(obj, hex_colour: int) -> None:
     ca.data.foreach_set("color", [*tint, 1.0] * len(obj.data.vertices))
 
 
-def _goblin_skin(ob, name: str, mat, triangles: int, soften: int, keep: tuple = ()):
+def _goblin_skin(ob, name: str, mat, triangles: int, soften: int, keep: tuple = (), crease: float | None = None):
     """
-    Rounds a voxel skin (soften smoothing passes), decimates it to its triangle count, validates,
-    names it and gives it its one material. keep is (centre, radius) balls in Blender space whose
-    inside takes a fifth of the smoothing, rising to all of it at 1.6 radii: forty passes shrink a
-    limb's end to a stump, and a hand has to stay a hand.
+    Rounds a voxel skin (soften smoothing passes), cuts it flat at the ground, decimates it to its
+    triangle count, validates, names it and gives it its one material. keep is (centre, radius)
+    balls in Blender space whose inside takes a fifth of the smoothing, rising to all of it at
+    1.6 radii: the passes shrink a limb's end to a stump, and a hand or a foot has to keep its
+    shape. crease is an angle: every edge whose faces meet more sharply is marked hard, so the
+    exporter splits its vertices and the form reads as carved planes; None leaves all smooth.
     """
     bpy.context.view_layer.objects.active = ob
     smooth = ob.modifiers.new("Soften", "SMOOTH")
@@ -1224,6 +1232,8 @@ def _goblin_skin(ob, name: str, mat, triangles: int, soften: int, keep: tuple = 
     smooth.factor = 0.5
     smooth.iterations = soften
     bpy.ops.object.modifier_apply(modifier="Soften")
+    for v in ob.data.vertices:  # soles flat on the ground
+        v.co.z = max(v.co.z, 0.0)
     tris = sum(len(p.vertices) - 2 for p in ob.data.polygons)
     if tris > triangles:
         dec = ob.modifiers.new("Decimate", "DECIMATE")
@@ -1236,10 +1246,17 @@ def _goblin_skin(ob, name: str, mat, triangles: int, soften: int, keep: tuple = 
     ob.data.materials.append(mat)
     for p in ob.data.polygons:
         p.use_smooth = True
+    if crease is not None:
+        bm = bmesh.new()
+        bm.from_mesh(ob.data)
+        for e in bm.edges:
+            e.smooth = e.calc_face_angle(math.pi) < crease
+        bm.to_mesh(ob.data)
+        bm.free()
     return ob
 
 
-def _goblin_fuse(objs: list, name: str, mat, voxel: float, triangles: int, soften: int):
+def _goblin_fuse(objs: list, name: str, mat, voxel: float, triangles: int, soften: int, crease: float | None = None):
     """Closed primitives fused into one continuous skin: join, voxel remesh, soften, decimate (body route b; the head)."""
     bpy.ops.object.select_all(action="DESELECT")
     for o in objs:
@@ -1249,7 +1266,7 @@ def _goblin_fuse(objs: list, name: str, mat, voxel: float, triangles: int, softe
     bpy.ops.object.join()
     ob.data.remesh_voxel_size = voxel
     bpy.ops.object.voxel_remesh()
-    return _goblin_skin(ob, name, mat, triangles, soften)
+    return _goblin_skin(ob, name, mat, triangles, soften, crease=crease)
 
 
 def _goblin_limb_dir(a: tuple, b: tuple) -> Vector:
@@ -1257,8 +1274,12 @@ def _goblin_limb_dir(a: tuple, b: tuple) -> Vector:
 
 
 def _goblin_body_graph(j: dict) -> tuple[list, list, list, list]:
-    """Route a: the stick graph and radii for figkit.organic_body, and the hands' keep balls for _goblin_skin, in Blender space."""
-    pts, radii, edges, hands = [], [], [], []
+    """
+    Route a: the stick graph and radii for figkit.organic_body, and the keep balls of hands and feet
+    for _goblin_skin, in Blender space. Each limb narrows between its joints, so shoulder, elbow,
+    hip and knee stand out as forms after the smoothing.
+    """
+    pts, radii, edges, keep = [], [], [], []
 
     def chain(start, nodes):
         prev = start
@@ -1270,29 +1291,44 @@ def _goblin_body_graph(j: dict) -> tuple[list, list, list, list]:
             prev = len(pts) - 1
         return prev
 
-    pelvis = chain(None, [((0.0, 0.66, 0.04), (0.17, 0.15))])
-    chest = chain(pelvis, [((0.0, 0.85, -0.04), 0.21), ((0.0, 1.10, -0.07), 0.24)])
-    chain(chest, [((0.0, 1.24, -0.17), 0.14), ((0.0, 1.40, -0.27), 0.12)])  # neck, thrust forward into the head
-    chain(chest, [((0.0, 1.22, 0.05), 0.17)])  # the hump of the hunched back
+    def along(a, b, t):
+        return tuple(Vector(a).lerp(Vector(b), t))
+
+    pelvis = chain(None, [((0.0, 0.66, 0.04), (0.165, 0.14))])
+    # The waist is narrower than hips and ribs: one break between chest and waist
+    chest = chain(pelvis, [((0.0, 0.82, -0.02), 0.135), ((0.0, 0.97, -0.05), 0.215), ((0.0, 1.11, -0.07), 0.225)])
+    chain(chest, [((0.0, 1.24, -0.17), 0.13), ((0.0, 1.40, -0.27), 0.11)])  # neck, thrust forward into the head
+    # The hump: one node standing off the back, which the skin modifier makes a block with a face
+    # of its own. A second node down the back lies in the back's surface and leaves tunnels.
+    chain(chest, [((0.0, 1.23, 0.10), 0.15)])
     for side, tag in ((-1.0, "Left"), (1.0, "Right")):
-        elbow, hand = Vector(j[f"{tag}ElbowPivot"]), Vector(j[f"{tag}Hand"])
+        shoulder, elbow, hand = j[f"{tag}ArmPivot"], j[f"{tag}ElbowPivot"], Vector(j[f"{tag}Hand"])
         d = _goblin_limb_dir(elbow, hand)
         chain(chest, [
-            ((side * 0.15, 1.19, -0.08), 0.14),  # collar: the shoulder line slopes instead of squaring off
-            (j[f"{tag}ArmPivot"], 0.125),
-            (tuple(elbow), 0.09),
-            (tuple(hand - d * 0.08), 0.062),  # wrist
-            (tuple(hand - d * 0.02), 0.10),  # the hand: a fist a third wider than the wrist, around the hand joint
-            (tuple(hand + d * 0.10), 0.09),
+            ((side * 0.15, 1.19, -0.08), 0.13),  # collar: the shoulder line slopes instead of squaring off
+            (shoulder, 0.118),
+            (along(shoulder, elbow, 0.6), 0.078),
+            (elbow, 0.092),
+            (along(elbow, hand, 0.35), 0.07),
+            (tuple(hand - d * 0.08), 0.056),  # wrist
+            (tuple(hand - d * 0.02), 0.084),  # the hand: a fist wider than the wrist, around the hand joint
+            (tuple(hand + d * 0.09), 0.078),
         ])
-        hands.append((Vector(t2b(*(hand + d * 0.04))), 0.15))
+        keep.append((Vector(t2b(*(hand + d * 0.04))), 0.15))
+        hip, knee, ankle = (side * 0.14, 0.64, 0.03), j[f"{tag}KneePivot"], j[f"{tag}Foot"]
         chain(pelvis, [
-            ((side * 0.14, 0.64, 0.03), 0.125),
-            (j[f"{tag}KneePivot"], 0.092),
-            (j[f"{tag}Foot"], 0.072),
-            ((side * 0.20, 0.06, -0.15), 0.06),
+            (hip, 0.118),
+            (along(hip, knee, 0.7), 0.082),
+            (knee, 0.098),
+            (along(knee, ankle, 0.3), 0.08),  # calf
+            (along(knee, ankle, 0.8), 0.052),
+            # The foot: heel under the ankle joint, toes forward, 0.30 long and 0.13 wide (15% over
+            # life). Both nodes reach under the ground; _goblin_skin cuts them flat there.
+            ((ankle[0], 0.045, 0.03), 0.06),
+            ((ankle[0] * 1.03, 0.04, -0.155), 0.066),
         ])
-    return pts, edges, radii, hands
+        keep.append((Vector(t2b(ankle[0], 0.04, -0.07)), 0.17))
+    return pts, edges, radii, keep
 
 
 def _goblin_belt(body, mat):
@@ -1333,16 +1369,18 @@ def _goblin_body_primitives(j: dict, mat) -> list:
             [
                 (0.56, 0.13, 0.12, 0.0, 0.04, 0.2),
                 (0.66, 0.18, 0.15, 0.0, 0.04, 0.2),
-                (0.84, 0.20, 0.19, 0.0, -0.04, 0.1),
-                (1.00, 0.23, 0.19, 0.0, -0.05, 0.15),
+                (0.80, 0.165, 0.15, 0.0, -0.01, 0.1),
+                (0.90, 0.17, 0.155, 0.0, -0.035, 0.1),  # waist
+                (0.96, 0.25, 0.20, 0.0, -0.05, 0.15),  # the ribs stand out over it: one break
                 (1.12, 0.29, 0.20, 0.0, -0.05, 0.2),
                 (1.22, 0.30, 0.19, 0.0, -0.04, 0.2),
                 (1.30, 0.17, 0.15, 0.0, -0.12, 0.1),
                 (1.42, 0.12, 0.12, 0.0, -0.27, 0.0),
             ],
-            segs=20,
+            segs=10,
         ),
-        add_sphere("gob_hump", None, mat, 0.17, tx=0.0, ty=1.22, tz=0.05),
+        # The hump: a ball of six sides and five rings, so it stands on the back as planes
+        add_sphere("gob_hump", None, mat, 0.21, 0.17, 0.17, tx=0.0, ty=1.21, tz=0.06, segs=6, rings=5),
     ]
     for side, tag in ((-1.0, "Left"), (1.0, "Right")):
         sh, el, ha = j[f"{tag}ArmPivot"], j[f"{tag}ElbowPivot"], j[f"{tag}Hand"]
@@ -1350,12 +1388,15 @@ def _goblin_body_primitives(j: dict, mat) -> list:
         kn, an = j[f"{tag}KneePivot"], j[f"{tag}Foot"]
         parts += [
             add_sphere("gob_shoulder", None, mat, 0.115, tx=sh[0], ty=sh[1], tz=sh[2]),
-            add_limb_tube("gob_upper_arm", None, mat, sh, el, 0.105, 0.075),
-            add_limb_tube("gob_forearm", None, mat, el, ha, 0.075, 0.06),
+            add_limb_tube("gob_upper_arm", None, mat, sh, el, 0.105, 0.075, segs=6),
+            add_sphere("gob_elbow", None, mat, 0.088, tx=el[0], ty=el[1], tz=el[2]),
+            add_limb_tube("gob_forearm", None, mat, el, ha, 0.075, 0.06, segs=6),
             add_sphere("gob_hand", None, mat, 0.08, 0.09, 0.065, tx=palm.x, ty=palm.y, tz=palm.z),
-            add_limb_tube("gob_thigh", None, mat, (side * 0.14, 0.66, 0.03), kn, 0.11, 0.08),
-            add_limb_tube("gob_calf", None, mat, kn, an, 0.08, 0.062),
-            add_sphere("gob_foot", None, mat, 0.07, 0.05, 0.13, tx=side * 0.196, ty=0.05, tz=-0.06),
+            add_limb_tube("gob_thigh", None, mat, (side * 0.14, 0.66, 0.03), kn, 0.11, 0.08, segs=6),
+            add_sphere("gob_knee", None, mat, 0.096, tx=kn[0], ty=kn[1], tz=kn[2]),
+            add_limb_tube("gob_calf", None, mat, kn, an, 0.08, 0.062, segs=6),
+            # 0.30 long and 0.13 wide (15% over life); it reaches under the ground and is cut flat there
+            add_sphere("gob_foot", None, mat, 0.066, 0.06, 0.15, tx=an[0] * 1.02, ty=0.045, tz=-0.07),
         ]
     return parts
 
@@ -1419,7 +1460,7 @@ def build_goblin(grid_pos: tuple[float, float, float], mats: dict):
     skin = make_mat("mat_skin_goblin_paint", 0xFFFFFF, roughness=0.58, metallic=0.04)
     wood = mats["wood"] if variant == "3" else skin
     metal = mats["bronze"] if variant == "3" else skin
-    col = GOBLIN_COLOURS
+    col = dict(GOBLIN_COLOURS, **GOBLIN_SHARED_CEILING) if variant == "3" else GOBLIN_COLOURS
     j = goblin_joints()
     hard = []  # (object, bone): rigid parts, weight 1 on one bone
 
@@ -1434,6 +1475,12 @@ def build_goblin(grid_pos: tuple[float, float, float], mats: dict):
             add_sphere(f"gob_iris_{tag}", None, skin, 0.055, 0.04, 0.022, tx=side * 0.10, ty=1.505, tz=-0.522, rz=side * -0.25, segs=8, rings=6),
             "HeadGroup",
             col["iris"],
+        )
+        # A dark pupil standing just proud of the iris, 0.048 wide: nothing on the face is thinner than 0.044
+        add(
+            add_sphere(f"gob_pupil_{tag}", None, skin, 0.024, 0.028, 0.014, tx=side * 0.10, ty=1.505, tz=-0.536, rz=side * -0.25, segs=8, rings=5),
+            "HeadGroup",
+            col["pupil"],
         )
         # Underbite tusks rise from the jaw's front corners, outside the iris column and ending under it
         add(
@@ -1461,9 +1508,9 @@ def build_goblin(grid_pos: tuple[float, float, float], mats: dict):
     hand = Vector(j["RightHand"])
     d = Vector((0.30, 0.94, -0.12)).normalized()
     butt, top = hand - d * 0.69, hand + d * 0.80
-    add(add_limb_tube("gob_spear_shaft", None, wood, tuple(butt), tuple(top), 0.028, 0.026, r_mid=0.027, segs=8, steps=3), "WeaponPivot", col["wood"])
+    add(add_limb_tube("gob_spear_shaft", None, wood, tuple(butt), tuple(top), 0.034, 0.032, r_mid=0.033, segs=8, steps=3), "WeaponPivot", col["wood"])
     add(
-        add_limb_tube("gob_spear_collar", None, metal, tuple(top - d * 0.10), tuple(top + d * 0.02), 0.042, 0.042, r_mid=0.042, segs=8, steps=2),
+        add_limb_tube("gob_spear_collar", None, metal, tuple(top - d * 0.10), tuple(top + d * 0.02), 0.048, 0.048, r_mid=0.048, segs=8, steps=2),
         "WeaponPivot",
         col["rust"],
     )
@@ -1488,18 +1535,26 @@ def build_goblin(grid_pos: tuple[float, float, float], mats: dict):
     boss = c + n * 0.03
     add(add_sphere("gob_shield_boss", None, metal, 0.09, tx=boss.x, ty=boss.y, tz=boss.z, segs=10, rings=7), "OffhandPivot", col["bronze"])
 
-    # Body: what is left of the triangle budget
+    # Body: what is left of the triangle budget, with hard edges so its planes read (plan S2b)
     hard_tris = sum(len(p.vertices) - 2 for obj, _ in hard for p in obj.data.polygons)
     body_tris = GOBLIN_TRIANGLES - 40 - hard_tris - GOBLIN_BELT_SEGS * 6
     if route == "a":
-        pts, edges, radii, hands = _goblin_body_graph(j)
+        pts, edges, radii, keep = _goblin_body_graph(j)
         # organic_body's own decimate is left out (a ceiling it never reaches): the skin is softened first.
-        # The skin modifier gives square limbs, so route a takes forty passes and radii about 15% over the wanted ones.
-        body = _goblin_skin(figkit.organic_body((pts, edges), radii, 0.02, 10**9), "gob_body", skin, body_tris, soften=40, keep=tuple(hands))
+        # Fourteen passes round the skin modifier's square limbs and leave the joints standing.
+        body = _goblin_skin(
+            figkit.organic_body((pts, edges), radii, 0.02, 10**9), "gob_body", skin, body_tris, soften=14, keep=tuple(keep), crease=GOBLIN_CREASE
+        )
     else:
-        body = _goblin_fuse(_goblin_body_primitives(j, skin), "gob_body", skin, 0.02, body_tris, soften=8)
-    # The belt hangs from the hips like the loincloth, and is laid on whichever body was built
-    add(_goblin_belt(body, wood), "Hips", col["leather"])
+        body = _goblin_fuse(_goblin_body_primitives(j, skin), "gob_body", skin, 0.02, body_tris, soften=1, crease=GOBLIN_CREASE)
+    # No skin in front of the shield's planks: the fist stays behind them on either route
+    cb, nb = Vector(t2b(*c)), Vector(t2b(*n))
+    through = sum(1 for v in body.data.vertices if (v.co - cb).dot(nb) > 0.026 and ((v.co - cb) - nb * (v.co - cb).dot(nb)).length < 0.27)
+    if through:
+        raise ValueError(f"goblin: {through} body vertices stand in front of the shield's planks")
+    # The belt hangs from the hips like the loincloth, on the paint material like it (leather is
+    # lighter than the shared mat_wood), and is laid on whichever body was built
+    add(_goblin_belt(body, skin), "Hips", col["leather"])
 
     for obj in [body] + [obj for obj, _ in hard]:
         obj.data.transform(Matrix.Scale(GOBLIN_SCALE, 4))

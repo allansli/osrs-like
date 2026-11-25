@@ -2,9 +2,9 @@
  "three-families": {
   "meshes": 3,
   "triangles": {
-   "wood": 216,
+   "wood": 120,
    "iron": 508,
-   "skin": 4236
+   "skin": 4332
   },
   "pivots": {
    "Monster_goblin": [
