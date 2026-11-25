@@ -32,7 +32,11 @@ describe('shipped files satisfy their manifest (Contract and Budget)', () => {
     try {
       const copy = path.join(tmp, `${name}.glb`);
       fs.copyFileSync(path.join(ROOT, 'public', 'models', `${name}.glb`), copy);
-      const r = compare(copy, CONTRACT);
+      // Shipped files are checked against the live manifests only: a pending/ manifest belongs to the built file (rule 0.3.5).
+      const live = path.join(tmp, 'live');
+      fs.mkdirSync(live);
+      for (const f of fs.readdirSync(CONTRACT)) if (f.endsWith('.json')) fs.copyFileSync(path.join(CONTRACT, f), path.join(live, f));
+      const r = compare(copy, live);
       expect(r.out).toContain('All contract checks passed.');
       expect(r.out).toContain('All budget checks passed.');
       expect(r.status).toBe(0);
