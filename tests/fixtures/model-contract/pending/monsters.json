@@ -1288,7 +1288,7 @@
       "meshes": 4,
       "materials": 5,
       "rawBytes": 166315,
-      "brotliBytes": 102339
+      "brotliBytes": 102301
     },
     "Monster_goblin_archer": {
       "triangles": 6640,

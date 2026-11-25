@@ -1471,9 +1471,12 @@ def build_goblin(grid_pos: tuple[float, float, float], mats: dict):
         col["bronze"],
     )
 
-    # Round shield on the left forearm, facing out and forward
-    n = Vector((-0.80, 0.10, -0.59)).normalized()
-    c = (Vector(j["LeftElbowPivot"]) + Vector(j["LeftHand"])) / 2.0 + n * 0.085
+    # Round shield on the left forearm, facing out and forward. Its face lies along the forearm and stands
+    # 0.15 off the forearm's axis, so the fist (0.133 from that axis at most) is behind the planks, not through them.
+    f = _goblin_limb_dir(j["LeftElbowPivot"], j["LeftHand"])
+    n = Vector((-0.80, 0.10, -0.59))
+    n = (n - f * n.dot(f)).normalized()
+    c = (Vector(j["LeftElbowPivot"]) + Vector(j["LeftHand"])) / 2.0 + n * 0.15
     face = {"rx": math.asin(n.z), "rz": -math.atan2(n.x, n.y)}
     add(add_lathe("gob_shield_rim", None, metal, [(-0.02, 0.30, 0.30), (0.02, 0.30, 0.30)], segs=18, tx=c.x, ty=c.y, tz=c.z, **face), "OffhandPivot", col["rust"])
     add(add_lathe("gob_shield_wood", None, wood, [(-0.026, 0.27, 0.27), (0.026, 0.27, 0.27)], segs=18, tx=c.x, ty=c.y, tz=c.z, **face), "OffhandPivot", col["wood"])
