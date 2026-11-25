@@ -17,7 +17,7 @@ import { buildHumanoidRig, LEAN_RIG } from './humanoid';
 import { loadBlenderHeroTemplate, upgradeHumanoidRigWithGltf } from './blenderHero';
 import { loadBlenderGearTemplate } from './blenderGear';
 import { buildCapeVisual, buildWeaponVisual } from './playerGear';
-import { mountLoadout } from './playerMesh';
+import { mountLoadout, type MountedRig } from './playerMesh';
 import { EMITTERS } from '../data/look';
 import { registerEmitter } from './lighting';
 
@@ -525,9 +525,9 @@ export function createMerchantNPC(x: number, z: number, name: string, tunicColor
       : name.includes('Al-Kharid')
       ? { id: 'hood', slot: 'head', iconKind: 'hood', color: tunicColor, trim: 0xfacc15 }
       : { id: 'circlet', slot: 'head', iconKind: 'circlet', color: 0x38bdf8, trim: 0xfacc15 }) as unknown as ItemDef;
-    mountLoadout(rig, { head: hatItem });
-    const hat = (rig as Record<string, any>).helmMesh;
-    if (hat) addCartoonOutline(hat, 0.018);
+    const mounted: MountedRig = rig;
+    mountLoadout(mounted, { head: hatItem });
+    addCartoonOutline(mounted.helmMesh!, 0.018);
   });
 }
 

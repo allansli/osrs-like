@@ -92,12 +92,24 @@ export function syncWhipGeometry(rig: WhipRig | null | undefined, stretch: numbe
   });
 }
 
-export type LoadoutItems =
-  | Record<string, string | ItemDef | null | undefined>
-  | (ItemDef | string | null | undefined)[];
+export type LoadoutItems = Record<string, string | ItemDef | null | undefined>;
 
-export function mountLoadout(rig: HumanoidRig, items: LoadoutItems): void {
-  if (!rig || !rig.rightArmPivot) return;
+const GEAR_KEYS = [
+  'wepMesh', 'shieldMesh', 'helmMesh', 'capeMesh', 'amuletMesh', 'ringMesh',
+  'bodyArmorMesh', 'bodyArmL', 'bodyArmR',
+  'legsArmorMesh', 'legsArmorL', 'legsArmorR',
+  'feetMeshL', 'feetMeshR', 'handsMeshL', 'handsMeshR', 'setBonusCue'
+] as const;
+type GearKey = (typeof GEAR_KEYS)[number];
+
+export type MountedRig = HumanoidRig & { [K in GearKey]?: THREE.Object3D | null } & {
+  whipRig?: WhipRig | null;
+};
+
+// The rig types its materials as Lambert; the recolouring below has always set metalness and roughness on them.
+type PbrMat = THREE.MeshLambertMaterial & { metalness: number; roughness: number };
+
+export function mountLoadout(rig: MountedRig, items: LoadoutItems): void {
   const rArm = rig.rightArmPivot;
   const lArm = rig.leftArmPivot;
   const headG = rig.headGroup;
@@ -105,50 +117,31 @@ export function mountLoadout(rig: HumanoidRig, items: LoadoutItems): void {
   const lLeg = rig.leftLegPivot;
   const rLeg = rig.rightLegPivot;
 
-  const gearKeys = [
-    'wepMesh', 'shieldMesh', 'helmMesh', 'capeMesh', 'amuletMesh', 'ringMesh',
-    'bodyArmorMesh', 'bodyArmL', 'bodyArmR',
-    'legsArmorMesh', 'legsArmorL', 'legsArmorR',
-    'feetMeshL', 'feetMeshR', 'handsMeshL', 'handsMeshR', 'setBonusCue'
-  ];
-  gearKeys.forEach((key) => {
-    const node = (rig as any)[key];
+  GEAR_KEYS.forEach((key) => {
+    const node = rig[key];
     // Gear geometry is per-node (blender clones are geometry.clone()d) and materials are
     // per-call; textures and the outline material are cached and the helper keeps them.
     if (node) disposeObject3D(node);
-    (rig as any)[key] = null;
+    rig[key] = null;
   });
-  (rig as any).whipRig = null;
+  rig.whipRig = null;
 
-  const mount = (parent: THREE.Object3D | null | undefined, node: THREE.Object3D | null | undefined, key: string): void => {
+  const mount = (parent: THREE.Object3D | null | undefined, node: THREE.Object3D | null | undefined, key: GearKey): void => {
     if (!parent || !node) return;
     parent.add(node);
-    (rig as any)[key] = node;
+    rig[key] = node;
   };
 
   const equip = (slot: string): ItemDef | null => {
-    if (!items) return null;
-    let val: any;
-    if (Array.isArray(items)) {
-      val = items.find((it) => (typeof it === 'string' ? ITEMS[it]?.slot === slot : it?.slot === slot));
-    } else {
-      val = (items as Record<string, any>)[slot];
-    }
+    const val = items[slot];
     if (!val) return null;
-    if (typeof val === 'string') return ITEMS[val] ?? null;
-    return val as ItemDef;
+    return typeof val === 'string' ? ITEMS[val] ?? null : val;
   };
 
-  const hasSlot = (slot: string): boolean => {
-    if (!items) return false;
-    if (Array.isArray(items)) {
-      return items.some((it) => (typeof it === 'string' ? ITEMS[it]?.slot === slot : it?.slot === slot));
-    }
-    return slot in items;
-  };
+  const hasSlot = (slot: string): boolean => slot in items;
 
   // 1. Body Armor Material
-  const tunicMat = rig.tunicMat as any;
+  const tunicMat = rig.tunicMat as PbrMat;
   const bodyItem = equip('body');
   if (bodyItem) {
     tunicMat.color.setHex(bodyItem.color || 0x586436);
@@ -163,7 +156,7 @@ export function mountLoadout(rig: HumanoidRig, items: LoadoutItems): void {
   }
 
   // 2. Leg Armor Material (Platelegs / Tassets / Trousers)
-  const legsMat = rig.legsMat as any;
+  const legsMat = rig.legsMat as PbrMat;
   const legsItem = equip('legs');
   if (legsItem) {
     legsMat.color.setHex(legsItem.color || 0x505c30);
@@ -177,7 +170,7 @@ export function mountLoadout(rig: HumanoidRig, items: LoadoutItems): void {
   }
 
   // 3. Boots Material (Feet)
-  const bootMat = rig.bootMat as any;
+  const bootMat = rig.bootMat as PbrMat;
   const feetItem = equip('feet');
   if (feetItem) {
     bootMat.color.setHex(feetItem.color || 0x342418);
@@ -190,8 +183,8 @@ export function mountLoadout(rig: HumanoidRig, items: LoadoutItems): void {
   }
 
   // 4. Gauntlets Material (Hands & Bracers)
-  const gloveMat = rig.gloveMat as any;
-  const bracerMat = rig.bracerMat as any;
+  const gloveMat = rig.gloveMat as PbrMat;
+  const bracerMat = rig.bracerMat as PbrMat | undefined;
   const handsItem = equip('hands');
   if (handsItem) {
     gloveMat.color.setHex(handsItem.color || 0x78350f);
@@ -215,7 +208,7 @@ export function mountLoadout(rig: HumanoidRig, items: LoadoutItems): void {
     }
   }
 
-  const isBlenderHero = !!rig.leftElbowPivot || !!rig.group?.userData?.isBlenderHero;
+  const isBlenderHero = !!rig.leftElbowPivot;
 
   const weapon = equip('weapon');
   if (weapon) {
@@ -228,7 +221,7 @@ export function mountLoadout(rig: HumanoidRig, items: LoadoutItems): void {
       visual.group.position.set(0, LEAN_RIG.handY, -0.08);
       mount(rArm, visual.group, 'wepMesh');
     }
-    (rig as any).whipRig = visual.whipRig;
+    rig.whipRig = visual.whipRig;
     if (visual.whipRig) syncWhipGeometry(visual.whipRig, 0);
   }
 
