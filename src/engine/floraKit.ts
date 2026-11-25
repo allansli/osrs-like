@@ -390,8 +390,9 @@ function buildWoodsTreeGeometry(
   trunk.translate(0, height * 0.5, 0);
   const tCol = applyColorsAndNormals(trunk, t.base, t.top, 0.04, rng);
 
-  // Crown colours: the wood family's crown hue, set to an sRGB lightness of 0.085 to 0.125, below the darkest
-  // harvestable crown (yew, about 0.148 with the grass albedo) at every vertex, and 0.04 less saturated.
+  // Crown colours: the wood family's crown hue, 0.04 less saturated, at an sRGB lightness of 0.135 to 0.155, so
+  // every vertex's linear luminance (0.020 to 0.025) stays below the darkest harvestable crown's albedo (yew,
+  // 0x223628 times the grass texture: 0.0266). Lightness 0.085 to 0.125 (luminance 0.009 to 0.017) read near black.
   // Set in sRGB: three's offsetHSL works in linear space. No per-vertex jitter: at this lightness a linear
   // jitter of even 0.002 moves the sRGB lightness by 0.015 and the saturation by 0.1.
   const hsl = { h: 0, s: 0, l: 0 };
@@ -403,13 +404,13 @@ function buildWoodsTreeGeometry(
   const h1 = (height - crownBaseY) * 0.65;
   const c1 = new THREE.ConeGeometry(crownR1, h1, 6);
   c1.translate(0, crownBaseY + h1 * 0.5, 0);
-  const c1Col = applyColorsAndNormals(c1, dark(t.accentBase, 0.085), dark(t.accentTop, 0.115), 0, rng);
+  const c1Col = applyColorsAndNormals(c1, dark(t.accentBase, 0.135), dark(t.accentTop, 0.15), 0, rng);
 
   const h2 = (height - crownBaseY) * 0.6;
   const apex = height + (h2 * rTop * 1.1) / crownR2;
   const c2 = new THREE.ConeGeometry(crownR2, h2, 6);
   c2.translate(0, apex - h2 * 0.5, 0);
-  const c2Col = applyColorsAndNormals(c2, dark(t.accentBase, 0.095), dark(t.accentTop, 0.125), 0, rng);
+  const c2Col = applyColorsAndNormals(c2, dark(t.accentBase, 0.14), dark(t.accentTop, 0.155), 0, rng);
 
   const merged = mergeGeometries([tCol, c1Col, c2Col], false);
   merged.computeVertexNormals();
