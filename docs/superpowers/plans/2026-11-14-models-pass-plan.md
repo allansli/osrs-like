@@ -830,3 +830,7 @@ The owner chose route (a), three families, accept, and both engine options (desi
 
 S4 then promotes, as written, with the S2 amendments' extra steps.
 
+### After S3d (2026-11-25)
+
+S3d (59e5c23): P-a, P-b, P-d and the draw-call half of P-c met for the one build; the fable art read calls the figure carved in the game and ready to ship, with two builder refinements that do not block (a chest-to-belly step with `GOBLIN_PLANE_SPREAD` about 30 degrees, paid for in shield segments; an instep on the foot and a wider toe box). They are carried to M1 (the goblin family), with the thumb and the other small items of the S3d read. The outline's view-space z push (gaps on upward-facing edges) stays with Slice 8. S4 runs now: promote the S2d build, with the S2 amendments' extra steps (the staged three-families entry over the goblin entry of `tests/fixtures/monster-families.json` and the staged file deleted; `pending/monsters.one-material.json` deleted; `totals.json` by its rule; the declared replacement in `tests/model-vertex-colour.test.ts`; the `?v=` key and `tests/model-cache-key.test.ts`).
+
