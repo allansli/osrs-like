@@ -23,12 +23,15 @@ const registeredEmitters: RegisteredEmitter[] = [];
 const pointLightsPool: THREE.PointLight[] = [];
 let pointLightTimer = 0.25;
 
+// Emitter groups sit at foot height; a light on the ground gives N.L ~ 0 on flat terrain.
+const EMITTER_LIGHT_LIFT = 1.2;
+
 export function registerEmitter(
   position: THREE.Vector3 | { x: number; y: number; z: number },
   colorHex: string | number
 ): void {
   registeredEmitters.push({
-    position: position instanceof THREE.Vector3 ? position.clone() : new THREE.Vector3(position.x, position.y, position.z),
+    position: new THREE.Vector3(position.x, position.y + EMITTER_LIGHT_LIFT, position.z),
     color: new THREE.Color(colorHex),
   });
 }
@@ -38,11 +41,11 @@ function syncPointLightsPool(tier: QualityTier): void {
   for (let i = 0; i < pointLightsPool.length; i++) {
     const pl = pointLightsPool[i];
     if (i < targetCount) {
-      if (!pl.parent && G.scene) {
+      if (!pl.parent) {
         G.scene.add(pl);
       }
     } else {
-      if (pl.parent && G.scene) {
+      if (pl.parent) {
         G.scene.remove(pl);
       }
       pl.intensity = 0;
@@ -63,12 +66,10 @@ function assignPointLights(): void {
   const frame = dayFrameAt(currentPhase);
   const intensity = Math.min(Math.max(0, 1 - frame.keyIntensity / 0.9), 1);
 
-  if (G.camera) {
-    const camPos = G.camera.position;
-    registeredEmitters.sort(
-      (a, b) => camPos.distanceToSquared(a.position) - camPos.distanceToSquared(b.position)
-    );
-  }
+  const camPos = G.camera.position;
+  registeredEmitters.sort(
+    (a, b) => camPos.distanceToSquared(a.position) - camPos.distanceToSquared(b.position)
+  );
 
   for (let i = 0; i < activeCount; i++) {
     const pl = pointLightsPool[i];
