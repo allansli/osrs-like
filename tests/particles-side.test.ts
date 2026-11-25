@@ -14,8 +14,9 @@ describe('particles', () => {
 
 describe('falling weather', () => {
   it('moves by offsets accumulated per frame, so a change of speed or wind never jumps the field', () => {
-    expect(src).toContain('move.y -= uFallOffset * aSpeed.y;');
-    expect(src).not.toMatch(/uFallSpeed \* aSpeed\.y \* uPTime/);
+    const fall = src.slice(src.indexOf('const FALL_VERTEX_SHADER'), src.indexOf('const PARTICLE_FRAGMENT_SHADER'));
+    expect(fall).toContain('move.y -= uFallOffset * aSpeed.y;');
+    expect(fall).not.toMatch(/uPTime \* aSpeed|aSpeed\.y \* uPTime/);
     expect(src).toContain('uFallOffset.value += fallSpeed * dt');
   });
 
