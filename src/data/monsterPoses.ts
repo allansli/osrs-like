@@ -140,7 +140,6 @@ export const MONSTER_MOTION: Record<string, MonsterMotionRow> = {
     }
   },
   elvarg_dragon: {
-    // The dragon library in monsters.glb (plan D2b); Ashmantle shares this row through its model key.
     skeleton: 'dragon',
     bones: [
       'Hips',
@@ -165,17 +164,6 @@ export const MONSTER_MOTION: Record<string, MonsterMotionRow> = {
       'TailPivot2',
       'TailPivot3'
     ],
-    clips: {
-      idle: 'Idle',
-      walk: 'Walk',
-      attack: 'Bite',
-      // The wind-up's clip. poseMonsterLimbs still holds `attack` during a wind-up; Bite and WingBuffet share
-      // the anticipation key, so either one held there is a true telegraph.
-      windup: 'WingBuffet',
-      death: 'Death'
-    },
-    anticipation: 0.333333,
-    // Today's head and wing swing, kept for the frames before monsters.glb arrives.
     codeAttack: {
       headBase: -0.35,
       headProgress: 0.65,
@@ -186,4 +174,18 @@ export const MONSTER_MOTION: Record<string, MonsterMotionRow> = {
       y: 0.32
     }
   }
+};
+
+// The dragon's clips (plan D2b), staged until D5 promotes the monsters.glb that carries them, as a pending manifest
+// is (plan 0.3.5): the shipped file has no animations, so naming them on the live row before then makes the
+// animator throw on Ashmantle's wind-up and on every dragon death. D5's promote commit sets the live row's `clips`
+// and `anticipation` to these, in the same commit as the GLB.
+export const PENDING_DRAGON_CLIPS: Pick<Required<MonsterMotionRow>, 'clips' | 'anticipation'> = {
+  clips: {
+    idle: 'Idle',
+    walk: 'Walk',
+    attack: 'Bite',
+    death: 'Death'
+  },
+  anticipation: 0.333333
 };

@@ -19,7 +19,7 @@ import path from 'node:path';
 import * as THREE from 'three';
 import { describe, expect, it, vi } from 'vitest';
 import { GLTFLoader, type GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { MONSTER_MOTION } from '../src/data/monsterPoses';
+import { MONSTER_MOTION, PENDING_DRAGON_CLIPS } from '../src/data/monsterPoses';
 import { MONSTER_TYPES } from '../src/data/world';
 import { KNOCK_BACK, springOffset } from '../src/data/feel';
 import { DYING_SECS } from '../src/state/monsterAi';
@@ -504,17 +504,45 @@ const DRAGON_CLIPS = ['Idle', 'Walk', 'Bite', 'WingBuffet', 'Death'];
 // The shipped file keeps the old rigid dragon until its promotion; these cases run against the built file.
 const dragonBuilt = monsters.animations.some((a) => a.name === 'Bite');
 
+function dragonEntity(): Animated {
+  const group = new THREE.Group();
+  const hitbox = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1));
+  group.add(hitbox);
+  return {
+    typeKey: 'elvarg_dragon',
+    modelKey: 'elvarg_dragon',
+    def: MONSTER_TYPES.elvarg_dragon,
+    rig: { group, hitbox },
+    logic: { state: 'idle', windup: null },
+    pos: group.position,
+    flinch: 0,
+    attackAnim: 0
+  } as unknown as Animated;
+}
+
 describe('the dragon plays its own library', () => {
-  it('its row names Idle, Walk, Bite, Death and WingBuffet, and its anticipation is the library\'s', () => {
-    const row = MONSTER_MOTION.elvarg_dragon;
-    expect(row.skeleton).toBe('dragon');
-    expect(row.clips).toMatchObject({ idle: 'Idle', walk: 'Walk', attack: 'Bite', windup: 'WingBuffet', death: 'Death' });
-    expect(dragonManifest.skin.attackClips?.Bite).toBeCloseTo(row.anticipation!, 5);
-    expect(dragonManifest.skin.attackClips?.WingBuffet).toBeCloseTo(row.anticipation!, 5);
+  it('its staged clips are Idle, Walk, Bite and Death, keyed only by the roles the engine reads, and its anticipation is the library\'s', () => {
+    const staged = PENDING_DRAGON_CLIPS;
+    expect(MONSTER_MOTION.elvarg_dragon.skeleton).toBe('dragon');
+    expect(staged.clips).toEqual({ idle: 'Idle', walk: 'Walk', attack: 'Bite', death: 'Death' });
+    expect(dragonManifest.skin.attackClips?.Bite).toBeCloseTo(staged.anticipation, 5);
+    expect(dragonManifest.skin.attackClips?.WingBuffet).toBeCloseTo(staged.anticipation, 5);
+    // Once D5 names them on the live row, they are the staged ones.
+    if (MONSTER_MOTION.elvarg_dragon.clips) expect(MONSTER_MOTION.elvarg_dragon).toMatchObject(staged);
+  });
+
+  it('a row plays from monsters.glb only clips that the monsters.glb in the tree carries', () => {
+    for (const key of MODEL_KEYS) {
+      const row = MONSTER_MOTION[key];
+      if (!row.clips || row.skeleton === 'biped') continue;
+      for (const name of Object.values(row.clips)) {
+        expect(monsters.animations.some((a) => a.name === name), `${key}: ${name} is in monsters.glb`).toBe(true);
+      }
+    }
   });
 
   it.skipIf(!dragonBuilt)('its clips rotate only the bones the row names, and move only Hips', () => {
-    const row = MONSTER_MOTION.elvarg_dragon;
+    const row = { ...MONSTER_MOTION.elvarg_dragon, ...PENDING_DRAGON_CLIPS };
     for (const name of DRAGON_CLIPS) {
       const clip = monsters.animations.find((a) => a.name === name);
       expect(clip, `${name} is in monsters.glb`).toBeDefined();
@@ -529,48 +557,61 @@ describe('the dragon plays its own library', () => {
     }
   });
 
-  it.skipIf(!dragonBuilt)('the wind-up holds Bite at progress times the anticipation, and Death ends lying within DYING_SECS', () => {
-    const group = new THREE.Group();
-    const hitbox = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1));
-    group.add(hitbox);
-    const m = {
-      typeKey: 'elvarg_dragon',
-      modelKey: 'elvarg_dragon',
-      def: MONSTER_TYPES.elvarg_dragon,
-      rig: { group, hitbox },
-      logic: { state: 'idle', windup: null },
-      pos: group.position,
-      flinch: 0,
-      attackAnim: 0
-    } as unknown as Animated;
+  it('on the monsters.glb in the tree, the dragon winds up, strikes and dies without a missing clip', () => {
+    const m = dragonEntity();
     expect(upgradeMonsterRigWithGltf(m, monsters, hero)).toBe(true);
-    expect(m.animator).toBeDefined();
-    for (let i = 0; i < 10; i++) frame(m, true);
-    expect(bone(m, 'LeftArmPivot').quaternion.angleTo(new THREE.Quaternion()), 'a fore leg swings in Walk').toBeGreaterThan(0.01);
-
-    const bite = m.animator!.actions.get('Bite' as HeroClipName)!;
-    windup(m, 0);
-    frame(m, false);
-    windup(m, 1);
-    frame(m, false);
-    expect(bite.time).toBeCloseTo(MONSTER_MOTION.elvarg_dragon.anticipation!, 3);
+    frame(m, true);
+    windup(m, 0.5);
+    expect(() => frame(m, false), 'a wind-up frame').not.toThrow();
     windup(m, -1);
     m.attackAnim = 1;
-    for (let i = 0; i < 6; i++) frame(m, false, 1 / 60);
-    expect(bite.time).toBeGreaterThan(MONSTER_MOTION.elvarg_dragon.anticipation! + 0.02);
-
-    const death = m.animator!.actions.get(DEATH)!;
-    const hipsRest = bone(m, 'Hips').position.y;
-    const dt = 1 / 60;
+    expect(() => frame(m, false), 'the strike').not.toThrow();
     m.logic.state = 'dying';
-    let left = DYING_SECS;
-    while (left > dt) {
-      poseMonsterDying(m, left, dt);
-      left -= dt;
+    expect(() => poseMonsterDying(m, DYING_SECS, 1 / 60), 'a dying frame').not.toThrow();
+    expect(() => poseMonsterDying(m, 1 / 120, 1 / 60), 'the last dying frame').not.toThrow();
+  });
+
+  it.skipIf(!dragonBuilt)('the wind-up holds Bite at progress times the anticipation, and Death ends lying within DYING_SECS', () => {
+    // The staged row, as D5 will name it, for this case only.
+    const live = MONSTER_MOTION.elvarg_dragon;
+    MONSTER_MOTION.elvarg_dragon = { ...live, ...PENDING_DRAGON_CLIPS };
+    try {
+      dragonPlaysItsLibrary();
+    } finally {
+      MONSTER_MOTION.elvarg_dragon = live;
     }
-    poseMonsterDying(m, left, dt);
-    expect(m.rig.group.rotation.x, 'no group topple').toBe(0);
-    expect(death.time).toBeGreaterThanOrEqual(death.getClip().duration - 0.05);
-    expect(bone(m, 'Hips').position.y, 'the body lies lower than it stood').toBeLessThan(hipsRest - 0.03);
   });
 });
+
+function dragonPlaysItsLibrary(): void {
+  const m = dragonEntity();
+  expect(upgradeMonsterRigWithGltf(m, monsters, hero)).toBe(true);
+  expect(m.animator).toBeDefined();
+  for (let i = 0; i < 10; i++) frame(m, true);
+  expect(bone(m, 'LeftArmPivot').quaternion.angleTo(new THREE.Quaternion()), 'a fore leg swings in Walk').toBeGreaterThan(0.01);
+
+  const bite = m.animator!.actions.get('Bite' as HeroClipName)!;
+  windup(m, 0);
+  frame(m, false);
+  windup(m, 1);
+  frame(m, false);
+  expect(bite.time).toBeCloseTo(MONSTER_MOTION.elvarg_dragon.anticipation!, 3);
+  windup(m, -1);
+  m.attackAnim = 1;
+  for (let i = 0; i < 6; i++) frame(m, false, 1 / 60);
+  expect(bite.time).toBeGreaterThan(MONSTER_MOTION.elvarg_dragon.anticipation! + 0.02);
+
+  const death = m.animator!.actions.get(DEATH)!;
+  const hipsRest = bone(m, 'Hips').position.y;
+  const dt = 1 / 60;
+  m.logic.state = 'dying';
+  let left = DYING_SECS;
+  while (left > dt) {
+    poseMonsterDying(m, left, dt);
+    left -= dt;
+  }
+  poseMonsterDying(m, left, dt);
+  expect(m.rig.group.rotation.x, 'no group topple').toBe(0);
+  expect(death.time).toBeGreaterThanOrEqual(death.getClip().duration - 0.05);
+  expect(bone(m, 'Hips').position.y, 'the body lies lower than it stood').toBeLessThan(hipsRest - 0.03);
+}
