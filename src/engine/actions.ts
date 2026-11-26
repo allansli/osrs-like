@@ -434,6 +434,9 @@ export function handleMonsterDeath(monster: MonsterEntity): void {
 }
 
 function maybeRetaliate(monster: MonsterEntity): void {
+  if (player.targetEntity?.type === 'resource') {
+    player.targetEntity = null;
+  }
   const hasTarget = player.targetEntity !== null;
   const walking = player.isMoving || player.waypoints.length > 0;
   const keyHeld = ['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowLeft', 'ArrowDown', 'ArrowRight'].some(
