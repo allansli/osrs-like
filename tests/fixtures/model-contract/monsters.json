@@ -13,142 +13,12 @@
         1
       ]
     },
-    "dark_ranger_HeadGroup": {
-      "parent": "Monster_dark_ranger",
-      "translation": [
-        0,
-        1.86,
-        0
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ]
-    },
-    "dark_ranger_LeftArmPivot": {
-      "parent": "Monster_dark_ranger",
-      "translation": [
-        -0.42,
-        1.5,
-        0
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ]
-    },
-    "dark_ranger_LeftLegPivot": {
-      "parent": "Monster_dark_ranger",
-      "translation": [
-        -0.15,
-        0.78,
-        0
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ]
-    },
-    "dark_ranger_RightArmPivot": {
-      "parent": "Monster_dark_ranger",
-      "translation": [
-        0.42,
-        1.5,
-        0
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ]
-    },
-    "dark_ranger_RightLegPivot": {
-      "parent": "Monster_dark_ranger",
-      "translation": [
-        0.15,
-        0.78,
-        0
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ]
-    },
     "Monster_dark_ranger": {
       "parent": null,
       "translation": [
-        -6,
         0,
-        2.2
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ]
-    },
-    "dark_wizard_HeadGroup": {
-      "parent": "Monster_dark_wizard",
-      "translation": [
         0,
-        1.92,
         0
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ]
-    },
-    "dark_wizard_LeftArmPivot": {
-      "parent": "Monster_dark_wizard",
-      "translation": [
-        -0.38,
-        1.5,
-        0
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ]
-    },
-    "dark_wizard_LeftLegPivot": {
-      "parent": "Monster_dark_wizard",
-      "translation": [
-        -0.16,
-        0.22,
-        0.04
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ]
-    },
-    "dark_wizard_RightArmPivot": {
-      "parent": "Monster_dark_wizard",
-      "translation": [
-        0.38,
-        1.5,
-        0
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ]
-    },
-    "dark_wizard_RightLegPivot": {
-      "parent": "Monster_dark_wizard",
-      "translation": [
-        0.16,
-        0.22,
-        0.04
       ],
       "scale": [
         1,
@@ -159,9 +29,9 @@
     "Monster_dark_wizard": {
       "parent": null,
       "translation": [
-        4.4,
         0,
-        -2
+        0,
+        0
       ],
       "scale": [
         1,
@@ -377,64 +247,12 @@
         1
       ]
     },
-    "scorpion_LeftArmPivot": {
-      "parent": "Monster_scorpion",
-      "translation": [
-        -0.28,
-        0.52,
-        -0.82
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ]
-    },
-    "scorpion_LeftLegPivot": {
-      "parent": "Monster_scorpion",
-      "translation": [
-        -0.22,
-        0.5,
-        0
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ]
-    },
-    "scorpion_RightArmPivot": {
-      "parent": "Monster_scorpion",
-      "translation": [
-        0.28,
-        0.52,
-        -0.82
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ]
-    },
-    "scorpion_RightLegPivot": {
-      "parent": "Monster_scorpion",
-      "translation": [
-        0.22,
-        0.5,
-        0
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ]
-    },
     "Monster_scorpion": {
       "parent": null,
       "translation": [
-        1.8,
         0,
-        -2
+        0,
+        0
       ],
       "scale": [
         1,
@@ -454,21 +272,137 @@
         1,
         1
       ]
+    },
+    "Kit_saltback_stalker": {
+      "parent": null,
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Hips": {
+      "parent": "Kit_saltback_stalker",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "TailPivot3": {
+      "parent": "Kit_saltback_stalker",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "LeftElbowPivot": {
+      "parent": "Kit_saltback_stalker",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "RightElbowPivot": {
+      "parent": "Kit_saltback_stalker",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Kit_thornwatch_marksman": {
+      "parent": null,
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "HeadGroup": {
+      "parent": "Kit_thornwatch_marksman",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Torso": {
+      "parent": "Kit_thornwatch_marksman",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "OffhandPivot": {
+      "parent": "Kit_thornwatch_marksman",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
     }
   },
   "materials": [
     "mat_bark",
     "mat_bone",
+    "mat_bone_scorpion_paint",
     "mat_bronze_goblin_paint",
     "mat_cloth_chicken_paint",
-    "mat_cloth_dark",
+    "mat_cloth_dark_ranger_paint",
     "mat_fur",
     "mat_glow_crimson",
     "mat_glow_emerald",
     "mat_glow_orange",
     "mat_glow_purple",
-    "mat_glow_yellow",
-    "mat_gold",
     "mat_gold_chicken_paint",
     "mat_horn",
     "mat_horn_ashmantle_paint",
@@ -477,23 +411,24 @@
     "mat_iron",
     "mat_iron_obsidian",
     "mat_leather",
-    "mat_leather_dragonhide",
+    "mat_leather_dark_ranger_paint",
     "mat_moss",
-    "mat_robe",
-    "mat_robe_trim",
+    "mat_robe_dark_wizard_paint",
     "mat_skin_ashmantle_paint",
     "mat_skin_chicken_paint",
+    "mat_skin_dark_wizard_paint",
     "mat_skin_elvarg_dragon_paint",
     "mat_skin_goblin_paint",
     "mat_skin_hill_giant",
     "mat_skin_lesser_demon_paint",
-    "mat_skin_scorpion",
-    "mat_skin_scorpion_plate",
+    "mat_skin_scorpion_paint",
     "mat_stone",
     "mat_wing_ashmantle_paint",
     "mat_wing_elvarg_dragon_paint",
     "mat_wing_lesser_demon_paint",
     "mat_wood",
+    "mat_wood_dark_ranger_paint",
+    "mat_wood_dark_wizard_paint",
     "mat_wood_goblin_paint"
   ],
   "toggled": [],
@@ -505,57 +440,14 @@
     "^chicken_beak$",
     "^chicken_body$",
     "^chicken_comb$",
-    "^dark_ranger_LeftLegPivot_boot$",
-    "^dark_ranger_LeftLegPivot_greave$",
-    "^dark_ranger_LeftLegPivot_thigh$",
-    "^dark_ranger_RightLegPivot_boot$",
-    "^dark_ranger_RightLegPivot_greave$",
-    "^dark_ranger_RightLegPivot_thigh$",
-    "^dark_ranger_arrow_fletch_-?\\d+$",
-    "^dark_ranger_belt$",
-    "^dark_ranger_bowstring$",
-    "^dark_ranger_bracer_L$",
-    "^dark_ranger_bracer_R$",
-    "^dark_ranger_brigandine$",
-    "^dark_ranger_buckle$",
+    "^dark_ranger_body$",
     "^dark_ranger_cloak$",
-    "^dark_ranger_cowl$",
-    "^dark_ranger_eye_L$",
-    "^dark_ranger_eye_R$",
-    "^dark_ranger_glove_L$",
-    "^dark_ranger_glove_R$",
-    "^dark_ranger_longbow$",
-    "^dark_ranger_mask$",
-    "^dark_ranger_pauldron_L$",
-    "^dark_ranger_pauldron_R$",
-    "^dark_ranger_pauldron_spike_L$",
-    "^dark_ranger_pauldron_spike_R$",
-    "^dark_ranger_quiver$",
-    "^dark_ranger_scale_-?\\d+_L$",
-    "^dark_ranger_scale_-?\\d+_R$",
-    "^dark_ranger_uarm_L$",
-    "^dark_ranger_uarm_R$",
-    "^dark_wizard_LeftLegPivot_boot$",
-    "^dark_wizard_RightLegPivot_boot$",
-    "^dark_wizard_cape$",
-    "^dark_wizard_eye_L$",
-    "^dark_wizard_eye_R$",
-    "^dark_wizard_hand_L$",
-    "^dark_wizard_hand_R$",
-    "^dark_wizard_hat_band$",
-    "^dark_wizard_hat_brim$",
-    "^dark_wizard_hat_cone$",
-    "^dark_wizard_hem_trim$",
-    "^dark_wizard_mantle$",
-    "^dark_wizard_orb$",
-    "^dark_wizard_orb_ring$",
+    "^dark_ranger_glow$",
+    "^dark_ranger_wood$",
+    "^dark_wizard_face$",
+    "^dark_wizard_glow$",
     "^dark_wizard_robe$",
-    "^dark_wizard_sleeve_L$",
-    "^dark_wizard_sleeve_R$",
     "^dark_wizard_staff$",
-    "^dark_wizard_stole$",
-    "^dark_wizard_stole_rune_-?\\d+$",
-    "^dark_wizard_void_skull$",
     "^elvarg_dragon_body$",
     "^elvarg_dragon_horn$",
     "^elvarg_dragon_maw$",
@@ -633,32 +525,11 @@
     "^moss_guardian_stone_slab_-?\\d+$",
     "^moss_guardian_uarm_L$",
     "^moss_guardian_uarm_R$",
-    "^scorpion_LeftArmPivot_chela_palm$",
-    "^scorpion_LeftArmPivot_pedipalp_-?\\d+$",
-    "^scorpion_LeftArmPivot_pincer_inner$",
-    "^scorpion_LeftArmPivot_pincer_outer$",
-    "^scorpion_LeftArmPivot_tooth_-?\\d+$",
-    "^scorpion_LeftLegPivot_femur_-?\\d+$",
-    "^scorpion_LeftLegPivot_tarsus_-?\\d+$",
-    "^scorpion_LeftLegPivot_tibia_-?\\d+$",
-    "^scorpion_RightArmPivot_chela_palm$",
-    "^scorpion_RightArmPivot_pedipalp_-?\\d+$",
-    "^scorpion_RightArmPivot_pincer_inner$",
-    "^scorpion_RightArmPivot_pincer_outer$",
-    "^scorpion_RightArmPivot_tooth_-?\\d+$",
-    "^scorpion_RightLegPivot_femur_-?\\d+$",
-    "^scorpion_RightLegPivot_tarsus_-?\\d+$",
-    "^scorpion_RightLegPivot_tibia_-?\\d+$",
-    "^scorpion_carapace_plate_-?\\d+$",
-    "^scorpion_eye_L_-?\\d+$",
-    "^scorpion_eye_R_-?\\d+$",
-    "^scorpion_mandible_L$",
-    "^scorpion_mandible_R$",
-    "^scorpion_prosoma$",
-    "^scorpion_stinger_barb$",
-    "^scorpion_tail_ring_-?\\d+$",
-    "^scorpion_tail_seg_-?\\d+$",
-    "^scorpion_telson_bulb$"
+    "^saltback_stalker_(Hips|TailPivot3|LeftElbowPivot|RightElbowPivot)$",
+    "^scorpion_body$",
+    "^scorpion_bone$",
+    "^scorpion_sting$",
+    "^thornwatch_marksman_(HeadGroup|Torso|OffhandPivot)$"
   ],
   "extras": {},
   "vertexColor": {
@@ -668,7 +539,12 @@
       "Monster_ashmantle": "all",
       "Monster_lesser_demon": "all",
       "Monster_chicken": "all",
-      "Monster_goblin_archer": "all"
+      "Monster_goblin_archer": "all",
+      "Monster_scorpion": "all",
+      "Monster_dark_wizard": "all",
+      "Monster_dark_ranger": "all",
+      "Kit_saltback_stalker": "all",
+      "Kit_thornwatch_marksman": "all"
     }
   },
   "clips": {
@@ -795,6 +671,98 @@
         "elvarg_dragon_TailPivot2",
         "elvarg_dragon_TailPivot3",
         "elvarg_dragon_Torso"
+      ]
+    },
+    "scorpion_Death": {
+      "moves": [
+        "scorpion_HeadGroup",
+        "scorpion_Hips",
+        "scorpion_LeftArmPivot",
+        "scorpion_LeftElbowPivot",
+        "scorpion_LeftLegPivot",
+        "scorpion_LegL1",
+        "scorpion_LegL2",
+        "scorpion_LegL3",
+        "scorpion_LegL4",
+        "scorpion_LegR1",
+        "scorpion_LegR2",
+        "scorpion_LegR3",
+        "scorpion_LegR4",
+        "scorpion_RightArmPivot",
+        "scorpion_RightElbowPivot",
+        "scorpion_RightLegPivot",
+        "scorpion_TailPivot",
+        "scorpion_TailPivot2",
+        "scorpion_TailPivot3"
+      ]
+    },
+    "scorpion_Idle": {
+      "moves": [
+        "scorpion_HeadGroup",
+        "scorpion_Hips",
+        "scorpion_LeftArmPivot",
+        "scorpion_LeftElbowPivot",
+        "scorpion_LeftLegPivot",
+        "scorpion_LegL1",
+        "scorpion_LegL2",
+        "scorpion_LegL3",
+        "scorpion_LegL4",
+        "scorpion_LegR1",
+        "scorpion_LegR2",
+        "scorpion_LegR3",
+        "scorpion_LegR4",
+        "scorpion_RightArmPivot",
+        "scorpion_RightElbowPivot",
+        "scorpion_RightLegPivot",
+        "scorpion_TailPivot",
+        "scorpion_TailPivot2",
+        "scorpion_TailPivot3"
+      ]
+    },
+    "scorpion_Walk": {
+      "moves": [
+        "scorpion_HeadGroup",
+        "scorpion_Hips",
+        "scorpion_LeftArmPivot",
+        "scorpion_LeftElbowPivot",
+        "scorpion_LeftLegPivot",
+        "scorpion_LegL1",
+        "scorpion_LegL2",
+        "scorpion_LegL3",
+        "scorpion_LegL4",
+        "scorpion_LegR1",
+        "scorpion_LegR2",
+        "scorpion_LegR3",
+        "scorpion_LegR4",
+        "scorpion_RightArmPivot",
+        "scorpion_RightElbowPivot",
+        "scorpion_RightLegPivot",
+        "scorpion_TailPivot",
+        "scorpion_TailPivot2",
+        "scorpion_TailPivot3"
+      ]
+    },
+    "Strike": {
+      "moves": [
+        "scorpion_HeadGroup",
+        "scorpion_Hips",
+        "scorpion_LeftArmPivot",
+        "scorpion_LeftElbowPivot",
+        "scorpion_LeftLegPivot",
+        "scorpion_LegL1",
+        "scorpion_LegL2",
+        "scorpion_LegL3",
+        "scorpion_LegL4",
+        "scorpion_LegR1",
+        "scorpion_LegR2",
+        "scorpion_LegR3",
+        "scorpion_LegR4",
+        "scorpion_RightArmPivot",
+        "scorpion_RightElbowPivot",
+        "scorpion_RightLegPivot",
+        "scorpion_TailPivot",
+        "scorpion_TailPivot2",
+        "scorpion_TailPivot3"
       ]
     }
   },
@@ -1776,6 +1744,438 @@
           0,
           0
         ]
+      },
+      "scorpion_LeftElbowPivot": {
+        "parent": "scorpion_LeftArmPivot",
+        "translation": [
+          -0.22,
+          0.02,
+          -0.34
+        ]
+      },
+      "scorpion_LeftArmPivot": {
+        "parent": "scorpion_HeadGroup",
+        "translation": [
+          -0.28,
+          0.02,
+          -0.27
+        ]
+      },
+      "scorpion_RightElbowPivot": {
+        "parent": "scorpion_RightArmPivot",
+        "translation": [
+          0.22,
+          0.02,
+          -0.34
+        ]
+      },
+      "scorpion_RightArmPivot": {
+        "parent": "scorpion_HeadGroup",
+        "translation": [
+          0.28,
+          0.02,
+          -0.27
+        ]
+      },
+      "scorpion_HeadGroup": {
+        "parent": "scorpion_Hips",
+        "translation": [
+          0,
+          0,
+          -0.55
+        ]
+      },
+      "scorpion_LegL1": {
+        "parent": "scorpion_LeftLegPivot",
+        "translation": [
+          -0.4,
+          -0.06,
+          -0.12
+        ]
+      },
+      "scorpion_LegL2": {
+        "parent": "scorpion_LeftLegPivot",
+        "translation": [
+          -0.4,
+          -0.06,
+          0.02
+        ]
+      },
+      "scorpion_LegL3": {
+        "parent": "scorpion_LeftLegPivot",
+        "translation": [
+          -0.4,
+          -0.06,
+          0.16
+        ]
+      },
+      "scorpion_LegL4": {
+        "parent": "scorpion_LeftLegPivot",
+        "translation": [
+          -0.4,
+          -0.06,
+          0.3
+        ]
+      },
+      "scorpion_LeftLegPivot": {
+        "parent": "scorpion_Hips",
+        "translation": [
+          -0.22,
+          0,
+          0
+        ]
+      },
+      "scorpion_LegR1": {
+        "parent": "scorpion_RightLegPivot",
+        "translation": [
+          0.4,
+          -0.06,
+          -0.12
+        ]
+      },
+      "scorpion_LegR2": {
+        "parent": "scorpion_RightLegPivot",
+        "translation": [
+          0.4,
+          -0.06,
+          0.02
+        ]
+      },
+      "scorpion_LegR3": {
+        "parent": "scorpion_RightLegPivot",
+        "translation": [
+          0.4,
+          -0.06,
+          0.16
+        ]
+      },
+      "scorpion_LegR4": {
+        "parent": "scorpion_RightLegPivot",
+        "translation": [
+          0.4,
+          -0.06,
+          0.3
+        ]
+      },
+      "scorpion_RightLegPivot": {
+        "parent": "scorpion_Hips",
+        "translation": [
+          0.22,
+          0,
+          0
+        ]
+      },
+      "scorpion_TailPivot3": {
+        "parent": "scorpion_TailPivot2",
+        "translation": [
+          0,
+          0.3,
+          0.14
+        ]
+      },
+      "scorpion_TailPivot2": {
+        "parent": "scorpion_TailPivot",
+        "translation": [
+          0,
+          0.18,
+          0.24
+        ]
+      },
+      "scorpion_TailPivot": {
+        "parent": "scorpion_Hips",
+        "translation": [
+          0,
+          0.04,
+          0.68
+        ]
+      },
+      "scorpion_Hips": {
+        "parent": "scorpion_Root",
+        "translation": [
+          0,
+          0.5,
+          0
+        ]
+      },
+      "scorpion_Root": {
+        "parent": null,
+        "translation": [
+          0,
+          0,
+          0
+        ]
+      },
+      "dark_wizard_HeadGroup": {
+        "parent": "dark_wizard_Torso",
+        "translation": [
+          0,
+          0.54,
+          -0.11
+        ]
+      },
+      "dark_wizard_LeftHand": {
+        "parent": "dark_wizard_LeftElbowPivot",
+        "translation": [
+          -0.18,
+          -0.27,
+          -0.07
+        ]
+      },
+      "dark_wizard_LeftElbowPivot": {
+        "parent": "dark_wizard_LeftArmPivot",
+        "translation": [
+          -0.16,
+          -0.3,
+          -0.04
+        ]
+      },
+      "dark_wizard_LeftArmPivot": {
+        "parent": "dark_wizard_Torso",
+        "translation": [
+          -0.26,
+          0.4,
+          -0.05
+        ]
+      },
+      "dark_wizard_WeaponPivot": {
+        "parent": "dark_wizard_RightHand",
+        "translation": [
+          0,
+          0,
+          0
+        ]
+      },
+      "dark_wizard_RightHand": {
+        "parent": "dark_wizard_RightElbowPivot",
+        "translation": [
+          0.18,
+          -0.27,
+          -0.07
+        ]
+      },
+      "dark_wizard_RightElbowPivot": {
+        "parent": "dark_wizard_RightArmPivot",
+        "translation": [
+          0.16,
+          -0.3,
+          -0.04
+        ]
+      },
+      "dark_wizard_RightArmPivot": {
+        "parent": "dark_wizard_Torso",
+        "translation": [
+          0.26,
+          0.4,
+          -0.05
+        ]
+      },
+      "dark_wizard_Torso": {
+        "parent": "dark_wizard_Hips",
+        "translation": [
+          0,
+          0.22,
+          -0.02
+        ]
+      },
+      "dark_wizard_LeftFoot": {
+        "parent": "dark_wizard_LeftKneePivot",
+        "translation": [
+          -0.01,
+          -0.42,
+          0.04
+        ]
+      },
+      "dark_wizard_LeftKneePivot": {
+        "parent": "dark_wizard_LeftLegPivot",
+        "translation": [
+          -0.05,
+          -0.44,
+          -0.04
+        ]
+      },
+      "dark_wizard_LeftLegPivot": {
+        "parent": "dark_wizard_Hips",
+        "translation": [
+          -0.12,
+          -0.04,
+          0
+        ]
+      },
+      "dark_wizard_RightFoot": {
+        "parent": "dark_wizard_RightKneePivot",
+        "translation": [
+          0.01,
+          -0.42,
+          0.04
+        ]
+      },
+      "dark_wizard_RightKneePivot": {
+        "parent": "dark_wizard_RightLegPivot",
+        "translation": [
+          0.05,
+          -0.44,
+          -0.04
+        ]
+      },
+      "dark_wizard_RightLegPivot": {
+        "parent": "dark_wizard_Hips",
+        "translation": [
+          0.12,
+          -0.04,
+          0
+        ]
+      },
+      "dark_wizard_Hips": {
+        "parent": "dark_wizard_Root",
+        "translation": [
+          0,
+          1,
+          0.03
+        ]
+      },
+      "dark_wizard_Root": {
+        "parent": null,
+        "translation": [
+          0,
+          0,
+          0
+        ]
+      },
+      "dark_ranger_HeadGroup": {
+        "parent": "dark_ranger_Torso",
+        "translation": [
+          0,
+          0.54,
+          -0.1
+        ]
+      },
+      "dark_ranger_OffhandPivot": {
+        "parent": "dark_ranger_LeftHand",
+        "translation": [
+          0,
+          0,
+          0
+        ]
+      },
+      "dark_ranger_LeftHand": {
+        "parent": "dark_ranger_LeftElbowPivot",
+        "translation": [
+          -0.16,
+          -0.26,
+          -0.07
+        ]
+      },
+      "dark_ranger_LeftElbowPivot": {
+        "parent": "dark_ranger_LeftArmPivot",
+        "translation": [
+          -0.16,
+          -0.28,
+          -0.05
+        ]
+      },
+      "dark_ranger_LeftArmPivot": {
+        "parent": "dark_ranger_Torso",
+        "translation": [
+          -0.25,
+          0.38,
+          -0.04
+        ]
+      },
+      "dark_ranger_RightHand": {
+        "parent": "dark_ranger_RightElbowPivot",
+        "translation": [
+          0.16,
+          -0.26,
+          -0.07
+        ]
+      },
+      "dark_ranger_RightElbowPivot": {
+        "parent": "dark_ranger_RightArmPivot",
+        "translation": [
+          0.16,
+          -0.28,
+          -0.05
+        ]
+      },
+      "dark_ranger_RightArmPivot": {
+        "parent": "dark_ranger_Torso",
+        "translation": [
+          0.25,
+          0.38,
+          -0.04
+        ]
+      },
+      "dark_ranger_Torso": {
+        "parent": "dark_ranger_Hips",
+        "translation": [
+          0,
+          0.2,
+          -0.03
+        ]
+      },
+      "dark_ranger_LeftFoot": {
+        "parent": "dark_ranger_LeftKneePivot",
+        "translation": [
+          -0.01,
+          -0.42,
+          0.06
+        ]
+      },
+      "dark_ranger_LeftKneePivot": {
+        "parent": "dark_ranger_LeftLegPivot",
+        "translation": [
+          -0.05,
+          -0.43,
+          -0.06
+        ]
+      },
+      "dark_ranger_LeftLegPivot": {
+        "parent": "dark_ranger_Hips",
+        "translation": [
+          -0.12,
+          -0.03,
+          0
+        ]
+      },
+      "dark_ranger_RightFoot": {
+        "parent": "dark_ranger_RightKneePivot",
+        "translation": [
+          0.01,
+          -0.42,
+          0.06
+        ]
+      },
+      "dark_ranger_RightKneePivot": {
+        "parent": "dark_ranger_RightLegPivot",
+        "translation": [
+          0.05,
+          -0.43,
+          -0.06
+        ]
+      },
+      "dark_ranger_RightLegPivot": {
+        "parent": "dark_ranger_Hips",
+        "translation": [
+          0.12,
+          -0.03,
+          0
+        ]
+      },
+      "dark_ranger_Hips": {
+        "parent": "dark_ranger_Root",
+        "translation": [
+          0,
+          0.98,
+          0.03
+        ]
+      },
+      "dark_ranger_Root": {
+        "parent": null,
+        "translation": [
+          0,
+          0,
+          0
+        ]
       }
     },
     "skinnedRoots": [
@@ -1784,7 +2184,10 @@
       "Monster_ashmantle",
       "Monster_lesser_demon",
       "Monster_chicken",
-      "Monster_goblin_archer"
+      "Monster_goblin_archer",
+      "Monster_scorpion",
+      "Monster_dark_wizard",
+      "Monster_dark_ranger"
     ],
     "limbs": [
       {
@@ -2344,20 +2747,291 @@
           -1,
           0
         ]
+      },
+      {
+        "bone": "scorpion_Root",
+        "child": "scorpion_Hips",
+        "direction": [
+          0,
+          1,
+          0
+        ]
+      },
+      {
+        "bone": "scorpion_Hips",
+        "child": "scorpion_HeadGroup",
+        "direction": [
+          0,
+          0,
+          -1
+        ]
+      },
+      {
+        "bone": "scorpion_LeftArmPivot",
+        "child": "scorpion_LeftElbowPivot",
+        "direction": [
+          -0.316,
+          0,
+          -0.949
+        ]
+      },
+      {
+        "bone": "scorpion_RightArmPivot",
+        "child": "scorpion_RightElbowPivot",
+        "direction": [
+          0.316,
+          0,
+          -0.949
+        ]
+      },
+      {
+        "bone": "scorpion_LeftLegPivot",
+        "child": "scorpion_LegL1",
+        "direction": [
+          -0.98,
+          -0.2,
+          0
+        ]
+      },
+      {
+        "bone": "scorpion_RightLegPivot",
+        "child": "scorpion_LegR1",
+        "direction": [
+          0.98,
+          -0.2,
+          0
+        ]
+      },
+      {
+        "bone": "scorpion_TailPivot",
+        "child": "scorpion_TailPivot2",
+        "direction": [
+          0,
+          0.6,
+          0.8
+        ]
+      },
+      {
+        "bone": "scorpion_TailPivot2",
+        "child": "scorpion_TailPivot3",
+        "direction": [
+          0,
+          0.8,
+          0.6
+        ]
+      },
+      {
+        "bone": "dark_wizard_Root",
+        "child": "dark_wizard_Hips",
+        "direction": [
+          0,
+          1,
+          0
+        ]
+      },
+      {
+        "bone": "dark_wizard_Hips",
+        "child": "dark_wizard_Torso",
+        "direction": [
+          0,
+          1,
+          0
+        ]
+      },
+      {
+        "bone": "dark_wizard_Torso",
+        "child": "dark_wizard_HeadGroup",
+        "direction": [
+          0,
+          1,
+          0
+        ]
+      },
+      {
+        "bone": "dark_wizard_LeftArmPivot",
+        "child": "dark_wizard_LeftElbowPivot",
+        "direction": [
+          -0.468,
+          -0.884,
+          0
+        ]
+      },
+      {
+        "bone": "dark_wizard_LeftElbowPivot",
+        "child": "dark_wizard_LeftHand",
+        "direction": [
+          -0.528,
+          -0.849,
+          0
+        ]
+      },
+      {
+        "bone": "dark_wizard_LeftLegPivot",
+        "child": "dark_wizard_LeftKneePivot",
+        "direction": [
+          -0.183,
+          -0.983,
+          0
+        ]
+      },
+      {
+        "bone": "dark_wizard_LeftKneePivot",
+        "child": "dark_wizard_LeftFoot",
+        "direction": [
+          0,
+          -1,
+          0
+        ]
+      },
+      {
+        "bone": "dark_wizard_RightArmPivot",
+        "child": "dark_wizard_RightElbowPivot",
+        "direction": [
+          0.468,
+          -0.884,
+          0
+        ]
+      },
+      {
+        "bone": "dark_wizard_RightElbowPivot",
+        "child": "dark_wizard_RightHand",
+        "direction": [
+          0.528,
+          -0.849,
+          0
+        ]
+      },
+      {
+        "bone": "dark_wizard_RightLegPivot",
+        "child": "dark_wizard_RightKneePivot",
+        "direction": [
+          0.183,
+          -0.983,
+          0
+        ]
+      },
+      {
+        "bone": "dark_wizard_RightKneePivot",
+        "child": "dark_wizard_RightFoot",
+        "direction": [
+          0,
+          -1,
+          0
+        ]
+      },
+      {
+        "bone": "dark_ranger_Root",
+        "child": "dark_ranger_Hips",
+        "direction": [
+          0,
+          1,
+          0
+        ]
+      },
+      {
+        "bone": "dark_ranger_Hips",
+        "child": "dark_ranger_Torso",
+        "direction": [
+          0,
+          1,
+          0
+        ]
+      },
+      {
+        "bone": "dark_ranger_Torso",
+        "child": "dark_ranger_HeadGroup",
+        "direction": [
+          0,
+          1,
+          0
+        ]
+      },
+      {
+        "bone": "dark_ranger_LeftArmPivot",
+        "child": "dark_ranger_LeftElbowPivot",
+        "direction": [
+          -0.468,
+          -0.884,
+          0
+        ]
+      },
+      {
+        "bone": "dark_ranger_LeftElbowPivot",
+        "child": "dark_ranger_LeftHand",
+        "direction": [
+          -0.528,
+          -0.849,
+          0
+        ]
+      },
+      {
+        "bone": "dark_ranger_LeftLegPivot",
+        "child": "dark_ranger_LeftKneePivot",
+        "direction": [
+          -0.183,
+          -0.983,
+          0
+        ]
+      },
+      {
+        "bone": "dark_ranger_LeftKneePivot",
+        "child": "dark_ranger_LeftFoot",
+        "direction": [
+          0,
+          -1,
+          0
+        ]
+      },
+      {
+        "bone": "dark_ranger_RightArmPivot",
+        "child": "dark_ranger_RightElbowPivot",
+        "direction": [
+          0.468,
+          -0.884,
+          0
+        ]
+      },
+      {
+        "bone": "dark_ranger_RightElbowPivot",
+        "child": "dark_ranger_RightHand",
+        "direction": [
+          0.528,
+          -0.849,
+          0
+        ]
+      },
+      {
+        "bone": "dark_ranger_RightLegPivot",
+        "child": "dark_ranger_RightKneePivot",
+        "direction": [
+          0.183,
+          -0.983,
+          0
+        ]
+      },
+      {
+        "bone": "dark_ranger_RightKneePivot",
+        "child": "dark_ranger_RightFoot",
+        "direction": [
+          0,
+          -1,
+          0
+        ]
       }
     ],
     "maxLimbDegrees": 20,
     "attackClips": {
       "Bite": 0.333333,
-      "WingBuffet": 0.333333
+      "WingBuffet": 0.333333,
+      "Strike": 0.333333
     }
   },
   "budget": {
-    "triangles": 70200,
-    "meshes": 120,
+    "triangles": 65678,
+    "meshes": 78,
     "materials": 38,
-    "rawBytes": 3085397,
-    "brotliBytes": 820930
+    "rawBytes": 2635191,
+    "brotliBytes": 922802
   },
   "figures": {
     "Monster_chicken": {
@@ -2382,25 +3056,25 @@
       "brotliBytes": 73129
     },
     "Monster_scorpion": {
-      "triangles": 10488,
-      "meshes": 19,
-      "materials": 6,
-      "rawBytes": 512976,
-      "brotliBytes": 95733
+      "triangles": 5000,
+      "meshes": 3,
+      "materials": 5,
+      "rawBytes": 97168,
+      "brotliBytes": 48069
     },
     "Monster_dark_wizard": {
-      "triangles": 3980,
-      "meshes": 18,
-      "materials": 9,
-      "rawBytes": 187824,
-      "brotliBytes": 34911
+      "triangles": 5000,
+      "meshes": 4,
+      "materials": 5,
+      "rawBytes": 153500,
+      "brotliBytes": 71688
     },
     "Monster_dark_ranger": {
-      "triangles": 5340,
-      "meshes": 23,
-      "materials": 8,
-      "rawBytes": 253488,
-      "brotliBytes": 49546
+      "triangles": 5000,
+      "meshes": 4,
+      "materials": 5,
+      "rawBytes": 146500,
+      "brotliBytes": 72608
     },
     "Monster_hill_giant": {
       "triangles": 7288,
@@ -2436,6 +3110,20 @@
       "materials": 4,
       "rawBytes": 354756,
       "brotliBytes": 160517
+    },
+    "Kit_saltback_stalker": {
+      "triangles": 1200,
+      "meshes": 4,
+      "materials": 2,
+      "rawBytes": 41556,
+      "brotliBytes": 12395
+    },
+    "Kit_thornwatch_marksman": {
+      "triangles": 1200,
+      "meshes": 3,
+      "materials": 1,
+      "rawBytes": 46284,
+      "brotliBytes": 16905
     }
   }
 }

@@ -105,8 +105,7 @@ export const MONSTER_MOTION: Record<string, MonsterMotionRow> = {
   },
   scorpion: {
     skeleton: 'crawler',
-    // The re-rigged scorpion's bones (plan M3b): every bone its own library keys. Its clips are staged
-    // below until K4 promotes the skinned scorpion (the shipped one is rigid and has no library).
+    // The re-rigged scorpion's bones (plan M3b): every bone its own library keys; its clips are monsters.glb's `scorpion_` library.
     bones: [
       'Hips',
       'HeadGroup',
@@ -128,6 +127,8 @@ export const MONSTER_MOTION: Record<string, MonsterMotionRow> = {
       'TailPivot2',
       'TailPivot3'
     ],
+    clips: { idle: 'Idle', walk: 'Walk', attack: 'Strike', death: 'Death' },
+    anticipation: 0.333333,
     codeAttack: {
       rightArmX: -1.45,
       leftArmX: 0.58,
@@ -136,8 +137,7 @@ export const MONSTER_MOTION: Record<string, MonsterMotionRow> = {
   },
   dark_wizard: {
     skeleton: 'biped',
-    // The rebuilt wizard's bones (plan M3e): the biped clips' thirteen. Its clips are staged below until K4
-    // promotes the skinned wizard (the shipped one is rigid and has no Hips).
+    // The rebuilt wizard's bones (plan M3e): the biped clips' thirteen. It casts with the hero file's `Cast`.
     bones: [
       'Hips',
       'Torso',
@@ -153,6 +153,8 @@ export const MONSTER_MOTION: Record<string, MonsterMotionRow> = {
       'RightKneePivot',
       'RightFoot'
     ],
+    clips: { idle: 'Idle', walk: 'Walk', attack: 'Cast', death: 'Death' },
+    anticipation: 0.25,
     codeAttack: {
       rightArmX: -1.65,
       leftArmX: -1.45,
@@ -162,7 +164,7 @@ export const MONSTER_MOTION: Record<string, MonsterMotionRow> = {
   },
   dark_ranger: {
     skeleton: 'biped',
-    // The rebuilt ranger's bones (plan M3e): the biped clips' thirteen; its clips are staged below, as the wizard's.
+    // The rebuilt ranger's bones (plan M3e): the biped clips' thirteen; it shoots with the hero file's `Ranged`.
     bones: [
       'Hips',
       'Torso',
@@ -178,6 +180,8 @@ export const MONSTER_MOTION: Record<string, MonsterMotionRow> = {
       'RightKneePivot',
       'RightFoot'
     ],
+    clips: { idle: 'Idle', walk: 'Walk', attack: 'Ranged', death: 'Death' },
+    anticipation: 0.583333,
     codeAttack: {
       rightArmX: -1.45,
       leftArmX: 0.58,
@@ -281,29 +285,4 @@ export const MONSTER_MOTION: Record<string, MonsterMotionRow> = {
       y: 0.32
     }
   }
-};
-
-/**
- * The scorpion's crawler library (plan M3b), staged as the dragon's and the archer's were: K4's promote
- * sets the live row's `clips` and `anticipation` to these and removes the export. In monsters.glb Idle, Walk
- * and Death are named `scorpion_<clip>` (the dragon's library holds the bare names); the loader strips the prefix.
- */
-export const PENDING_SCORPION_CLIPS: Pick<MonsterMotionRow, 'clips' | 'anticipation'> = {
-  clips: { idle: 'Idle', walk: 'Walk', attack: 'Strike', death: 'Death' },
-  anticipation: 0.333333
-};
-
-/**
- * The rebuilt wizard and ranger (plan M3e) play the hero file's biped library: the wizard casts with `Cast`, the
- * ranger shoots with `Ranged`, each anticipation the hero manifest's. Staged as the scorpion's: K4's promote sets the
- * live rows' `clips` and `anticipation` to these and removes the exports.
- */
-export const PENDING_WIZARD_CLIPS: Pick<MonsterMotionRow, 'clips' | 'anticipation'> = {
-  clips: { idle: 'Idle', walk: 'Walk', attack: 'Cast', death: 'Death' },
-  anticipation: 0.25
-};
-
-export const PENDING_RANGER_CLIPS: Pick<MonsterMotionRow, 'clips' | 'anticipation'> = {
-  clips: { idle: 'Idle', walk: 'Walk', attack: 'Ranged', death: 'Death' },
-  anticipation: 0.583333
 };

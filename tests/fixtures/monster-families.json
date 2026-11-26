@@ -16,89 +16,40 @@
   "floor": 3
  },
  "dark_ranger": {
-  "meshes": 37,
+  "meshes": 4,
   "triangles": {
-   "leather": 3032,
-   "iron": 624,
-   "cloth": 596,
-   "bark": 168,
-   "plain": 72,
-   "eyes": 560,
-   "glow": 288
+   "wood": 316,
+   "glow": 96,
+   "cloth": 250,
+   "leather": 3698
   },
   "pivots": {
    "Monster_dark_ranger": [
     "cloth",
     "glow",
-    "iron",
-    "leather"
-   ],
-   "dark_ranger_RightLegPivot": [
-    "iron",
-    "leather"
-   ],
-   "dark_ranger_RightArmPivot": [
-    "bark",
-    "cloth",
     "leather",
-    "plain"
-   ],
-   "dark_ranger_LeftLegPivot": [
-    "iron",
-    "leather"
-   ],
-   "dark_ranger_LeftArmPivot": [
-    "cloth",
-    "leather"
-   ],
-   "dark_ranger_HeadGroup": [
-    "cloth",
-    "eyes",
-    "iron"
+    "wood"
    ]
   },
-  "floor": 23
+  "floor": 4
  },
  "dark_wizard": {
-  "meshes": 24,
+  "meshes": 4,
   "triangles": {
-   "plain": 1240,
-   "cloth": 1260,
-   "leather": 216,
-   "bark": 144,
-   "glow": 280,
-   "iron": 280,
-   "eyes": 560
+   "wood": 252,
+   "cloth": 3284,
+   "glow": 192,
+   "skin": 632
   },
   "pivots": {
    "Monster_dark_wizard": [
     "cloth",
-    "plain"
-   ],
-   "dark_wizard_RightLegPivot": [
-    "leather"
-   ],
-   "dark_wizard_RightArmPivot": [
-    "bark",
-    "cloth",
     "glow",
-    "plain"
-   ],
-   "dark_wizard_LeftLegPivot": [
-    "leather"
-   ],
-   "dark_wizard_LeftArmPivot": [
-    "cloth",
-    "plain"
-   ],
-   "dark_wizard_HeadGroup": [
-    "cloth",
-    "eyes",
-    "iron",
-    "plain"
+    "skin",
+    "wood"
    ]
   },
-  "floor": 18
+  "floor": 4
  },
  "elvarg_dragon": {
   "meshes": 4,
@@ -260,38 +211,20 @@
   "floor": 20
  },
  "scorpion": {
-  "meshes": 68,
+  "meshes": 3,
   "triangles": {
-   "skin": 6744,
-   "glow": 144,
-   "plain": 1920,
-   "eyes": 1680
+   "glow": 288,
+   "plain": 912,
+   "skin": 3376
   },
   "pivots": {
    "Monster_scorpion": [
-    "eyes",
     "glow",
-    "plain",
-    "skin"
-   ],
-   "scorpion_RightLegPivot": [
-    "plain",
-    "skin"
-   ],
-   "scorpion_RightArmPivot": [
-    "plain",
-    "skin"
-   ],
-   "scorpion_LeftLegPivot": [
-    "plain",
-    "skin"
-   ],
-   "scorpion_LeftArmPivot": [
     "plain",
     "skin"
    ]
   },
-  "floor": 19
+  "floor": 3
  },
  "ashmantle": {
   "meshes": 4,
