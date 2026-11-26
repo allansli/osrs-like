@@ -193,7 +193,14 @@ def build_ears(head) -> None:
             faces.append(bm.faces.new((outer[i], outer[j], bowl)))
         for v in inner + outer + [bowl]:
             v[dl][group] = 1.0
-        bmesh.ops.recalc_face_normals(bm, faces=faces)
+        middle = sum((v.co for v in inner + outer), Vector()) / (2 * k)
+        flipped = 0
+        for f in faces:  # every face looks away from the ear's own middle (the paint's occlusion needs it)
+            f.normal_update()
+            if f.normal.dot(f.calc_center_median() - middle) < 0:
+                f.normal_flip()
+                flipped += 1
+        print(f"[BlenderHero] ear {side:+d}: {len(faces)} faces, {flipped} turned outward")
     bm.to_mesh(head.data)
     bm.free()
     head.data.update()
