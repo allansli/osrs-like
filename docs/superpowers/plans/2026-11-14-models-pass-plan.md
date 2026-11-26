@@ -851,3 +851,8 @@ Three lanes ran in their own worktrees. **Gear** (G2, G2b) and **engine** (Q1, B
 
 - **H7 also edits** `tests/model-cache-key.test.ts` (the hero's `?v=` key), `tests/model-contract.test.ts` (pivots checked as `skin.bones`, centres Boots/Hands/Head, eleven clips, the hero's `vertexColors` true with the hitbox excluded, the hero dropped from LEGACY), `tests/model-vertex-colour.test.ts` (the hero's materials have `vertexColors` true) and `tests/fixtures/model-contract/totals.json` (by its rule). Same kind of promote follow-through as the S2 amendments' S4 list; declared, no assertion weakened.
 - **Sheets at most 2 MB** is met by cutting `s2/` to 1,992,398 bytes of JPEG: the H3a to H3c sheets and the two H5b play-distance sheets leave the tree and stay in history (`s2/README.md`, "Sheets cut").
+
+### Lanes 2 and promotes (2026-11-26, main session)
+
+H3b to H5b and D2 verified and merged (ca73092, da08e17); H7 promoted the hero and G6 the merged gear, verified; SUITE green again (1,348 tests). Correction to "After S3d": the S3d builder refinements of the goblin (chest-to-belly step, instep, toe box, thumb) ride with **M3a** (the goblin family), not M1. Next, two lanes: guards (N1, N2, N3) and monsters (M1, M1b, D2b, D3, M3d, D4, then D5's [AGY] part; D5's promote stays with the main session).
+
