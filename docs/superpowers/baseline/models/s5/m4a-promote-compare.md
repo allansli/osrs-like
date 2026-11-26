@@ -1,0 +1,142 @@
+# Model Compare Report: monsters
+
+## Contract
+All contract checks passed.
+
+## Budget
+All budget checks passed.
+
+## Drift
+- Node 'chicken_HeadGroup' added
+- Node 'chicken_LeftHand' added
+- Node 'chicken_LeftElbowPivot' added
+- Node 'chicken_LeftArmPivot' added
+- Node 'chicken_RightHand' added
+- Node 'chicken_RightElbowPivot' added
+- Node 'chicken_RightArmPivot' added
+- Node 'chicken_LWing' translation changed: [0, 0, 0] -> [-0.1599999964237213, 0.019999980926513672, 0.14000000059604645]
+- Node 'chicken_RWing' translation changed: [0, 0, 0] -> [0.1599999964237213, 0.019999980926513672, 0.14000000059604645]
+- Node 'chicken_Torso' added
+- Node 'chicken_LeftFoot' added
+- Node 'chicken_LeftKneePivot' added
+- Node 'chicken_LeftLegPivot' translation changed: [-0.09999990463256836, 0.23999999463558197, 0.039999961853027344] -> [-0.10000000149011612, -0.12000001966953278, 0.03999999910593033]
+- Node 'chicken_RightFoot' added
+- Node 'chicken_RightKneePivot' added
+- Node 'chicken_RightLegPivot' translation changed: [0.09999990463256836, 0.23999999463558197, 0.039999961853027344] -> [0.10000000149011612, -0.12000001966953278, 0.03999999910593033]
+- Node 'chicken_Hips' added
+- Node 'chicken_Root' added
+- Node 'chicken_beak' added
+- Node 'Monster_chicken' translation changed: [-5.199999809265137, 0, -2] -> [0, 0, 0]
+- Node 'goblin_archer_Jaw' added
+- Node 'goblin_archer_HeadGroup' translation changed: [0, 1.4800000190734863, -0.07999992370605469] -> [0, 0.4488000273704529, -0.15299999713897705]
+- Node 'goblin_archer_OffhandPivot' added
+- Node 'goblin_archer_LeftHand' added
+- Node 'goblin_archer_LeftElbowPivot' added
+- Node 'goblin_archer_LeftArmPivot' translation changed: [-0.4599999785423279, 1.2799999713897705, -0.07999992370605469] -> [-0.3059999942779541, 0.35700005292892456, -0.07649999856948853]
+- Node 'goblin_archer_WeaponPivot' added
+- Node 'goblin_archer_RightHand' added
+- Node 'goblin_archer_RightElbowPivot' added
+- Node 'goblin_archer_RightArmPivot' translation changed: [0.46000000834465027, 1.2799999713897705, -0.07999992370605469] -> [0.3059999942779541, 0.35700005292892456, -0.07649999856948853]
+- Node 'goblin_archer_Torso' added
+- Node 'goblin_archer_LeftFoot' added
+- Node 'goblin_archer_LeftKneePivot' added
+- Node 'goblin_archer_LeftLegPivot' translation changed: [-0.1600000262260437, 0.699999988079071, 0] -> [-0.1428000032901764, -0.02039998769760132, -0.010200001299381256]
+- Node 'goblin_archer_RightFoot' added
+- Node 'goblin_archer_RightKneePivot' added
+- Node 'goblin_archer_RightLegPivot' translation changed: [0.1600000262260437, 0.699999988079071, 0] -> [0.1428000032901764, -0.02039998769760132, -0.010200001299381256]
+- Node 'goblin_archer_Hips' added
+- Node 'goblin_archer_Root' added
+- Node 'goblin_archer_body' added
+- Node 'goblin_archer_wood' added
+- Node 'Monster_goblin_archer' translation changed: [-0.800000011920929, 0, -2] -> [0, 0, 0]
+- Node 'chicken_beak_lower' removed
+- Node 'chicken_eye_L' removed
+- Node 'chicken_LeftLegPivot_drumstick' removed
+- Node 'chicken_LeftLegPivot_shank' removed
+- Node 'chicken_LeftLegPivot_talon_0' removed
+- Node 'chicken_RightLegPivot_drumstick' removed
+- Node 'chicken_RightLegPivot_shank' removed
+- Node 'chicken_RightLegPivot_talon_0' removed
+- Node 'chicken_tail_feather_0' removed
+- Node 'goblin_archer_arrow_0' removed
+- Node 'goblin_archer_belt' removed
+- Node 'goblin_archer_buckle' removed
+- Node 'goblin_archer_fletch_0' removed
+- Node 'goblin_archer_brow_ridge' removed
+- Node 'goblin_archer_ear_L' removed
+- Node 'goblin_archer_eye_L' removed
+- Node 'goblin_archer_fang_L' removed
+- Node 'goblin_archer_hood' removed
+- Node 'goblin_archer_bracer_L' removed
+- Node 'goblin_archer_farm_L' removed
+- Node 'goblin_archer_hand_L' removed
+- Node 'goblin_archer_LeftLegPivot_calf' removed
+- Node 'goblin_archer_LeftLegPivot_claw_0' removed
+- Node 'goblin_archer_LeftLegPivot_foot' removed
+- Node 'goblin_archer_LeftLegPivot_wrap' removed
+- Node 'goblin_archer_loincloth_back' removed
+- Node 'goblin_archer_rib_0_L' removed
+- Node 'goblin_archer_bow' removed
+- Node 'goblin_archer_bowstring' removed
+- Node 'goblin_archer_bracer_R' removed
+- Node 'goblin_archer_farm_R' removed
+- Node 'goblin_archer_hand_R' removed
+- Node 'goblin_archer_RightLegPivot_calf' removed
+- Node 'goblin_archer_RightLegPivot_claw_0' removed
+- Node 'goblin_archer_RightLegPivot_foot' removed
+- Node 'goblin_archer_RightLegPivot_wrap' removed
+- Node 'goblin_archer_torso' removed
+- Mesh 'chicken_beak' added
+- Mesh 'chicken_body' bounds changed: [-0.2124556601047516, 0.10000000149011612, -0.33485332131385803]..[0.2124556601047516, 0.6837281584739685, 0.4821266233921051] -> [-0.24799999594688416, 0.10000000149011612, -0.3307003080844879]..[0.24799999594688416, 0.6830562353134155, 0.4835836887359619]
+- Mesh 'chicken_body' geometry bytes changed
+- Mesh 'chicken_comb' bounds changed: [-0.033726539462804794, -0.03750000149011612, -0.3160000145435333]..[0.033726539462804794, 0.7875000238418579, 0.009270509704947472] -> [-0.03400000184774399, 0.5180000066757202, -0.3160000145435333]..[0.03400000184774399, 0.7875000238418579, -0.1379999965429306]
+- Mesh 'chicken_comb' geometry bytes changed
+- Mesh 'goblin_body' geometry bytes changed
+- Mesh 'goblin_metal' bounds changed: [-0.9149115681648254, 0.641301691532135, -0.4367903769016266]..[0.9819459915161133, 1.7771399021148682, 0.0982726439833641] -> [-0.9128870964050293, 0.6460210680961609, -0.44075292348861694]..[0.9819459915161133, 1.7771399021148682, 0.10223518311977386]
+- Mesh 'goblin_metal' geometry bytes changed
+- Mesh 'goblin_wood' bounds changed: [-0.8976839184761047, 0.03945259004831314, -0.41430437564849854]..[0.9107269644737244, 1.4823801517486572, 0.07578663527965546] -> [-0.8958619236946106, 0.03945259004831314, -0.4178706407546997]..[0.9107269644737244, 1.4823801517486572, 0.07935291528701782]
+- Mesh 'goblin_wood' geometry bytes changed
+- Mesh 'goblin_archer_body' added
+- Mesh 'goblin_archer_wood' added
+- Mesh 'chicken_beak_lower' removed
+- Mesh 'chicken_eye_L' removed
+- Mesh 'chicken_LeftLegPivot_drumstick' removed
+- Mesh 'chicken_LeftLegPivot_shank' removed
+- Mesh 'chicken_LeftLegPivot_talon_0' removed
+- Mesh 'chicken_LWing' removed
+- Mesh 'chicken_RightLegPivot_drumstick' removed
+- Mesh 'chicken_RightLegPivot_shank' removed
+- Mesh 'chicken_RightLegPivot_talon_0' removed
+- Mesh 'chicken_RWing' removed
+- Mesh 'chicken_tail_feather_0' removed
+- Mesh 'goblin_archer_arrow_0' removed
+- Mesh 'goblin_archer_belt' removed
+- Mesh 'goblin_archer_buckle' removed
+- Mesh 'goblin_archer_fletch_0' removed
+- Mesh 'goblin_archer_brow_ridge' removed
+- Mesh 'goblin_archer_ear_L' removed
+- Mesh 'goblin_archer_eye_L' removed
+- Mesh 'goblin_archer_fang_L' removed
+- Mesh 'goblin_archer_hood' removed
+- Mesh 'goblin_archer_bracer_L' removed
+- Mesh 'goblin_archer_farm_L' removed
+- Mesh 'goblin_archer_hand_L' removed
+- Mesh 'goblin_archer_LeftLegPivot_calf' removed
+- Mesh 'goblin_archer_LeftLegPivot_claw_0' removed
+- Mesh 'goblin_archer_LeftLegPivot_foot' removed
+- Mesh 'goblin_archer_LeftLegPivot_wrap' removed
+- Mesh 'goblin_archer_loincloth_back' removed
+- Mesh 'goblin_archer_rib_0_L' removed
+- Mesh 'goblin_archer_bow' removed
+- Mesh 'goblin_archer_bowstring' removed
+- Mesh 'goblin_archer_bracer_R' removed
+- Mesh 'goblin_archer_farm_R' removed
+- Mesh 'goblin_archer_hand_R' removed
+- Mesh 'goblin_archer_RightLegPivot_calf' removed
+- Mesh 'goblin_archer_RightLegPivot_claw_0' removed
+- Mesh 'goblin_archer_RightLegPivot_foot' removed
+- Mesh 'goblin_archer_RightLegPivot_wrap' removed
+- Mesh 'goblin_archer_torso' removed
+- triangles changed: 74724 -> 70200
+- rawBytes changed: 3411448 -> 3054848
+- brotliBytes changed: 822441 -> 812801

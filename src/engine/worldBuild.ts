@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { loadGltfOnce } from './gltf';
 import { G } from './context';
 import { disposeObject3D } from './dispose';
 import { WORLD_REGIONS, type RegionDef } from '../data/world';
@@ -16,7 +15,8 @@ import { mergeByMaterial } from './batching';
 import { buildHumanoidRig, LEAN_RIG } from './humanoid';
 import { loadBlenderHeroTemplate, upgradeHumanoidRigWithGltf } from './blenderHero';
 import { loadBlenderGearTemplate } from './blenderGear';
-import { buildCapeVisual, buildHeadVisual, buildWeaponVisual } from './playerGear';
+import { buildCapeVisual, buildWeaponVisual } from './playerGear';
+import { mountLoadout, moveToTodayPivot, type MountedRig } from './playerMesh';
 import { EMITTERS } from '../data/look';
 import { registerEmitter } from './lighting';
 
@@ -203,8 +203,8 @@ export function buildAllCitiesAndLandmarks(): void {
 
   // 2. Sculpted Lumbridge Castle Keep & Cylindrical Battlement Towers
   createCastleStructure(0, -25);
-  createCastleGuard(-2.4, -16.5, 'Lumbridge Castle Guard', 0);
-  createCastleGuard(2.4, -16.5, 'Lumbridge Castle Guard', 0);
+  createCastleGuard(-2.4, -15.3, 'Lumbridge Castle Guard', 0);
+  createCastleGuard(2.4, -15.3, 'Lumbridge Castle Guard', 0);
 
   // BlendSwap #6679 Props: Barrels, Crates, Cabbage & Apple Boxes, Grain Sacks
   spawnWorldProp('World_barrel', -3.6, -17.8, 0.4);
@@ -470,9 +470,11 @@ export function createSlayerMaster(x: number, z: number): void {
     if (rig.rightElbowPivot) {
       wepVis.group.position.set(0.19, -0.32, 0.08);
       wepVis.group.rotation.set(-0.2, 0.0, 0.1);
+      moveToTodayPivot(rig.rightElbowPivot, wepVis.group, rig.group);
       rig.rightElbowPivot.add(wepVis.group);
     } else {
       wepVis.group.position.set(0, LEAN_RIG.handY, -0.08);
+      moveToTodayPivot(rig.rightArmPivot, wepVis.group, rig.group);
       rig.rightArmPivot.add(wepVis.group);
     }
     vannakaWep = wepVis.group;
@@ -484,6 +486,7 @@ export function createSlayerMaster(x: number, z: number): void {
     } else {
       capeVis.position.set(0, 0.285, 0.175);
     }
+    moveToTodayPivot(rig.torso, capeVis, rig.group);
     rig.torso.add(capeVis);
     vannakaCape = capeVis;
     addCartoonOutline(vannakaCape, 0.02);
@@ -524,28 +527,21 @@ export function createMerchantNPC(x: number, z: number, name: string, tunicColor
       : name.includes('Al-Kharid')
       ? { id: 'hood', slot: 'head', iconKind: 'hood', color: tunicColor, trim: 0xfacc15 }
       : { id: 'circlet', slot: 'head', iconKind: 'circlet', color: 0x38bdf8, trim: 0xfacc15 }) as unknown as ItemDef;
-    const hat = buildHeadVisual(hatItem);
-    if (rig.leftElbowPivot || rig.group.userData.isBlenderHero) {
-      hat.scale.set(0.74, 0.74, 0.74);
-      hat.position.set(0, -0.16, 0.01);
-    }
-    rig.headGroup.add(hat);
-    addCartoonOutline(hat, 0.018);
+    const mounted: MountedRig = rig;
+    mountLoadout(mounted, { head: hatItem });
+    addCartoonOutline(mounted.helmMesh!, 0.018);
   });
-}
-
-export function loadBlenderGuardTemplate(): Promise<GLTF | null> {
-  if (typeof window === 'undefined' || typeof document === 'undefined') {
-    return Promise.resolve(null);
-  }
-  return loadGltfOnce('/models/guard.glb');
 }
 
 export function createCastleGuard(x: number, z: number, name: string, rotY = 0): void {
   const y = getTerrainHeight(x, z);
-  const grp = new THREE.Group();
-  grp.position.set(x, y, z);
-  grp.rotation.y = rotY;
+  const rig = buildHumanoidRig(0x80898f, 0xfacc15, 0x80898f, 1.0);
+  rig.hitbox.geometry.dispose();
+  rig.hitbox.geometry = new THREE.CylinderGeometry(0.45, 0.45, 1.85, 8);
+  rig.hitbox.position.y = 0.92;
+
+  rig.group.position.set(x, y, z);
+  rig.group.rotation.y = rotY;
 
   const uData = {
     type: 'interactive',
@@ -554,33 +550,30 @@ export function createCastleGuard(x: number, z: number, name: string, rotY = 0):
     dialogue: 'Halt! Welcome to Lumbridge Castle, adventurer. Keep your weapons sheathed within the courtyard.',
     interactRadius: 3.5
   };
-  grp.userData = uData;
+  rig.group.userData = { ...uData };
+  rig.hitbox.userData = { ...uData };
 
-  const hitbox = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.45, 0.45, 1.85, 8),
-    new THREE.MeshBasicMaterial({ visible: false })
-  );
-  hitbox.position.y = 0.92;
-  hitbox.userData = uData;
-  grp.add(hitbox);
-  G.worldInteractiveObjects.push(hitbox);
-  G.scene.add(grp);
-  G.npcList.push({ pos: grp.position, name, color: '#94a3b8', yOffset: 2.5 });
+  G.worldInteractiveObjects.push(rig.hitbox);
+  G.scene.add(rig.group);
+  G.npcList.push({ pos: rig.group.position, name, color: '#94a3b8', yOffset: 2.5 });
 
-  loadBlenderGuardTemplate().then((gltf: GLTF | null) => {
-    if (!gltf) return;
-    const cloned = gltf.scene.clone(true);
-    cloned.position.set(0, 0, 0);
-    cloned.traverse((obj: THREE.Object3D) => {
-      const m = obj as THREE.Mesh;
-      if (m.isMesh) {
-        m.castShadow = true;
-        m.receiveShadow = false;
-        m.userData = { ...m.userData, ...uData };
-      }
-    });
-    grp.add(cloned);
-    addCartoonOutline(cloned, 0.024);
+  Promise.all([loadBlenderHeroTemplate(), loadBlenderGearTemplate()]).then(([heroGltf]) => {
+    if (heroGltf) {
+      const anim = upgradeHumanoidRigWithGltf(rig, heroGltf, 0x80898f, 0xfacc15, 0x80898f, { isPlayer: false });
+      if (anim) G.npcAnimatorsList.push(anim);
+    }
+    const guardSteel = 0x80898f;
+    const goldTrim = 0xfacc15;
+    const items = {
+      head: { id: 'steel_helm', slot: 'head', iconKind: 'head', color: guardSteel, trim: goldTrim } as unknown as ItemDef,
+      body: { id: 'steel_plate', slot: 'body', iconKind: 'body', color: guardSteel, trim: goldTrim } as unknown as ItemDef,
+      legs: { id: 'steel_legs', slot: 'legs', iconKind: 'legs', color: guardSteel, trim: goldTrim } as unknown as ItemDef,
+      shield: { id: 'steel_shield', slot: 'shield', iconKind: 'kiteshield', color: guardSteel, trim: goldTrim } as unknown as ItemDef,
+      weapon: { id: 'steel_sword', slot: 'weapon', iconKind: 'sword', color: guardSteel, trim: goldTrim } as unknown as ItemDef
+    };
+    const mounted: MountedRig = rig;
+    mountLoadout(mounted, items);
+    addCartoonOutline(rig.group, LEAN_RIG.outline);
   });
 }
 

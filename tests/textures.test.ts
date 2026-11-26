@@ -428,4 +428,24 @@ describe('creature identity albedos', () => {
       expect(sumSq / count - mean * mean).toBeGreaterThan(12);
     }
   });
+
+  it('the tile mean colour is within 3 of (209, 215, 174)', () => {
+    const file = join(TEXTURE_DIR, 'creatures/goblin-hide.png');
+    const image = decodePng(readFileSync(file));
+    let rSum = 0;
+    let gSum = 0;
+    let bSum = 0;
+    const count = image.width * image.height;
+    for (let i = 0; i < count; i++) {
+      rSum += image.rgba[i * 4];
+      gSum += image.rgba[i * 4 + 1];
+      bSum += image.rgba[i * 4 + 2];
+    }
+    const meanR = rSum / count;
+    const meanG = gSum / count;
+    const meanB = bSum / count;
+    expect(Math.abs(meanR - 209)).toBeLessThanOrEqual(3);
+    expect(Math.abs(meanG - 215)).toBeLessThanOrEqual(3);
+    expect(Math.abs(meanB - 174)).toBeLessThanOrEqual(3);
+  });
 });

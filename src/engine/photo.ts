@@ -18,7 +18,7 @@ export function setPlayerChoseTier(val = true): void {
 
 export interface LookHooks {
   ready(): boolean;
-  pose(row: { place: string; yaw: number; pitch: number; distance: number }): void;
+  pose(row: { place?: string; x?: number; z?: number; yaw: number; pitch: number; distance: number }): void;
   phase(p: number): void;
   preset(n: 0 | 1 | 2): void;
   hud(on: boolean): void;
@@ -64,12 +64,15 @@ export function createLookHooks(): LookHooks {
       return worldGlbSettled;
     },
 
-    pose(row: { place: string; yaw: number; pitch: number; distance: number }): void {
+    pose(row: { place?: string; x?: number; z?: number; yaw: number; pitch: number; distance: number }): void {
       let targetX: number | undefined;
       let targetZ: number | undefined;
 
       const poi = POIS.find((p) => p.id === row.place);
-      if (poi) {
+      if (row.place === undefined) {
+        targetX = row.x;
+        targetZ = row.z;
+      } else if (poi) {
         targetX = poi.x;
         targetZ = poi.z;
       } else {
@@ -89,7 +92,7 @@ export function createLookHooks(): LookHooks {
       }
 
       if (targetX === undefined || targetZ === undefined) {
-        throw new Error(`Unknown place: ${row.place}`);
+        throw new Error(`Unknown place: ${row.place ?? `x ${row.x}, z ${row.z}`}`);
       }
 
       const targetY = getTerrainHeight(targetX, targetZ);

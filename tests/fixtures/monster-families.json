@@ -1,0 +1,190 @@
+{
+ "chicken": {
+  "meshes": 3,
+  "triangles": {
+   "cloth": 216,
+   "skin": 1164,
+   "plain": 1056
+  },
+  "pivots": {
+   "Monster_chicken": [
+    "cloth",
+    "plain",
+    "skin"
+   ]
+  },
+  "floor": 3
+ },
+ "dark_ranger": {
+  "meshes": 4,
+  "triangles": {
+   "wood": 316,
+   "glow": 96,
+   "cloth": 250,
+   "leather": 3698
+  },
+  "pivots": {
+   "Monster_dark_ranger": [
+    "cloth",
+    "glow",
+    "leather",
+    "wood"
+   ]
+  },
+  "floor": 4
+ },
+ "dark_wizard": {
+  "meshes": 4,
+  "triangles": {
+   "wood": 252,
+   "cloth": 3284,
+   "glow": 192,
+   "skin": 632
+  },
+  "pivots": {
+   "Monster_dark_wizard": [
+    "cloth",
+    "glow",
+    "skin",
+    "wood"
+   ]
+  },
+  "floor": 4
+ },
+ "elvarg_dragon": {
+  "meshes": 4,
+  "triangles": {
+   "leather": 96,
+   "glow": 80,
+   "plain": 2592,
+   "skin": 7192
+  },
+  "pivots": {
+   "Monster_elvarg_dragon": [
+    "glow",
+    "leather",
+    "plain",
+    "skin"
+   ]
+  },
+  "floor": 4
+ },
+ "goblin": {
+  "meshes": 3,
+  "triangles": {
+   "wood": 96,
+   "iron": 284,
+   "skin": 3980
+  },
+  "pivots": {
+   "Monster_goblin": [
+    "iron",
+    "skin",
+    "wood"
+   ]
+  },
+  "floor": 3
+ },
+ "goblin_archer": {
+  "meshes": 2,
+  "triangles": {
+   "wood": 316,
+   "skin": 4044
+  },
+  "pivots": {
+   "Monster_goblin_archer": [
+    "skin",
+    "wood"
+   ]
+  },
+  "floor": 2
+ },
+ "hill_giant": {
+  "meshes": 4,
+  "triangles": {
+   "leather": 356,
+   "wood": 96,
+   "plain": 1032,
+   "skin": 4074
+  },
+  "pivots": {
+   "Monster_hill_giant": [
+    "leather",
+    "plain",
+    "skin",
+    "wood"
+   ]
+  },
+  "floor": 4
+ },
+ "lesser_demon": {
+  "meshes": 4,
+  "triangles": {
+   "leather": 120,
+   "plain": 804,
+   "glow": 188,
+   "skin": 4348
+  },
+  "pivots": {
+   "Monster_lesser_demon": [
+    "glow",
+    "leather",
+    "plain",
+    "skin"
+   ]
+  },
+  "floor": 4
+ },
+ "moss_guardian": {
+  "meshes": 4,
+  "triangles": {
+   "stone": 560,
+   "grass": 416,
+   "glow": 96,
+   "bark": 1222
+  },
+  "pivots": {
+   "Monster_moss_guardian": [
+    "bark",
+    "glow",
+    "grass",
+    "stone"
+   ]
+  },
+  "floor": 4
+ },
+ "scorpion": {
+  "meshes": 3,
+  "triangles": {
+   "glow": 288,
+   "plain": 912,
+   "skin": 3376
+  },
+  "pivots": {
+   "Monster_scorpion": [
+    "glow",
+    "plain",
+    "skin"
+   ]
+  },
+  "floor": 3
+ },
+ "ashmantle": {
+  "meshes": 4,
+  "triangles": {
+   "leather": 96,
+   "glow": 296,
+   "plain": 3242,
+   "skin": 5926
+  },
+  "pivots": {
+   "Monster_ashmantle": [
+    "glow",
+    "leather",
+    "plain",
+    "skin"
+   ]
+  },
+  "floor": 4
+ }
+}

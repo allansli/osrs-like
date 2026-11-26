@@ -1,0 +1,223 @@
+# Model Compare Report: monsters
+
+## Contract
+All contract checks passed.
+
+## Budget
+All budget checks passed.
+
+## Drift
+- Node 'scorpion_LeftElbowPivot' added
+- Node 'scorpion_LeftArmPivot' translation changed: [-0.2799999713897705, 0.5199999809265137, -0.8199999332427979] -> [-0.2800000011920929, 0.02000001072883606, -0.26999998092651367]
+- Node 'scorpion_RightElbowPivot' added
+- Node 'scorpion_RightArmPivot' translation changed: [0.2799999713897705, 0.5199999809265137, -0.8199999332427979] -> [0.2800000011920929, 0.02000001072883606, -0.26999998092651367]
+- Node 'scorpion_HeadGroup' added
+- Node 'scorpion_LegL1' added
+- Node 'scorpion_LegL2' added
+- Node 'scorpion_LegL3' added
+- Node 'scorpion_LegL4' added
+- Node 'scorpion_LeftLegPivot' translation changed: [-0.2200000286102295, 0.5, 0] -> [-0.2199999988079071, -2.9802322387695312e-8, 0]
+- Node 'scorpion_LegR1' added
+- Node 'scorpion_LegR2' added
+- Node 'scorpion_LegR3' added
+- Node 'scorpion_LegR4' added
+- Node 'scorpion_RightLegPivot' translation changed: [0.2200000286102295, 0.5, 0] -> [0.2199999988079071, -2.9802322387695312e-8, 0]
+- Node 'scorpion_TailPivot3' added
+- Node 'scorpion_TailPivot2' added
+- Node 'scorpion_TailPivot' added
+- Node 'scorpion_Hips' added
+- Node 'scorpion_Root' added
+- Node 'scorpion_body' added
+- Node 'scorpion_bone' added
+- Node 'scorpion_sting' added
+- Node 'Monster_scorpion' translation changed: [1.7999999523162842, 0, -2] -> [0, 0, 0]
+- Node 'Hips' added
+- Node 'LeftElbowPivot' added
+- Node 'RightElbowPivot' added
+- Node 'TailPivot3' added
+- Node 'Kit_saltback_stalker' added
+- Node 'dark_wizard_HeadGroup' translation changed: [0, 1.9199999570846558, 0] -> [0, 0.5399999618530273, -0.10999999940395355]
+- Node 'dark_wizard_LeftHand' added
+- Node 'dark_wizard_LeftElbowPivot' added
+- Node 'dark_wizard_LeftArmPivot' translation changed: [-0.38000011444091797, 1.5, 0] -> [-0.25999999046325684, 0.3999999761581421, -0.04999999701976776]
+- Node 'dark_wizard_WeaponPivot' added
+- Node 'dark_wizard_RightHand' added
+- Node 'dark_wizard_RightElbowPivot' added
+- Node 'dark_wizard_RightArmPivot' translation changed: [0.38000011444091797, 1.5, 0] -> [0.25999999046325684, 0.3999999761581421, -0.04999999701976776]
+- Node 'dark_wizard_Torso' added
+- Node 'dark_wizard_LeftFoot' added
+- Node 'dark_wizard_LeftKneePivot' added
+- Node 'dark_wizard_LeftLegPivot' translation changed: [-0.15999984741210938, 0.2199999988079071, 0.039999961853027344] -> [-0.11999999731779099, -0.04000002145767212, 0]
+- Node 'dark_wizard_RightFoot' added
+- Node 'dark_wizard_RightKneePivot' added
+- Node 'dark_wizard_RightLegPivot' translation changed: [0.15999984741210938, 0.2199999988079071, 0.039999961853027344] -> [0.11999999731779099, -0.04000002145767212, 0]
+- Node 'dark_wizard_Hips' added
+- Node 'dark_wizard_Root' added
+- Node 'dark_wizard_face' added
+- Node 'dark_wizard_glow' added
+- Node 'Monster_dark_wizard' translation changed: [4.400000095367432, 0, -2] -> [0, 0, 0]
+- Node 'dark_ranger_HeadGroup' translation changed: [0, 1.8600000143051147, 0] -> [0, 0.5400000810623169, -0.10000000149011612]
+- Node 'dark_ranger_OffhandPivot' added
+- Node 'dark_ranger_LeftHand' added
+- Node 'dark_ranger_LeftElbowPivot' added
+- Node 'dark_ranger_LeftArmPivot' translation changed: [-0.4200000762939453, 1.5, 0] -> [-0.25, 0.3799999952316284, -0.03999999910593033]
+- Node 'dark_ranger_RightHand' added
+- Node 'dark_ranger_RightElbowPivot' added
+- Node 'dark_ranger_RightArmPivot' translation changed: [0.4200000762939453, 1.5, 0] -> [0.25, 0.3799999952316284, -0.03999999910593033]
+- Node 'dark_ranger_Torso' added
+- Node 'dark_ranger_LeftFoot' added
+- Node 'dark_ranger_LeftKneePivot' added
+- Node 'dark_ranger_LeftLegPivot' translation changed: [-0.15000009536743164, 0.7799999713897705, 0] -> [-0.11999999731779099, -0.030000030994415283, 0]
+- Node 'dark_ranger_RightFoot' added
+- Node 'dark_ranger_RightKneePivot' added
+- Node 'dark_ranger_RightLegPivot' translation changed: [0.15000009536743164, 0.7799999713897705, 0] -> [0.11999999731779099, -0.030000030994415283, 0]
+- Node 'dark_ranger_Hips' added
+- Node 'dark_ranger_Root' added
+- Node 'dark_ranger_body' added
+- Node 'dark_ranger_glow' added
+- Node 'dark_ranger_wood' added
+- Node 'Monster_dark_ranger' translation changed: [-6, 0, 2.200000047683716] -> [0, 0, 0]
+- Node 'HeadGroup' added
+- Node 'OffhandPivot' added
+- Node 'Torso' added
+- Node 'Kit_thornwatch_marksman' added
+- Node 'scorpion_carapace_plate_0' removed
+- Node 'scorpion_carapace_plate_1' removed
+- Node 'scorpion_eye_L_0' removed
+- Node 'scorpion_LeftArmPivot_chela_palm' removed
+- Node 'scorpion_LeftArmPivot_pedipalp_1' removed
+- Node 'scorpion_LeftArmPivot_pincer_inner' removed
+- Node 'scorpion_LeftArmPivot_tooth_0' removed
+- Node 'scorpion_LeftLegPivot_femur_0' removed
+- Node 'scorpion_LeftLegPivot_tarsus_0' removed
+- Node 'scorpion_LeftLegPivot_tibia_0' removed
+- Node 'scorpion_mandible_L' removed
+- Node 'scorpion_RightArmPivot_chela_palm' removed
+- Node 'scorpion_RightArmPivot_pedipalp_1' removed
+- Node 'scorpion_RightArmPivot_pincer_inner' removed
+- Node 'scorpion_RightArmPivot_tooth_0' removed
+- Node 'scorpion_RightLegPivot_femur_0' removed
+- Node 'scorpion_RightLegPivot_tarsus_0' removed
+- Node 'scorpion_RightLegPivot_tibia_0' removed
+- Node 'scorpion_stinger_barb' removed
+- Node 'dark_wizard_cape' removed
+- Node 'dark_wizard_eye_L' removed
+- Node 'dark_wizard_hat_band' removed
+- Node 'dark_wizard_hat_brim' removed
+- Node 'dark_wizard_void_skull' removed
+- Node 'dark_wizard_hem_trim' removed
+- Node 'dark_wizard_hand_L' removed
+- Node 'dark_wizard_sleeve_L' removed
+- Node 'dark_wizard_LeftLegPivot_boot' removed
+- Node 'dark_wizard_mantle' removed
+- Node 'dark_wizard_hand_R' removed
+- Node 'dark_wizard_orb' removed
+- Node 'dark_wizard_orb_ring' removed
+- Node 'dark_wizard_sleeve_R' removed
+- Node 'dark_wizard_RightLegPivot_boot' removed
+- Node 'dark_wizard_stole_rune_0' removed
+- Node 'dark_ranger_arrow_fletch_0' removed
+- Node 'dark_ranger_belt' removed
+- Node 'dark_ranger_brigandine' removed
+- Node 'dark_ranger_buckle' removed
+- Node 'dark_ranger_cowl' removed
+- Node 'dark_ranger_eye_L' removed
+- Node 'dark_ranger_mask' removed
+- Node 'dark_ranger_bracer_L' removed
+- Node 'dark_ranger_glove_L' removed
+- Node 'dark_ranger_uarm_L' removed
+- Node 'dark_ranger_LeftLegPivot_boot' removed
+- Node 'dark_ranger_LeftLegPivot_greave' removed
+- Node 'dark_ranger_LeftLegPivot_thigh' removed
+- Node 'dark_ranger_bowstring' removed
+- Node 'dark_ranger_bracer_R' removed
+- Node 'dark_ranger_glove_R' removed
+- Node 'dark_ranger_longbow' removed
+- Node 'dark_ranger_uarm_R' removed
+- Node 'dark_ranger_RightLegPivot_boot' removed
+- Node 'dark_ranger_RightLegPivot_greave' removed
+- Node 'dark_ranger_RightLegPivot_thigh' removed
+- Node 'dark_ranger_scale_0_L' removed
+- Mesh 'scorpion_body' added
+- Mesh 'scorpion_bone' added
+- Mesh 'scorpion_sting' added
+- Mesh 'saltback_stalker_Hips' added
+- Mesh 'saltback_stalker_LeftElbowPivot' added
+- Mesh 'saltback_stalker_RightElbowPivot' added
+- Mesh 'saltback_stalker_TailPivot3' added
+- Mesh 'dark_wizard_face' added
+- Mesh 'dark_wizard_glow' added
+- Mesh 'dark_wizard_robe' bounds changed: [-0.4399999976158142, 0.03999999910593033, -0.3400000035762787]..[0.4399999976158142, 1.7599999904632568, 0.41999998688697815] -> [-0.7377821207046509, -0.00014008219295646995, -0.5574859976768494]..[0.7377821207046509, 2.5236282348632812, 0.43022188544273376]
+- Mesh 'dark_wizard_robe' geometry bytes changed
+- Mesh 'dark_wizard_staff' bounds changed: [0.022079814225435257, -1.380980372428894, -0.2839999198913574]..[0.18395838141441345, 0.6473672389984131, -0.13401848077774048] -> [0.4471782147884369, 0.009298495016992092, -0.3397909700870514]..[0.7006989121437073, 2.2657129764556885, -0.07906772941350937]
+- Mesh 'dark_wizard_staff' geometry bytes changed
+- Mesh 'dark_ranger_body' added
+- Mesh 'dark_ranger_cloak' bounds changed: [-0.3100000023841858, 0.33396008610725403, 0.10391093045473099]..[0.3100000023841858, 1.7060399055480957, 0.3360890746116638] -> [-0.5299999713897705, 0.3199999928474426, -0.2587131857872009]..[0.5299999713897705, 2.188048839569092, 0.5600000023841858]
+- Mesh 'dark_ranger_cloak' geometry bytes changed
+- Mesh 'dark_ranger_glow' added
+- Mesh 'dark_ranger_wood' added
+- Mesh 'thornwatch_marksman_HeadGroup' added
+- Mesh 'thornwatch_marksman_OffhandPivot' added
+- Mesh 'thornwatch_marksman_Torso' added
+- Mesh 'scorpion_carapace_plate_0' removed
+- Mesh 'scorpion_carapace_plate_1' removed
+- Mesh 'scorpion_eye_L_0' removed
+- Mesh 'scorpion_LeftArmPivot_chela_palm' removed
+- Mesh 'scorpion_LeftArmPivot_pedipalp_1' removed
+- Mesh 'scorpion_LeftArmPivot_pincer_inner' removed
+- Mesh 'scorpion_LeftArmPivot_tooth_0' removed
+- Mesh 'scorpion_LeftLegPivot_femur_0' removed
+- Mesh 'scorpion_LeftLegPivot_tarsus_0' removed
+- Mesh 'scorpion_LeftLegPivot_tibia_0' removed
+- Mesh 'scorpion_mandible_L' removed
+- Mesh 'scorpion_RightArmPivot_chela_palm' removed
+- Mesh 'scorpion_RightArmPivot_pedipalp_1' removed
+- Mesh 'scorpion_RightArmPivot_pincer_inner' removed
+- Mesh 'scorpion_RightArmPivot_tooth_0' removed
+- Mesh 'scorpion_RightLegPivot_femur_0' removed
+- Mesh 'scorpion_RightLegPivot_tarsus_0' removed
+- Mesh 'scorpion_RightLegPivot_tibia_0' removed
+- Mesh 'scorpion_stinger_barb' removed
+- Mesh 'dark_wizard_cape' removed
+- Mesh 'dark_wizard_eye_L' removed
+- Mesh 'dark_wizard_hat_band' removed
+- Mesh 'dark_wizard_hat_brim' removed
+- Mesh 'dark_wizard_void_skull' removed
+- Mesh 'dark_wizard_hem_trim' removed
+- Mesh 'dark_wizard_hand_L' removed
+- Mesh 'dark_wizard_sleeve_L' removed
+- Mesh 'dark_wizard_LeftLegPivot_boot' removed
+- Mesh 'dark_wizard_mantle' removed
+- Mesh 'dark_wizard_hand_R' removed
+- Mesh 'dark_wizard_orb' removed
+- Mesh 'dark_wizard_orb_ring' removed
+- Mesh 'dark_wizard_sleeve_R' removed
+- Mesh 'dark_wizard_RightLegPivot_boot' removed
+- Mesh 'dark_wizard_stole_rune_0' removed
+- Mesh 'dark_ranger_arrow_fletch_0' removed
+- Mesh 'dark_ranger_belt' removed
+- Mesh 'dark_ranger_brigandine' removed
+- Mesh 'dark_ranger_buckle' removed
+- Mesh 'dark_ranger_cowl' removed
+- Mesh 'dark_ranger_eye_L' removed
+- Mesh 'dark_ranger_mask' removed
+- Mesh 'dark_ranger_bracer_L' removed
+- Mesh 'dark_ranger_glove_L' removed
+- Mesh 'dark_ranger_uarm_L' removed
+- Mesh 'dark_ranger_LeftLegPivot_boot' removed
+- Mesh 'dark_ranger_LeftLegPivot_greave' removed
+- Mesh 'dark_ranger_LeftLegPivot_thigh' removed
+- Mesh 'dark_ranger_bowstring' removed
+- Mesh 'dark_ranger_bracer_R' removed
+- Mesh 'dark_ranger_glove_R' removed
+- Mesh 'dark_ranger_longbow' removed
+- Mesh 'dark_ranger_uarm_R' removed
+- Mesh 'dark_ranger_RightLegPivot_boot' removed
+- Mesh 'dark_ranger_RightLegPivot_greave' removed
+- Mesh 'dark_ranger_RightLegPivot_thigh' removed
+- Mesh 'dark_ranger_scale_0_L' removed
+- triangles changed: 70200 -> 65678
+- rawBytes changed: 3054848 -> 2609100
+- brotliBytes changed: 812801 -> 913665
+Promoted monsters: daf83d2d518ce6e3fdca19194406ac62ed972848c9a48749d12c82edd70c8977
+?v=daf83d2d

@@ -1,0 +1,14 @@
+{
+ "info": {
+  "animator": true,
+  "archers": 2,
+  "raiderHipsY": 0.6745292281794788
+ },
+ "walkTimeScale": {
+  "walkTimeScale": 1.7454643008779716,
+  "heroWalkTimeScale": 0.94,
+  "walkLegRatio": 1.3886433386438413
+ },
+ "errors": [],
+ "renderer": "ANGLE (Microsoft Corporation, D3D12 (NVIDIA GeForce RTX 4070 Laptop GPU), OpenGL 4.6)"
+}

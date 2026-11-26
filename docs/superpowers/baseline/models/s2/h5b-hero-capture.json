@@ -1,0 +1,34 @@
+{
+ "renderer": "ANGLE (Microsoft Corporation, D3D12 (NVIDIA GeForce RTX 4070 Laptop GPU), OpenGL 4.6)",
+ "info": {
+  "skinned": 17,
+  "meshes": 20,
+  "bones": 16,
+  "anim": true
+ },
+ "undressed-close": {
+  "skinned": 17,
+  "meshes": 20,
+  "bones": 16,
+  "anim": true
+ },
+ "undressed-play": {
+  "skinned": 17,
+  "meshes": 20,
+  "bones": 16,
+  "anim": true
+ },
+ "plate-close": {
+  "skinned": 17,
+  "meshes": 141,
+  "bones": 16,
+  "anim": true
+ },
+ "plate-play": {
+  "skinned": 17,
+  "meshes": 141,
+  "bones": 16,
+  "anim": true
+ },
+ "errs": []
+}

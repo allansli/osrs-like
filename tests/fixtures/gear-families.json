@@ -1,0 +1,360 @@
+{
+ "Gear_ahrim-staff": {
+  "dark": 1280,
+  "glow": 128,
+  "primary": 112,
+  "trim": 420,
+  "wood": 120
+ },
+ "Gear_amulet": {
+  "glow": 64,
+  "trim": 664
+ },
+ "Gear_ancient-bow": {
+  "glow": 376,
+  "primary": 168,
+  "trim": 280
+ },
+ "Gear_ancient-staff": {
+  "dark": 112,
+  "glow": 32,
+  "trim": 2432
+ },
+ "Gear_arcane-shield": {
+  "glow": 664,
+  "leather": 216,
+  "primary": 240,
+  "trim": 128
+ },
+ "Gear_armadyl-helm": {
+  "glow": 64,
+  "primary": 140,
+  "trim": 740,
+  "white": 560
+ },
+ "Gear_ava": {
+  "glow": 64,
+  "leather": 264,
+  "primary": 108,
+  "trim": 960,
+  "white": 252
+ },
+ "Gear_bandos-chest_torso": {
+  "leather": 536,
+  "primary": 312,
+  "trim": 1240,
+  "white": 48
+ },
+ "Gear_blowpipe": {
+  "dark": 320,
+  "glow": 64,
+  "primary": 72,
+  "trim": 280
+ },
+ "Gear_book": {
+  "glow": 48,
+  "primary": 108,
+  "trim": 860,
+  "white": 108
+ },
+ "Gear_boots_L": {
+  "primary": 164,
+  "trim": 320
+ },
+ "Gear_boots_R": {
+  "primary": 164,
+  "trim": 320
+ },
+ "Gear_bow": {
+  "leather": 84,
+  "primary": 216,
+  "trim": 1280,
+  "white": 32
+ },
+ "Gear_cape": {
+  "glow": 128,
+  "primary": 284,
+  "trim": 604
+ },
+ "Gear_circlet": {
+  "glow": 352,
+  "trim": 740
+ },
+ "Gear_crossbow": {
+  "dark": 444,
+  "glow": 116,
+  "leather": 108,
+  "primary": 108,
+  "trim": 100,
+  "white": 36
+ },
+ "Gear_defender": {
+  "glow": 64,
+  "leather": 48,
+  "primary": 22,
+  "trim": 528
+ },
+ "Gear_dhide-body_torso": {
+  "leather": 428,
+  "primary": 300,
+  "trim": 1180
+ },
+ "Gear_dhide-chaps_legL": {
+  "glow": 48,
+  "leather": 324,
+  "primary": 56,
+  "trim": 108
+ },
+ "Gear_dhide-chaps_legR": {
+  "glow": 48,
+  "leather": 324,
+  "primary": 56,
+  "trim": 108
+ },
+ "Gear_dhide-chaps_torso": {
+  "leather": 320,
+  "trim": 108
+ },
+ "Gear_elysian": {
+  "glow": 664,
+  "leather": 216,
+  "primary": 240,
+  "trim": 128
+ },
+ "Gear_eternal-boots_L": {
+  "glow": 64,
+  "primary": 164,
+  "trim": 460
+ },
+ "Gear_eternal-boots_R": {
+  "glow": 64,
+  "primary": 164,
+  "trim": 460
+ },
+ "Gear_gloves_L": {
+  "primary": 56,
+  "trim": 1068
+ },
+ "Gear_gloves_R": {
+  "primary": 56,
+  "trim": 1068
+ },
+ "Gear_greataxe": {
+  "dark": 108,
+  "glow": 80,
+  "leather": 56,
+  "primary": 192,
+  "trim": 780,
+  "wood": 140
+ },
+ "Gear_greatsword": {
+  "primary": 304,
+  "trim": 88
+ },
+ "Gear_helm": {
+  "crimson": 120,
+  "dark": 216,
+  "glow": 96,
+  "primary": 448,
+  "trim": 804
+ },
+ "Gear_hood": {
+  "glow": 64,
+  "primary": 588,
+  "trim": 740
+ },
+ "Gear_horned-helm": {
+  "dark": 48,
+  "primary": 344,
+  "trim": 944
+ },
+ "Gear_hylian-shield": {
+  "crimson": 324,
+  "leather": 216,
+  "primary": 240,
+  "trim": 224
+ },
+ "Gear_infinity-hat": {
+  "glow": 64,
+  "primary": 396,
+  "trim": 640
+ },
+ "Gear_kiteshield": {
+  "primary": 198,
+  "trim": 216
+ },
+ "Gear_lava-cape": {
+  "dark": 124,
+  "glow": 676,
+  "primary": 284
+ },
+ "Gear_mace": {
+  "glow": 320,
+  "leather": 56,
+  "primary": 1024,
+  "trim": 1396,
+  "wood": 112
+ },
+ "Gear_neitiznot-helm": {
+  "glow": 160,
+  "primary": 264,
+  "trim": 1504,
+  "white": 840
+ },
+ "Gear_pegasian-boots_L": {
+  "primary": 164,
+  "trim": 320,
+  "white": 280
+ },
+ "Gear_pegasian-boots_R": {
+  "primary": 164,
+  "trim": 320,
+  "white": 280
+ },
+ "Gear_plate-body_torso": {
+  "primary": 384,
+  "trim": 1732
+ },
+ "Gear_platelegs_legL": {
+  "primary": 56,
+  "trim": 248
+ },
+ "Gear_platelegs_legR": {
+  "primary": 56,
+  "trim": 248
+ },
+ "Gear_primordial-boots_L": {
+  "glow": 64,
+  "primary": 164,
+  "trim": 568
+ },
+ "Gear_primordial-boots_R": {
+  "glow": 64,
+  "primary": 164,
+  "trim": 568
+ },
+ "Gear_ring": {
+  "glow": 64,
+  "trim": 384
+ },
+ "Gear_robe-skirt_torso": {
+  "glow": 96,
+  "primary": 120,
+  "trim": 428
+ },
+ "Gear_robe-top_armL": {
+  "primary": 56,
+  "trim": 320
+ },
+ "Gear_robe-top_armR": {
+  "primary": 56,
+  "trim": 320
+ },
+ "Gear_robe-top_torso": {
+  "glow": 48,
+  "primary": 108,
+  "trim": 644
+ },
+ "Gear_robin-hat": {
+  "crimson": 80,
+  "leather": 320,
+  "primary": 336,
+  "trim": 156
+ },
+ "Gear_scimitar": {
+  "primary": 117,
+  "trim": 81
+ },
+ "Gear_shadow-staff": {
+  "glow": 96,
+  "trim": 1160,
+  "wood": 60
+ },
+ "Gear_sheikah-mask": {
+  "dark": 488,
+  "glow": 304,
+  "trim": 108
+ },
+ "Gear_staff": {
+  "glow": 180,
+  "leather": 56,
+  "trim": 2480,
+  "wood": 140
+ },
+ "Gear_sword": {
+  "primary": 126,
+  "trim": 152
+ },
+ "Gear_tassets_legL": {
+  "primary": 108,
+  "trim": 108
+ },
+ "Gear_tassets_legR": {
+  "primary": 108,
+  "trim": 108
+ },
+ "Gear_tassets_torso": {
+  "glow": 96,
+  "primary": 64,
+  "trim": 324
+ },
+ "Gear_trim-plate_torso": {
+  "glow": 32,
+  "primary": 312,
+  "trim": 1496
+ },
+ "Gear_trousers_legL": {
+  "leather": 1280,
+  "primary": 56
+ },
+ "Gear_trousers_legR": {
+  "leather": 1280,
+  "primary": 56
+ },
+ "Gear_trousers_torso": {
+  "trim": 320
+ },
+ "Gear_tunic_torso": {
+  "glow": 64,
+  "leather": 536,
+  "primary": 108,
+  "trim": 428,
+  "white": 108,
+  "wood": 108
+ },
+ "Gear_twisted-bow": {
+  "glow": 108,
+  "leather": 108,
+  "trim": 280,
+  "wood": 100
+ },
+ "Gear_twisted-buckler": {
+  "glow": 48,
+  "trim": 320,
+  "white": 560,
+  "wood": 64
+ },
+ "Gear_wand": {
+  "glow": 128,
+  "trim": 1840,
+  "wood": 96
+ },
+ "Gear_ward": {
+  "glow": 64,
+  "primary": 32,
+  "trim": 600
+ },
+ "Gear_whip": {
+  "crimson": 256,
+  "dark": 180,
+  "glow": 256,
+  "leather": 48,
+  "trim": 640
+ },
+ "Gear_wizard-hat": {
+  "glow": 40,
+  "leather": 320,
+  "primary": 396,
+  "trim": 428
+ }
+}

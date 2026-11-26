@@ -3,12 +3,13 @@ Author:  Xali
 Source:  https://www.blendswap.com/blend/28541
 Licence: Creative Commons Zero (CC0)
 
-File:    knight.blend
-Used by: scripts/blender/export_guard.py, which exports public/models/guard.glb
-         (the guard model shipped with the game).
+File:    knight.blend (removed from the repository; owner decision D-3, 2026-11-14)
+Used by: nothing. scripts/blender/export_guard.py and public/models/guard.glb are
+         gone; the guards are built from the hero and gear models. This file
+         stays as the credit record for the knight.
 
 Note: the author says the base mesh came from a CGTrader model. The terms of
 that CGTrader model are not stated on the Blend Swap page.
 
-No Blend Swap licence file is kept in this repository for this blend. This
+No Blend Swap licence file was kept in this repository for this blend. This
 file records the asset's source, author and licence.

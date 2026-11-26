@@ -1,12 +1,16 @@
 import * as THREE from 'three';
-import { addCartoonOutline, facetMaterial } from './materials';
-import { albedoMaterial, speciesAlbedo } from './textures';
+import { REACTION_WINDOW } from '../data/attacks';
+import { MONSTER_MOTION } from '../data/monsterPoses';
+import type { MonsterDef } from '../data/world';
 import { getTerrainHeight } from '../state/terrain';
 import { inCombat } from '../state/monsterAi';
-import { isHitStopped } from './reactions';
-import type { MonsterDef } from '../data/world';
-import type { MonsterEntity } from './context';
+import type { BlenderHeroAnimator, HeroClipName } from './blenderHero';
 import type { MonsterRigLike } from './blenderMonsters';
+import type { MonsterEntity } from './context';
+import { addCartoonOutline, facetMaterial } from './materials';
+import { applyFlinch, restoreFlinch } from './monsterFlinch';
+import { isHitStopped } from './reactions';
+import { albedoMaterial, speciesAlbedo } from './textures';
 // Bespoke OSRS × Zelda monster silhouettes. Each species owns its anatomy.
 // Walk / idle / attack still drive leftLegPivot, rightLegPivot, leftArmPivot, rightArmPivot.
 // Winged rigs also expose lWing / rWing for the flap in the monster update.
@@ -797,12 +801,54 @@ const windupPosed = new WeakSet<object>();
 // Death topple progress (0..1), drawn only: it holds through a hit stop and then catches up, so the body is fully
 // toppled on the frame the rules timer ends (timeLeft <= dt), whatever stop it went through.
 const dyingProgress = new WeakMap<object, number>();
+const dyingStarted = new WeakSet<object>();
+const clipAction = (animator: BlenderHeroAnimator, name: string): THREE.AnimationAction => {
+  const action = animator.actions.get(name as HeroClipName);
+  if (!action) throw new Error(`monster animator has no clip ${name}`);
+  return action;
+};
+// Walk time scale: the monster's measured speed over the hero's run speed (design 6.5); the leg ratio is in the animator.
+const lastPos = new WeakMap<object, { x: number; z: number }>();
 
+/** A respawned monster stands up again: the clamped Death clip, a held wind-up and the death bookkeeping are cleared. */
+export function resetMonsterMotion(m: MonsterEntity): void {
+  dyingStarted.delete(m);
+  dyingProgress.delete(m);
+  windupPosed.delete(m);
+  lastPos.delete(m);
+  m.animator?.stopOneShots();
+}
 export function poseMonsterDying(m: MonsterEntity, timeLeft: number, dt: number): void {
+  const motionRow = MONSTER_MOTION[m.modelKey ?? m.typeKey];
+  const animator = m.animator;
   const prev = dyingProgress.get(m) ?? 0;
   const progress = isHitStopped(m) ? prev : prev + (1 - prev) * Math.min(1, dt / timeLeft);
   if (timeLeft <= dt) dyingProgress.delete(m);
   else dyingProgress.set(m, progress);
+
+  if (motionRow.clips && animator) {
+    const deathAction = clipAction(animator, motionRow.clips.death);
+    m.rig.group.rotation.x = 0;
+    m.rig.group.position.y = getTerrainHeight(m.pos.x, m.pos.z);
+    if (!dyingStarted.has(m)) {
+      dyingStarted.add(m);
+      windupPosed.delete(m);
+      animator.stopOneShots(motionRow.clips.death as HeroClipName);
+      deathAction.reset();
+      deathAction.setLoop(THREE.LoopOnce, 1);
+      deathAction.clampWhenFinished = true;
+      deathAction.setEffectiveWeight(1.0);
+      deathAction.setEffectiveTimeScale(1);
+      deathAction.play();
+      clipAction(animator, motionRow.clips.idle).setEffectiveWeight(0);
+      clipAction(animator, motionRow.clips.walk).setEffectiveWeight(0);
+    }
+    // Same progress as the rigid topple: holds through a hit stop, last pose when the rules timer ends.
+    deathAction.time = progress * deathAction.getClip().duration;
+    animator.mixer.update(0);
+    return;
+  }
+
   m.rig.group.rotation.x = progress * (Math.PI / 2.3);
   m.rig.group.position.y = getTerrainHeight(m.pos.x, m.pos.z) - progress * 0.45;
 }
@@ -814,6 +860,53 @@ export function poseMonsterLimbs(m: MonsterEntity, moving: boolean, now: number,
   const groundY = getTerrainHeight(m.pos.x, m.pos.z);
   // Hit stop freezes the pose time of the flinch and the attack swing (design 6.5).
   const animDt = isHitStopped(m) ? 0 : dt;
+  const model = m.modelKey ?? m.typeKey;
+  const motionRow = MONSTER_MOTION[model];
+  const animator = m.animator;
+
+  if (motionRow.clips && animator) {
+    const clips = motionRow.clips;
+    const prev = lastPos.get(m);
+    if (prev && animDt > 0) {
+      animator.setWalkSpeed(Math.hypot(m.pos.x - prev.x, m.pos.z - prev.z) / animDt / REACTION_WINDOW.heroRunSpeed);
+    }
+    lastPos.set(m, { x: m.pos.x, z: m.pos.z });
+    animator.setMoving(moving);
+
+    const attackClip = clips.attack as HeroClipName;
+    const windupClip = (clips.windup ?? clips.attack) as HeroClipName; // the clip a wind-up holds (plan D2b amendments)
+    if (m.logic.windup) {
+      const progress = Math.min(1, Math.max(0, 1 - m.logic.windup.left / m.logic.windup.total));
+      if (motionRow.anticipation === undefined) throw new Error(`motion row ${model} has clips but no anticipation`);
+      animator.holdOneShot(windupClip, progress * motionRow.anticipation);
+      windupPosed.add(m);
+    } else if (windupPosed.delete(m)) {
+      // A strike sets attackAnim; a cancel (leash, safe zone, player down, stall, give-up) does not.
+      if (m.attackAnim > 0) animator.releaseHeld();
+      else animator.cancelHeld();
+    } else if (m.attackAnim > 0 && !clipAction(animator, attackClip).isRunning() && !clipAction(animator, windupClip).isRunning()) {
+      animator.playAction(attackClip, 1.0);
+    }
+
+    if (m.attackAnim > 0) {
+      m.attackAnim = Math.max(0, m.attackAnim - animDt * 3.2);
+    }
+
+    restoreFlinch(m, rig);
+    animator.update(animDt);
+
+    if (m.flinch > 0) {
+      m.flinch = Math.max(0, m.flinch - animDt * 3.8);
+      const curve = Math.sin(m.flinch * Math.PI);
+      rig.group.position.y = groundY + curve * 0.16;
+      rig.group.rotation.x = curve * 0.24;
+      if (curve > 0) applyFlinch(m, rig, curve);
+    } else {
+      rig.group.rotation.x = 0;
+      rig.group.position.y = groundY;
+    }
+    return;
+  }
 
   // Flinch Reaction on Hit
   if (m.flinch > 0) {
@@ -849,27 +942,26 @@ export function poseMonsterLimbs(m: MonsterEntity, moving: boolean, now: number,
   if (m.attackAnim > 0) {
     m.attackAnim = Math.max(0, m.attackAnim - animDt * 3.2);
     const progress = Math.sin(m.attackAnim * Math.PI);
-    const model = m.def.model ?? m.typeKey;
-    if (model === 'elvarg_dragon') {
-      if (rig.headGroup) rig.headGroup.rotation.x = -0.35 + progress * 0.65;
-      if (rig.lWing && rig.rWing) {
-        rig.lWing.rotation.z = 0.2 + progress * 0.55;
-        rig.rWing.rotation.z = -0.2 - progress * 0.55;
+    const codeAttack = motionRow.codeAttack;
+    if (codeAttack) {
+      if (codeAttack.headBase !== undefined && codeAttack.headProgress !== undefined) {
+        if (rig.headGroup) rig.headGroup.rotation.x = codeAttack.headBase + progress * codeAttack.headProgress;
+      } else if (codeAttack.headX !== undefined) {
+        if (rig.headGroup) rig.headGroup.rotation.x = codeAttack.headX * progress;
       }
-      rig.group.position.y = groundY + progress * 0.32;
-    } else if (model === 'dark_wizard') {
-      if (rig.rightArmPivot) rig.rightArmPivot.rotation.x = -1.65 * progress;
-      if (rig.leftArmPivot) rig.leftArmPivot.rotation.x = -1.45 * progress;
-      if (rig.headGroup) rig.headGroup.rotation.x = -0.25 * progress;
-      rig.group.position.y = groundY + progress * 0.12;
-    } else if (model === 'moss_guardian' || model === 'hill_giant') {
-      if (rig.rightArmPivot) rig.rightArmPivot.rotation.x = -1.8 * progress;
-      if (rig.leftArmPivot) rig.leftArmPivot.rotation.x = -1.8 * progress;
-      rig.group.position.y = groundY + progress * 0.22;
-    } else if (model === 'goblin' || model === 'hobgoblin') {
-      if (rig.rightArmPivot) rig.rightArmPivot.rotation.x = -1.55 * progress;
-      if (rig.leftArmPivot) rig.leftArmPivot.rotation.x = progress * 0.4;
-      rig.group.position.y = groundY + progress * 0.25;
+      if (codeAttack.lWingBase !== undefined && codeAttack.lWingProgress !== undefined && rig.lWing) {
+        rig.lWing.rotation.z = codeAttack.lWingBase + progress * codeAttack.lWingProgress;
+      }
+      if (codeAttack.rWingBase !== undefined && codeAttack.rWingProgress !== undefined && rig.rWing) {
+        rig.rWing.rotation.z = codeAttack.rWingBase + progress * codeAttack.rWingProgress;
+      }
+      if (codeAttack.rightArmX !== undefined && rig.rightArmPivot) {
+        rig.rightArmPivot.rotation.x = codeAttack.rightArmX * progress;
+      }
+      if (codeAttack.leftArmX !== undefined && rig.leftArmPivot) {
+        rig.leftArmPivot.rotation.x = codeAttack.leftArmX * progress;
+      }
+      rig.group.position.y = groundY + progress * codeAttack.y;
     } else {
       const slash = progress * 1.45;
       if (rig.rightArmPivot) rig.rightArmPivot.rotation.x = -slash;

@@ -29,6 +29,11 @@ import bpy
 import bmesh
 from mathutils import Vector, Euler, Matrix
 
+sys.dont_write_bytecode = True
+sys.path.insert(0, os.path.dirname(__file__))
+import paths
+import figkit
+
 
 # =============================================================================
 # BlendSwap Asset Cache & Loader
@@ -39,8 +44,7 @@ def get_blend_object(blend_rel_path: str, obj_name: str) -> bpy.types.Object | N
     cache_key = f"{blend_rel_path}::{obj_name}"
     if cache_key in BLEND_ASSET_CACHE:
         return BLEND_ASSET_CACHE[cache_key]
-    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-    blend_file = os.path.join(repo_root, blend_rel_path)
+    blend_file = paths.source(blend_rel_path)
     if not os.path.exists(blend_file):
         raise FileNotFoundError(f"[BlendAsset] {blend_file} not found (needed for object {obj_name!r})")
     try:
@@ -3094,18 +3098,12 @@ def setup_armory_studio_and_render(render_path: str | None):
         scene.render.engine = "BLENDER_EEVEE"
         scene.render.resolution_x = 1600
         scene.render.resolution_y = 1050
-        scene.render.filepath = render_path
+        scene.render.filepath = paths.checked_write(render_path)
         bpy.ops.render.render(write_still=True)
         print(f"[Blender] Rendered Armory preview image: {render_path}")
 
 
 def main():
-    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-    blend_dir = os.path.join(repo_root, "blender")
-    models_dir = os.path.join(repo_root, "public", "models")
-    os.makedirs(blend_dir, exist_ok=True)
-    os.makedirs(models_dir, exist_ok=True)
-
     render_path = None
     if "--" in sys.argv:
         extra = sys.argv[sys.argv.index("--") + 1 :]
@@ -3113,7 +3111,7 @@ def main():
             idx = extra.index("--render")
             if idx + 1 >= len(extra):
                 raise SystemExit("--render requires an output path: blender ... -- --render <file.png>")
-            render_path = extra[idx + 1]
+            render_path = paths.checked_write(extra[idx + 1])
 
     clear_scene()
     mats = create_semantic_materials()
@@ -3132,12 +3130,19 @@ def main():
             pass
     BLEND_ASSET_CACHE.clear()
 
-    blend_path = os.path.join(blend_dir, "gear.blend")
-    glb_path = os.path.join(models_dir, "gear.glb")
+    # Merge-only pass (plan G2b): one merge_parts call per Gear_* root, toggled names and _04_ ordinals kept.
+    for obj in [o for o in bpy.data.objects if o.name.startswith("Gear_") and o.parent is None]:
+        figkit.merge_parts(obj)
 
+    blend_path = paths.blend_path("gear")
+    glb_path = paths.glb_path("gear")
+
+    # No TEXCOORD_0 (design K2): the engine re-projects every UV. A joined mesh cannot share the
+    # index buffers the exporter shared between identical pieces, which cost 63 kB on the wire.
     bpy.ops.export_scene.gltf(
-        filepath=glb_path,
+        filepath=paths.glb_path("gear"),
         export_format="GLB",
+        export_texcoords=False,
         export_yup=True,
         export_extras=True,
         export_animations=False,
@@ -3145,7 +3150,7 @@ def main():
     print(f"[Blender] Exported glTF binary: {glb_path}")
 
     setup_armory_studio_and_render(render_path)
-    bpy.ops.wm.save_as_mainfile(filepath=blend_path)
+    bpy.ops.wm.save_as_mainfile(filepath=paths.blend_path("gear"))
     print(f"[Blender] Saved editable source file: {blend_path}")
 
 
