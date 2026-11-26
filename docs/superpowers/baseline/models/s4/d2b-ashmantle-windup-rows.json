@@ -1,0 +1,292 @@
+{
+ "info": {
+  "animator": true,
+  "clips": [
+   "Bite",
+   "Death",
+   "Idle",
+   "Walk",
+   "WingBuffet"
+  ],
+  "state": "idle",
+  "pos": [
+   -102,
+   54
+  ]
+ },
+ "polls": [
+  "idle",
+  "attack",
+  "attack",
+  "attack",
+  "attack",
+  "attack",
+  "attack",
+  "attack",
+  "attack",
+  "attack",
+  "attack",
+  "attack",
+  "attack",
+  "attack",
+  "attack",
+  "attack",
+  "attack",
+  "attack",
+  "attack",
+  "attack",
+  "attack",
+  "attack",
+  "attack",
+  "attack",
+  "attack",
+  "attack",
+  "attack",
+  "attack",
+  "attack",
+  "attack",
+  "attack",
+  "attack",
+  "attack",
+  "attack",
+  "attack",
+  "attack",
+  "attack",
+  "attack"
+ ],
+ "frames": [
+  {
+   "f": "ash-00.png",
+   "state": "attack",
+   "windup": {
+    "id": "ember_cone",
+    "left": 1.65,
+    "total": 1.8
+   },
+   "attackAnim": 0,
+   "biteTime": 0.028,
+   "biteRunning": false,
+   "biteWeight": 1,
+   "hp": 90
+  },
+  {
+   "f": "ash-01.png",
+   "state": "attack",
+   "windup": {
+    "id": "ember_cone",
+    "left": 1.133,
+    "total": 1.8
+   },
+   "attackAnim": 0,
+   "biteTime": 0.123,
+   "biteRunning": false,
+   "biteWeight": 1,
+   "hp": 90
+  },
+  {
+   "f": "ash-02.png",
+   "state": "attack",
+   "windup": {
+    "id": "ember_cone",
+    "left": 0.65,
+    "total": 1.8
+   },
+   "attackAnim": 0,
+   "biteTime": 0.213,
+   "biteRunning": false,
+   "biteWeight": 1,
+   "hp": 90
+  },
+  {
+   "f": "ash-03.png",
+   "state": "attack",
+   "windup": {
+    "id": "ember_cone",
+    "left": 0.167,
+    "total": 1.8
+   },
+   "attackAnim": 0,
+   "biteTime": 0.302,
+   "biteRunning": false,
+   "biteWeight": 1,
+   "hp": 90
+  },
+  {
+   "f": "ash-04.png",
+   "state": "attack",
+   "windup": null,
+   "attackAnim": 0.413,
+   "biteTime": 0.517,
+   "biteRunning": true,
+   "biteWeight": 1,
+   "hp": 90
+  },
+  {
+   "f": "ash-05.png",
+   "state": "attack",
+   "windup": null,
+   "attackAnim": 0,
+   "biteTime": 0.817,
+   "biteRunning": true,
+   "biteWeight": 1,
+   "hp": 90
+  },
+  {
+   "f": "ash-06.png",
+   "state": "attack",
+   "windup": null,
+   "attackAnim": 0,
+   "biteTime": 0.833,
+   "biteRunning": false,
+   "biteWeight": 0,
+   "hp": 90
+  },
+  {
+   "f": "ash-07.png",
+   "state": "attack",
+   "windup": null,
+   "attackAnim": 0,
+   "biteTime": 0.833,
+   "biteRunning": false,
+   "biteWeight": 0,
+   "hp": 90
+  },
+  {
+   "f": "ash-08.png",
+   "state": "attack",
+   "windup": null,
+   "attackAnim": 0.947,
+   "biteTime": 0.017,
+   "biteRunning": true,
+   "biteWeight": 0.21,
+   "hp": 90
+  },
+  {
+   "f": "ash-09.png",
+   "state": "attack",
+   "windup": null,
+   "attackAnim": 0,
+   "biteTime": 0.333,
+   "biteRunning": true,
+   "biteWeight": 1,
+   "hp": 90
+  },
+  {
+   "f": "ash-10.png",
+   "state": "attack",
+   "windup": {
+    "id": "tail_sweep",
+    "left": 1.517,
+    "total": 1.7
+   },
+   "attackAnim": 0,
+   "biteTime": 0.036,
+   "biteRunning": false,
+   "biteWeight": 1,
+   "hp": 90
+  },
+  {
+   "f": "ash-11.png",
+   "state": "attack",
+   "windup": {
+    "id": "tail_sweep",
+    "left": 1.033,
+    "total": 1.7
+   },
+   "attackAnim": 0,
+   "biteTime": 0.131,
+   "biteRunning": false,
+   "biteWeight": 1,
+   "hp": 90
+  },
+  {
+   "f": "ash-12.png",
+   "state": "attack",
+   "windup": {
+    "id": "tail_sweep",
+    "left": 0.533,
+    "total": 1.7
+   },
+   "attackAnim": 0,
+   "biteTime": 0.229,
+   "biteRunning": false,
+   "biteWeight": 1,
+   "hp": 90
+  },
+  {
+   "f": "ash-13.png",
+   "state": "attack",
+   "windup": {
+    "id": "tail_sweep",
+    "left": 0.033,
+    "total": 1.7
+   },
+   "attackAnim": 0,
+   "biteTime": 0.327,
+   "biteRunning": false,
+   "biteWeight": 1,
+   "hp": 90
+  },
+  {
+   "f": "ash-14.png",
+   "state": "attack",
+   "windup": null,
+   "attackAnim": 0,
+   "biteTime": 0.733,
+   "biteRunning": true,
+   "biteWeight": 1,
+   "hp": 90
+  },
+  {
+   "f": "ash-15.png",
+   "state": "attack",
+   "windup": null,
+   "attackAnim": 0,
+   "biteTime": 0.833,
+   "biteRunning": false,
+   "biteWeight": 0,
+   "hp": 90
+  },
+  {
+   "f": "ash-16.png",
+   "state": "attack",
+   "windup": null,
+   "attackAnim": 0,
+   "biteTime": 0.833,
+   "biteRunning": false,
+   "biteWeight": 0,
+   "hp": 90
+  },
+  {
+   "f": "ash-17.png",
+   "state": "attack",
+   "windup": null,
+   "attackAnim": 0,
+   "biteTime": 0.833,
+   "biteRunning": false,
+   "biteWeight": 0,
+   "hp": 90
+  },
+  {
+   "f": "ash-18.png",
+   "state": "attack",
+   "windup": null,
+   "attackAnim": 0.733,
+   "biteTime": 0.083,
+   "biteRunning": true,
+   "biteWeight": 1,
+   "hp": 90
+  },
+  {
+   "f": "ash-19.png",
+   "state": "attack",
+   "windup": null,
+   "attackAnim": 0,
+   "biteTime": 0.5,
+   "biteRunning": true,
+   "biteWeight": 1,
+   "hp": 90
+  }
+ ],
+ "errors": []
+}
