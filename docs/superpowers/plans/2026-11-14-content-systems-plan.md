@@ -962,3 +962,17 @@ A models lane runs beside slices 0 and 1 in its own worktree (`../osrs-like-wp/S
 
 - **F2's files gain `src/data/recipeTable.ts`** (new): `RecipeDef`, `LOG_IDS`, `LOG_CRAFT`, `logRecipes` and `FORGE_RECIPES` move there byte for byte from `recipes.ts`, which re-exports them, because `progress.ts` reads `FORGE_RECIPES` at module load and `recipes.ts` imports `progress.ts` (an import cycle). Ratified as is (commit c8a79a0).
 - The models lane's own amendment (commit 7b4419d on `cs/models`: the declared `tests/monster-kits.test.ts` fixture rename and `scripts/blender/review_scales.json` in MP6) is ratified by the main session.
+
+### O-6.1b.6 amendment: kit child names (2026-11-26, main session, from MK1)
+
+GLB node names are unique, so two kits cannot both have a child named `HeadGroup` (the Thornwatch Marksman's kit already does). From now on **every kit child is named `<kit>_<Bone>`** (for example `cinder_adept_HeadGroup`), like the `<key>_<Bone>` bones of a figure.
+- **MK1 to MK3** build their children with that prefix, and MK1 builds the hood it left out. MK1 also renames the two existing kits' children (`saltback_stalker_<Bone>`, `thornwatch_marksman_<Bone>`) in `build_monsters.py`; nothing else about them changes.
+- **MK1** also edits `tests/monster-models.test.ts`'s kit case (**declared**): it reads the pending manifest when one exists, so it asserts that each child carries the `<kit>_` prefix and that the name without it is a bone of the model.
+- **MP6**, in the promote commit with the new `monsters.glb` (the shipped file has the old names until then): `upgradeMonsterRigWithGltf`'s kit loop attaches each child to the bone named by its name with the `<kit>_` prefix removed, and throws when a child lacks the prefix.
+- **Emissive (design 5.4, at most one per figure)**: a kit's fire may glow on its own emissive beside its base's (the Cinder Adept: the wizard's violet glints and the brazier's orange fire). Each kit README records it as an owner look check (OM-S6c), not a defect.
+
+### O-6.1b.6 amendment 2: MP6 files and captures (2026-11-26, main session, from the MP6 repair)
+
+- **Declared edit to a frozen test**: `tests/monster-kits.test.ts`. The loader change of amendment 1 throws on a kit child without the `<kit>_` prefix, so the fixture's kit children (`Arm`, `Stray`) must carry it (`spiked_Arm`, `spiked_Stray`) and the lookups read the prefixed names; one case is added for the throw. No assertion is weakened or removed. `tests/model-vertex-colour.test.ts` (painted set gains `saltfang` and `kiln_warden`) and `tests/fixtures/monster-families.json` (two entries) are the follow-through edits the M4c pattern already declares.
+- **MP6's file list also holds** `scripts/blender/review_scales.json` (the new figures' and kits' review scales, which SHEETS reads for the roster sheet) and `src/engine/blenderMonsters.ts` (the loader and the `?v=` key).
+- **MP6 captures** are as M4c's: the in-engine capture and draw calls are taken at the promote commit in a throw-away worktree because the new defs are not wired until D4, Z4 and U1, so the capture sets their look fields in the throw-away copy only. Frame time is recorded but is too noisy on the shared machine to compare (OM-S4 stands). The owner's look check on a real GPU (OM-S6c) stays open.

@@ -12,10 +12,13 @@ Sculpts authentic, high-detail OSRS / RuneScape Dragonwilds stylized monsters:
   9. Monster_lesser_demon     - Lesser Demon, rebuilt and skinned on the biped rig: a slate brute with a forward hunch, swept horns, wings raised from the back, a spade tail & an ember-edged cleaver
  10. Monster_elvarg_dragon    - Elvarg the Crag Dragon world boss, a new skinned model on the dragon rig: low heavy-shouldered body, wedge head with a jaw, swept horns, crag plates down the spine, raised wings & spade tail
  11. Monster_ashmantle        - Ashmantle the Slag Wyrm, its own skinned body on the dragon rig: heavier chest, slag crown, back plates with glowing seams, clubbed tail
+ 12. Monster_saltfang         - Matron Saltfang, her own skinned body on the crawler rig: a broad brood body under a salt-white carapace, egg sacs on the back, heavy claws & a forked violet sting
+ 13. Monster_kiln_warden      - The Kiln Warden, its own skinned body on the moss guardian's biped rig: a fired-clay kiln banded in iron, an open furnace chest with a glowing core, a chimney on the back & two iron hammer fists
 """
 
 import math
 import os
+import random
 import re
 import sys
 import bpy
@@ -1884,9 +1887,10 @@ def _scorpion_clip_tables(pose_table):
 # =============================================================================
 # A clone of the scorpion plus rigid pieces of its own: salt crystals standing on the back plates, a
 # forked double sting flanking the scorpion's own, and heavier salt-crusted claws. The engine adds each
-# child of Kit_saltback_stalker under the scorpion bone of the same name, keeping the child's own
-# transform, so each child is one rigid mesh named after its bone, at identity, whose vertices are
-# relative to that bone's joint (every rest rotation is identity). Nothing of the scorpion is hidden:
+# child of Kit_saltback_stalker under the scorpion bone its name gives without the kit_ prefix, keeping
+# the child's own transform, so each child is one rigid mesh named <kit>_<Bone> (plan O-6.1b.6 amendment:
+# GLB node names are unique, and two kits ride HeadGroup), at identity, whose vertices are relative to
+# that bone's joint (every rest rotation is identity). Nothing of the scorpion is hidden:
 # every piece is added over it. The paint is a corner colour on the scorpion's own white materials
 # (mat_bone_scorpion_paint, plain; mat_glow_crimson for the prongs), so the kit adds no material, and
 # Stage 4's tint multiplies it with the rest of the figure.
@@ -1908,7 +1912,7 @@ def _salt_crystal(name: str, mat, r: float, h: float, tx: float, ty: float, tz: 
 def _kit_root(key: str, parts: dict, j: dict, budget: int):
     """
     Kit_<key> at the origin with one child per bone of parts ({bone: [objects]}), each the join of its
-    pieces, named after the bone without the model prefix, its vertices relative to that bone's joint in
+    pieces, named <key>_<bone> (object and mesh), its vertices relative to that bone's joint in
     j, painted with its 'Tint' as Col and without UVs. Refuses a taken name, a piece of more than one
     material and a kit over budget triangles.
     """
@@ -1922,9 +1926,9 @@ def _kit_root(key: str, parts: dict, j: dict, budget: int):
         target = objs[0]
         bpy.context.view_layer.objects.active = target
         bpy.ops.object.join()
-        target.name = bone
+        target.name = f"{key}_{bone}"
         target.data.name = f"{key}_{bone}"
-        if target.name != bone:
+        if target.name != f"{key}_{bone}":
             raise ValueError(f"{key} kit: the piece for bone {bone} was named {target.name!r} (the name is taken)")
         if len(target.data.materials) != 1:
             raise ValueError(f"{key} kit: piece {bone} has {len(target.data.materials)} materials, one expected")
@@ -1946,7 +1950,7 @@ def _kit_root(key: str, parts: dict, j: dict, budget: int):
 def build_saltback_stalker_kit(mats: dict):
     """
     The Saltback Stalker's kit (plan K1): Kit_saltback_stalker at the origin, with one child per bone in
-    SALTBACK_BONES, each the join of its pieces, named after the bone without the scorpion_ prefix.
+    SALTBACK_BONES, each the join of its pieces, named saltback_stalker_<Bone>.
     """
     salt = bpy.data.materials["mat_bone_scorpion_paint"]  # build_scorpion's; the kit is built after it
     glow = mats["glow_crimson"]
@@ -1981,6 +1985,199 @@ def build_saltback_stalker_kit(mats: dict):
             add(_salt_crystal("ssk_claw_crystal", salt, 0.05, ch, s * (0.47 + 0.03 * k), 0.70, cz, rz=-s * 0.35), bone, "salt")
 
     return _kit_root("saltback_stalker", parts, j, SALTBACK_KIT_TRIANGLES)
+
+
+# =============================================================================
+# 4c. Monster_saltfang (Matron Saltfang): her own body on the crawler skeleton (Stage 6 plan MB1)
+# =============================================================================
+# As Ashmantle on the dragon's: a second body on the scorpion's bones (saltfang_<Bone>), at the
+# scorpion's joints (scorpion_joints), so the scorpion's clips, whose Hips track is absolute, play on
+# her unchanged; she has no clips of her own. Chitin is rigid, so every part is hard on one bone, as
+# the scorpion's. What tells her from the scorpion and the Saltback Stalker: a broad, swollen brood
+# body under a flat salt-white carapace with a salt-crystal rim, piles of egg sacs on her back, heavier
+# claws, longer legs in a wider stance and a heavy forked violet sting. Stage 6 draws her at
+# modelScale 2.2 of the scorpion, so she is built at the scorpion's height. The engine draws 'skin'
+# with the scorpion-chitin tile (the row's model key is scorpion), so the chitin's paint is its
+# colour over that tile's mean; the salt, bone and eggs are on a plain material, painted as they are;
+# the sting and eyes are on the file's mat_glow_purple, which the engine never tints.
+SALTFANG_TRIANGLES = 9000  # the builder's own budget, under the manifest's 14,000 (design 9.1's boss class)
+SALTFANG_OCCLUSION = 0.5  # bake_paint's occlusion strength, as the scorpion's
+SALTFANG_COLOURS = {  # as the game shows them, before the row's tint
+    "salt": 0xB9B1A2,  # the carapace plates, the prosoma and the tail segments (73% value)
+    "crystal": 0xBFBBB1,  # the rim crystals (75%)
+    "bone": 0xAEA287,  # pincers, mandibles, tarsi (68%)
+    "egg": 0x9D8FA6,  # egg sacs, pale violet grey (65%)
+    "egg_dark": 0x83758D,  # the lower eggs of each pile (55%)
+    "chitin": 0x6A5741,  # femurs, claws, pedipalps, over the chitin tile (42%)
+    "chitin_dark": 0x4E4030,  # tibiae, forearms, telson (31%)
+    "ring": 0x3F3326,  # joint rings, coxae (25%)
+}
+SALTFANG_PLAIN = ("salt", "crystal", "bone", "egg", "egg_dark")
+SALTFANG_PLATES = (  # (z of the plate's middle, half-width, half-height): six, widest behind the legs
+    (-0.26, 0.48, 0.20),
+    (-0.04, 0.54, 0.22),
+    (0.18, 0.58, 0.25),
+    (0.40, 0.60, 0.27),
+    (0.60, 0.54, 0.25),
+    (0.78, 0.40, 0.19),
+)
+SALTFANG_FLOOR = 0.31  # the plates' lowest y: the scorpion's, so her body lies where its did in Death
+SALTFANG_TAIL_GIRTH = 1.25  # the scorpion's tail radii times this
+SALTFANG_EGGS = (  # (x, z, radius) of each egg of the near-left pile, mirrored to the right; y sits on the plate
+    (0.24, -0.02, 0.105), (0.36, 0.06, 0.095), (0.28, 0.14, 0.11), (0.40, 0.20, 0.085), (0.18, 0.10, 0.08),
+    (0.30, 0.34, 0.115), (0.42, 0.40, 0.095), (0.26, 0.46, 0.10), (0.38, 0.54, 0.085), (0.20, 0.30, 0.075),
+)
+
+
+def build_saltfang(mats: dict):
+    """
+    Matron Saltfang's body (Stage 6 plan MB1): Monster_saltfang at the file's origin, three skinned
+    meshes on the crawler rig, every part hard on one of the scorpion's nineteen posed bones.
+    """
+    import rigs
+    from mathutils.bvhtree import BVHTree
+
+    prefix = "saltfang_"
+    chitin = make_mat("mat_skin_saltfang_paint", 0xFFFFFF, roughness=0.38, metallic=0.15)
+    salt = make_mat("mat_bone_saltfang_paint", 0xFFFFFF, roughness=0.62, metallic=0.04)
+    glow = mats["glow_purple"]
+    tile = _goblin_hide_mean(SCORPION_CHITIN_TILE)
+    col = {k: (v if k in SALTFANG_PLAIN else _goblin_skin_paint(v, tile)) for k, v in SALTFANG_COLOURS.items()}
+    col["glow"] = 0xFFFFFF
+    seg = SCORPION_SEGS
+    j = scorpion_joints()
+    hard = []  # (object, bone)
+
+    def add(obj, bone: str, colour: str, planes: bool = False):
+        _goblin_tint(obj, col[colour], planes)
+        hard.append((obj, prefix + bone))
+
+    # Prosoma, on HeadGroup: broader and flatter than the scorpion's, salt-white, faceted
+    add(add_lathe("sf_prosoma", None, salt, [
+        (-0.84, 0.22, 0.10, 0.0, 0.47, 0.30, 0.02, 0.03),
+        (-0.62, 0.40, 0.16, 0.0, 0.50, 0.32, 0.03, 0.05),
+        (-0.40, 0.48, 0.19, 0.0, 0.52, 0.32, 0.04, 0.06),
+    ], segs=14, axis="Z", smooth=False), "HeadGroup", "salt", planes=True)
+    # Three crystals over the brow, leaning forward and out, off the midline the tail passes over in Strike
+    for x, h, lean in ((0.0, 0.15, 0.0), (0.17, 0.13, 0.45), (-0.17, 0.13, -0.45)):
+        add(_salt_crystal("sf_brow", salt, 0.05, h, x, 0.62, -0.66, rx=-0.55, rz=-lean), "HeadGroup", "crystal", planes=True)
+    # Eyes: a pair high on the brow and two pairs at the front corners, on the glow ('eye' in no mesh name)
+    for side in (-1.0, 1.0):
+        for ex, ey, ez, er in ((0.07, 0.635, -0.72, 0.034), (0.20, 0.57, -0.80, 0.028), (0.26, 0.56, -0.74, 0.026)):
+            add(add_sphere("sf_ocellus", None, glow, er, tx=side * ex, ty=ey, tz=ez, segs=seg["ball"], rings=4), "HeadGroup", "glow")
+        add(add_cone_spike("sf_mandible", None, salt, base_r=0.055, length=0.25, tx=side * 0.10, ty=0.45, tz=-0.82,
+                           rx=-math.pi * 0.48, ry=side * 0.25, curve_bend=-side * 0.05, segs=seg["leg"], smooth=False), "HeadGroup", "bone", planes=True)
+
+    # The brood body: six overlapping salt plates on Hips, widest behind the legs, floored at the scorpion's height
+    tops = []
+    for p_idx, (pz, pw, ph) in enumerate(SALTFANG_PLATES):
+        cy = SALTFANG_FLOOR + ph
+        tops.append((pz, pw, cy + ph))
+        add(add_lathe("sf_plate", None, salt, [
+            (pz - 0.14, pw * 0.92, ph * 0.86, 0.0, cy - 0.01, 0.30, 0.05, 0.05),
+            (pz, pw, ph, 0.0, cy, 0.32, 0.06, 0.07),
+            (pz + 0.13, pw * 0.95, ph * 0.90, 0.0, cy - 0.01, 0.30, 0.05, 0.06),
+        ], segs=14, axis="Z", smooth=False), "Hips", "salt", planes=True)
+    # The rim: two crystals a side on each plate's margin, leaning out and a little back
+    for pz, pw, top in tops:
+        for side in (-1.0, 1.0):
+            for k, dz in enumerate((-0.05, 0.06)):
+                h = 0.10 + 0.04 * ((k + int(pz * 10)) % 2)
+                add(_salt_crystal("sf_rim", salt, 0.045, h, side * pw * 0.86, top - 0.12 - 0.03 * k, pz + dz,
+                                  rx=0.25, rz=-side * 1.05), "Hips", "crystal", planes=True)
+
+    # Egg sacs: a pile on each side of the back, sat on the plates' top found by a ray, clear of the midline
+    plates = [obj for obj, bone in hard if obj.name.startswith("sf_plate")]
+    bm = bmesh.new()
+    for ob in plates:
+        bm.from_mesh(ob.data)
+    tree = BVHTree.FromBMesh(bm)
+    for side in (-1.0, 1.0):
+        for k, (x, z, r) in enumerate(SALTFANG_EGGS):
+            hit = tree.ray_cast(Vector(t2b(side * x, 5.0, z)), Vector((0.0, 0.0, -1.0)))[0]
+            if hit is None:
+                raise ValueError(f"saltfang: no back under the egg at x {x}, z {z}")
+            add(add_sphere("sf_egg", None, salt, r, r * 0.88, r, tx=side * x, ty=hit.z + r * 0.55, tz=z, segs=7, rings=5),
+                "Hips", "egg" if r >= 0.095 else "egg_dark")
+    bm.free()
+
+    # The tail: the scorpion's path, thicker; segment k rides the scorpion's bone for it
+    tail_bone = ("TailPivot", "TailPivot2", "TailPivot3", "TailPivot3", "TailPivot3", "TailPivot3")
+    g = SALTFANG_TAIL_GIRTH
+    for k in range(6):
+        a, b = SCORPION_TAIL[k], SCORPION_TAIL[k + 1]
+        add(add_limb_tube("sf_tail", None, salt, a[:3], b[:3], a[3] * g, b[3] * g * 0.92, r_mid=(a[3] + b[3]) * 0.58 * g,
+                          segs=10, steps=4, smooth=False), tail_bone[k], "salt", planes=True)
+        ring_bone = tail_bone[k + 1] if k + 1 < 6 else "TailPivot3"
+        add(add_sphere("sf_ring", None, chitin, b[3] * g * 1.10, b[3] * g * 0.95, b[3] * g * 1.10, tx=b[0], ty=b[1], tz=b[2],
+                       segs=seg["ring"], rings=5), ring_bone, "ring")
+    # The telson, swollen, and the fork: two heavy violet prongs splayed from its sides
+    add(add_sphere("sf_telson", None, chitin, 0.19, 0.16, 0.24, tx=0.0, ty=1.86, tz=-0.03, segs=8, rings=6, smooth=False),
+        "TailPivot3", "chitin_dark", planes=True)
+    for side in (-1.0, 1.0):
+        add(add_cone_spike("sf_prong", None, glow, base_r=0.095, length=0.50, tx=side * 0.08, ty=1.84, tz=-0.18,
+                           rx=-math.pi * 0.66, ry=-side * 0.42, curve_bend=-0.16, segs=8, smooth=False), "TailPivot3", "glow")
+
+    # Eight legs, longer than the scorpion's and splayed wider: the coxa rides the side pivot, femur,
+    # tibia and tarsus the leg's bone; each leg fans out from its joint and ends on the ground
+    for s, tag, leg in ((-1.0, "Left", "L"), (1.0, "Right", "R")):
+        for n, (zc, fan) in enumerate(SCORPION_LEGS, start=1):
+            c = Vector(j[f"Leg{leg}{n}"])
+            d = Vector((s * math.cos(fan), 0.0, math.sin(fan)))
+            knee = c + d * 0.30 + Vector((0.0, 0.26, 0.0))
+            ankle = c + d * 0.62 + Vector((0.0, -0.02, 0.0))
+            tip = c + d * 0.78 + Vector((0.0, -0.44, 0.0))
+            add(add_limb_tube("sf_coxa", None, chitin, (s * 0.36, 0.48, zc * 0.8), tuple(c), 0.085, 0.072,
+                              segs=seg["leg"], steps=3), f"{tag}LegPivot", "ring")
+            add(add_sphere("sf_hinge", None, chitin, 0.074, tx=c.x, ty=c.y, tz=c.z, segs=seg["ball"], rings=4), f"Leg{leg}{n}", "ring")
+            add(add_limb_tube("sf_femur", None, chitin, tuple(c), tuple(knee), 0.068, 0.058, segs=seg["leg"], steps=4), f"Leg{leg}{n}", "chitin")
+            add(add_sphere("sf_knee", None, chitin, 0.062, tx=knee.x, ty=knee.y, tz=knee.z, segs=seg["ball"], rings=4), f"Leg{leg}{n}", "ring")
+            add(add_limb_tube("sf_tibia", None, chitin, tuple(knee), tuple(ankle), 0.058, 0.048, segs=seg["leg"], steps=4), f"Leg{leg}{n}", "chitin_dark")
+            add(add_limb_tube("sf_tarsus", None, salt, tuple(ankle), tuple(tip), 0.046, 0.026, segs=seg["leg"], steps=4), f"Leg{leg}{n}", "bone")
+
+    # Claws, heavier than the scorpion's: the pedipalp rides the arm pivot; forearm, chela, its salt
+    # crust and both pincers ride the elbow, at the scorpion's joints
+    for s, tag in ((-1.0, "Left"), (1.0, "Right")):
+        arm, elbow = j[f"{tag}ArmPivot"], j[f"{tag}ElbowPivot"]
+        add(add_limb_tube("sf_pedipalp", None, chitin, arm, elbow, 0.09, 0.082, segs=seg["claw"], steps=4), f"{tag}ArmPivot", "chitin")
+        add(add_sphere("sf_wrist", None, chitin, 0.088, tx=elbow[0], ty=elbow[1], tz=elbow[2], segs=seg["ball"], rings=4), f"{tag}ElbowPivot", "ring")
+        add(add_limb_tube("sf_forearm", None, chitin, elbow, (s * 0.47, 0.58, -1.38), 0.082, 0.10, segs=seg["claw"], steps=4), f"{tag}ElbowPivot", "chitin_dark")
+        add(add_sphere("sf_chela", None, chitin, 0.19, 0.15, 0.27, tx=s * 0.46, ty=0.585, tz=-1.54, ry=-s * 0.22,
+                       segs=10, rings=6, smooth=False), f"{tag}ElbowPivot", "chitin", planes=True)
+        for k, (cz, ch) in enumerate(((-1.40, 0.12), (-1.54, 0.16), (-1.68, 0.11))):
+            add(_salt_crystal("sf_claw_crystal", salt, 0.05, ch, s * (0.44 + 0.04 * k), 0.705, cz, rz=-s * 0.40), f"{tag}ElbowPivot", "crystal", planes=True)
+        # The pincers reach no farther from the elbow than the scorpion's (0.84, as its), and the claw rides
+        # 0.025 higher, or the claw that sags at the end of Death would pass through the ground its Hips track was locked to
+        add(add_cone_spike("sf_pincer", None, salt, base_r=0.072, length=0.34, tx=s * 0.53, ty=0.585, tz=-1.66,
+                           rx=-math.pi * 0.50, ry=s * 0.28, curve_bend=-s * 0.08, segs=seg["claw"], smooth=False), f"{tag}ElbowPivot", "bone", planes=True)
+        add(add_cone_spike("sf_pincer", None, salt, base_r=0.066, length=0.32, tx=s * 0.38, ty=0.575, tz=-1.66,
+                           rx=-math.pi * 0.50, ry=-s * 0.24, curve_bend=s * 0.07, segs=seg["claw"], smooth=False), f"{tag}ElbowPivot", "bone", planes=True)
+
+    rig = figkit.make_rig("Monster_saltfang", rigs.CRAWLER_TABLE, {k: t2b(*p) for k, p in j.items()}, prefix="saltfang")
+    for obj, bone in hard:
+        figkit.hard_weights(obj, bone)
+        obj.parent = rig
+    held = {bone for _, bone in hard}
+    missing = [b for b in SCORPION_BONES if prefix + b not in held]
+    if missing:
+        raise ValueError(f"saltfang: no part rides {missing}; every bone the scorpion's clips turn must carry weight")
+
+    merged = figkit.merge_by_family(rig)
+    names = {"skin": "saltfang_body", "plain": "saltfang_shell", "glow": "saltfang_sting"}
+    for ob in merged:
+        ob.name = ob.data.name = names[figkit.get_material_family(ob)]
+    _figure_paint(rig, merged, SALTFANG_OCCLUSION)
+
+    tris = sum(len(p.vertices) - 2 for ob in merged for p in ob.data.polygons)
+    if tris > SALTFANG_TRIANGLES:
+        raise ValueError(f"saltfang: {tris} triangles, over the budget of {SALTFANG_TRIANGLES}")
+    cos = [v.co for ob in merged for v in ob.data.vertices]
+    size = [max(c[a] for c in cos) - min(c[a] for c in cos) for a in (0, 2, 1)]  # width, height, length
+    print(f"[Blender] saltfang: {tris} triangles in {len(merged)} meshes; width {size[0]:.3f}, height {size[1]:.3f}, "
+          f"length {size[2]:.3f}; lowest {min(c.z for c in cos):.4f}")
+    if abs(size[1] / SCORPION_HEIGHT - 1.0) > 0.05:
+        raise ValueError(f"saltfang: height {size[1]:.3f} is more than 5% from the scorpion's {SCORPION_HEIGHT}")
+    return rig
 
 
 # =============================================================================
@@ -2332,6 +2529,122 @@ def build_dark_wizard(grid_pos: tuple[float, float, float], mats: dict):
     return _build_human("dark_wizard", j, WIZARD_RADII, WIZARD_TRIANGLES, WIZARD_HEIGHT, own, "cloth", names, _wizard_kit(j, col, own), _wizard_colour(col))
 
 
+# --- 5b. Kit_cinder_adept: the Cinder Adept's kit on the wizard (Stage 6 plan MK1, design 7.5) -------------------
+# The wizard plus rigid pieces of its own, each one mesh named cinder_adept_<Bone> after the wizard bone it
+# rides on, as K1's and K2's: a fitted hood (HeadGroup) round the skull, worn under the wizard's hat, ash
+# grey outside and lined with ember at its mouth, which is open on the face, the glints and the beard; a brazier on
+# the staff head (WeaponPivot) whose iron bowl swallows the wizard's prongs and purple orb, with four tines
+# and an ember-lit rim; the fire standing in it (RightHand, which no clip turns against WeaponPivot: same
+# joint, one glow material a piece); and an ember held over the open left hand (LeftHand). The hood is
+# painted on the wizard's robe material (over the cloth tile's mean), the iron and the rim on its wood
+# material (over the wood tile's mean), as _human_paint does, and the fire on the file's mat_glow_orange,
+# so the kit adds no material.
+CINDER_KIT_TRIANGLES = 1200
+CINDER_COLOURS = {  # as the game shows them before Stage 6's tint
+    "iron": 0x4A423C,  # the bowl and tines, a charred iron: 27% luma, 29% value
+    "ember": 0xBC5C28,  # the rim's ember band and the hood's lining: 45% luma, 74% value (design 5.4's top of 75%)
+    "ash": 0x5E5852,  # the hood outside, ash grey: 35% luma, 37% value
+}
+CINDER_CLOTH = ("ash", "ember")  # painted on the robe material, over the cloth tile's mean; the rest over the wood tile's
+
+
+def build_cinder_adept_kit():
+    """
+    The Cinder Adept's kit (plan MK1): Kit_cinder_adept at the origin with the children
+    cinder_adept_HeadGroup, _WeaponPivot, _RightHand and _LeftHand (_kit_root). Built after
+    build_dark_wizard, on its robe and wood materials.
+    """
+    robe = bpy.data.materials["mat_robe_dark_wizard_paint"]  # build_dark_wizard's
+    wood = bpy.data.materials["mat_wood_dark_wizard_paint"]
+    glow = bpy.data.materials["mat_glow_orange"]  # build_materials'
+    col = {k: _goblin_skin_paint(c, _goblin_hide_mean(WOOD_TILE)) for k, c in CINDER_COLOURS.items()}
+    cloth = {k: _goblin_skin_paint(CINDER_COLOURS[k], _goblin_hide_mean(CLOTH_TILE)) for k in CINDER_CLOTH}
+    j = wizard_joints()
+    parts = {"HeadGroup": [], "WeaponPivot": [], "RightHand": [], "LeftHand": []}
+
+    def add(obj, bone: str, colour, planes: bool = True):
+        _goblin_tint(obj, colour, planes)
+        parts[bone].append(obj)
+
+    def aim(d) -> dict:
+        d = Vector(d).normalized()
+        return {"rx": math.asin(d.z), "rz": -math.atan2(d.x, d.y)}
+
+    def spike(name: str, mat, r: float, length: float, at, d):
+        """A four-sided spike of base radius r along d from at (K2's thorn)."""
+        return add_lathe(name, None, mat, [(0.0, r, r), (length * 0.5, r * 0.55, r * 0.55), (length, 0.004, 0.004)],
+                         segs=4, tx=at.x, ty=at.y, tz=at.z, smooth=False, **aim(d))
+
+    # The hood: a fitted cowl worn under the wizard's hat. It wraps the skull (radii 0.13, 0.16, 0.15 round
+    # (0, 1.90, -0.13)) a few centimetres out, stands clear of the high collar behind the head (top ring 0.26
+    # by 0.21 at y 1.86) and falls in a short mantle over the shoulder balls (±0.36 at y 1.62). Its open top
+    # ring stops at y 1.995, under the hat's brim (y 2.00 to 2.05, 0.48 across), so the brim covers it and the
+    # hat sits on the hood. The mouth is cut where the face and beard are: faces with three z < -0.28 (the three front columns) between
+    # the hem and y 1.97; the band from 1.97 to 1.995 stays whole as a brow under the brim. A shell 0.03
+    # thick (solidify, rims filled): ash grey outside, ember only on the inner faces of the front half, which
+    # the mouth shows
+    sections = [(1.56, 0.41, 0.33, 0.0, -0.02), (1.68, 0.39, 0.32, 0.0, -0.03), (1.80, 0.31, 0.30, 0.0, -0.06),
+                (1.90, 0.26, 0.27, 0.0, -0.09), (1.97, 0.20, 0.22, 0.0, -0.11), (1.995, 0.185, 0.21, 0.0, -0.12)]
+    hood = add_lathe("cad_hood", None, robe, sections, segs=14, cap_ends=False, smooth=False)
+    bm = bmesh.new()
+    bm.from_mesh(hood.data)
+    mouth = [f for f in bm.faces if f.calc_center_median().y > 0.28 and f.calc_center_median().z < 1.97]  # three z < -0.28: the three front columns
+    bmesh.ops.delete(bm, geom=mouth, context="FACES")
+    bm.to_mesh(hood.data)
+    bm.free()
+    solid = hood.modifiers.new("shell", "SOLIDIFY")
+    solid.thickness, solid.offset, solid.use_rim = 0.03, -1.0, True
+    bpy.context.view_layer.objects.active = hood
+    bpy.ops.object.modifier_apply(modifier=solid.name)
+    _goblin_tint(hood, cloth["ash"], planes=True)
+    tint = hood.data.color_attributes["Tint"].data
+    lining = [*cloth["ember"], 1.0]
+    for poly in hood.data.polygons:
+        c = Vector(poly.center)
+        inward = Vector((-c.x, 0.08 - c.y, 0.0))  # toward the hood's axis at three z -0.08 (Blender y is -three z)
+        if c.y > 0.05 and poly.normal.dot(inward) > 0.0:  # the front half only (three z < -0.05)
+            for li in poly.loop_indices:
+                tint[li].color = lining
+    parts["HeadGroup"].append(hood)
+
+    # The staff's axis and head as _wizard_kit builds them; the bowl starts just under the head, so the
+    # prongs (0.24 long, 0.6 out) and the orb (radius 0.10, 0.13 up) stand inside it
+    hand = Vector(j["RightHand"])
+    d = Vector((-0.03, 1.0, -0.04)).normalized()
+    base = hand + d * 0.97
+    side = d.cross(Vector((0.0, 0.0, 1.0))).normalized()
+    fwd = side.cross(d).normalized()
+    bowl = [(0.0, 0.045, 0.045), (0.07, 0.10, 0.10), (0.16, 0.22, 0.22), (0.28, 0.245, 0.245), (0.32, 0.265, 0.265), (0.345, 0.25, 0.25)]
+    add(add_lathe("cad_bowl", None, wood, bowl, segs=8, tx=base.x, ty=base.y, tz=base.z, smooth=False, **aim(d)), "WeaponPivot", col["iron"])
+    add(add_lathe("cad_rim", None, wood, [(0.29, 0.272, 0.272), (0.335, 0.278, 0.278)], segs=8, tx=base.x, ty=base.y, tz=base.z, cap_ends=False, smooth=False, **aim(d)),
+        "WeaponPivot", col["ember"], planes=False)
+    for k in range(4):
+        a = math.pi * (0.25 + 0.5 * k)
+        out = side * math.cos(a) + fwd * math.sin(a)
+        add(spike(f"cad_tine_{k}", wood, 0.03, 0.24, base + d * 0.30 + out * 0.25, d + out * 0.45), "WeaponPivot", col["iron"])
+
+    # The fire: one tall faceted flame out of the bowl and six tongues round it, leaning out, so the staff
+    # ends in a flame higher than the hat's tip
+    top = base + d * 0.31
+    flame = [(0.0, 0.20, 0.20), (0.12, 0.17, 0.16), (0.26, 0.11, 0.10), (0.40, 0.05, 0.045), (0.52, 0.004, 0.004)]
+    add(add_lathe("cad_flame", None, glow, flame, segs=6, tx=top.x, ty=top.y, tz=top.z, smooth=False, **aim(d + side * 0.06)), "RightHand", 0xFFFFFF, planes=False)
+    for k in range(6):
+        a = math.pi * k / 3.0 + 0.3
+        out = side * math.cos(a) + fwd * math.sin(a)
+        add(spike(f"cad_tongue_{k}", glow, 0.07, 0.30 if k % 2 else 0.22, top + out * 0.13, d + out * 0.35 + side * 0.15),
+            "RightHand", 0xFFFFFF, planes=False)
+
+    # The ember over the open left hand: a faceted coal with three tongues, held a little out and forward
+    lh = Vector(j["LeftHand"]) + Vector((-0.03, 0.15, -0.06))
+    add(add_sphere("cad_coal", None, glow, 0.085, 0.08, 0.085, tx=lh.x, ty=lh.y, tz=lh.z, segs=6, rings=4, smooth=False), "LeftHand", 0xFFFFFF, planes=False)
+    for k in range(3):
+        a = 2.0 * math.pi * k / 3.0
+        out = Vector((math.cos(a), 0.0, math.sin(a)))
+        add(spike(f"cad_lick_{k}", glow, 0.045, 0.20 if k == 0 else 0.14, lh + out * 0.04 + Vector((0.0, 0.04, 0.0)), Vector((0.0, 1.0, 0.0)) + out * 0.3),
+            "LeftHand", 0xFFFFFF, planes=False)
+    return _kit_root("cinder_adept", parts, j, CINDER_KIT_TRIANGLES)
+
+
 # --- 6. Monster_dark_ranger ---------------------------------------------------------------------------------------
 # A lean hunter: a cloak that falls from the shoulders to a wide hem behind, a triangle outline from
 # every side; a peaked hood with a mask under its shadow; the bow held out on the left hand, a quiver at
@@ -2478,8 +2791,8 @@ def build_dark_ranger(grid_pos: tuple[float, float, float], mats: dict):
 
 
 # --- 6b. Kit_thornwatch_marksman: the Thornwatch Marksman's kit on the ranger (plan K2, design 5.6) ---------------
-# The ranger plus three rigid pieces of its own, each one mesh named after the ranger bone it rides on, as
-# K1's: a wreath of thorns round the hood (HeadGroup), a tall bramble quiver on the back over the right
+# The ranger plus three rigid pieces of its own, each one mesh named thornwatch_marksman_<Bone> after the
+# ranger bone it rides on, as K1's: a wreath of thorns round the hood (HeadGroup), a tall bramble quiver on the back over the right
 # shoulder (Torso; the bare name Hips is K1's, and the ranger's own hip quiver cannot be hidden, so this
 # one is a second, on the back), and a longbow (OffhandPivot) that swallows the ranger's recurve: its arc
 # runs along the recurve's, fatter, and its limbs reach past both tips, with a fatter string on the
@@ -2749,6 +3062,262 @@ def build_hill_giant(grid_pos: tuple[float, float, float], mats: dict):
     return _build_human("hill_giant", j, GIANT_RADII, GIANT_TRIANGLES, GIANT_HEIGHT, own, "skin", names, _giant_kit(j, col, own), _giant_colour(col))
 
 
+# --- 7b. Kit_slag_brute: the Slag Brute's kit on the hill giant (Stage 6 plan MK2, design 7.5) --------------------
+# The giant plus rigid pieces of its own, each one mesh named slag_brute_<Bone> after the giant bone it rides
+# on, as MK1's: a pauldron of three overlapping slag lames over each shoulder ball, centred on the arm's joint
+# so it turns with the arm in the Overhead Slam (Left/RightArmPivot); a hunch of shingled slag slabs over the
+# upper back, rising behind the neck, with three blunt knobs and nothing above the skull (Torso); and a
+# cooled-slag maul head of three stacked slabs across the club's head, swallowing its spikes (WeaponPivot).
+# Every slab is a chamfered box with its corners knocked about, so it reads as broken slag, not cut stone.
+# The hot slag shows only where a plate overlaps the next: the undersides and inner faces of the plates and
+# the seams between the maul's slabs are painted ember. All on the giant's plain bone material (no tile, so
+# the colours are painted as they are), so the kit adds no material and no emissive.
+SLAG_KIT_TRIANGLES = 1200
+SLAG_COLOURS = {  # as the game shows them before Stage 6's tint
+    "basalt": 0x4A4440,  # the plates, 27% luma, 29% value
+    "crust": 0x5C5550,  # the maul's cooled slag and the knobs, 34% luma, 36% value
+    "ember": 0xBC5C28,  # the seams, 45% luma, 74% value (MK1's ember, under design 5.4's top of 75%)
+}
+
+
+def _slag_chunk(name: str, mat, size, centre, basis, rng, jitter: float = 0.014):
+    """
+    A chamfered box of full sizes (along basis[0], basis[1], basis[2], three-space unit vectors) at centre,
+    each vertex moved up to jitter by rng, so its faces break like slag. Built flat-shaded.
+    """
+    bm = bmesh.new()
+    bmesh.ops.create_cube(bm, size=1.0)
+    bmesh.ops.bevel(bm, geom=bm.edges[:] + bm.verts[:], offset=0.14, segments=1, profile=0.5)
+    c = Vector(centre)
+    axes = [Vector(a).normalized() for a in basis]
+    for v in bm.verts:
+        p = c + sum((axes[k] * (v.co[k] * size[k]) for k in range(3)), Vector())
+        p += Vector([rng.uniform(-jitter, jitter) for _ in range(3)])
+        v.co = Vector(t2b(*p))
+    bm.normal_update()  # finalize_obj's recalc_face_normals reads the face normals: stale ones turn the box inside out
+    return finalize_obj(name, bm, None, mat, smooth=False)
+
+
+def _slag_ember(obj, colour: list, hot) -> None:
+    """Paints ember on every face for which hot(centre, normal) holds, both in three-space."""
+    tint = obj.data.color_attributes["Tint"].data
+    for poly in obj.data.polygons:
+        c, n = Vector(poly.center), Vector(poly.normal)
+        if hot(Vector((c.x, c.z, -c.y)), Vector((n.x, n.z, -n.y))):
+            for li in poly.loop_indices:
+                tint[li].color = [*colour, 1.0]
+
+
+def build_slag_brute_kit():
+    """
+    The Slag Brute's kit (plan MK2): Kit_slag_brute at the origin with the children slag_brute_Torso,
+    _LeftArmPivot, _RightArmPivot and _WeaponPivot (_kit_root). Built after build_hill_giant, on its bone
+    material.
+    """
+    plain = bpy.data.materials["mat_bone_hill_giant_paint"]  # build_hill_giant's
+    col = {k: list(hex_to_rgba(c)[:3]) for k, c in SLAG_COLOURS.items()}  # no tile: painted as they are
+    j = giant_joints()
+    rng = random.Random(58)
+    parts = {"Torso": [], "LeftArmPivot": [], "RightArmPivot": [], "WeaponPivot": []}
+
+    def add(obj, bone: str, colour: str, hot=None):
+        _goblin_tint(obj, col[colour], planes=True)
+        if hot is not None:
+            _slag_ember(obj, col["ember"], hot)
+        parts[bone].append(obj)
+
+    # The pauldrons: three lames of a dome round the shoulder ball (radius 0.20 at the arm's joint), each a
+    # little larger than the one above and overlapping it, the dome's axis tilted 0.55 out from the vertical.
+    # A shell 0.035 thick; ember on the rims and the inner faces, which show in the step between two lames
+    lames = ((0.27, (0.0, 0.32, 0.62)), (0.29, (0.52, 1.02)), (0.31, (0.93, 1.42)))
+    for s, tag in ((-1.0, "Left"), (1.0, "Right")):
+        bone = f"{tag}ArmPivot"
+        joint = Vector(j[bone])
+        for k, (radius, angles) in enumerate(lames):
+            sections = [(radius * math.cos(a), max(0.004, radius * math.sin(a)), max(0.004, radius * math.sin(a))) for a in angles]
+            lame = add_lathe(f"sbr_lame_{tag[0]}{k}", None, plain, sections, segs=8, tx=joint.x, ty=joint.y, tz=joint.z,
+                             rz=-s * 0.55, cap_ends=False, smooth=False)
+            for v in lame.data.vertices:
+                v.co += Vector([rng.uniform(-0.012, 0.012) for _ in range(3)])
+            solid = lame.modifiers.new("shell", "SOLIDIFY")
+            solid.thickness, solid.offset, solid.use_rim = 0.035, -1.0, True
+            bpy.context.view_layer.objects.active = lame
+            bpy.ops.object.modifier_apply(modifier=solid.name)
+            add(lame, bone, "basalt", lambda c, n, o=joint: n.dot((c - o).normalized()) < 0.5)
+
+    # The hunch: four rows of shingled slabs over the upper back, each slab's face turned to the back's
+    # slope (phi from straight up toward the back) and lying on it (the back's skin is at three z 0.22 to 0.27
+    # between y 1.4 and 1.7), the top row behind the neck at
+    # y 1.88, clear of the head's back (three z 0.14); wide and low, nothing above the skull. Ember on the
+    # undersides and their chamfers, which show between a slab and the one below
+    rows = (  # (x, y, z, phi, yaw, width, thickness, length)
+        (0.0, 1.88, 0.30, 0.60, 0.0, 0.66, 0.14, 0.34),
+        (-0.21, 1.68, 0.33, 1.10, 0.25, 0.40, 0.15, 0.30), (0.21, 1.68, 0.33, 1.10, -0.25, 0.40, 0.15, 0.30),
+        (-0.19, 1.46, 0.35, 1.45, 0.30, 0.38, 0.14, 0.28), (0.19, 1.46, 0.35, 1.45, -0.30, 0.38, 0.14, 0.28),
+        (0.0, 1.26, 0.33, 1.75, 0.0, 0.48, 0.12, 0.22),
+    )
+    for k, (x, y, z, phi, yaw, w, t, length) in enumerate(rows):
+        normal = Vector((math.sin(yaw) * math.sin(phi), math.cos(phi), math.cos(yaw) * math.sin(phi)))
+        across = Vector((math.cos(yaw), 0.0, -math.sin(yaw)))
+        along = normal.cross(across).normalized()
+        add(_slag_chunk(f"sbr_slab_{k}", plain, (w, t, length), (x, y, z), (across, normal, along), rng), "Torso", "basalt",
+            lambda c, n: n.y < -0.3)
+    for k, (x, y, z, lean) in enumerate(((0.0, 1.96, 0.36, 0.0), (-0.24, 1.80, 0.41, 0.35), (0.24, 1.80, 0.41, -0.35))):
+        add(add_lathe(f"sbr_knob_{k}", None, plain, [(0.0, 0.07, 0.07), (0.08, 0.055, 0.05), (0.14, 0.012, 0.012)], segs=5,
+                      tx=x, ty=y, tz=z, rx=0.75, rz=lean, smooth=False), "Torso", "crust")
+
+    # The maul head: three slabs stacked along the club's axis (as _giant_kit carries it, hanging at the
+    # right side), across it 0.52 to 0.64 (the lowest the widest, over the spikes' tips at 0.28 from the axis at
+    # 0.60 of it) and fore and aft 0.64 to 0.76 (the lowest the shortest, so its corners stay off the ground),
+    # each turned a little about the axis so their edges stagger; the club's head, straps and spikes inside them.
+    # Ember only on the seams between the slabs: the top slab's upper face, where the handle goes in, and the
+    # lowest slab's end face, which faces the camera in the Overhead Slam, stay crust
+    hand = Vector(j["RightHand"])
+    d = Vector((0.10, -1.0, -0.14)).normalized()
+    side = d.cross(Vector((0.0, 0.0, 1.0))).normalized()
+    fwd = side.cross(d).normalized()
+    for k, (t, w, h, length, turn) in enumerate(((0.33, 0.52, 0.13, 0.68, 0.10), (0.46, 0.60, 0.13, 0.76, -0.07), (0.595, 0.64, 0.15, 0.64, 0.12))):
+        a = side * math.cos(turn) + fwd * math.sin(turn)
+        b = fwd * math.cos(turn) - side * math.sin(turn)
+        hot = {0: lambda c, n: n.dot(d) > 0.3, 1: lambda c, n: abs(n.dot(d)) > 0.3, 2: lambda c, n: n.dot(d) < -0.3}[k]
+        add(_slag_chunk(f"sbr_maul_{k}", plain, (w, h, length), hand + d * t, (a, d, b), rng, jitter=0.03), "WeaponPivot", "crust", hot)
+    return _kit_root("slag_brute", parts, j, SLAG_KIT_TRIANGLES)
+
+
+# --- 7c. Kit_marrowjaw: Marrowjaw the Tollmaster's kit on the hill giant (Stage 6 plan MK3, design 7.5) ------------
+# The giant plus rigid pieces of its own, each one mesh named marrowjaw_<Bone> after the giant bone it rides on,
+# as MK1's and MK2's: a crown made of a beast's lower jaw, worn round the top of the skull above the brow, its
+# teeth standing up and its two hinges rising at the back (HeadGroup); over each shoulder ball a pauldron of
+# three great ribs arching from the chest to the shoulder blade, centred on the arm's joint so it turns with the
+# arm, and one tusk rising up and back from it (Left/RightArmPivot); and the toll banner on the back: a pole
+# seated in a socket at the belt, tucked under the fur strap, standing well above the head, with a cross-bar
+# and a swallow-tailed banner hung from it to the left, a brass toll coin on both its faces (Torso). Where
+# MK2's brute is low and wide with nothing above the skull, Marrowjaw's kit is vertical: the teeth, the
+# tusks and the banner are what the black cut-out keeps. All on the giant's plain bone material (no tile, so
+# the colours are painted as they are): the kit adds no material and no emissive.
+MARROW_KIT_TRIANGLES = 1200
+MARROW_COLOURS = {  # as the game shows them before Stage 6's tint
+    "bone": 0xBCAC8C,  # the giant's own bone (74% value): the jaw, the teeth, the ribs' tips, the tusks
+    "old": 0xA49474,  # the ribs and the jaw's underside, older bone, 64% value
+    "paint": 0x8C3424,  # war paint on the middle rib and the hinges, 30% luma, 55% value
+    "banner": 0x7A2C22,  # the banner, 25% luma, 48% value
+    "wood": 0x6E5034,  # the pole and the cross-bar, the giant's club wood, 43% value
+    "hide": 0x6E4E32,  # the socket and the binding, the giant's pelt, 43% value
+    "brass": 0xB08C3C,  # the toll coins and the pole's cap, 56% luma, 69% value
+}
+
+
+def build_marrowjaw_kit():
+    """
+    Marrowjaw's kit (plan MK3): Kit_marrowjaw at the origin with the children marrowjaw_HeadGroup,
+    _LeftArmPivot, _RightArmPivot and _Torso (_kit_root). Built after build_hill_giant, on its bone material.
+    """
+    plain = bpy.data.materials["mat_bone_hill_giant_paint"]  # build_hill_giant's
+    j = giant_joints()
+    parts = {"HeadGroup": [], "LeftArmPivot": [], "RightArmPivot": [], "Torso": []}
+
+    def add(obj, bone: str, colour: str, planes: bool = True):
+        _goblin_tint(obj, MARROW_COLOURS[colour], planes)
+        parts[bone].append(obj)
+
+    def aim(d) -> dict:
+        d = Vector(d).normalized()
+        return {"rx": math.asin(d.z), "rz": -math.atan2(d.x, d.y)}
+
+    def tooth(name: str, r: float, length: float, at, d, segs: int = 4):
+        """A faceted tooth or tusk of base radius r along d from at."""
+        return add_lathe(name, None, plain, [(0.0, r, r * 0.8), (length * 0.55, r * 0.6, r * 0.5), (length, 0.004, 0.004)],
+                         segs=segs, tx=at.x, ty=at.y, tz=at.z, smooth=False, **aim(d))
+
+    # The jaw crown: a horseshoe of bone round the skull at y 2.27, where the head is 0.31 across and 0.36 deep
+    # about three z -0.08 (measured on the built giant), so the band (0.03 by 0.045) rests on it above the brow
+    # and the ears; open at the back, where the jaw's two hinges rise 0.2 and lean out. Teeth stand on it, the
+    # canines at the front corners the tallest
+    cz, ax, az, cy = -0.08, 0.200, 0.222, 2.27
+    ring = []
+    for k in range(13):
+        t = math.radians(-138.0 + 23.0 * k)
+        ring.append((ax * math.sin(t), cy + 0.012 * (1.0 - math.cos(t)), cz - az * math.cos(t), 0.030, 0.045))
+    add(add_curved_tube("mjw_jaw", None, plain, ring, segs=5, smooth=False), "HeadGroup", "bone")
+    for s in (-1.0, 1.0):
+        t = math.radians(138.0)
+        base = Vector((s * ax * math.sin(t), cy + 0.012 * (1.0 - math.cos(t)), cz - az * math.cos(t)))
+        hinge = [(*base, 0.032, 0.045), (*(base + Vector((s * 0.03, 0.11, 0.03))), 0.030, 0.040), (*(base + Vector((s * 0.06, 0.20, 0.07))), 0.034, 0.034)]
+        add(add_curved_tube("mjw_hinge", None, plain, hinge, segs=5, smooth=False), "HeadGroup", "paint")
+        top = base + Vector((s * 0.06, 0.20, 0.07))
+        add(add_sphere("mjw_knuckle", None, plain, 0.045, 0.035, 0.05, tx=top.x, ty=top.y + 0.02, tz=top.z, segs=5, rings=4, smooth=False), "HeadGroup", "bone")
+    for deg, length, r in ((14.0, 0.07, 0.026), (40.0, 0.17, 0.034), (66.0, 0.09, 0.030), (92.0, 0.08, 0.030)):
+        for s in (-1.0, 1.0):
+            t = math.radians(s * deg)
+            at = Vector((ax * math.sin(t), cy + 0.03, cz - az * math.cos(t)))
+            out = Vector((math.sin(t), 0.0, -math.cos(t)))
+            add(tooth("mjw_tooth", r, length, at, Vector((0.0, 1.0, 0.0)) + out * 0.25), "HeadGroup", "bone")
+
+    # The rib pauldrons: three ribs over each shoulder ball (radius 0.20 at the arm's joint), in planes across the
+    # arm, 0.06 in, 0.04 and 0.13 out from the joint along it, each arching from the chest over the top to the
+    # shoulder blade 0.05 clear of the ball; the middle one war-painted. One tusk rises from the top, up and
+    # back and a little out, clear of the head when the arm is raised
+    for s, tag in ((-1.0, "Left"), (1.0, "Right")):
+        bone = f"{tag}ArmPivot"
+        joint = Vector(j[bone])
+        up = Vector((s * math.sin(0.55), math.cos(0.55), 0.0))
+        along = Vector((s * math.cos(0.55), -math.sin(0.55), 0.0))
+        fore = Vector((0.0, 0.0, 1.0))
+        for k, (o, colour) in enumerate(((-0.06, "old"), (0.04, "paint"), (0.13, "old"))):
+            radius = math.sqrt(0.20**2 - o**2) + 0.05
+            c = joint + along * o
+            pts = []
+            for i in range(7):
+                p = math.radians(-95.0 + 190.0 * i / 6)
+                w = 0.05 if 0 < i < 6 else 0.03
+                pts.append((*(c + up * (radius * math.cos(p)) + fore * (radius * math.sin(p))), w, 0.032))
+            add(add_curved_tube(f"mjw_rib_{tag[0]}{k}", None, plain, pts, segs=4, smooth=False), bone, colour)
+        root = joint + up * 0.22 + fore * 0.05
+        add(tooth(f"mjw_tusk_{tag[0]}", 0.055, 0.34, root, up * 0.9 + fore * 0.45 + Vector((s * 0.25, 0.0, 0.0)), segs=5), bone, "bone")
+
+    # The toll banner: a pole at x -0.16, three z 0.335, seated in a hide socket at the belt (the back's skin is
+    # at three z 0.27 to 0.30 there) and tucked under the fur strap at y 1.5, rising to y 3.22; a cross-bar at
+    # y 3.12 turned 35 degrees back from the figure's left, so the banner shows from the front, the side and the
+    # back; the banner hung from it, 0.46 wide and 0.70 deep with a swallow-tail, two-sided, a brass coin on each
+    # face; a brass cap on the pole
+    px, pz = -0.16, 0.335
+    add(add_lathe("mjw_pole", None, plain, [(0.92, 0.036, 0.036), (3.22, 0.030, 0.030)], segs=6, tx=px, tz=pz, smooth=False), "Torso", "wood")
+    add(add_lathe("mjw_socket", None, plain, [(0.90, 0.050, 0.050), (0.97, 0.060, 0.060), (1.10, 0.054, 0.054)], segs=6, tx=px, tz=pz, smooth=False), "Torso", "hide")
+    add(add_lathe("mjw_binding", None, plain, [(1.27, 0.046, 0.046), (1.33, 0.046, 0.046)], segs=6, tx=px, tz=pz, cap_ends=False, smooth=False), "Torso", "hide")
+    add(add_lathe("mjw_cap", None, plain, [(3.20, 0.045, 0.045), (3.26, 0.04, 0.04), (3.36, 0.004, 0.004)], segs=6, tx=px, tz=pz, smooth=False), "Torso", "brass")
+    bar = Vector((-math.cos(math.radians(35.0)), 0.0, math.sin(math.radians(35.0))))
+    pole_top = Vector((px, 3.12, pz))
+    add(add_curved_tube("mjw_bar", None, plain, [(*(pole_top - bar * 0.04), 0.024), (*(pole_top + bar * 0.54), 0.022)], segs=5, smooth=False), "Torso", "wood")
+    normal = bar.cross(Vector((0.0, 1.0, 0.0))).normalized()
+    width, depth, cols, rows = 0.46, 0.70, 4, 5
+    bm = bmesh.new()
+    grid = []
+    for r in range(rows + 1):
+        line = []
+        for c in range(cols + 1):
+            u, v = c / cols, r / rows
+            down = depth * v - (0.16 * (1.0 - abs(2.0 * u - 1.0)) if r == rows else 0.0)  # the swallow-tail
+            p = pole_top + bar * (0.05 + width * u) + Vector((0.0, -0.03 - down, 0.0)) + normal * (0.025 * math.sin(math.pi * u * 2.0) * v)
+            line.append(bm.verts.new(t2b(*p)))
+        grid.append(line)
+    for r in range(rows):
+        for c in range(cols):
+            bm.faces.new((grid[r][c], grid[r][c + 1], grid[r + 1][c + 1], grid[r + 1][c]))
+    bm.normal_update()
+    flag = finalize_obj("mjw_banner", bm, None, plain, smooth=False)
+    solid = flag.modifiers.new("cloth", "SOLIDIFY")
+    solid.thickness, solid.offset, solid.use_rim = 0.02, 0.0, True
+    bpy.context.view_layer.objects.active = flag
+    bpy.ops.object.modifier_apply(modifier=solid.name)
+    add(flag, "Torso", "banner")
+    centre = pole_top + bar * (0.05 + width * 0.5) + Vector((0.0, -0.03 - depth * 0.42, 0.0))
+    for side in (-1.0, 1.0):
+        at = centre + normal * side * 0.03
+        add(add_lathe(f"mjw_coin", None, plain, [(0.0, 0.095, 0.095), (0.012, 0.095, 0.095)], segs=6, tx=at.x, ty=at.y, tz=at.z, smooth=False, **aim(normal * side)),
+            "Torso", "brass")
+    return _kit_root("marrowjaw", parts, j, MARROW_KIT_TRIANGLES)
+
+
 # =============================================================================
 # 8. Monster_moss_guardian (Moss Guardian): kept and re-rigged on the biped rig (plan M3c)
 # =============================================================================
@@ -2911,6 +3480,181 @@ def build_moss_guardian(grid_pos: tuple[float, float, float], mats: dict):
     if abs(size[1] / GUARDIAN_HEIGHT - 1.0) > 0.05:
         raise ValueError(f"moss_guardian: height {size[1]:.3f} is more than 5% from the shipped guardian's {GUARDIAN_HEIGHT}")
     return rig
+
+
+# =============================================================================
+# 8b. Monster_kiln_warden (The Kiln Warden): its own body on the moss guardian's biped skeleton (Stage 6 plan MB2)
+# =============================================================================
+# As Saltfang on the scorpion's: a second body on the guardian's bones (kiln_warden_<Bone>), at the guardian's
+# joints (guardian_joints), so the hero file's clips play on it with the guardian's Hips ratio (the engine
+# caches the scaled clips by the model key, moss_guardian). A furnace golem of fired clay banded in iron:
+# a squat kiln-dome head with a glowing slit under an iron visor, a barrel kiln for a chest with its furnace
+# mouth open in front (an iron frame, a glowing core behind three grate bars), a chimney rising behind the
+# right shoulder (the one asymmetry), clay shoulder domes under iron rims, clay arms whose forearms end in
+# iron hammer heads, and iron-shod feet. What tells it from the woods creature at 85 px: no antlers, a flat
+# kiln top with the chimney beside it, two hammer fists in place of claws and a gauntlet, and the clay's
+# red at 66% against the guardian's bark at 37%. Clay and iron do not bend, so every part is hard on one
+# bone; the glow (core, slit, seams, chimney ember) rides only Torso and HeadGroup, so no glow swings
+# out of its mesh's sphere. The clay is on a 'stone' material (the stone tile), the iron on an 'iron' one
+# (the iron tile), each painted over its tile's mean; the glow is the file's mat_glow_orange.
+KILN_TRIANGLES = 9000  # the builder's own budget, under the manifest's 14,000 (design 9.1's boss class)
+KILN_OCCLUSION = 0.5  # bake_paint's occlusion strength, as the guardian's
+IRON_TILE = "public/textures/iron.png"  # 'iron' in a material name draws with this tile (blenderMonsters.ts)
+KILN_COLOURS = {  # as the game shows them, before the row's tint
+    "clay": 0xA8643F,  # fired clay: chest, head, arms, thighs (66% value)
+    "clay_dark": 0x84503A,  # pelvis, shins, the chimney's lower courses (52%)
+    "clay_light": 0xB97A52,  # the shoulder domes and the kiln's crown (73%)
+    "iron": 0x5C5854,  # bands, visor, rims, hammer heads (36%)
+    "iron_dark": 0x45413D,  # the furnace frame, grate bars, knees, feet (27%)
+}
+KILN_FAMILY = {"clay": "stone", "clay_dark": "stone", "clay_light": "stone", "iron": "metal", "iron_dark": "metal"}
+KILN_SEAMS = (  # (y, angle round the chest from the front, + toward the figure's left, length, lean): glowing cracks
+    (1.56, 1.25, 0.20, 0.35), (1.22, 1.45, 0.18, -0.30), (1.42, -1.30, 0.22, -0.25), (1.18, -1.55, 0.16, 0.40),
+    (1.50, 2.45, 0.20, 0.30), (1.25, -2.55, 0.18, -0.35),
+)
+
+
+def build_kiln_warden(mats: dict):
+    """
+    The Kiln Warden's body (Stage 6 plan MB2): Monster_kiln_warden at the file's origin, three skinned meshes
+    on the biped rig at the guardian's joints, every part hard on one bone.
+    """
+    import rigs
+    from mathutils.bvhtree import BVHTree
+
+    clay = make_mat("mat_stone_kiln_warden_paint", 0xFFFFFF, roughness=0.82, metallic=0.02)
+    iron = make_mat("mat_iron_kiln_warden_paint", 0xFFFFFF, roughness=0.48, metallic=0.60)
+    glow = mats["glow_orange"]
+    means = {"stone": _goblin_hide_mean(STONE_TILE), "metal": _goblin_hide_mean(IRON_TILE)}
+    col = _human_paint(KILN_COLOURS, KILN_FAMILY, means)
+    col["glow"] = 0xFFFFFF
+    j = guardian_joints()
+    hard = []  # (object, bone)
+
+    def add(obj, bone: str, colour: str, planes: bool = True):
+        _goblin_tint(obj, col[colour], planes and colour != "glow")
+        hard.append((obj, f"kiln_warden_{bone}"))
+        return obj
+
+    # Hips: the kiln's foot, a clay block from under the leg joints to the waist, and an iron belt
+    add(add_lathe("kwd_pelvis", None, clay, [(0.64, 0.25, 0.20), (0.84, 0.34, 0.27, 0.0, 0.02, 0.3), (1.02, 0.34, 0.27, 0.0, 0.0, 0.3)],
+                  segs=8, smooth=False), "Hips", "clay_dark")
+    add(add_lathe("kwd_belt", None, iron, [(0.90, 0.365, 0.295, 0.0, 0.02, 0.3), (0.99, 0.37, 0.30, 0.0, 0.01, 0.3)],
+                  segs=8, smooth=False), "Hips", "iron")
+
+    # Torso: the barrel kiln, squared a little, leaning into the head; two iron hoops
+    chest = add(add_lathe("kwd_chest", None, clay, [
+        (0.97, 0.33, 0.26), (1.18, 0.48, 0.36, 0.0, -0.03, 0.3), (1.44, 0.55, 0.40, 0.0, -0.05, 0.3),
+        (1.66, 0.50, 0.36, 0.0, -0.05, 0.3), (1.80, 0.30, 0.25, 0.0, -0.04, 0.2)], segs=12, smooth=False), "Torso", "clay")
+    add(add_lathe("kwd_hoop_low", None, iron, [(1.04, 0.42, 0.32, 0.0, -0.01, 0.3), (1.11, 0.46, 0.35, 0.0, -0.02, 0.3)],
+                  segs=10, smooth=False), "Torso", "iron")
+    add(add_lathe("kwd_hoop_high", None, iron, [(1.62, 0.535, 0.39, 0.0, -0.05, 0.3), (1.70, 0.50, 0.365, 0.0, -0.05, 0.3)],
+                  segs=10, smooth=False), "Torso", "iron")
+    # The furnace mouth, open in front: a glowing core behind three grate bars in an iron frame
+    add(add_sphere("kwd_core", None, glow, 0.21, 0.17, 0.07, tx=0.0, ty=1.32, tz=-0.42, segs=8, rings=6, smooth=False), "Torso", "glow")
+    for name, w, h, x, y in (("lintel", 0.58, 0.09, 0.0, 1.53), ("sill", 0.58, 0.09, 0.0, 1.11),
+                             ("jamb_L", 0.09, 0.50, -0.25, 1.32), ("jamb_R", 0.09, 0.50, 0.25, 1.32)):
+        add(add_box(f"kwd_frame_{name}", None, iron, w, h, 0.11, tx=x, ty=y, tz=-0.46, bevel=0.0), "Torso", "iron_dark")
+    for k, x in enumerate((-0.11, 0.0, 0.11)):
+        add(add_box(f"kwd_bar_{k}", None, iron, 0.05, 0.36, 0.05, tx=x, ty=1.32, tz=-0.51, bevel=0.0), "Torso", "iron_dark")
+    # The chimney behind the right shoulder, leaning back: clay courses, an iron cap, embers in its throat
+    cx, cz = 0.20, 0.26
+    add(add_lathe("kwd_flue", None, clay, [(1.40, 0.20, 0.19, 0.0, 0.0, 0.4), (1.90, 0.18, 0.17, 0.0, 0.04, 0.4), (2.28, 0.165, 0.155, 0.0, 0.08, 0.4)],
+                  segs=8, tx=cx, tz=cz, smooth=False), "Torso", "clay_dark")
+    add(add_lathe("kwd_flue_cap", None, iron, [(2.22, 0.21, 0.20, 0.0, 0.075, 0.4), (2.40, 0.225, 0.215, 0.0, 0.08, 0.4)],
+                  segs=8, tx=cx, tz=cz, smooth=False), "Torso", "iron")
+    add(add_sphere("kwd_ember", None, glow, 0.15, 0.03, 0.14, tx=cx, ty=2.405, tz=cz + 0.08, segs=6, rings=4, smooth=False), "Torso", "glow")
+    # Glowing seams: zigzag cracks laid on the chest through points found by rays from outside, 0.056 across
+    bm = bmesh.new()
+    bm.from_mesh(chest.data)
+    tree = BVHTree.FromBMesh(bm)
+
+    def on_chest(y: float, ang: float) -> tuple:
+        d = Vector(t2b(-math.sin(ang), 0.0, -math.cos(ang)))  # outward, in Blender space
+        hit = tree.ray_cast(Vector(t2b(0.0, y, -0.04)) + d * 2.0, -d)[0]
+        if hit is None:
+            raise ValueError(f"kiln_warden: no chest under the seam at y {y}, angle {ang}")
+        return (hit.x, hit.z, -hit.y)  # three-space
+
+    for k, (y, ang, length, lean) in enumerate(KILN_SEAMS):
+        zig = [(y + length * 0.5, ang + lean * 0.25), (y, ang - lean * 0.25), (y - length * 0.5, ang + lean * 0.10)]
+        add(add_curved_tube(f"kwd_seam_{k}", None, glow, [(*on_chest(py, pa), 0.028) for py, pa in zig], segs=4, smooth=False), "Torso", "glow")
+    bm.free()
+
+    # Head: a squat kiln dome sunk between the shoulders, an iron visor with a glowing slit, a clay crown
+    hx, hy, hz = j["HeadGroup"]
+    add(add_lathe("kwd_dome", None, clay, [(hy - 0.04, 0.21, 0.20), (hy + 0.12, 0.24, 0.22), (hy + 0.26, 0.21, 0.19), (hy + 0.33, 0.12, 0.11)],
+                  segs=10, tx=hx, tz=hz, smooth=False), "HeadGroup", "clay")
+    add(add_lathe("kwd_crown", None, clay, [(hy + 0.32, 0.13, 0.12), (hy + 0.38, 0.11, 0.10)], segs=8, tx=hx, tz=hz, smooth=False), "HeadGroup", "clay_light")
+    add(add_lathe("kwd_visor", None, iron, [(hy + 0.09, 0.255, 0.235), (hy + 0.23, 0.25, 0.23)], segs=8, tx=hx, tz=hz, smooth=False), "HeadGroup", "iron")
+    add(add_box("kwd_slit", None, glow, 0.30, 0.055, 0.05, tx=hx, ty=hy + 0.16, tz=hz - 0.235, bevel=0.0), "HeadGroup", "glow")
+    add(add_box("kwd_brow", None, iron, 0.34, 0.06, 0.08, tx=hx, ty=hy + 0.215, tz=hz - 0.23, bevel=0.0), "HeadGroup", "iron_dark")
+
+    # Shoulders: clay domes under iron rims, on the arm bones
+    for side, tag in ((-1.0, "Left"), (1.0, "Right")):
+        px, py, pz = j[f"{tag}ArmPivot"]
+        add(add_sphere(f"kwd_dome_{tag}", None, clay, 0.26, 0.20, 0.26, tx=px + side * 0.02, ty=py + 0.08, tz=pz, rz=-side * 0.30,
+                       segs=8, rings=5, smooth=False), f"{tag}ArmPivot", "clay_light")
+        add(add_lathe(f"kwd_rim_{tag}", None, iron, [(-0.03, 0.29, 0.29), (0.04, 0.28, 0.28)], segs=8,
+                      tx=px + side * 0.03, ty=py + 0.02, tz=pz, rz=-side * 0.30, smooth=False), f"{tag}ArmPivot", "iron")
+
+    # Arms: a clay upper arm, an iron elbow, a thick clay forearm in an iron band, and an iron hammer head for a fist
+    for side, tag in ((-1.0, "Left"), (1.0, "Right")):
+        a, e, h = (Vector(j[f"{tag}{n}"]) for n in ("ArmPivot", "ElbowPivot", "Hand"))
+        d = (h - e).normalized()
+        add(add_limb_tube(f"kwd_upper_{tag}", None, clay, tuple(a), tuple(e), 0.15, 0.12, segs=8, steps=4, smooth=False), f"{tag}ArmPivot", "clay")
+        add(add_sphere(f"kwd_elbow_{tag}", None, iron, 0.15, 0.13, 0.15, tx=e.x, ty=e.y, tz=e.z, segs=7, rings=5, smooth=False), f"{tag}ElbowPivot", "iron_dark")
+        add(add_limb_tube(f"kwd_fore_{tag}", None, clay, tuple(e), tuple(h), 0.125, 0.15, segs=8, steps=4, smooth=False), f"{tag}ElbowPivot", "clay")
+        w = h - d * 0.10
+        add(add_limb_tube(f"kwd_cuff_{tag}", None, iron, tuple(w - d * 0.05), tuple(w + d * 0.05), 0.17, 0.17, r_mid=0.17, segs=7, steps=2, smooth=False),
+            f"{tag}ElbowPivot", "iron")
+        c = h + d * 0.10
+        rot = dict(rx=-0.24, rz=math.atan2(d.x, -d.y))
+        add(add_box(f"kwd_hammer_{tag}", None, iron, 0.36, 0.32, 0.58, tx=c.x, ty=c.y, tz=c.z, bevel=0.0, **rot), f"{tag}Hand", "iron")
+        for k, f in enumerate((-1.0, 1.0)):  # the two striking faces, a little wider than the head, at its ends
+            bx, by, bz = xform_pt(0.0, 0.0, f * 0.29, **rot)
+            fc = c + Vector((bx, bz, -by))
+            add(add_box(f"kwd_face_{tag}_{k}", None, iron, 0.42, 0.38, 0.07, tx=fc.x, ty=fc.y, tz=fc.z, bevel=0.0, **rot), f"{tag}Hand", "iron_dark")
+        add(add_limb_tube(f"kwd_fist_{tag}", None, clay, tuple(h - d * 0.05), tuple(c), 0.14, 0.14, segs=7, steps=2, smooth=False), f"{tag}Hand", "clay_dark")
+
+    # Legs: a clay thigh, an iron knee, a clay shin flaring to an iron-shod foot
+    for side, tag in ((-1.0, "Left"), (1.0, "Right")):
+        hip, knee, foot = (Vector(j[f"{tag}{n}"]) for n in ("LegPivot", "KneePivot", "Foot"))
+        add(add_limb_tube(f"kwd_thigh_{tag}", None, clay, tuple(hip + Vector((0.0, 0.06, 0.0))), tuple(knee), 0.18, 0.15, segs=8, steps=4, smooth=False), f"{tag}LegPivot", "clay")
+        add(add_sphere(f"kwd_knee_{tag}", None, iron, 0.17, 0.14, 0.16, tx=knee.x, ty=knee.y, tz=knee.z - 0.05, segs=7, rings=5, smooth=False), f"{tag}KneePivot", "iron_dark")
+        add(add_limb_tube(f"kwd_shin_{tag}", None, clay, tuple(knee), tuple(foot + Vector((0.0, 0.04, 0.0))), 0.15, 0.20, segs=8, steps=4, smooth=False), f"{tag}KneePivot", "clay_dark")
+        add(add_box(f"kwd_foot_{tag}", None, iron, 0.34, 0.13, 0.42, tx=foot.x, ty=0.065, tz=foot.z - 0.07, bevel=0.0), f"{tag}Foot", "iron_dark")
+        add(add_box(f"kwd_toe_{tag}", None, iron, 0.30, 0.08, 0.10, tx=foot.x, ty=0.12, tz=foot.z - 0.24, rx=0.35, bevel=0.0), f"{tag}Foot", "iron")
+
+    rig = figkit.make_rig("Monster_kiln_warden", rigs.BIPED_TABLE, {k: t2b(*p) for k, p in j.items()}, prefix="kiln_warden")
+    for obj, bone in hard:
+        figkit.hard_weights(obj, bone)
+        obj.parent = rig
+    held = {bone for _, bone in hard}
+    missing = [b for b in KILN_BONES if f"kiln_warden_{b}" not in held]
+    if missing:
+        raise ValueError(f"kiln_warden: no part rides {missing}; every bone the guardian's clips turn must carry weight")
+
+    merged = figkit.merge_by_family(rig)
+    names = {"stone": "kiln_warden_clay", "metal": "kiln_warden_iron", "glow": "kiln_warden_core"}
+    for ob in merged:
+        ob.name = ob.data.name = names[figkit.get_material_family(ob)]
+    _figure_paint(rig, merged, KILN_OCCLUSION)
+
+    tris = sum(len(p.vertices) - 2 for ob in merged for p in ob.data.polygons)
+    if tris > KILN_TRIANGLES:
+        raise ValueError(f"kiln_warden: {tris} triangles, over the budget of {KILN_TRIANGLES}")
+    cos = [v.co for ob in merged for v in ob.data.vertices]
+    size = [max(c[a] for c in cos) - min(c[a] for c in cos) for a in (0, 2, 1)]  # width, height, depth
+    print(f"[Blender] kiln_warden: {tris} triangles in {len(merged)} meshes; width {size[0]:.3f}, height {size[1]:.3f}, "
+          f"depth {size[2]:.3f}; lowest {min(c.z for c in cos):.4f}")
+    if abs(size[1] / GUARDIAN_HEIGHT - 1.0) > 0.05:
+        raise ValueError(f"kiln_warden: height {size[1]:.3f} is more than 5% from the guardian's {GUARDIAN_HEIGHT}")
+    return rig
+
+
+KILN_BONES = ("Hips", "Torso", "HeadGroup", "LeftArmPivot", "LeftElbowPivot", "RightArmPivot", "RightElbowPivot",
+              "LeftLegPivot", "LeftKneePivot", "LeftFoot", "RightLegPivot", "RightKneePivot", "RightFoot")  # MONSTER_MOTION.moss_guardian's
 
 
 # =============================================================================
@@ -4137,13 +4881,18 @@ def main():
     build_goblin_archer((-0.8, 0.0, -2.0), mats)
     build_scorpion((1.8, 0.0, -2.0), mats)
     build_saltback_stalker_kit(mats)
+    build_saltfang(mats)
     build_dark_wizard((4.4, 0.0, -2.0), mats)
+    build_cinder_adept_kit()
 
     # Back row (Z = +2.4 -> Blender Y = -2.4, behind front row)
     build_dark_ranger((-6.0, 0.0, 2.2), mats)
     build_thornwatch_marksman_kit()
     build_hill_giant((-3.4, 0.0, 2.2), mats)
+    build_slag_brute_kit()
+    build_marrowjaw_kit()
     build_moss_guardian((-0.6, 0.0, 2.2), mats)
+    build_kiln_warden(mats)
     build_lesser_demon((2.2, 0.0, 2.2), mats)
     build_elvarg_dragon((6.2, 0.0, 2.6), mats)
     build_ashmantle(mats)

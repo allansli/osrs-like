@@ -186,5 +186,37 @@
    ]
   },
   "floor": 4
+ },
+ "saltfang": {
+  "meshes": 3,
+  "triangles": {
+   "glow": 480,
+   "plain": 4370,
+   "skin": 2992
+  },
+  "pivots": {
+   "Monster_saltfang": [
+    "glow",
+    "plain",
+    "skin"
+   ]
+  },
+  "floor": 3
+ },
+ "kiln_warden": {
+  "meshes": 3,
+  "triangles": {
+   "iron": 792,
+   "glow": 300,
+   "stone": 1056
+  },
+  "pivots": {
+   "Monster_kiln_warden": [
+    "glow",
+    "iron",
+    "stone"
+   ]
+  },
+  "floor": 3
  }
 }

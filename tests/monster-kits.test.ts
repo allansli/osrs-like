@@ -55,7 +55,7 @@ const gltfOf = (...nodes: THREE.Object3D[]): GLTF => {
 
 describe('a def with a kit', () => {
   const setup = () => {
-    const kit = kitNode('spiked', ['Arm', 'Stray']);
+    const kit = kitNode('spiked', ['spiked_Arm', 'spiked_Stray']);
     const gltf = gltfOf(skinnedFigure('scorp'), kit);
     const e = entity('scorp', { kit: 'spiked' });
     expect(upgradeMonsterRigWithGltf(e, gltf)).toBe(true);
@@ -72,29 +72,36 @@ describe('a def with a kit', () => {
     const { group } = setup();
     const arm = group.getObjectByName('Arm')!;
     expect((arm as THREE.Bone).isBone).toBe(true);
-    const child = arm.children.find((c) => c.name === 'Arm' && (c as THREE.Mesh).isMesh);
+    const child = arm.children.find((c) => c.name === 'spiked_Arm' && (c as THREE.Mesh).isMesh);
     expect(child, 'kit child under bone Arm').toBeDefined();
   });
 
   it('puts a kit child named after no bone under the root', () => {
     const { group } = setup();
-    const stray = group.getObjectByName('Stray')!;
+    const stray = group.getObjectByName('spiked_Stray')!;
     expect(stray.parent).toBe(group);
   });
 
   it('adds clones, leaving the template kit node as it was', () => {
     const { kit, group } = setup();
-    expect(kit.children.map((c) => c.name)).toEqual(['Arm', 'Stray']);
-    expect(group.getObjectByName('Stray')).not.toBe(kit.children[1]);
+    expect(kit.children.map((c) => c.name)).toEqual(['spiked_Arm', 'spiked_Stray']);
+    expect(group.getObjectByName('spiked_Stray')).not.toBe(kit.children[1]);
+  });
+});
+
+describe('a kit child without the kit prefix', () => {
+  it('is refused with an error naming the kit and the child', () => {
+    const gltf = gltfOf(skinnedFigure('scorp'), kitNode('spiked', ['Arm']));
+    expect(() => upgradeMonsterRigWithGltf(entity('scorp', { kit: 'spiked' }), gltf)).toThrow(/Kit_spiked.*'Arm'.*spiked_/);
   });
 });
 
 describe('a def with no kit', () => {
   it('is unchanged: no Kit_ child is added even when the node exists', () => {
-    const gltf = gltfOf(skinnedFigure('scorp'), kitNode('spiked', ['Arm', 'Stray']));
+    const gltf = gltfOf(skinnedFigure('scorp'), kitNode('spiked', ['spiked_Arm', 'spiked_Stray']));
     const e = entity('scorp');
     expect(upgradeMonsterRigWithGltf(e, gltf)).toBe(true);
-    expect(e.rig.group.getObjectByName('Stray')).toBeUndefined();
+    expect(e.rig.group.getObjectByName('spiked_Stray')).toBeUndefined();
     const arm = e.rig.group.getObjectByName('Arm')!;
     expect(arm.children).toHaveLength(0);
     expect(e.rig.group.getObjectByName('Hips')).toBeDefined();
