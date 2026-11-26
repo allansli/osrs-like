@@ -1,0 +1,150 @@
+// Monster motion table (design 6.1.3, 6.5; plan M1, M1b).
+// Pure data: per model key either today's code-pose numbers or the names of the clips
+// for idle, walk, attack, hurt and death, the skeleton it stands on and an optional arm-swing scale.
+// No imports from three.
+
+export type MonsterSkeleton = 'biped' | 'dragon' | 'crawler';
+
+export type MonsterMotionClips = Record<string, string> & {
+  idle: string;
+  walk: string;
+  attack: string;
+  death: string;
+  hurt?: string;
+};
+
+export interface CodeAttackPose {
+  rightArmX?: number;
+  leftArmX?: number;
+  headX?: number;
+  headBase?: number;
+  headProgress?: number;
+  lWingBase?: number;
+  lWingProgress?: number;
+  rWingBase?: number;
+  rWingProgress?: number;
+  y: number;
+}
+
+export interface MonsterMotionRow {
+  skeleton: MonsterSkeleton;
+  bones: string[];
+  clips?: MonsterMotionClips;
+  anticipation?: number;
+  armSwingScale?: number;
+  codeAttack?: CodeAttackPose;
+}
+
+export const MONSTER_MOTION: Record<string, MonsterMotionRow> = {
+  goblin: {
+    skeleton: 'biped',
+    bones: [
+      'Hips',
+      'Torso',
+      'HeadGroup',
+      'LeftArmPivot',
+      'LeftElbowPivot',
+      'RightArmPivot',
+      'RightElbowPivot',
+      'LeftLegPivot',
+      'LeftKneePivot',
+      'LeftFoot',
+      'RightLegPivot',
+      'RightKneePivot',
+      'RightFoot'
+    ],
+    clips: {
+      idle: 'Idle',
+      walk: 'Walk',
+      attack: 'Slash',
+      death: 'Death'
+    },
+    anticipation: 0.25
+  },
+  chicken: {
+    skeleton: 'biped',
+    bones: [],
+    codeAttack: {
+      rightArmX: -1.45,
+      leftArmX: 0.58,
+      y: 0.1
+    }
+  },
+  goblin_archer: {
+    skeleton: 'biped',
+    bones: [],
+    codeAttack: {
+      rightArmX: -1.45,
+      leftArmX: 0.58,
+      y: 0.1
+    }
+  },
+  scorpion: {
+    skeleton: 'crawler',
+    bones: [],
+    codeAttack: {
+      rightArmX: -1.45,
+      leftArmX: 0.58,
+      y: 0.1
+    }
+  },
+  dark_wizard: {
+    skeleton: 'biped',
+    bones: [],
+    codeAttack: {
+      rightArmX: -1.65,
+      leftArmX: -1.45,
+      headX: -0.25,
+      y: 0.12
+    }
+  },
+  dark_ranger: {
+    skeleton: 'biped',
+    bones: [],
+    codeAttack: {
+      rightArmX: -1.45,
+      leftArmX: 0.58,
+      y: 0.1
+    }
+  },
+  hill_giant: {
+    skeleton: 'biped',
+    bones: [],
+    codeAttack: {
+      rightArmX: -1.8,
+      leftArmX: -1.8,
+      y: 0.22
+    }
+  },
+  moss_guardian: {
+    skeleton: 'biped',
+    bones: [],
+    codeAttack: {
+      rightArmX: -1.8,
+      leftArmX: -1.8,
+      y: 0.22
+    }
+  },
+  lesser_demon: {
+    skeleton: 'biped',
+    bones: [],
+    codeAttack: {
+      rightArmX: -1.45,
+      leftArmX: 0.58,
+      y: 0.1
+    }
+  },
+  elvarg_dragon: {
+    skeleton: 'dragon',
+    bones: [],
+    codeAttack: {
+      headBase: -0.35,
+      headProgress: 0.65,
+      lWingBase: 0.2,
+      lWingProgress: 0.55,
+      rWingBase: -0.2,
+      rWingProgress: -0.55,
+      y: 0.32
+    }
+  }
+};
