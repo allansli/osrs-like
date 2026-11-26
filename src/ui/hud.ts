@@ -4,8 +4,8 @@ import { weaponSpecial, adventureTracker, slayerCard, combatLevel } from '../sta
 import { ITEMS, TIER_COLORS, isStackableInBackpack, type ItemDef } from '../data/items';
 import { SKILLS_META, OSRS_XP_TABLE } from '../data/skills';
 import { PRAYERS, SPELLS, type SpellDef } from '../data/magic';
-import { keepCorrupt, legacyPreview, recoveryExit } from '../state/saveRecovery';
-import { readLegacy, SAVE_KEY } from '../state/save';
+import { keepCorrupt, legacyPreview, recoveryExit, LIMIT_BYTES } from '../state/saveRecovery';
+import { readLegacy, SAVE_KEY, type MigratedSave } from '../state/save';
 
 type PrayerDef = (typeof PRAYERS)[number];
 import {
@@ -505,16 +505,25 @@ export function hideItemTooltip(): void {
 
 export interface SaveRecoveryNoticeCallbacks {
   onNewGame: () => void;
-  onLoadOlder: (state: typeof STATE) => void;
+  onLoadOlder: (legacy: MigratedSave) => void;
 }
 
 let saveRecoveryWired = false;
 let currentSaveRecoveryCallbacks: SaveRecoveryNoticeCallbacks | null = null;
 let saveRecoveryAskOnceMoreNew = false;
 let saveRecoveryAskOnceMoreOlder = false;
+let saveRecoveryRaw = '';
+
+function keepFailedText(action: string): string {
+  return saveRecoveryRaw.length > LIMIT_BYTES
+    ? `This save is too large to keep a backup copy. Click ${action} again to proceed without a backup.`
+    : `Could not keep a backup copy. Click ${action} again to proceed without saving a backup.`;
+}
 
 export function showSaveRecoveryNotice(callbacks: SaveRecoveryNoticeCallbacks): void {
-  if (typeof document === 'undefined') return;
+  const raw = localStorage.getItem(SAVE_KEY);
+  if (raw === null) throw new Error(`save recovery notice opened but ${SAVE_KEY} is missing`);
+  saveRecoveryRaw = raw;
   currentSaveRecoveryCallbacks = callbacks;
   saveRecoveryAskOnceMoreNew = false;
   saveRecoveryAskOnceMoreOlder = false;
@@ -546,55 +555,54 @@ export function showSaveRecoveryNotice(callbacks: SaveRecoveryNoticeCallbacks): 
   if (!saveRecoveryWired) {
     saveRecoveryWired = true;
 
+    document.addEventListener('keydown', (ev) => {
+      if (ev.code === 'Escape' && modal.classList.contains('open')) ev.stopImmediatePropagation();
+    }, true);
+
     el('save-recovery-new-btn').addEventListener('click', () => {
-      const raw = localStorage.getItem(SAVE_KEY) ?? '';
-      const result = keepCorrupt(localStorage, raw);
+      const result = keepCorrupt(localStorage, saveRecoveryRaw);
       if (!recoveryExit('new', result)) {
         if (!saveRecoveryAskOnceMoreNew) {
           saveRecoveryAskOnceMoreNew = true;
-          warn.textContent = 'Could not keep a backup copy. Click Start New Game again to proceed without saving a backup.';
+          warn.textContent = keepFailedText('Start New Game');
           return;
         }
       }
       saveRecoveryAskOnceMoreNew = false;
       modal.classList.remove('open');
-      currentSaveRecoveryCallbacks?.onNewGame();
+      currentSaveRecoveryCallbacks!.onNewGame();
       updateAllUI();
     });
 
     olderBtn.addEventListener('click', () => {
-      const raw = localStorage.getItem(SAVE_KEY) ?? '';
-      const result = keepCorrupt(localStorage, raw);
+      const legacy = readLegacy(localStorage);
+      if (!legacy) throw new Error('save recovery: Load Older Save clicked but no legacy save can be read');
+      const result = keepCorrupt(localStorage, saveRecoveryRaw);
       if (!recoveryExit('older', result)) {
         if (!saveRecoveryAskOnceMoreOlder) {
           saveRecoveryAskOnceMoreOlder = true;
-          warn.textContent = 'Could not keep a backup copy. Click Load Older Save again to proceed without saving a backup.';
+          warn.textContent = keepFailedText('Load Older Save');
           return;
         }
       }
       saveRecoveryAskOnceMoreOlder = false;
       modal.classList.remove('open');
-      const legacy = readLegacy(localStorage);
-      if (legacy) {
-        currentSaveRecoveryCallbacks?.onLoadOlder(legacy.state);
-      }
+      currentSaveRecoveryCallbacks!.onLoadOlder(legacy);
       updateAllUI();
     });
 
     el('save-recovery-copy-btn').addEventListener('click', () => {
-      const raw = localStorage.getItem(SAVE_KEY) ?? '';
+      const raw = saveRecoveryRaw;
       const showFallback = () => {
         fallbackBox.hidden = false;
         fallbackText.value = raw;
         fallbackText.readOnly = true;
-        try {
-          fallbackText.select();
-        } catch {}
+        fallbackText.select();
         copyStatus.textContent = 'Save text shown below. Copy it manually:';
       };
 
       try {
-        if (typeof navigator !== 'undefined' && navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+        if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
           navigator.clipboard.writeText(raw).then(() => {
             copyStatus.textContent = 'Save text copied to clipboard.';
           }).catch(() => {

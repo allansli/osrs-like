@@ -3,10 +3,11 @@ import { SFX } from './audio';
 import { spawnLevelUpFireworks } from './vfx';
 import { STATE, applyState, createNewGameState } from '../state/gameState';
 import { STARTER_ARRIVAL } from '../state/quests';
-import { readSave, writeSave, SAVE_KEY, LEGACY_SAVE_KEYS, sanitizeCam } from '../state/save';
+import { readSave, writeSave, type MigratedSave, SAVE_KEY, LEGACY_SAVE_KEYS, sanitizeCam } from '../state/save';
 import { matchCheat, matchToolsCode, applySkillsPlus10, applyGold200k } from '../state/cheats';
 import { AGGRO_GRACE_MS } from '../state/monsterAi';
-import { el, addChatMessage, showBanner, updateAllUI, showSaveRecoveryNotice } from '../ui/hud';
+import { el, addChatMessage, showBanner, updateAllUI, showSaveRecoveryNotice, applyLoadedStateToHud } from '../ui/hud';
+import { rebuildPlayerEquipmentMeshes } from './playerMesh';
 import { closeModals } from '../ui/playerActions';
 
 let resetting = false;
@@ -15,9 +16,7 @@ export let saveHold = false;
 export function saveGameState(): void {
   if (resetting) return;
   if (saveHold) {
-    try {
-      el('save-status-btn').textContent = 'Not saving';
-    } catch {}
+    el('save-status-btn').textContent = 'Not saving';
     return;
   }
   try {
@@ -46,46 +45,53 @@ export function saveGameState(): void {
   }
 }
 
+function applyPoseAndCam(migrated: MigratedSave): void {
+    if (migrated.pose && player && player.pos) {
+      player.pos.x = migrated.pose.x;
+      player.pos.z = migrated.pose.z;
+      if (typeof migrated.pose.yaw === 'number') player.yaw = migrated.pose.yaw;
+    }
+    if (migrated.cam && camState) {
+      const cam = sanitizeCam(migrated.cam);
+      camState.yaw = cam.yaw;
+      camState.manualOffset = cam.manualOffset;
+      camState.pitch = cam.pitch;
+      camState.distance = cam.distance;
+    }
+}
+
+function holdAndNotify(): void {
+  showSaveRecoveryNotice({
+    onNewGame: () => {
+      startNewGame();
+      saveHold = false;
+    },
+    onLoadOlder: (legacy) => {
+      applyState(STATE, legacy.state);
+      applyPoseAndCam(legacy);
+      rebuildPlayerEquipmentMeshes();
+      applyLoadedStateToHud();
+      saveHold = false;
+    }
+  });
+  saveHold = true;
+  el('save-status-btn').textContent = 'Not saving';
+}
+
 export function loadGameState(): boolean {
   G.aggroGraceUntil = performance.now() + AGGRO_GRACE_MS;
   try {
     const migrated = readSave(localStorage);
     if (!migrated) return false;
     if (migrated.corrupt) {
-      saveHold = true;
-      try {
-        el('save-status-btn').textContent = 'Not saving';
-      } catch {}
-      showSaveRecoveryNotice({
-        onNewGame: () => {
-          startNewGame();
-          saveHold = false;
-        },
-        onLoadOlder: (legacyState) => {
-          applyState(STATE, legacyState);
-          saveHold = false;
-        }
-      });
+      holdAndNotify();
       return false;
     }
     try {
       applyState(STATE, migrated.state);
     } catch (e) {
       console.error(e);
-      saveHold = true;
-      try {
-        el('save-status-btn').textContent = 'Not saving';
-      } catch {}
-      showSaveRecoveryNotice({
-        onNewGame: () => {
-          startNewGame();
-          saveHold = false;
-        },
-        onLoadOlder: (legacyState) => {
-          applyState(STATE, legacyState);
-          saveHold = false;
-        }
-      });
+      holdAndNotify();
       return false;
     }
 
@@ -109,18 +115,7 @@ export function loadGameState(): boolean {
         }
       }
     }
-    if (migrated.pose && player && player.pos) {
-      player.pos.x = migrated.pose.x;
-      player.pos.z = migrated.pose.z;
-      if (typeof migrated.pose.yaw === 'number') player.yaw = migrated.pose.yaw;
-    }
-    if (migrated.cam && camState) {
-      const cam = sanitizeCam(migrated.cam);
-      camState.yaw = cam.yaw;
-      camState.manualOffset = cam.manualOffset;
-      camState.pitch = cam.pitch;
-      camState.distance = cam.distance;
-    }
+    applyPoseAndCam(migrated);
     return true;
   } catch (e) {
     return false;
@@ -132,6 +127,10 @@ export function startNewGame(): void {
 }
 
 export function manualSaveToast(): void {
+  if (saveHold) {
+    addChatMessage('Not saved: saving is paused until the save recovery notice is answered.', 'combat');
+    return;
+  }
   saveGameState();
   SFX.coin();
   addChatMessage('Progress & state saved to <b>localStorage</b> (Skills, XP, GP, Inventory, 10-Slot Equipment, Vitals, Prayers & World Coordinates).', 'lvlup');
