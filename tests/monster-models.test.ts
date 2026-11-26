@@ -63,7 +63,7 @@ describe('kits', () => {
     const bones = bonesOf(key);
     const children = Object.entries(manifest.nodes).filter(([, n]) => n.parent === `Kit_${def.kit}`).map(([name]) => name);
     expect(children.length, `children of Kit_${def.kit}`).toBeGreaterThan(0);
-    for (const child of children) expect(bones.has(child.replace(`${key}_`, '')), `${child} names a bone of ${key}`).toBe(true);
+    for (const child of children) expect(bones.has(child), `${child} names a bone of ${key}`).toBe(true);
   });
 
   it('the two variant rows name their kits', () => {
