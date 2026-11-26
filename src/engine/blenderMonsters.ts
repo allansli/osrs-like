@@ -292,8 +292,15 @@ function attachMonsterGltfAnimator(
   let cached = modelClipsCache.get(modelKey);
   if (!cached) {
     // The library's tracks carry the prefix of the figure that authored it (the model key), never a body's (design 6.1).
-    const stripped = stripClipPrefix(monstersGltf.animations, modelKey);
-    const clonedClips = stripped.map((c) => c.clone());
+    // monsters.glb holds more than one library (the dragon's, the scorpion's; plan M3b): a figure takes only the clips
+    // whose every track is on its own bones, and a clip named `<model key>_<clip>` (a name another library took) plays as `<clip>`.
+    const prefix = `${modelKey}_`;
+    const own = monstersGltf.animations.filter((c) => c.tracks.length > 0 && c.tracks.every((t) => t.name.startsWith(prefix)));
+    const clonedClips = stripClipPrefix(own, modelKey).map((c) => {
+      const clone = c.clone();
+      if (clone.name.startsWith(prefix)) clone.name = clone.name.slice(prefix.length);
+      return clone;
+    });
     cached = { clips: clonedClips, walkLegRatio: 1.0 };
     modelClipsCache.set(modelKey, cached);
   }
