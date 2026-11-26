@@ -3370,10 +3370,10 @@
     }
   },
   "budget": {
-    "triangles": 60334,
+    "triangles": 60110,
     "meshes": 50,
     "materials": 34,
-    "rawBytes": 2323340,
+    "rawBytes": 2312929,
     "brotliBytes": 1270000
   },
   "figures": {
@@ -3472,7 +3472,7 @@
       "triangles": 1200,
       "meshes": 4,
       "materials": 3,
-      "rawBytes": 47900,
+      "rawBytes": 37596,
       "brotliBytes": 20000
     }
   }

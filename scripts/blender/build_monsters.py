@@ -2335,8 +2335,8 @@ def build_dark_wizard(grid_pos: tuple[float, float, float], mats: dict):
 
 # --- 5b. Kit_cinder_adept: the Cinder Adept's kit on the wizard (Stage 6 plan MK1, design 7.5) -------------------
 # The wizard plus rigid pieces of its own, each one mesh named cinder_adept_<Bone> after the wizard bone it
-# rides on, as K1's and K2's: a deep hood (HeadGroup) that swallows the wizard's hat, brim and crown, ash
-# grey outside and lined with ember inside, its mouth open on the face and the violet glints; a brazier on
+# rides on, as K1's and K2's: a fitted hood (HeadGroup) round the skull, worn under the wizard's hat, ash
+# grey outside and lined with ember at its mouth, which is open on the face, the glints and the beard; a brazier on
 # the staff head (WeaponPivot) whose iron bowl swallows the wizard's prongs and purple orb, with four tines
 # and an ember-lit rim; the fire standing in it (RightHand, which no clip turns against WeaponPivot: same
 # joint, one glow material a piece); and an ember held over the open left hand (LeftHand). The hood is
@@ -2379,18 +2379,20 @@ def build_cinder_adept_kit():
         return add_lathe(name, None, mat, [(0.0, r, r), (length * 0.5, r * 0.55, r * 0.55), (length, 0.004, 0.004)],
                          segs=4, tx=at.x, ty=at.y, tz=at.z, smooth=False, **aim(d))
 
-    # The hood: a deep faceted cowl round the head that swallows the hat (brim 0.48 by 0.46 round
-    # (0, 2.0, -0.12), crown bending back to its tip at (0.10, 2.47, 0.31)), falling to a short mantle on
-    # the shoulders, its mouth cut open over the face and the glints (z -0.26 at y 1.92) below the brim. A shell
-    # 0.03 thick (solidify, rims filled): ash grey outside, ember on every face that looks into the hood
-    # A bell, not a ball: widest at the brim and the shoulders, then a cone to a peak that droops back
-    sections = [(1.60, 0.60, 0.56, 0.0, 0.0), (1.84, 0.53, 0.53, 0.0, -0.06), (1.95, 0.515, 0.53, 0.0, -0.08), (2.04, 0.505, 0.53, 0.0, -0.10),
-                (2.12, 0.45, 0.49, 0.0, -0.08), (2.22, 0.34, 0.40, 0.0, -0.05), (2.34, 0.22, 0.29, 0.0, 0.02), (2.48, 0.12, 0.20, 0.05, 0.15),
-                (2.58, 0.05, 0.08, 0.06, 0.30), (2.64, 0.01, 0.01, 0.06, 0.40)]
+    # The hood: a fitted cowl worn under the wizard's hat. It wraps the skull (radii 0.13, 0.16, 0.15 round
+    # (0, 1.90, -0.13)) a few centimetres out, stands clear of the high collar behind the head (top ring 0.26
+    # by 0.21 at y 1.86) and falls in a short mantle over the shoulder balls (±0.36 at y 1.62). Its open top
+    # ring stops at y 1.995, under the hat's brim (y 2.00 to 2.05, 0.48 across), so the brim covers it and the
+    # hat sits on the hood. The mouth is cut where the face and beard are: faces with three z < -0.28 (the three front columns) between
+    # the hem and y 1.97; the band from 1.97 to 1.995 stays whole as a brow under the brim. A shell 0.03
+    # thick (solidify, rims filled): ash grey outside, ember only on the inner faces of the front half, which
+    # the mouth shows
+    sections = [(1.56, 0.41, 0.33, 0.0, -0.02), (1.68, 0.39, 0.32, 0.0, -0.03), (1.80, 0.31, 0.30, 0.0, -0.06),
+                (1.90, 0.26, 0.27, 0.0, -0.09), (1.97, 0.20, 0.22, 0.0, -0.11), (1.995, 0.185, 0.21, 0.0, -0.12)]
     hood = add_lathe("cad_hood", None, robe, sections, segs=14, cap_ends=False, smooth=False)
     bm = bmesh.new()
     bm.from_mesh(hood.data)
-    mouth = [f for f in bm.faces if f.calc_center_median().y > 0.30 and 1.60 < f.calc_center_median().z < 1.98]  # three z < -0.30
+    mouth = [f for f in bm.faces if f.calc_center_median().y > 0.28 and f.calc_center_median().z < 1.97]  # three z < -0.28: the three front columns
     bmesh.ops.delete(bm, geom=mouth, context="FACES")
     bm.to_mesh(hood.data)
     bm.free()
@@ -2404,7 +2406,7 @@ def build_cinder_adept_kit():
     for poly in hood.data.polygons:
         c = Vector(poly.center)
         inward = Vector((-c.x, 0.08 - c.y, 0.0))  # toward the hood's axis at three z -0.08 (Blender y is -three z)
-        if poly.normal.dot(inward) > 0.0:
+        if c.y > 0.05 and poly.normal.dot(inward) > 0.0:  # the front half only (three z < -0.05)
             for li in poly.loop_indices:
                 tint[li].color = lining
     parts["HeadGroup"].append(hood)
