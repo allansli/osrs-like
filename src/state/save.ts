@@ -180,22 +180,7 @@ export interface StorageLike {
 
 const CORRUPT_KEY = 'gielinor_hero_save_v1_corrupt';
 
-export function readSave(storage: StorageLike, now: number = Date.now()): MigratedSave | null {
-  const mainRaw = storage.getItem(SAVE_KEY);
-  if (mainRaw) {
-    try {
-      const parsed = JSON.parse(mainRaw);
-      return migrateLegacySave(parsed, SAVE_KEY, now);
-    } catch {
-      if (!storage.getItem(CORRUPT_KEY)) {
-        storage.setItem(CORRUPT_KEY, mainRaw);
-      }
-      const corrupt = migrateLegacySave({}, null, now);
-      corrupt.corrupt = true;
-      return corrupt;
-    }
-  }
-
+export function readLegacy(storage: StorageLike, now: number = Date.now()): MigratedSave | null {
   for (const key of LEGACY_SAVE_KEYS) {
     const raw = storage.getItem(key);
     if (!raw) continue;
@@ -206,6 +191,29 @@ export function readSave(storage: StorageLike, now: number = Date.now()): Migrat
     }
   }
   return null;
+}
+
+export function readSave(storage: StorageLike, now: number = Date.now()): MigratedSave | null {
+  const mainRaw = storage.getItem(SAVE_KEY);
+  if (mainRaw) {
+    try {
+      const parsed = JSON.parse(mainRaw);
+      return migrateLegacySave(parsed, SAVE_KEY, now);
+    } catch {
+      if (!storage.getItem(CORRUPT_KEY)) {
+        try {
+          storage.setItem(CORRUPT_KEY, mainRaw);
+        } catch {
+          // ignore write error
+        }
+      }
+      const corrupt = migrateLegacySave({}, null, now);
+      corrupt.corrupt = true;
+      return corrupt;
+    }
+  }
+
+  return readLegacy(storage, now);
 }
 
 export function writeSave(storage: StorageLike, state: GameState, pose: SavedPose | null, cam: SavedCam | null): void {
