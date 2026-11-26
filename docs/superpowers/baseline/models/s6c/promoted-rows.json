@@ -1,0 +1,3238 @@
+{
+ "before": {
+  "errs": [],
+  "rows": [
+   {
+    "name": "P1-noon",
+    "row": {
+     "place": "lumbridge",
+     "yaw": 1.571,
+     "pitch": 0.2,
+     "distance": 5.4
+    },
+    "monsters": null,
+    "perf": [
+     {
+      "colour": 297,
+      "shadow": 342,
+      "frames": 60,
+      "hud": "638 calls \u2022 505k tris",
+      "benchMs": 34.032
+     },
+     {
+      "colour": 296,
+      "shadow": 341,
+      "frames": 25,
+      "hud": "637 calls \u2022 505k tris",
+      "benchMs": 37.759
+     },
+     {
+      "colour": 297,
+      "shadow": 338,
+      "frames": 59,
+      "hud": "634 calls \u2022 500k tris",
+      "benchMs": 10.607
+     }
+    ],
+    "after": null
+   },
+   {
+    "name": "camp-goblin",
+    "row": {
+     "place": "three_kettle_camp",
+     "yaw": 0,
+     "pitch": 0.3,
+     "distance": 8.5
+    },
+    "monsters": [
+     {
+      "pos": [
+       13.2,
+       4.2
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 3
+     },
+     {
+      "pos": [
+       13.6,
+       15.9
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 3
+     },
+     {
+      "pos": [
+       16.9,
+       19.8
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 3
+     },
+     {
+      "pos": [
+       7.1,
+       18.1
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 3
+     },
+     {
+      "pos": [
+       19.9,
+       11.1
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 3
+     }
+    ],
+    "perf": [
+     {
+      "colour": 178,
+      "shadow": 338,
+      "frames": 61,
+      "hud": "516 calls \u2022 446k tris",
+      "benchMs": 24.85
+     },
+     {
+      "colour": 178,
+      "shadow": 339,
+      "frames": 22,
+      "hud": "517 calls \u2022 446k tris",
+      "benchMs": 34.259
+     },
+     {
+      "colour": 176,
+      "shadow": 339,
+      "frames": 24,
+      "hud": "515 calls \u2022 442k tris",
+      "benchMs": 30.993
+     }
+    ],
+    "after": [
+     {
+      "pos": [
+       14.6,
+       6.3
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 3
+     },
+     {
+      "pos": [
+       15.7,
+       13.9
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 3
+     },
+     {
+      "pos": [
+       17.4,
+       16.2
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 3
+     },
+     {
+      "pos": [
+       9.3,
+       21.2
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 3
+     },
+     {
+      "pos": [
+       22.6,
+       7.6
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 3
+     }
+    ]
+   },
+   {
+    "name": "scorpion",
+    "row": {
+     "x": 45.64251250576818,
+     "z": 46.05288311660272,
+     "yaw": 3.142,
+     "pitch": 0.5,
+     "distance": 7
+    },
+    "monsters": [
+     {
+      "pos": [
+       44.9,
+       40.6
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Death",
+       "Idle",
+       "Walk",
+       "Strike"
+      ],
+      "skinned": 3
+     },
+     {
+      "pos": [
+       51.5,
+       36.2
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Death",
+       "Idle",
+       "Walk",
+       "Strike"
+      ],
+      "skinned": 3
+     },
+     {
+      "pos": [
+       48.2,
+       49
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Death",
+       "Idle",
+       "Walk",
+       "Strike"
+      ],
+      "skinned": 3
+     },
+     {
+      "pos": [
+       89.1,
+       35.8
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Death",
+       "Idle",
+       "Walk",
+       "Strike"
+      ],
+      "skinned": 3
+     },
+     {
+      "pos": [
+       98.2,
+       38.9
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Death",
+       "Idle",
+       "Walk",
+       "Strike"
+      ],
+      "skinned": 3
+     }
+    ],
+    "perf": [
+     {
+      "colour": 289,
+      "shadow": 188,
+      "frames": 60,
+      "hud": "479 calls \u2022 451k tris",
+      "benchMs": 24.874
+     },
+     {
+      "colour": 293,
+      "shadow": 190,
+      "frames": 22,
+      "hud": "483 calls \u2022 454k tris",
+      "benchMs": 23.161
+     },
+     {
+      "colour": 293,
+      "shadow": 190,
+      "frames": 58,
+      "hud": "484 calls \u2022 457k tris",
+      "benchMs": 33.406
+     }
+    ],
+    "after": [
+     {
+      "pos": [
+       44.1,
+       41.8
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Death",
+       "Idle",
+       "Walk",
+       "Strike"
+      ],
+      "skinned": 3
+     },
+     {
+      "pos": [
+       54.3,
+       42
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Death",
+       "Idle",
+       "Walk",
+       "Strike"
+      ],
+      "skinned": 3
+     },
+     {
+      "pos": [
+       46.2,
+       50.4
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Death",
+       "Idle",
+       "Walk",
+       "Strike"
+      ],
+      "skinned": 3
+     },
+     {
+      "pos": [
+       90.9,
+       36.5
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Death",
+       "Idle",
+       "Walk",
+       "Strike"
+      ],
+      "skinned": 3
+     },
+     {
+      "pos": [
+       96.4,
+       40.2
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Death",
+       "Idle",
+       "Walk",
+       "Strike"
+      ],
+      "skinned": 3
+     }
+    ]
+   },
+   {
+    "name": "wizard",
+    "row": {
+     "x": 48.325404308261255,
+     "z": -16.42627243539967,
+     "yaw": 3.142,
+     "pitch": 0.4,
+     "distance": 6
+    },
+    "monsters": [
+     {
+      "pos": [
+       46.1,
+       -24
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 4
+     },
+     {
+      "pos": [
+       51.4,
+       -33.3
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 4
+     },
+     {
+      "pos": [
+       41.4,
+       -31.6
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 4
+     }
+    ],
+    "perf": [
+     {
+      "colour": 79,
+      "shadow": 213,
+      "frames": 60,
+      "hud": "292 calls \u2022 337k tris",
+      "benchMs": 9.863
+     },
+     {
+      "colour": 79,
+      "shadow": 214,
+      "frames": 53,
+      "hud": "292 calls \u2022 337k tris",
+      "benchMs": 8.659
+     },
+     {
+      "colour": 79,
+      "shadow": 213,
+      "frames": 54,
+      "hud": "295 calls \u2022 341k tris",
+      "benchMs": 3.999
+     }
+    ],
+    "after": [
+     {
+      "pos": [
+       48.5,
+       -23.8
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 4
+     },
+     {
+      "pos": [
+       48.3,
+       -27.2
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 4
+     },
+     {
+      "pos": [
+       42.7,
+       -31.7
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 4
+     }
+    ]
+   },
+   {
+    "name": "giant",
+    "row": {
+     "x": 74.81601940501072,
+     "z": 25.686461660986815,
+     "yaw": 3.142,
+     "pitch": 0.4,
+     "distance": 8
+    },
+    "monsters": [
+     {
+      "pos": [
+       71.4,
+       14
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 4
+     },
+     {
+      "pos": [
+       82.3,
+       18.1
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 4
+     },
+     {
+      "pos": [
+       71.5,
+       19.9
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 4
+     },
+     {
+      "pos": [
+       80.1,
+       28.9
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 4
+     }
+    ],
+    "perf": [
+     {
+      "colour": 164,
+      "shadow": 145,
+      "frames": 60,
+      "hud": "309 calls \u2022 351k tris",
+      "benchMs": 24.692
+     },
+     {
+      "colour": 163,
+      "shadow": 145,
+      "frames": 36,
+      "hud": "308 calls \u2022 351k tris",
+      "benchMs": 31.568
+     },
+     {
+      "colour": 162,
+      "shadow": 145,
+      "frames": 25,
+      "hud": "307 calls \u2022 350k tris",
+      "benchMs": 28.618
+     }
+    ],
+    "after": [
+     {
+      "pos": [
+       73,
+       13.9
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 4
+     },
+     {
+      "pos": [
+       82.6,
+       15.9
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 4
+     },
+     {
+      "pos": [
+       72.7,
+       20.1
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 4
+     },
+     {
+      "pos": [
+       84.9,
+       26.6
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 4
+     }
+    ]
+   },
+   {
+    "name": "guardian",
+    "row": {
+     "x": -96.67410615070698,
+     "z": -17.668103052391064,
+     "yaw": 3.142,
+     "pitch": 0.4,
+     "distance": 8
+    },
+    "monsters": [
+     {
+      "pos": [
+       -97.6,
+       -24.9
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 4
+     },
+     {
+      "pos": [
+       -98.4,
+       -33.9
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 4
+     },
+     {
+      "pos": [
+       -73,
+       -59.3
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 4
+     },
+     {
+      "pos": [
+       -77.2,
+       -53.7
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 4
+     }
+    ],
+    "perf": [
+     {
+      "colour": 124,
+      "shadow": 114,
+      "frames": 60,
+      "hud": "238 calls \u2022 261k tris",
+      "benchMs": 9.28
+     },
+     {
+      "colour": 124,
+      "shadow": 114,
+      "frames": 49,
+      "hud": "238 calls \u2022 261k tris",
+      "benchMs": 9.309
+     },
+     {
+      "colour": 124,
+      "shadow": 114,
+      "frames": 49,
+      "hud": "238 calls \u2022 261k tris",
+      "benchMs": 7.947
+     }
+    ],
+    "hidden": 5,
+    "after": [
+     {
+      "pos": [
+       -100.4,
+       -25.9
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 4
+     },
+     {
+      "pos": [
+       -101.7,
+       -32.4
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 4
+     },
+     {
+      "pos": [
+       -69.4,
+       -59.6
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 4
+     },
+     {
+      "pos": [
+       -76.3,
+       -54.4
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 4
+     }
+    ]
+   }
+  ],
+  "renderer": "ANGLE (Microsoft Corporation, D3D12 (NVIDIA GeForce RTX 4070 Laptop GPU), OpenGL 4.6)"
+ },
+ "after": {
+  "errs": [],
+  "rows": [
+   {
+    "name": "P1-noon",
+    "row": {
+     "place": "lumbridge",
+     "yaw": 1.571,
+     "pitch": 0.2,
+     "distance": 5.4
+    },
+    "monsters": null,
+    "perf": [
+     {
+      "colour": 324,
+      "shadow": 350,
+      "frames": 60,
+      "hud": "674 calls \u2022 536k tris",
+      "benchMs": 38.429
+     },
+     {
+      "colour": 324,
+      "shadow": 350,
+      "frames": 31,
+      "hud": "674 calls \u2022 536k tris",
+      "benchMs": 48.462
+     },
+     {
+      "colour": 324,
+      "shadow": 349,
+      "frames": 22,
+      "hud": "673 calls \u2022 535k tris",
+      "benchMs": 48.648
+     }
+    ],
+    "after": null
+   },
+   {
+    "name": "camp-goblin",
+    "row": {
+     "place": "three_kettle_camp",
+     "yaw": 0,
+     "pitch": 0.3,
+     "distance": 8.5
+    },
+    "monsters": [
+     {
+      "pos": [
+       11.8,
+       4.1
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 3
+     },
+     {
+      "pos": [
+       17.2,
+       14.6
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 3
+     },
+     {
+      "pos": [
+       20.2,
+       17.5
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 3
+     },
+     {
+      "pos": [
+       7.9,
+       18.1
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 3
+     },
+     {
+      "pos": [
+       18.9,
+       8.3
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 3
+     }
+    ],
+    "perf": [
+     {
+      "colour": 181,
+      "shadow": 339,
+      "frames": 60,
+      "hud": "518 calls \u2022 470k tris",
+      "benchMs": 23.18
+     },
+     {
+      "colour": 180,
+      "shadow": 340,
+      "frames": 24,
+      "hud": "519 calls \u2022 470k tris",
+      "benchMs": 34.049
+     },
+     {
+      "colour": 179,
+      "shadow": 345,
+      "frames": 27,
+      "hud": "524 calls \u2022 470k tris",
+      "benchMs": 30.683
+     }
+    ],
+    "after": [
+     {
+      "pos": [
+       10.9,
+       3
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 3
+     },
+     {
+      "pos": [
+       16.6,
+       14.1
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 3
+     },
+     {
+      "pos": [
+       17.8,
+       16.6
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 3
+     },
+     {
+      "pos": [
+       8.2,
+       22.4
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 3
+     },
+     {
+      "pos": [
+       18.6,
+       9.7
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 3
+     }
+    ]
+   },
+   {
+    "name": "scorpion",
+    "row": {
+     "x": 43.26507477432139,
+     "z": 50.328166100889106,
+     "yaw": 3.142,
+     "pitch": 0.5,
+     "distance": 7
+    },
+    "monsters": [
+     {
+      "pos": [
+       41.5,
+       44.6
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Death",
+       "Idle",
+       "Walk",
+       "Strike"
+      ],
+      "skinned": 3
+     },
+     {
+      "pos": [
+       49.5,
+       38.8
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Death",
+       "Idle",
+       "Walk",
+       "Strike"
+      ],
+      "skinned": 3
+     },
+     {
+      "pos": [
+       45.1,
+       47.6
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Death",
+       "Idle",
+       "Walk",
+       "Strike"
+      ],
+      "skinned": 3
+     },
+     {
+      "pos": [
+       89.1,
+       33.6
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Death",
+       "Idle",
+       "Walk",
+       "Strike"
+      ],
+      "skinned": 3
+     },
+     {
+      "pos": [
+       93.3,
+       38.4
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Death",
+       "Idle",
+       "Walk",
+       "Strike"
+      ],
+      "skinned": 3
+     }
+    ],
+    "perf": [
+     {
+      "colour": 314,
+      "shadow": 187,
+      "frames": 60,
+      "hud": "501 calls \u2022 467k tris",
+      "benchMs": 26.104
+     },
+     {
+      "colour": 314,
+      "shadow": 187,
+      "frames": 27,
+      "hud": "501 calls \u2022 467k tris",
+      "benchMs": 28.135
+     },
+     {
+      "colour": 317,
+      "shadow": 191,
+      "frames": 25,
+      "hud": "508 calls \u2022 484k tris",
+      "benchMs": 31.717
+     }
+    ],
+    "after": [
+     {
+      "pos": [
+       45.9,
+       43.8
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Death",
+       "Idle",
+       "Walk",
+       "Strike"
+      ],
+      "skinned": 3
+     },
+     {
+      "pos": [
+       53.2,
+       36.1
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Death",
+       "Idle",
+       "Walk",
+       "Strike"
+      ],
+      "skinned": 3
+     },
+     {
+      "pos": [
+       49.2,
+       46.5
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Death",
+       "Idle",
+       "Walk",
+       "Strike"
+      ],
+      "skinned": 3
+     },
+     {
+      "pos": [
+       85.6,
+       33.5
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Death",
+       "Idle",
+       "Walk",
+       "Strike"
+      ],
+      "skinned": 3
+     },
+     {
+      "pos": [
+       95,
+       40.4
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Death",
+       "Idle",
+       "Walk",
+       "Strike"
+      ],
+      "skinned": 3
+     }
+    ]
+   },
+   {
+    "name": "wizard",
+    "row": {
+     "x": 44.80588533920872,
+     "z": -16.96988595384281,
+     "yaw": 3.142,
+     "pitch": 0.4,
+     "distance": 6
+    },
+    "monsters": [
+     {
+      "pos": [
+       44.9,
+       -22.9
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 4
+     },
+     {
+      "pos": [
+       50.9,
+       -29.8
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 4
+     },
+     {
+      "pos": [
+       41.9,
+       -31
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 4
+     }
+    ],
+    "perf": [
+     {
+      "colour": 96,
+      "shadow": 242,
+      "frames": 60,
+      "hud": "338 calls \u2022 343k tris",
+      "benchMs": 16.087
+     },
+     {
+      "colour": 96,
+      "shadow": 244,
+      "frames": 60,
+      "hud": "340 calls \u2022 348k tris",
+      "benchMs": 21.576
+     },
+     {
+      "colour": 96,
+      "shadow": 245,
+      "frames": 57,
+      "hud": "341 calls \u2022 349k tris",
+      "benchMs": 22.065
+     }
+    ],
+    "after": [
+     {
+      "pos": [
+       44,
+       -21.7
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 4
+     },
+     {
+      "pos": [
+       51.9,
+       -29.6
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 4
+     },
+     {
+      "pos": [
+       43,
+       -31.7
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 4
+     }
+    ]
+   },
+   {
+    "name": "giant",
+    "row": {
+     "x": 74.18804371792531,
+     "z": 21.157590280958487,
+     "yaw": 3.142,
+     "pitch": 0.4,
+     "distance": 8
+    },
+    "monsters": [
+     {
+      "pos": [
+       76,
+       14.5
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 4
+     },
+     {
+      "pos": [
+       81.1,
+       16
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 4
+     },
+     {
+      "pos": [
+       74,
+       22.1
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 4
+     },
+     {
+      "pos": [
+       82.1,
+       27.3
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 4
+     }
+    ],
+    "perf": [
+     {
+      "colour": 184,
+      "shadow": 169,
+      "frames": 60,
+      "hud": "351 calls \u2022 376k tris",
+      "benchMs": 30.881
+     },
+     {
+      "colour": 184,
+      "shadow": 167,
+      "frames": 37,
+      "hud": "351 calls \u2022 376k tris",
+      "benchMs": 37.217
+     },
+     {
+      "colour": 184,
+      "shadow": 167,
+      "frames": 22,
+      "hud": "351 calls \u2022 376k tris",
+      "benchMs": 34.29
+     }
+    ],
+    "after": [
+     {
+      "pos": [
+       74.4,
+       13.2
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 4
+     },
+     {
+      "pos": [
+       82.8,
+       17.9
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 4
+     },
+     {
+      "pos": [
+       73,
+       23
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 4
+     },
+     {
+      "pos": [
+       81.4,
+       31.2
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 4
+     }
+    ]
+   },
+   {
+    "name": "guardian",
+    "row": {
+     "x": -100.46124675891204,
+     "z": -17.02949084622982,
+     "yaw": 3.142,
+     "pitch": 0.4,
+     "distance": 8
+    },
+    "monsters": [
+     {
+      "pos": [
+       -99.4,
+       -25.8
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 3
+     },
+     {
+      "pos": [
+       -99.3,
+       -33.8
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 3
+     },
+     {
+      "pos": [
+       -68.9,
+       -57.4
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 3
+     },
+     {
+      "pos": [
+       -77.3,
+       -53.8
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 3
+     }
+    ],
+    "perf": [
+     {
+      "colour": 112,
+      "shadow": 110,
+      "frames": 60,
+      "hud": "222 calls \u2022 257k tris",
+      "benchMs": 8.53
+     },
+     {
+      "colour": 112,
+      "shadow": 110,
+      "frames": 46,
+      "hud": "222 calls \u2022 257k tris",
+      "benchMs": 5.783
+     },
+     {
+      "colour": 112,
+      "shadow": 110,
+      "frames": 48,
+      "hud": "222 calls \u2022 257k tris",
+      "benchMs": 5.867
+     }
+    ],
+    "hidden": 7,
+    "after": [
+     {
+      "pos": [
+       -99.6,
+       -26.2
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 3
+     },
+     {
+      "pos": [
+       -100.9,
+       -36
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 3
+     },
+     {
+      "pos": [
+       -72.4,
+       -58.4
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 3
+     },
+     {
+      "pos": [
+       -77.6,
+       -52.8
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 3
+     }
+    ]
+   }
+  ],
+  "renderer": "ANGLE (Microsoft Corporation, D3D12 (NVIDIA GeForce RTX 4070 Laptop GPU), OpenGL 4.6)"
+ },
+ "marrow": {
+  "errs": [],
+  "rows": [
+   {
+    "name": "P1-noon",
+    "row": {
+     "place": "lumbridge",
+     "yaw": 1.571,
+     "pitch": 0.2,
+     "distance": 5.4
+    },
+    "monsters": null,
+    "perf": [
+     {
+      "colour": 324,
+      "shadow": 349,
+      "frames": 60,
+      "hud": "673 calls \u2022 536k tris",
+      "benchMs": 36.035
+     },
+     {
+      "colour": 324,
+      "shadow": 350,
+      "frames": 53,
+      "hud": "674 calls \u2022 537k tris",
+      "benchMs": 11.154
+     },
+     {
+      "colour": 324,
+      "shadow": 349,
+      "frames": 28,
+      "hud": "673 calls \u2022 536k tris",
+      "benchMs": 50.558
+     }
+    ],
+    "after": null
+   },
+   {
+    "name": "camp-goblin",
+    "row": {
+     "place": "three_kettle_camp",
+     "yaw": 0,
+     "pitch": 0.3,
+     "distance": 8.5
+    },
+    "monsters": [
+     {
+      "pos": [
+       12,
+       3.7
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 3
+     },
+     {
+      "pos": [
+       17.1,
+       12.2
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 3
+     },
+     {
+      "pos": [
+       20.4,
+       15.7
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 3
+     },
+     {
+      "pos": [
+       10.3,
+       18.2
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 3
+     },
+     {
+      "pos": [
+       17.7,
+       6.8
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 3
+     }
+    ],
+    "perf": [
+     {
+      "colour": 183,
+      "shadow": 347,
+      "frames": 60,
+      "hud": "528 calls \u2022 475k tris",
+      "benchMs": 26.197
+     },
+     {
+      "colour": 182,
+      "shadow": 346,
+      "frames": 50,
+      "hud": "528 calls \u2022 475k tris",
+      "benchMs": 34.871
+     },
+     {
+      "colour": 180,
+      "shadow": 346,
+      "frames": 57,
+      "hud": "526 calls \u2022 475k tris",
+      "benchMs": 39.45
+     }
+    ],
+    "after": [
+     {
+      "pos": [
+       13.9,
+       2
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 3
+     },
+     {
+      "pos": [
+       16.3,
+       13
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 3
+     },
+     {
+      "pos": [
+       18.5,
+       18.7
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 3
+     },
+     {
+      "pos": [
+       10.1,
+       17.3
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 3
+     },
+     {
+      "pos": [
+       18.7,
+       7.6
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 3
+     }
+    ]
+   },
+   {
+    "name": "scorpion",
+    "row": {
+     "x": 45.94719495736313,
+     "z": 46.119108455526955,
+     "yaw": 3.142,
+     "pitch": 0.5,
+     "distance": 7
+    },
+    "monsters": [
+     {
+      "pos": [
+       46.2,
+       44.2
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Death",
+       "Idle",
+       "Walk",
+       "Strike"
+      ],
+      "skinned": 3
+     },
+     {
+      "pos": [
+       53.2,
+       42.3
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Death",
+       "Idle",
+       "Walk",
+       "Strike"
+      ],
+      "skinned": 3
+     },
+     {
+      "pos": [
+       48.5,
+       51.6
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Death",
+       "Idle",
+       "Walk",
+       "Strike"
+      ],
+      "skinned": 3
+     },
+     {
+      "pos": [
+       88,
+       34.4
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Death",
+       "Idle",
+       "Walk",
+       "Strike"
+      ],
+      "skinned": 3
+     },
+     {
+      "pos": [
+       98.8,
+       40.4
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Death",
+       "Idle",
+       "Walk",
+       "Strike"
+      ],
+      "skinned": 3
+     }
+    ],
+    "perf": [
+     {
+      "colour": 295,
+      "shadow": 208,
+      "frames": 60,
+      "hud": "498 calls \u2022 484k tris",
+      "benchMs": 24.434
+     },
+     {
+      "colour": 292,
+      "shadow": 201,
+      "frames": 24,
+      "hud": "493 calls \u2022 481k tris",
+      "benchMs": 23.895
+     },
+     {
+      "colour": 291,
+      "shadow": 201,
+      "frames": 25,
+      "hud": "492 calls \u2022 474k tris",
+      "benchMs": 23.444
+     }
+    ],
+    "after": [
+     {
+      "pos": [
+       44.9,
+       43
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Death",
+       "Idle",
+       "Walk",
+       "Strike"
+      ],
+      "skinned": 3
+     },
+     {
+      "pos": [
+       49.7,
+       39.9
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Death",
+       "Idle",
+       "Walk",
+       "Strike"
+      ],
+      "skinned": 3
+     },
+     {
+      "pos": [
+       45.3,
+       51.1
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Death",
+       "Idle",
+       "Walk",
+       "Strike"
+      ],
+      "skinned": 3
+     },
+     {
+      "pos": [
+       85.6,
+       33.6
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Death",
+       "Idle",
+       "Walk",
+       "Strike"
+      ],
+      "skinned": 3
+     },
+     {
+      "pos": [
+       96.7,
+       39.9
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Death",
+       "Idle",
+       "Walk",
+       "Strike"
+      ],
+      "skinned": 3
+     }
+    ]
+   },
+   {
+    "name": "wizard",
+    "row": {
+     "x": 48.734599521078394,
+     "z": -16.191454150140434,
+     "yaw": 3.142,
+     "pitch": 0.4,
+     "distance": 6
+    },
+    "monsters": [
+     {
+      "pos": [
+       46.9,
+       -23.2
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 4
+     },
+     {
+      "pos": [
+       52.2,
+       -30.2
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 4
+     },
+     {
+      "pos": [
+       42.4,
+       -33.7
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 4
+     }
+    ],
+    "perf": [
+     {
+      "colour": 91,
+      "shadow": 223,
+      "frames": 60,
+      "hud": "320 calls \u2022 348k tris",
+      "benchMs": 14.923
+     },
+     {
+      "colour": 91,
+      "shadow": 229,
+      "frames": 56,
+      "hud": "319 calls \u2022 348k tris",
+      "benchMs": 16.666
+     },
+     {
+      "colour": 91,
+      "shadow": 228,
+      "frames": 60,
+      "hud": "319 calls \u2022 348k tris",
+      "benchMs": 19.122
+     }
+    ],
+    "after": [
+     {
+      "pos": [
+       44.8,
+       -24.4
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 4
+     },
+     {
+      "pos": [
+       51.4,
+       -28.4
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 4
+     },
+     {
+      "pos": [
+       39.7,
+       -30.3
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 4
+     }
+    ]
+   },
+   {
+    "name": "giant",
+    "row": {
+     "x": 75.0350294709261,
+     "z": 20.76364802339897,
+     "yaw": 3.142,
+     "pitch": 0.4,
+     "distance": 8
+    },
+    "monsters": [
+     {
+      "pos": [
+       76.4,
+       12.3
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 4
+     },
+     {
+      "pos": [
+       83.6,
+       18.4
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 4
+     },
+     {
+      "pos": [
+       70.7,
+       23.3
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 4
+     },
+     {
+      "pos": [
+       84.8,
+       27.2
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 4
+     }
+    ],
+    "perf": [
+     {
+      "colour": 184,
+      "shadow": 167,
+      "frames": 60,
+      "hud": "351 calls \u2022 377k tris",
+      "benchMs": 31.478
+     },
+     {
+      "colour": 184,
+      "shadow": 167,
+      "frames": 41,
+      "hud": "351 calls \u2022 377k tris",
+      "benchMs": 45.187
+     },
+     {
+      "colour": 186,
+      "shadow": 167,
+      "frames": 30,
+      "hud": "353 calls \u2022 382k tris",
+      "benchMs": 40.845
+     }
+    ],
+    "after": [
+     {
+      "pos": [
+       75.4,
+       14.3
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 4
+     },
+     {
+      "pos": [
+       82,
+       18.3
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 4
+     },
+     {
+      "pos": [
+       73.4,
+       23
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 4
+     },
+     {
+      "pos": [
+       79.5,
+       28
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 4
+     }
+    ]
+   },
+   {
+    "name": "guardian",
+    "row": {
+     "x": -98.2399840394382,
+     "z": -18.47358249262785,
+     "yaw": 3.142,
+     "pitch": 0.4,
+     "distance": 8
+    },
+    "monsters": [
+     {
+      "pos": [
+       -96.4,
+       -26
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 3
+     },
+     {
+      "pos": [
+       -99.3,
+       -37.1
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 3
+     },
+     {
+      "pos": [
+       -71.2,
+       -56.5
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 3
+     },
+     {
+      "pos": [
+       -76.9,
+       -52.4
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 3
+     }
+    ],
+    "perf": [
+     {
+      "colour": 115,
+      "shadow": 110,
+      "frames": 60,
+      "hud": "225 calls \u2022 258k tris",
+      "benchMs": 7.367
+     },
+     {
+      "colour": 115,
+      "shadow": 110,
+      "frames": 45,
+      "hud": "225 calls \u2022 258k tris",
+      "benchMs": 5.632
+     },
+     {
+      "colour": 115,
+      "shadow": 110,
+      "frames": 46,
+      "hud": "225 calls \u2022 258k tris",
+      "benchMs": 6.017
+     }
+    ],
+    "after": [
+     {
+      "pos": [
+       -95,
+       -25.6
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 3
+     },
+     {
+      "pos": [
+       -97.5,
+       -34.3
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 3
+     },
+     {
+      "pos": [
+       -71.6,
+       -58.4
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 3
+     },
+     {
+      "pos": [
+       -77.8,
+       -53.4
+      ],
+      "state": "idle",
+      "animator": true,
+      "clips": [
+       "Cast",
+       "Chop",
+       "Death",
+       "Fish",
+       "Idle",
+       "Lunge",
+       "Mine",
+       "Ranged",
+       "Slash",
+       "SpinSlash",
+       "Walk"
+      ],
+      "skinned": 3
+     }
+    ]
+   }
+  ],
+  "renderer": "ANGLE (Microsoft Corporation, D3D12 (NVIDIA GeForce RTX 4070 Laptop GPU), OpenGL 4.6)"
+ }
+}
