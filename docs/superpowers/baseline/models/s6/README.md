@@ -400,18 +400,18 @@ Built with `BLEND(monsters)` on Blender 5.0.1 from `da74139` plus this task's bu
 
 ## Values
 
-Stage 4's tint `0x6b6470` multiplies every non-glow mesh of the stalker, the kit included (linear multiply, as the engine does). Rec. 601 luma, the measure of the scorpion's own table (shell `0x84582A` 37%):
+Stage 4's tint `0x6b6470` multiplies every non-glow mesh of the stalker, the kit included (linear multiply, as the engine does). Rec. 601 luma, which is close to the measure of M3b's table (that table gives the shell `0x84582A` 37%):
 
 | | Before the tint | With the tint |
 |---|---|---|
 | Kit salt `0xE4DED0` | 87% | 35% (`#5f565a`) |
 | Kit crust `0xC9C1B0` | 76% | 30% (`#534a4b`) |
-| Scorpion shell `0x84582A` | 37% | 13% (`#341d0c`) |
-| Scorpion bone `0xC2B293` | 71% | 27% (`#50433d`) |
+| Scorpion shell `0x84582A` | 38% | 13% (`#341d0c`) |
+| Scorpion bone `0xC2B293` | 70% | 28% (`#50433d`) |
 
 - The stalker's kit against its own shell: 35% against 13%, 22 points.
-- The stalker's shell against the scorpion's: 13% against 37%, 24 points (the tint's work, Stage 4's).
-- The kit salt against the scorpion's shell is only 2 points apart (35% against 37%). Against the scorpion the stalker differs by its darker body with pale crust, not by the crust alone. The owner reads it at OM-S6.
+- The stalker's shell against the scorpion's: 13% against 38%, 25 points (the tint's work, Stage 4's).
+- The kit salt against the scorpion's shell is only 3 points apart (35% against 38%). Against the scorpion the stalker differs by its darker body with pale crust, not by the crust alone. The owner reads it at OM-S6.
 
 ## Measured
 
