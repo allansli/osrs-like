@@ -4,7 +4,8 @@
 // figure's space in the built file must equal the same pivot's in the shipped file within 0.02 rad (SpinSlash's
 // arm and elbow bones excepted: they keep today's numbers as local rotations), and each leg bone's displacement
 // from rest in the figure's space must equal the shipped leg pivot's within 0.01. Prints the largest difference
-// per clip; exit 0 when every clip passes, 1 when one fails, 3 on unreadable input.
+// per clip; exit 0 when every clip passes, 1 when one fails, 3 on unreadable input, a file with no animations
+// or a shipped file without all ten clips.
 import { readGlb, readAccessor } from './lib/glb.mjs';
 
 const ROT_TOL = 0.02;
@@ -15,6 +16,7 @@ const COMPARED = [
   'LeftLegPivot', 'RightLegPivot', 'LeftKneePivot', 'RightKneePivot'
 ];
 const LEGS = ['LeftLegPivot', 'RightLegPivot'];
+const CLIPS = ['Cast', 'Chop', 'Fish', 'Idle', 'Lunge', 'Mine', 'Ranged', 'Slash', 'SpinSlash', 'Walk'];
 const SPIN_EXCEPT = new Set(['LeftArmPivot', 'RightArmPivot', 'LeftElbowPivot', 'RightElbowPivot']);
 // The shipped legs' rest: the pivot builder's values (build_hero.py before H3a, LEAN_RIG hipX and hipY). The
 // shipped nodes store the last frame of Walk's dip (0.865) instead, so the node cannot serve as rest.
@@ -57,7 +59,8 @@ function load(file) {
   nodes.forEach((n, i) => (n.children || []).forEach((c) => parent.set(c, i)));
   const byName = new Map(nodes.map((n, i) => [n.name, i]));
   const clips = new Map();
-  for (const anim of doc.json.animations || []) {
+  if (!doc.json.animations?.length) throw new Error(`${file} has no animations`);
+  for (const anim of doc.json.animations) {
     const tracks = new Map();
     for (const ch of anim.channels) {
       const smp = anim.samplers[ch.sampler];
@@ -119,6 +122,8 @@ function run() {
   }
   const built = load(builtPath);
   const shipped = load(shippedPath);
+  const absent = CLIPS.filter((c) => !shipped.clips.has(c));
+  if (absent.length) throw new Error(`${shippedPath} lacks the clips ${absent.join(', ')}`);
   let failed = false;
   console.log(`clip | largest orientation difference (rad) | at | largest leg displacement difference | comparisons | skipped`);
   for (const [name, sClip] of shipped.clips) {
