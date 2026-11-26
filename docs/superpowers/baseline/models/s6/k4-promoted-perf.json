@@ -1,0 +1,110 @@
+{
+ "renderer": "ANGLE (Microsoft Corporation, D3D12 (NVIDIA GeForce RTX 4070 Laptop GPU), OpenGL 4.6)",
+ "errs": [],
+ "rows": [
+  {
+   "name": "P1-noon",
+   "perf": [
+    {
+     "colour": 361,
+     "shadow": 344,
+     "frames": 60,
+     "hud": "705 calls • 516k tris",
+     "benchMs": 43.009
+    },
+    {
+     "colour": 361,
+     "shadow": 344,
+     "frames": 53,
+     "hud": "705 calls • 516k tris",
+     "benchMs": 10.92
+    },
+    {
+     "colour": 361,
+     "shadow": 343,
+     "frames": 53,
+     "hud": "704 calls • 516k tris",
+     "benchMs": 10.867
+    }
+   ]
+  },
+  {
+   "name": "camp",
+   "perf": [
+    {
+     "colour": 174,
+     "shadow": 339,
+     "frames": 60,
+     "hud": "512 calls • 438k tris",
+     "benchMs": 26.577
+    },
+    {
+     "colour": 175,
+     "shadow": 338,
+     "frames": 25,
+     "hud": "513 calls • 442k tris",
+     "benchMs": 33.504
+    },
+    {
+     "colour": 178,
+     "shadow": 339,
+     "frames": 31,
+     "hud": "517 calls • 450k tris",
+     "benchMs": 28.939
+    }
+   ]
+  },
+  {
+   "name": "wizards",
+   "perf": [
+    {
+     "colour": 73,
+     "shadow": 196,
+     "frames": 60,
+     "hud": "266 calls • 313k tris",
+     "benchMs": 7.263
+    },
+    {
+     "colour": 71,
+     "shadow": 194,
+     "frames": 52,
+     "hud": "266 calls • 317k tris",
+     "benchMs": 4.155
+    },
+    {
+     "colour": 71,
+     "shadow": 189,
+     "frames": 51,
+     "hud": "258 calls • 310k tris",
+     "benchMs": 5.966
+    }
+   ]
+  },
+  {
+   "name": "dunes",
+   "perf": [
+    {
+     "colour": 324,
+     "shadow": 256,
+     "frames": 60,
+     "hud": "579 calls • 469k tris",
+     "benchMs": 29.262
+    },
+    {
+     "colour": 323,
+     "shadow": 256,
+     "frames": 24,
+     "hud": "579 calls • 469k tris",
+     "benchMs": 33.038
+    },
+    {
+     "colour": 324,
+     "shadow": 276,
+     "frames": 23,
+     "hud": "601 calls • 480k tris",
+     "benchMs": 32.606
+    }
+   ]
+  }
+ ]
+}

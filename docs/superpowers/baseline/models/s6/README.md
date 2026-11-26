@@ -133,7 +133,7 @@ The worktree is HEAD with this task's files, the packed build over `public/model
 - `m3b-scorpion-Idle-strip`, `-Walk-strip`, `-Strike-strip` and `-Death-strip`. The renderer plays every clip in the file on the figure; the dragon's strips are left out.
 - The worst-pose sheet bends the tail and claws hard, and every part stays at its joint. The renderer has no tile, so the chitin reads smoother than in the game.
 
-**Capture**: `m3b-ingame.jpg` (grid), `m3b-ingame-strike.jpg` and `m3b-ingame-rows.json`.
+**Capture**: `m3b-ingame.jpg` (grid) and `m3b-ingame-rows.json`.
 
 - **Setup**: NVIDIA GPU (`scripts/capture-gpu.mjs`, ANGLE over D3D12, RTX 4070 Laptop), `vite build` and `vite preview` (port 4196, stopped after) of the throw-away worktree, with the `__DEBUG.G` patch of M3a. Balanced tier, noon, clear, the hero beside the figure, at the west dune nest (44, 42). No page or console error.
 - **The grid**, row by row:
@@ -620,3 +620,15 @@ These come from `scratch/k2/kit_render.py` (not committed). It is K1's `kit_rend
 - The bow runs from near the ground (0.10) to above the head (2.20), where the ranger's spans 0.36 to 1.82.
 
 `s6/` holds 1.67 MB of its 2 MB after K2 (108 kB of it K2's).
+
+# K4: monsters.glb promoted (scorpion, wizard, ranger, the two kits)
+
+Promoted `public/models/monsters.glb`, SHA-256 `daf83d2d...` (`?v=daf83d2d`), 2,609,100 bytes (packed by Q1's step), Brotli 913,665 (before: 3,054,848 and 812,801). Triangles 70,200 to 65,678, meshes 120 to 78, materials 38 to 38. Built from `84fc9e6` with BLEND(monsters) on Blender 5.0.1 (`--out scratch/models-build/k4`), promoted by `models-promote.mjs monsters --yes --build-dir scratch/models-build/k4 --blend-dir blender` (which packs, runs COMPARE against the pending manifest, then moves the manifest over the live one). `blender/monsters.blend` promoted with it. Contract and Budget pass (`k4-promote-compare.md`). Drift names only scorpion, dark_wizard, dark_ranger, the two kits' bone-named children and the file totals: **zero Drift on the chicken, goblin, goblin archer, hill giant, moss guardian, dragon, Ashmantle and demon**. The Brotli rise is the painted (vertex-colour) scorpion, wizard and ranger; the new total is 2,056,579 against GM8's 2,600,000.
+
+Follow-through (plan, K4 promote amendments): the three rows' clips and anticipation and the three `PENDING_*_CLIPS` exports removed; cache key; `totals.json` (raw 7,578,301, Brotli 2,056,579, by its 1% rule); the families fixture's scorpion, wizard and ranger entries; the painted-figures case; `tests/monster-libraries.test.ts` import line and local clips constant.
+
+Gate: SUITE 126 files passed, 1,428 passed, 42 skipped, 0 failed (`tests/monster-models.test.ts` fully green, "the two variant rows name their kits" included; the extra skips are the "row without clips reproduces the old branch" cases of the three rows that now have clips); TYPES exit 0; BUILD exit 0.
+
+Capture: throw-away worktree of the promote commit `4940f2d`, `__DEBUG.G` patch, NVIDIA RTX 4070 Laptop, balanced, noon, clear, no page or console error, preview stopped. `k4-promoted-ingame.jpg` (scorpion three-quarter, `Strike`, 26; Saltback Stalker three-quarter and `Strike`; wizard three-quarter and `Cast`; ranger three-quarter, `Ranged`, 26; Thornwatch Marksman three-quarter and `Ranged`), rows in `k4-promoted-rows.json`. Every scorpion and stalker: 3 skinned meshes, every wizard, ranger and marksman: 4, all painted, `FACET_CUT`, one skeleton, animator on (scorpion library of four clips; humans the hero's eleven, `Cast` and `Ranged` play on `attackAnim`). Draw calls (colour / HUD, last of three): P1 noon 361 / 704 calls, 516k tris (M4a: about 500 / 880, 540k); Three Kettle Camp 178 / 517, 450k; wizards' field 71 / 258, 310k; scorpion dunes 324 / 601, 480k (`k4-promoted-perf.json`). `k4-roster-silhouette.jpg`: the eleven bodies told apart (GM6), chicken, goblin, archer, scorpion, wizard, ranger, giant, guardian, demon, dragon, Ashmantle; rendered with `--only` because the `Kit_` roots stop an unfiltered run.
+
+Not seen in the engine: `Death` of the three, and the marksman's right hand against the quiver (K2 item 3) at speed. Owner at OM-S6: the stalker's three-point sting, the marksman's two quivers, the green tint on the ranger body.
