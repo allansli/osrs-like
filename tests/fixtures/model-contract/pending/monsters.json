@@ -454,11 +454,25 @@
         1,
         1
       ]
+    },
+    "Monster_saltfang": {
+      "parent": null,
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
     }
   },
   "materials": [
     "mat_bark_guardian_paint",
     "mat_bone_hill_giant_paint",
+    "mat_bone_saltfang_paint",
     "mat_bone_scorpion_paint",
     "mat_bronze_goblin_paint",
     "mat_cloth_chicken_paint",
@@ -482,6 +496,7 @@
     "mat_skin_goblin_paint",
     "mat_skin_hill_giant_paint",
     "mat_skin_lesser_demon_paint",
+    "mat_skin_saltfang_paint",
     "mat_skin_scorpion_paint",
     "mat_stone_guardian_paint",
     "mat_wing_ashmantle_paint",
@@ -533,6 +548,9 @@
     "^moss_guardian_moss$",
     "^moss_guardian_stone$",
     "^saltback_stalker_(Hips|TailPivot3|LeftElbowPivot|RightElbowPivot)$",
+    "^saltfang_body$",
+    "^saltfang_shell$",
+    "^saltfang_sting$",
     "^scorpion_body$",
     "^scorpion_bone$",
     "^scorpion_sting$",
@@ -557,7 +575,8 @@
       "Monster_moss_guardian": "all",
       "Kit_cinder_adept": "all",
       "Kit_slag_brute": "all",
-      "Kit_marrowjaw": "all"
+      "Kit_marrowjaw": "all",
+      "Monster_saltfang": "all"
     }
   },
   "clips": {
@@ -2453,6 +2472,166 @@
           0,
           0
         ]
+      },
+      "saltfang_LeftElbowPivot": {
+        "parent": "saltfang_LeftArmPivot",
+        "translation": [
+          -0.22,
+          0.02,
+          -0.34
+        ]
+      },
+      "saltfang_LeftArmPivot": {
+        "parent": "saltfang_HeadGroup",
+        "translation": [
+          -0.28,
+          0.02,
+          -0.27
+        ]
+      },
+      "saltfang_RightElbowPivot": {
+        "parent": "saltfang_RightArmPivot",
+        "translation": [
+          0.22,
+          0.02,
+          -0.34
+        ]
+      },
+      "saltfang_RightArmPivot": {
+        "parent": "saltfang_HeadGroup",
+        "translation": [
+          0.28,
+          0.02,
+          -0.27
+        ]
+      },
+      "saltfang_HeadGroup": {
+        "parent": "saltfang_Hips",
+        "translation": [
+          0,
+          0,
+          -0.55
+        ]
+      },
+      "saltfang_LegL1": {
+        "parent": "saltfang_LeftLegPivot",
+        "translation": [
+          -0.4,
+          -0.06,
+          -0.12
+        ]
+      },
+      "saltfang_LegL2": {
+        "parent": "saltfang_LeftLegPivot",
+        "translation": [
+          -0.4,
+          -0.06,
+          0.02
+        ]
+      },
+      "saltfang_LegL3": {
+        "parent": "saltfang_LeftLegPivot",
+        "translation": [
+          -0.4,
+          -0.06,
+          0.16
+        ]
+      },
+      "saltfang_LegL4": {
+        "parent": "saltfang_LeftLegPivot",
+        "translation": [
+          -0.4,
+          -0.06,
+          0.3
+        ]
+      },
+      "saltfang_LeftLegPivot": {
+        "parent": "saltfang_Hips",
+        "translation": [
+          -0.22,
+          0,
+          0
+        ]
+      },
+      "saltfang_LegR1": {
+        "parent": "saltfang_RightLegPivot",
+        "translation": [
+          0.4,
+          -0.06,
+          -0.12
+        ]
+      },
+      "saltfang_LegR2": {
+        "parent": "saltfang_RightLegPivot",
+        "translation": [
+          0.4,
+          -0.06,
+          0.02
+        ]
+      },
+      "saltfang_LegR3": {
+        "parent": "saltfang_RightLegPivot",
+        "translation": [
+          0.4,
+          -0.06,
+          0.16
+        ]
+      },
+      "saltfang_LegR4": {
+        "parent": "saltfang_RightLegPivot",
+        "translation": [
+          0.4,
+          -0.06,
+          0.3
+        ]
+      },
+      "saltfang_RightLegPivot": {
+        "parent": "saltfang_Hips",
+        "translation": [
+          0.22,
+          0,
+          0
+        ]
+      },
+      "saltfang_TailPivot3": {
+        "parent": "saltfang_TailPivot2",
+        "translation": [
+          0,
+          0.3,
+          0.14
+        ]
+      },
+      "saltfang_TailPivot2": {
+        "parent": "saltfang_TailPivot",
+        "translation": [
+          0,
+          0.18,
+          0.24
+        ]
+      },
+      "saltfang_TailPivot": {
+        "parent": "saltfang_Hips",
+        "translation": [
+          0,
+          0.04,
+          0.68
+        ]
+      },
+      "saltfang_Hips": {
+        "parent": "saltfang_Root",
+        "translation": [
+          0,
+          0.5,
+          0
+        ]
+      },
+      "saltfang_Root": {
+        "parent": null,
+        "translation": [
+          0,
+          0,
+          0
+        ]
       }
     },
     "skinnedRoots": [
@@ -2466,7 +2645,8 @@
       "Monster_dark_wizard",
       "Monster_dark_ranger",
       "Monster_hill_giant",
-      "Monster_moss_guardian"
+      "Monster_moss_guardian",
+      "Monster_saltfang"
     ],
     "limbs": [
       {
@@ -3494,6 +3674,78 @@
           -1,
           0
         ]
+      },
+      {
+        "bone": "saltfang_Root",
+        "child": "saltfang_Hips",
+        "direction": [
+          0,
+          1,
+          0
+        ]
+      },
+      {
+        "bone": "saltfang_Hips",
+        "child": "saltfang_HeadGroup",
+        "direction": [
+          0,
+          0,
+          -1
+        ]
+      },
+      {
+        "bone": "saltfang_LeftArmPivot",
+        "child": "saltfang_LeftElbowPivot",
+        "direction": [
+          -0.316,
+          0,
+          -0.949
+        ]
+      },
+      {
+        "bone": "saltfang_RightArmPivot",
+        "child": "saltfang_RightElbowPivot",
+        "direction": [
+          0.316,
+          0,
+          -0.949
+        ]
+      },
+      {
+        "bone": "saltfang_LeftLegPivot",
+        "child": "saltfang_LegL1",
+        "direction": [
+          -0.98,
+          -0.2,
+          0
+        ]
+      },
+      {
+        "bone": "saltfang_RightLegPivot",
+        "child": "saltfang_LegR1",
+        "direction": [
+          0.98,
+          -0.2,
+          0
+        ]
+      },
+      {
+        "bone": "saltfang_TailPivot",
+        "child": "saltfang_TailPivot2",
+        "direction": [
+          0,
+          0.6,
+          0.8
+        ]
+      },
+      {
+        "bone": "saltfang_TailPivot2",
+        "child": "saltfang_TailPivot3",
+        "direction": [
+          0,
+          0.8,
+          0.6
+        ]
       }
     ],
     "maxLimbDegrees": 20,
@@ -3504,10 +3756,10 @@
     }
   },
   "budget": {
-    "triangles": 62194,
-    "meshes": 58,
-    "materials": 34,
-    "rawBytes": 2414397,
+    "triangles": 70036,
+    "meshes": 61,
+    "materials": 36,
+    "rawBytes": 2719110,
     "brotliBytes": 1270000
   },
   "figures": {
@@ -3622,6 +3874,13 @@
       "materials": 3,
       "rawBytes": 52580,
       "brotliBytes": 20000
+    },
+    "Monster_saltfang": {
+      "triangles": 14000,
+      "meshes": 4,
+      "materials": 5,
+      "rawBytes": 296720,
+      "brotliBytes": 220000
     }
   }
 }

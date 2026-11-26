@@ -12,6 +12,7 @@ Sculpts authentic, high-detail OSRS / RuneScape Dragonwilds stylized monsters:
   9. Monster_lesser_demon     - Lesser Demon, rebuilt and skinned on the biped rig: a slate brute with a forward hunch, swept horns, wings raised from the back, a spade tail & an ember-edged cleaver
  10. Monster_elvarg_dragon    - Elvarg the Crag Dragon world boss, a new skinned model on the dragon rig: low heavy-shouldered body, wedge head with a jaw, swept horns, crag plates down the spine, raised wings & spade tail
  11. Monster_ashmantle        - Ashmantle the Slag Wyrm, its own skinned body on the dragon rig: heavier chest, slag crown, back plates with glowing seams, clubbed tail
+ 12. Monster_saltfang         - Matron Saltfang, her own skinned body on the crawler rig: a broad brood body under a salt-white carapace, egg sacs on the back, heavy claws & a forked violet sting
 """
 
 import math
@@ -1983,6 +1984,199 @@ def build_saltback_stalker_kit(mats: dict):
             add(_salt_crystal("ssk_claw_crystal", salt, 0.05, ch, s * (0.47 + 0.03 * k), 0.70, cz, rz=-s * 0.35), bone, "salt")
 
     return _kit_root("saltback_stalker", parts, j, SALTBACK_KIT_TRIANGLES)
+
+
+# =============================================================================
+# 4c. Monster_saltfang (Matron Saltfang): her own body on the crawler skeleton (Stage 6 plan MB1)
+# =============================================================================
+# As Ashmantle on the dragon's: a second body on the scorpion's bones (saltfang_<Bone>), at the
+# scorpion's joints (scorpion_joints), so the scorpion's clips, whose Hips track is absolute, play on
+# her unchanged; she has no clips of her own. Chitin is rigid, so every part is hard on one bone, as
+# the scorpion's. What tells her from the scorpion and the Saltback Stalker: a broad, swollen brood
+# body under a flat salt-white carapace with a salt-crystal rim, piles of egg sacs on her back, heavier
+# claws, longer legs in a wider stance and a heavy forked violet sting. Stage 6 draws her at
+# modelScale 2.2 of the scorpion, so she is built at the scorpion's height. The engine draws 'skin'
+# with the scorpion-chitin tile (the row's model key is scorpion), so the chitin's paint is its
+# colour over that tile's mean; the salt, bone and eggs are on a plain material, painted as they are;
+# the sting and eyes are on the file's mat_glow_purple, which the engine never tints.
+SALTFANG_TRIANGLES = 9000  # the builder's own budget, under the manifest's 14,000 (design 9.1's boss class)
+SALTFANG_OCCLUSION = 0.5  # bake_paint's occlusion strength, as the scorpion's
+SALTFANG_COLOURS = {  # as the game shows them, before the row's tint
+    "salt": 0xB9B1A2,  # the carapace plates and the prosoma (72% value)
+    "crystal": 0xBFBBB1,  # the rim crystals (75%)
+    "bone": 0xAEA287,  # pincers, mandibles, tarsi (68%)
+    "egg": 0x9D8FA6,  # egg sacs, pale violet grey (65%)
+    "egg_dark": 0x83758D,  # the lower eggs of each pile (55%)
+    "chitin": 0x6A5741,  # coxae, femurs, claws, tail segments, over the chitin tile (42%)
+    "chitin_dark": 0x4E4030,  # tibiae, forearms, telson (31%)
+    "ring": 0x3F3326,  # joint rings (25%)
+}
+SALTFANG_PLAIN = ("salt", "crystal", "bone", "egg", "egg_dark")
+SALTFANG_PLATES = (  # (z of the plate's middle, half-width, half-height): six, widest behind the legs
+    (-0.26, 0.48, 0.20),
+    (-0.04, 0.54, 0.22),
+    (0.18, 0.58, 0.25),
+    (0.40, 0.60, 0.27),
+    (0.60, 0.54, 0.25),
+    (0.78, 0.40, 0.19),
+)
+SALTFANG_FLOOR = 0.31  # the plates' lowest y: the scorpion's, so her body lies where its did in Death
+SALTFANG_TAIL_GIRTH = 1.25  # the scorpion's tail radii times this
+SALTFANG_EGGS = (  # (x, z, radius) of each egg of the near-left pile, mirrored to the right; y sits on the plate
+    (0.24, -0.02, 0.105), (0.36, 0.06, 0.095), (0.28, 0.14, 0.11), (0.40, 0.20, 0.085), (0.18, 0.10, 0.08),
+    (0.30, 0.34, 0.115), (0.42, 0.40, 0.095), (0.26, 0.46, 0.10), (0.38, 0.54, 0.085), (0.20, 0.30, 0.075),
+)
+
+
+def build_saltfang(mats: dict):
+    """
+    Matron Saltfang's body (Stage 6 plan MB1): Monster_saltfang at the file's origin, three skinned
+    meshes on the crawler rig, every part hard on one of the scorpion's nineteen posed bones.
+    """
+    import rigs
+    from mathutils.bvhtree import BVHTree
+
+    prefix = "saltfang_"
+    chitin = make_mat("mat_skin_saltfang_paint", 0xFFFFFF, roughness=0.38, metallic=0.15)
+    salt = make_mat("mat_bone_saltfang_paint", 0xFFFFFF, roughness=0.62, metallic=0.04)
+    glow = mats["glow_purple"]
+    tile = _goblin_hide_mean(SCORPION_CHITIN_TILE)
+    col = {k: (v if k in SALTFANG_PLAIN else _goblin_skin_paint(v, tile)) for k, v in SALTFANG_COLOURS.items()}
+    col["glow"] = 0xFFFFFF
+    seg = SCORPION_SEGS
+    j = scorpion_joints()
+    hard = []  # (object, bone)
+
+    def add(obj, bone: str, colour: str, planes: bool = False):
+        _goblin_tint(obj, col[colour], planes)
+        hard.append((obj, prefix + bone))
+
+    # Prosoma, on HeadGroup: broader and flatter than the scorpion's, salt-white, faceted
+    add(add_lathe("sf_prosoma", None, salt, [
+        (-0.84, 0.22, 0.10, 0.0, 0.47, 0.30, 0.02, 0.03),
+        (-0.62, 0.40, 0.16, 0.0, 0.50, 0.32, 0.03, 0.05),
+        (-0.40, 0.48, 0.19, 0.0, 0.52, 0.32, 0.04, 0.06),
+    ], segs=14, axis="Z", smooth=False), "HeadGroup", "salt", planes=True)
+    # Three crystals over the brow, leaning forward and out, off the midline the tail passes over in Strike
+    for x, h, lean in ((0.0, 0.15, 0.0), (0.17, 0.13, 0.45), (-0.17, 0.13, -0.45)):
+        add(_salt_crystal("sf_brow", salt, 0.05, h, x, 0.62, -0.66, rx=-0.55, rz=-lean), "HeadGroup", "crystal", planes=True)
+    # Eyes: a pair high on the brow and two pairs at the front corners, on the glow ('eye' in no mesh name)
+    for side in (-1.0, 1.0):
+        for ex, ey, ez, er in ((0.07, 0.635, -0.72, 0.034), (0.20, 0.57, -0.80, 0.028), (0.26, 0.56, -0.74, 0.026)):
+            add(add_sphere("sf_ocellus", None, glow, er, tx=side * ex, ty=ey, tz=ez, segs=seg["ball"], rings=4), "HeadGroup", "glow")
+        add(add_cone_spike("sf_mandible", None, salt, base_r=0.055, length=0.25, tx=side * 0.10, ty=0.45, tz=-0.82,
+                           rx=-math.pi * 0.48, ry=side * 0.25, curve_bend=-side * 0.05, segs=seg["leg"], smooth=False), "HeadGroup", "bone", planes=True)
+
+    # The brood body: six overlapping salt plates on Hips, widest behind the legs, floored at the scorpion's height
+    tops = []
+    for p_idx, (pz, pw, ph) in enumerate(SALTFANG_PLATES):
+        cy = SALTFANG_FLOOR + ph
+        tops.append((pz, pw, cy + ph))
+        add(add_lathe("sf_plate", None, salt, [
+            (pz - 0.14, pw * 0.92, ph * 0.86, 0.0, cy - 0.01, 0.30, 0.05, 0.05),
+            (pz, pw, ph, 0.0, cy, 0.32, 0.06, 0.07),
+            (pz + 0.13, pw * 0.95, ph * 0.90, 0.0, cy - 0.01, 0.30, 0.05, 0.06),
+        ], segs=14, axis="Z", smooth=False), "Hips", "salt", planes=True)
+    # The rim: two crystals a side on each plate's margin, leaning out and a little back
+    for pz, pw, top in tops:
+        for side in (-1.0, 1.0):
+            for k, dz in enumerate((-0.05, 0.06)):
+                h = 0.10 + 0.04 * ((k + int(pz * 10)) % 2)
+                add(_salt_crystal("sf_rim", salt, 0.045, h, side * pw * 0.86, top - 0.12 - 0.03 * k, pz + dz,
+                                  rx=0.25, rz=-side * 1.05), "Hips", "crystal", planes=True)
+
+    # Egg sacs: a pile on each side of the back, sat on the plates' top found by a ray, clear of the midline
+    plates = [obj for obj, bone in hard if obj.name.startswith("sf_plate")]
+    bm = bmesh.new()
+    for ob in plates:
+        bm.from_mesh(ob.data)
+    tree = BVHTree.FromBMesh(bm)
+    for side in (-1.0, 1.0):
+        for k, (x, z, r) in enumerate(SALTFANG_EGGS):
+            hit = tree.ray_cast(Vector(t2b(side * x, 5.0, z)), Vector((0.0, 0.0, -1.0)))[0]
+            if hit is None:
+                raise ValueError(f"saltfang: no back under the egg at x {x}, z {z}")
+            add(add_sphere("sf_egg", None, salt, r, r * 0.88, r, tx=side * x, ty=hit.z + r * 0.55, tz=z, segs=7, rings=5),
+                "Hips", "egg" if r >= 0.095 else "egg_dark")
+    bm.free()
+
+    # The tail: the scorpion's path, thicker; segment k rides the scorpion's bone for it
+    tail_bone = ("TailPivot", "TailPivot2", "TailPivot3", "TailPivot3", "TailPivot3", "TailPivot3")
+    g = SALTFANG_TAIL_GIRTH
+    for k in range(6):
+        a, b = SCORPION_TAIL[k], SCORPION_TAIL[k + 1]
+        add(add_limb_tube("sf_tail", None, salt, a[:3], b[:3], a[3] * g, b[3] * g * 0.92, r_mid=(a[3] + b[3]) * 0.58 * g,
+                          segs=10, steps=4, smooth=False), tail_bone[k], "salt", planes=True)
+        ring_bone = tail_bone[k + 1] if k + 1 < 6 else "TailPivot3"
+        add(add_sphere("sf_ring", None, chitin, b[3] * g * 1.10, b[3] * g * 0.95, b[3] * g * 1.10, tx=b[0], ty=b[1], tz=b[2],
+                       segs=seg["ring"], rings=5), ring_bone, "ring")
+    # The telson, swollen, and the fork: two heavy violet prongs splayed from its sides
+    add(add_sphere("sf_telson", None, chitin, 0.19, 0.16, 0.24, tx=0.0, ty=1.86, tz=-0.03, segs=8, rings=6, smooth=False),
+        "TailPivot3", "chitin_dark", planes=True)
+    for side in (-1.0, 1.0):
+        add(add_cone_spike("sf_prong", None, glow, base_r=0.095, length=0.50, tx=side * 0.08, ty=1.84, tz=-0.18,
+                           rx=-math.pi * 0.66, ry=-side * 0.42, curve_bend=-0.16, segs=8, smooth=False), "TailPivot3", "glow")
+
+    # Eight legs, longer than the scorpion's and splayed wider: the coxa rides the side pivot, femur,
+    # tibia and tarsus the leg's bone; each leg fans out from its joint and ends on the ground
+    for s, tag, leg in ((-1.0, "Left", "L"), (1.0, "Right", "R")):
+        for n, (zc, fan) in enumerate(SCORPION_LEGS, start=1):
+            c = Vector(j[f"Leg{leg}{n}"])
+            d = Vector((s * math.cos(fan), 0.0, math.sin(fan)))
+            knee = c + d * 0.30 + Vector((0.0, 0.26, 0.0))
+            ankle = c + d * 0.62 + Vector((0.0, -0.02, 0.0))
+            tip = c + d * 0.78 + Vector((0.0, -0.44, 0.0))
+            add(add_limb_tube("sf_coxa", None, chitin, (s * 0.36, 0.48, zc * 0.8), tuple(c), 0.085, 0.072,
+                              segs=seg["leg"], steps=3), f"{tag}LegPivot", "ring")
+            add(add_sphere("sf_hinge", None, chitin, 0.074, tx=c.x, ty=c.y, tz=c.z, segs=seg["ball"], rings=4), f"Leg{leg}{n}", "ring")
+            add(add_limb_tube("sf_femur", None, chitin, tuple(c), tuple(knee), 0.068, 0.058, segs=seg["leg"], steps=4), f"Leg{leg}{n}", "chitin")
+            add(add_sphere("sf_knee", None, chitin, 0.062, tx=knee.x, ty=knee.y, tz=knee.z, segs=seg["ball"], rings=4), f"Leg{leg}{n}", "ring")
+            add(add_limb_tube("sf_tibia", None, chitin, tuple(knee), tuple(ankle), 0.058, 0.048, segs=seg["leg"], steps=4), f"Leg{leg}{n}", "chitin_dark")
+            add(add_limb_tube("sf_tarsus", None, salt, tuple(ankle), tuple(tip), 0.046, 0.026, segs=seg["leg"], steps=4), f"Leg{leg}{n}", "bone")
+
+    # Claws, heavier than the scorpion's: the pedipalp rides the arm pivot; forearm, chela, its salt
+    # crust and both pincers ride the elbow, at the scorpion's joints
+    for s, tag in ((-1.0, "Left"), (1.0, "Right")):
+        arm, elbow = j[f"{tag}ArmPivot"], j[f"{tag}ElbowPivot"]
+        add(add_limb_tube("sf_pedipalp", None, chitin, arm, elbow, 0.09, 0.082, segs=seg["claw"], steps=4), f"{tag}ArmPivot", "chitin")
+        add(add_sphere("sf_wrist", None, chitin, 0.088, tx=elbow[0], ty=elbow[1], tz=elbow[2], segs=seg["ball"], rings=4), f"{tag}ElbowPivot", "ring")
+        add(add_limb_tube("sf_forearm", None, chitin, elbow, (s * 0.47, 0.58, -1.38), 0.082, 0.10, segs=seg["claw"], steps=4), f"{tag}ElbowPivot", "chitin_dark")
+        add(add_sphere("sf_chela", None, chitin, 0.19, 0.15, 0.27, tx=s * 0.46, ty=0.585, tz=-1.54, ry=-s * 0.22,
+                       segs=10, rings=6, smooth=False), f"{tag}ElbowPivot", "chitin", planes=True)
+        for k, (cz, ch) in enumerate(((-1.40, 0.12), (-1.54, 0.16), (-1.68, 0.11))):
+            add(_salt_crystal("sf_claw_crystal", salt, 0.05, ch, s * (0.44 + 0.04 * k), 0.705, cz, rz=-s * 0.40), f"{tag}ElbowPivot", "crystal", planes=True)
+        # The pincers reach no farther from the elbow than the scorpion's (0.84, as its), and the claw rides
+        # 0.025 higher, or the claw that sags at the end of Death would pass through the ground its Hips track was locked to
+        add(add_cone_spike("sf_pincer", None, salt, base_r=0.072, length=0.34, tx=s * 0.53, ty=0.585, tz=-1.66,
+                           rx=-math.pi * 0.50, ry=s * 0.28, curve_bend=-s * 0.08, segs=seg["claw"], smooth=False), f"{tag}ElbowPivot", "bone", planes=True)
+        add(add_cone_spike("sf_pincer", None, salt, base_r=0.066, length=0.32, tx=s * 0.38, ty=0.575, tz=-1.66,
+                           rx=-math.pi * 0.50, ry=-s * 0.24, curve_bend=s * 0.07, segs=seg["claw"], smooth=False), f"{tag}ElbowPivot", "bone", planes=True)
+
+    rig = figkit.make_rig("Monster_saltfang", rigs.CRAWLER_TABLE, {k: t2b(*p) for k, p in j.items()}, prefix="saltfang")
+    for obj, bone in hard:
+        figkit.hard_weights(obj, bone)
+        obj.parent = rig
+    held = {bone for _, bone in hard}
+    missing = [b for b in SCORPION_BONES if prefix + b not in held]
+    if missing:
+        raise ValueError(f"saltfang: no part rides {missing}; every bone the scorpion's clips turn must carry weight")
+
+    merged = figkit.merge_by_family(rig)
+    names = {"skin": "saltfang_body", "plain": "saltfang_shell", "glow": "saltfang_sting"}
+    for ob in merged:
+        ob.name = ob.data.name = names[figkit.get_material_family(ob)]
+    _figure_paint(rig, merged, SALTFANG_OCCLUSION)
+
+    tris = sum(len(p.vertices) - 2 for ob in merged for p in ob.data.polygons)
+    if tris > SALTFANG_TRIANGLES:
+        raise ValueError(f"saltfang: {tris} triangles, over the budget of {SALTFANG_TRIANGLES}")
+    cos = [v.co for ob in merged for v in ob.data.vertices]
+    size = [max(c[a] for c in cos) - min(c[a] for c in cos) for a in (0, 2, 1)]  # width, height, length
+    print(f"[Blender] saltfang: {tris} triangles in {len(merged)} meshes; width {size[0]:.3f}, height {size[1]:.3f}, "
+          f"length {size[2]:.3f}; lowest {min(c.z for c in cos):.4f}")
+    if abs(size[1] / SCORPION_HEIGHT - 1.0) > 0.05:
+        raise ValueError(f"saltfang: height {size[1]:.3f} is more than 5% from the scorpion's {SCORPION_HEIGHT}")
+    return rig
 
 
 # =============================================================================
@@ -4511,6 +4705,7 @@ def main():
     build_goblin_archer((-0.8, 0.0, -2.0), mats)
     build_scorpion((1.8, 0.0, -2.0), mats)
     build_saltback_stalker_kit(mats)
+    build_saltfang(mats)
     build_dark_wizard((4.4, 0.0, -2.0), mats)
     build_cinder_adept_kit()
 
