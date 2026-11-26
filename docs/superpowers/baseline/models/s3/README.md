@@ -23,3 +23,7 @@ Captures `n3-gate-{play,front,top}-{before,after}.jpg`: the game on the GPU (ANG
 Draw calls are level to 16 lower; triangles fall by about 180k.
 
 **Finding for the owner.** In none of the three views are the new guards visible: they stand at x = +-2.4, z = -16.5, the positions the plan keeps unchanged, and those points are inside the two gate-wall blocks, so only their boots show under the walls' lower edge. In the "before" shots one old knight shows in the gap beside the player: the old `guard.glb` carried an offset that put one guard outside the stone. If the guards should be seen, their positions have to move to the gap (outside N3's list); N3 does not change them.
+
+## N3b: the guards step out of the wall (main session)
+
+The finding above is fixed: `createWorld` places the two guards at x = +-2.4, z = -15.3, in front of the gate wall (its face is at z -16.3), so they flank the opening. `tests/guards.test.ts` `SPOTS` follows (**declared**, the one changed line; every other assertion unchanged). Captures `n3b-gate-{play,front}.jpg` (same rig as N3; the `front` pose now stands the player at z -13.5): play 529 calls, 391k tris; front 962 calls, 613k tris.

@@ -203,8 +203,8 @@ export function buildAllCitiesAndLandmarks(): void {
 
   // 2. Sculpted Lumbridge Castle Keep & Cylindrical Battlement Towers
   createCastleStructure(0, -25);
-  createCastleGuard(-2.4, -16.5, 'Lumbridge Castle Guard', 0);
-  createCastleGuard(2.4, -16.5, 'Lumbridge Castle Guard', 0);
+  createCastleGuard(-2.4, -15.3, 'Lumbridge Castle Guard', 0);
+  createCastleGuard(2.4, -15.3, 'Lumbridge Castle Guard', 0);
 
   // BlendSwap #6679 Props: Barrels, Crates, Cabbage & Apple Boxes, Grain Sacks
   spawnWorldProp('World_barrel', -3.6, -17.8, 0.4);

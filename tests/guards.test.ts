@@ -41,7 +41,7 @@ import { createCastleGuard } from '../src/engine/worldBuild';
 import { upgradeHumanoidRigWithGltf } from '../src/engine/blenderHero';
 
 const NAME = 'Lumbridge Castle Guard';
-const SPOTS: [number, number][] = [[-2.4, -16.5], [2.4, -16.5]]; // createWorld's two calls
+const SPOTS: [number, number][] = [[-2.4, -15.3], [2.4, -15.3]]; // createWorld's two calls, in front of the gate wall (its face is at z -16.3)
 const USER_DATA = {
   type: 'interactive',
   action: 'dialogue',
