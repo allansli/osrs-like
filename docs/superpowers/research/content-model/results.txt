@@ -226,13 +226,19 @@ level target            coins | ranged TODAY bronze | AFTER bronze bought | AFTE
   runestone_rock   (-42, -3) walkable true, walkable ground within 1, aggressive camp no, nearest existing node 21.1, nearest woods tree 5.5, safe zone no
   camp cinder_circle  centre (-0.7, 72.7) radius 11, reach 15: gaps camp 2.0, safe zone 39.8, path 5.3, node 27.9, Ashmantle arena 70.0, woods tree 69.0; open cells 709/709; height range 0.8; region none
   camp brute_shelf    centre (-2.0, 102.0) radius 9, reach 13: gaps camp 23.8, safe zone 49.0, path 33.7, node 47.9, Ashmantle arena 79.9, woods tree 95.2; open cells 529/529; height range 0.8; region none
-  camp tollmaster     centre (4.0, -70.0) radius 9, reach 15: gaps camp 4.1, safe zone 41.1, path 51.0, node 7.5, Ashmantle arena 130.1, woods tree 37.5; open cells 709/709; height range 1.2; region none
+  camp tollmaster     centre (7.0, -73.0) radius 12, reach 18: gaps camp 5.4, safe zone 41.3, path 51.9, node 3.1, Ashmantle arena 131.4, woods tree 41.6; open cells 1009/1009; height range 1.7; region none
   new camps cinder_circle and brute_shelf: gap 1.4
-  new camps cinder_circle and tollmaster: gap 112.7
-  new camps brute_shelf and tollmaster: gap 144.1
+  new camps cinder_circle and tollmaster: gap 112.9
+  new camps brute_shelf and tollmaster: gap 144.2
   Corin Ashby to cinder_circle: 25.0 from its centre, 10.0 outside its leash
   door saltfang_warren  (106, 74) walkable true, aggressive camp no, nearest node 19.4, new camps 91.7, Ashmantle arena 191.0, safe zone no, height 1.96, region desert
   door underkiln        (-52, 46) walkable true, aggressive camp no, nearest node 41.0, new camps 42.8, Ashmantle arena 32.6, safe zone no, height 1.70, region wilderness
+
+=== 6b. Boss arenas: Stage 4's placement criterion (tests/world-data-combat.test.ts 65-115), on CAMPS with this stage's camps added
+  ashmantle, on CAMPS as shipped (the port)    (-102.0, 54.0) radius 12: 448 open cells, steepest 0.52 per unit; passes
+  ashmantle, with this stage's camps           (-102.0, 54.0) radius 12: 448 open cells, steepest 0.52 per unit; passes
+  tollmaster, with this stage's camps          (7.0, -73.0) radius 12: 448 open cells, steepest 0.10 per unit; passes
+  tollmaster: nearest passing spot to (4, -70) is (7, -73), 4.2 away, 35.4 from thornwatch (-18, -48) (59 spots tried); the content file has (7, -73)
 
 === 7. Dungeons: geometry, connectivity and size of each zone
   Saltfang Warren: origin (1000,-200), 96 x 96 cells, 2652 open, all reachable with the gate open true; boss cell reachable with the gate shut false; rooms 9; monsters 22

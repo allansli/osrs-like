@@ -118,7 +118,7 @@ export const NEW_MONSTERS: Record<string, Monster> = {
   cinder_adept: { name: 'Cinder Adept', level: 52, hp: 80, maxHit: 17, atk: 49, def: 36, style: 'magic', model: 'dark_wizard', modelScale: 1.08, tintNote: 'ash grey robe, ember trim',
     pattern: 'basic x3, Hexfall', drops: [{ id: 'big_bones', chance: 1 }, { gp: [230, 550], chance: 1 }, { id: 'cinder_silk', chance: 0.1 }, { id: 'ashes', chance: 0.5, qty: 2 }], modelNeed: 'a hooded caster with a brazier staff' },
   slag_brute: { name: 'Slag Brute', level: 58, hp: 112, maxHit: 19, atk: 54, def: 48, style: 'melee', model: 'hill_giant', modelScale: 1.12, tintNote: 'dark basalt skin, orange cracks',
-    pattern: 'basic x2, Overhead Slam, Rootquake', drops: [{ id: 'big_bones', chance: 1 }, { gp: [340, 770], chance: 1 }, { id: 'slag_hide', chance: 0.1 }, { id: 'shark', chance: 0.4 }], modelNeed: 'a hunched, plated brute, not a recoloured hill dweller' },
+    pattern: "hill_giant's (PATTERNS.hill_giant: basic x3, overhead_slam; O-6.1b.3)", drops: [{ id: 'big_bones', chance: 1 }, { gp: [340, 770], chance: 1 }, { id: 'slag_hide', chance: 0.1 }, { id: 'shark', chance: 0.4 }], modelNeed: 'a hunched, plated brute, not a recoloured hill dweller' },
   scree_skitter: { name: 'Scree Skitter', level: 30, hp: 20, maxHit: 6, atk: 30, def: 14, style: 'melee', model: 'scorpion', modelScale: 0.6, tintNote: 'pale grey shell',
     pattern: 'basic only', drops: [{ id: 'bones', chance: 1 }, { gp: [20, 60], chance: 0.6 }, { id: 'chitin_plate', chance: 0.06 }], modelNeed: 'a small, fast, many-legged body that reads at a glance in a group of eight' },
   // bosses (each also has a row in BOSSES below)
@@ -146,7 +146,7 @@ export const ADDED_DROPS: Record<string, Drop[]> = {
 export const NEW_CAMPS = [
   { id: 'cinder_circle', aggro: 12, members: [{ type: 'cinder_adept', x: -2, z: 67 }, { type: 'cinder_adept', x: 4, z: 74 }, { type: 'cinder_adept', x: -4, z: 77 }] },
   { id: 'brute_shelf', aggro: 9, members: [{ type: 'slag_brute', x: -6, z: 100 }, { type: 'slag_brute', x: 2, z: 104 }] },
-  { id: 'tollmaster', aggro: 9, arenaRadius: 9, members: [{ type: 'marrowjaw', x: 4, z: -70 }] }
+  { id: 'tollmaster', aggro: 9, arenaRadius: 12, members: [{ type: 'marrowjaw', x: 7, z: -73 }] }
 ];
 
 // ------------------------------------------------------------------ the cast
@@ -228,35 +228,37 @@ export const CHASES: { what: string; source: string; need: number; perRun: { alw
 ];
 
 // ------------------------------------------------------------------ bosses, in the shape of Stage 4's BossConfig
+// O-6.1b.5 (owner, 2026-11-26): each takes Ashmantle's numbers, marks max 4 for 12 s, no opening roar (openingShiftMs 0),
+// 2000 ms per phase shift. O-6.1b.4: Marrowjaw's arena is radius 12, so Stage 4's 400-open-cell rule holds.
 const A = (a: Attack) => a;
 export const BOSSES: Record<string, BossConfig & { respawnSecs: number; arenaRadius: number; question: string }> = {
   marrowjaw: {
-    typeKey: 'marrowjaw', hp: NEW_MONSTERS.marrowjaw.hp, markStep: 0.25, respawnSecs: 180, arenaRadius: 9,
+    typeKey: 'marrowjaw', hp: NEW_MONSTERS.marrowjaw.hp, mark: { step: 0.25, max: 4, secs: 12 }, openingShiftMs: 0, respawnSecs: 180, arenaRadius: 12,
     question: 'Do you step off the spot? One mechanic at a time, with long warnings: the first boss teaches the language.',
     attacks: {
       toll_slam: A({ id: 'toll_slam', shape: { type: 'circle', anchor: 'target', radius: 3 }, windupMs: 1800, slots: 2, style: 'melee', power: 26, reach: 13.5 }),
       camp_sweep: A({ id: 'camp_sweep', shape: { type: 'circle', anchor: 'self', radius: 5 }, windupMs: 1900, slots: 2, style: 'melee', power: 30, reach: 5 })
     },
     phases: [
-      { name: 'I The Toll', untilHpFrac: 0.5, pattern: ['basic', 'basic', 'toll_slam', 'basic'], cadenceMult: 1 },
-      { name: 'II The Reckoning', untilHpFrac: 0, pattern: ['camp_sweep', 'toll_slam', 'basic', 'basic'], cadenceMult: 1 }
+      { name: 'I The Toll', untilHpFrac: 0.5, pattern: ['basic', 'basic', 'toll_slam', 'basic'], cadenceMult: 1, shiftMs: 2000 },
+      { name: 'II The Reckoning', untilHpFrac: 0, pattern: ['camp_sweep', 'toll_slam', 'basic', 'basic'], cadenceMult: 1, shiftMs: 2000 }
     ]
   },
   saltfang: {
-    typeKey: 'saltfang', hp: NEW_MONSTERS.saltfang.hp, markStep: 0.25, respawnSecs: 0, arenaRadius: 10,
+    typeKey: 'saltfang', hp: NEW_MONSTERS.saltfang.hp, mark: { step: 0.25, max: 4, secs: 12 }, openingShiftMs: 0, respawnSecs: 0, arenaRadius: 10,
     question: 'Can you keep up? Its tempo rises in every phase: the fight is won by ending it, so food and damage are the plan.',
     attacks: {
       sting_arc: A({ id: 'sting_arc', shape: { type: 'cone', length: 14, halfAngleDeg: 50 }, windupMs: 1600, slots: 2, style: 'melee', power: 40, reach: 13.5 }),
       brine_spit: A({ id: 'brine_spit', shape: { type: 'circle', anchor: 'target', radius: 2.5 }, windupMs: 1400, slots: 1, style: 'pure', power: 26, reach: 13.5 })
     },
     phases: [
-      { name: 'I Stirring', untilHpFrac: 0.6, pattern: ['basic', 'basic', 'sting_arc', 'basic'], cadenceMult: 1 },
-      { name: 'II Roused', untilHpFrac: 0.3, pattern: ['brine_spit', 'brine_spit', 'sting_arc', 'basic', 'basic'], cadenceMult: 0.9 },
-      { name: 'III Frenzy', untilHpFrac: 0, pattern: ['sting_arc', 'brine_spit', 'brine_spit', 'basic', 'sting_arc', 'basic'], cadenceMult: 0.75 }
+      { name: 'I Stirring', untilHpFrac: 0.6, pattern: ['basic', 'basic', 'sting_arc', 'basic'], cadenceMult: 1, shiftMs: 2000 },
+      { name: 'II Roused', untilHpFrac: 0.3, pattern: ['brine_spit', 'brine_spit', 'sting_arc', 'basic', 'basic'], cadenceMult: 0.9, shiftMs: 2000 },
+      { name: 'III Frenzy', untilHpFrac: 0, pattern: ['sting_arc', 'brine_spit', 'brine_spit', 'basic', 'sting_arc', 'basic'], cadenceMult: 0.75, shiftMs: 2000 }
     ]
   },
   kiln_warden: {
-    typeKey: 'kiln_warden', hp: NEW_MONSTERS.kiln_warden.hp, markStep: 0.25, respawnSecs: 0, arenaRadius: 12,
+    typeKey: 'kiln_warden', hp: NEW_MONSTERS.kiln_warden.hp, mark: { step: 0.25, max: 4, secs: 12 }, openingShiftMs: 0, respawnSecs: 0, arenaRadius: 12,
     question: 'Can you hold the band? The ring burns everything far, the vent everything near: only a strip 3 to 6 units out is safe through both.',
     attacks: {
       kiln_ring: A({ id: 'kiln_ring', shape: { type: 'ring', inner: 6, outer: 20 }, windupMs: 1900, slots: 2, style: 'pure', power: 62, reach: 13.5 }),
@@ -264,9 +266,9 @@ export const BOSSES: Record<string, BossConfig & { respawnSecs: number; arenaRad
       hammer_arc: A({ id: 'hammer_arc', shape: { type: 'cone', length: 14, halfAngleDeg: 60 }, windupMs: 1800, slots: 2, style: 'melee', power: 56, reach: 13.5 })
     },
     phases: [
-      { name: 'I Banked', untilHpFrac: 0.6, pattern: ['basic', 'basic', 'hammer_arc', 'basic', 'kiln_ring'], cadenceMult: 1 },
-      { name: 'II Stoked', untilHpFrac: 0.25, pattern: ['kiln_ring', 'core_vent', 'basic', 'hammer_arc', 'basic'], cadenceMult: 1 },
-      { name: 'III White Heat', untilHpFrac: 0, pattern: ['kiln_ring', 'core_vent', 'hammer_arc', 'basic', 'kiln_ring', 'core_vent'], cadenceMult: 0.85 }
+      { name: 'I Banked', untilHpFrac: 0.6, pattern: ['basic', 'basic', 'hammer_arc', 'basic', 'kiln_ring'], cadenceMult: 1, shiftMs: 2000 },
+      { name: 'II Stoked', untilHpFrac: 0.25, pattern: ['kiln_ring', 'core_vent', 'basic', 'hammer_arc', 'basic'], cadenceMult: 1, shiftMs: 2000 },
+      { name: 'III White Heat', untilHpFrac: 0, pattern: ['kiln_ring', 'core_vent', 'hammer_arc', 'basic', 'kiln_ring', 'core_vent'], cadenceMult: 0.85, shiftMs: 2000 }
     ]
   }
 };

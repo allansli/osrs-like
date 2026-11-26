@@ -351,6 +351,27 @@ What changed on the merged world: Stage 4's Saltback Stalkers (level 34, 140 to 
 
 Building a kit or a body stays outside this stage (plan line 3). Every row above works with `model`, `tint` and `modelScale` alone, as the design planned.
 
+## After O-6.1b (R0b, 2026-11-26)
+
+The owner answered section 5 and 6.1 with every recommendation ("Segue recomendação"; plan section "Revision 2026-11-26"). R0b wrote the answers into the content file and the design (7.4, 7.5, 7.7, 11.3); nothing under `src/` or `tests/` changed.
+
+- **The ten frozen tests** of section 5 are declared, additive: design 11.3 items 13b and 16 to 24 (O-6.1b.1). Section 5's proposed "14b" is item 16.
+- **Feather**: stays on the chicken (`tests/economy-rolls.test.ts`, item 18).
+- **Slag Brute**: `pattern` is the hill giant's (basic x3, Overhead Slam). `tests/monster-patterns.test.ts` stays as it is.
+- **Marrowjaw's arena**: radius 12, in both `NEW_CAMPS.tollmaster` and `BOSSES.marrowjaw`. The camp moves from (4, -70) to **(7, -73)**: 4.2 away, 35.4 from `thornwatch` (-18, -48), 448 open arena cells, steepest ground 0.10 a unit. It is the first spot to pass in a search of integer spots ordered by distance from (4, -70), then by z, then by x (59 spots tried). The search tests every check of `results.txt` section 6 and Stage 4's arena criterion. Section 6's camp line now reads: gaps camp 5.4, safe zone 41.3, path 51.9, node 3.1 (a fishing spot), woods tree 41.6, and 1009 of 1009 cells open within reach 18.
+- **Stage 4's arena criterion is in MODEL** (`model.ts` section 6b), ported from `tests/world-data-combat.test.ts` 65-115. It runs on `CAMPS` plus this stage's three camps, with `NEW_NODE_PLACEMENTS` among the nodes. Two runs check the port: Ashmantle on `CAMPS` as shipped, and Ashmantle with the new camps added. Both pass with 448 cells. At radius 9, the first run of this task showed the two failures section 5 and 6.1 named: 256 cells, and the arena inside thornwatch's reach. No spot within 40 passed. Section 6's door check now measures a boss camp by its arena + 6, as the pair check already did.
+- **Boss numbers**: the rows of Marrowjaw, Saltfang and the Kiln Warden write `mark` (0.25, 4, 12 s), `openingShiftMs: 0` and `shiftMs: 2000` on every phase. `fight.ts` reads them and throws if one is missing. It no longer borrows Ashmantle's marks or defaults the shift. These are the values it used to assume, and it has no arena wall, so radius 12 enters no fight number. The rerun `check-results.txt` is byte-identical to R0's.
+- **Reruns** (each behind `flock /tmp/claude-capped.lock scripts/capped.sh`):
+
+  | Command | Exit | What it showed |
+  |---|---|---|
+  | MODEL | 0 | `ALL CHECKS PASS`, `EVERY BOUND HOLDS, WITH TODAY'S FORMULA AND WITH THE REBALANCE`, `ALL AGGRESSION CHECKS PASS` |
+  | PACE | 0 | every one of its 5 blocks ends with `EVERY ASSERTION OF pacing.test.ts HOLDS` |
+  | `second-pass.sh` | 0 | `SECOND-PASS CHECKS PASS` |
+  | `critique-check.sh` | 0 | as before |
+
+  Only `results.txt` changed, in sections 6 and 6b. `check-results.txt`, `aggro-results.txt`, `pacing-results.txt`, `second-pass-results.txt` and `critique-results.txt` are byte-identical to R0's.
+
 ## Commands run (exit status)
 
 All from the worktree root, behind `flock /tmp/claude-capped.lock scripts/capped.sh`: `npx vitest run` (0), `npx tsc --noEmit` (0), `npm run build` (0), `npx vitest run tests/pacing.test.ts` (0), `npx vitest run tests/economy-invariants.test.ts` (0), `bash docs/superpowers/research/content-model/run.sh` (0, after the content fix in 6.1; 1 before it), `pacing-rerun.sh` (0), `second-pass.sh` (0), `critique-check.sh` (0). The slice 1 probe (section 5): `npx vitest run --root scratch/s1` (1: 30 failed, 1,407 passed), then 8 files with the declared counts edited in the copy (1: only `world-data-combat`), then `world-data-combat` with its list edited (1: 400 cells, then the thornwatch reach). The scratch copy was deleted. No Blender process was run.

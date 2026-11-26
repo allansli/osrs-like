@@ -106,14 +106,17 @@ function swing(s: GameState, typeKey: string, r: () => number, ammo = 0): [numbe
   const dmg = r() < hc ? Math.max(1, Math.floor(r() * (maxHit + 1))) : 0;
   return [dmg, dmg > 0 && healRatio ? Math.max(1, Math.floor(dmg * healRatio)) : 0];
 }
-/** The game's BossDef for a boss: its own row when it has one, else one registered from the config (marks as Ashmantle's). */
+/** The game's BossDef for a boss: its own row when it has one, else one registered from the config's own mark, opening
+ *  and phase-shift numbers (esbuild does not type-check, so a row missing one throws here). */
 function bossDef(boss: BossConfig): BossDef {
   const own = BOSSES[boss.typeKey];
   if (own) return own;
+  const num = (v: unknown) => typeof v === 'number' && Number.isFinite(v);
+  if (![boss.mark?.step, boss.mark?.max, boss.mark?.secs, boss.openingShiftMs, ...boss.phases.map((p) => p.shiftMs)].every(num)) throw new Error(`fight: ${boss.typeKey} lacks a mark, opening or phase-shift number`);
   const def: BossDef = {
-    respawnSecs: 0, arenaRadius: 0, openingShiftMs: boss.openingShiftMs ?? 0,
-    mark: { step: boss.markStep, max: BOSSES.ashmantle.mark.max, secs: BOSSES.ashmantle.mark.secs },
-    phases: boss.phases.map((p) => ({ ...p, shiftMs: p.shiftMs ?? 2000 }))
+    respawnSecs: 0, arenaRadius: 0, openingShiftMs: boss.openingShiftMs,
+    mark: { ...boss.mark },
+    phases: boss.phases.map((p) => ({ ...p }))
   };
   BOSSES[boss.typeKey] = def;
   return def;
@@ -133,7 +136,7 @@ export function fight(f: Fighter, boss: BossConfig, seed: number): Outcome {
   const stand = STAND[f.style], reach = REACH[f.style];
   const regen = f.regen ?? REGEN_IN_COMBAT, eatEvery = f.eatCd ?? EAT_CD;
   let bossHp = HP, ph = 0, idx = 0, t = 0, next = 0;
-  let shift = (boss.openingShiftMs ?? 0) / 1000; // the opening roar: untouchable, no attack
+  let shift = boss.openingShiftMs / 1000; // the opening roar: untouchable, no attack
   let eatCd = 0, potCd = 0, atkCd = 0, food = f.food, pots = f.pots;
   const marks: Marks = { count: 0, left: 0 };
   let pos: V = { x: stand, z: 0 };        // where the hero is (or will be when the current move ends)
@@ -207,7 +210,7 @@ export function fight(f: Fighter, boss: BossConfig, seed: number): Outcome {
       if (healed) s.hp = Math.min(s.maxHp, s.hp + healed);
       bossHp = Math.max(floor, bossHp - dmg);
       if (bossHp <= 0) return out(true);
-      if (bossHp <= floor && ph < PH.length - 1) { ph++; idx = 0; shift = (PH[ph].shiftMs ?? 2000) / 1000; pending = []; }
+      if (bossHp <= floor && ph < PH.length - 1) { ph++; idx = 0; shift = PH[ph].shiftMs / 1000; pending = []; }
     }
   }
   return out(false);

@@ -6,7 +6,8 @@ import { BOSS_ARENA_MARGIN, BOSSES } from '../../../../src/data/attacks';
 import { FORGE_RECIPES } from '../../../../src/data/recipes';
 import { MONSTER_TYPES, RESOURCE_NODES_DEF, WORLD_REGIONS } from '../../../../src/data/world';
 import { SPELLS } from '../../../../src/data/magic';
-import { CAMPS, PATHS, SAFE_ZONES } from '../../../../src/data/worldMap';
+import { CAMPS, PATHS, POIS, SAFE_ZONES } from '../../../../src/data/worldMap';
+import { buildWalkGrid, findPath } from '../../../../src/state/pathfind';
 import { NODE_PLACEMENTS } from '../../../../src/data/placements';
 import { WOODS_TREES } from '../../../../src/data/woodsTrees';
 import { CAMERA_FAR, HORIZON_APRON } from '../../../../src/data/look';
@@ -301,9 +302,12 @@ const leash = (c: { x: number; z: number; radius: number }) => c.radius + 4;
 const mk = (members: { x: number; z: number }[]) => { const cx = members.reduce((s, m) => s + m.x, 0) / members.length, cz = members.reduce((s, m) => s + m.z, 0) / members.length; return { x: cx, z: cz, radius: Math.ceil(Math.max(...members.map((m) => Math.hypot(m.x - cx, m.z - cz))) + 4.5) }; };
 const ashCamp = CAMPS.find((c) => c.id === 'ashmantle')!;
 const arenas = [{ id: 'ashmantle', x: ashCamp.x, z: ashCamp.z, radius: BOSSES.ashmantle.arenaRadius, margin: BOSS_ARENA_MARGIN }];
-for (const c of C.NEW_CAMPS) {
-  const circle = mk(c.members), r = (c as { arenaRadius?: number }).arenaRadius ?? circle.radius;
-  const reach = (c as { arenaRadius?: number }).arenaRadius ? r + 6 : leash(circle);
+type NewCamp = (typeof C.NEW_CAMPS)[number] & { arenaRadius?: number };
+/** How far a new camp reaches: an arena camp its arena + 6 (the boss takes damage from that far), any other its leash. */
+const reachOf = (c: NewCamp) => (c.arenaRadius ? c.arenaRadius + 6 : leash(mk(c.members)));
+/** The section-6 checks of one new camp, against the merged world, the other new camps, the people and the doors. */
+function campPlacement(c: NewCamp, all: NewCamp[]) {
+  const circle = mk(c.members), r = c.arenaRadius ?? circle.radius, reach = reachOf(c);
   const gapCamp = Math.min(...CAMPS.map((o) => Math.hypot(o.x - circle.x, o.z - circle.z) - leash(o) - reach));
   const gapSafe = Math.min(...SAFE_ZONES.map((s) => Math.hypot(s.x - circle.x, s.z - circle.z) - s.radius - reach));
   const gapPath = Math.min(...PATHS.map((pp) => nearestOnPolyline(pp.points, circle.x, circle.z).d - pp.halfWidth - reach));
@@ -312,27 +316,115 @@ for (const c of C.NEW_CAMPS) {
   let open = 0, cells = 0; for (let x = -reach; x <= reach; x++) for (let z = -reach; z <= reach; z++) if (Math.hypot(x, z) <= reach) { cells++; if (isWalkable(circle.x + x, circle.z + z)) open++; }
   const hs: number[] = []; for (let x = -r; x <= r; x += 1) for (let z = -r; z <= r; z += 1) if (Math.hypot(x, z) <= r) hs.push(getTerrainHeight(circle.x + x, circle.z + z));
   const gapTree = nearestTree(circle.x, circle.z) - circle.radius - 2;
-  p(`  camp ${c.id.padEnd(14)} centre (${circle.x.toFixed(1)}, ${circle.z.toFixed(1)}) radius ${r}, reach ${reach}: gaps camp ${gapCamp.toFixed(1)}, safe zone ${gapSafe.toFixed(1)}, path ${gapPath.toFixed(1)}, node ${gapNode.toFixed(1)}, Ashmantle arena ${gapArena.toFixed(1)}, woods tree ${gapTree.toFixed(1)}; open cells ${open}/${cells}; height range ${(Math.max(...hs) - Math.min(...hs)).toFixed(1)}; region ${WORLD_REGIONS.find((g) => Math.hypot(g.x - circle.x, g.z - circle.z) <= g.radius)?.id || 'none'}`);
-  check(gapCamp >= 0 && gapSafe >= 0 && gapPath >= 0 && gapNode >= 0 && gapArena >= 0 && gapTree > 0 && open === cells && c.members.every((m) => isWalkable(m.x, m.z)), `camp ${c.id}`);
+  const gapNew = Math.min(Infinity, ...all.filter((o) => o.id !== c.id).map((o) => { const k = mk(o.members); return Math.hypot(k.x - circle.x, k.z - circle.z) - reachOf(o) - reach; }));
+  const person = C.NPCS.find((n) => Math.hypot(n.x - circle.x, n.z - circle.z) <= reach);
+  const gapDoor = Math.min(...C.DUNGEONS.map((d) => Math.hypot(circle.x - d.door.x, circle.z - d.door.z) - reach));
+  const line = `  camp ${c.id.padEnd(14)} centre (${circle.x.toFixed(1)}, ${circle.z.toFixed(1)}) radius ${r}, reach ${reach}: gaps camp ${gapCamp.toFixed(1)}, safe zone ${gapSafe.toFixed(1)}, path ${gapPath.toFixed(1)}, node ${gapNode.toFixed(1)}, Ashmantle arena ${gapArena.toFixed(1)}, woods tree ${gapTree.toFixed(1)}; open cells ${open}/${cells}; height range ${(Math.max(...hs) - Math.min(...hs)).toFixed(1)}; region ${WORLD_REGIONS.find((g) => Math.hypot(g.x - circle.x, g.z - circle.z) <= g.radius)?.id || 'none'}`;
+  const ok = gapCamp >= 0 && gapSafe >= 0 && gapPath >= 0 && gapNode >= 0 && gapArena >= 0 && gapTree > 0 && open === cells && c.members.every((m) => isWalkable(m.x, m.z)) && gapNew >= 0 && !person && gapDoor >= 0;
+  return { ok, line, gapNew, gapDoor };
+}
+for (const c of C.NEW_CAMPS as NewCamp[]) {
+  const pl = campPlacement(c, C.NEW_CAMPS);
+  p(pl.line);
+  check(pl.ok, `camp ${c.id}`);
 }
 {
-  const cs = C.NEW_CAMPS.map((c) => ({ id: c.id, k: mk(c.members), arena: (c as { arenaRadius?: number }).arenaRadius }));
+  const cs = C.NEW_CAMPS.map((c) => ({ id: c.id, k: mk(c.members), reach: reachOf(c) }));
   for (let i = 0; i < cs.length; i++) for (let j = i + 1; j < cs.length; j++) {
-    const ri = cs[i].arena ? cs[i].arena! + 6 : leash(cs[i].k), rj = cs[j].arena ? cs[j].arena! + 6 : leash(cs[j].k);
-    const gap = Math.hypot(cs[i].k.x - cs[j].k.x, cs[i].k.z - cs[j].k.z) - ri - rj;
+    const gap = Math.hypot(cs[i].k.x - cs[j].k.x, cs[i].k.z - cs[j].k.z) - cs[i].reach - cs[j].reach;
     p(`  new camps ${cs[i].id} and ${cs[j].id}: gap ${gap.toFixed(1)}`);
     check(gap >= 0, `new camps ${cs[i].id} and ${cs[j].id} overlap`);
   }
-  for (const n of C.NPCS) for (const c of cs) check(Math.hypot(n.x - c.k.x, n.z - c.k.z) > (c.arena ? c.arena + 6 : leash(c.k)), `${n.id} inside new camp ${c.id}`);
+  for (const n of C.NPCS) for (const c of cs) check(Math.hypot(n.x - c.k.x, n.z - c.k.z) > c.reach, `${n.id} inside new camp ${c.id}`);
   const corin = C.NPCS.find((n) => n.id === 'corin_ashby')!, cc = cs.find((c) => c.id === 'cinder_circle')!;
   p(`  Corin Ashby to cinder_circle: ${Math.hypot(corin.x - cc.k.x, corin.z - cc.k.z).toFixed(1)} from its centre, ${(Math.hypot(corin.x - cc.k.x, corin.z - cc.k.z) - leash(cc.k)).toFixed(1)} outside its leash`);
 }
 for (const d of C.DUNGEONS) {
   const ag = inAggro(d.door.x, d.door.z), near = Math.min(...NODE_PLACEMENTS.map((q) => Math.hypot(q.x - d.door.x, q.z - d.door.z)));
-  const newCamp = Math.min(...C.NEW_CAMPS.map((c) => { const k = mk(c.members); return Math.hypot(k.x - d.door.x, k.z - d.door.z) - leash(k); }));
+  const newCamp = Math.min(...C.NEW_CAMPS.map((c) => { const k = mk(c.members); return Math.hypot(k.x - d.door.x, k.z - d.door.z) - reachOf(c); }));
   const ar = Math.min(...arenas.map((a) => Math.hypot(a.x - d.door.x, a.z - d.door.z) - a.radius - a.margin));
   p(`  door ${d.id.padEnd(16)} (${d.door.x}, ${d.door.z}) walkable ${isWalkable(d.door.x, d.door.z)}, aggressive camp ${ag ? ag.id : 'no'}, nearest node ${near.toFixed(1)}, new camps ${newCamp.toFixed(1)}, Ashmantle arena ${ar.toFixed(1)}, safe zone ${inSafe(d.door.x, d.door.z)?.id || 'no'}, height ${getTerrainHeight(d.door.x, d.door.z).toFixed(2)}, region ${WORLD_REGIONS.find((g) => Math.hypot(g.x - d.door.x, g.z - d.door.z) <= g.radius)?.id || 'none'}`);
   check(isWalkable(d.door.x, d.door.z) && !ag && near >= 3 && newCamp >= 0 && ar >= 0, `door ${d.id}`);
+}
+
+// ---------------------------------------------------------------- 6b. boss arenas: Stage 4's criterion (O-6.1b.4)
+h("6b. Boss arenas: Stage 4's placement criterion (tests/world-data-combat.test.ts 65-115), on CAMPS with this stage's camps added");
+// A port of that test, line for line (the route search runs only once every other rule passes; it cannot turn a fail
+// into a pass): what it will see once D3 adds the three camps. Reach: 2.9 for melee members, 11 for
+// the rest. The new camps are aggressive at their `aggro` radius, as makeCamp builds them.
+type ArenaCamp = { id: string; x: number; z: number; radius: number; aggressive: boolean; aggroRadius?: number; arenaRadius?: number; members: { type: string; x: number; z: number }[] };
+const asCamp = (c: NewCamp): ArenaCamp => ({ id: c.id, ...mk(c.members), aggressive: true, aggroRadius: c.aggro, arenaRadius: c.arenaRadius, members: c.members });
+const walkGrid = buildWalkGrid();
+function arenaFails(camp: ArenaCamp, campsAll: ArenaCamp[]) {
+  const WORLD = 118, NODE_CLEAR = 2, MAX_STEP = 0.8;
+  const R = camp.arenaRadius!, big = R + BOSS_ARENA_MARGIN, { x, z } = camp;
+  const fails: string[] = [];
+  for (const c of campsAll) {
+    if (c.id === camp.id) continue;
+    const d = Math.hypot(c.x - x, c.z - z);
+    const reach = Math.max(...c.members.map((m) => (monsters[m.type].style === 'melee' ? 2.9 : 11)));
+    if (d - (c.radius + 4) - big <= 0) fails.push(`margin inside the leash circle of ${c.id}`);
+    if (d - (c.radius + 4 + reach) - R <= 0) fails.push(`arena inside the attack reach of ${c.id}`);
+    if (c.aggressive && d - c.aggroRadius! - R <= 0) fails.push(`arena inside the aggression circle of ${c.id}`);
+  }
+  for (const s of SAFE_ZONES) if (Math.hypot(s.x - x, s.z - z) - s.radius - big <= 0) fails.push(`margin inside safe zone ${s.id}`);
+  if (Math.abs(x) + R > WORLD || Math.abs(z) + R > WORLD) fails.push('arena past the world bound');
+  let cells = 0;
+  for (let id = 0; id < walkGrid.cells.length; id++) {
+    const cx = walkGrid.origin + (id % walkGrid.size) + 0.5, cz = walkGrid.origin + ((id / walkGrid.size) | 0) + 0.5;
+    if (Math.hypot(cx - x, cz - z) > R) continue;
+    cells++;
+    if (walkGrid.cells[id] !== 1) fails.push(`arena cell (${cx}, ${cz}) blocked`);
+  }
+  if (!(cells > 400)) fails.push(`${cells} arena cells, not more than 400`);
+  for (const path of PATHS) {
+    for (let i = 1; i < path.points.length; i++) {
+      const [ax, az] = path.points[i - 1], [bx, bz] = path.points[i];
+      for (let k = 0; k <= 20; k++) if (Math.hypot(ax + ((bx - ax) * k) / 20 - x, az + ((bz - az) * k) / 20 - z) - path.halfWidth - big <= 0) { fails.push(`path ${path.id} inside the margin`); break; }
+    }
+  }
+  for (const q of POIS) if (Math.hypot(q.x - x, q.z - z) - q.padRadius - big <= 0) fails.push(`pad ${q.id} inside the margin`);
+  for (const n of [...NODE_PLACEMENTS, ...C.NEW_NODE_PLACEMENTS]) if (Math.hypot(n.x - x, n.z - z) - R - NODE_CLEAR <= 0) fails.push(`resource node at (${n.x}, ${n.z})`);
+  let steep = 0;
+  for (let dx = -R; dx <= R; dx += 0.5) for (let dz = -R; dz <= R; dz += 0.5) {
+    if (Math.hypot(dx, dz) > R) continue;
+    const hh = getTerrainHeight(x + dx, z + dz);
+    steep = Math.max(steep, Math.abs(getTerrainHeight(x + dx + 1, z + dz) - hh), Math.abs(getTerrainHeight(x + dx, z + dz + 1) - hh));
+  }
+  if (steep > MAX_STEP) fails.push(`ground ${steep.toFixed(2)} per unit`);
+  if (fails.length === 0) for (const m of camp.members) if (findPath(walkGrid, [-48, 55], [m.x, m.z]) === null) fails.push(`${m.type} home unreachable from the pass's west mouth`);
+  return { fails, cells, steep };
+}
+{
+  const merged: ArenaCamp[] = [...(CAMPS as ArenaCamp[]), ...C.NEW_CAMPS.map(asCamp)];
+  const show = (label: string, camp: ArenaCamp, all: ArenaCamp[]) => {
+    const r = arenaFails(camp, all);
+    p(`  ${label.padEnd(44)} (${camp.x.toFixed(1)}, ${camp.z.toFixed(1)}) radius ${camp.arenaRadius}: ${r.cells} open cells, steepest ${r.steep.toFixed(2)} per unit; ${r.fails.length ? 'FAILS ' + r.fails.slice(0, 6).join('; ') : 'passes'}`);
+    check(r.fails.length === 0, `arena criterion: ${label}`);
+  };
+  show('ashmantle, on CAMPS as shipped (the port)', ashCamp as ArenaCamp, CAMPS as ArenaCamp[]);
+  show("ashmantle, with this stage's camps", ashCamp as ArenaCamp, merged);
+  for (const c of C.NEW_CAMPS as NewCamp[]) if (c.arenaRadius) show(`${c.id}, with this stage's camps`, merged.find((m) => m.id === c.id)!, merged);
+  // O-6.1b.4: the tollmaster camp stands on the nearest integer spot to R0's (4, -70) that passes every check of section 6
+  // and this criterion. Candidates by distance, then z, then x; the first that passes must be the content file's.
+  const tm = (C.NEW_CAMPS as NewCamp[]).find((c) => c.id === 'tollmaster')!, from = [4, -70];
+  const thorn = CAMPS.find((c) => c.id === 'thornwatch')!;
+  const cand: [number, number][] = [];
+  for (let x = from[0] - 40; x <= from[0] + 40; x++) for (let z = from[1] - 40; z <= from[1] + 40; z++) cand.push([x, z]);
+  cand.sort((a, b) => Math.hypot(a[0] - from[0], a[1] - from[1]) - Math.hypot(b[0] - from[0], b[1] - from[1]) || a[1] - b[1] || a[0] - b[0]);
+  let tried = 0, found: [number, number] | null = null;
+  for (const [x, z] of cand) {
+    tried++;
+    const moved: NewCamp = { ...tm, members: tm.members.map((m) => ({ ...m, x, z })) };
+    const all = C.NEW_CAMPS.map((c) => (c.id === tm.id ? moved : c)) as NewCamp[];
+    if (!campPlacement(moved, all).ok) continue;
+    const ac = asCamp(moved);
+    if (arenaFails(ac, [...(CAMPS as ArenaCamp[]), ...all.map(asCamp)]).fails.length) continue;
+    found = [x, z]; break;
+  }
+  const at = [tm.members[0].x, tm.members[0].z];
+  p(`  tollmaster: nearest passing spot to (${from.join(', ')}) is ${found ? `(${found.join(', ')}), ${Math.hypot(found[0] - from[0], found[1] - from[1]).toFixed(1)} away, ${Math.hypot(found[0] - thorn.x, found[1] - thorn.z).toFixed(1)} from thornwatch (${thorn.x}, ${thorn.z})` : 'none within 40'} (${tried} spots tried); the content file has (${at.join(', ')})`);
+  check(found !== null && found[0] === at[0] && found[1] === at[1], 'tollmaster on the nearest passing spot');
 }
 
 // ---------------------------------------------------------------- 7. dungeon geometry
