@@ -118,9 +118,9 @@ describe('a hostile progress block', () => {
   });
 
   it('keeps a boss time of the year 3000 no later than now plus one respawn, and drops other types', () => {
-    const t = p.bossDownUntil?.ashmantle;
-    if (t !== undefined) expect(t).toBeLessThanOrEqual(NOW + BOSSES.ashmantle.respawnSecs * 1000);
+    expect(p.bossDownUntil.ashmantle).toBe(NOW + BOSSES.ashmantle.respawnSecs * 1000);
     expect(p.bossDownUntil?.goblin).toBeUndefined();
+    expect(own(p.bossDownUntil, "constructor")).toBe(false);
   });
 
   it('loads through readSave with the clock passed in', () => {
