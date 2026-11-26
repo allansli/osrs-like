@@ -1625,201 +1625,263 @@ def build_goblin_archer(grid_pos: tuple[float, float, float], mats: dict):
 
 
 # =============================================================================
-# 4. Monster_scorpion (King Scorpion)
+# 4. Monster_scorpion (King Scorpion): kept and re-rigged on the crawler rig, with its library (plan M3b)
 # =============================================================================
+# Today's design kept (design 4.6): a prosoma, five carapace plates, a six-segment tail arched over the
+# back to the telson and sting, eight legs and two pincered claws. Chitin is rigid, so every part is
+# hard-weighted to one bone. The legs are thickened (nothing under 0.044 across, design 5.3), each on
+# its own bone, and the values are lifted to ochre and bone (design 5.4).
+SCORPION_TRIANGLES = 5000
+SCORPION_OCCLUSION = 0.5  # bake_paint's occlusion strength, as the goblin's
+SCORPION_HEIGHT = 1.984  # the shipped scorpion's height; the re-rigged one stays within 5%
+SCORPION_CHITIN_TILE = "public/textures/creatures/scorpion-chitin.png"  # the engine's tile for scorpion (textures.ts)
+SCORPION_COLOURS = {  # as the game shows them
+    "shell": 0x84582A,  # ochre: prosoma, odd plates, tail segments, femurs, upper claws (37% value; lighter melts into the dune sand)
+    "plate": 0x6A4422,  # darker ochre: even plates, tibiae, forearms, telson (29%)
+    "ring": 0x583A1C,  # joint rings and leg roots (24%)
+    "bone": 0xC2B293,  # pincers, mandibles, tarsi (70%)
+}
+SCORPION_SEGS = {"plate": 12, "tail": 8, "ring": 8, "leg": 6, "claw": 8, "ball": 6}
+SCORPION_LEGS = (  # coxa joint z, fan angle (0 straight out, + toward the tail), front to back
+    (-0.12, -0.62),
+    (0.02, -0.20),
+    (0.16, 0.22),
+    (0.30, 0.58),
+)
+SCORPION_TAIL = (  # (x, y, z, radius) along the tail, today's
+    (0.0, 0.54, 0.68, 0.18),
+    (0.0, 0.72, 0.92, 0.15),
+    (0.0, 1.02, 1.06, 0.13),
+    (0.0, 1.36, 1.02, 0.12),
+    (0.0, 1.66, 0.80, 0.11),
+    (0.0, 1.84, 0.46, 0.10),
+    (0.0, 1.88, 0.12, 0.095),
+)
+
+
+def scorpion_joints() -> dict:
+    """
+    The crawler rig at today's pivots (three space, figure at the origin). LeftArmPivot and LeftLegPivot
+    stand where today's pivots stood. Each leg's bone is at its coxa joint on the body's side; LegL1, the
+    front leg, lies out to the side of LeftLegPivot (the table's reference child). The tail's three bones
+    are today's first three tail nodes, so TailPivot3 carries the arch from the third node to the sting.
+    """
+    j = {"Root": (0.0, 0.0, 0.0), "Hips": (0.0, 0.50, 0.0), "HeadGroup": (0.0, 0.50, -0.55)}
+    for s, tag, leg in ((-1.0, "Left", "L"), (1.0, "Right", "R")):
+        j[f"{tag}ArmPivot"] = (s * 0.28, 0.52, -0.82)
+        j[f"{tag}ElbowPivot"] = (s * 0.50, 0.54, -1.16)
+        j[f"{tag}LegPivot"] = (s * 0.22, 0.50, 0.0)
+        for n, (zc, _) in enumerate(SCORPION_LEGS, start=1):
+            j[f"Leg{leg}{n}"] = (s * 0.62, 0.44, zc)
+    for k, name in enumerate(("TailPivot", "TailPivot2", "TailPivot3")):
+        j[name] = SCORPION_TAIL[k][:3]
+    return j
+
+
 def build_scorpion(grid_pos: tuple[float, float, float], mats: dict):
-    root = create_pivot("Monster_scorpion", None, *grid_pos)
+    """
+    The king scorpion, kept and re-rigged (plan M3b): today's parts, three skinned meshes on the crawler
+    rig, every part hard on one bone. grid_pos is not used: a skinned figure stands at the file's
+    origin (design 6.1.1 rule 2b).
+    """
+    import rigs
 
-    # Armored prosoma head plate at front (-Z)
-    add_lathe(
-        "scorpion_prosoma",
-        root,
-        mats["skin_scorpion_plate"],
-        [
-            (-0.78, 0.18, 0.10, 0.0, 0.48, 0.25, 0.02, 0.03),
-            (-0.56, 0.34, 0.16, 0.0, 0.50, 0.28, 0.03, 0.05),
-            (-0.32, 0.40, 0.19, 0.0, 0.52, 0.28, 0.04, 0.06),
-        ],
-        segs=20,
-        axis="Z",
-    )
+    # White, like the goblin's: the paint is the colour. 'skin' draws with the scorpion-chitin tile, so
+    # its paint is the colour over that tile's mean; the bone material is plain; the sting and the eyes
+    # are the file's own mat_glow_crimson.
+    skin = make_mat("mat_skin_scorpion_paint", 0xFFFFFF, roughness=0.38, metallic=0.15)
+    bone_mat = make_mat("mat_bone_scorpion_paint", 0xFFFFFF, roughness=0.45, metallic=0.06)
+    glow = mats["glow_crimson"]
+    tile = _goblin_hide_mean(SCORPION_CHITIN_TILE)
+    col = {k: _goblin_skin_paint(v, tile) for k, v in SCORPION_COLOURS.items() if k != "bone"}
+    col["bone"] = SCORPION_COLOURS["bone"]
+    col["glow"] = 0xFFFFFF
+    seg = SCORPION_SEGS
+    j = scorpion_joints()
+    hard = []  # (object, bone)
 
-    # 6 glowing yellow arachnid eyes & serrated chelicerae mandibles
+    def add(obj, bone: str, colour: str):
+        _goblin_tint(obj, col[colour])
+        hard.append((obj, f"scorpion_{bone}"))
+
+    # Prosoma, the head plate, on HeadGroup
+    add(add_lathe("scp_prosoma", None, skin, [
+        (-0.78, 0.18, 0.10, 0.0, 0.48, 0.25, 0.02, 0.03),
+        (-0.56, 0.34, 0.16, 0.0, 0.50, 0.28, 0.03, 0.05),
+        (-0.32, 0.40, 0.19, 0.0, 0.52, 0.28, 0.04, 0.06),
+    ], segs=seg["plate"], axis="Z"), "HeadGroup", "shell")
+    # Two eyes a side, 0.052 across, on the glow (no mesh name holds 'eye': the engine would draw it unlit)
     for side in (-1.0, 1.0):
-        for e_i in range(3):
-            add_sphere(
-                f"scorpion_eye_{'L' if side < 0 else 'R'}_{e_i}",
-                root,
-                mats["glow_yellow"],
-                0.022,
-                tx=side * (0.08 + e_i * 0.045),
-                ty=0.58 - e_i * 0.015,
-                tz=-0.68 + e_i * 0.04,
-                no_outline=True,
-            )
-        add_cone_spike(
-            f"scorpion_mandible_{'L' if side < 0 else 'R'}",
-            root,
-            mats["horn"],
-            base_r=0.045,
-            length=0.22,
-            tx=side * 0.09,
-            ty=0.45,
-            tz=-0.74,
-            rx=-math.pi * 0.48,
-            ry=side * 0.25,
-            curve_bend=-side * 0.04,
-            segs=10,
-        )
+        for e_i in range(2):
+            add(add_sphere("scp_ocellus", None, glow, 0.026, tx=side * (0.08 + e_i * 0.06), ty=0.585 - e_i * 0.02,
+                           tz=-0.68 + e_i * 0.05, segs=seg["ball"], rings=4), "HeadGroup", "glow")
+        add(add_cone_spike("scp_mandible", None, bone_mat, base_r=0.045, length=0.22, tx=side * 0.09, ty=0.45, tz=-0.74,
+                           rx=-math.pi * 0.48, ry=side * 0.25, curve_bend=-side * 0.04, segs=seg["leg"]), "HeadGroup", "bone")
 
-    # 5 overlapping segmented chitinous carapace plates with dorsal ridges
-    plate_z = [-0.28, -0.06, 0.16, 0.38, 0.58]
-    plate_w = [0.42, 0.45, 0.43, 0.38, 0.30]
-    for p_idx, (pz, pw) in enumerate(zip(plate_z, plate_w)):
-        add_lathe(
-            f"scorpion_carapace_plate_{p_idx}",
-            root,
-            mats["skin_scorpion"] if p_idx % 2 == 0 else mats["skin_scorpion_plate"],
-            [
-                (pz - 0.14, pw * 0.92, 0.17, 0.0, 0.50, 0.24, 0.04, 0.05),
-                (pz, pw, 0.20, 0.0, 0.52, 0.26, 0.05, 0.07),
-                (pz + 0.13, pw * 0.95, 0.18, 0.0, 0.51, 0.24, 0.04, 0.06),
-            ],
-            segs=20,
-            axis="Z",
-        )
+    # Five overlapping carapace plates on Hips
+    for p_idx, (pz, pw) in enumerate(zip((-0.28, -0.06, 0.16, 0.38, 0.58), (0.42, 0.45, 0.43, 0.38, 0.30))):
+        add(add_lathe("scp_plate", None, skin, [
+            (pz - 0.14, pw * 0.92, 0.17, 0.0, 0.50, 0.24, 0.04, 0.05),
+            (pz, pw, 0.20, 0.0, 0.52, 0.26, 0.05, 0.07),
+            (pz + 0.13, pw * 0.95, 0.18, 0.0, 0.51, 0.24, 0.04, 0.06),
+        ], segs=seg["plate"], axis="Z"), "Hips", "shell" if p_idx % 2 == 0 else "plate")
 
-    # 6-segment arched metasoma tail sweeping high over the back + swollen venomous telson bulb + crimson stinger
-    tail_nodes = [
-        (0.0, 0.54, 0.68, 0.18),
-        (0.0, 0.72, 0.92, 0.15),
-        (0.0, 1.02, 1.06, 0.13),
-        (0.0, 1.36, 1.02, 0.12),
-        (0.0, 1.66, 0.80, 0.11),
-        (0.0, 1.84, 0.46, 0.10),
-        (0.0, 1.88, 0.12, 0.095),
-    ]
-    for seg_i in range(6):
-        p_a = tail_nodes[seg_i]
-        p_b = tail_nodes[seg_i + 1]
-        add_limb_tube(
-            f"scorpion_tail_seg_{seg_i}",
-            root,
-            mats["skin_scorpion"],
-            p_a[:3],
-            p_b[:3],
-            p_a[3],
-            p_b[3] * 0.92,
-            r_mid=(p_a[3] + p_b[3]) * 0.58,
-            segs=14,
-        )
-        # Chitinous armor ring joint
-        add_sphere(
-            f"scorpion_tail_ring_{seg_i}",
-            root,
-            mats["skin_scorpion_plate"],
-            p_b[3] * 1.12,
-            p_b[3] * 0.95,
-            p_b[3] * 1.12,
-            tx=p_b[0],
-            ty=p_b[1],
-            tz=p_b[2],
-        )
+    # The tail: segment k rides TailPivot, TailPivot2, then TailPivot3 from the third node on; the ring at
+    # a node sits on the bone of the segment that starts there, centred on that bone's joint
+    tail_bone = ("TailPivot", "TailPivot2", "TailPivot3", "TailPivot3", "TailPivot3", "TailPivot3")
+    for k in range(6):
+        a, b = SCORPION_TAIL[k], SCORPION_TAIL[k + 1]
+        add(add_limb_tube("scp_tail", None, skin, a[:3], b[:3], a[3], b[3] * 0.92, r_mid=(a[3] + b[3]) * 0.58,
+                          segs=seg["tail"], steps=4), tail_bone[k], "shell")
+        ring_bone = tail_bone[k + 1] if k + 1 < 6 else "TailPivot3"
+        add(add_sphere("scp_ring", None, skin, b[3] * 1.12, b[3] * 0.95, b[3] * 1.12, tx=b[0], ty=b[1], tz=b[2],
+                       segs=seg["ring"], rings=5), ring_bone, "ring")
+    add(add_sphere("scp_telson", None, skin, 0.14, 0.12, 0.18, tx=0.0, ty=1.86, tz=-0.02, segs=seg["ring"], rings=6), "TailPivot3", "plate")
+    add(add_cone_spike("scp_sting", None, glow, base_r=0.065, length=0.38, tx=0.0, ty=1.85, tz=-0.16, rx=-math.pi * 0.68,
+                       curve_bend=-0.12, segs=seg["claw"]), "TailPivot3", "glow")
 
-    # Swollen venomous telson bulb + curved glowing crimson stinger barb
-    add_sphere("scorpion_telson_bulb", root, mats["skin_scorpion_plate"], 0.14, 0.12, 0.18, tx=0.0, ty=1.86, tz=-0.02)
-    add_cone_spike(
-        "scorpion_stinger_barb",
-        root,
-        mats["glow_crimson"],
-        base_r=0.065,
-        length=0.38,
-        tx=0.0,
-        ty=1.85,
-        tz=-0.16,
-        rx=-math.pi * 0.68,
-        curve_bend=-0.12,
-        segs=12,
-    )
+    # Eight legs: the coxa from the body's side to the leg's joint rides the side pivot; femur, tibia
+    # and tarsus ride the leg's own bone. Each leg fans out from its joint and ends on the ground.
+    for s, tag, leg in ((-1.0, "Left", "L"), (1.0, "Right", "R")):
+        for n, (zc, fan) in enumerate(SCORPION_LEGS, start=1):
+            c = Vector(j[f"Leg{leg}{n}"])
+            d = Vector((s * math.cos(fan), 0.0, math.sin(fan)))
+            knee = c + d * 0.22 + Vector((0.0, 0.20, 0.0))
+            ankle = c + d * 0.46 + Vector((0.0, -0.04, 0.0))
+            tip = c + d * 0.58 + Vector((0.0, -0.44, 0.0))
+            add(add_limb_tube("scp_coxa", None, skin, (s * 0.36, 0.48, zc * 0.8), tuple(c), 0.075, 0.062,
+                              segs=seg["leg"], steps=3), f"{tag}LegPivot", "ring")
+            add(add_sphere("scp_hinge", None, skin, 0.064, tx=c.x, ty=c.y, tz=c.z, segs=seg["ball"], rings=4), f"Leg{leg}{n}", "ring")
+            add(add_limb_tube("scp_femur", None, skin, tuple(c), tuple(knee), 0.058, 0.050, segs=seg["leg"], steps=4), f"Leg{leg}{n}", "shell")
+            add(add_limb_tube("scp_tibia", None, skin, tuple(knee), tuple(ankle), 0.050, 0.042, segs=seg["leg"], steps=4), f"Leg{leg}{n}", "plate")
+            add(add_limb_tube("scp_tarsus", None, bone_mat, tuple(ankle), tuple(tip), 0.040, 0.024, segs=seg["leg"], steps=4), f"Leg{leg}{n}", "bone")
 
-    # 4 multi-jointed arachnid legs per side under LeftLegPivot (-0.22, 0.50, 0) & RightLegPivot (0.22, 0.50, 0)
-    leg_z_offsets = [-0.50, -0.16, 0.18, 0.50]
-    for side, piv_name in ((-1.0, "scorpion_LeftLegPivot"), (1.0, "scorpion_RightLegPivot")):
-        leg_piv = create_pivot(piv_name, root, side * 0.22, 0.50, 0.0)
-        for l_idx, z_off in enumerate(leg_z_offsets):
-            splay_z = (l_idx - 1.5) * 0.16
-            coxa = (side * 0.12, 0.02, z_off)
-            femur_top = (side * 0.48, 0.22, z_off + splay_z * 0.5)
-            tibia_mid = (side * 0.78, -0.12, z_off + splay_z * 0.85)
-            tarsus_tip = (side * 0.92, -0.50, z_off + splay_z)
-            add_limb_tube(f"{piv_name}_femur_{l_idx}", leg_piv, mats["skin_scorpion"], coxa, femur_top, 0.055, 0.048, segs=10)
-            add_limb_tube(f"{piv_name}_tibia_{l_idx}", leg_piv, mats["skin_scorpion_plate"], femur_top, tibia_mid, 0.048, 0.036, segs=10)
-            add_limb_tube(f"{piv_name}_tarsus_{l_idx}", leg_piv, mats["horn"], tibia_mid, tarsus_tip, 0.034, 0.012, segs=8)
+    # Claws: the pedipalp's upper arm rides the arm pivot; the forearm, the chela palm and both pincers
+    # ride the elbow, which is set forward of today's bend so the arm lies within 20 degrees of the
+    # rig's reference (forward and a little out)
+    for s, tag in ((-1.0, "Left"), (1.0, "Right")):
+        arm, elbow = j[f"{tag}ArmPivot"], j[f"{tag}ElbowPivot"]
+        add(add_limb_tube("scp_pedipalp", None, skin, arm, elbow, 0.075, 0.068, segs=seg["claw"], steps=4), f"{tag}ArmPivot", "shell")
+        add(add_sphere("scp_wrist", None, skin, 0.072, tx=elbow[0], ty=elbow[1], tz=elbow[2], segs=seg["ball"], rings=4), f"{tag}ElbowPivot", "ring")
+        add(add_limb_tube("scp_forearm", None, skin, elbow, (s * 0.46, 0.56, -1.38), 0.068, 0.085, segs=seg["claw"], steps=4), f"{tag}ElbowPivot", "plate")
+        add(add_sphere("scp_chela", None, skin, 0.15, 0.12, 0.21, tx=s * 0.45, ty=0.56, tz=-1.52, ry=-s * 0.22,
+                       segs=seg["claw"], rings=6), f"{tag}ElbowPivot", "shell")
+        add(add_cone_spike("scp_pincer", None, bone_mat, base_r=0.065, length=0.38, tx=s * 0.52, ty=0.56, tz=-1.62,
+                           rx=-math.pi * 0.50, ry=s * 0.28, curve_bend=-s * 0.08, segs=seg["claw"]), f"{tag}ElbowPivot", "bone")
+        add(add_cone_spike("scp_pincer", None, bone_mat, base_r=0.052, length=0.32, tx=s * 0.38, ty=0.55, tz=-1.62,
+                           rx=-math.pi * 0.50, ry=-s * 0.24, curve_bend=s * 0.06, segs=seg["claw"]), f"{tag}ElbowPivot", "bone")
 
-    # Pedipalp arms + massive bulbous crab-like crushing chela pincers under LeftArmPivot / RightArmPivot
-    for side, piv_name in ((-1.0, "scorpion_LeftArmPivot"), (1.0, "scorpion_RightArmPivot")):
-        arm_piv = create_pivot(piv_name, root, side * 0.28, 0.52, -0.82)
-        elbow = (side * 0.34, 0.06, -0.14)
-        wrist = (side * 0.26, 0.04, -0.52)
-        add_limb_tube(f"{piv_name}_pedipalp_1", arm_piv, mats["skin_scorpion"], (0.0, 0.0, 0.0), elbow, 0.075, 0.068, segs=12)
-        add_limb_tube(f"{piv_name}_pedipalp_2", arm_piv, mats["skin_scorpion_plate"], elbow, wrist, 0.072, 0.088, segs=12)
-        # Bulbous crushing chela palm
-        add_sphere(
-            f"{piv_name}_chela_palm",
-            arm_piv,
-            mats["skin_scorpion_plate"],
-            0.16,
-            0.12,
-            0.22,
-            tx=side * 0.24,
-            ty=0.04,
-            tz=-0.68,
-            ry=-side * 0.22,
-        )
-        # Outer & inner pincer blades with serrated inner teeth
-        add_cone_spike(
-            f"{piv_name}_pincer_outer",
-            arm_piv,
-            mats["horn"],
-            base_r=0.065,
-            length=0.38,
-            tx=side * 0.30,
-            ty=0.04,
-            tz=-0.82,
-            rx=-math.pi * 0.50,
-            ry=side * 0.28,
-            curve_bend=-side * 0.08,
-            segs=10,
-        )
-        add_cone_spike(
-            f"{piv_name}_pincer_inner",
-            arm_piv,
-            mats["horn"],
-            base_r=0.052,
-            length=0.32,
-            tx=side * 0.16,
-            ty=0.03,
-            tz=-0.82,
-            rx=-math.pi * 0.50,
-            ry=-side * 0.24,
-            curve_bend=side * 0.06,
-            segs=10,
-        )
-        for tooth_i in range(3):
-            add_cone_spike(
-                f"{piv_name}_tooth_{tooth_i}",
-                arm_piv,
-                mats["bone"],
-                base_r=0.016,
-                length=0.045,
-                tx=side * 0.25,
-                ty=0.04,
-                tz=-0.88 - tooth_i * 0.065,
-                rz=side * math.pi * 0.5,
-                segs=6,
-            )
+    rig = figkit.make_rig("Monster_scorpion", rigs.CRAWLER_TABLE, {k: t2b(*p) for k, p in j.items()}, prefix="scorpion")
+    for obj, bone in hard:
+        figkit.hard_weights(obj, bone)
+        obj.parent = rig
 
-    return root
+    merged = figkit.merge_by_family(rig)
+    names = {"skin": "scorpion_body", "plain": "scorpion_bone", "glow": "scorpion_sting"}
+    for ob in merged:
+        ob.name = ob.data.name = names[figkit.get_material_family(ob)]
+    _figure_paint(rig, merged, SCORPION_OCCLUSION)
+
+    tris = sum(len(p.vertices) - 2 for ob in merged for p in ob.data.polygons)
+    if tris > SCORPION_TRIANGLES:
+        raise ValueError(f"scorpion: {tris} triangles, over the budget of {SCORPION_TRIANGLES}")
+    cos = [v.co for ob in merged for v in ob.data.vertices]
+    size = [max(c[a] for c in cos) - min(c[a] for c in cos) for a in (0, 2, 1)]  # width, height, length
+    print(f"[Blender] scorpion: {tris} triangles in {len(merged)} meshes; width {size[0]:.3f}, height {size[1]:.3f}, "
+          f"length {size[2]:.3f}; lowest {min(c.z for c in cos):.4f}")
+    if abs(size[1] / SCORPION_HEIGHT - 1.0) > 0.05:
+        raise ValueError(f"scorpion: height {size[1]:.3f} is more than 5% from the shipped scorpion's {SCORPION_HEIGHT}")
+    build_dragon_library(rig, merged, prefix="scorpion_", tables=_scorpion_clip_tables, label="scorpion", clip_prefix="scorpion_")
+    return rig
+
+
+# The crawler library (plan M3b, design 6.5): Idle, Walk, Strike, Death on the scorpion's bones, as the
+# dragon's: pose tables on the twelve-a-second grid, rotation only, plus the measured Hips height. Values
+# are three-space Euler triples local to the bone's parent (every rest rotation is identity). The figure
+# faces -z: +x lifts a forward bone (a claw, the head) and tips the tail back and down, -x rears the tail
+# up and over; on a left leg -y swings it forward and -z lifts its tip, mirrored on the right; +y opens a
+# left claw outward, -y a right one. No Hurt clip (decision N-6). Strike's anticipation key is frame 8.
+SCORPION_ANTICIPATION_FRAME = 8
+SCORPION_BONES = (
+    "Hips", "HeadGroup", "LeftArmPivot", "LeftElbowPivot", "RightArmPivot", "RightElbowPivot",
+    "LeftLegPivot", "RightLegPivot", "LegL1", "LegL2", "LegL3", "LegL4", "LegR1", "LegR2", "LegR3", "LegR4",
+    "TailPivot", "TailPivot2", "TailPivot3",
+)
+
+
+def _scorpion_clip_tables(pose_table):
+    Z = (0.0, 0.0, 0.0)
+    rest = {b: Z for b in SCORPION_BONES}
+
+    def mirror(pose):
+        """Left and right swapped (claws, side pivots and legs); y and z change sign."""
+        out = {}
+        for b, (x, y, z) in pose.items():
+            o = b.replace("Left", "#").replace("Right", "Left").replace("#", "Right")
+            if o == b:
+                o = b.replace("LegL", "#").replace("LegR", "LegL").replace("#", "LegR")
+            out[o] = (x, -y, -z)
+        return out
+
+    def legs(group, swing=0.0, lift=0.0):
+        """Each (side, n) leg swung forward by `swing` and its tip raised by `lift` (radians)."""
+        return {f"Leg{side}{n}": (0.0, (-1.0 if side == "L" else 1.0) * swing, (-1.0 if side == "L" else 1.0) * lift)
+                for side, n in group}
+
+    every = [(side, n) for side in "LR" for n in range(1, 5)]
+    a_set = [("L", 1), ("R", 2), ("L", 3), ("R", 4)]  # the alternating tetrapod gait: these four step together
+    b_set = [("R", 1), ("L", 2), ("R", 3), ("L", 4)]
+
+    # Idle: the claws open and close a little out of phase, the tail sways and the sting bobs.
+    idle_a = {"LeftArmPivot": (0.06, 0.05, 0.0), "RightArmPivot": (0.02, -0.02, 0.0), "LeftElbowPivot": (0.0, 0.06, 0.0),
+              "TailPivot": (0.0, 0.05, 0.0), "TailPivot3": (-0.05, 0.0, 0.0), "HeadGroup": (0.02, 0.0, 0.0)}
+    idle_b = {"LeftArmPivot": (0.03, 0.08, 0.0), "RightArmPivot": (0.03, -0.08, 0.0), "LeftElbowPivot": (0.0, 0.10, 0.0),
+              "RightElbowPivot": (0.0, -0.10, 0.0), "TailPivot2": (-0.04, 0.0, 0.0), "TailPivot3": (0.06, 0.0, 0.0), "Hips": (0.015, 0.0, 0.0)}
+    idle = pose_table("Idle", 48, rest, [
+        (0, "rest", {}, "cr"), (12, "open", idle_a, "cr"), (24, "full", idle_b, "cr"),
+        (36, "close", mirror(idle_a), "cr"), (48, "rest", {}, "cr"),
+    ], loop=True)
+
+    # Walk: two sets of four legs step in turn; the set in the air swings forward lifted, the set on
+    # the ground pushes back. The body yaws a little against the step and the tail counters it.
+    reach = {**legs(a_set, swing=0.22), **legs(b_set, swing=-0.22), "Hips": (0.0, 0.03, 0.0), "TailPivot": (0.0, -0.06, 0.0),
+             "HeadGroup": (0.0, -0.02, 0.0), "LeftArmPivot": (0.05, 0.0, 0.0), "RightArmPivot": (-0.02, 0.0, 0.0)}
+    passing = {**legs(b_set, lift=0.28), "TailPivot3": (0.03, 0.0, 0.0)}
+    walk = pose_table("Walk", 16, rest, [
+        (0, "reach", reach, "cr"), (4, "pass", passing, "cr"), (8, "reach other", mirror(reach), "cr"),
+        (12, "pass other", mirror(passing), "cr"), (16, "reach", reach, "cr"),
+    ], loop=True)
+
+    # Strike: the tail rears and the sting draws back while the claws rise and spread (the telegraph),
+    # then the tail whips over the head and the sting drives down in front, the claws snap in.
+    a = SCORPION_ANTICIPATION_FRAME
+    cock = {"TailPivot": (-0.12, 0.0, 0.0), "TailPivot2": (0.10, 0.0, 0.0), "TailPivot3": (0.40, 0.0, 0.0),
+            "LeftArmPivot": (0.22, 0.18, 0.0), "RightArmPivot": (0.22, -0.18, 0.0), "LeftElbowPivot": (0.0, 0.15, 0.0),
+            "RightElbowPivot": (0.0, -0.15, 0.0), "Hips": (0.04, 0.0, 0.0), "HeadGroup": (0.05, 0.0, 0.0)}
+    hit = {"TailPivot": (-0.20, 0.0, 0.0), "TailPivot2": (-0.25, 0.0, 0.0), "TailPivot3": (-0.45, 0.0, 0.0),
+           "LeftArmPivot": (-0.04, 0.05, 0.0), "RightArmPivot": (-0.04, -0.05, 0.0), "LeftElbowPivot": (0.0, -0.12, 0.0),
+           "RightElbowPivot": (0.0, 0.12, 0.0), "Hips": (-0.05, 0.0, 0.0), "HeadGroup": (-0.06, 0.0, 0.0)}
+    strike = pose_table("Strike", 20, rest, [
+        (0, "rest", {}, "io"), (a, "cock", cock, "io"), (12, "strike", hit, "in"),
+        (14, "hold", {k: tuple(v * 0.9 for v in val) for k, val in hit.items()}, "out"), (20, "settle", {}, "io"),
+    ])
+
+    # Death: a recoil, the legs buckle and curl up under the body, which drops onto its plates rolled
+    # a little; the claws sag and the tail falls back and to the side.
+    fall = {**legs(every, lift=0.85), "LeftArmPivot": (-0.20, 0.25, 0.0), "RightArmPivot": (-0.20, -0.20, 0.0),
+            "LeftElbowPivot": (0.0, 0.30, 0.0), "RightElbowPivot": (0.0, -0.30, 0.0), "TailPivot": (0.55, 0.45, 0.0),
+            "TailPivot2": (0.30, 0.20, 0.0), "TailPivot3": (0.45, 0.15, 0.0), "Hips": (0.0, 0.10, 0.10), "HeadGroup": (-0.08, 0.0, 0.0)}
+    death = pose_table("Death", 26, rest, [
+        (0, "rest", {}, "io"),
+        (6, "recoil", {**legs(every, lift=0.10), "TailPivot": (-0.15, 0.0, 0.0), "TailPivot3": (0.25, 0.0, 0.0),
+                       "LeftArmPivot": (0.20, 0.10, 0.0), "RightArmPivot": (0.20, -0.10, 0.0), "Hips": (0.05, 0.0, 0.0)}, "out"),
+        (12, "buckle", {**legs(every, lift=0.35), "LeftArmPivot": (-0.05, 0.10, 0.0), "RightArmPivot": (-0.05, -0.10, 0.0),
+                        "TailPivot": (0.15, 0.15, 0.0), "Hips": (0.0, 0.0, 0.04)}, "io"),
+        (20, "fall", fall, "in"),
+        (24, "bounce", dict(fall, Hips=(0.0, 0.10, 0.08), TailPivot=(0.50, 0.45, 0.0)), "out"),
+        (26, "still", dict(fall, TailPivot=(0.58, 0.47, 0.0)), "io"),
+    ])
+    return [("Idle", idle, 48, True), ("Walk", walk, 16, True), ("Strike", strike, 20, False), ("Death", death, 26, False)]
 
 
 # =============================================================================
@@ -3401,18 +3463,23 @@ def _dragon_clip_tables(pose_table):
             ("WingBuffet", buffet, 24, False), ("Death", death, 26, False)]
 
 
-def build_dragon_library(rig, meshes):
+def build_dragon_library(rig, meshes, prefix="elvarg_dragon_", tables=_dragon_clip_tables, label="dragon", clip_prefix=""):
     """
-    Keys the five clips on the dragon's armature, one NLA track each. Frames 0 to the clip's last key
+    Keys the five clips on the dragon's armature, one NLA track each. The scorpion's library (plan M3b)
+    goes through here too, with its own bones, tables and label: a clip whose name the dragon's library
+    already holds (Idle, Walk, Death) carries `clip_prefix`, since the file's animation names must be
+    unique; the engine strips it again (attachMonsterGltfAnimator). Frames 0 to the clip's last key
     are keyed (a one-shot ends on its settle or held pose, a loop's last frame repeats its first). The
     Hips height is measured per frame so the posed body's lowest point is on the ground; loops are
     smoothed round the cycle and may let a foot 0.01 into the ground, as the hero's Walk.
     """
     import build_hero  # the pose-table sampler, its eases and the lowest-point probe (H4)
 
-    prefix = "elvarg_dragon_"
     hips = rig.pose.bones[prefix + "Hips"]
-    for name, sample, frames, loop in _dragon_clip_tables(build_hero.pose_table):
+    taken = {n for n, *_ in _dragon_clip_tables(build_hero.pose_table)} if clip_prefix else set()
+    for name, sample, frames, loop in tables(build_hero.pose_table):
+        if name in taken:
+            name = clip_prefix + name
         rig.animation_data_create()
         action = bpy.data.actions.new(name=name)
         rig.animation_data.action = action
@@ -3450,7 +3517,7 @@ def build_dragon_library(rig, meshes):
             lows.append(lo)
             held = lo >= -build_hero.GROUND_SINK - build_hero.GROUND_TOL if loop else abs(lo) <= build_hero.GROUND_TOL
             if not held:
-                raise ValueError(f"dragon {name} frame {f}: lowest point {lo:+.4f} after the ground lock")
+                raise ValueError(f"{label} {name} frame {f}: lowest point {lo:+.4f} after the ground lock")
         bpy.context.scene.frame_set(0)
         for tr in earlier:
             tr.mute = False
@@ -3464,7 +3531,7 @@ def build_dragon_library(rig, meshes):
             pb.rotation_quaternion = (1.0, 0.0, 0.0, 0.0)
             pb.location = Vector()
         keys = ", ".join(f"{n} {k}" for k, n in sample.keys)
-        print(f"[Blender] dragon {name}: {last + 1} frames, {last / build_hero.FPS:.4f} s; keys {keys}; "
+        print(f"[Blender] {label} {name}: {last + 1} frames, {last / build_hero.FPS:.4f} s; keys {keys}; "
               f"Hips height {min(heights):+.3f} to {max(heights):+.3f}, lowest point {min(lows):+.3f} to {max(lows):+.3f}")
     bpy.context.view_layer.update()
 

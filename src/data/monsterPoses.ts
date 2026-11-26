@@ -105,7 +105,29 @@ export const MONSTER_MOTION: Record<string, MonsterMotionRow> = {
   },
   scorpion: {
     skeleton: 'crawler',
-    bones: [],
+    // The re-rigged scorpion's bones (plan M3b): every bone its own library keys. Its clips are staged
+    // below until K4 promotes the skinned scorpion (the shipped one is rigid and has no library).
+    bones: [
+      'Hips',
+      'HeadGroup',
+      'LeftArmPivot',
+      'LeftElbowPivot',
+      'RightArmPivot',
+      'RightElbowPivot',
+      'LeftLegPivot',
+      'RightLegPivot',
+      'LegL1',
+      'LegL2',
+      'LegL3',
+      'LegL4',
+      'LegR1',
+      'LegR2',
+      'LegR3',
+      'LegR4',
+      'TailPivot',
+      'TailPivot2',
+      'TailPivot3'
+    ],
     codeAttack: {
       rightArmX: -1.45,
       leftArmX: 0.58,
@@ -228,4 +250,14 @@ export const MONSTER_MOTION: Record<string, MonsterMotionRow> = {
       y: 0.32
     }
   }
+};
+
+/**
+ * The scorpion's crawler library (plan M3b), staged as the dragon's and the archer's were: K4's promote
+ * sets the live row's `clips` and `anticipation` to these and removes the export. In monsters.glb Idle, Walk
+ * and Death are named `scorpion_<clip>` (the dragon's library holds the bare names); the loader strips the prefix.
+ */
+export const PENDING_SCORPION_CLIPS: Pick<MonsterMotionRow, 'clips' | 'anticipation'> = {
+  clips: { idle: 'Idle', walk: 'Walk', attack: 'Strike', death: 'Death' },
+  anticipation: 0.333333
 };
