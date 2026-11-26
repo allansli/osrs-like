@@ -2,6 +2,9 @@ import * as THREE from 'three';
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { G, type MonsterEntity, type ResourceNodeEntity } from './context';
 import { MONSTER_TYPES, RESOURCE_NODES_DEF, type MonsterDef } from '../data/world';
+import { BOSSES } from '../data/attacks';
+import { STATE } from '../state/gameState';
+import { bossBackIn, clearBossDown } from '../state/progress';
 import { CAMPS } from '../data/worldMap';
 import { NODE_PLACEMENTS } from '../data/placements';
 import { getTerrainHeight } from '../state/terrain';
@@ -64,6 +67,26 @@ export function spawnMonster(
   const id = `monster_${nextMonsterId++}`;
   const logic = createMonsterLogic(typeKey, x, z, opts);
   logic.wanderTimer = Math.random() * 3;
+  if (BOSSES[typeKey]) {
+    let currentState = logic.state;
+    Object.defineProperty(logic, 'state', {
+      get: () => currentState,
+      set: (s) => {
+        if (currentState === 'dead' && s !== 'dead') {
+          clearBossDown(STATE, typeKey);
+        }
+        currentState = s;
+      },
+      configurable: true,
+      enumerable: true
+    });
+  }
+  const backIn = bossBackIn(STATE, typeKey, Date.now());
+  if (backIn > 0) {
+    logic.state = 'dead';
+    logic.timer = backIn;
+    rig.group.visible = false;
+  }
   const modelKey = def.model ?? typeKey;
   const mObj: MonsterEntity = {
     id,
