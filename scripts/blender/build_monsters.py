@@ -13,6 +13,7 @@ Sculpts authentic, high-detail OSRS / RuneScape Dragonwilds stylized monsters:
  10. Monster_elvarg_dragon    - Elvarg the Crag Dragon world boss, a new skinned model on the dragon rig: low heavy-shouldered body, wedge head with a jaw, swept horns, crag plates down the spine, raised wings & spade tail
  11. Monster_ashmantle        - Ashmantle the Slag Wyrm, its own skinned body on the dragon rig: heavier chest, slag crown, back plates with glowing seams, clubbed tail
  12. Monster_saltfang         - Matron Saltfang, her own skinned body on the crawler rig: a broad brood body under a salt-white carapace, egg sacs on the back, heavy claws & a forked violet sting
+ 13. Monster_kiln_warden      - The Kiln Warden, its own skinned body on the moss guardian's biped rig: a fired-clay kiln banded in iron, an open furnace chest with a glowing core, a chimney on the back & two iron hammer fists
 """
 
 import math
@@ -3482,6 +3483,181 @@ def build_moss_guardian(grid_pos: tuple[float, float, float], mats: dict):
 
 
 # =============================================================================
+# 8b. Monster_kiln_warden (The Kiln Warden): its own body on the moss guardian's biped skeleton (Stage 6 plan MB2)
+# =============================================================================
+# As Saltfang on the scorpion's: a second body on the guardian's bones (kiln_warden_<Bone>), at the guardian's
+# joints (guardian_joints), so the hero file's clips play on it with the guardian's Hips ratio (the engine
+# caches the scaled clips by the model key, moss_guardian). A furnace golem of fired clay banded in iron:
+# a squat kiln-dome head with a glowing slit under an iron visor, a barrel kiln for a chest with its furnace
+# mouth open in front (an iron frame, a glowing core behind three grate bars), a chimney rising behind the
+# right shoulder (the one asymmetry), clay shoulder domes under iron rims, clay arms whose forearms end in
+# iron hammer heads, and iron-shod feet. What tells it from the woods creature at 85 px: no antlers, a flat
+# kiln top with the chimney beside it, two hammer fists in place of claws and a gauntlet, and the clay's
+# red at 66% against the guardian's bark at 37%. Clay and iron do not bend, so every part is hard on one
+# bone; the glow (core, slit, seams, chimney ember) rides only Torso and HeadGroup, so no glow swings
+# out of its mesh's sphere. The clay is on a 'stone' material (the stone tile), the iron on an 'iron' one
+# (the iron tile), each painted over its tile's mean; the glow is the file's mat_glow_orange.
+KILN_TRIANGLES = 9000  # the builder's own budget, under the manifest's 14,000 (design 9.1's boss class)
+KILN_OCCLUSION = 0.5  # bake_paint's occlusion strength, as the guardian's
+IRON_TILE = "public/textures/iron.png"  # 'iron' in a material name draws with this tile (blenderMonsters.ts)
+KILN_COLOURS = {  # as the game shows them, before the row's tint
+    "clay": 0xA8643F,  # fired clay: chest, head, arms, thighs (66% value)
+    "clay_dark": 0x84503A,  # pelvis, shins, the chimney's lower courses (52%)
+    "clay_light": 0xB97A52,  # the shoulder domes and the kiln's crown (73%)
+    "iron": 0x5C5854,  # bands, visor, rims, hammer heads (36%)
+    "iron_dark": 0x45413D,  # the furnace frame, grate bars, knees, feet (27%)
+}
+KILN_FAMILY = {"clay": "stone", "clay_dark": "stone", "clay_light": "stone", "iron": "metal", "iron_dark": "metal"}
+KILN_SEAMS = (  # (y, angle round the chest from the front, + toward the figure's left, length, lean): glowing cracks
+    (1.56, 1.25, 0.20, 0.35), (1.22, 1.45, 0.18, -0.30), (1.42, -1.30, 0.22, -0.25), (1.18, -1.55, 0.16, 0.40),
+    (1.50, 2.45, 0.20, 0.30), (1.25, -2.55, 0.18, -0.35),
+)
+
+
+def build_kiln_warden(mats: dict):
+    """
+    The Kiln Warden's body (Stage 6 plan MB2): Monster_kiln_warden at the file's origin, three skinned meshes
+    on the biped rig at the guardian's joints, every part hard on one bone.
+    """
+    import rigs
+    from mathutils.bvhtree import BVHTree
+
+    clay = make_mat("mat_stone_kiln_warden_paint", 0xFFFFFF, roughness=0.82, metallic=0.02)
+    iron = make_mat("mat_iron_kiln_warden_paint", 0xFFFFFF, roughness=0.48, metallic=0.60)
+    glow = mats["glow_orange"]
+    means = {"stone": _goblin_hide_mean(STONE_TILE), "metal": _goblin_hide_mean(IRON_TILE)}
+    col = _human_paint(KILN_COLOURS, KILN_FAMILY, means)
+    col["glow"] = 0xFFFFFF
+    j = guardian_joints()
+    hard = []  # (object, bone)
+
+    def add(obj, bone: str, colour: str, planes: bool = True):
+        _goblin_tint(obj, col[colour], planes and colour != "glow")
+        hard.append((obj, f"kiln_warden_{bone}"))
+        return obj
+
+    # Hips: the kiln's foot, a clay block from under the leg joints to the waist, and an iron belt
+    add(add_lathe("kwd_pelvis", None, clay, [(0.64, 0.25, 0.20), (0.84, 0.34, 0.27, 0.0, 0.02, 0.3), (1.02, 0.34, 0.27, 0.0, 0.0, 0.3)],
+                  segs=8, smooth=False), "Hips", "clay_dark")
+    add(add_lathe("kwd_belt", None, iron, [(0.90, 0.365, 0.295, 0.0, 0.02, 0.3), (0.99, 0.37, 0.30, 0.0, 0.01, 0.3)],
+                  segs=8, smooth=False), "Hips", "iron")
+
+    # Torso: the barrel kiln, squared a little, leaning into the head; two iron hoops
+    chest = add(add_lathe("kwd_chest", None, clay, [
+        (0.97, 0.33, 0.26), (1.18, 0.48, 0.36, 0.0, -0.03, 0.3), (1.44, 0.55, 0.40, 0.0, -0.05, 0.3),
+        (1.66, 0.50, 0.36, 0.0, -0.05, 0.3), (1.80, 0.30, 0.25, 0.0, -0.04, 0.2)], segs=12, smooth=False), "Torso", "clay")
+    add(add_lathe("kwd_hoop_low", None, iron, [(1.04, 0.42, 0.32, 0.0, -0.01, 0.3), (1.11, 0.46, 0.35, 0.0, -0.02, 0.3)],
+                  segs=10, smooth=False), "Torso", "iron")
+    add(add_lathe("kwd_hoop_high", None, iron, [(1.62, 0.535, 0.39, 0.0, -0.05, 0.3), (1.70, 0.50, 0.365, 0.0, -0.05, 0.3)],
+                  segs=10, smooth=False), "Torso", "iron")
+    # The furnace mouth, open in front: a glowing core behind three grate bars in an iron frame
+    add(add_sphere("kwd_core", None, glow, 0.21, 0.17, 0.07, tx=0.0, ty=1.32, tz=-0.42, segs=8, rings=6, smooth=False), "Torso", "glow")
+    for name, w, h, x, y in (("lintel", 0.58, 0.09, 0.0, 1.53), ("sill", 0.58, 0.09, 0.0, 1.11),
+                             ("jamb_L", 0.09, 0.50, -0.25, 1.32), ("jamb_R", 0.09, 0.50, 0.25, 1.32)):
+        add(add_box(f"kwd_frame_{name}", None, iron, w, h, 0.11, tx=x, ty=y, tz=-0.46, bevel=0.0), "Torso", "iron_dark")
+    for k, x in enumerate((-0.11, 0.0, 0.11)):
+        add(add_box(f"kwd_bar_{k}", None, iron, 0.05, 0.36, 0.05, tx=x, ty=1.32, tz=-0.51, bevel=0.0), "Torso", "iron_dark")
+    # The chimney behind the right shoulder, leaning back: clay courses, an iron cap, embers in its throat
+    cx, cz = 0.20, 0.26
+    add(add_lathe("kwd_flue", None, clay, [(1.40, 0.20, 0.19, 0.0, 0.0, 0.4), (1.90, 0.18, 0.17, 0.0, 0.04, 0.4), (2.28, 0.165, 0.155, 0.0, 0.08, 0.4)],
+                  segs=8, tx=cx, tz=cz, smooth=False), "Torso", "clay_dark")
+    add(add_lathe("kwd_flue_cap", None, iron, [(2.22, 0.21, 0.20, 0.0, 0.075, 0.4), (2.40, 0.225, 0.215, 0.0, 0.08, 0.4)],
+                  segs=8, tx=cx, tz=cz, smooth=False), "Torso", "iron")
+    add(add_sphere("kwd_ember", None, glow, 0.15, 0.03, 0.14, tx=cx, ty=2.405, tz=cz + 0.08, segs=6, rings=4, smooth=False), "Torso", "glow")
+    # Glowing seams: zigzag cracks laid on the chest through points found by rays from outside, 0.056 across
+    bm = bmesh.new()
+    bm.from_mesh(chest.data)
+    tree = BVHTree.FromBMesh(bm)
+
+    def on_chest(y: float, ang: float) -> tuple:
+        d = Vector(t2b(-math.sin(ang), 0.0, -math.cos(ang)))  # outward, in Blender space
+        hit = tree.ray_cast(Vector(t2b(0.0, y, -0.04)) + d * 2.0, -d)[0]
+        if hit is None:
+            raise ValueError(f"kiln_warden: no chest under the seam at y {y}, angle {ang}")
+        return (hit.x, hit.z, -hit.y)  # three-space
+
+    for k, (y, ang, length, lean) in enumerate(KILN_SEAMS):
+        zig = [(y + length * 0.5, ang + lean * 0.25), (y, ang - lean * 0.25), (y - length * 0.5, ang + lean * 0.10)]
+        add(add_curved_tube(f"kwd_seam_{k}", None, glow, [(*on_chest(py, pa), 0.028) for py, pa in zig], segs=4, smooth=False), "Torso", "glow")
+    bm.free()
+
+    # Head: a squat kiln dome sunk between the shoulders, an iron visor with a glowing slit, a clay crown
+    hx, hy, hz = j["HeadGroup"]
+    add(add_lathe("kwd_dome", None, clay, [(hy - 0.04, 0.21, 0.20), (hy + 0.12, 0.24, 0.22), (hy + 0.26, 0.21, 0.19), (hy + 0.33, 0.12, 0.11)],
+                  segs=10, tx=hx, tz=hz, smooth=False), "HeadGroup", "clay")
+    add(add_lathe("kwd_crown", None, clay, [(hy + 0.32, 0.13, 0.12), (hy + 0.38, 0.11, 0.10)], segs=8, tx=hx, tz=hz, smooth=False), "HeadGroup", "clay_light")
+    add(add_lathe("kwd_visor", None, iron, [(hy + 0.09, 0.255, 0.235), (hy + 0.23, 0.25, 0.23)], segs=8, tx=hx, tz=hz, smooth=False), "HeadGroup", "iron")
+    add(add_box("kwd_slit", None, glow, 0.30, 0.055, 0.05, tx=hx, ty=hy + 0.16, tz=hz - 0.235, bevel=0.0), "HeadGroup", "glow")
+    add(add_box("kwd_brow", None, iron, 0.34, 0.06, 0.08, tx=hx, ty=hy + 0.215, tz=hz - 0.23, bevel=0.0), "HeadGroup", "iron_dark")
+
+    # Shoulders: clay domes under iron rims, on the arm bones
+    for side, tag in ((-1.0, "Left"), (1.0, "Right")):
+        px, py, pz = j[f"{tag}ArmPivot"]
+        add(add_sphere(f"kwd_dome_{tag}", None, clay, 0.26, 0.20, 0.26, tx=px + side * 0.02, ty=py + 0.08, tz=pz, rz=-side * 0.30,
+                       segs=8, rings=5, smooth=False), f"{tag}ArmPivot", "clay_light")
+        add(add_lathe(f"kwd_rim_{tag}", None, iron, [(-0.03, 0.29, 0.29), (0.04, 0.28, 0.28)], segs=8,
+                      tx=px + side * 0.03, ty=py + 0.02, tz=pz, rz=-side * 0.30, smooth=False), f"{tag}ArmPivot", "iron")
+
+    # Arms: a clay upper arm, an iron elbow, a thick clay forearm in an iron band, and an iron hammer head for a fist
+    for side, tag in ((-1.0, "Left"), (1.0, "Right")):
+        a, e, h = (Vector(j[f"{tag}{n}"]) for n in ("ArmPivot", "ElbowPivot", "Hand"))
+        d = (h - e).normalized()
+        add(add_limb_tube(f"kwd_upper_{tag}", None, clay, tuple(a), tuple(e), 0.15, 0.12, segs=8, steps=4, smooth=False), f"{tag}ArmPivot", "clay")
+        add(add_sphere(f"kwd_elbow_{tag}", None, iron, 0.15, 0.13, 0.15, tx=e.x, ty=e.y, tz=e.z, segs=7, rings=5, smooth=False), f"{tag}ElbowPivot", "iron_dark")
+        add(add_limb_tube(f"kwd_fore_{tag}", None, clay, tuple(e), tuple(h), 0.125, 0.15, segs=8, steps=4, smooth=False), f"{tag}ElbowPivot", "clay")
+        w = h - d * 0.10
+        add(add_limb_tube(f"kwd_cuff_{tag}", None, iron, tuple(w - d * 0.05), tuple(w + d * 0.05), 0.17, 0.17, r_mid=0.17, segs=7, steps=2, smooth=False),
+            f"{tag}ElbowPivot", "iron")
+        c = h + d * 0.10
+        rot = dict(rx=-0.24, rz=math.atan2(d.x, -d.y))
+        add(add_box(f"kwd_hammer_{tag}", None, iron, 0.36, 0.32, 0.58, tx=c.x, ty=c.y, tz=c.z, bevel=0.0, **rot), f"{tag}Hand", "iron")
+        for k, f in enumerate((-1.0, 1.0)):  # the two striking faces, a little wider than the head, at its ends
+            bx, by, bz = xform_pt(0.0, 0.0, f * 0.29, **rot)
+            fc = c + Vector((bx, bz, -by))
+            add(add_box(f"kwd_face_{tag}_{k}", None, iron, 0.42, 0.38, 0.07, tx=fc.x, ty=fc.y, tz=fc.z, bevel=0.0, **rot), f"{tag}Hand", "iron_dark")
+        add(add_limb_tube(f"kwd_fist_{tag}", None, clay, tuple(h - d * 0.05), tuple(c), 0.14, 0.14, segs=7, steps=2, smooth=False), f"{tag}Hand", "clay_dark")
+
+    # Legs: a clay thigh, an iron knee, a clay shin flaring to an iron-shod foot
+    for side, tag in ((-1.0, "Left"), (1.0, "Right")):
+        hip, knee, foot = (Vector(j[f"{tag}{n}"]) for n in ("LegPivot", "KneePivot", "Foot"))
+        add(add_limb_tube(f"kwd_thigh_{tag}", None, clay, tuple(hip + Vector((0.0, 0.06, 0.0))), tuple(knee), 0.18, 0.15, segs=8, steps=4, smooth=False), f"{tag}LegPivot", "clay")
+        add(add_sphere(f"kwd_knee_{tag}", None, iron, 0.17, 0.14, 0.16, tx=knee.x, ty=knee.y, tz=knee.z - 0.05, segs=7, rings=5, smooth=False), f"{tag}KneePivot", "iron_dark")
+        add(add_limb_tube(f"kwd_shin_{tag}", None, clay, tuple(knee), tuple(foot + Vector((0.0, 0.04, 0.0))), 0.15, 0.20, segs=8, steps=4, smooth=False), f"{tag}KneePivot", "clay_dark")
+        add(add_box(f"kwd_foot_{tag}", None, iron, 0.34, 0.13, 0.42, tx=foot.x, ty=0.065, tz=foot.z - 0.07, bevel=0.0), f"{tag}Foot", "iron_dark")
+        add(add_box(f"kwd_toe_{tag}", None, iron, 0.30, 0.08, 0.10, tx=foot.x, ty=0.12, tz=foot.z - 0.24, rx=0.35, bevel=0.0), f"{tag}Foot", "iron")
+
+    rig = figkit.make_rig("Monster_kiln_warden", rigs.BIPED_TABLE, {k: t2b(*p) for k, p in j.items()}, prefix="kiln_warden")
+    for obj, bone in hard:
+        figkit.hard_weights(obj, bone)
+        obj.parent = rig
+    held = {bone for _, bone in hard}
+    missing = [b for b in KILN_BONES if f"kiln_warden_{b}" not in held]
+    if missing:
+        raise ValueError(f"kiln_warden: no part rides {missing}; every bone the guardian's clips turn must carry weight")
+
+    merged = figkit.merge_by_family(rig)
+    names = {"stone": "kiln_warden_clay", "metal": "kiln_warden_iron", "glow": "kiln_warden_core"}
+    for ob in merged:
+        ob.name = ob.data.name = names[figkit.get_material_family(ob)]
+    _figure_paint(rig, merged, KILN_OCCLUSION)
+
+    tris = sum(len(p.vertices) - 2 for ob in merged for p in ob.data.polygons)
+    if tris > KILN_TRIANGLES:
+        raise ValueError(f"kiln_warden: {tris} triangles, over the budget of {KILN_TRIANGLES}")
+    cos = [v.co for ob in merged for v in ob.data.vertices]
+    size = [max(c[a] for c in cos) - min(c[a] for c in cos) for a in (0, 2, 1)]  # width, height, depth
+    print(f"[Blender] kiln_warden: {tris} triangles in {len(merged)} meshes; width {size[0]:.3f}, height {size[1]:.3f}, "
+          f"depth {size[2]:.3f}; lowest {min(c.z for c in cos):.4f}")
+    if abs(size[1] / GUARDIAN_HEIGHT - 1.0) > 0.05:
+        raise ValueError(f"kiln_warden: height {size[1]:.3f} is more than 5% from the guardian's {GUARDIAN_HEIGHT}")
+    return rig
+
+
+KILN_BONES = ("Hips", "Torso", "HeadGroup", "LeftArmPivot", "LeftElbowPivot", "RightArmPivot", "RightElbowPivot",
+              "LeftLegPivot", "LeftKneePivot", "LeftFoot", "RightLegPivot", "RightKneePivot", "RightFoot")  # MONSTER_MOTION.moss_guardian's
+
+
+# =============================================================================
 # 9. Monster_lesser_demon (Lesser Demon): rebuilt and skinned on the biped rig (plan M3d)
 # =============================================================================
 # An original demon on the pilot's pattern (docs/superpowers/baseline/models/README.md): a brute
@@ -4716,6 +4892,7 @@ def main():
     build_slag_brute_kit()
     build_marrowjaw_kit()
     build_moss_guardian((-0.6, 0.0, 2.2), mats)
+    build_kiln_warden(mats)
     build_lesser_demon((2.2, 0.0, 2.2), mats)
     build_elvarg_dragon((6.2, 0.0, 2.6), mats)
     build_ashmantle(mats)

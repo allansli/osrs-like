@@ -467,6 +467,19 @@
         1,
         1
       ]
+    },
+    "Monster_kiln_warden": {
+      "parent": null,
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
     }
   },
   "materials": [
@@ -486,6 +499,7 @@
     "mat_horn_ashmantle_paint",
     "mat_horn_elvarg_dragon_paint",
     "mat_horn_lesser_demon_paint",
+    "mat_iron_kiln_warden_paint",
     "mat_leather_dark_ranger_paint",
     "mat_moss_guardian_paint",
     "mat_robe_dark_wizard_paint",
@@ -499,6 +513,7 @@
     "mat_skin_saltfang_paint",
     "mat_skin_scorpion_paint",
     "mat_stone_guardian_paint",
+    "mat_stone_kiln_warden_paint",
     "mat_wing_ashmantle_paint",
     "mat_wing_elvarg_dragon_paint",
     "mat_wing_lesser_demon_paint",
@@ -538,6 +553,9 @@
     "^hill_giant_bone$",
     "^hill_giant_club$",
     "^hill_giant_fur$",
+    "^kiln_warden_clay$",
+    "^kiln_warden_core$",
+    "^kiln_warden_iron$",
     "^lesser_demon_body$",
     "^lesser_demon_embers$",
     "^lesser_demon_horn$",
@@ -576,7 +594,8 @@
       "Kit_cinder_adept": "all",
       "Kit_slag_brute": "all",
       "Kit_marrowjaw": "all",
-      "Monster_saltfang": "all"
+      "Monster_saltfang": "all",
+      "Monster_kiln_warden": "all"
     }
   },
   "clips": {
@@ -2632,6 +2651,134 @@
           0,
           0
         ]
+      },
+      "kiln_warden_HeadGroup": {
+        "parent": "kiln_warden_Torso",
+        "translation": [
+          0,
+          0.56,
+          -0.18
+        ]
+      },
+      "kiln_warden_LeftHand": {
+        "parent": "kiln_warden_LeftElbowPivot",
+        "translation": [
+          -0.15,
+          -0.371,
+          -0.09
+        ]
+      },
+      "kiln_warden_LeftElbowPivot": {
+        "parent": "kiln_warden_LeftArmPivot",
+        "translation": [
+          -0.163,
+          -0.365,
+          -0.05
+        ]
+      },
+      "kiln_warden_LeftArmPivot": {
+        "parent": "kiln_warden_Torso",
+        "translation": [
+          -0.6,
+          0.33,
+          0
+        ]
+      },
+      "kiln_warden_RightHand": {
+        "parent": "kiln_warden_RightElbowPivot",
+        "translation": [
+          0.15,
+          -0.371,
+          -0.09
+        ]
+      },
+      "kiln_warden_RightElbowPivot": {
+        "parent": "kiln_warden_RightArmPivot",
+        "translation": [
+          0.163,
+          -0.365,
+          -0.05
+        ]
+      },
+      "kiln_warden_RightArmPivot": {
+        "parent": "kiln_warden_Torso",
+        "translation": [
+          0.6,
+          0.33,
+          0
+        ]
+      },
+      "kiln_warden_Torso": {
+        "parent": "kiln_warden_Hips",
+        "translation": [
+          0,
+          0.22,
+          -0.02
+        ]
+      },
+      "kiln_warden_LeftFoot": {
+        "parent": "kiln_warden_LeftKneePivot",
+        "translation": [
+          0,
+          -0.33,
+          0.05
+        ]
+      },
+      "kiln_warden_LeftKneePivot": {
+        "parent": "kiln_warden_LeftLegPivot",
+        "translation": [
+          -0.05,
+          -0.36,
+          -0.03
+        ]
+      },
+      "kiln_warden_LeftLegPivot": {
+        "parent": "kiln_warden_Hips",
+        "translation": [
+          -0.25,
+          -0.06,
+          -0.02
+        ]
+      },
+      "kiln_warden_RightFoot": {
+        "parent": "kiln_warden_RightKneePivot",
+        "translation": [
+          0,
+          -0.33,
+          0.05
+        ]
+      },
+      "kiln_warden_RightKneePivot": {
+        "parent": "kiln_warden_RightLegPivot",
+        "translation": [
+          0.05,
+          -0.36,
+          -0.03
+        ]
+      },
+      "kiln_warden_RightLegPivot": {
+        "parent": "kiln_warden_Hips",
+        "translation": [
+          0.25,
+          -0.06,
+          -0.02
+        ]
+      },
+      "kiln_warden_Hips": {
+        "parent": "kiln_warden_Root",
+        "translation": [
+          0,
+          0.84,
+          0.02
+        ]
+      },
+      "kiln_warden_Root": {
+        "parent": null,
+        "translation": [
+          0,
+          0,
+          0
+        ]
       }
     },
     "skinnedRoots": [
@@ -2646,7 +2793,8 @@
       "Monster_dark_ranger",
       "Monster_hill_giant",
       "Monster_moss_guardian",
-      "Monster_saltfang"
+      "Monster_saltfang",
+      "Monster_kiln_warden"
     ],
     "limbs": [
       {
@@ -3746,6 +3894,105 @@
           0.8,
           0.6
         ]
+      },
+      {
+        "bone": "kiln_warden_Root",
+        "child": "kiln_warden_Hips",
+        "direction": [
+          0,
+          1,
+          0
+        ]
+      },
+      {
+        "bone": "kiln_warden_Hips",
+        "child": "kiln_warden_Torso",
+        "direction": [
+          0,
+          1,
+          0
+        ]
+      },
+      {
+        "bone": "kiln_warden_Torso",
+        "child": "kiln_warden_HeadGroup",
+        "direction": [
+          0,
+          1,
+          0
+        ]
+      },
+      {
+        "bone": "kiln_warden_LeftArmPivot",
+        "child": "kiln_warden_LeftElbowPivot",
+        "direction": [
+          -0.468,
+          -0.884,
+          0
+        ]
+      },
+      {
+        "bone": "kiln_warden_LeftElbowPivot",
+        "child": "kiln_warden_LeftHand",
+        "direction": [
+          -0.528,
+          -0.849,
+          0
+        ]
+      },
+      {
+        "bone": "kiln_warden_LeftLegPivot",
+        "child": "kiln_warden_LeftKneePivot",
+        "direction": [
+          -0.183,
+          -0.983,
+          0
+        ]
+      },
+      {
+        "bone": "kiln_warden_LeftKneePivot",
+        "child": "kiln_warden_LeftFoot",
+        "direction": [
+          0,
+          -1,
+          0
+        ]
+      },
+      {
+        "bone": "kiln_warden_RightArmPivot",
+        "child": "kiln_warden_RightElbowPivot",
+        "direction": [
+          0.468,
+          -0.884,
+          0
+        ]
+      },
+      {
+        "bone": "kiln_warden_RightElbowPivot",
+        "child": "kiln_warden_RightHand",
+        "direction": [
+          0.528,
+          -0.849,
+          0
+        ]
+      },
+      {
+        "bone": "kiln_warden_RightLegPivot",
+        "child": "kiln_warden_RightKneePivot",
+        "direction": [
+          0.183,
+          -0.983,
+          0
+        ]
+      },
+      {
+        "bone": "kiln_warden_RightKneePivot",
+        "child": "kiln_warden_RightFoot",
+        "direction": [
+          0,
+          -1,
+          0
+        ]
       }
     ],
     "maxLimbDegrees": 20,
@@ -3756,10 +4003,10 @@
     }
   },
   "budget": {
-    "triangles": 70036,
-    "meshes": 61,
-    "materials": 36,
-    "rawBytes": 2719110,
+    "triangles": 72184,
+    "meshes": 64,
+    "materials": 38,
+    "rawBytes": 2854483,
     "brotliBytes": 1270000
   },
   "figures": {
@@ -3880,6 +4127,13 @@
       "meshes": 4,
       "materials": 5,
       "rawBytes": 296720,
+      "brotliBytes": 220000
+    },
+    "Monster_kiln_warden": {
+      "triangles": 14000,
+      "meshes": 4,
+      "materials": 5,
+      "rawBytes": 129160,
       "brotliBytes": 220000
     }
   }
