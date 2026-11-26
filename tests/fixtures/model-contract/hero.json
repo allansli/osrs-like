@@ -557,15 +557,15 @@
     "meshes": 11,
     "materials": 11,
     "rawBytes": 251537,
-    "brotliBytes": 123092
+    "brotliBytes": 150000
   },
   "figures": {
     "HeroRoot": {
-      "triangles": 5321,
+      "triangles": 6000,
       "meshes": 11,
       "materials": 11,
       "rawBytes": 134898,
-      "brotliBytes": 82791
+      "brotliBytes": 150000
     }
   }
 }

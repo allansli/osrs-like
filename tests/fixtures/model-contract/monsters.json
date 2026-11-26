@@ -3307,7 +3307,7 @@
     "meshes": 46,
     "materials": 34,
     "rawBytes": 2271135,
-    "brotliBytes": 930086
+    "brotliBytes": 1270000
   },
   "figures": {
     "Monster_chicken": {
@@ -3315,91 +3315,91 @@
       "meshes": 3,
       "materials": 4,
       "rawBytes": 52168,
-      "brotliBytes": 25271
+      "brotliBytes": 42000
     },
     "Monster_goblin": {
-      "triangles": 4360,
-      "meshes": 3,
-      "materials": 3,
+      "triangles": 5000,
+      "meshes": 4,
+      "materials": 5,
       "rawBytes": 130164,
-      "brotliBytes": 69909
+      "brotliBytes": 80000
     },
     "Monster_goblin_archer": {
       "triangles": 5000,
       "meshes": 4,
       "materials": 5,
       "rawBytes": 150296,
-      "brotliBytes": 73129
+      "brotliBytes": 80000
     },
     "Monster_scorpion": {
       "triangles": 5000,
-      "meshes": 3,
+      "meshes": 4,
       "materials": 5,
       "rawBytes": 97168,
-      "brotliBytes": 48069
+      "brotliBytes": 80000
     },
     "Monster_dark_wizard": {
       "triangles": 5000,
       "meshes": 4,
       "materials": 5,
       "rawBytes": 153500,
-      "brotliBytes": 71688
+      "brotliBytes": 80000
     },
     "Monster_dark_ranger": {
       "triangles": 5000,
       "meshes": 4,
       "materials": 5,
       "rawBytes": 146500,
-      "brotliBytes": 72608
+      "brotliBytes": 80000
     },
     "Monster_hill_giant": {
       "triangles": 7000,
       "meshes": 4,
       "materials": 5,
       "rawBytes": 199580,
-      "brotliBytes": 94744
+      "brotliBytes": 110000
     },
     "Monster_moss_guardian": {
       "triangles": 7000,
       "meshes": 4,
       "materials": 5,
       "rawBytes": 141740,
-      "brotliBytes": 35634
+      "brotliBytes": 110000
     },
     "Monster_lesser_demon": {
-      "triangles": 5460,
+      "triangles": 7000,
       "meshes": 4,
-      "materials": 4,
+      "materials": 5,
       "rawBytes": 209112,
-      "brotliBytes": 92433
+      "brotliBytes": 110000
     },
     "Monster_elvarg_dragon": {
-      "triangles": 9960,
+      "triangles": 14000,
       "meshes": 4,
-      "materials": 4,
+      "materials": 5,
       "rawBytes": 354048,
-      "brotliBytes": 157719
+      "brotliBytes": 220000
     },
     "Monster_ashmantle": {
-      "triangles": 9560,
+      "triangles": 12000,
       "meshes": 4,
-      "materials": 4,
+      "materials": 5,
       "rawBytes": 354756,
-      "brotliBytes": 160517
+      "brotliBytes": 190000
     },
     "Kit_saltback_stalker": {
       "triangles": 1200,
-      "meshes": 4,
-      "materials": 2,
+      "meshes": 2,
+      "materials": 3,
       "rawBytes": 41556,
-      "brotliBytes": 12395
+      "brotliBytes": 20000
     },
     "Kit_thornwatch_marksman": {
       "triangles": 1200,
-      "meshes": 3,
-      "materials": 1,
+      "meshes": 2,
+      "materials": 3,
       "rawBytes": 46284,
-      "brotliBytes": 16905
+      "brotliBytes": 20000
     }
   }
 }

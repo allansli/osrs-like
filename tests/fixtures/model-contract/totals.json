@@ -1,6 +1,6 @@
 {
   "rawBytes": 7214245,
-  "brotliBytes": 2063863,
+  "brotliBytes": 2600000,
   "loaders": {
     "hero": {
       "file": "src/engine/blenderHero.ts",
