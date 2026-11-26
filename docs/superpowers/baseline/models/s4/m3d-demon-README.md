@@ -62,7 +62,7 @@ The demon's entry is replaced whole:
 - `vertexColor` is `all` for the figure;
 - four mesh classes are added.
 
-The material set follows the built file. The old demon's `mat_skin_lesser_demon` and `mat_wing` leave it, and the three paint materials join it. That makes 44, so `budget.materials` goes from 43 to 44: this is the one file ceiling the task moved. The figure's ceilings are 7,000 triangles, 4 meshes, 5 materials, raw 362,655 and Brotli 158,382 (the build plus 1% and 2%). COMPARE passes Contract and Budget. Its Drift lists only the demon's nodes and meshes and the nodes of the already-rebuilt dragon.
+The material set follows the built file. The old demon's `mat_skin_lesser_demon` and `mat_wing` leave it, and the three paint materials join it. That makes 44, so `budget.materials` goes from 43 to 44: this is the one file ceiling the task moved. The figure's ceilings are 7,000 triangles, 4 meshes, 5 materials, raw 362,655 and Brotli 158,382 (the build plus 1% and 2%). COMPARE passes Contract and Budget. Against the shipped file, Drift lists the demon's nodes and meshes, the rebuilt dragon's and Ashmantle's (D2, D3), and the file's three totals: triangles 94,712 to 74,724, raw bytes 4,558,688 to 4,813,856, Brotli bytes 1,401,411 to 1,237,865. That no other figure changed is shown by the hash comparison under "Measured".
 
 ## Motion: staged clips
 
@@ -93,6 +93,6 @@ The copy was of this branch's head, with the built `monsters.glb` over the shipp
   - Top row: two views between strikes, then play distance 26, then a frame taken during a `Walk` chase that had turned into the next wind-up by the time it was taken (rows: `attack`, `Slash` at 0.083).
   - Bottom row: the `scorch_lane` wind-up holding `Slash` (time 0.086, paused) under its telegraph, the strike (`Slash` 0.35), and `Death` at 0.489 and 0.977 s.
   - The four named meshes have `FACET_CUT` and vertex colours, and the group scale is 1.8.
-  - The demon was in `attack` in the first views because it had already aggroed; its state is in the rows.
+  - No idle frame was taken. The demon was in `attack` in every view before the fight and stayed there, and the rows hold its state. The job moved the hero 40 and then 70 units away, but the death frames show the hero beside the demon, so those moves did not hold. The cause was not found.
 
 `s4/` was 3,047,080 bytes with these, over the 2 MB a slice may hold. M3d adds 342,530 of them. D5 trims `s4/` (plan, "D3 amendments").
