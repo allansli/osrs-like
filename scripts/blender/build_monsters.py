@@ -3643,7 +3643,7 @@ ASHMANTLE_TRIANGLES = 9600  # the builder's own budget, under the manifest's 12,
 ASHMANTLE_TINT = 0x8A8580  # Stage 4's tint on the ashmantle row (src/data/world.ts)
 ASHMANTLE_COLOURS = {  # as the game shows them, value against the dragon's (DRAGON_COLOURS)
     "hide": 0x2E2B28,  # charcoal ash, 18%, the floor (dragon 38%)
-    "hide_dark": 0x2E2A26,  # feet and wing struts, 18%, design 5.4's floor (dragon 29%)
+    "hide_dark": 0x7A756E,  # feet, wing wrists and struts in the pale slag, on the crust material, 48% (dragon 29%)
     "membrane": 0x3A2A24,  # 23% (dragon 50%)
     "belly": 0x5A534B,  # ash grey, 35% (dragon 62%)
     "crust": 0x7A756E,  # crown, plates, club and claws, pale cooled slag, 48% (dragon's horn 72%)
@@ -3653,7 +3653,7 @@ ASHMANTLE_COLOURS = {  # as the game shows them, value against the dragon's (DRA
 # their paint is near the top of what the tile and tint leave.
 ASHMANTLE_WIDE_TONE = (-0.40, 0.85)
 ASHMANTLE_NARROW_TONE = (-0.25, 0.30)
-ASHMANTLE_TONES = {"hide": ASHMANTLE_WIDE_TONE, "hide_dark": ASHMANTLE_WIDE_TONE, "membrane": ASHMANTLE_WIDE_TONE,
+ASHMANTLE_TONES = {"hide": ASHMANTLE_WIDE_TONE, "hide_dark": ASHMANTLE_NARROW_TONE, "membrane": ASHMANTLE_WIDE_TONE,
                    "belly": ASHMANTLE_NARROW_TONE, "crust": ASHMANTLE_NARROW_TONE}
 ASHMANTLE_HEAVY = {  # three-space node of the dragon's stick graph -> radius factor: the heavier chest and neck base
     (0.0, 1.27, -0.40): 1.28,  # chest
@@ -3670,6 +3670,27 @@ def _ashmantle_paint(hex_colour: int, tile: list, tone: tuple) -> list:
     if max(paint) > 1.0 / (1.0 + tone[1]):
         raise ValueError(f"ashmantle: colour {hex_colour:#08x} over its tile and the tint is too light to paint: {paint}")
     return paint
+
+
+def _ashmantle_feet(body, mat):
+    """Splits the body's foot faces (the dragon's foot rule in _dragon_body_tint) off into a mesh of their own on mat."""
+    foot = [p.center.z < 0.16 for p in body.data.polygons]
+    feet = body.copy()
+    feet.data = body.data.copy()
+    feet.name = feet.data.name = "ash_feet"
+    for c in body.users_collection:
+        c.objects.link(feet)
+    for ob, keep_feet in ((body, False), (feet, True)):
+        bm = bmesh.new()
+        bm.from_mesh(ob.data)
+        bm.faces.ensure_lookup_table()
+        bmesh.ops.delete(bm, geom=[f for f in bm.faces if foot[f.index] != keep_feet], context="FACES")
+        bm.to_mesh(ob.data)
+        bm.free()
+    feet.data.materials.clear()
+    feet.data.materials.append(mat)
+    assert feet.data.polygons and body.data.polygons, "ashmantle: the foot rule found no feet, or nothing else"
+    return feet
 
 
 def _ashmantle_body_graph(j: dict) -> tuple[list, list, list, list, list]:
@@ -3699,7 +3720,7 @@ def build_ashmantle(mats: dict):
     crust = make_mat("mat_horn_ashmantle_paint", 0xFFFFFF, roughness=0.70, metallic=0.05)
     glow = mats["glow_orange"]  # the seams, the maw and the eyes: the engine draws it lit and never tints it
     scale_tile, leather_tile = _goblin_hide_mean(DRAGON_SCALE_TILE), _goblin_hide_mean(DRAGON_LEATHER_TILE)
-    tiles = {"hide": scale_tile, "hide_dark": scale_tile, "belly": scale_tile, "membrane": leather_tile, "crust": [1.0, 1.0, 1.0]}
+    tiles = {"hide": scale_tile, "hide_dark": [1.0, 1.0, 1.0], "belly": scale_tile, "membrane": leather_tile, "crust": [1.0, 1.0, 1.0]}
     col = {k: _ashmantle_paint(v, tiles[k], ASHMANTLE_TONES[k]) for k, v in ASHMANTLE_COLOURS.items()}
     j = dragon_joints()
     hard = []  # (object, bone): rigid parts, weight 1 on one bone
@@ -3753,10 +3774,10 @@ def build_ashmantle(mats: dict):
         flank = Vector((side * 0.35, 1.40, 0.75))
         sunk = root - (wrist - root).normalized() * 0.12
         add(add_limb_tube(f"ash_wing_arm_{tag}", None, skin, tuple(sunk), tuple(wrist), 0.19, 0.12, segs=6, steps=3, smooth=False), f"{tag}Wing", col["hide"], planes=True)
-        add(add_sphere(f"ash_wing_wrist_{tag}", None, skin, 0.14, tx=wrist.x, ty=wrist.y, tz=wrist.z, segs=6, rings=4, smooth=False), f"{tag}Wing2", col["hide_dark"], planes=True)
+        add(add_sphere(f"ash_wing_wrist_{tag}", None, crust, 0.14, tx=wrist.x, ty=wrist.y, tz=wrist.z, segs=6, rings=4, smooth=False), f"{tag}Wing2", col["hide_dark"], planes=True)
         for k, tip in enumerate(tips):
             add(
-                add_limb_tube(f"ash_wing_finger_{tag}_{k}", None, skin, tuple(wrist), tuple(tip), 0.085, 0.035, r_mid=0.06, segs=5, steps=3, smooth=False),
+                add_limb_tube(f"ash_wing_finger_{tag}_{k}", None, crust, tuple(wrist), tuple(tip), 0.085, 0.035, r_mid=0.06, segs=5, steps=3, smooth=False),
                 f"{tag}Wing2", col["hide_dark"], planes=True,
             )
         add(
@@ -3834,10 +3855,11 @@ def build_ashmantle(mats: dict):
     bpy.data.objects.remove(weight_rig, do_unlink=True)
     bpy.data.armatures.remove(weight_data)
     _dragon_body_tint(body, spine_line, col["hide"], col["hide_dark"], col["belly"], tuple(ASHMANTLE_TONES[k] for k in ("hide", "belly", "hide_dark")))
+    feet = _ashmantle_feet(body, crust)  # painted for the crust above, so they join the crust mesh
 
     for obj, bone in hard:
         figkit.hard_weights(obj, bone)
-    for obj in [body] + membranes + [obj for obj, _ in hard]:
+    for obj in [body, feet] + membranes + [obj for obj, _ in hard]:
         obj.parent = rig
 
     merged = figkit.merge_by_family(rig)
