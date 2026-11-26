@@ -38,8 +38,8 @@ function monsterEntity(key: string): MonsterEntityLike {
   return { typeKey: key, def: { bodyColor: 0x65a30d }, rig: { group, hitbox }, pos: new THREE.Vector3() };
 }
 
-// The figures the manifest paints (`vertexColor.figures`): the goblin since S4, the dragon, Ashmantle and the demon since D5.
-const PAINTED = new Set(['goblin', 'elvarg_dragon', 'ashmantle', 'lesser_demon']);
+// The figures the manifest paints (`vertexColor.figures`): the goblin since S4, the dragon, Ashmantle and the demon since D5, the archer and the chicken since M4a.
+const PAINTED = new Set(['goblin', 'goblin_archer', 'chicken', 'elvarg_dragon', 'ashmantle', 'lesser_demon']);
 
 describe('vertex colour reaches the engine materials (H6; red until H6b)', () => {
   it('the fixtures carry COLOR_0 on every mesh, as the loader parses it', async () => {

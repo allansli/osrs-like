@@ -1,29 +1,19 @@
 {
  "chicken": {
-  "meshes": 38,
+  "meshes": 3,
   "triangles": {
-   "cloth": 720,
-   "skin": 1984,
-   "plain": 1416,
-   "eyes": 560
+   "cloth": 216,
+   "skin": 1164,
+   "plain": 1056
   },
   "pivots": {
    "Monster_chicken": [
     "cloth",
-    "eyes",
-    "plain",
-    "skin"
-   ],
-   "chicken_RightLegPivot": [
-    "plain",
-    "skin"
-   ],
-   "chicken_LeftLegPivot": [
     "plain",
     "skin"
    ]
   },
-  "floor": 12
+  "floor": 3
  },
  "dark_ranger": {
   "meshes": 37,
@@ -131,9 +121,9 @@
  "goblin": {
   "meshes": 3,
   "triangles": {
-   "wood": 120,
-   "iron": 308,
-   "skin": 3932
+   "wood": 96,
+   "iron": 284,
+   "skin": 3980
   },
   "pivots": {
    "Monster_goblin": [
@@ -145,52 +135,18 @@
   "floor": 3
  },
  "goblin_archer": {
-  "meshes": 58,
+  "meshes": 2,
   "triangles": {
-   "skin": 3608,
-   "cloth": 672,
-   "plain": 696,
-   "leather": 496,
-   "wood": 500,
-   "eyes": 560,
-   "iron": 108
+   "wood": 316,
+   "skin": 4044
   },
   "pivots": {
    "Monster_goblin_archer": [
-    "cloth",
-    "iron",
-    "leather",
     "skin",
     "wood"
-   ],
-   "goblin_archer_RightLegPivot": [
-    "cloth",
-    "plain",
-    "skin"
-   ],
-   "goblin_archer_RightArmPivot": [
-    "leather",
-    "plain",
-    "skin",
-    "wood"
-   ],
-   "goblin_archer_LeftLegPivot": [
-    "cloth",
-    "plain",
-    "skin"
-   ],
-   "goblin_archer_LeftArmPivot": [
-    "leather",
-    "skin"
-   ],
-   "goblin_archer_HeadGroup": [
-    "cloth",
-    "eyes",
-    "plain",
-    "skin"
    ]
   },
-  "floor": 28
+  "floor": 2
  },
  "hill_giant": {
   "meshes": 45,
