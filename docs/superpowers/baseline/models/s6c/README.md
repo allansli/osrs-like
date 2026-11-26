@@ -376,3 +376,159 @@ flock /tmp/claude-blender.lock timeout 600 /usr/bin/blender --background --facto
 - From the back, the shingled slabs cover the upper back between the shoulder blades. The top of the hump is basalt, and the ember shows only under each slab's edge.
 - Nothing intersects visibly in the rest views. The hump stands clear of the back of the skull (z 0.14 at most against the plates' 0.30 at y 1.88).
 - In the worst pose, the raised maul's top end is crust, with ember only on its two seams.
+
+# MK3: Marrowjaw's kit on the hill giant
+
+Built from `5031e36` plus this task's builder (commit `feat(models-s6c): MK3`), with `BLEND(monsters)` on Blender 5.0.1:
+
+```
+flock /tmp/claude-blender.lock timeout 600 env BLENDER_PATH=/usr/bin/blender node scripts/run-blender.mjs monsters --out scratch/models-build/mk3
+```
+
+The build exits 0 and prints `[Blender] marrowjaw kit: 1150 triangles in 4 pieces`. It is packed as `scratch/models-build/mk3-packed`. Every number, sheet and check below comes from that build.
+
+Nothing is promoted: `git status --short public/models blender` prints nothing. The built-file checks read the scratch file directly. MP6 promotes the file and makes the amendment's loader change. D4 gives the row `kit: 'marrowjaw'` and its tint.
+
+## Open for the main session
+
+1. **The row's tint multiplies the whole kit.** The engine multiplies every non-glow material by the row's `tint`, kit pieces included, as for MK2. The content file's `tintNote` is "war paint, iron collar", and the row has no hex value yet. A warm or dark tint darkens the bone crown, the ribs and the banner together. The sheets are untinted.
+2. **"Iron collar" and body war paint are not in MK3's list.** The plan asks for bone shoulder armour, a jaw-bone crown and a toll banner pole. The war paint here is only on the kit (the middle rib of each pauldron and the crown's two hinges). The kit has all four meshes, so a collar would need a fifth mesh or a place on one of the four pieces (it could join `_Torso`). That is the owner's call, not a defect.
+3. **No emissive on the figure.** The giant has none and the kit adds none, so design 5.4's "at most one" holds.
+4. **Pieces that sink into the body at rest**, measured by `scratch/mk3/inside.mjs` (rays along z through each kit vertex against the giant's skinned meshes at rest):
+   - the crown: 16 of 927 vertices, at most 0.050 deep, where the hinges meet the back of the skull;
+   - the pauldrons: 42 and 46 of 402, at most 0.075, the rib ends tucked into the chest and the shoulder blade;
+   - the banner piece: 19 of 553, at most 0.020, where the pole lies on the back.
+
+   None shows in the sheets as a visible cut.
+5. **Not seen in the engine.** MK3's accept has no capture. MP6's capture should look at three things:
+   - the outline pass on the thin banner, which is 0.02 thick;
+   - the pole in `Death`;
+   - the banner against the camera's orbit, since it is edge-on at about 40 degrees from the front.
+
+## What was built
+
+`build_marrowjaw_kit` is called in `main()` after `build_slag_brute_kit`. It goes through `_kit_root` with `giant_joints()`. Every child is named `marrowjaw_<Bone>` (amendment). No other builder changed. The primitive hashes of all 15 roots match MK2's build (`scratch/models-build/mk2`), and only `marrowjaw` is new.
+
+| Child (bone) | What it is |
+|---|---|
+| `marrowjaw_HeadGroup` | a beast's lower jaw worn as a crown. A horseshoe band 0.03 by 0.045 at y 2.27, open at the back, with radii 0.200 across and 0.222 fore and aft about three z −0.08. On the built giant the skull there is 0.31 across and 0.36 deep, so the band rests on the crown of the skull, above the brow and the ears. Eight four-sided teeth stand on it, the canines at the front corners the tallest (0.17). The jaw's two hinges rise 0.2 at the back, lean out, are war-painted, and end in a bone knuckle |
+| `marrowjaw_LeftArmPivot`, `marrowjaw_RightArmPivot` | three ribs over each shoulder ball, which has radius 0.20 at the arm's joint. The ribs lie in planes across the arm at −0.06, 0.04 and 0.13 along it. Each arches from the chest over the top to the shoulder blade, 0.05 clear of the ball. The middle rib is war-painted and the other two are older bone. One five-sided tusk 0.34 long rises from the top, up, back and a little out. All of it is centred on the arm's joint, so it turns with the arm |
+| `marrowjaw_Torso` | the toll banner. The pole is at x −0.16, three z 0.335. It sits in a hide socket at the belt, with one hide binding at y 1.3, and is tucked under the giant's fur strap at y 1.55. It rises to a brass cap at y 3.36. A cross-bar at y 3.12 is turned 35 degrees back from the figure's left. The banner hangs from it: 0.46 wide, 0.70 deep, swallow-tailed, two-sided (0.02 thick), slightly waved. A brass toll coin sits on each face |
+
+- **One material.** Every piece is on `mat_bone_hill_giant_paint`, the giant's own plain material, so the colours are painted as they are. The file stays at 34 materials. Every kit primitive carries `COLOR_0`, and the manifest lists `Kit_marrowjaw` as its own `all` unit.
+- **Faceted.** Every piece is flat-shaded, with `_goblin_tint`'s plane tones.
+- **The pole on the back**, measured with rays at x −0.16:
+  - the back's skin is at three z 0.27 to 0.30 between y 0.95 and 1.35, and the pole's surface at 0.299 lies on it (gaps −0.005 to 0.021);
+  - at y 1.55 the fur strap (0.315) passes over the pole;
+  - above y 1.6 the back falls away, and the pole stands free behind the head, whose back is at z 0.14 at most.
+- **Budget**: 1,150 of the 1,200 triangles allowed, 4 meshes, 1 material.
+
+## Values
+
+Rec. 601 luma and HSV value, as for MK1 and MK2.
+
+| Colour | Luma | HSV value |
+|---|---|---|
+| Bone `0xBCAC8C` (jaw, teeth, tusks; the giant's own bone) | 68% | 74% |
+| Old bone `0xA49474` (two ribs of three) | 58% | 64% |
+| War paint `0x8C3424` (middle ribs, hinges) | 30% | 55% |
+| Banner `0x7A2C22` | 26% | 48% |
+| Wood `0x6E5034` (pole, cross-bar; the club's) | 34% | 43% |
+| Hide `0x6E4E32` (socket, binding; the pelt's) | 33% | 43% |
+| Brass `0xB08C3C` (coins, cap) | 56% | 69% |
+
+| Rule | Result |
+|---|---|
+| 5.4 range 25% to 75% (HSV value) | met: 43% to 74% |
+| 5.4 floor 18% | met: the darkest kit paint is the banner at 26% luma |
+| 5.4 at most one emissive, at most five materials | no emissive on the figure; one material in the kit |
+| 5.6.1 a silhouette element that survives 85 px, and reading apart from MK2 | met (`mk3-marrowjaw-silhouette.jpg`). In every view the banner and pole stand above the head, at 289 to 324 px tall against the brute's 180 to 206 px. The crown's teeth and hinges notch the head's outline, and the two tusks break the shoulders into spikes. The brute is low and wide, with squared shoulder domes, a back hump, nothing above the skull and a square maul block at the right hand. Marrowjaw is vertical and spiked, and keeps the giant's thin spiked club |
+| 5.6.2 value 15 points from the base | set by the row's tint, which is D4's (item 1) |
+| 5.6.3 size | the content file's `modelScale` 1.3 (D4's row) |
+
+## Measured
+
+`node scratch/mk3/stats.mjs` (MK1's). "Packed" is `packGlb` (`node scratch/mk3/pack.mjs`).
+
+| | As exported | Packed |
+|---|---|---|
+| Kit triangles / meshes / materials | 1,150 / 4 / 1 | same |
+| Kit raw bytes | 79,988 | 52,580 |
+| Kit Brotli bytes | 20,541 | 16,621 |
+| File raw / Brotli | 3,900,212 / 1,565,203 | 2,390,492 / 968,131 |
+| File meshes / materials | 58 / 34 | same |
+
+The packed kit is 16.6 kB against the 20 kB kit ceiling.
+
+## Pending manifest and COMPARE
+
+`python3 scratch/mk3/make_pending.py` (MK2's, for this kit) loads the pending manifest MK2 wrote and adds the following, with nothing else changed:
+- `nodes`: `Kit_marrowjaw` and `marrowjaw_HeadGroup`, `_LeftArmPivot`, `_RightArmPivot` and `_Torso`, each asserted to be a `hill_giant_` bone;
+- `meshClasses`: `^marrowjaw_(HeadGroup|LeftArmPivot|RightArmPivot|Torso)$`;
+- `vertexColor.figures.Kit_marrowjaw`: `all`;
+- `figures.Kit_marrowjaw`: 1,200 triangles, 4 meshes, 3 materials, raw 52,580 (packed), Brotli 20,000;
+- file `budget`: only the ceilings the packed build exceeds rise. Triangles go from 61,044 to 62,194, meshes from 54 to 58, and raw bytes from 2,357,611 to 2,414,397. Brotli stays 1,270,000 and materials stay 34.
+
+| COMPARE | Exit | Result |
+|---|---|---|
+| This build, packed (`node scripts/models-compare.mjs scratch/models-build/mk3-packed/monsters.glb public/models/monsters.glb`), against the pending manifest | **0** | "All contract checks passed", "All budget checks passed". Drift lists the earlier kits' nodes, the five new `marrowjaw` nodes and four meshes, triangles 59,274 to 62,194 and Brotli 920,877 to 968,131 |
+| This build, as exported | 2 | Budget only, on the packed ceilings, as for MK1 and MK2. Contract passes |
+
+## Checks
+
+**On the branch at the feat commit:**
+
+| Check | Command | Result |
+|---|---|---|
+| `ONE` | `flock /tmp/claude-capped.lock scripts/capped.sh npx vitest run tests/monster-models.test.ts` | exit 0: 19 passed |
+| `SUITE` | `flock /tmp/claude-capped.lock scripts/capped.sh npx vitest run` | exit 0: 130 files passed; 1,428 passed, 3 skipped |
+| `TYPES` | `flock /tmp/claude-capped.lock scripts/capped.sh npx tsc --noEmit` | exit 0, no output |
+| `BUILD` | `flock /tmp/claude-capped.lock scripts/capped.sh npm run build` | exit 0. JS chunk 1,097.21 kB (gzip 311.09 kB), CSS 37.73 kB, reported and not a ceiling |
+| `UNTOUCHED` | `git status --short public/models blender` | prints nothing |
+
+**Built-file check (`monster-motion`).** As for MK2, three scratch tests read `scratch/models-build/mk3-packed/monsters.glb` with the shipped `hero.glb`. They were placed under `tests/` for the run and deleted afterwards:
+- `motion-built`: `tests/monster-motion.test.ts` with only its `monsters` load pointed at the built file;
+- `libraries-built`: `tests/monster-libraries.test.ts`, the same way;
+- `kit-engine`: MK2's placement test for `kit: 'marrowjaw'`, with its four bones.
+
+The command:
+
+```
+flock /tmp/claude-capped.lock scripts/capped.sh npx vitest run tests/mk3-motion-built.test.ts tests/mk3-kit-engine.test.ts tests/mk3-libraries-built.test.ts tests/monster-kits.test.ts
+```
+
+The result: exit 0, 4 files, 46 passed, 3 skipped.
+- `monster-motion` on the built file: 38 passed and 3 skipped.
+- `monster-libraries` on the built file: 2 passed.
+- `monster-kits`: 6 passed.
+- The placement test: 3 passed. The kit is loaded through `upgradeMonsterRigWithGltf` on the `hill_giant` row with `kit: 'marrowjaw'`, and each `marrowjaw_<Bone>` is moved under `<Bone>` (MP6's rule, by hand). It checks:
+  - all four pieces find their bone;
+  - no rig pivot is a kit mesh;
+  - each piece's world bounds equal its own bounds moved by its joint, within 1e-4;
+  - every piece has `vertexColors` and none is emissive;
+  - turning `RightArmPivot`, `LeftArmPivot`, `Torso` or `HeadGroup` by 0.8 turns the piece on it by 0.8;
+  - the giant's biped motion turns a leg bone and moves a kit piece in 15 walk frames, and the attack moves the right pauldron;
+  - without the kit field, no piece is added.
+
+## Sheets
+
+`scratch/mk3/kit_render.py` is MK2's script, not committed. It mounts both the brute's and Marrowjaw's kits on the giant's bones at their rest joints and shows one kit at a time. The run exits 0:
+
+```
+flock /tmp/claude-blender.lock timeout 600 /usr/bin/blender --background --factory-startup --disable-autoexec --python-exit-code 1 --python scratch/mk3/kit_render.py -- scratch/models-build/mk3/monsters.glb scratch/mk3/sheets
+```
+
+| Sheet | What it shows |
+|---|---|
+| `mk3-marrowjaw-turnaround.jpg` | Marrowjaw in `review_render`'s turnaround: front three-quarter, side and back three-quarter, 512 px, 426 px tall |
+| `mk3-marrowjaw-worst-pose.jpg` | the worst pose: crouch, right arm overhead, trunk twisted, head turned. The club is raised on the right, and the banner stays on the left, clear of it. The right pauldron's tusk points out from the raised arm, away from the head and the crown |
+| `mk3-marrowjaw-silhouette.jpg` | **the 85 px silhouette sheet**: black cut-outs at distance 26 in a 1080 frame, in triples of giant, brute and Marrowjaw, from the front, three-quarter, side and back. The scales are 1.55, 1.736 (× 1.12) and 2.015 (× 1.3). Heights in px: front 162, 183 and 305; three-quarter 172, 196 and 322; side 177, 206 and 324; back 161, 180 and 289 |
+| `mk3-marrowjaw-against.jpg` | lit and untinted: the giant, the brute and Marrowjaw at three-quarter, side and back three-quarter |
+
+**Reading the cut-outs.** Marrowjaw is the tallest of the three by the banner alone. A flag stands above the left shoulder in every view, and the crown and its hinges notch the top of the head. Two spikes break the shoulder line. Nothing of the brute's low, squared outline (plated domes, hump, maul block) is shared.
+
+**Reading the lit sheets (side and back judged too).**
+- From the front, the pale jaw crown sits on the skull with its teeth up, and the two red hinges stand behind it. The ribs arch over each shoulder, the middle one red, with a tusk rising.
+- From the side, the banner shows its face and coin, and the pole runs down the back into the socket at the belt.
+- From the back, the pole lies on the back under the fur strap, and the banner hangs to the left of the head.
+- No visible intersection in the rest views.
