@@ -1,6 +1,6 @@
 # Stage 6 baseline (task R0)
 
-**Verdict: STOP (O-6.1b).** Every name the design takes from Stages 3, 4 and 5 exists in the shape it uses. SG, ECON, MODEL and PACE all pass on the merged tree. Two frozen tests pin counts that design 11.3 does not declare (stop rule: "a frozen test pins a count that design 11.3 does not declare"). Both are listed in section 5, together with the declaration the owner would add. Nothing else stops the stage. Section 6 lists two content-file changes: one is required, the other only follows from removing the overlays.
+**Verdict: STOP (O-6.1b).** Every name the design takes from Stages 3, 4 and 5 exists in the shape it uses. SG, ECON, MODEL and PACE all pass on the merged tree. But a run of the suite with slice 1's data finds **ten frozen tests that pin a count, a list or a snapshot design 11.3 does not declare**, and one Stage 4 rule test that the Slag Brute's pattern breaks. The stop rule reads: "a frozen test pins a count that design 11.3 does not declare". Section 5 lists each one with the declaration or content change the owner could choose. Marrowjaw's camp also fails Stage 4's arena test (5 item 6 and 6.1). The probe covered slice 1 and the runestone only: slices 3 to 7 may find more, and each later test task should run the suite on its data before it writes.
 
 Tree: `feat/content-systems` at `72c95ab`, which is `8761672` (origin/main `2c9c697`, Stages 1 to 5 and the models pass, merged in) plus the R0 workflow file. No rebase was needed. The local `main` ref is stale (`c84cd12`), so the "only docs" check below is taken against `origin/main`. The commands are the brief's gate commands (`flock /tmp/claude-capped.lock scripts/capped.sh ...`). Plan 0.2's `systemd-run` lines are obsolete.
 
@@ -40,7 +40,7 @@ Every symbol is found by name. Lines that moved since `87f18e7` are marked. `src
 | `MAX_GP`, `creditGp`, `HP_REGEN_PER_SEC`, `FISH_DEPLETION_CHANCE`, `rollDrops`, `gatherChance` | `src/state/economy.ts` 4, 7, 19, 22, 28, 47 |
 | `unlocksAt`, `forgeHint` | `src/state/unlocks.ts` 12, 53 |
 | `prepareAttack`, `mitigateDamage`, `playerAttackProfile` (ranged branch 223-225, magic 226-229), `playerHitChance`, `monsterHitChance`, `rollMonsterHit`, `Marks`/`addMark`/`tickMarks`, `rollMonsterAttack` | `src/state/combat.ts` 91, 111, 213, 242, 246, 257, 284-300, 306 |
-| `CADENCE_SECS`, `BOSS_ARENA_MARGIN`, `BOSS_FIRST_ENTRY_SECS`, `Shape`, `AttackDef`, `ATTACKS`, `PhaseDef`, `BossDef`, `BOSSES`, `PATTERNS` | `src/data/attacks.ts` 1, 6, 7, 16, 23, 34, 141, 149, 158, 191 |
+| `CADENCE_SECS`, `BOSS_ARENA_MARGIN`, `BOSS_FIRST_ENTRY_SECS`, `Shape`, `AttackDef`, `ATTACKS`, `PhaseDef`, `BossDef`, `BOSSES`, `PATTERNS` | `src/data/attacks.ts` 1, 6, 7, 17, 23, 34, 141, 149, 158, 191 |
 | `RUNE_COSTS` (not exported), `SPELLS` | `src/data/magic.ts` 21 (ice burst 24, blood barrage 25), 32 |
 | the combat spells' rows and "Max Hit" descriptions | `src/data/catalog.ts` 401-405 |
 | `MonsterDef` (`pattern`, `model`, `tint`, `modelScale`, `kit`, `body` at 34-40), `MONSTER_TYPES`, `RESOURCE_NODES_DEF` | `src/data/world.ts` 20, 43, 181 |
@@ -128,7 +128,7 @@ All exist:
   - `followPath` (209) passes `grid.walkable`; it is the chase and return route used when `world.grid` is set.
   - The return without a grid (302) and the chase without a grid (370) pass **no** test, so they use the overworld's `isWalkable`.
   - The wander (519) passes `world.grid?.walkable`.
-  - So with a zone grid, chase and return already route on it. Z2's edit ("its three calls pass `world.grid?.walkable`") applies to 302 and 370, and 519 already does it.
+  - Lines 302 and 370 sit inside `if (!world.grid)`. So with a zone grid, every move already passes the grid's walk test. Of Z2's edits ("its three calls pass `world.grid?.walkable`") none is needed for zones; only the clamp is left.
 - **The clamp.** `moveWithCollision` clamps to ±118 even when given a test (see section 3).
 - **Dead time.** It comes from `BOSSES[type].respawnSecs` or `DEAD_SECS`, chosen per type in `stepMonster`, not per monster.
 
@@ -158,43 +158,56 @@ All exist:
   - `entry-staff` 48: `{ maxHit: 6, accuracy: 21.5 }`.
   - Its other users are the two support models: `bossModel.ts`, above, and `pacingModel.ts`, which is melee.
 
-## 5. Frozen counts: two not declared (the STOP)
+## 5. Frozen counts and frozen rules: ten not declared (the STOP)
 
-Found with a grep over every existing test for `toHaveLength(n)`, `.length).toBe(n)` and `.size).toBe(n)`, and for every loop over `MONSTER_TYPES`, `CAMPS`, `NODE_PLACEMENTS`, `ITEMS` and `FORGE_RECIPES`. Every test file the models pass added since `87f18e7` was checked the same way.
+Found in two ways:
+
+1. A grep over every existing test for `toHaveLength(n)`, `.length).toBe(n)` and `.size).toBe(n)`, and over the loops on `MONSTER_TYPES` and `NODE_PLACEMENTS`.
+2. **The method that found design 11.3 items 13 and 14: running the suite.** A scratch copy of the tree (under `scratch/`, gitignored, deleted afterwards, nothing committed) got slice 1's data as the content file writes it:
+   - D2: five items, `coal_rock`, its three placements, the eleven recipes, the appended feather, sting gland and mire root drops;
+   - D4: three monster rows, three camps, `toll_slam` and `camp_sweep`, `BOSSES.marrowjaw` with respawn 180 and arena 9;
+   - N2's `runestone` item, `runestone_rock` node and its two moved placements.
+
+   Run once with SUITE: **30 tests failed in 19 files** (1,407 passed, 3 skipped).
+   - Two of the failures belong to the scratch copy, not to the data: `model-licences` and `credits`, because `blender/examples/` was not copied.
+   - The rest are below. The probe covers slice 1 and the runestone only, not slices 3, 3a, 4, 5 or 7.
 
 **Declared and found as design 11.3 says:**
 
-- `tests/world-budget.test.ts` 41 and `tests/world-data.test.ts` 162 (42 members).
-- `src/__tests__/blender-hero.test.ts`: the type-key count 13 is at line **155**, not 138. Its species count of 10 (157) holds, because every new row reuses one of the ten meshes.
-- `tests/scatter.test.ts` 176 and 178, and `tests/woods-trees.test.ts` 134 and 240 (15 camps, 42 members).
-- `tests/new-monsters.test.ts` 125 (`NEW`) and 132 (`MODELS` 10).
-- `tests/fixtures/size-refactor-golden.json` `monsters` (`f3c2f70d...`). `monsterAi.ts` is unchanged since `87f18e7`, so the declared digest still applies.
-- The Stage 3 goldens and `tests/fixtures/save-relocation/v4-loaded.json` (skills).
-- `tests/monster-territory.test.ts` 259-273, `pacingModel.ts` 17 and 141, `combat-profile.test.ts` and `entry-staff.test.ts`.
-- No existing test pins the number of skills, commands, `WINDOW_GLOBALS`, recipes or items: `globals.test.ts` asserts only `> 10` data-actions, and `commands.test.ts` lists no kinds. **Design 11.3 item 12 needs nothing.**
+- `content-freeze.test.ts`: ITEMS, MONSTER_TYPES, RESOURCE_NODES_DEF and FORGE_RECIPES (item 1; D1's lists).
+- `tests/world-budget.test.ts` 41 and `tests/world-data.test.ts` 162 (item 4, 5).
+- `src/__tests__/blender-hero.test.ts`: the type-key count is at line **155**, not 138 (item 6). Its species count of 10 (157) holds.
+- `tests/scatter.test.ts` 176 and 178, and `tests/woods-trees.test.ts` 134 and 240 (item 13).
+- `tests/new-monsters.test.ts` 132, through `NEW` at 125 (item 14).
+- Not exercised by the probe but in place as declared: the Stage 3 goldens and `v4-loaded.json` (items 2, 3); `monster-territory.test.ts` 259-273 and `pacingModel.ts` 17 and 141 (items 8, 9); `combat-profile` and `entry-staff` (items 10, 11); and the `monsters` key of `size-refactor-golden.json` (item 15, `f3c2f70d...`; `monsterAi.ts` is unchanged since `87f18e7`, and the slice 1 data does not move it).
+- No test pins the number of skills, commands, `WINDOW_GLOBALS` entries or interactive actions: `globals.test.ts` asserts only "more than 10" data-actions, and `commands.test.ts` lists no kinds. **Design 11.3 item 12 needs nothing.**
 
-**Not declared (stop rule):**
+**Not declared (stop rule).** Each item names the test, what it pins, the slices that break it, and the declaration or content change the owner could choose.
 
-1. **`NODE_PLACEMENTS` has 46 rows, pinned three times** (Stage 5):
-   - `tests/scatter.test.ts` 175 (`expect(NODE_PLACEMENTS).toHaveLength(46)`);
-   - `tests/woods-trees.test.ts` 135 (inside `targets()`, which the reachability and route tests call);
-   - `tests/woods-trees.test.ts` 218.
+| # | Test | What it pins | Breaks at | Proposed |
+|---|---|---|---|---|
+| 1 | `tests/scatter.test.ts` 175; `tests/woods-trees.test.ts` 135 (in `targets()`, so both reach tests) and 218 | `NODE_PLACEMENTS` has 46 rows | D2 (49), N2 (51) | 11.3 item 13b: the count follows, made by D3 and N1. With the counts edited, every other assertion of both files passes on the probe (woods-tree clearance, reach, routes, scatter clearance). |
+| 2 | `tests/monster-kits.test.ts` 105-123 | `toEqual` snapshot of every row's model key (13 types) | D4, Z4, C2, U1 | 11.3 item 14b: each new type is added with its model key, made by D3, Z3, C1 and U0, as `NEW`: `cinder_adept: 'dark_wizard'`, `slag_brute: 'hill_giant'`, `marrowjaw: 'hill_giant'`, `scree_skitter: 'scorpion'`, `saltfang: 'scorpion'`, `ember_hurler: 'lesser_demon'`, `kiln_warden: 'moss_guardian'`. |
+| 3 | `tests/monster-models.test.ts` 76-81 (SNAPSHOT 84 onwards) | `toEqual` snapshot of every row's name, stats, drops and model | every new row (D4, Z4, C2, U1) and every appended drop (D2, K2, N2) | the snapshot gains each new row and each appended drop, made by the test task of the slice. Every existing row's stats stay byte-identical. |
+| 4 | `tests/economy-rolls.test.ts` 58-70 | the chicken's table has three entries (draw count 3 and 4) | D2 (feather appended to `chicken`) | a declared edit of the draw count (3 to 4, 4 to 5, plus the feather result), or the feather moves off the chicken (design 7.4, a content change) |
+| 5 | `tests/boss-phases.test.ts` 188-189 | `Object.keys(BOSSES)` equals `['ashmantle']` | D4 (`marrowjaw`), Z4 (`saltfang`), U1 (`kiln_warden`) | that one line becomes "contains `ashmantle`"; the rest of the test still pins Ashmantle's row |
+| 6 | `tests/world-data-combat.test.ts` 70-71 and 95 | the boss arenas are exactly `['ashmantle']`, and an arena has **more than 400 open cells** | D4 (`tollmaster`) | the list gains `tollmaster`. **The 400 cells cannot hold at radius 9**: an arena of radius 9 has 254 cells, and 400 needs a radius of about 11.3. The owner decides whether Marrowjaw's arena grows to 12 (design 7.7, the fight model and MODEL rerun) or the threshold is declared. See also 6.1: the camp fails the same test on reach. |
+| 7 | `tests/names-combat.test.ts` 26 and 45-49 | every `ATTACKS` name is in a fixed list of the eleven Stage 4 names | D4, Z4, U1 (seven new attacks) | the list gains the names of design 7.10 (`Toll Slam`, `Camp Sweep`, `Sting Arc`, `Brine Spit`, `Kiln Ring`, `Core Vent`, `Hammer Arc`), made by D1's names task. `OTHER_NAMES` (27-30) already holds `Cinder Adept` and `Slag Brute`. |
+| 8 | `tests/size-refactor-golden.test.ts` 103-109 | the `plans` digest and the `telegraphs` map of `size-refactor-golden.json` run over **every `ATTACKS` row** (the test also asserts the map has one entry per attack) | D4, Z4, U1 | 11.3 item 15 says these two keys "stay byte-identical", which cannot hold once an attack is added. Proposed: each existing attack's `telegraphs` entry stays byte-identical and only new keys are added; `plans` is regenerated once per slice that adds attacks, checked against a digest recomputed with the new attacks removed. The file's header forbids regenerating it without such a declaration. |
+| 9 | `tests/recipes-bars.test.ts` 31-38 | the smith recipes are exactly `SMITH_TABLE`'s 13 | D2 (six), Z4, U1, S4 (bolts) | the table gains each new smith recipe with its inputs and requirement, made by the test task of the slice |
+| 10 | `tests/unlocks.test.ts` 75-78 and 95-98 | `forgeHint('steel_longsword')` is null and its unlock line shows "shop alone", because no recipe made steel | D2 (`smith_steel_sword`) | the two cases name an item that still has no recipe (D2 makes steel, black, and later adamant and dragon forgeable), made by D1 |
 
-   D2 appends three `coal_rock` placements to `src/data/placements.ts` (46 to 49), and N2 appends two `runestone_rock` placements (to 51). Each of the three asserts fails as soon as D2 lands. The design's 2026-11-25 run found the camp counts by running the suite with the cave's data only, which adds no node, so it could not see this one.
+**A content-versus-rule conflict, also a stop.** `tests/monster-patterns.test.ts` 112-123 holds every patterned monster to "basic, basic, basic, wind-up", repeating; `heavyOf` takes the pattern's first heavy. Design 7.5 gives the Slag Brute "basic x2, Overhead Slam, Rootquake", which fails it. Two ways out:
 
-   *Proposed declaration* (design 11.3 item 13b, made by D3 and N1 the way item 13 is): `46` to `49` (D3, before D2's rows land), then `49` to `51` (N1). Every other assertion of both files passes unedited with the new placements. MODEL now checks the woods-tree clearance that `woods-trees.test.ts` 215 applies, and scatter avoids every node and camp member by itself (`src/state/scatter.ts` 77-78).
+- The smallest content change: the Slag Brute takes an existing four-slot pattern, `hill_giant` (Overhead Slam) or `moss_guardian` (Rootquake).
+- Or the test is declared.
 
-2. **`tests/monster-kits.test.ts` 105-123 holds a snapshot of every `MONSTER_TYPES` row's model key** (models pass), titled "the model keys of every row equal a snapshot, so Stage 4's tests still see ten". Its `expect(keys).toEqual({...})` lists the 13 types. Any new row fails it, starting with D4's three, then Z4's two, C2's one and U1's one. Its last line (`new Set(Object.values(keys).filter((_, i) => i < 10)).size` is 10) holds, because new rows are appended after the first ten.
+**Checked and passing on the probe** (with only the counts of items 1 and 13 edited in the scratch copy):
 
-   *Proposed declaration* (design 11.3 item 14b, made by D3, Z3, C1 and U0, the same task that extends `NEW` in `tests/new-monsters.test.ts`): the object gains each Stage 6 type with its model key when its row lands:
-   - D3: `cinder_adept: 'dark_wizard'`, `slag_brute: 'hill_giant'`, `marrowjaw: 'hill_giant'`;
-   - Z3: `scree_skitter: 'scorpion'`, `saltfang: 'scorpion'`;
-   - C1: `ember_hurler: 'lesser_demon'`;
-   - U0: `kiln_warden: 'moss_guardian'`.
+- `world-data`, `woods-trees`, `scatter`, `placements` and `stage2-review-fixes` (node approaches), including the two moved Runestone Outcrops;
+- ECON (`pacing.test.ts` and `economy-invariants.test.ts`) with Marrowjaw in `CAMPS`.
 
-   No other line changes. It is at least as strict, because each new row's model key is pinned by name.
-
-What the owner decides at O-6.1b: add items 13b and 14b to design 11.3 (and to plan 0.3.3, D3, N1, Z3, C1 and U0), or change the plan otherwise. Nothing under `src/` or `tests/` is touched before that.
+What the owner decides at O-6.1b: the ten declarations above (or their alternatives), the Slag Brute's pattern, and Marrowjaw's arena. Each is then written into design 11.3 and the plan tasks named. Nothing under `src/` or `tests/` is touched before that.
 
 ## 6. The model on the real code
 
@@ -234,6 +247,12 @@ Both are moved to the nearest spots that pass every check (walkable, walkable gr
 
 Design 7.4 (line 520, "two rocks at (-44, -6) and (-48, -4)") follows. After the move: `ALL CHECKS PASS`.
 
+**One check MODEL does not carry fails and is not fixed here: Marrowjaw's camp.** On the probe of section 5, `tollmaster` at (4, -70) with arena 9 is inside the attack reach of Stage 4's `thornwatch` camp (`tests/world-data-combat.test.ts` 81-82). The margin is -0.9: the arena edge must clear thornwatch's radius 8, leash 4 and ranged reach 11, so the centre must stand more than 32 from (-18, -48), and it stands 31.1.
+
+- At radius 9, the smallest move is about one unit away from thornwatch. For example, (5, -71) stands 32.5 away.
+- It also fails the 400-cell rule at radius 9 (section 5, item 6).
+- Not applied, because the arena's radius is the owner's to decide first (radius 12 needs a centre more than 35 away). After that decision, MODEL should gain Stage 4's arena criterion (`world-data-combat.test.ts` 65-115) so the camp is checked as D3 requires.
+
 ### 6.2 For later tasks, recorded and not a stop
 
 - **B1 to B3 (fight tests).** Stage 4's model has no boss parameter. A fight test for a new boss needs a parameterised model under `tests/support`, for example a new file that does what `fight.ts` now does. `fight.ts` is the reference, and its Ashmantle rows equal the shipped model's. The plan's "through Stage 4's fight model" should read that way.
@@ -268,7 +287,7 @@ Marrowjaw's rows move by at most 0.2 points. Design 7.7 and 7.12 (the Ashmantle 
 
 **Second pass.**
 
-- **Section A** (the band, O-6.6's table) is identical to the committed one. From 20 to 70, ranged runs ×0.98 to ×1.33 and magic ×0.98 to ×1.43; the largest spread is 1.43 at level 28 and the only level above 1.4 is 28. From 71 to 99 the largest spread is 1.19.
+- **The band.** O-6.6's table is `results.txt` section 5, and it is unchanged by R0's diff, so the rebalance numbers the owner approved stand on the merged code. Second-pass section A, the band at every level, is identical to the committed one. From 20 to 70, ranged runs ×0.98 to ×1.33 and magic ×0.98 to ×1.43; the largest spread is 1.43 at level 28 and the only level above 1.4 is 28. From 71 to 99 the largest spread is 1.19.
 - **Section C** (the high trees) is identical.
 - **Section B** adds Stage 4's camps, so a new column appears in the same rows.
 
@@ -312,7 +331,7 @@ What changed on the merged world: Stage 4's Saltback Stalkers (level 34, 140 to 
 - **Look fields** on `MonsterDef`:
   - `kit` puts `Kit_<name>` rigid pieces on the base's bones, at most 4 rigid meshes (owner, 2026-11-26).
   - `body` names another `Monster_` node on the same skeleton (`tests/monster-models.test.ts` checks that).
-  - `tint` and `modelScale` are as in Stage 4. `tint` recolours the `skin`, `scale`, `chitin` and `feather` materials.
+  - `tint` and `modelScale` are as in Stage 4. `tint` multiplies the colour of every material except glow and eyes, painted skinned figures included (`blenderMonsters.ts` 134 and 189-190, after the material is chosen). `modelScale` scales the rig (`spawns.ts` 50). So a recolour still works on every skinned figure.
 - **`public/models/monsters.glb`** (2,248,648 bytes):
   - 11 skinned `Monster_` nodes: chicken, goblin, goblin_archer, scorpion, dark_wizard, dark_ranger, hill_giant, moss_guardian, lesser_demon, elvarg_dragon and ashmantle.
   - Two rigid kits: `Kit_saltback_stalker` (4 children) and `Kit_thornwatch_marksman` (3).
@@ -334,4 +353,4 @@ Building a kit or a body stays outside this stage (plan line 3). Every row above
 
 ## Commands run (exit status)
 
-All from the worktree root, behind `flock /tmp/claude-capped.lock scripts/capped.sh`: `npx vitest run` (0), `npx tsc --noEmit` (0), `npm run build` (0), `npx vitest run tests/pacing.test.ts` (0), `npx vitest run tests/economy-invariants.test.ts` (0), `bash docs/superpowers/research/content-model/run.sh` (0, after the content fix in 6.1; 1 before it), `pacing-rerun.sh` (0), `second-pass.sh` (0), `critique-check.sh` (0). No Blender process was run.
+All from the worktree root, behind `flock /tmp/claude-capped.lock scripts/capped.sh`: `npx vitest run` (0), `npx tsc --noEmit` (0), `npm run build` (0), `npx vitest run tests/pacing.test.ts` (0), `npx vitest run tests/economy-invariants.test.ts` (0), `bash docs/superpowers/research/content-model/run.sh` (0, after the content fix in 6.1; 1 before it), `pacing-rerun.sh` (0), `second-pass.sh` (0), `critique-check.sh` (0). The slice 1 probe (section 5): `npx vitest run --root scratch/s1` (1: 30 failed, 1,407 passed), then 8 files with the declared counts edited in the copy (1: only `world-data-combat`), then `world-data-combat` with its list edited (1: 400 cells, then the thornwatch reach). The scratch copy was deleted. No Blender process was run.
