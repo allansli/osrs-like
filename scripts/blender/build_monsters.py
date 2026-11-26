@@ -1475,14 +1475,13 @@ def _goblin_head(mat):
     return _goblin_fuse(parts, "gob_head", mat, 0.012, 800, soften=3, crease=GOBLIN_CREASE)
 
 
-def _goblin_plane_tones(body, planes_out: list | None = None) -> list:
+def _goblin_plane_tones(body) -> list:
     """
     One tone per face of a part, the same for every face of a plane (plan S2c). A plane is the
     smooth faces joined by edges that are not hard, or one flat face of a faceted part; its tone
     comes from its area-weighted normal against GOBLIN_PLANE_LIGHT. Two corners of one vertex in
     different planes are parted by hard edges or flat faces, which the exporter splits anyway, so
-    the tone costs no vertex. planes_out, if given, takes each face's plane index (the dragon
-    colours its body by plane).
+    the tone costs no vertex.
     """
     bm = bmesh.new()
     bm.from_mesh(body.data)
@@ -1514,8 +1513,6 @@ def _goblin_plane_tones(body, planes_out: list | None = None) -> list:
         f"[Blender] goblin planes of {body.name}: {len(tones)} on {len(plane)} faces; largest {top[0] / total:.1%} of the area, "
         f"five largest {sum(top[:5]) / total:.1%}; tones {min(tones):.3f} to {max(tones):.3f}"
     )
-    if planes_out is not None:
-        planes_out.extend(plane)
     return [tones[i] for i in plane]
 
 
