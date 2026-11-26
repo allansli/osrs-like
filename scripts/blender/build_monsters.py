@@ -2002,14 +2002,14 @@ def build_saltback_stalker_kit(mats: dict):
 SALTFANG_TRIANGLES = 9000  # the builder's own budget, under the manifest's 14,000 (design 9.1's boss class)
 SALTFANG_OCCLUSION = 0.5  # bake_paint's occlusion strength, as the scorpion's
 SALTFANG_COLOURS = {  # as the game shows them, before the row's tint
-    "salt": 0xB9B1A2,  # the carapace plates and the prosoma (72% value)
+    "salt": 0xB9B1A2,  # the carapace plates, the prosoma and the tail segments (73% value)
     "crystal": 0xBFBBB1,  # the rim crystals (75%)
     "bone": 0xAEA287,  # pincers, mandibles, tarsi (68%)
     "egg": 0x9D8FA6,  # egg sacs, pale violet grey (65%)
     "egg_dark": 0x83758D,  # the lower eggs of each pile (55%)
-    "chitin": 0x6A5741,  # coxae, femurs, claws, tail segments, over the chitin tile (42%)
+    "chitin": 0x6A5741,  # femurs, claws, pedipalps, over the chitin tile (42%)
     "chitin_dark": 0x4E4030,  # tibiae, forearms, telson (31%)
-    "ring": 0x3F3326,  # joint rings (25%)
+    "ring": 0x3F3326,  # joint rings, coxae (25%)
 }
 SALTFANG_PLAIN = ("salt", "crystal", "bone", "egg", "egg_dark")
 SALTFANG_PLATES = (  # (z of the plate's middle, half-width, half-height): six, widest behind the legs
