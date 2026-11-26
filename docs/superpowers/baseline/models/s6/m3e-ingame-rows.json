@@ -1,0 +1,875 @@
+{
+ "errs": [],
+ "rows": [
+  {
+   "name": "wizard-threeq",
+   "row": {
+    "x": 47.88567036587393,
+    "z": -23.952223001401364,
+    "yaw": 2.6,
+    "pitch": 0.22,
+    "distance": 6
+   },
+   "monsters": [
+    {
+     "pos": [
+      46.3,
+      -23.4
+     ],
+     "state": "idle",
+     "windup": false,
+     "animator": true,
+     "clips": [
+      "Cast",
+      "Chop",
+      "Death",
+      "Fish",
+      "Idle",
+      "Lunge",
+      "Mine",
+      "Ranged",
+      "Slash",
+      "SpinSlash",
+      "Walk"
+     ],
+     "running": [
+      "Cast@0.000w1.00",
+      "Chop@0.000w1.00",
+      "Death@0.000w1.00",
+      "Fish@0.000w1.00",
+      "Idle@1.395w1.00",
+      "Lunge@0.000w1.00",
+      "Mine@0.000w1.00",
+      "Ranged@0.000w1.00",
+      "Slash@0.000w1.00",
+      "SpinSlash@0.000w1.00",
+      "Walk@0.554w0.00"
+     ],
+     "skinned": 4,
+     "painted": 4,
+     "cut": 4,
+     "skeletons": 1,
+     "scale": 1.02,
+     "pivots": {
+      "head": "Bone:HeadGroup",
+      "lArm": "Bone:LeftArmPivot",
+      "lLeg": "Bone:LeftLegPivot",
+      "lWing": null,
+      "rWing": null
+     },
+     "wingZ": null,
+     "legX": -0.003
+    }
+   ]
+  },
+  {
+   "name": "wizard-side",
+   "row": {
+    "x": 46.43814590821035,
+    "z": -24.51001554847888,
+    "yaw": -1.571,
+    "pitch": 0.2,
+    "distance": 6
+   },
+   "monsters": [
+    {
+     "pos": [
+      46.4,
+      -22.7
+     ],
+     "state": "idle",
+     "windup": false,
+     "animator": true,
+     "clips": [
+      "Cast",
+      "Chop",
+      "Death",
+      "Fish",
+      "Idle",
+      "Lunge",
+      "Mine",
+      "Ranged",
+      "Slash",
+      "SpinSlash",
+      "Walk"
+     ],
+     "running": [
+      "Cast@0.000w1.00",
+      "Chop@0.000w1.00",
+      "Death@0.000w1.00",
+      "Fish@0.000w1.00",
+      "Idle@0.528w1.00",
+      "Lunge@0.000w1.00",
+      "Mine@0.000w1.00",
+      "Ranged@0.000w1.00",
+      "Slash@0.000w1.00",
+      "SpinSlash@0.000w1.00",
+      "Walk@0.750w0.00"
+     ],
+     "skinned": 4,
+     "painted": 4,
+     "cut": 4,
+     "skeletons": 1,
+     "scale": 1.02,
+     "pivots": {
+      "head": "Bone:HeadGroup",
+      "lArm": "Bone:LeftArmPivot",
+      "lLeg": "Bone:LeftLegPivot",
+      "lWing": null,
+      "rWing": null
+     },
+     "wingZ": null,
+     "legX": 0.019
+    }
+   ]
+  },
+  {
+   "name": "wizard-cast",
+   "row": {
+    "x": 45.94428183264072,
+    "z": -22.20041592562435,
+    "yaw": 2.6,
+    "pitch": 0.22,
+    "distance": 6.5
+   },
+   "monsters": [
+    {
+     "pos": [
+      43.2,
+      -21
+     ],
+     "state": "idle",
+     "windup": false,
+     "animator": true,
+     "clips": [
+      "Cast",
+      "Chop",
+      "Death",
+      "Fish",
+      "Idle",
+      "Lunge",
+      "Mine",
+      "Ranged",
+      "Slash",
+      "SpinSlash",
+      "Walk"
+     ],
+     "running": [
+      "Cast@0.233w1.00",
+      "Chop@0.000w1.00",
+      "Death@0.000w1.00",
+      "Fish@0.000w1.00",
+      "Idle@1.953w0.00",
+      "Lunge@0.000w1.00",
+      "Mine@0.000w1.00",
+      "Ranged@0.000w1.00",
+      "Slash@0.000w1.00",
+      "SpinSlash@0.000w1.00",
+      "Walk@0.038w0.00"
+     ],
+     "skinned": 4,
+     "painted": 4,
+     "cut": 4,
+     "skeletons": 1,
+     "scale": 1.02,
+     "pivots": {
+      "head": "Bone:HeadGroup",
+      "lArm": "Bone:LeftArmPivot",
+      "lLeg": "Bone:LeftLegPivot",
+      "lWing": null,
+      "rWing": null
+     },
+     "wingZ": null,
+     "legX": 0.058
+    },
+    {
+     "pos": [
+      42.7,
+      -20.7
+     ],
+     "state": "idle",
+     "windup": false,
+     "animator": true,
+     "clips": [
+      "Cast",
+      "Chop",
+      "Death",
+      "Fish",
+      "Idle",
+      "Lunge",
+      "Mine",
+      "Ranged",
+      "Slash",
+      "SpinSlash",
+      "Walk"
+     ],
+     "running": [
+      "Cast@0.550w1.00",
+      "Chop@0.000w1.00",
+      "Death@0.000w1.00",
+      "Fish@0.000w1.00",
+      "Idle@0.311w0.00",
+      "Lunge@0.000w1.00",
+      "Mine@0.000w1.00",
+      "Ranged@0.000w1.00",
+      "Slash@0.000w1.00",
+      "SpinSlash@0.000w1.00",
+      "Walk@0.339w0.00"
+     ],
+     "skinned": 4,
+     "painted": 4,
+     "cut": 4,
+     "skeletons": 1,
+     "scale": 1.02,
+     "pivots": {
+      "head": "Bone:HeadGroup",
+      "lArm": "Bone:LeftArmPivot",
+      "lLeg": "Bone:LeftLegPivot",
+      "lWing": null,
+      "rWing": null
+     },
+     "wingZ": null,
+     "legX": 0.1
+    }
+   ],
+   "spheres": [
+    {
+     "mesh": "dark_wizard_face",
+     "radius": 0.595,
+     "worstOutside": 0
+    },
+    {
+     "mesh": "dark_wizard_glow",
+     "radius": 0.65,
+     "worstOutside": 0.3453
+    },
+    {
+     "mesh": "dark_wizard_robe",
+     "radius": 2.314,
+     "worstOutside": 0
+    },
+    {
+     "mesh": "dark_wizard_staff",
+     "radius": 1.714,
+     "worstOutside": 0.0586
+    }
+   ]
+  },
+  {
+   "name": "wizard-back",
+   "row": {
+    "x": 41.127083965539164,
+    "z": -20.143415624432933,
+    "yaw": -0.5,
+    "pitch": 0.25,
+    "distance": 6
+   },
+   "monsters": [
+    {
+     "pos": [
+      42.7,
+      -20.7
+     ],
+     "state": "idle",
+     "windup": false,
+     "animator": true,
+     "clips": [
+      "Cast",
+      "Chop",
+      "Death",
+      "Fish",
+      "Idle",
+      "Lunge",
+      "Mine",
+      "Ranged",
+      "Slash",
+      "SpinSlash",
+      "Walk"
+     ],
+     "running": [
+      "Chop@0.000w1.00",
+      "Death@0.000w1.00",
+      "Fish@0.000w1.00",
+      "Idle@1.419w1.00",
+      "Lunge@0.000w1.00",
+      "Mine@0.000w1.00",
+      "Ranged@0.000w1.00",
+      "Slash@0.000w1.00",
+      "SpinSlash@0.000w1.00",
+      "Walk@0.532w0.00"
+     ],
+     "skinned": 4,
+     "painted": 4,
+     "cut": 4,
+     "skeletons": 1,
+     "scale": 1.02,
+     "pivots": {
+      "head": "Bone:HeadGroup",
+      "lArm": "Bone:LeftArmPivot",
+      "lLeg": "Bone:LeftLegPivot",
+      "lWing": null,
+      "rWing": null
+     },
+     "wingZ": null,
+     "legX": -0.002
+    }
+   ]
+  },
+  {
+   "name": "wizard-8.5",
+   "row": {
+    "x": 46.11867294883482,
+    "z": -24.139788412943236,
+    "yaw": 3.142,
+    "pitch": 0.3,
+    "distance": 8.5
+   },
+   "monsters": [
+    {
+     "pos": [
+      44.5,
+      -24.1
+     ],
+     "state": "idle",
+     "windup": false,
+     "animator": true,
+     "clips": [
+      "Cast",
+      "Chop",
+      "Death",
+      "Fish",
+      "Idle",
+      "Lunge",
+      "Mine",
+      "Ranged",
+      "Slash",
+      "SpinSlash",
+      "Walk"
+     ],
+     "running": [
+      "Chop@0.000w1.00",
+      "Death@0.000w1.00",
+      "Fish@0.000w1.00",
+      "Idle@0.586w1.00",
+      "Lunge@0.000w1.00",
+      "Mine@0.000w1.00",
+      "Ranged@0.000w1.00",
+      "Slash@0.000w1.00",
+      "SpinSlash@0.000w1.00",
+      "Walk@0.845w0.00"
+     ],
+     "skinned": 4,
+     "painted": 4,
+     "cut": 4,
+     "skeletons": 1,
+     "scale": 1.02,
+     "pivots": {
+      "head": "Bone:HeadGroup",
+      "lArm": "Bone:LeftArmPivot",
+      "lLeg": "Bone:LeftLegPivot",
+      "lWing": null,
+      "rWing": null
+     },
+     "wingZ": null,
+     "legX": 0.016
+    }
+   ]
+  },
+  {
+   "name": "wizard-26",
+   "row": {
+    "x": 46.11867294883482,
+    "z": -24.139788412943236,
+    "yaw": 3.142,
+    "pitch": 0.3,
+    "distance": 26
+   },
+   "monsters": [
+    {
+     "pos": [
+      44.2,
+      -24
+     ],
+     "state": "idle",
+     "windup": false,
+     "animator": true,
+     "clips": [
+      "Cast",
+      "Chop",
+      "Death",
+      "Fish",
+      "Idle",
+      "Lunge",
+      "Mine",
+      "Ranged",
+      "Slash",
+      "SpinSlash",
+      "Walk"
+     ],
+     "running": [
+      "Chop@0.000w1.00",
+      "Death@0.000w1.00",
+      "Fish@0.000w1.00",
+      "Idle@1.694w0.00",
+      "Lunge@0.000w1.00",
+      "Mine@0.000w1.00",
+      "Ranged@0.000w1.00",
+      "Slash@0.000w1.00",
+      "SpinSlash@0.000w1.00",
+      "Walk@1.047w1.00"
+     ],
+     "skinned": 4,
+     "painted": 4,
+     "cut": 4,
+     "skeletons": 1,
+     "scale": 1.02,
+     "pivots": {
+      "head": "Bone:HeadGroup",
+      "lArm": "Bone:LeftArmPivot",
+      "lLeg": "Bone:LeftLegPivot",
+      "lWing": null,
+      "rWing": null
+     },
+     "wingZ": null,
+     "legX": -0.458
+    }
+   ]
+  },
+  {
+   "name": "ranger-threeq",
+   "row": {
+    "x": 80.71246487118627,
+    "z": -52.8283641941543,
+    "yaw": 2.6,
+    "pitch": 0.22,
+    "distance": 6
+   },
+   "monsters": [
+    {
+     "pos": [
+      79.1,
+      -52.2
+     ],
+     "state": "idle",
+     "windup": false,
+     "animator": true,
+     "clips": [
+      "Cast",
+      "Chop",
+      "Death",
+      "Fish",
+      "Idle",
+      "Lunge",
+      "Mine",
+      "Ranged",
+      "Slash",
+      "SpinSlash",
+      "Walk"
+     ],
+     "running": [
+      "Cast@0.000w1.00",
+      "Chop@0.000w1.00",
+      "Death@0.000w1.00",
+      "Fish@0.000w1.00",
+      "Idle@0.844w1.00",
+      "Lunge@0.000w1.00",
+      "Mine@0.000w1.00",
+      "Ranged@0.000w1.00",
+      "Slash@0.000w1.00",
+      "SpinSlash@0.000w1.00",
+      "Walk@0.575w0.00"
+     ],
+     "skinned": 4,
+     "painted": 4,
+     "cut": 4,
+     "skeletons": 1,
+     "scale": 1.05,
+     "pivots": {
+      "head": "Bone:HeadGroup",
+      "lArm": "Bone:LeftArmPivot",
+      "lLeg": "Bone:LeftLegPivot",
+      "lWing": null,
+      "rWing": null
+     },
+     "wingZ": null,
+     "legX": 0.005
+    }
+   ]
+  },
+  {
+   "name": "ranger-side",
+   "row": {
+    "x": 79.11246487118628,
+    "z": -54.02836419415429,
+    "yaw": -1.571,
+    "pitch": 0.2,
+    "distance": 6
+   },
+   "monsters": [
+    {
+     "pos": [
+      79.1,
+      -52.2
+     ],
+     "state": "idle",
+     "windup": false,
+     "animator": true,
+     "clips": [
+      "Cast",
+      "Chop",
+      "Death",
+      "Fish",
+      "Idle",
+      "Lunge",
+      "Mine",
+      "Ranged",
+      "Slash",
+      "SpinSlash",
+      "Walk"
+     ],
+     "running": [
+      "Cast@0.000w1.00",
+      "Chop@0.000w1.00",
+      "Death@0.000w1.00",
+      "Fish@0.000w1.00",
+      "Idle@1.952w1.00",
+      "Lunge@0.000w1.00",
+      "Mine@0.000w1.00",
+      "Ranged@0.000w1.00",
+      "Slash@0.000w1.00",
+      "SpinSlash@0.000w1.00",
+      "Walk@0.825w0.00"
+     ],
+     "skinned": 4,
+     "painted": 4,
+     "cut": 4,
+     "skeletons": 1,
+     "scale": 1.05,
+     "pivots": {
+      "head": "Bone:HeadGroup",
+      "lArm": "Bone:LeftArmPivot",
+      "lLeg": "Bone:LeftLegPivot",
+      "lWing": null,
+      "rWing": null
+     },
+     "wingZ": null,
+     "legX": 0.038
+    }
+   ]
+  },
+  {
+   "name": "ranger-shoot",
+   "row": {
+    "x": 78.3044552408707,
+    "z": -49.49773416007539,
+    "yaw": 2.6,
+    "pitch": 0.22,
+    "distance": 6.5
+   },
+   "monsters": [
+    {
+     "pos": [
+      76.7,
+      -48.9
+     ],
+     "state": "idle",
+     "windup": false,
+     "animator": true,
+     "clips": [
+      "Cast",
+      "Chop",
+      "Death",
+      "Fish",
+      "Idle",
+      "Lunge",
+      "Mine",
+      "Ranged",
+      "Slash",
+      "SpinSlash",
+      "Walk"
+     ],
+     "running": [
+      "Cast@0.000w1.00",
+      "Chop@0.000w1.00",
+      "Death@0.000w1.00",
+      "Fish@0.000w1.00",
+      "Idle@1.669w0.00",
+      "Lunge@0.000w1.00",
+      "Mine@0.000w1.00",
+      "Ranged@0.467w1.00",
+      "Slash@0.000w1.00",
+      "SpinSlash@0.000w1.00",
+      "Walk@0.420w0.00"
+     ],
+     "skinned": 4,
+     "painted": 4,
+     "cut": 4,
+     "skeletons": 1,
+     "scale": 1.05,
+     "pivots": {
+      "head": "Bone:HeadGroup",
+      "lArm": "Bone:LeftArmPivot",
+      "lLeg": "Bone:LeftLegPivot",
+      "lWing": null,
+      "rWing": null
+     },
+     "wingZ": null,
+     "legX": 0.107
+    },
+    {
+     "pos": [
+      76.7,
+      -48.9
+     ],
+     "state": "idle",
+     "windup": false,
+     "animator": true,
+     "clips": [
+      "Cast",
+      "Chop",
+      "Death",
+      "Fish",
+      "Idle",
+      "Lunge",
+      "Mine",
+      "Ranged",
+      "Slash",
+      "SpinSlash",
+      "Walk"
+     ],
+     "running": [
+      "Cast@0.000w1.00",
+      "Chop@0.000w1.00",
+      "Death@0.000w1.00",
+      "Fish@0.000w1.00",
+      "Idle@0.060w0.00",
+      "Lunge@0.000w1.00",
+      "Mine@0.000w1.00",
+      "Ranged@0.817w1.00",
+      "Slash@0.000w1.00",
+      "SpinSlash@0.000w1.00",
+      "Walk@0.744w0.00"
+     ],
+     "skinned": 4,
+     "painted": 4,
+     "cut": 4,
+     "skeletons": 1,
+     "scale": 1.05,
+     "pivots": {
+      "head": "Bone:HeadGroup",
+      "lArm": "Bone:LeftArmPivot",
+      "lLeg": "Bone:LeftLegPivot",
+      "lWing": null,
+      "rWing": null
+     },
+     "wingZ": null,
+     "legX": 0.12
+    }
+   ],
+   "spheres": [
+    {
+     "mesh": "dark_ranger_body",
+     "radius": 1.842,
+     "worstOutside": 0
+    },
+    {
+     "mesh": "dark_ranger_cloak",
+     "radius": 1.724,
+     "worstOutside": 0
+    },
+    {
+     "mesh": "dark_ranger_glow",
+     "radius": 0.121,
+     "worstOutside": 0
+    },
+    {
+     "mesh": "dark_ranger_wood",
+     "radius": 1.403,
+     "worstOutside": 0.1046
+    }
+   ]
+  },
+  {
+   "name": "ranger-back",
+   "row": {
+    "x": 74.31361140219862,
+    "z": -50.372029131007544,
+    "yaw": -0.5,
+    "pitch": 0.25,
+    "distance": 6
+   },
+   "monsters": [
+    {
+     "pos": [
+      75.6,
+      -51.8
+     ],
+     "state": "idle",
+     "windup": false,
+     "animator": true,
+     "clips": [
+      "Cast",
+      "Chop",
+      "Death",
+      "Fish",
+      "Idle",
+      "Lunge",
+      "Mine",
+      "Ranged",
+      "Slash",
+      "SpinSlash",
+      "Walk"
+     ],
+     "running": [
+      "Cast@0.000w1.00",
+      "Chop@0.000w1.00",
+      "Death@0.000w1.00",
+      "Fish@0.000w1.00",
+      "Idle@1.185w0.00",
+      "Lunge@0.000w1.00",
+      "Mine@0.000w1.00",
+      "Slash@0.000w1.00",
+      "SpinSlash@0.000w1.00",
+      "Walk@1.095w1.00"
+     ],
+     "skinned": 4,
+     "painted": 4,
+     "cut": 4,
+     "skeletons": 1,
+     "scale": 1.05,
+     "pivots": {
+      "head": "Bone:HeadGroup",
+      "lArm": "Bone:LeftArmPivot",
+      "lLeg": "Bone:LeftLegPivot",
+      "lWing": null,
+      "rWing": null
+     },
+     "wingZ": null,
+     "legX": -0.406
+    }
+   ]
+  },
+  {
+   "name": "ranger-26",
+   "row": {
+    "x": 77.58562986535085,
+    "z": -52.3728927019346,
+    "yaw": 3.142,
+    "pitch": 0.3,
+    "distance": 26
+   },
+   "monsters": [
+    {
+     "pos": [
+      76,
+      -52.4
+     ],
+     "state": "idle",
+     "windup": false,
+     "animator": true,
+     "clips": [
+      "Cast",
+      "Chop",
+      "Death",
+      "Fish",
+      "Idle",
+      "Lunge",
+      "Mine",
+      "Ranged",
+      "Slash",
+      "SpinSlash",
+      "Walk"
+     ],
+     "running": [
+      "Cast@0.000w1.00",
+      "Chop@0.000w1.00",
+      "Death@0.000w1.00",
+      "Fish@0.000w1.00",
+      "Idle@0.465w1.00",
+      "Lunge@0.000w1.00",
+      "Mine@0.000w1.00",
+      "Slash@0.000w1.00",
+      "SpinSlash@0.000w1.00",
+      "Walk@0.227w0.00"
+     ],
+     "skinned": 4,
+     "painted": 4,
+     "cut": 4,
+     "skeletons": 1,
+     "scale": 1.05,
+     "pivots": {
+      "head": "Bone:HeadGroup",
+      "lArm": "Bone:LeftArmPivot",
+      "lLeg": "Bone:LeftLegPivot",
+      "lWing": null,
+      "rWing": null
+     },
+     "wingZ": null,
+     "legX": 0.022
+    }
+   ]
+  },
+  {
+   "name": "marksman-threeq",
+   "row": {
+    "x": -19.004351988814143,
+    "z": -52.037088581244376,
+    "yaw": 2.6,
+    "pitch": 0.22,
+    "distance": 6.5
+   },
+   "monsters": [
+    {
+     "pos": [
+      -20.9,
+      -51.2
+     ],
+     "state": "idle",
+     "windup": false,
+     "animator": true,
+     "clips": [
+      "Cast",
+      "Chop",
+      "Death",
+      "Fish",
+      "Idle",
+      "Lunge",
+      "Mine",
+      "Ranged",
+      "Slash",
+      "SpinSlash",
+      "Walk"
+     ],
+     "running": [
+      "Cast@0.000w1.00",
+      "Chop@0.000w1.00",
+      "Death@0.000w1.00",
+      "Fish@0.000w1.00",
+      "Idle@1.556w0.11",
+      "Lunge@0.000w1.00",
+      "Mine@0.000w1.00",
+      "Ranged@0.000w1.00",
+      "Slash@0.000w1.00",
+      "SpinSlash@0.000w1.00",
+      "Walk@0.326w0.89"
+     ],
+     "skinned": 4,
+     "painted": 4,
+     "cut": 4,
+     "skeletons": 1,
+     "scale": 1.155,
+     "pivots": {
+      "head": "Bone:HeadGroup",
+      "lArm": "Bone:LeftArmPivot",
+      "lLeg": "Bone:LeftLegPivot",
+      "lWing": null,
+      "rWing": null
+     },
+     "wingZ": null,
+     "legX": 0.427
+    }
+   ]
+  }
+ ],
+ "renderer": "ANGLE (Microsoft Corporation, D3D12 (NVIDIA GeForce RTX 4070 Laptop GPU), OpenGL 4.6)"
+}
