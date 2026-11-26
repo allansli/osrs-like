@@ -107,12 +107,15 @@
     "Cast": {
       "moves": [
         "HeadGroup",
+        "Hips",
         "LeftArmPivot",
         "LeftElbowPivot",
+        "LeftFoot",
         "LeftKneePivot",
         "LeftLegPivot",
         "RightArmPivot",
         "RightElbowPivot",
+        "RightFoot",
         "RightKneePivot",
         "RightLegPivot",
         "Torso"
@@ -121,12 +124,32 @@
     "Chop": {
       "moves": [
         "HeadGroup",
+        "Hips",
         "LeftArmPivot",
         "LeftElbowPivot",
+        "LeftFoot",
         "LeftKneePivot",
         "LeftLegPivot",
         "RightArmPivot",
         "RightElbowPivot",
+        "RightFoot",
+        "RightKneePivot",
+        "RightLegPivot",
+        "Torso"
+      ]
+    },
+    "Death": {
+      "moves": [
+        "HeadGroup",
+        "Hips",
+        "LeftArmPivot",
+        "LeftElbowPivot",
+        "LeftFoot",
+        "LeftKneePivot",
+        "LeftLegPivot",
+        "RightArmPivot",
+        "RightElbowPivot",
+        "RightFoot",
         "RightKneePivot",
         "RightLegPivot",
         "Torso"
@@ -135,12 +158,15 @@
     "Fish": {
       "moves": [
         "HeadGroup",
+        "Hips",
         "LeftArmPivot",
         "LeftElbowPivot",
+        "LeftFoot",
         "LeftKneePivot",
         "LeftLegPivot",
         "RightArmPivot",
         "RightElbowPivot",
+        "RightFoot",
         "RightKneePivot",
         "RightLegPivot",
         "Torso"
@@ -152,10 +178,12 @@
         "Hips",
         "LeftArmPivot",
         "LeftElbowPivot",
+        "LeftFoot",
         "LeftKneePivot",
         "LeftLegPivot",
         "RightArmPivot",
         "RightElbowPivot",
+        "RightFoot",
         "RightKneePivot",
         "RightLegPivot",
         "Torso"
@@ -164,12 +192,15 @@
     "Lunge": {
       "moves": [
         "HeadGroup",
+        "Hips",
         "LeftArmPivot",
         "LeftElbowPivot",
+        "LeftFoot",
         "LeftKneePivot",
         "LeftLegPivot",
         "RightArmPivot",
         "RightElbowPivot",
+        "RightFoot",
         "RightKneePivot",
         "RightLegPivot",
         "Torso"
@@ -178,12 +209,15 @@
     "Mine": {
       "moves": [
         "HeadGroup",
+        "Hips",
         "LeftArmPivot",
         "LeftElbowPivot",
+        "LeftFoot",
         "LeftKneePivot",
         "LeftLegPivot",
         "RightArmPivot",
         "RightElbowPivot",
+        "RightFoot",
         "RightKneePivot",
         "RightLegPivot",
         "Torso"
@@ -192,12 +226,15 @@
     "Ranged": {
       "moves": [
         "HeadGroup",
+        "Hips",
         "LeftArmPivot",
         "LeftElbowPivot",
+        "LeftFoot",
         "LeftKneePivot",
         "LeftLegPivot",
         "RightArmPivot",
         "RightElbowPivot",
+        "RightFoot",
         "RightKneePivot",
         "RightLegPivot",
         "Torso"
@@ -206,12 +243,15 @@
     "Slash": {
       "moves": [
         "HeadGroup",
+        "Hips",
         "LeftArmPivot",
         "LeftElbowPivot",
+        "LeftFoot",
         "LeftKneePivot",
         "LeftLegPivot",
         "RightArmPivot",
         "RightElbowPivot",
+        "RightFoot",
         "RightKneePivot",
         "RightLegPivot",
         "Torso"
@@ -220,12 +260,15 @@
     "SpinSlash": {
       "moves": [
         "HeadGroup",
+        "Hips",
         "LeftArmPivot",
         "LeftElbowPivot",
+        "LeftFoot",
         "LeftKneePivot",
         "LeftLegPivot",
         "RightArmPivot",
         "RightElbowPivot",
+        "RightFoot",
         "RightKneePivot",
         "RightLegPivot",
         "Torso"
@@ -237,10 +280,12 @@
         "Hips",
         "LeftArmPivot",
         "LeftElbowPivot",
+        "LeftFoot",
         "LeftKneePivot",
         "LeftLegPivot",
         "RightArmPivot",
         "RightElbowPivot",
+        "RightFoot",
         "RightKneePivot",
         "RightLegPivot",
         "Torso"
@@ -385,6 +430,7 @@
     "sharedClips": [
       "Cast",
       "Chop",
+      "Death",
       "Fish",
       "Idle",
       "Lunge",
@@ -495,14 +541,23 @@
         ]
       }
     ],
-    "maxLimbDegrees": 20
+    "maxLimbDegrees": 20,
+    "attackClips": {
+      "Cast": 0.25,
+      "Chop": 0.5,
+      "Lunge": 0.333333,
+      "Mine": 0.416667,
+      "Ranged": 0.583333,
+      "Slash": 0.25,
+      "SpinSlash": 0.166667
+    }
   },
   "budget": {
     "triangles": 6000,
     "meshes": 11,
     "materials": 11,
-    "rawBytes": 298989,
-    "brotliBytes": 156663
+    "rawBytes": 334973,
+    "brotliBytes": 166544
   },
   "figures": {
     "HeroRoot": {
