@@ -10,7 +10,7 @@ Sculpts authentic, high-detail OSRS / RuneScape Dragonwilds stylized monsters:
   7. Monster_hill_giant       - Hill Giant with barrel-chested muscular torso, fur pelt loincloth, skull buckle, braided beard & spiked tree-trunk club
   8. Monster_moss_guardian    - Moss Guardian forest golem of craggy stone & twisted bark, glowing heart-core, mossy boulder pauldrons & branching antlers
   9. Monster_lesser_demon     - Lesser Demon with V-tapered crimson musculature, ram horns, ribbed bat wings, cloven hooves, spade tail & hellfire cleaver
- 10. Monster_elvarg_dragon    - Elvarg the Crag Dragon world boss with golden belly scutes, S-curved neck, roaring fanged jaw, 16 dorsal horns, 4.2m wings & spiked tail club
+ 10. Monster_elvarg_dragon    - Elvarg the Crag Dragon world boss, a new skinned model on the dragon rig: low heavy-shouldered body, wedge head with a jaw, swept horns, crag plates down the spine, raised wings & spade tail
 """
 
 import math
@@ -1202,15 +1202,15 @@ def goblin_joints() -> dict:
     return j
 
 
-def _goblin_hide_mean() -> list:
-    """Mean colour of the goblin-hide tile, linear, read from the engine's own file."""
-    img = bpy.data.images.load(os.path.join(paths.repo_root(), GOBLIN_HIDE_TILE))
+def _goblin_hide_mean(tile: str) -> list:
+    """Mean colour of an albedo tile, linear, read from the engine's own file."""
+    img = bpy.data.images.load(os.path.join(paths.repo_root(), tile))
     px = [0.0] * (len(img.pixels))
     img.pixels.foreach_get(px)  # an 8-bit file's pixels come as stored, sRGB
     count = len(px) // img.channels
     mean = [sum(s2l(c) for c in px[k :: img.channels]) / count for k in range(3)]
     bpy.data.images.remove(img)
-    print(f"[Blender] goblin-hide tile mean, linear: {mean[0]:.4f} {mean[1]:.4f} {mean[2]:.4f}")
+    print(f"[Blender] {os.path.splitext(os.path.basename(tile))[0]} tile mean, linear: {mean[0]:.4f} {mean[1]:.4f} {mean[2]:.4f}")
     return mean
 
 
@@ -1534,6 +1534,39 @@ def _goblin_body_tint(body, main: list, dark: list) -> None:
     body.data.color_attributes.new("Tint", "FLOAT_COLOR", "CORNER").data.foreach_set("color", cols)
 
 
+def _figure_paint(rig, merged: list, ao: float) -> None:
+    """
+    The paint layer of a skinned figure, on its merged meshes (README pattern step 8): the baked layer
+    (occlusion, height gradient, warm to cool, one value a vertex) times each part's 'Tint' (colour
+    and plane tone, one value a face corner), stored per face corner so a tone can change across a
+    hard edge. Nothing else is in the bake, so no neighbour on the grid shades the figure. The meshes
+    drop their UV layers and take the armature modifier.
+    """
+    others = [o for o in bpy.data.objects if o not in merged and not o.hide_render]
+    for o in others:
+        o.hide_render = True
+    figkit.bake_paint(rig, ao=ao)
+    for o in others:
+        o.hide_render = False
+    for ob in merged:
+        attrs = ob.data.color_attributes
+        baked, tint = [0.0] * (4 * len(ob.data.vertices)), [0.0] * (4 * len(ob.data.loops))
+        attrs["Col"].data.foreach_get("color", baked)
+        attrs["Tint"].data.foreach_get("color", tint)
+        assert min(tint[3::4]) == 1.0, f"{ob.name}: a face corner came through the merge without a Tint"
+        for li, loop in enumerate(ob.data.loops):
+            for c in range(3):
+                tint[4 * li + c] *= baked[4 * loop.vertex_index + c]
+        attrs.remove(attrs["Col"])  # bake_paint's layer is one value a vertex; the exported one is per corner
+        attrs.remove(attrs["Tint"])
+        attrs.new("Col", "FLOAT_COLOR", "CORNER").data.foreach_set("color", tint)
+        while ob.data.uv_layers:  # no figure reads GLB UVs (design 6.3)
+            ob.data.uv_layers.remove(ob.data.uv_layers[0])
+        attrs.active_color = attrs["Col"]
+        attrs.render_color_index = attrs.active_color_index
+        ob.modifiers.new("Armature", "ARMATURE").object = rig
+
+
 def build_goblin(grid_pos: tuple[float, float, float], mats: dict):
     # grid_pos is not used: a skinned figure stands at the file's origin (design 6.1.1 rule 2b)
     import rigs  # the biped table; imported here because only this builder is skinned (plan S2)
@@ -1545,7 +1578,7 @@ def build_goblin(grid_pos: tuple[float, float, float], mats: dict):
     skin = make_mat("mat_skin_goblin_paint", 0xFFFFFF, roughness=0.58, metallic=0.04)
     wood = make_mat("mat_wood_goblin_paint", 0xFFFFFF, roughness=0.70, metallic=0.02)
     metal = make_mat("mat_bronze_goblin_paint", 0xFFFFFF, roughness=0.45, metallic=0.65)
-    tile = _goblin_hide_mean()
+    tile = _goblin_hide_mean(GOBLIN_HIDE_TILE)
     col = dict(GOBLIN_COLOURS, skin=_goblin_skin_paint(GOBLIN_COLOURS["skin"], tile), skin_dark=_goblin_skin_paint(GOBLIN_COLOURS["skin_dark"], tile))
     j = goblin_joints()
     hard = []  # (object, bone): rigid parts, weight 1 on one bone
@@ -1705,32 +1738,7 @@ def build_goblin(grid_pos: tuple[float, float, float], mats: dict):
     for ob in merged:
         ob.name = ob.data.name = names[figkit.get_material_family(ob)]
 
-    # Paint: the baked layer (occlusion, height gradient, warm to cool, one value a vertex) times each
-    # part's colour and plane tone (one value a face corner), stored per face corner so a tone can
-    # change across a hard edge. Nothing else is in the bake, so no neighbour on the grid shades the goblin.
-    others = [o for o in bpy.data.objects if o not in merged and not o.hide_render]
-    for o in others:
-        o.hide_render = True
-    figkit.bake_paint(rig, ao=GOBLIN_OCCLUSION)
-    for o in others:
-        o.hide_render = False
-    for ob in merged:
-        attrs = ob.data.color_attributes
-        baked, tint = [0.0] * (4 * len(ob.data.vertices)), [0.0] * (4 * len(ob.data.loops))
-        attrs["Col"].data.foreach_get("color", baked)
-        attrs["Tint"].data.foreach_get("color", tint)
-        assert min(tint[3::4]) == 1.0, f"{ob.name}: a face corner came through the merge without a Tint"
-        for li, loop in enumerate(ob.data.loops):
-            for c in range(3):
-                tint[4 * li + c] *= baked[4 * loop.vertex_index + c]
-        attrs.remove(attrs["Col"])  # bake_paint's layer is one value a vertex; the exported one is per corner
-        attrs.remove(attrs["Tint"])
-        attrs.new("Col", "FLOAT_COLOR", "CORNER").data.foreach_set("color", tint)
-        while ob.data.uv_layers:  # no figure reads GLB UVs (design 6.3)
-            ob.data.uv_layers.remove(ob.data.uv_layers[0])
-        attrs.active_color = attrs["Col"]
-        attrs.render_color_index = attrs.active_color_index
-        ob.modifiers.new("Armature", "ARMATURE").object = rig
+    _figure_paint(rig, merged, GOBLIN_OCCLUSION)
 
     tris = sum(len(p.vertices) - 2 for ob in merged for p in ob.data.polygons)
     if tris > GOBLIN_TRIANGLES:
@@ -3022,286 +3030,414 @@ def build_lesser_demon(grid_pos: tuple[float, float, float], mats: dict):
 
 
 # =============================================================================
-# 10. Monster_elvarg_dragon (Elvarg the Crag Dragon - World Boss)
+# 10. Monster_elvarg_dragon (Elvarg the Crag Dragon): a new model, skinned on the dragon rig (plan D2)
 # =============================================================================
-def build_elvarg_dragon(grid_pos: tuple[float, float, float], mats: dict):
-    root = create_pivot("Monster_elvarg_dragon", None, *grid_pos)
-    head_piv = create_pivot("elvarg_dragon_HeadGroup", root, 0.0, 1.56, -3.18)
-    l_wing = create_pivot("elvarg_dragon_LWing", root, -2.73, 2.44, -0.53)
-    r_wing = create_pivot("elvarg_dragon_RWing", root, 2.73, 2.44, -0.53)
-    left_arm = create_pivot("elvarg_dragon_LeftArmPivot", root, -1.10, 0.95, -1.40)
-    right_arm = create_pivot("elvarg_dragon_RightArmPivot", root, 1.10, 0.95, -1.40)
-    left_leg = create_pivot("elvarg_dragon_LeftLegPivot", root, -1.25, 0.95, 1.20)
-    right_leg = create_pivot("elvarg_dragon_RightLegPivot", root, 1.25, 0.95, 1.20)
+# An original dragon on the pilot's pattern (docs/superpowers/baseline/models/README.md): a low,
+# heavy-shouldered body from figkit.organic_body, a wedge head with a jaw, horns swept back (one
+# broken), crag plates down the spine, wings held up with the membrane as its own material, a spade
+# on the tail. Coordinates are three-space like the rest of this file (+Y up, -Z forward). The
+# figure stands at the file's origin (design 6.1.1 rule 2b).
+DRAGON_TRIANGLES = 10000  # the builder's own budget, under the manifest's 14,000: what the wire ceiling allows
+DRAGON_HEAD_TRIANGLES = 700
+DRAGON_VOXEL = 0.05  # the goblin's 0.02 on a body four times the size
+DRAGON_OCCLUSION = 0.5  # bake_paint's occlusion strength, as the goblin's
+DRAGON_BOUNDS = (10.458, 3.600, 7.101)  # the shipped dragon's width, height and length; the new one stays within 5%
+DRAGON_COLOURS = {
+    "hide": 0x3F6139,  # crag green, 38% value
+    "hide_dark": 0x2E4A2E,  # feet and wing struts, 29% value
+    "membrane": 0x80402E,  # 50% value
+    "belly": 0x9E8748,  # ochre, 62% value
+    "horn": 0xB8AD90,  # horns, plates, claws and teeth, 72% value
+    "iris": 0xE6B820,
+    "pupil": 0x1E1410,
+}
+# The engine multiplies the hide by the dragon-scale tile and the membrane by the leather tile
+# (blenderMonsters.ts: 'skin' and 'wing' in the material name): each paint is divided by its tile's mean.
+DRAGON_SCALE_TILE = "public/textures/creatures/dragon-scale.png"
+DRAGON_LEATHER_TILE = "public/textures/leather.png"
 
-    imported_parts = load_imported_character(
-        "blender/examples/dragon_3826/Dragon-low-rig.blend",
-        ["dragon", "dents", "dents.001", "yeux", "yeux.001"],
-        target_height=3.60,
-        rot_z_180=True,
+
+def dragon_joints() -> dict:
+    """
+    Joints of the dragon rig. The bind pose is the stance, each limb within 20 degrees of the dragon
+    reference (rigs.DRAGON_TABLE): the spine climbs from low hips to heavy shoulders, the neck rises
+    in two bones and levels into the head, the wings are held up and out, the tail runs back and
+    down. Root stands on the ground under the hips (the reference wants Root to Hips upright); the
+    armature itself is at the origin.
+    """
+    j = {
+        "Root": (0.0, 0.0, 0.95),
+        "Hips": (0.0, 1.00, 0.95),
+        "Torso": (0.0, 1.36, 0.0),
+        "Neck1": (0.0, 1.75, -0.95),
+        "Neck2": (0.0, 2.46, -1.50),
+        "HeadGroup": (0.0, 2.82, -2.38),
+        "Jaw": (0.0, 2.76, -2.62),
+        "TailPivot": (0.0, 0.98, 1.60),
+        "TailPivot2": (0.0, 0.76, 2.35),
+        "TailPivot3": (0.0, 0.56, 3.00),
+    }
+    for side, tag in ((-1.0, "Left"), (1.0, "Right")):
+        j[f"{tag}ArmPivot"] = (side * 0.80, 1.30, -0.72)
+        j[f"{tag}ElbowPivot"] = (side * 1.03, 0.62, -0.66)
+        j[f"{tag}LegPivot"] = (side * 0.62, 1.00, 1.02)
+        j[f"{tag}KneePivot"] = (side * 0.73, 0.58, 0.95)
+        j[f"{tag[0]}Wing"] = (side * 0.42, 1.88, -0.55)
+        j[f"{tag[0]}Wing2"] = (side * 2.22, 2.98, -0.45)
+    return j
+
+
+def _dragon_body_graph(j: dict) -> tuple[list, list, list, list, list]:
+    """
+    The stick graph and radii for figkit.organic_body, the keep balls of the four feet for
+    _goblin_skin, and the spine (the nodes from head to tail tip with their half heights, for the
+    belly's paint), in Blender space: trunk, neck, tail and legs are one skin. On a level edge a
+    radius pair is (half height, half width). Shoulders and haunches are the widest nodes of their
+    legs, so they stand outside the trunk.
+    """
+    pts, radii, edges, keep = [], [], [], []
+
+    def chain(start, nodes):
+        prev = start
+        for p, r in nodes:
+            pts.append(t2b(*p))
+            radii.append(r)
+            if prev is not None:
+                edges.append((prev, len(pts) - 1))
+            prev = len(pts) - 1
+        return prev
+
+    def along(a, b, t):
+        return tuple(Vector(a).lerp(Vector(b), t))
+
+    pelvis = chain(None, [((0.0, 1.02, 0.95), (0.46, 0.50))])
+    waist = chain(pelvis, [((0.0, 1.16, 0.30), (0.42, 0.45))])
+    chest = chain(waist, [((0.0, 1.27, -0.40), (0.64, 0.72))])
+    withers = chain(chest, [((0.0, 1.48, -0.92), (0.58, 0.64))])
+    # The neck rises steeply from the withers and levels into the head, where its last node ends inside the skull
+    chain(withers, [((0.0, 1.92, -1.20), 0.40), (j["Neck2"], 0.28), ((0.0, 2.72, -1.95), 0.22), ((0.0, 2.82, -2.40), 0.20)])
+    chain(pelvis, [(j["TailPivot"], 0.34), (j["TailPivot2"], 0.22), (j["TailPivot3"], 0.13), ((0.0, 0.50, 3.28), 0.08)])
+    for side, tag in ((-1.0, "Left"), (1.0, "Right")):
+        shoulder, elbow = j[f"{tag}ArmPivot"], j[f"{tag}ElbowPivot"]
+        chain(withers, [
+            (shoulder, 0.42),
+            # The arm stands clear of the chest below the shoulder: an elbow against the ribs seals a pocket in the skin
+            (along(shoulder, elbow, 0.55), 0.24),
+            (elbow, 0.24),
+            ((side * 1.05, 0.34, -0.78), 0.18),
+            # The foot: one flat slab, heel to toe box, reaching under the ground where _goblin_skin cuts it flat
+            ((side * 1.06, 0.10, -0.86), (0.10, 0.22)),
+            ((side * 1.08, 0.10, -1.20), (0.10, 0.29)),
+        ])
+        keep.append((Vector(t2b(side * 1.07, 0.08, -1.03)), 0.40))
+        hip, knee = j[f"{tag}LegPivot"], j[f"{tag}KneePivot"]
+        chain(pelvis, [
+            (hip, 0.44),
+            (along(hip, knee, 0.6), 0.28),
+            (knee, 0.20),
+            ((side * 0.80, 0.42, 1.40), 0.14),  # the hock stands behind the knee
+            # The hind foot is low and ends behind the knee: a toe box that reaches the knee leaves a tunnel in the skin
+            ((side * 0.80, 0.08, 1.36), (0.08, 0.17)),
+            ((side * 0.82, 0.08, 1.04), (0.08, 0.27)),
+        ])
+        keep.append((Vector(t2b(side * 0.81, 0.08, 1.20)), 0.40))
+    spine = [(Vector(p), r if isinstance(r, float) else r[0]) for p, r in zip(pts, radii) if p[0] == 0.0]
+    return pts, edges, radii, keep, sorted(spine, key=lambda s: s[0].y)
+
+
+def _dragon_head(mat):
+    """
+    The head: a block skull running into a six-sided snout with a flat top, a brow ridge over each
+    eye, jowls and nostrils, fused into one form with hard edges round its planes. It is built of
+    flat-sided parts and softened once, so the planes are chosen ones (a head of spheres came out a
+    smooth lump).
+    """
+    parts = [
+        add_box("drg_skull", None, mat, 0.58, 0.40, 0.64, tx=0.0, ty=2.88, tz=-2.60, rx=-0.12, bevel=0.0),
+        add_curved_tube(
+            "drg_snout", None, mat,
+            [(0.0, 2.86, -2.78, 0.27, 0.18), (0.0, 2.79, -3.10, 0.21, 0.14), (0.0, 2.70, -3.42, 0.15, 0.10), (0.0, 2.67, -3.53, 0.11, 0.08)],
+            segs=6, smooth=False,
+        ),
+    ]
+    for side in (-1.0, 1.0):
+        # The brow: a four-sided ridge over the eye that runs down into the snout
+        parts.append(add_curved_tube(
+            "drg_brow", None, mat,
+            [(side * 0.21, 3.05, -2.34, 0.11, 0.07), (side * 0.25, 3.08, -2.72, 0.11, 0.08), (side * 0.15, 2.95, -3.08, 0.06, 0.05)],
+            segs=4, smooth=False,
+        ))
+        parts.append(add_box("drg_jowl", None, mat, 0.16, 0.24, 0.36, tx=side * 0.29, ty=2.79, tz=-2.52, bevel=0.0))
+        parts.append(add_box("drg_nostril", None, mat, 0.10, 0.07, 0.12, tx=side * 0.085, ty=2.78, tz=-3.44, rx=-0.25, bevel=0.0))
+    return _goblin_fuse(parts, "drg_head", mat, 0.025, DRAGON_HEAD_TRIANGLES, soften=1, crease=GOBLIN_CREASE)
+
+
+def _dragon_body_tint(body, spine: list, hide: list, dark: list, belly: list) -> None:
+    """
+    Paint rule of the body: one band of belly from the throat to the tail's tip (the faces under the
+    spine's line that do not look up, within three quarters of the spine's half height of the
+    midline), the dark tone on the feet, hide on the rest; each times its plane's tone. The edges
+    round the belly and round the feet are made hard first, so the colour changes only where the
+    exporter splits a vertex anyway and each patch is a plane of its own.
+    """
+    def under_spine(c) -> bool:
+        for (a, ra), (b, rb) in zip(spine, spine[1:]):
+            if a.y <= c.y <= b.y:
+                t = (c.y - a.y) / (b.y - a.y)
+                r = ra + (rb - ra) * t
+                return abs(c.x) < 0.75 * r and c.z < a.z + (b.z - a.z) * t - 0.35 * r
+        return False
+
+    polys = body.data.polygons
+    kind = [2 if p.center.z < 0.16 else 1 if p.normal.z < -0.15 and under_spine(p.center) else 0 for p in polys]
+    bm = bmesh.new()
+    bm.from_mesh(body.data)
+    for e in bm.edges:
+        if kind[e.link_faces[0].index] != kind[e.link_faces[1].index]:
+            e.smooth = False
+    bm.to_mesh(body.data)
+    bm.free()
+    tones = _goblin_plane_tones(body)
+    cols = []
+    for p, k, tone in zip(polys, kind, tones):
+        cols += [*(c * tone for c in (hide, belly, dark)[k]), 1.0] * len(p.vertices)
+    body.data.color_attributes.new("Tint", "FLOAT_COLOR", "CORNER").data.foreach_set("color", cols)
+    print(f"[Blender] dragon body faces: {kind.count(1)} belly, {kind.count(2)} foot, of {len(kind)}")
+
+
+def _dragon_membrane(name: str, mat, root: Vector, wrist: Vector, tips: list, flank: Vector, bones: tuple):
+    """
+    One wing's membrane: a fan of flat panels from the wrist to the three finger tips and the flank,
+    and one panel from the wing's root to the wrist and the flank, each trailing edge scalloped
+    toward the wrist. It is a closed sheet 0.04 thick, so the outline shell holds on it. Weights are
+    by rule (design 6.1.6): what the fingers carry is on the second wing bone, the root on the first,
+    the flank on the hips, and a panel's middle is shared between its corners' bones.
+    bones is (first wing bone, second wing bone, hips), full names.
+    """
+    wing1, wing2, hips = bones
+    bm = bmesh.new()
+    made = {}  # three-space position -> (vertex, weights)
+
+    def vert(p: Vector, weights: dict):
+        key = tuple(round(c, 5) for c in p)
+        if key not in made:
+            made[key] = (bm.verts.new(t2b(*p)), weights)
+        return made[key][0]
+
+    sag = Vector((0.0, -0.10, 0.0))
+    rim = [(t, {wing2: 1.0}) for t in tips] + [(flank, {hips: 1.0})]
+    w = vert(wrist, {wing2: 1.0})
+    for (p, wp), (q, wq) in zip(rim, rim[1:]):
+        shared = {b: (wp.get(b, 0.0) + wq.get(b, 0.0)) / 2.0 for b in bones}  # in the order of bones: a set's order changes from run to run
+        a, b = vert(p, wp), vert(q, wq)
+        mid = vert(((p + q) / 2.0).lerp(wrist, 0.20), shared)
+        third = {b: (wp.get(b, 0.0) + wq.get(b, 0.0) + (1.0 if b == wing2 else 0.0)) / 3.0 for b in bones}
+        centre = vert((wrist + p + q) / 3.0 + sag, third)
+        for tri in ((w, a, centre), (a, mid, centre), (mid, b, centre), (b, w, centre)):
+            bm.faces.new(tri)
+    r, f = vert(root, {wing1: 1.0}), vert(flank, {hips: 1.0})
+    centre = vert((root + wrist + flank) / 3.0, {wing1: 0.4, wing2: 0.3, hips: 0.3})
+    for tri in ((r, w, centre), (w, f, centre), (f, r, centre)):
+        bm.faces.new(tri)
+    # The sheet is closed by hand (a second skin 0.04 under the first and a rim between them):
+    # bmesh's solidify gave another index order from run to run.
+    bm.normal_update()
+    rule = [(v.co.copy(), weights) for v, weights in made.values()]
+    upper = [tuple(f.verts) for f in bm.faces]
+    rim_edges = [(l.vert, l.link_loop_next.vert) for f in bm.faces for l in f.loops if l.edge.is_boundary]
+    lower = {v: bm.verts.new(v.co - v.normal * 0.04) for v in list(bm.verts)}
+    for a, b, c in upper:
+        bm.faces.new((lower[c], lower[b], lower[a]))
+    for a, b in rim_edges:
+        bm.faces.new((b, a, lower[a], lower[b]))
+    ob = finalize_obj(name, bm, None, mat, smooth=False)
+    groups = {b: ob.vertex_groups.new(name=b) for b in bones}
+    for v in ob.data.vertices:
+        co, weights = min(rule, key=lambda item: (item[0] - v.co).length_squared)
+        assert (co - v.co).length < 0.05, f"{name}: a membrane vertex is {(co - v.co).length:.3f} from every vertex of the weight rule"
+        for b in bones:
+            if weights.get(b, 0.0) > 0.0:
+                groups[b].add([v.index], weights[b], "REPLACE")
+    return ob
+
+
+def build_elvarg_dragon(grid_pos: tuple[float, float, float], mats: dict):
+    # grid_pos is not used: a skinned figure stands at the file's origin (design 6.1.1 rule 2b)
+    import rigs  # the dragon table
+    from mathutils.bvhtree import BVHTree
+
+    # White, like the goblin's: every colour of the dragon is paint. The names give the engine its
+    # families: 'skin' the hide with the dragon-scale tile, 'wing' the membrane (leather, both sides
+    # drawn), the horn material plain. The mouth's glow is the file's own mat_glow_orange.
+    skin = make_mat("mat_skin_elvarg_dragon_paint", 0xFFFFFF, roughness=0.45, metallic=0.12)
+    wing = make_mat("mat_wing_elvarg_dragon_paint", 0xFFFFFF, roughness=0.55, metallic=0.08)
+    horn = make_mat("mat_horn_elvarg_dragon_paint", 0xFFFFFF, roughness=0.45, metallic=0.12)
+    glow = mats["glow_orange"]
+    scale_tile, leather_tile = _goblin_hide_mean(DRAGON_SCALE_TILE), _goblin_hide_mean(DRAGON_LEATHER_TILE)
+    col = dict(DRAGON_COLOURS)
+    for key, tile in (("hide", scale_tile), ("hide_dark", scale_tile), ("belly", scale_tile), ("membrane", leather_tile)):
+        col[key] = _goblin_skin_paint(DRAGON_COLOURS[key], tile)
+    j = dragon_joints()
+    hard = []  # (object, bone): rigid parts, weight 1 on one bone
+
+    def add(obj, bone: str, colour, planes: bool = False):
+        _goblin_tint(obj, colour, planes)
+        hard.append((obj, f"elvarg_dragon_{bone}"))
+
+    def aim(d) -> dict:
+        """The rx and rz that turn a primitive's own +Y axis to the direction d."""
+        d = Vector(d).normalized()
+        return {"rx": math.asin(d.z), "rz": -math.atan2(d.x, d.y)}
+
+    # Head and jaw. The jaw hangs open a little in the bind pose, so the glow of the mouth shows
+    # between the teeth; it is a faceted wedge in the belly's colour. Eyes are paint on the horn
+    # mesh (no mesh name holds 'eye': the engine would draw that whole mesh unlit).
+    add(_dragon_head(skin), "HeadGroup", col["hide"], planes=True)
+    add(
+        add_curved_tube(
+            "drg_jaw", None, skin,
+            [(0.0, 2.68, -2.50, 0.25, 0.10), (0.0, 2.58, -2.95, 0.21, 0.09), (0.0, 2.46, -3.30, 0.14, 0.07), (0.0, 2.42, -3.46, 0.08, 0.05)],
+            segs=6, smooth=False,
+        ),
+        "Jaw", col["belly"], planes=True,
+    )
+    add(add_sphere("drg_maw", None, glow, 0.15, 0.04, 0.36, tx=0.0, ty=2.57, tz=-3.05, rx=-0.18, segs=8, rings=5), "HeadGroup", 0xFFFFFF)
+    for side, tag in ((-1.0, "L"), (1.0, "R")):
+        add(add_sphere(f"drg_iris_{tag}", None, horn, 0.03, 0.05, 0.075, tx=side * 0.285, ty=2.95, tz=-2.76, segs=8, rings=6), "HeadGroup", col["iris"])
+        add(add_sphere(f"drg_pupil_{tag}", None, horn, 0.03, 0.048, 0.026, tx=side * 0.30, ty=2.95, tz=-2.77, segs=6, rings=5), "HeadGroup", col["pupil"])
+        for k, (tz, tx, ty) in enumerate(((-3.44, 0.085, 2.61), (-3.26, 0.14, 2.64), (-3.06, 0.185, 2.67))):
+            add(add_cone_spike(f"drg_fang_{tag}_{k}", None, horn, base_r=0.036, length=0.13, tx=side * tx, ty=ty, tz=tz, rx=math.pi, segs=5), "HeadGroup", col["horn"])
+        for k, (tz, tx, ty) in enumerate(((-3.36, 0.10, 2.49), (-3.14, 0.16, 2.56))):
+            add(add_cone_spike(f"drg_tusk_{tag}_{k}", None, horn, base_r=0.036, length=0.12, tx=side * tx, ty=ty, tz=tz, segs=5), "Jaw", col["horn"])
+        # A small horn on each jowl
+        add(
+            add_cone_spike(f"drg_cheek_horn_{tag}", None, horn, base_r=0.06, length=0.36, tx=side * 0.30, ty=2.80, tz=-2.46, segs=5, smooth=False, **aim((side * 0.62, 0.12, 0.77))),
+            "HeadGroup", col["horn"], planes=True,
+        )
+    # Two horns swept back from the skull; the left one is broken short (the one asymmetry, design 5.3)
+    sweep = Vector((0.22, 0.50, 0.84)).normalized()
+    add(
+        add_cone_spike("drg_horn_R", None, horn, base_r=0.105, length=0.90, tx=0.17, ty=3.00, tz=-2.36, segs=6, smooth=False, **aim(sweep)),
+        "HeadGroup", col["horn"], planes=True,
+    )
+    stump = Vector((-0.17, 3.00, -2.36))
+    sweep.x = -sweep.x
+    add(
+        add_limb_tube("drg_horn_L", None, horn, tuple(stump), tuple(stump + sweep * 0.40), 0.105, 0.075, r_mid=0.09, segs=6, steps=2, smooth=False),
+        "HeadGroup", col["horn"], planes=True,
     )
 
-    if imported_parts and "dragon" in imported_parts:
-        finalize_obj(
-            "elvarg_dragon_body",
-            imported_parts["dragon"],
-            root,
-            mat=mats["skin_elvarg_dragon"],
-            smooth=True,
+    # Wings: arm and fingers are rigid struts on the two wing bones, the membrane lies between them
+    membranes = []
+    for side, tag in ((-1.0, "L"), (1.0, "R")):
+        root, wrist = Vector(j[f"{tag}Wing"]), Vector(j[f"{tag}Wing2"])
+        tips = [Vector((side * 5.20, 2.55, -0.10)), Vector((side * 4.45, 1.75, 1.15)), Vector((side * 3.05, 1.45, 1.85))]
+        flank = Vector((side * 0.35, 1.40, 0.75))
+        sunk = root - (wrist - root).normalized() * 0.12  # the arm starts inside the back
+        add(add_limb_tube(f"drg_wing_arm_{tag}", None, skin, tuple(sunk), tuple(wrist), 0.17, 0.11, segs=6, steps=3, smooth=False), f"{tag}Wing", col["hide"], planes=True)
+        add(add_sphere(f"drg_wing_wrist_{tag}", None, skin, 0.13, tx=wrist.x, ty=wrist.y, tz=wrist.z, segs=6, rings=4, smooth=False), f"{tag}Wing2", col["hide_dark"], planes=True)
+        for k, tip in enumerate(tips):
+            add(
+                add_limb_tube(f"drg_wing_finger_{tag}_{k}", None, skin, tuple(wrist), tuple(tip), 0.085, 0.035, r_mid=0.06, segs=5, steps=3, smooth=False),
+                f"{tag}Wing2", col["hide_dark"], planes=True,
+            )
+        # The wrist's claw stands up to the shipped dragon's height
+        add(
+            add_cone_spike(f"drg_wing_claw_{tag}", None, horn, base_r=0.07, length=0.58, tx=wrist.x, ty=wrist.y + 0.08, tz=wrist.z, segs=5, smooth=False, **aim((side * 0.10, 0.93, -0.35))),
+            f"{tag}Wing2", col["horn"], planes=True,
         )
-        if "dents" in imported_parts:
-            finalize_obj("elvarg_dragon_teeth_1", imported_parts["dents"], root, mat=mats["bone"], smooth=True)
-        if "dents.001" in imported_parts:
-            finalize_obj("elvarg_dragon_teeth_2", imported_parts["dents.001"], root, mat=mats["bone"], smooth=True)
-        if "yeux" in imported_parts:
-            finalize_obj("elvarg_dragon_eye_1", imported_parts["yeux"], root, mat=mats["glow_yellow"], smooth=True, no_outline=True)
-        if "yeux.001" in imported_parts:
-            finalize_obj("elvarg_dragon_eye_2", imported_parts["yeux.001"], root, mat=mats["glow_yellow"], smooth=True, no_outline=True)
-    else:
-        # Fallback procedural dragon
-        body_sections = [
-            (-1.45, 0.52, 0.46, 0.0, 1.52, 0.18, 0.06, 0.10),
-            (-0.95, 0.88, 0.72, 0.0, 1.48, 0.22, 0.14, 0.14),
-            (-0.30, 0.96, 0.78, 0.0, 1.46, 0.22, 0.18, 0.16),
-            (0.45, 0.84, 0.70, 0.0, 1.48, 0.20, 0.12, 0.14),
-            (1.15, 0.68, 0.58, 0.0, 1.44, 0.18, 0.06, 0.12),
-            (1.65, 0.42, 0.38, 0.0, 1.36, 0.15, 0.02, 0.08),
-        ]
-        add_lathe("elvarg_body", root, mats["skin_elvarg_dragon"], body_sections, segs=26, axis="Z")
-
-        belly_sections = [
-            (-1.38, 0.36, 0.22, 0.0, 1.16, 0.25),
-            (-0.85, 0.58, 0.28, 0.0, 0.96, 0.28),
-            (-0.20, 0.62, 0.30, 0.0, 0.92, 0.28),
-            (0.50, 0.52, 0.26, 0.0, 0.98, 0.26),
-            (1.15, 0.36, 0.20, 0.0, 1.08, 0.22),
-        ]
-        add_lathe("elvarg_belly", root, mats["gold"], belly_sections, segs=20, axis="Z")
-
-        neck_pts = [
-            (0.0, 1.62, -1.30, 0.46, 0.48),
-            (0.0, 2.05, -1.85, 0.38, 0.42),
-            (0.0, 2.65, -2.25, 0.33, 0.36),
-            (0.0, 3.25, -2.60, 0.29, 0.32),
-            (0.0, 3.65, -2.95, 0.27, 0.30),
-            (0.0, 3.75, -3.15, 0.30, 0.32),
-        ]
-        add_curved_tube("elvarg_neck", root, mats["skin_elvarg_dragon"], neck_pts, segs=20, dorsal_ridge=0.18)
-
-        snout_sections = [
-            (-4.15, 0.14, 0.12, 0.0, 3.68, 0.28, 0.0, 0.04),
-            (-3.80, 0.24, 0.18, 0.0, 3.74, 0.28, 0.0, 0.06),
-            (-3.45, 0.34, 0.26, 0.0, 3.80, 0.26, 0.0, 0.08),
-            (-3.00, 0.38, 0.32, 0.0, 3.80, 0.24, 0.0, 0.06),
-        ]
-        add_lathe("elvarg_upper_snout", root, mats["skin_elvarg_dragon"], snout_sections, segs=20, axis="Z")
-
-        add_box(
-            "elvarg_lower_jaw",
-            root,
-            mats["skin_elvarg_dragon"],
-            0.42,
-            0.16,
-            0.88,
-            tx=0.0,
-            ty=3.34,
-            tz=-3.52,
-            rx=-0.34,
-            bevel=0.04,
+        m = _dragon_membrane(
+            f"drg_membrane_{tag}", wing, root, wrist, tips, flank,
+            (f"elvarg_dragon_{tag}Wing", f"elvarg_dragon_{tag}Wing2", "elvarg_dragon_Hips"),
         )
-        for f_i in range(4):
-            fz = -3.98 + f_i * 0.16
-            for side in (-1.0, 1.0):
-                add_cone_spike(
-                    f"elvarg_fang_top_{'L' if side < 0 else 'R'}_{f_i}",
-                    root,
-                    mats["bone"],
-                    base_r=0.025,
-                    length=0.11,
-                    tx=side * (0.14 + f_i * 0.02),
-                    ty=3.62,
-                    tz=fz,
-                    rx=math.pi,
-                    segs=8,
+        _goblin_tint(m, col["membrane"], planes=True)
+        membranes.append(m)
+
+    # Claws: three on each foot, on the bone that holds the lower leg
+    for side, tag in ((-1.0, "Left"), (1.0, "Right")):
+        for bone, x, z in ((f"{tag}ElbowPivot", 1.08, -1.22), (f"{tag}KneePivot", 0.82, 1.02)):
+            for k, dx in enumerate((-0.15, 0.0, 0.15)):
+                add(
+                    add_cone_spike(f"drg_claw_{bone}_{k}", None, horn, base_r=0.07, length=0.26, tx=side * x + dx, ty=0.10, tz=z, segs=5, smooth=False, **aim((dx * 0.8, -0.12, -1.0))),
+                    bone, col["horn"], planes=True,
                 )
-                add_cone_spike(
-                    f"elvarg_fang_bot_{'L' if side < 0 else 'R'}_{f_i}",
-                    root,
-                    mats["bone"],
-                    base_r=0.022,
-                    length=0.095,
-                    tx=side * (0.12 + f_i * 0.02),
-                    ty=3.26 + f_i * 0.05,
-                    tz=fz,
-                    rx=-0.25,
-                    segs=8,
-                )
+    # The tail ends in a flat spade
+    add(
+        add_cone_spike("drg_tail_blade", None, horn, base_r=0.10, length=0.40, tx=0.0, ty=0.50, tz=3.15, segs=4, flatten_x=2.6, smooth=False, **aim((0.0, -0.10, 1.0))),
+        "TailPivot3", col["horn"], planes=True,
+    )
 
-        for side, s_tag in ((-1.0, "L"), (1.0, "R")):
-            add_sphere(
-                f"elvarg_eye_{s_tag}",
-                root,
-                mats["glow_yellow"],
-                0.058,
-                0.038,
-                0.045,
-                tx=side * 0.24,
-                ty=3.84,
-                tz=-3.48,
-                ry=side * 0.35,
-                no_outline=True,
-            )
-            crown_horn = [
-                (side * 0.22, 3.92, -3.12, 0.10, 0.10),
-                (side * 0.38, 4.18, -2.72, 0.075, 0.075),
-                (side * 0.52, 4.46, -2.28, 0.048, 0.048),
-                (side * 0.58, 4.68, -1.88, 0.016, 0.016),
-            ]
-            add_curved_tube(f"elvarg_crown_horn_{s_tag}", root, mats["gold"], crown_horn, segs=14)
-            for ch_i in range(2):
-                add_cone_spike(
-                    f"elvarg_cheek_spike_{s_tag}_{ch_i}",
-                    root,
-                    mats["gold"],
-                    base_r=0.042,
-                    length=0.22,
-                    tx=side * 0.32,
-                    ty=3.68 - ch_i * 0.10,
-                    tz=-3.18 + ch_i * 0.14,
-                    rx=0.45,
-                    rz=-side * 1.15,
-                    segs=8,
-                )
+    # Body: what is left of the triangle budget after the rigid parts and the twelve spine plates
+    plates = [  # (z along the spine, half length, height)
+        (-2.05, 0.16, 0.30), (-1.72, 0.19, 0.36), (-1.36, 0.22, 0.42), (-0.98, 0.25, 0.50), (-0.50, 0.26, 0.52), (-0.02, 0.24, 0.46),
+        (0.45, 0.22, 0.42), (0.90, 0.21, 0.40), (1.38, 0.19, 0.36), (1.85, 0.16, 0.30), (2.30, 0.13, 0.25), (2.72, 0.10, 0.20),
+    ]
+    hard_tris = sum(len(p.vertices) - 2 for obj in [obj for obj, _ in hard] + membranes for p in obj.data.polygons)
+    body_tris = DRAGON_TRIANGLES - 40 - hard_tris - len(plates) * 48
+    pts, edges, radii, keep, spine_line = _dragon_body_graph(j)
+    body = _goblin_skin(
+        figkit.organic_body((pts, edges), radii, DRAGON_VOXEL, 10**9), "drg_body", skin, body_tris, soften=14, keep=tuple(keep), crease=GOBLIN_CREASE
+    )
 
-        tail_pts = [
-            (0.0, 1.36, 1.55, 0.38, 0.36),
-            (0.14, 1.12, 2.25, 0.28, 0.27),
-            (0.26, 0.92, 2.95, 0.21, 0.20),
-            (0.08, 0.84, 3.65, 0.15, 0.15),
-            (-0.14, 0.96, 4.25, 0.11, 0.11),
-            (0.0, 1.18, 4.80, 0.08, 0.08),
-        ]
-        add_curved_tube("elvarg_tail", root, mats["skin_elvarg_dragon"], tail_pts, segs=18, dorsal_ridge=0.16)
-        add_sphere("elvarg_tail_club", root, mats["gold"], 0.18, 0.14, 0.24, tx=0.0, ty=1.18, tz=4.78)
-        for tc_side in (-1.0, 1.0):
-            add_cone_spike(
-                f"elvarg_tail_club_spike_{'L' if tc_side < 0 else 'R'}",
-                root,
-                mats["gold"],
-                base_r=0.048,
-                length=0.26,
-                tx=tc_side * 0.14,
-                ty=1.18,
-                tz=4.78,
-                rz=-tc_side * math.pi * 0.48,
-                segs=8,
-            )
+    # Crag plates stand on the finished back: a ray from above finds the spine's surface, and each
+    # plate is a four-sided blade leaning back, rigid on the spine bone under it
+    tree = BVHTree.FromPolygons([v.co for v in body.data.vertices], [tuple(p.vertices) for p in body.data.polygons])
+    spine = [("Neck2", j["Neck2"][2]), ("Neck1", j["Neck1"][2]), ("Torso", j["Torso"][2]), ("Hips", j["TailPivot"][2]),
+             ("TailPivot", j["TailPivot2"][2]), ("TailPivot2", j["TailPivot3"][2]), ("TailPivot3", 99.0)]
+    for k, (z, half, height) in enumerate(plates):
+        hit = tree.ray_cast(Vector(t2b(0.0, 10.0, z)), Vector((0.0, 0.0, -1.0)))[0]
+        if hit is None:
+            raise ValueError(f"dragon: no back under the spine plate at z {z}")
+        add(
+            add_cone_spike(f"drg_plate_{k}", None, horn, base_r=half, length=height + 0.06, tx=0.0, ty=hit.z - 0.06, tz=z, rx=0.45, segs=4, flatten_x=0.35, smooth=False),
+            next(bone for bone, end in spine if z < end), col["horn"], planes=True,
+        )
 
-        spine_coords = [
-            (0.0, 3.55, -2.80, 0.22),
-            (0.0, 3.15, -2.50, 0.24),
-            (0.0, 2.60, -2.18, 0.26),
-            (0.0, 2.15, -1.78, 0.28),
-            (0.0, 2.12, -1.15, 0.30),
-            (0.0, 2.22, -0.65, 0.34),
-            (0.0, 2.24, -0.15, 0.34),
-            (0.0, 2.18, 0.35, 0.32),
-            (0.0, 2.06, 0.85, 0.28),
-            (0.0, 1.84, 1.35, 0.25),
-            (0.06, 1.52, 1.88, 0.22),
-            (0.18, 1.24, 2.45, 0.20),
-            (0.24, 1.04, 3.05, 0.18),
-            (0.10, 0.96, 3.60, 0.16),
-            (-0.08, 1.02, 4.10, 0.15),
-            (-0.04, 1.14, 4.48, 0.14),
-        ]
-        for sp_i, (sx, sy, sz, sh) in enumerate(spine_coords):
-            add_cone_spike(
-                f"elvarg_dorsal_horn_{sp_i}",
-                root,
-                mats["gold"],
-                base_r=sh * 0.24,
-                length=sh,
-                tx=sx,
-                ty=sy,
-                tz=sz,
-                rx=0.42,
-                curve_bend=0.04,
-                segs=8,
-            )
+    rig = figkit.make_rig("Monster_elvarg_dragon", rigs.DRAGON_TABLE, {k: t2b(*p) for k, p in j.items()}, prefix="elvarg_dragon")
 
-        for side, w_name in ((-1.0, "elvarg_dragon_LWing"), (1.0, "elvarg_dragon_RWing")):
-            wing_piv = l_wing if side < 0 else r_wing
-            elbow = (side * 1.45, 1.15, -0.15)
-            wrist = (side * 2.45, 1.65, 0.10)
-            tip_1 = (side * 4.20, 1.95, 0.45)
-            tip_2 = (side * 3.85, 0.65, 0.55)
-            tip_3 = (side * 2.85, -0.35, 0.65)
-            tip_4 = (side * 1.55, -0.65, 0.60)
-            body_anchor = (side * 0.10, -0.45, 0.85)
+    # Weight rule 1: the body takes automatic weights from a second rig whose Root, jaw and wing
+    # bones lie inside the body (a wing arm standing in the air gives the heat solver nothing to find).
+    core = dict(j, Root=(0.0, 0.90, 0.95))
+    for side, tag in ((-1.0, "L"), (1.0, "R")):
+        core[f"{tag}Wing"], core[f"{tag}Wing2"] = (side * 0.10, 1.50, -0.55), (side * 0.40, 1.68, -0.55)
+    weight_rig = figkit.make_rig("elvarg_dragon_weight_rig", rigs.DRAGON_TABLE, {k: t2b(*p) for k, p in core.items()}, prefix="elvarg_dragon")
+    figkit.auto_weights(body, weight_rig, limb_radius=0.35)
+    # Weight rule 2: Root, the jaw and the wing bones deform no skin; their shares go to hips, head and torso.
+    fold = {"Root": "Hips", "Jaw": "HeadGroup", "LWing": "Torso", "LWing2": "Torso", "RWing": "Torso", "RWing2": "Torso"}
+    mapping = {}
+    for b in weight_rig.data.bones:
+        bone = b.name[len("elvarg_dragon_"):]
+        mapping.setdefault(f"elvarg_dragon_{fold.get(bone, bone)}", []).append(b.name)
+    figkit.fold_weights(body, mapping)
+    for m in list(body.modifiers):
+        body.modifiers.remove(m)
+    weight_data = weight_rig.data
+    bpy.data.objects.remove(weight_rig, do_unlink=True)
+    bpy.data.armatures.remove(weight_data)
+    _dragon_body_tint(body, spine_line, col["hide"], col["hide_dark"], col["belly"])
 
-            add_limb_tube(f"{w_name}_humerus", wing_piv, mats["skin_elvarg_dragon"], (0.0, 0.0, 0.0), elbow, 0.14, 0.11, segs=12)
-            add_limb_tube(f"{w_name}_radius", wing_piv, mats["skin_elvarg_dragon"], elbow, wrist, 0.11, 0.085, segs=12)
-            add_cone_spike(
-                f"{w_name}_thumb_claw",
-                wing_piv,
-                mats["gold"],
-                base_r=0.055,
-                length=0.28,
-                tx=wrist[0],
-                ty=wrist[1],
-                tz=wrist[2] - 0.06,
-                rx=-0.85,
-                rz=-side * 0.35,
-                segs=8,
-            )
-            for f_i, f_tip in enumerate((tip_1, tip_2, tip_3, tip_4)):
-                add_limb_tube(f"{w_name}_finger_{f_i}", wing_piv, mats["horn"], wrist, f_tip, 0.065, 0.022, segs=10)
+    # Weight rule 3: every other part is rigid on one bone (the membranes carry their own rule).
+    for obj, bone in hard:
+        figkit.hard_weights(obj, bone)
+    for obj in [body] + membranes + [obj for obj, _ in hard]:
+        obj.parent = rig
 
-            add_wing_web(f"{w_name}_membrane_1", wing_piv, mats["wing_dragon"], wrist, tip_1, tip_2, thickness=0.025)
-            add_wing_web(f"{w_name}_membrane_2", wing_piv, mats["wing_dragon"], wrist, tip_2, tip_3, thickness=0.025)
-            add_wing_web(f"{w_name}_membrane_3", wing_piv, mats["wing_dragon"], wrist, tip_3, tip_4, thickness=0.025)
-            add_wing_web(f"{w_name}_membrane_4", wing_piv, mats["wing_dragon"], elbow, tip_4, body_anchor, thickness=0.025)
+    merged = figkit.merge_by_family(rig)
+    names = {"skin": "elvarg_dragon_body", "leather": "elvarg_dragon_membrane", "plain": "elvarg_dragon_horn", "glow": "elvarg_dragon_maw"}
+    for ob in merged:
+        ob.name = ob.data.name = names[figkit.get_material_family(ob)]
+    _figure_paint(rig, merged, DRAGON_OCCLUSION)
 
-        limb_specs = [
-            (-1.0, "elvarg_dragon_LeftArmPivot", left_arm, -0.18),
-            (1.0, "elvarg_dragon_RightArmPivot", right_arm, -0.18),
-            (-1.0, "elvarg_dragon_LeftLegPivot", left_leg, 0.22),
-            (1.0, "elvarg_dragon_RightLegPivot", right_leg, 0.22),
-        ]
-        for side, piv_name, leg_piv, knee_z in limb_specs:
-            knee = (side * 0.14, -0.54, knee_z)
-            ankle = (side * 0.08, -1.04, -0.08)
-            add_limb_tube(f"{piv_name}_thigh", leg_piv, mats["skin_elvarg_dragon"], (0.0, 0.0, 0.0), knee, 0.28, 0.20, segs=16)
-            add_limb_tube(f"{piv_name}_shin", leg_piv, mats["skin_elvarg_dragon"], knee, ankle, 0.21, 0.15, segs=16)
-            add_box(
-                f"{piv_name}_foot",
-                leg_piv,
-                mats["skin_elvarg_dragon"],
-                0.36,
-                0.16,
-                0.44,
-                tx=side * 0.08,
-                ty=-1.12,
-                tz=-0.18,
-                bevel=0.04,
-            )
-            for c_i, c_off in enumerate((-0.11, 0.0, 0.11)):
-                add_cone_spike(
-                    f"{piv_name}_talon_{c_i}",
-                    leg_piv,
-                    mats["gold"],
-                    base_r=0.042,
-                    length=0.22,
-                    tx=side * 0.08 + c_off,
-                    ty=-1.14,
-                    tz=-0.40,
-                    rx=-math.pi * 0.48,
-                    curve_bend=-0.04,
-                    segs=8,
-                )
-
-    return root
+    tris = sum(len(p.vertices) - 2 for ob in merged for p in ob.data.polygons)
+    if tris > DRAGON_TRIANGLES:
+        raise ValueError(f"dragon: {tris} triangles, over the budget of {DRAGON_TRIANGLES}")
+    cos = [v.co for ob in merged for v in ob.data.vertices]
+    size = [max(c[a] for c in cos) - min(c[a] for c in cos) for a in (0, 2, 1)]  # width, height, length
+    print(f"[Blender] dragon: {tris} triangles in {len(merged)} meshes; width {size[0]:.3f}, height {size[1]:.3f}, length {size[2]:.3f}; lowest {min(c.z for c in cos):.4f}")
+    for got, shipped, what in zip(size, DRAGON_BOUNDS, ("width", "height", "length")):
+        if abs(got / shipped - 1.0) > 0.05:
+            raise ValueError(f"dragon: {what} {got:.3f} is more than 5% from the shipped dragon's {shipped}")
+    return rig
 
 
 # =============================================================================
