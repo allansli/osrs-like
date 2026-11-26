@@ -2073,7 +2073,7 @@ def _human_mats(key: str, families: dict, glow) -> tuple[dict, dict]:
 
 def _human_paint(colours: dict, family_of: dict, means: dict) -> dict:
     """Each colour as the paint that shows it in the game: over the mean of its family's tile, or as it is with no tile."""
-    return {k: (_goblin_skin_paint(c, means[family_of[k]]) if family_of.get(k) in means else c) for k, c in colours.items()}
+    return {k: (_goblin_skin_paint(c, means[family_of[k]]) if family_of[k] in means else c) for k, c in colours.items()}
 
 
 # --- 5. Monster_dark_wizard ---------------------------------------------------------------------------------------
