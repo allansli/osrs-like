@@ -20,3 +20,11 @@ Supporting evidence, which does not replace the mount test: the pending manifest
 **CAPTURE(hero): not taken.** An in-engine capture of the built hero goes through the same `upgradeHumanoidRigWithGltf`, so it fails in the same place until H5b lands. The only sheets in this directory are Blender sheets (`h3b-*.jpg`).
 
 **For the main session:** either amend H3b's Accept so that both items run after H5b (with H5b and H5 applied, in a throw-away worktree of the built file), or run them there once H5b exists. This note records the gap; it does not decide it.
+
+## H3b repair: the hands' paint (2026-11-25)
+
+The source's hand faces point into the hand: 180 of 180 faces of the shipped `Hand_L`/`Hand_R`, and 354 of 360 `Hands` faces of the H3b build, cast a ray along their normal that hits the back of the hand's own far wall within 0.1. `bake_paint`'s Cycles AO therefore read every hand vertex as fully occluded, and all 1,080 hand corners exported between 0.57 and 0.62: one dark value with no form. `grow_hands` in `scripts/blender/build_hero.py` now turns the hand faces outward (`bmesh.ops.recalc_face_normals`) before `paint()`.
+
+On the rebuilt file, no `Hands` face's normal ray hits the back of a wall; 66 of 360 hit the front of another surface within 0.1 (the fingers and the gaps between them). The hand corners now run from 0.60 to 0.94 (mean of the three channels; median 0.84, tenth percentile 0.70), so the occlusion sits in the creases only. COMPARE: Contract and Budget pass; file 296,028 bytes, as before. The sheets `h3b-hero-{turnaround,play-distance,against,paint-turnaround,paint-play-distance}.jpg` are re-rendered from this build; the silhouette and worst-pose sheets came out byte-identical. The plate-set sheets are not re-rendered: the gloves cover the hands there.
+
+The two open Accept items above (`gear-mount` against the built file, CAPTURE(hero)) are unchanged by this repair: both still wait on H5b's skinned loader or a main-session amendment that moves them after H5b.
