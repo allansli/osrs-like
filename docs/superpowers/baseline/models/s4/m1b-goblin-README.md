@@ -1,0 +1,7 @@
+# M1b: the goblin raider on the hero file's clips (in-engine capture)
+
+Throw-away worktree of the task head plus a debug patch (not committed: `__DEBUG` also exposes `G`, `poseMonsterLimbs`, `poseMonsterDying`, `getTerrainHeight`, `THREE`; a monster with `__tick` set is driven by the job through the game's own `poseMonsterLimbs` / `poseMonsterDying` on the real frame loop). NVIDIA GPU (`scripts/capture-gpu.mjs`), 1280x720 balanced, noon, seeded `Math.random`, skills 99, at `three_kettle_camp`. Sheets: `m1b-goblin-walk.jpg`, `-windup.jpg`, `-strike.jpg`, `-flinch.jpg`, `-death.jpg`; numbers in `m1b-goblin-rows.json`. The hero stands beside the raider (it plays its own `Slash` for the strike frames); the two rigid archers stand in the walk and death frames.
+
+- Walk: the raider moves at 5.2 u/s (monster chase speed). Time scale measured 1.745 = (0.85 + 0.9 * 5.2/11.5) * 1.389 (leg ratio 0.963 / 0.693). The hunch holds and no slide is visible in six frames (a still sheet cannot prove it; the owner's look on a real GPU does).
+- Wind-up: the spear arm winds back as the clip's own anticipation, scrubbed by progress; the strike plays on from there with no restart. Flinch is added after the animator. Death plays the hero's `Death` inside `DYING_SECS` and the figure is not also toppled.
+- First look at a shared clip on another stance (design 15): the goblin keeps its hunch and does not over-reach with the hero's `Slash`. Decision: no arm-swing scale and no stance offset. The `armSwingScale` field, which the engine never read, is removed from the table.

@@ -1,6 +1,6 @@
 // Monster motion table (design 6.1.3, 6.5; plan M1, M1b).
 // Pure data: per model key either today's code-pose numbers or the names of the clips
-// for idle, walk, attack, hurt and death, the skeleton it stands on and an optional arm-swing scale.
+// for idle, walk, attack, hurt and death, the skeleton it stands on.
 // No imports from three.
 
 export type MonsterSkeleton = 'biped' | 'dragon' | 'crawler';
@@ -31,7 +31,6 @@ export interface MonsterMotionRow {
   bones: string[];
   clips?: MonsterMotionClips;
   anticipation?: number;
-  armSwingScale?: number;
   codeAttack?: CodeAttackPose;
 }
 
