@@ -1,0 +1,269 @@
+{
+ "info": {
+  "animator": true,
+  "clips": [
+   "Bite",
+   "Death",
+   "Idle",
+   "Walk",
+   "WingBuffet"
+  ],
+  "meshes": [
+   {
+    "name": "ashmantle_body",
+    "skinned": true,
+    "colour": "#8a8580",
+    "cut": true,
+    "vertexColors": true
+   },
+   {
+    "name": "",
+    "skinned": true,
+    "colour": null,
+    "cut": false,
+    "vertexColors": false
+   },
+   {
+    "name": "ashmantle_crust",
+    "skinned": true,
+    "colour": "#8a8580",
+    "cut": true,
+    "vertexColors": true
+   },
+   {
+    "name": "",
+    "skinned": true,
+    "colour": null,
+    "cut": false,
+    "vertexColors": false
+   },
+   {
+    "name": "ashmantle_embers",
+    "skinned": true,
+    "colour": "#d97706",
+    "cut": true,
+    "vertexColors": true
+   },
+   {
+    "name": "",
+    "skinned": true,
+    "colour": null,
+    "cut": false,
+    "vertexColors": false
+   },
+   {
+    "name": "ashmantle_membrane",
+    "skinned": true,
+    "colour": "#8a8580",
+    "cut": true,
+    "vertexColors": true
+   },
+   {
+    "name": "",
+    "skinned": true,
+    "colour": null,
+    "cut": false,
+    "vertexColors": false
+   }
+  ],
+  "scale": [
+   1.2,
+   1.2,
+   1.2
+  ],
+  "pos": [
+   -100.63435165422673,
+   54.197669952411765
+  ]
+ },
+ "shots": [
+  {
+   "name": "idle-threeq",
+   "yaw": 0.7,
+   "pitch": 0.32,
+   "distance": 17,
+   "state": "attack",
+   "walk": [
+    true,
+    0.59
+   ],
+   "bite": [
+    false,
+    0
+   ],
+   "buffet": [
+    false,
+    false,
+    0
+   ],
+   "windup": null,
+   "attackAnim": 0
+  },
+  {
+   "name": "idle-side",
+   "yaw": 1.57,
+   "pitch": 0.22,
+   "distance": 17,
+   "state": "attack",
+   "walk": [
+    true,
+    0.319
+   ],
+   "bite": [
+    false,
+    0
+   ],
+   "buffet": [
+    false,
+    false,
+    0
+   ],
+   "windup": null,
+   "attackAnim": 0
+  },
+  {
+   "name": "idle-front",
+   "yaw": 0,
+   "pitch": 0.3,
+   "distance": 17,
+   "state": "attack",
+   "walk": [
+    true,
+    0.082
+   ],
+   "bite": [
+    true,
+    0.183
+   ],
+   "buffet": [
+    false,
+    false,
+    0
+   ],
+   "windup": null,
+   "attackAnim": 0.413
+  },
+  {
+   "name": "play-distance",
+   "yaw": 0.7,
+   "pitch": 0.55,
+   "distance": 30,
+   "state": "attack",
+   "walk": [
+    true,
+    0.309
+   ],
+   "bite": [
+    false,
+    0.833
+   ],
+   "buffet": [
+    false,
+    false,
+    0
+   ],
+   "windup": null,
+   "attackAnim": 0
+  },
+  {
+   "name": "bite",
+   "state": "attack",
+   "walk": [
+    true,
+    0.128
+   ],
+   "bite": [
+    true,
+    0.167
+   ],
+   "buffet": [
+    false,
+    false,
+    0
+   ],
+   "windup": null,
+   "attackAnim": 0.467
+  },
+  {
+   "name": "windup",
+   "state": "attack",
+   "walk": [
+    true,
+    0.617
+   ],
+   "bite": [
+    false,
+    0.833
+   ],
+   "buffet": [
+    false,
+    true,
+    0.17
+   ],
+   "windup": "ember_cone",
+   "attackAnim": 0
+  },
+  {
+   "name": "walk",
+   "state": "attack",
+   "walk": [
+    true,
+    0.467
+   ],
+   "bite": [
+    false,
+    0.833
+   ],
+   "buffet": [
+    false,
+    true,
+    0.222
+   ],
+   "windup": null,
+   "attackAnim": 0
+  }
+ ],
+ "polls": [
+  "chase",
+  "attack",
+  "attack+b",
+  "attack+b",
+  "attack+b",
+  "attack+b",
+  "attack+b",
+  "attack+b",
+  "attack",
+  "attack",
+  "attack",
+  "attack",
+  "attack",
+  "attack",
+  "attack",
+  "attack",
+  "attack",
+  "attack",
+  "attack+b",
+  "attack+b",
+  "attack+b",
+  "attack+b",
+  "attack+b",
+  "attack+b",
+  "attack+b",
+  "attack+b",
+  "attack+b",
+  "attack+b",
+  "attack",
+  "attack",
+  "attack",
+  "attack",
+  "attack",
+  "attack",
+  "attack",
+  "attack",
+  "attack",
+  "attack+w",
+  "attack+w",
+  "return"
+ ],
+ "errors": []
+}

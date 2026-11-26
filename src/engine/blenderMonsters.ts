@@ -1,8 +1,10 @@
 import * as THREE from 'three';
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { MONSTER_MOTION } from '../data/monsterPoses';
+import { BlenderHeroAnimator } from './blenderHero';
 import { loadGltfOnce } from './gltf';
 import { addCartoonOutline, facetMaterial } from './materials';
-import { cloneFigure, fixCullSpheres, hasSkin, stripBonePrefix } from './skinned';
+import { cloneFigure, fixCullSpheres, hasSkin, stripBonePrefix, stripClipPrefix } from './skinned';
 import { albedoMaterial, offsetAlbedoPhase, sealAlbedoUvs, speciesAlbedo } from './textures';
 
 export function loadBlenderMonstersTemplate(url = '/models/monsters.glb?v=aa89cd4a'): Promise<GLTF | null> {
@@ -39,6 +41,7 @@ export interface MonsterEntityLike {
   };
   rig: MonsterRigLike;
   pos: THREE.Vector3;
+  animator?: BlenderHeroAnimator;
 }
 
 function extractColorHex(mat: THREE.Material | undefined, fallback: number): number {
@@ -79,7 +82,11 @@ function findPivot(root: THREE.Object3D, prefix: string, suffix: string): THREE.
 /**
  * Upgrades a monster's Three.js rig in-place with the sculpted Blender model from `monsters.glb`.
  */
-export function upgradeMonsterRigWithGltf(mObj: MonsterEntityLike, gltf: GLTF): boolean {
+export function upgradeMonsterRigWithGltf(
+  mObj: MonsterEntityLike,
+  gltf: GLTF,
+  heroGltf?: GLTF | null
+): boolean {
   const modelKey = mObj.modelKey ?? mObj.typeKey;
   const nodeKey = mObj.def.body ?? modelKey;
   const template = gltf.scene.getObjectByName(`Monster_${nodeKey}`);
@@ -211,5 +218,95 @@ export function upgradeMonsterRigWithGltf(mObj: MonsterEntityLike, gltf: GLTF): 
   const phase = (Math.abs(mObj.pos.x) * 12.9898 + Math.abs(mObj.pos.z) * 78.233) % 1;
   offsetAlbedoPhase(rig.group, phase, (phase * 1.618) % 1);
   addCartoonOutline(rig.group, 0.022);
+
+  const motionRow = MONSTER_MOTION[modelKey];
+  if (motionRow?.clips) {
+    if (motionRow.skeleton === 'biped') {
+      // Optional by contract (callers that do not pose the figure pass no hero file); spawnMonster throws when the hero file failed to load.
+      if (heroGltf) attachBipedAnimator(mObj, modelKey, heroGltf);
+    } else {
+      attachMonsterGltfAnimator(mObj, modelKey, gltf);
+    }
+  }
+
   return true;
+}
+
+interface CachedClips {
+  clips: THREE.AnimationClip[];
+  walkLegRatio: number;
+}
+const modelClipsCache = new Map<string, CachedClips>();
+
+function attachBipedAnimator(mObj: MonsterEntityLike, modelKey: string, heroSource: GLTF): void {
+  let cached = modelClipsCache.get(modelKey);
+  if (!cached) {
+    const heroHips = heroSource.scene.getObjectByName('Hips');
+    if (!heroHips) throw new Error('attachBipedAnimator: the hero file has no Hips bone');
+    const monHips = mObj.rig.group.getObjectByName('Hips');
+    if (!monHips) throw new Error(`attachBipedAnimator: ${modelKey} has no Hips bone`);
+    const heroHipsY = heroHips.position.y;
+    const monHipsY = monHips.position.y;
+    const ratio = monHipsY / heroHipsY;
+    const walkLegRatio = heroHipsY / monHipsY;
+
+    const clonedClips: THREE.AnimationClip[] = [];
+    for (const clip of heroSource.animations) {
+      const cloned = clip.clone();
+      for (let t = 0; t < cloned.tracks.length; t++) {
+        const track = cloned.tracks[t];
+        if (track.name === 'Hips.position') {
+          const scaledTrack = track.clone();
+          for (let i = 0; i < scaledTrack.values.length; i++) {
+            scaledTrack.values[i] *= ratio;
+          }
+          cloned.tracks[t] = scaledTrack;
+        }
+      }
+      clonedClips.push(cloned);
+    }
+    cached = { clips: clonedClips, walkLegRatio };
+    modelClipsCache.set(modelKey, cached);
+  }
+
+  const rig = mObj.rig;
+  const pivots: Record<string, THREE.Object3D> = {};
+  if (rig.headGroup) pivots.headGroup = rig.headGroup;
+  if (rig.leftArmPivot) pivots.leftArmPivot = rig.leftArmPivot;
+  if (rig.rightArmPivot) pivots.rightArmPivot = rig.rightArmPivot;
+  if (rig.leftLegPivot) pivots.leftLegPivot = rig.leftLegPivot;
+  if (rig.rightLegPivot) pivots.rightLegPivot = rig.rightLegPivot;
+  if (rig.lWing) pivots.lWing = rig.lWing;
+  if (rig.rWing) pivots.rWing = rig.rWing;
+
+  const animator = new BlenderHeroAnimator(rig.group, cached.clips, pivots);
+  animator.setWalkLegRatio(cached.walkLegRatio);
+  mObj.animator = animator;
+}
+
+function attachMonsterGltfAnimator(
+  mObj: MonsterEntityLike,
+  modelKey: string,
+  monstersGltf: GLTF
+): void {
+  let cached = modelClipsCache.get(modelKey);
+  if (!cached) {
+    // The library's tracks carry the prefix of the figure that authored it (the model key), never a body's (design 6.1).
+    const stripped = stripClipPrefix(monstersGltf.animations, modelKey);
+    const clonedClips = stripped.map((c) => c.clone());
+    cached = { clips: clonedClips, walkLegRatio: 1.0 };
+    modelClipsCache.set(modelKey, cached);
+  }
+  const rig = mObj.rig;
+  const pivots: Record<string, THREE.Object3D> = {};
+  if (rig.headGroup) pivots.headGroup = rig.headGroup;
+  if (rig.leftArmPivot) pivots.leftArmPivot = rig.leftArmPivot;
+  if (rig.rightArmPivot) pivots.rightArmPivot = rig.rightArmPivot;
+  if (rig.leftLegPivot) pivots.leftLegPivot = rig.leftLegPivot;
+  if (rig.rightLegPivot) pivots.rightLegPivot = rig.rightLegPivot;
+  if (rig.lWing) pivots.lWing = rig.lWing;
+  if (rig.rWing) pivots.rWing = rig.rWing;
+
+  const animator = new BlenderHeroAnimator(rig.group, cached.clips, pivots);
+  mObj.animator = animator;
 }

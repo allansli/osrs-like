@@ -36,6 +36,8 @@ export class BlenderHeroAnimator {
   private pivots: Record<string, THREE.Object3D>;
   private isMoving = false;
   private walkSpeedRatio = 1.0;
+  // Hero leg length over the figure's: stretches Walk's time scale so shorter legs do not slide (design 6.5).
+  private walkLegRatio = 1.0;
   private blend = 0.0; // 0.0 = full idle, 1.0 = full walk
 
   constructor(
@@ -86,6 +88,48 @@ export class BlenderHeroAnimator {
     this.walkSpeedRatio = Math.max(0.1, speedRatio);
   }
 
+  setWalkLegRatio(legRatio: number): void {
+    this.walkLegRatio = legRatio;
+  }
+
+  /** Holds a one-shot clip at `time` seconds (a scrubbed wind-up); `releaseHeld` lets it play on from there. */
+  holdOneShot(clipName: HeroClipName, time: number): void {
+    const action = this.actions.get(clipName);
+    if (!action) throw new Error(`holdOneShot: no clip ${clipName}`);
+    if (this.activeOneShot !== action) {
+      if (this.activeOneShot) this.activeOneShot.fadeOut(0.08);
+      this.activeOneShot = action;
+      action.reset();
+      action.setLoop(THREE.LoopOnce, 1);
+      action.clampWhenFinished = false;
+      action.setEffectiveTimeScale(1);
+      action.play();
+    }
+    action.paused = true;
+    action.setEffectiveWeight(1);
+    action.time = time;
+  }
+
+  releaseHeld(): void {
+    if (this.activeOneShot) this.activeOneShot.paused = false;
+  }
+
+  /** Fades out a held one-shot that was never released: a cancelled wind-up, which must not strike. */
+  cancelHeld(): void {
+    const held = this.activeOneShot;
+    if (!held || !held.paused) return;
+    held.fadeOut(0.12);
+    this.activeOneShot = null;
+  }
+
+  /** Stops every one-shot at once, except `keep`: a death must not blend with a wind-up or a strike, and a respawn clears Death. */
+  stopOneShots(keep?: HeroClipName): void {
+    for (const [name, action] of this.actions) {
+      if (name !== 'Idle' && name !== 'Walk' && name !== keep) action.stop();
+    }
+    this.activeOneShot = null;
+  }
+
   setMoving(isMoving: boolean): void {
     this.isMoving = isMoving;
     this.currentLocomotion = isMoving ? 'Walk' : 'Idle';
@@ -132,7 +176,7 @@ export class BlenderHeroAnimator {
       walk.setEffectiveWeight(w * baseWeight);
       idle.setEffectiveWeight((1.0 - w) * baseWeight);
 
-      const targetTimeScale = 0.85 + this.walkSpeedRatio * 0.90;
+      const targetTimeScale = (0.85 + this.walkSpeedRatio * 0.90) * this.walkLegRatio;
       walk.setEffectiveTimeScale(targetTimeScale);
     }
 

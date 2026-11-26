@@ -54,6 +54,7 @@ describe('monster hit stop (review 9): the flinch pose freezes while the monster
   it('flinch does not decay during the stop and resumes after it', () => {
     const group = new THREE.Group();
     const m = {
+      typeKey: 'chicken',
       rig: { group },
       logic: { state: 'attack', windup: null },
       pos: new THREE.Vector3(0, 0, 0),
@@ -106,7 +107,7 @@ describe('camera kick and rumble (review 12): offsets ride on top of the lerped 
 describe('monster hit stop (review 9): the death topple freezes through the killing blow\'s hit stop', () => {
   it('the dying pose holds while hit-stopped, resumes without a jump and is fully toppled when the rules timer ends', () => {
     const group = new THREE.Group();
-    const m = { rig: { group }, logic: { state: 'dying' }, pos: new THREE.Vector3(0, 0, 0) } as unknown as MonsterEntity;
+    const m = { typeKey: 'chicken', rig: { group }, logic: { state: 'dying' }, pos: new THREE.Vector3(0, 0, 0) } as unknown as MonsterEntity;
     const dt = 0.016;
     let left = 0.85;
     hitStop(m, 110);
