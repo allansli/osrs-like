@@ -136,9 +136,14 @@ def carve_face(head) -> None:
 
 
 def grow_hands(hands) -> None:
-    """Each hand (one loose piece a side) 15% larger about its own bounds centre (design 5.2)."""
+    """
+    Each hand (one loose piece a side) 15% larger about its own bounds centre (design 5.2). The source's
+    hand faces point into the hand (180 of 180 normal rays hit the hand within 0.1), which makes bake_paint's
+    AO read every hand vertex as fully occluded; they are turned outward here, before paint().
+    """
     bm = bmesh.new()
     bm.from_mesh(hands.data)
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
     for side in (-1, 1):
         verts = [v for v in bm.verts if v.co.x * side > 0]
         centre = bounds_centre(v.co for v in verts)
