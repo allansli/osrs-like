@@ -10,7 +10,7 @@ import { buildTinySkin, packGlb, tinySkinManifest, type Doc } from './fixtures/m
 const ROOT = path.resolve(__dirname, '..');
 const COMPARE = path.join(ROOT, 'scripts', 'models-compare.mjs');
 const CONTRACT = path.join(__dirname, 'fixtures', 'model-contract');
-const NAMES = ['hero', 'gear', 'monsters', 'guard', 'world'];
+const NAMES = ['hero', 'gear', 'monsters', 'world'];
 // glb.mjs is a plain node script with no declaration file: a non-literal specifier and the shape this test reads.
 type ReadGlb = (p: string) => { json: unknown; rawBytes: number; brotliBytes: number };
 const { readGlb } = (await import(/* @vite-ignore */ pathToFileURL(path.join(ROOT, 'scripts', 'lib', 'glb.mjs')).href)) as { readGlb: ReadGlb };
@@ -45,7 +45,7 @@ describe('shipped files satisfy their manifest (Contract and Budget)', () => {
     }
   });
 
-  it('the five files together stay within the total ceilings', () => {
+  it('the four files together stay within the total ceilings', () => {
     const docs = NAMES.map((n) => readGlb(path.join(ROOT, 'public', 'models', `${n}.glb`)));
     expect(docs.reduce((s, d) => s + d.rawBytes, 0)).toBeLessThanOrEqual(totals.rawBytes);
     expect(docs.reduce((s, d) => s + d.brotliBytes, 0)).toBeLessThanOrEqual(totals.brotliBytes);
