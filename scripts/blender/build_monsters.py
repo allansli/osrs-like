@@ -1892,8 +1892,8 @@ def _scorpion_clip_tables(pose_table):
 # Stage 4's tint multiplies it with the rest of the figure.
 SALTBACK_KIT_TRIANGLES = 1200
 SALTBACK_COLOURS = {  # as the game shows them before Stage 4's tint
-    "salt": 0xE4DED0,  # crystal faces (89% value)
-    "crust": 0xC9C1B0,  # the claw shells and the flank crystals (79%)
+    "salt": 0xE4DED0,  # crystal faces (87% Rec. 601 luma)
+    "crust": 0xC9C1B0,  # the claw shells and the flank crystals (76%)
     "glow": 0xFFFFFF,
 }
 SALTBACK_BONES = ("Hips", "TailPivot3", "LeftElbowPivot", "RightElbowPivot")
