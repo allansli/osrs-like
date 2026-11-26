@@ -11,6 +11,8 @@ export type MonsterMotionClips = Record<string, string> & {
   attack: string;
   death: string;
   hurt?: string;
+  /** Held while `logic.windup` is set, instead of `attack` (plan D2b amendments). */
+  windup?: string;
 };
 
 export interface CodeAttackPose {
@@ -185,6 +187,7 @@ export const PENDING_DRAGON_CLIPS: Pick<Required<MonsterMotionRow>, 'clips' | 'a
     idle: 'Idle',
     walk: 'Walk',
     attack: 'Bite',
+    windup: 'WingBuffet',
     death: 'Death'
   },
   anticipation: 0.333333

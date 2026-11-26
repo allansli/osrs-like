@@ -875,16 +875,17 @@ export function poseMonsterLimbs(m: MonsterEntity, moving: boolean, now: number,
     animator.setMoving(moving);
 
     const attackClip = clips.attack as HeroClipName;
+    const windupClip = (clips.windup ?? clips.attack) as HeroClipName; // the clip a wind-up holds (plan D2b amendments)
     if (m.logic.windup) {
       const progress = Math.min(1, Math.max(0, 1 - m.logic.windup.left / m.logic.windup.total));
       if (motionRow.anticipation === undefined) throw new Error(`motion row ${model} has clips but no anticipation`);
-      animator.holdOneShot(attackClip, progress * motionRow.anticipation);
+      animator.holdOneShot(windupClip, progress * motionRow.anticipation);
       windupPosed.add(m);
     } else if (windupPosed.delete(m)) {
       // A strike sets attackAnim; a cancel (leash, safe zone, player down, stall, give-up) does not.
       if (m.attackAnim > 0) animator.releaseHeld();
       else animator.cancelHeld();
-    } else if (m.attackAnim > 0 && !clipAction(animator, attackClip).isRunning()) {
+    } else if (m.attackAnim > 0 && !clipAction(animator, attackClip).isRunning() && !clipAction(animator, windupClip).isRunning()) {
       animator.playAction(attackClip, 1.0);
     }
 

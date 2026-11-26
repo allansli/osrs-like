@@ -521,10 +521,11 @@ function dragonEntity(): Animated {
 }
 
 describe('the dragon plays its own library', () => {
-  it('its staged clips are Idle, Walk, Bite and Death, keyed only by the roles the engine reads, and its anticipation is the library\'s', () => {
+  it('its staged clips are Idle, Walk, Bite, WingBuffet (the wind-up) and Death, keyed only by the roles the engine reads, and its anticipation is the library\'s', () => {
     const staged = PENDING_DRAGON_CLIPS;
     expect(MONSTER_MOTION.elvarg_dragon.skeleton).toBe('dragon');
-    expect(staged.clips).toEqual({ idle: 'Idle', walk: 'Walk', attack: 'Bite', death: 'Death' });
+    // Declared (plan D2b amendments): gains windup: 'WingBuffet'.
+    expect(staged.clips).toEqual({ idle: 'Idle', walk: 'Walk', attack: 'Bite', windup: 'WingBuffet', death: 'Death' });
     expect(dragonManifest.skin.attackClips?.Bite).toBeCloseTo(staged.anticipation, 5);
     expect(dragonManifest.skin.attackClips?.WingBuffet).toBeCloseTo(staged.anticipation, 5);
     // Once D5 names them on the live row, they are the staged ones.
@@ -571,7 +572,7 @@ describe('the dragon plays its own library', () => {
     expect(() => poseMonsterDying(m, 1 / 120, 1 / 60), 'the last dying frame').not.toThrow();
   });
 
-  it.skipIf(!dragonBuilt)('the wind-up holds Bite at progress times the anticipation, and Death ends lying within DYING_SECS', () => {
+  it.skipIf(!dragonBuilt)('the wind-up holds WingBuffet at progress times the anticipation and strikes on it, a plain attack plays Bite, and Death ends lying within DYING_SECS', () => {
     // The staged row, as D5 will name it, for this case only.
     const live = MONSTER_MOTION.elvarg_dragon;
     MONSTER_MOTION.elvarg_dragon = { ...live, ...PENDING_DRAGON_CLIPS };
@@ -591,15 +592,27 @@ function dragonPlaysItsLibrary(): void {
   expect(bone(m, 'LeftArmPivot').quaternion.angleTo(new THREE.Quaternion()), 'a fore leg swings in Walk').toBeGreaterThan(0.01);
 
   const bite = m.animator!.actions.get('Bite' as HeroClipName)!;
+  const buffet = m.animator!.actions.get('WingBuffet' as HeroClipName)!;
   windup(m, 0);
   frame(m, false);
   windup(m, 1);
   frame(m, false);
-  expect(bite.time).toBeCloseTo(MONSTER_MOTION.elvarg_dragon.anticipation!, 3);
+  expect(buffet.time, 'the held wind-up clip is WingBuffet').toBeCloseTo(MONSTER_MOTION.elvarg_dragon.anticipation!, 3);
+  expect(buffet.paused).toBe(true);
+  expect(bite.isRunning(), 'Bite is not held').toBe(false);
   windup(m, -1);
   m.attackAnim = 1;
   for (let i = 0; i < 6; i++) frame(m, false, 1 / 60);
-  expect(bite.time).toBeGreaterThan(MONSTER_MOTION.elvarg_dragon.anticipation! + 0.02);
+  expect(buffet.time, 'the strike plays WingBuffet on').toBeGreaterThan(MONSTER_MOTION.elvarg_dragon.anticipation! + 0.02);
+  expect(bite.isRunning(), 'no Bite on top of the released wind-up').toBe(false);
+
+  // A plain attack (no wind-up) plays the row's attack clip.
+  for (let i = 0; i < 90; i++) frame(m, false, 1 / 60);
+  expect(buffet.isRunning(), 'WingBuffet has ended').toBe(false);
+  m.attackAnim = 1;
+  frame(m, false, 1 / 60);
+  expect(bite.isRunning(), 'a plain attack plays Bite').toBe(true);
+  expect(buffet.isRunning()).toBe(false);
 
   const death = m.animator!.actions.get(DEATH)!;
   const hipsRest = bone(m, 'Hips').position.y;
