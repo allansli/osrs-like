@@ -911,3 +911,49 @@ The owner approved the package of `docs/superpowers/proposals/2026-11-24-call-6.
 - Critique, low: C3 mixed a Rule, a Data and an Engine change in one commit (rule 0.3.5). Applied: Rule commit (`frameOf`), Data commit (`CAVE_LIGHT`, `CAVE_FOG_SCALE`), then Engine commit.
 - Critique, low: design 11.3 item 1 counted 6 monster types and 0.3.3's appender list left out C1. Applied: item 1 reads 7 monster types, the Ember Hurler by C1; 0.3.3 lists D1, Z3, C1, K1, N1, S3, U0. Item 1 has no appender list of its own, so only 0.3.3 changed there.
 - 2026-11-25, O-6.33 answered (a): the cave row's `respawnSecs` is 13.5; table 0.5 row (a) applies to C1, C2, C3.
+
+## Revision 2026-11-26: O-6.1b answered after R0
+
+R0 stopped (baseline file, section 5 and 6.1 to 6.2). The owner answered every point with the recommendation ("Segue recomendação", 2026-11-26). Each answer below names the task that carries it; these win over older text.
+
+### O-6.1b.1 The ten undeclared frozen tests (declared, additive)
+
+Each list or count follows the new content only; every existing entry stays byte-identical. Made by the test task of the slice that adds the content, never by a data task (rule 0.3.6).
+1. `tests/scatter.test.ts` 175, `tests/woods-trees.test.ts` 135 and 218: the `NODE_PLACEMENTS` count follows (46 to 49 by D3, to 51 by N1).
+2. `tests/monster-kits.test.ts` 105-123: the model-key snapshot gains each new type with its model key (D3, Z3, C1, U0).
+3. `tests/monster-models.test.ts` 76-81 and its SNAPSHOT: gains each new row and each appended drop (D3 for slice 1 rows and D2's drops, K1 and N1 for theirs, Z3, C1, U0).
+4. `tests/economy-rolls.test.ts` 58-70: the chicken's draw count and results gain the feather (D1). The feather stays on the chicken (O-6.1b.2).
+5. `tests/boss-phases.test.ts` 188-189: `Object.keys(BOSSES)` "equals ['ashmantle']" becomes "contains 'ashmantle'"; the rest of the test still pins Ashmantle's row (D3).
+6. `tests/world-data-combat.test.ts` 70-71: the arena list gains each new boss camp (D3, Z3, U0). The "more than 400 open cells" rule at 95 is **not** declared: Marrowjaw's arena grows instead (O-6.1b.4).
+7. `tests/names-combat.test.ts` 26 and 45-49: the name list gains the seven attack names of design 7.10 (D1).
+8. `tests/size-refactor-golden.test.ts` 103-109: each existing attack's `telegraphs` entry stays byte-identical and only new keys are added; `plans` is regenerated once per slice that adds attacks, and its test checks the regenerated digest against one recomputed with the new attacks removed (D3, Z3, U0).
+9. `tests/recipes-bars.test.ts` 31-38: `SMITH_TABLE` gains each new smith recipe with its inputs and requirement (D1, Z3, U0, S3).
+10. `tests/unlocks.test.ts` 75-78 and 95-98: the two cases name an item that still has no recipe after the stage (D1 picks it and asserts it is still unforgeable at the end).
+
+Design 11.3 gains these as items 13b and 16 to 24.
+
+### O-6.1b.2 to 5
+
+- **Feather**: stays on the chicken (item 4 above).
+- **Slag Brute**: takes `hill_giant`'s four-slot pattern (one heavy, Overhead Slam); Stage 4's "basic x3, wind-up" rule and `tests/monster-patterns.test.ts` are unchanged. Design 7.5 follows.
+- **Marrowjaw's arena**: radius 12, so the 400-cell rule holds, and the `tollmaster` camp moves to the nearest spot more than 35 from `thornwatch` (-18, -48) that passes every MODEL placement check. MODEL gains Stage 4's arena criterion (`tests/world-data-combat.test.ts` 65-115), and the fight model is rerun at radius 12.
+- **New boss numbers**: Marrowjaw, Matron Saltfang and the Kiln Warden take Ashmantle's: marks max 4 for 12 s, no opening roar (`openingShiftMs` 0), 2000 ms per phase shift.
+
+### R0b Content file and design follow the answers [CLAUDE], before F1
+
+- **Tier**: opus. **Files**: `docs/superpowers/research/content-model/*`, the design (7.4, 7.5, 7.7, 11.3, review log), the baseline file (an "After O-6.1b" note).
+- **Change**: write O-6.1b.2 to 5 into the content file (the Slag Brute's pattern, Marrowjaw's radius and camp, the three bosses' mark, opening and phase numbers) and the design; add the arena criterion to MODEL; rerun MODEL, PACE, `second-pass.sh` and `critique-check.sh`.
+- **Accept**: MODEL, PACE and the arena criterion pass; `git diff main --stat` shows only files under `docs/`. **Stop rule**: no camp spot passes, or a fight bound fails at radius 12: stop and report.
+
+### O-6.1b.6 Models for the new monsters (owner: option B)
+
+A models lane runs beside slices 0 and 1 in its own worktree (`../osrs-like-wp/S6-mod` on `cs/models`, never pushed until merged by the main session). Its rules, commands (BLEND, COMPARE, SHEETS, the promote) and art bar are the models pass's: its plan section 0, its design 5 and 9.1, `docs/superpowers/baseline/models/README.md` (the pilot's pattern) and `final.md`'s hand-off "To Stage 6". Budgets: a kit at most 1,200 triangles, 4 rigid meshes, 3 materials, 20 kB; a boss body the dragon-class row of design 9.1 (14,000 triangles, 4 skinned meshes, 220 kB Brotli).
+
+- **MK1 Cinder Adept kit** [CLAUDE, opus]: `Kit_cinder_adept` on `dark_wizard`: a hood with an ember lining and a brazier staff head; read as a fire caster, not the dark wizard.
+- **MK2 Slag Brute kit** [CLAUDE, opus]: `Kit_slag_brute` on `hill_giant`: slag plates on the shoulders and back, a cooled-slag maul head.
+- **MK3 Marrowjaw kit** [CLAUDE, opus]: `Kit_marrowjaw` on `hill_giant`: bone shoulder armour, a jaw-bone crown, a toll banner pole on the back; must read apart from MK2 at 85 px.
+- **MB1 Matron Saltfang body** [CLAUDE, opus]: `Monster_saltfang` on the scorpion's crawler skeleton (bones `saltfang_<Bone>`, no clips of its own; it plays the scorpion's library as Ashmantle plays the dragon's): a broad brood mother, a salt-crusted carapace, egg sacs, a heavy forked sting.
+- **MB2 Kiln Warden body** [CLAUDE, opus]: `Monster_kiln_warden` on `moss_guardian`'s biped skeleton (bones `kiln_warden_<Bone>`): a fired-clay and iron construct with a glowing kiln core (the `glow` material), heavy hammer arms; must not read as the woods creature.
+- **MP6 Promote** [CLAUDE, main session, sonnet runs it]: as the models pass's M4c (8-bit pack, live manifest from pending with the same margins, `?v=` key, `totals.json`, follow-through test edits only as the models pass declared them), with sheets and captures under `docs/superpowers/baseline/models/s6c/`.
+- Each of MK1 to MB2 ends with BLEND, COMPARE against the pending manifest, the turnaround, worst-pose and 85 px silhouette sheets, and a `monster-motion` built-file check that the figure plays its base's clips. Verified by opus against the models pass's art bar and the owner's art words ("the models must make sense; old school but with good definition").
+- **Wiring**: the data task that adds each row sets its look field once MP6 is merged into `feat/content-systems`: D4 sets `kit: 'cinder_adept'`, `kit: 'slag_brute'` and `kit: 'marrowjaw'`; Z4 sets `body: 'saltfang'`; U1 sets `body: 'kiln_warden'`. Scree Skitter and the Ember Hurler stay recolours. D4 therefore also depends on MP6. `tests/monster-models.test.ts`'s kit and body cases then cover them with no new test.
