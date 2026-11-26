@@ -170,6 +170,7 @@ export const MONSTER_TYPES: Record<string, MonsterDef> = {
       { id: 'shark', chance: 1 }
     ],
     model: 'elvarg_dragon',
+    body: 'ashmantle',
     tint: 0x8a8580,
     modelScale: 1.2
   }
