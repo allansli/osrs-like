@@ -1884,9 +1884,10 @@ def _scorpion_clip_tables(pose_table):
 # =============================================================================
 # A clone of the scorpion plus rigid pieces of its own: salt crystals standing on the back plates, a
 # forked double sting flanking the scorpion's own, and heavier salt-crusted claws. The engine adds each
-# child of Kit_saltback_stalker under the scorpion bone of the same name, keeping the child's own
-# transform, so each child is one rigid mesh named after its bone, at identity, whose vertices are
-# relative to that bone's joint (every rest rotation is identity). Nothing of the scorpion is hidden:
+# child of Kit_saltback_stalker under the scorpion bone its name gives without the kit_ prefix, keeping
+# the child's own transform, so each child is one rigid mesh named <kit>_<Bone> (plan O-6.1b.6 amendment:
+# GLB node names are unique, and two kits ride HeadGroup), at identity, whose vertices are relative to
+# that bone's joint (every rest rotation is identity). Nothing of the scorpion is hidden:
 # every piece is added over it. The paint is a corner colour on the scorpion's own white materials
 # (mat_bone_scorpion_paint, plain; mat_glow_crimson for the prongs), so the kit adds no material, and
 # Stage 4's tint multiplies it with the rest of the figure.
@@ -1908,7 +1909,7 @@ def _salt_crystal(name: str, mat, r: float, h: float, tx: float, ty: float, tz: 
 def _kit_root(key: str, parts: dict, j: dict, budget: int):
     """
     Kit_<key> at the origin with one child per bone of parts ({bone: [objects]}), each the join of its
-    pieces, named after the bone without the model prefix, its vertices relative to that bone's joint in
+    pieces, named <key>_<bone> (object and mesh), its vertices relative to that bone's joint in
     j, painted with its 'Tint' as Col and without UVs. Refuses a taken name, a piece of more than one
     material and a kit over budget triangles.
     """
@@ -1922,9 +1923,9 @@ def _kit_root(key: str, parts: dict, j: dict, budget: int):
         target = objs[0]
         bpy.context.view_layer.objects.active = target
         bpy.ops.object.join()
-        target.name = bone
+        target.name = f"{key}_{bone}"
         target.data.name = f"{key}_{bone}"
-        if target.name != bone:
+        if target.name != f"{key}_{bone}":
             raise ValueError(f"{key} kit: the piece for bone {bone} was named {target.name!r} (the name is taken)")
         if len(target.data.materials) != 1:
             raise ValueError(f"{key} kit: piece {bone} has {len(target.data.materials)} materials, one expected")
@@ -1946,7 +1947,7 @@ def _kit_root(key: str, parts: dict, j: dict, budget: int):
 def build_saltback_stalker_kit(mats: dict):
     """
     The Saltback Stalker's kit (plan K1): Kit_saltback_stalker at the origin, with one child per bone in
-    SALTBACK_BONES, each the join of its pieces, named after the bone without the scorpion_ prefix.
+    SALTBACK_BONES, each the join of its pieces, named saltback_stalker_<Bone>.
     """
     salt = bpy.data.materials["mat_bone_scorpion_paint"]  # build_scorpion's; the kit is built after it
     glow = mats["glow_crimson"]
@@ -2332,6 +2333,120 @@ def build_dark_wizard(grid_pos: tuple[float, float, float], mats: dict):
     return _build_human("dark_wizard", j, WIZARD_RADII, WIZARD_TRIANGLES, WIZARD_HEIGHT, own, "cloth", names, _wizard_kit(j, col, own), _wizard_colour(col))
 
 
+# --- 5b. Kit_cinder_adept: the Cinder Adept's kit on the wizard (Stage 6 plan MK1, design 7.5) -------------------
+# The wizard plus rigid pieces of its own, each one mesh named cinder_adept_<Bone> after the wizard bone it
+# rides on, as K1's and K2's: a deep hood (HeadGroup) that swallows the wizard's hat, brim and crown, ash
+# grey outside and lined with ember inside, its mouth open on the face and the violet glints; a brazier on
+# the staff head (WeaponPivot) whose iron bowl swallows the wizard's prongs and purple orb, with four tines
+# and an ember-lit rim; the fire standing in it (RightHand, which no clip turns against WeaponPivot: same
+# joint, one glow material a piece); and an ember held over the open left hand (LeftHand). The hood is
+# painted on the wizard's robe material (over the cloth tile's mean), the iron and the rim on its wood
+# material (over the wood tile's mean), as _human_paint does, and the fire on the file's mat_glow_orange,
+# so the kit adds no material.
+CINDER_KIT_TRIANGLES = 1200
+CINDER_COLOURS = {  # as the game shows them before Stage 6's tint
+    "iron": 0x4A423C,  # the bowl and tines, a charred iron: 27% luma, 29% value
+    "ember": 0xBC5C28,  # the rim's ember band and the hood's lining: 45% luma, 74% value (design 5.4's top of 75%)
+    "ash": 0x5E5852,  # the hood outside, ash grey: 35% luma, 37% value
+}
+CINDER_CLOTH = ("ash", "ember")  # painted on the robe material, over the cloth tile's mean; the rest over the wood tile's
+
+
+def build_cinder_adept_kit():
+    """
+    The Cinder Adept's kit (plan MK1): Kit_cinder_adept at the origin with the children
+    cinder_adept_HeadGroup, _WeaponPivot, _RightHand and _LeftHand (_kit_root). Built after
+    build_dark_wizard, on its robe and wood materials.
+    """
+    robe = bpy.data.materials["mat_robe_dark_wizard_paint"]  # build_dark_wizard's
+    wood = bpy.data.materials["mat_wood_dark_wizard_paint"]
+    glow = bpy.data.materials["mat_glow_orange"]  # build_materials'
+    col = {k: _goblin_skin_paint(c, _goblin_hide_mean(WOOD_TILE)) for k, c in CINDER_COLOURS.items()}
+    cloth = {k: _goblin_skin_paint(CINDER_COLOURS[k], _goblin_hide_mean(CLOTH_TILE)) for k in CINDER_CLOTH}
+    j = wizard_joints()
+    parts = {"HeadGroup": [], "WeaponPivot": [], "RightHand": [], "LeftHand": []}
+
+    def add(obj, bone: str, colour, planes: bool = True):
+        _goblin_tint(obj, colour, planes)
+        parts[bone].append(obj)
+
+    def aim(d) -> dict:
+        d = Vector(d).normalized()
+        return {"rx": math.asin(d.z), "rz": -math.atan2(d.x, d.y)}
+
+    def spike(name: str, mat, r: float, length: float, at, d):
+        """A four-sided spike of base radius r along d from at (K2's thorn)."""
+        return add_lathe(name, None, mat, [(0.0, r, r), (length * 0.5, r * 0.55, r * 0.55), (length, 0.004, 0.004)],
+                         segs=4, tx=at.x, ty=at.y, tz=at.z, smooth=False, **aim(d))
+
+    # The hood: a deep faceted cowl round the head that swallows the hat (brim 0.48 by 0.46 round
+    # (0, 2.0, -0.12), crown bending back to its tip at (0.10, 2.47, 0.31)), falling to a short mantle on
+    # the shoulders, its mouth cut open over the face and the glints (z -0.26 at y 1.92) below the brim. A shell
+    # 0.03 thick (solidify, rims filled): ash grey outside, ember on every face that looks into the hood
+    # A bell, not a ball: widest at the brim and the shoulders, then a cone to a peak that droops back
+    sections = [(1.60, 0.60, 0.56, 0.0, 0.0), (1.84, 0.53, 0.53, 0.0, -0.06), (1.95, 0.515, 0.53, 0.0, -0.08), (2.04, 0.505, 0.53, 0.0, -0.10),
+                (2.12, 0.45, 0.49, 0.0, -0.08), (2.22, 0.34, 0.40, 0.0, -0.05), (2.34, 0.22, 0.29, 0.0, 0.02), (2.48, 0.12, 0.20, 0.05, 0.15),
+                (2.58, 0.05, 0.08, 0.06, 0.30), (2.64, 0.01, 0.01, 0.06, 0.40)]
+    hood = add_lathe("cad_hood", None, robe, sections, segs=14, cap_ends=False, smooth=False)
+    bm = bmesh.new()
+    bm.from_mesh(hood.data)
+    mouth = [f for f in bm.faces if f.calc_center_median().y > 0.30 and 1.60 < f.calc_center_median().z < 1.98]  # three z < -0.30
+    bmesh.ops.delete(bm, geom=mouth, context="FACES")
+    bm.to_mesh(hood.data)
+    bm.free()
+    solid = hood.modifiers.new("shell", "SOLIDIFY")
+    solid.thickness, solid.offset, solid.use_rim = 0.03, -1.0, True
+    bpy.context.view_layer.objects.active = hood
+    bpy.ops.object.modifier_apply(modifier=solid.name)
+    _goblin_tint(hood, cloth["ash"], planes=True)
+    tint = hood.data.color_attributes["Tint"].data
+    lining = [*cloth["ember"], 1.0]
+    for poly in hood.data.polygons:
+        c = Vector(poly.center)
+        inward = Vector((-c.x, 0.08 - c.y, 0.0))  # toward the hood's axis at three z -0.08 (Blender y is -three z)
+        if poly.normal.dot(inward) > 0.0:
+            for li in poly.loop_indices:
+                tint[li].color = lining
+    parts["HeadGroup"].append(hood)
+
+    # The staff's axis and head as _wizard_kit builds them; the bowl starts just under the head, so the
+    # prongs (0.24 long, 0.6 out) and the orb (radius 0.10, 0.13 up) stand inside it
+    hand = Vector(j["RightHand"])
+    d = Vector((-0.03, 1.0, -0.04)).normalized()
+    base = hand + d * 0.97
+    side = d.cross(Vector((0.0, 0.0, 1.0))).normalized()
+    fwd = side.cross(d).normalized()
+    bowl = [(0.0, 0.045, 0.045), (0.07, 0.10, 0.10), (0.16, 0.22, 0.22), (0.28, 0.245, 0.245), (0.32, 0.265, 0.265), (0.345, 0.25, 0.25)]
+    add(add_lathe("cad_bowl", None, wood, bowl, segs=8, tx=base.x, ty=base.y, tz=base.z, smooth=False, **aim(d)), "WeaponPivot", col["iron"])
+    add(add_lathe("cad_rim", None, wood, [(0.29, 0.272, 0.272), (0.335, 0.278, 0.278)], segs=8, tx=base.x, ty=base.y, tz=base.z, cap_ends=False, smooth=False, **aim(d)),
+        "WeaponPivot", col["ember"], planes=False)
+    for k in range(4):
+        a = math.pi * (0.25 + 0.5 * k)
+        out = side * math.cos(a) + fwd * math.sin(a)
+        add(spike(f"cad_tine_{k}", wood, 0.03, 0.24, base + d * 0.30 + out * 0.25, d + out * 0.45), "WeaponPivot", col["iron"])
+
+    # The fire: one tall faceted flame out of the bowl and six tongues round it, leaning out, so the staff
+    # ends in a flame higher than the hat's tip
+    top = base + d * 0.31
+    flame = [(0.0, 0.20, 0.20), (0.12, 0.17, 0.16), (0.26, 0.11, 0.10), (0.40, 0.05, 0.045), (0.52, 0.004, 0.004)]
+    add(add_lathe("cad_flame", None, glow, flame, segs=6, tx=top.x, ty=top.y, tz=top.z, smooth=False, **aim(d + side * 0.06)), "RightHand", 0xFFFFFF, planes=False)
+    for k in range(6):
+        a = math.pi * k / 3.0 + 0.3
+        out = side * math.cos(a) + fwd * math.sin(a)
+        add(spike(f"cad_tongue_{k}", glow, 0.07, 0.30 if k % 2 else 0.22, top + out * 0.13, d + out * 0.35 + side * 0.15),
+            "RightHand", 0xFFFFFF, planes=False)
+
+    # The ember over the open left hand: a faceted coal with three tongues, held a little out and forward
+    lh = Vector(j["LeftHand"]) + Vector((-0.03, 0.15, -0.06))
+    add(add_sphere("cad_coal", None, glow, 0.085, 0.08, 0.085, tx=lh.x, ty=lh.y, tz=lh.z, segs=6, rings=4, smooth=False), "LeftHand", 0xFFFFFF, planes=False)
+    for k in range(3):
+        a = 2.0 * math.pi * k / 3.0
+        out = Vector((math.cos(a), 0.0, math.sin(a)))
+        add(spike(f"cad_lick_{k}", glow, 0.045, 0.20 if k == 0 else 0.14, lh + out * 0.04 + Vector((0.0, 0.04, 0.0)), Vector((0.0, 1.0, 0.0)) + out * 0.3),
+            "LeftHand", 0xFFFFFF, planes=False)
+    return _kit_root("cinder_adept", parts, j, CINDER_KIT_TRIANGLES)
+
+
 # --- 6. Monster_dark_ranger ---------------------------------------------------------------------------------------
 # A lean hunter: a cloak that falls from the shoulders to a wide hem behind, a triangle outline from
 # every side; a peaked hood with a mask under its shadow; the bow held out on the left hand, a quiver at
@@ -2478,8 +2593,8 @@ def build_dark_ranger(grid_pos: tuple[float, float, float], mats: dict):
 
 
 # --- 6b. Kit_thornwatch_marksman: the Thornwatch Marksman's kit on the ranger (plan K2, design 5.6) ---------------
-# The ranger plus three rigid pieces of its own, each one mesh named after the ranger bone it rides on, as
-# K1's: a wreath of thorns round the hood (HeadGroup), a tall bramble quiver on the back over the right
+# The ranger plus three rigid pieces of its own, each one mesh named thornwatch_marksman_<Bone> after the
+# ranger bone it rides on, as K1's: a wreath of thorns round the hood (HeadGroup), a tall bramble quiver on the back over the right
 # shoulder (Torso; the bare name Hips is K1's, and the ranger's own hip quiver cannot be hidden, so this
 # one is a second, on the back), and a longbow (OffhandPivot) that swallows the ranger's recurve: its arc
 # runs along the recurve's, fatter, and its limbs reach past both tips, with a fatter string on the
@@ -4138,6 +4253,7 @@ def main():
     build_scorpion((1.8, 0.0, -2.0), mats)
     build_saltback_stalker_kit(mats)
     build_dark_wizard((4.4, 0.0, -2.0), mats)
+    build_cinder_adept_kit()
 
     # Back row (Z = +2.4 -> Blender Y = -2.4, behind front row)
     build_dark_ranger((-6.0, 0.0, 2.2), mats)
