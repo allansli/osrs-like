@@ -60,6 +60,7 @@ export type CampDef = {
   aggressive: boolean;
   aggroRadius?: number;
   arenaRadius?: number;
+  keepsSight?: boolean;
   members: CampMember[];
 };
 
@@ -153,7 +154,7 @@ export const POIS: PoiDef[] = [
 
 // Camp circle: members' centroid, radius = farthest member + 4.5, rounded up (design 6.4).
 // Aggressive camps notice a player within aggroRadius: 9 for melee, 12 for ranged and magic.
-function makeCamp(id: string, members: CampMember[], aggroRadius?: number, arenaRadius?: number): CampDef {
+function makeCamp(id: string, members: CampMember[], aggroRadius?: number, arenaRadius?: number, keepsSight?: boolean): CampDef {
   const count = members.length;
   const cx = members.reduce((s, m) => s + m.x, 0) / count;
   const cz = members.reduce((s, m) => s + m.z, 0) / count;
@@ -166,6 +167,7 @@ function makeCamp(id: string, members: CampMember[], aggroRadius?: number, arena
     aggressive: aggroRadius !== undefined,
     aggroRadius,
     arenaRadius,
+    keepsSight,
     members
   };
 }
@@ -226,7 +228,7 @@ export const CAMPS: CampDef[] = [
     { type: 'lesser_demon', x: -37, z: 55, wander: 1 },
     { type: 'lesser_demon', x: -27, z: 55, wander: 1 },
     { type: 'lesser_demon', x: -22, z: 55, wander: 1 }
-  ], MELEE_AGGRO),
+  ], MELEE_AGGRO, undefined, true),
   makeCamp('slagfall_terrace', [
     { type: 'lesser_demon', x: -86, z: 96 },
     { type: 'lesser_demon', x: -78, z: 104 }
@@ -247,7 +249,7 @@ export const CAMPS: CampDef[] = [
   // Design 6.4: the boss's arena, far from every other camp's reach.
   makeCamp('ashmantle', [
     { type: 'ashmantle', x: -102, z: 54 }
-  ], RANGED_AGGRO, 12)
+  ], RANGED_AGGRO, 12, true)
 ];
 
 export const SAFE_ZONES: SafeZoneDef[] = WORLD_REGIONS.map((reg) => ({
