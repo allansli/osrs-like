@@ -8,15 +8,22 @@ import { migrateLegacySave, readSave, SAVE_KEY, serializeState, writeSave, type 
 const MAX = 2147483647;
 const NOW = 1_800_000_000_000;
 const fixture = (name: string): string => readFileSync(new URL(`./fixtures/${name}`, import.meta.url), 'utf8');
-const json = (name: string): any => JSON.parse(fixture(name));
+const json = (name: string): Record<string, unknown> => JSON.parse(fixture(name)) as Record<string, unknown>;
 
 function memStorage(): StorageLike {
   const m = new Map<string, string>();
   return { getItem: (k) => m.get(k) ?? null, setItem: (k, v) => void m.set(k, v), removeItem: (k) => void m.delete(k) };
 }
 
-const load = (progress: unknown) => migrateLegacySave({ progress }, SAVE_KEY, NOW).state.progress as any;
-const own = (o: object, k: string): boolean => Object.hasOwn(o, k);
+type Loaded = {
+  story: Record<string, number>;
+  stats: Record<string, number>;
+  dungeons: Record<string, { clears: number; best: number }>;
+  bossDownUntil: Record<string, number>;
+  diary?: unknown[];
+};
+const load = (progress: unknown) => migrateLegacySave({ progress }, SAVE_KEY, NOW).state.progress as unknown as Loaded;
+const own = (o: unknown, k: string): boolean => Object.hasOwn(o as object, k);
 
 describe('progress in the save', () => {
   it('the default state serialises with no progress key', () => {
@@ -74,7 +81,7 @@ describe('a hostile progress block', () => {
     for (const k of Object.keys(p.dungeons ?? {})) expect(k).not.toMatch(/^(__proto__|constructor|no_such_dungeon)$/);
     for (const k of Object.keys(p.bossDownUntil ?? {})) expect(Object.keys(BOSSES)).toContain(k);
     expect(p.stats?.['kill:no_such_monster']).toBeUndefined();
-    expect(({} as any).clears).toBeUndefined();
+    expect((Object.prototype as Record<string, unknown>).clears).toBeUndefined();
     expect(Object.getPrototypeOf(p.stats ?? {})).toBe(Object.prototype);
   });
 
@@ -82,7 +89,7 @@ describe('a hostile progress block', () => {
     const nums: number[] = [
       ...Object.values<number>(p.story ?? {}),
       ...Object.values<number>(p.stats ?? {}),
-      ...Object.values<any>(p.dungeons ?? {}).flatMap((d) => [d.clears, d.best]),
+      ...Object.values(p.dungeons ?? {}).flatMap((d) => [d.clears, d.best]),
       ...Object.values<number>(p.bossDownUntil ?? {})
     ];
     for (const n of nums) {
