@@ -110,7 +110,7 @@ export function upgradeMonsterRigWithGltf(
     const kitTemplate = gltf.scene.getObjectByName(`Kit_${mObj.def.kit}`);
     if (!kitTemplate) return false;
     for (const child of kitTemplate.children) {
-      const clonedChild = child.clone(true);
+      const clonedChild = child.clone();
       let bone: THREE.Bone | null = null;
       cloned.traverse((obj) => {
         if (!bone && (obj as THREE.Bone).isBone && obj.name === child.name) {
