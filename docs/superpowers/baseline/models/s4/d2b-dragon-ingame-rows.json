@@ -1,0 +1,59 @@
+{
+ "info": {
+  "animator": true,
+  "clips": [
+   "Bite",
+   "Death",
+   "Idle",
+   "Walk",
+   "WingBuffet"
+  ],
+  "skinnedMeshes": 8,
+  "hipsY": 1.002390079535385
+ },
+ "strips": {
+  "walk": [
+   "walk-0.png",
+   "walk-1.png",
+   "walk-2.png",
+   "walk-3.png",
+   "walk-4.png",
+   "walk-5.png"
+  ],
+  "windup": [
+   "windup-0.png",
+   "windup-1.png",
+   "windup-2.png",
+   "windup-3.png",
+   "windup-4.png"
+  ],
+  "bite": [
+   "bite-0.png",
+   "bite-1.png",
+   "bite-2.png",
+   "bite-3.png",
+   "bite-4.png",
+   "bite-5.png"
+  ],
+  "wingbuffet": [
+   "wingbuffet-0.png",
+   "wingbuffet-1.png",
+   "wingbuffet-2.png",
+   "wingbuffet-3.png",
+   "wingbuffet-4.png",
+   "wingbuffet-5.png"
+  ],
+  "death": [
+   "death-0.png",
+   "death-1.png",
+   "death-2.png",
+   "death-3.png",
+   "death-4.png",
+   "death-5.png"
+  ]
+ },
+ "walkTimeScale": 1.256956521739112,
+ "heldBiteTime": 0.333333,
+ "errors": [],
+ "renderer": "ANGLE (Microsoft Corporation, D3D12 (NVIDIA GeForce RTX 4070 Laptop GPU), OpenGL 4.6)"
+}
