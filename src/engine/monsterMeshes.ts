@@ -3,7 +3,7 @@ import { REACTION_WINDOW } from '../data/attacks';
 import { MONSTER_MOTION } from '../data/monsterPoses';
 import type { MonsterDef } from '../data/world';
 import { getTerrainHeight } from '../state/terrain';
-import { inCombat, DYING_SECS } from '../state/monsterAi';
+import { inCombat } from '../state/monsterAi';
 import type { BlenderHeroAnimator, HeroClipName } from './blenderHero';
 import type { MonsterRigLike } from './blenderMonsters';
 import type { MonsterEntity } from './context';
@@ -811,33 +811,45 @@ const lastPos = new WeakMap<object, { x: number; z: number }>();
 const _flinchAxis = new THREE.Vector3(1, 0, 0);
 const _flinchQ = new THREE.Quaternion();
 
+/** A respawned monster stands up again: the clamped Death clip, a held wind-up and the death bookkeeping are cleared. */
+export function resetMonsterMotion(m: MonsterEntity): void {
+  dyingStarted.delete(m);
+  dyingProgress.delete(m);
+  windupPosed.delete(m);
+  lastPos.delete(m);
+  m.animator?.stopOneShots();
+}
 export function poseMonsterDying(m: MonsterEntity, timeLeft: number, dt: number): void {
   const motionRow = MONSTER_MOTION[m.modelKey ?? m.typeKey];
   const animator = m.animator;
+  const prev = dyingProgress.get(m) ?? 0;
+  const progress = isHitStopped(m) ? prev : prev + (1 - prev) * Math.min(1, dt / timeLeft);
+  if (timeLeft <= dt) dyingProgress.delete(m);
+  else dyingProgress.set(m, progress);
 
-  if (motionRow?.clips && animator) {
+  if (motionRow.clips && animator) {
     const deathAction = clipAction(animator, motionRow.clips.death);
     m.rig.group.rotation.x = 0;
     m.rig.group.position.y = getTerrainHeight(m.pos.x, m.pos.z);
     if (!dyingStarted.has(m)) {
       dyingStarted.add(m);
+      windupPosed.delete(m);
+      animator.stopOneShots(motionRow.clips.death as HeroClipName);
       deathAction.reset();
       deathAction.setLoop(THREE.LoopOnce, 1);
       deathAction.clampWhenFinished = true;
       deathAction.setEffectiveWeight(1.0);
-      deathAction.setEffectiveTimeScale(deathAction.getClip().duration / DYING_SECS);
+      deathAction.setEffectiveTimeScale(1);
       deathAction.play();
       clipAction(animator, motionRow.clips.idle).setEffectiveWeight(0);
       clipAction(animator, motionRow.clips.walk).setEffectiveWeight(0);
     }
-    animator.mixer.update(isHitStopped(m) ? 0 : dt);
+    // Same progress as the rigid topple: holds through a hit stop, last pose when the rules timer ends.
+    deathAction.time = progress * deathAction.getClip().duration;
+    animator.mixer.update(0);
     return;
   }
 
-  const prev = dyingProgress.get(m) ?? 0;
-  const progress = isHitStopped(m) ? prev : prev + (1 - prev) * Math.min(1, dt / timeLeft);
-  if (timeLeft <= dt) dyingProgress.delete(m);
-  else dyingProgress.set(m, progress);
   m.rig.group.rotation.x = progress * (Math.PI / 2.3);
   m.rig.group.position.y = getTerrainHeight(m.pos.x, m.pos.z) - progress * 0.45;
 }
@@ -853,7 +865,7 @@ export function poseMonsterLimbs(m: MonsterEntity, moving: boolean, now: number,
   const motionRow = MONSTER_MOTION[model];
   const animator = m.animator;
 
-  if (motionRow?.clips && animator) {
+  if (motionRow.clips && animator) {
     const clips = motionRow.clips;
     const prev = lastPos.get(m);
     if (prev && animDt > 0) {
@@ -869,7 +881,9 @@ export function poseMonsterLimbs(m: MonsterEntity, moving: boolean, now: number,
       animator.holdOneShot(attackClip, progress * motionRow.anticipation);
       windupPosed.add(m);
     } else if (windupPosed.delete(m)) {
-      animator.releaseHeld();
+      // A strike sets attackAnim; a cancel (leash, safe zone, player down, stall, give-up) does not.
+      if (m.attackAnim > 0) animator.releaseHeld();
+      else animator.cancelHeld();
     } else if (m.attackAnim > 0 && !clipAction(animator, attackClip).isRunning()) {
       animator.playAction(attackClip, 1.0);
     }
@@ -931,7 +945,7 @@ export function poseMonsterLimbs(m: MonsterEntity, moving: boolean, now: number,
   if (m.attackAnim > 0) {
     m.attackAnim = Math.max(0, m.attackAnim - animDt * 3.2);
     const progress = Math.sin(m.attackAnim * Math.PI);
-    const codeAttack = motionRow?.codeAttack;
+    const codeAttack = motionRow.codeAttack;
     if (codeAttack) {
       if (codeAttack.headBase !== undefined && codeAttack.headProgress !== undefined) {
         if (rig.headGroup) rig.headGroup.rotation.x = codeAttack.headBase + progress * codeAttack.headProgress;

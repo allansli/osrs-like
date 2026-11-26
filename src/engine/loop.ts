@@ -32,7 +32,7 @@ import {
   spawnExpandingRing,
   spawnLevelUpFireworks
 } from './vfx';
-import { poseMonsterDying, poseMonsterLimbs } from './monsterMeshes';
+import { poseMonsterDying, poseMonsterLimbs, resetMonsterMotion } from './monsterMeshes';
 import { syncWhipGeometry } from './playerMesh';
 import {
   renderMinimap,
@@ -717,6 +717,7 @@ export function updateMonsters(f: FrameState): void {
     if (prevState === 'dead') {
       if (events.some(e => e.kind === 'respawned')) {
         m.flinch = 0;
+        resetMonsterMotion(m);
         m.pos.set(L.x, getTerrainHeight(L.x, L.z), L.z);
         m.rig.group.rotation.set(0, 0, 0);
         m.rig.group.visible = true;
@@ -724,7 +725,7 @@ export function updateMonsters(f: FrameState): void {
       continue;
     }
 
-    const hasClips = Boolean(MONSTER_MOTION[m.modelKey ?? m.typeKey]?.clips);
+    const hasClips = Boolean(MONSTER_MOTION[m.modelKey ?? m.typeKey].clips);
     if (!hasClips && m.rig.lWing && m.rig.rWing) {
       const flap = Math.sin(f.now * 0.006) * 0.35;
       m.rig.lWing.rotation.z = 0.22 + flap;

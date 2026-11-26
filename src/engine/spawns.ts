@@ -88,7 +88,8 @@ export function spawnMonster(
   collectFlashMaterials(mObj);
   Promise.all([loadBlenderMonstersTemplate(), loadBlenderHeroTemplate()]).then(([gltf, heroGltf]) => {
     if (!gltf) return;
-    upgradeMonsterRigWithGltf(mObj, gltf, heroGltf ?? undefined);
+    if (!heroGltf) throw new Error(`spawnMonster: hero.glb did not load, and ${mObj.typeKey} plays its clips`);
+    upgradeMonsterRigWithGltf(mObj, gltf, heroGltf);
     collectFlashMaterials(mObj);
   });
 }

@@ -85,7 +85,7 @@ function findPivot(root: THREE.Object3D, prefix: string, suffix: string): THREE.
 export function upgradeMonsterRigWithGltf(
   mObj: MonsterEntityLike,
   gltf: GLTF,
-  heroGltf?: GLTF
+  heroGltf?: GLTF | null
 ): boolean {
   const modelKey = mObj.modelKey ?? mObj.typeKey;
   const nodeKey = mObj.def.body ?? modelKey;
@@ -222,7 +222,7 @@ export function upgradeMonsterRigWithGltf(
   const motionRow = MONSTER_MOTION[modelKey];
   if (motionRow?.clips) {
     if (motionRow.skeleton === 'biped') {
-      // A missing hero file leaves the row posed in code (its codeAttack numbers).
+      // Optional by contract (callers that do not pose the figure pass no hero file); spawnMonster throws when the hero file failed to load.
       if (heroGltf) attachBipedAnimator(mObj, modelKey, heroGltf);
     } else {
       attachMonsterGltfAnimator(mObj, modelKey, nodeKey, gltf);

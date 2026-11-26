@@ -114,6 +114,22 @@ export class BlenderHeroAnimator {
     if (this.activeOneShot) this.activeOneShot.paused = false;
   }
 
+  /** Fades out a held one-shot that was never released: a cancelled wind-up, which must not strike. */
+  cancelHeld(): void {
+    const held = this.activeOneShot;
+    if (!held || !held.paused) return;
+    held.fadeOut(0.12);
+    this.activeOneShot = null;
+  }
+
+  /** Stops every one-shot at once, except `keep`: a death must not blend with a wind-up or a strike, and a respawn clears Death. */
+  stopOneShots(keep?: HeroClipName): void {
+    for (const [name, action] of this.actions) {
+      if (name !== 'Idle' && name !== 'Walk' && name !== keep) action.stop();
+    }
+    this.activeOneShot = null;
+  }
+
   setMoving(isMoving: boolean): void {
     this.isMoving = isMoving;
     this.currentLocomotion = isMoving ? 'Walk' : 'Idle';
