@@ -856,3 +856,10 @@ Three lanes ran in their own worktrees. **Gear** (G2, G2b) and **engine** (Q1, B
 
 H3b to H5b and D2 verified and merged (ca73092, da08e17); H7 promoted the hero and G6 the merged gear, verified; SUITE green again (1,348 tests). Correction to "After S3d": the S3d builder refinements of the goblin (chest-to-belly step, instep, toe box, thumb) ride with **M3a** (the goblin family), not M1. Next, two lanes: guards (N1, N2, N3) and monsters (M1, M1b, D2b, D3, M3d, D4, then D5's [AGY] part; D5's promote stays with the main session).
 
+
+### N2 amendments (2026-11-26, main session, from N2's verification)
+
+N2 also edits three files its list left out, each only because the guard mode and `guard.glb` are gone:
+- `tests/model-contract.test.ts` (frozen otherwise): `'guard'` leaves `NAMES`, and the case name "the five files together" becomes "the four files together". No assertion is weakened; the totals check sums the four remaining files against `totals.json`.
+- `tests/model-pipeline.test.ts`: besides the removed `guard is a mode` case, `'guard'` leaves the mode loop of "run-blender passes --out through after \"--\" on every build spawn" and the argument list of "every --background spawn carries --factory-startup". Both loops still cover every remaining mode.
+- `scripts/models-manifest.mjs`: `guard` leaves `NAMES`, `LOADERS` and `FIGURE_ROOT`, so a rerun of the generator does not read the deleted `guard.glb`.

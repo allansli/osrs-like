@@ -82,7 +82,7 @@ describe('scripts/run-blender.mjs, build pipeline flags', () => {
   const outDir = () => path.join(dir, 'out');
 
   it('run-blender passes --out through after "--" on every build spawn', () => {
-    for (const mode of ['hero', 'gear', 'monsters', 'world', 'guard']) {
+    for (const mode of ['hero', 'gear', 'monsters', 'world']) {
       fs.rmSync(log, { force: true });
       expect(run([mode, '--out', outDir()]).status, mode).toBe(0);
       const s = spawns();
@@ -106,7 +106,7 @@ describe('scripts/run-blender.mjs, build pipeline flags', () => {
   });
 
   it('every --background spawn carries --factory-startup (the GUI open spawn is unchanged)', async () => {
-    for (const args of [['hero'], ['all'], ['export', 'knight'], ['guard']]) {
+    for (const args of [['hero'], ['all'], ['export', 'knight']]) {
       fs.rmSync(log, { force: true });
       expect(run(args).status, args.join(' ')).toBe(0);
       const s = spawns();
@@ -132,14 +132,6 @@ describe('scripts/run-blender.mjs, build pipeline flags', () => {
     const all = spawns();
     expect(all).toHaveLength(4);
     expect(all.some((a) => a.some((x) => x.endsWith('export_guard.py')))).toBe(false);
-  });
-
-  it('guard is a mode', () => {
-    const res = run(['guard']);
-    expect(res.status).toBe(0);
-    const s = spawns();
-    expect(s).toHaveLength(1);
-    expect(s[0][s[0].indexOf('--python') + 1].endsWith('export_guard.py')).toBe(true);
   });
 
   it('export passes --out and the target name', () => {

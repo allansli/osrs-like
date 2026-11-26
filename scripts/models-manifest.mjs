@@ -6,7 +6,7 @@ import path from 'node:path';
 import { readGlb } from './lib/glb.mjs';
 import { figureStats } from './models-compare.mjs';
 
-export const NAMES = ['hero', 'gear', 'monsters', 'guard', 'world'];
+export const NAMES = ['hero', 'gear', 'monsters', 'world'];
 const MARGIN = 1.01; // per-file bytes and the total: today's value plus 1%
 // per-figure Brotli bytes: today's value plus 2%. A rebuild on Blender 5.0.1 writes the same mesh bytes in another
 // buffer-view order than the shipped 5.2.41 export, which moves a figure's compressed size by up to 1.7% (P5).
@@ -14,13 +14,12 @@ const FIGURE_BROTLI_MARGIN = 1.02;
 const HERO_CENTRES = ['Hand_L', 'Hand_R', 'Boot_L', 'Boot_R', 'Head'];
 // design 8.1: mesh names the engine hides by (playerMesh.ts), and gear leg meshes hidden on the hero (the ordinal _04_)
 const TOGGLED = /^(Hair|CrownSpike_|BackSpike_|Sideburn_|TorsoCoat|OuterCoat_|CoatTrim_|CoatTail_|CoatTailTrim_|InnerCollar)|_leg[LR]_04_/;
-const FIGURE_ROOT = { hero: /^HeroRoot$/, monsters: /^Monster_/, guard: /^CastleGuard$/ };
+const FIGURE_ROOT = { hero: /^HeroRoot$/, monsters: /^Monster_/ };
 // the loader of each file and the cache key it carries today, to be tied to a hash from the first promotion on
 const LOADERS = {
   hero: ['src/engine/blenderHero.ts', '/models/hero.glb'],
   gear: ['src/engine/blenderGear.ts', '/models/gear.glb'],
   monsters: ['src/engine/blenderMonsters.ts', '/models/monsters.glb'],
-  guard: ['src/engine/worldBuild.ts', '/models/guard.glb'],
   world: ['src/engine/blenderWorld.ts', '/models/world.glb']
 };
 

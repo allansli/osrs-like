@@ -1,6 +1,6 @@
 {
-  "rawBytes": 11269799,
-  "brotliBytes": 3735296,
+  "rawBytes": 9547385,
+  "brotliBytes": 2549202,
   "loaders": {
     "hero": {
       "file": "src/engine/blenderHero.ts",
@@ -13,10 +13,6 @@
     "monsters": {
       "file": "src/engine/blenderMonsters.ts",
       "url": "/models/monsters.glb?v=aa89cd4a"
-    },
-    "guard": {
-      "file": "src/engine/worldBuild.ts",
-      "url": "/models/guard.glb"
     },
     "world": {
       "file": "src/engine/blenderWorld.ts",
