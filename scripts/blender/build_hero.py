@@ -408,8 +408,7 @@ def mark_planes(ob, spread=PLANE_SPREAD) -> None:
             continue
         faces = [f for f in bm.faces if plane[f.index] == small]
         near = {plane[g.index] for f in faces for e in f.edges for g in e.link_faces} - {small}
-        if not near:
-            continue  # a loose face of its own (none is built)
+        assert near, f"{ob.name}: plane {small} is under PLANE_MIN and has no neighbour to join"
         into = max(near, key=lambda i: normals[i].dot(normals[small]))
         for f in faces:
             plane[f.index] = into
