@@ -16,6 +16,7 @@ Sculpts authentic, high-detail OSRS / RuneScape Dragonwilds stylized monsters:
 
 import math
 import os
+import random
 import re
 import sys
 import bpy
@@ -2866,6 +2867,126 @@ def build_hill_giant(grid_pos: tuple[float, float, float], mats: dict):
     return _build_human("hill_giant", j, GIANT_RADII, GIANT_TRIANGLES, GIANT_HEIGHT, own, "skin", names, _giant_kit(j, col, own), _giant_colour(col))
 
 
+# --- 7b. Kit_slag_brute: the Slag Brute's kit on the hill giant (Stage 6 plan MK2, design 7.5) --------------------
+# The giant plus rigid pieces of its own, each one mesh named slag_brute_<Bone> after the giant bone it rides
+# on, as MK1's: a pauldron of three overlapping slag lames over each shoulder ball, centred on the arm's joint
+# so it turns with the arm in the Overhead Slam (Left/RightArmPivot); a hunch of shingled slag slabs over the
+# upper back, rising behind the neck, with three blunt knobs and nothing above the skull (Torso); and a
+# cooled-slag maul head of three stacked slabs across the club's head, swallowing its spikes (WeaponPivot).
+# Every slab is a chamfered box with its corners knocked about, so it reads as broken slag, not cut stone.
+# The hot slag shows only where a plate overlaps the next: the undersides and inner faces of the plates and
+# the seams between the maul's slabs are painted ember. All on the giant's plain bone material (no tile, so
+# the colours are painted as they are), so the kit adds no material and no emissive.
+SLAG_KIT_TRIANGLES = 1200
+SLAG_COLOURS = {  # as the game shows them before Stage 6's tint
+    "basalt": 0x4A4440,  # the plates, 27% luma, 29% value
+    "crust": 0x5C5550,  # the maul's cooled slag and the knobs, 34% luma, 36% value
+    "ember": 0xBC5C28,  # the seams, 45% luma, 74% value (MK1's ember, under design 5.4's top of 75%)
+}
+
+
+def _slag_chunk(name: str, mat, size, centre, basis, rng, jitter: float = 0.014):
+    """
+    A chamfered box of full sizes (along basis[0], basis[1], basis[2], three-space unit vectors) at centre,
+    each vertex moved up to jitter by rng, so its faces break like slag. Built flat-shaded.
+    """
+    bm = bmesh.new()
+    bmesh.ops.create_cube(bm, size=1.0)
+    bmesh.ops.bevel(bm, geom=bm.edges[:] + bm.verts[:], offset=0.14, segments=1, profile=0.5)
+    c = Vector(centre)
+    axes = [Vector(a).normalized() for a in basis]
+    for v in bm.verts:
+        p = c + sum((axes[k] * (v.co[k] * size[k]) for k in range(3)), Vector())
+        p += Vector([rng.uniform(-jitter, jitter) for _ in range(3)])
+        v.co = Vector(t2b(*p))
+    bm.normal_update()  # finalize_obj's recalc_face_normals reads the face normals: stale ones turn the box inside out
+    return finalize_obj(name, bm, None, mat, smooth=False)
+
+
+def _slag_ember(obj, colour: list, hot) -> None:
+    """Paints ember on every face for which hot(centre, normal) holds, both in three-space."""
+    tint = obj.data.color_attributes["Tint"].data
+    for poly in obj.data.polygons:
+        c, n = Vector(poly.center), Vector(poly.normal)
+        if hot(Vector((c.x, c.z, -c.y)), Vector((n.x, n.z, -n.y))):
+            for li in poly.loop_indices:
+                tint[li].color = [*colour, 1.0]
+
+
+def build_slag_brute_kit():
+    """
+    The Slag Brute's kit (plan MK2): Kit_slag_brute at the origin with the children slag_brute_Torso,
+    _LeftArmPivot, _RightArmPivot and _WeaponPivot (_kit_root). Built after build_hill_giant, on its bone
+    material.
+    """
+    plain = bpy.data.materials["mat_bone_hill_giant_paint"]  # build_hill_giant's
+    col = {k: list(hex_to_rgba(c)[:3]) for k, c in SLAG_COLOURS.items()}  # no tile: painted as they are
+    j = giant_joints()
+    rng = random.Random(58)
+    parts = {"Torso": [], "LeftArmPivot": [], "RightArmPivot": [], "WeaponPivot": []}
+
+    def add(obj, bone: str, colour: str, hot=None):
+        _goblin_tint(obj, col[colour], planes=True)
+        if hot is not None:
+            _slag_ember(obj, col["ember"], hot)
+        parts[bone].append(obj)
+
+    # The pauldrons: three lames of a dome round the shoulder ball (radius 0.20 at the arm's joint), each a
+    # little larger than the one above and overlapping it, the dome's axis tilted 0.55 out from the vertical.
+    # A shell 0.035 thick; ember on the rims and the inner faces, which show in the step between two lames
+    lames = ((0.27, (0.0, 0.32, 0.62)), (0.29, (0.52, 1.02)), (0.31, (0.93, 1.42)))
+    for s, tag in ((-1.0, "Left"), (1.0, "Right")):
+        bone = f"{tag}ArmPivot"
+        joint = Vector(j[bone])
+        for k, (radius, angles) in enumerate(lames):
+            sections = [(radius * math.cos(a), max(0.004, radius * math.sin(a)), max(0.004, radius * math.sin(a))) for a in angles]
+            lame = add_lathe(f"sbr_lame_{tag[0]}{k}", None, plain, sections, segs=8, tx=joint.x, ty=joint.y, tz=joint.z,
+                             rz=-s * 0.55, cap_ends=False, smooth=False)
+            for v in lame.data.vertices:
+                v.co += Vector([rng.uniform(-0.012, 0.012) for _ in range(3)])
+            solid = lame.modifiers.new("shell", "SOLIDIFY")
+            solid.thickness, solid.offset, solid.use_rim = 0.035, -1.0, True
+            bpy.context.view_layer.objects.active = lame
+            bpy.ops.object.modifier_apply(modifier=solid.name)
+            add(lame, bone, "basalt", lambda c, n, o=joint: n.dot((c - o).normalized()) < 0.5)
+
+    # The hunch: four rows of shingled slabs over the upper back, each slab's face turned to the back's
+    # slope (phi from straight up toward the back) and standing off it, the top row behind the neck at
+    # y 1.88, clear of the head's back (three z 0.14); wide and low, nothing above the skull. Ember on the
+    # undersides and their chamfers, which show between a slab and the one below
+    rows = (  # (x, y, z, phi, yaw, width, thickness, length)
+        (0.0, 1.88, 0.30, 0.60, 0.0, 0.66, 0.14, 0.34),
+        (-0.21, 1.68, 0.40, 1.10, 0.25, 0.40, 0.15, 0.30), (0.21, 1.68, 0.40, 1.10, -0.25, 0.40, 0.15, 0.30),
+        (-0.19, 1.46, 0.42, 1.45, 0.30, 0.38, 0.14, 0.28), (0.19, 1.46, 0.42, 1.45, -0.30, 0.38, 0.14, 0.28),
+        (0.0, 1.26, 0.38, 1.75, 0.0, 0.48, 0.12, 0.22),
+    )
+    for k, (x, y, z, phi, yaw, w, t, length) in enumerate(rows):
+        normal = Vector((math.sin(yaw) * math.sin(phi), math.cos(phi), math.cos(yaw) * math.sin(phi)))
+        across = Vector((math.cos(yaw), 0.0, -math.sin(yaw)))
+        along = normal.cross(across).normalized()
+        add(_slag_chunk(f"sbr_slab_{k}", plain, (w, t, length), (x, y, z), (across, normal, along), rng), "Torso", "basalt",
+            lambda c, n: n.y < -0.3)
+    for k, (x, y, z, lean) in enumerate(((0.0, 1.96, 0.36, 0.0), (-0.24, 1.80, 0.48, 0.35), (0.24, 1.80, 0.48, -0.35))):
+        add(add_lathe(f"sbr_knob_{k}", None, plain, [(0.0, 0.07, 0.07), (0.08, 0.055, 0.05), (0.14, 0.012, 0.012)], segs=5,
+                      tx=x, ty=y, tz=z, rx=0.75, rz=lean, smooth=False), "Torso", "crust")
+
+    # The maul head: three slabs stacked along the club's axis (as _giant_kit carries it, hanging at the
+    # right side), across it 0.52 to 0.60 and fore and aft 0.64 to 0.76 (the lowest the shortest, so its corners
+    # stay off the ground), each turned a little about the axis so their edges stagger; the club's head, straps and spikes (out to
+    # 0.28 from the axis between 0.45 and 0.60 of it) inside them. Ember on the seams between the slabs; the
+    # top slab's upper face, where the handle goes in, stays crust
+    hand = Vector(j["RightHand"])
+    d = Vector((0.10, -1.0, -0.14)).normalized()
+    side = d.cross(Vector((0.0, 0.0, 1.0))).normalized()
+    fwd = side.cross(d).normalized()
+    for k, (t, w, h, length, turn) in enumerate(((0.33, 0.52, 0.13, 0.68, 0.10), (0.46, 0.60, 0.13, 0.76, -0.07), (0.595, 0.54, 0.15, 0.64, 0.12))):
+        a = side * math.cos(turn) + fwd * math.sin(turn)
+        b = fwd * math.cos(turn) - side * math.sin(turn)
+        hot = (lambda c, n: n.dot(d) > 0.3) if k == 0 else (lambda c, n: abs(n.dot(d)) > 0.3)
+        add(_slag_chunk(f"sbr_maul_{k}", plain, (w, h, length), hand + d * t, (a, d, b), rng, jitter=0.03), "WeaponPivot", "crust", hot)
+    return _kit_root("slag_brute", parts, j, SLAG_KIT_TRIANGLES)
+
+
 # =============================================================================
 # 8. Monster_moss_guardian (Moss Guardian): kept and re-rigged on the biped rig (plan M3c)
 # =============================================================================
@@ -4261,6 +4382,7 @@ def main():
     build_dark_ranger((-6.0, 0.0, 2.2), mats)
     build_thornwatch_marksman_kit()
     build_hill_giant((-3.4, 0.0, 2.2), mats)
+    build_slag_brute_kit()
     build_moss_guardian((-0.6, 0.0, 2.2), mats)
     build_lesser_demon((2.2, 0.0, 2.2), mats)
     build_elvarg_dragon((6.2, 0.0, 2.6), mats)

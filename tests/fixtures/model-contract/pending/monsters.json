@@ -324,6 +324,71 @@
         1,
         1
       ]
+    },
+    "Kit_slag_brute": {
+      "parent": null,
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "slag_brute_Torso": {
+      "parent": "Kit_slag_brute",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "slag_brute_LeftArmPivot": {
+      "parent": "Kit_slag_brute",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "slag_brute_RightArmPivot": {
+      "parent": "Kit_slag_brute",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "slag_brute_WeaponPivot": {
+      "parent": "Kit_slag_brute",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
     }
   },
   "materials": [
@@ -405,6 +470,7 @@
     "^scorpion_body$",
     "^scorpion_bone$",
     "^scorpion_sting$",
+    "^slag_brute_(Torso|LeftArmPivot|RightArmPivot|WeaponPivot)$",
     "^thornwatch_marksman_(HeadGroup|Torso|OffhandPivot)$"
   ],
   "extras": {},
@@ -423,7 +489,8 @@
       "Kit_thornwatch_marksman": "all",
       "Monster_hill_giant": "all",
       "Monster_moss_guardian": "all",
-      "Kit_cinder_adept": "all"
+      "Kit_cinder_adept": "all",
+      "Kit_slag_brute": "all"
     }
   },
   "clips": {
@@ -3370,10 +3437,10 @@
     }
   },
   "budget": {
-    "triangles": 60110,
-    "meshes": 50,
+    "triangles": 61044,
+    "meshes": 54,
     "materials": 34,
-    "rawBytes": 2312929,
+    "rawBytes": 2357591,
     "brotliBytes": 1270000
   },
   "figures": {
@@ -3473,6 +3540,13 @@
       "meshes": 4,
       "materials": 3,
       "rawBytes": 37596,
+      "brotliBytes": 20000
+    },
+    "Kit_slag_brute": {
+      "triangles": 1200,
+      "meshes": 4,
+      "materials": 3,
+      "rawBytes": 40564,
       "brotliBytes": 20000
     }
   }
