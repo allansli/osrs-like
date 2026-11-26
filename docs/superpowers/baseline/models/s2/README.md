@@ -41,7 +41,7 @@ From the main session's read of the H3b sheets (plan, "Lanes 1", H3c): the hair 
 |---|---|---|---|
 | Triangles | 5,324 | 5,216 | 6,000 |
 | Meshes / materials | 11 / 11 | 11 / 11 | 11 / 11 |
-| Exported vertices | 3,623 | 3,509 | |
+| Exported vertices | 3,623 | 3,569 | |
 | File raw bytes | 296,028 | 292,568 | 298,989 |
 | File Brotli bytes | 155,150 | 151,418 | 156,663 |
 | Figure raw / Brotli bytes | 221,364 / 128,192 | 217,908 / 124,808 | 223,578 / 130,677 |
