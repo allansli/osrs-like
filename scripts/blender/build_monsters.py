@@ -1202,8 +1202,8 @@ def goblin_joints() -> dict:
     return j
 
 
-def _goblin_hide_mean(tile: str = GOBLIN_HIDE_TILE) -> list:
-    """Mean colour of an albedo tile (the goblin-hide tile by default), linear, read from the engine's own file."""
+def _goblin_hide_mean(tile: str) -> list:
+    """Mean colour of an albedo tile, linear, read from the engine's own file."""
     img = bpy.data.images.load(os.path.join(paths.repo_root(), tile))
     px = [0.0] * (len(img.pixels))
     img.pixels.foreach_get(px)  # an 8-bit file's pixels come as stored, sRGB
@@ -1578,7 +1578,7 @@ def build_goblin(grid_pos: tuple[float, float, float], mats: dict):
     skin = make_mat("mat_skin_goblin_paint", 0xFFFFFF, roughness=0.58, metallic=0.04)
     wood = make_mat("mat_wood_goblin_paint", 0xFFFFFF, roughness=0.70, metallic=0.02)
     metal = make_mat("mat_bronze_goblin_paint", 0xFFFFFF, roughness=0.45, metallic=0.65)
-    tile = _goblin_hide_mean()
+    tile = _goblin_hide_mean(GOBLIN_HIDE_TILE)
     col = dict(GOBLIN_COLOURS, skin=_goblin_skin_paint(GOBLIN_COLOURS["skin"], tile), skin_dark=_goblin_skin_paint(GOBLIN_COLOURS["skin_dark"], tile))
     j = goblin_joints()
     hard = []  # (object, bone): rigid parts, weight 1 on one bone
@@ -3205,7 +3205,7 @@ def _dragon_body_tint(body, spine: list, hide: list, dark: list, belly: list) ->
     print(f"[Blender] dragon body faces: {kind.count(1)} belly, {kind.count(2)} foot, of {len(kind)}")
 
 
-def _dragon_membrane(name: str, mat, side: float, root: Vector, wrist: Vector, tips: list, flank: Vector, bones: tuple):
+def _dragon_membrane(name: str, mat, root: Vector, wrist: Vector, tips: list, flank: Vector, bones: tuple):
     """
     One wing's membrane: a fan of flat panels from the wrist to the three finger tips and the flank,
     and one panel from the wing's root to the wrist and the flank, each trailing edge scalloped
@@ -3347,7 +3347,7 @@ def build_elvarg_dragon(grid_pos: tuple[float, float, float], mats: dict):
             f"{tag}Wing2", col["horn"], planes=True,
         )
         m = _dragon_membrane(
-            f"drg_membrane_{tag}", wing, side, root, wrist, tips, flank,
+            f"drg_membrane_{tag}", wing, root, wrist, tips, flank,
             (f"elvarg_dragon_{tag}Wing", f"elvarg_dragon_{tag}Wing2", "elvarg_dragon_Hips"),
         )
         _goblin_tint(m, col["membrane"], planes=True)
