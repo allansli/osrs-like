@@ -166,7 +166,7 @@ export function serializeState(state: GameState, pose: SavedPose | null, cam: Sa
     playerPos: pose,
     cam
   };
-  if (state.progress && !isEmptyProgress(state.progress)) {
+  if (!isEmptyProgress(state.progress)) {
     out.progress = state.progress;
   }
   return JSON.stringify(out);

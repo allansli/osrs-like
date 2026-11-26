@@ -40,8 +40,8 @@ export function stat(state: { progress?: Progress }, key: string): number {
   return state.progress?.stats?.[key] ?? 0;
 }
 
-export function isEmptyProgress(progress?: Progress | null): boolean {
-  if (!progress || typeof progress !== 'object') return true;
+export function isEmptyProgress(progress?: Progress): boolean {
+  if (!progress) return true;
   if (progress.story && Object.keys(progress.story).length > 0) return false;
   if (progress.stats && Object.keys(progress.stats).length > 0) return false;
   if (progress.diary && progress.diary.length > 0) return false;
