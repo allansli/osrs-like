@@ -109,17 +109,20 @@ export type MountedRig = HumanoidRig & { [K in GearKey]?: THREE.Object3D | null 
 // The rig types its materials as Lambert; the recolouring below has always set metalness and roughness on them.
 type PbrMat = THREE.MeshLambertMaterial & { metalness: number; roughness: number };
 
+// Today's pivot rest positions, from LEAN_RIG; the elbow and knee sit a fixed drop below the shoulder and hip.
+const ELBOW_DROP = 0.26;
+const KNEE_DROP = 0.38;
 const TODAY_PIVOT_REST: Record<string, [number, number, number]> = {
-  Torso: [0, 1.24, 0],
-  HeadGroup: [0, 1.86, 0],
-  LeftArmPivot: [-0.28, 1.5, 0],
-  RightArmPivot: [0.28, 1.5, 0],
-  LeftElbowPivot: [-0.28, 1.24, 0],
-  RightElbowPivot: [0.28, 1.24, 0],
-  LeftLegPivot: [-0.11, 0.9, 0],
-  RightLegPivot: [0.11, 0.9, 0],
-  LeftKneePivot: [-0.11, 0.52, 0],
-  RightKneePivot: [0.11, 0.52, 0]
+  Torso: [0, LEAN_RIG.torsoY, 0],
+  HeadGroup: [0, LEAN_RIG.headY, 0],
+  LeftArmPivot: [-LEAN_RIG.shoulderX, LEAN_RIG.shoulderY, 0],
+  RightArmPivot: [LEAN_RIG.shoulderX, LEAN_RIG.shoulderY, 0],
+  LeftElbowPivot: [-LEAN_RIG.shoulderX, LEAN_RIG.shoulderY - ELBOW_DROP, 0],
+  RightElbowPivot: [LEAN_RIG.shoulderX, LEAN_RIG.shoulderY - ELBOW_DROP, 0],
+  LeftLegPivot: [-LEAN_RIG.hipX, LEAN_RIG.hipY, 0],
+  RightLegPivot: [LEAN_RIG.hipX, LEAN_RIG.hipY, 0],
+  LeftKneePivot: [-LEAN_RIG.hipX, LEAN_RIG.hipY - KNEE_DROP, 0],
+  RightKneePivot: [LEAN_RIG.hipX, LEAN_RIG.hipY - KNEE_DROP, 0]
 };
 
 function getBoneRestPosition(bone: THREE.Object3D, root: THREE.Object3D): THREE.Vector3 {
@@ -127,22 +130,22 @@ function getBoneRestPosition(bone: THREE.Object3D, root: THREE.Object3D): THREE.
   root.traverse((obj) => {
     if (pos) return;
     const sm = obj as THREE.SkinnedMesh;
-    if (sm.isSkinnedMesh && sm.skeleton) {
-      const idx = sm.skeleton.bones.indexOf(bone as THREE.Bone);
-      if (idx !== -1 && sm.skeleton.boneInverses[idx]) {
-        pos = new THREE.Vector3().setFromMatrixPosition(sm.skeleton.boneInverses[idx].clone().invert());
-      }
-    }
+    if (!sm.isSkinnedMesh) return;
+    const idx = sm.skeleton.bones.indexOf(bone as THREE.Bone);
+    if (idx !== -1) pos = new THREE.Vector3().setFromMatrixPosition(sm.skeleton.boneInverses[idx].clone().invert());
   });
-  if (pos) return pos;
+  if (!pos) throw new Error(`getBoneRestPosition: bone ${bone.name} is not bound by any skinned mesh under ${root.name}`);
+  return pos;
+}
 
-  const p = new THREE.Vector3();
-  let curr: THREE.Object3D | null = bone;
-  while (curr && curr !== root) {
-    p.add(curr.position);
-    curr = curr.parent;
-  }
-  return p;
+// The one place the joint-move arithmetic lives: shift a node mounted on a skinned pivot so it sits where it did on today's rig.
+function moveToTodayPivot(parent: THREE.Object3D, node: THREE.Object3D, root: THREE.Object3D): void {
+  if (!(parent.name in TODAY_PIVOT_REST) || !(parent as THREE.Bone).isBone) return;
+  const today = TODAY_PIVOT_REST[parent.name];
+  const bone = getBoneRestPosition(parent, root);
+  node.position.x += today[0] - bone.x;
+  node.position.y += today[1] - bone.y;
+  node.position.z += today[2] - bone.z;
 }
 
 export function mountLoadout(rig: MountedRig, items: LoadoutItems): void {
@@ -164,13 +167,7 @@ export function mountLoadout(rig: MountedRig, items: LoadoutItems): void {
 
   const mount = (parent: THREE.Object3D | null | undefined, node: THREE.Object3D | null | undefined, key: GearKey): void => {
     if (!parent || !node) return;
-    if (parent.name && parent.name in TODAY_PIVOT_REST && (parent as THREE.Bone).isBone) {
-      const today = TODAY_PIVOT_REST[parent.name];
-      const bone = getBoneRestPosition(parent, rig.group);
-      node.position.x += today[0] - bone.x;
-      node.position.y += today[1] - bone.y;
-      node.position.z += today[2] - bone.z;
-    }
+    moveToTodayPivot(parent, node, rig.group);
     parent.add(node);
     rig[key] = node;
   };
@@ -290,18 +287,16 @@ export function mountLoadout(rig: MountedRig, items: LoadoutItems): void {
   const headItem = equip('head');
   const showHair = headShowsHair(headItem);
   if (rig.hairCap) rig.hairCap.visible = showHair;
-  if (rig.group) {
-    rig.group.traverse((ch: THREE.Object3D) => {
-      if (
-        ch.name.startsWith('Hair') ||
-        ch.name.startsWith('CrownSpike_') ||
-        ch.name.startsWith('BackSpike_') ||
-        ch.name.startsWith('Sideburn_')
-      ) {
-        ch.visible = showHair;
-      }
-    });
-  }
+  rig.group.traverse((ch: THREE.Object3D) => {
+    if (
+      ch.name.startsWith('Hair') ||
+      ch.name.startsWith('CrownSpike_') ||
+      ch.name.startsWith('BackSpike_') ||
+      ch.name.startsWith('Sideburn_')
+    ) {
+      ch.visible = showHair;
+    }
+  });
   if (headItem) {
     const helmVisual = buildHeadVisual(headItem);
     if (isBlenderHero) {
@@ -317,20 +312,18 @@ export function mountLoadout(rig: MountedRig, items: LoadoutItems): void {
     mount(lArm, body.left, 'bodyArmL');
     mount(rArm, body.right, 'bodyArmR');
   }
-  if (rig.group) {
-    rig.group.traverse((ch: THREE.Object3D) => {
-      if (
-        ch.name === 'TorsoCoat' ||
-        ch.name.startsWith('OuterCoat_') ||
-        ch.name.startsWith('CoatTrim_') ||
-        ch.name.startsWith('CoatTail_') ||
-        ch.name.startsWith('CoatTailTrim_') ||
-        ch.name === 'InnerCollar'
-      ) {
-        ch.visible = !bodyItem;
-      }
-    });
-  }
+  rig.group.traverse((ch: THREE.Object3D) => {
+    if (
+      ch.name === 'TorsoCoat' ||
+      ch.name.startsWith('OuterCoat_') ||
+      ch.name.startsWith('CoatTrim_') ||
+      ch.name.startsWith('CoatTail_') ||
+      ch.name.startsWith('CoatTailTrim_') ||
+      ch.name === 'InnerCollar'
+    ) {
+      ch.visible = !bodyItem;
+    }
+  });
 
   if (legsItem) {
     const legs = buildLegsVisual(legsItem);
@@ -454,13 +447,7 @@ export function rebuildPlayerEquipmentMeshes(): void {
     );
     cue.rotation.x = Math.PI / 2;
     cue.position.y = LEAN_RIG.beltY - LEAN_RIG.torsoY;
-    if (torso.name && torso.name in TODAY_PIVOT_REST && (torso as THREE.Bone).isBone) {
-      const today = TODAY_PIVOT_REST[torso.name];
-      const bone = getBoneRestPosition(torso, player.parts.group);
-      cue.position.x += today[0] - bone.x;
-      cue.position.y += today[1] - bone.y;
-      cue.position.z += today[2] - bone.z;
-    }
+    moveToTodayPivot(torso, cue, player.parts.group);
     cue.userData.setBonusCue = true;
     cue.userData.noOutline = true;
     torso.add(cue);

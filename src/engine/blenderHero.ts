@@ -17,8 +17,7 @@ export type HeroClipName =
   | 'Mine'
   | 'Fish'
   | 'SpinSlash'
-  | 'Death'
-  | 'Hurt';
+  | 'Death';
 
 const REST_POSITIONS: Record<string, [number, number, number]> = {
   Torso: [0, LEAN_RIG.torsoY, 0],
