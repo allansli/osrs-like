@@ -134,7 +134,27 @@ export const MONSTER_MOTION: Record<string, MonsterMotionRow> = {
   },
   lesser_demon: {
     skeleton: 'biped',
-    bones: [],
+    // The rebuilt demon's bones (plan M3d): the biped clips' thirteen, the jaw, the wings and the tail.
+    bones: [
+      'Hips',
+      'Torso',
+      'HeadGroup',
+      'Jaw',
+      'LeftArmPivot',
+      'LeftElbowPivot',
+      'RightArmPivot',
+      'RightElbowPivot',
+      'LeftLegPivot',
+      'LeftKneePivot',
+      'LeftFoot',
+      'RightLegPivot',
+      'RightKneePivot',
+      'RightFoot',
+      'LWing',
+      'RWing',
+      'TailPivot',
+      'TailPivot2'
+    ],
     codeAttack: {
       rightArmX: -1.45,
       leftArmX: 0.58,
@@ -191,4 +211,18 @@ export const PENDING_DRAGON_CLIPS: Pick<Required<MonsterMotionRow>, 'clips' | 'a
     death: 'Death'
   },
   anticipation: 0.333333
+};
+
+// The rebuilt demon's clips (plan M3d): the biped library of the hero file, staged as the dragon's are until D5
+// promotes the monsters.glb that carries the skinned demon. The shipped demon is rigid and has no Hips bone, so naming
+// clips on the live row before then makes the biped animator throw on every demon spawn. D5's promote commit sets the
+// live row's `clips` and `anticipation` to these, in the same commit as the GLB.
+export const PENDING_DEMON_CLIPS: Pick<Required<MonsterMotionRow>, 'clips' | 'anticipation'> = {
+  clips: {
+    idle: 'Idle',
+    walk: 'Walk',
+    attack: 'Slash',
+    death: 'Death'
+  },
+  anticipation: 0.25
 };

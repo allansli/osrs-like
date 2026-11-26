@@ -9,7 +9,7 @@ Sculpts authentic, high-detail OSRS / RuneScape Dragonwilds stylized monsters:
   6. Monster_dark_ranger      - Dark Ranger in green dragonhide brigandine, spiked pauldrons, shadow cloak, assassin cowl & dark-yew longbow
   7. Monster_hill_giant       - Hill Giant with barrel-chested muscular torso, fur pelt loincloth, skull buckle, braided beard & spiked tree-trunk club
   8. Monster_moss_guardian    - Moss Guardian forest golem of craggy stone & twisted bark, glowing heart-core, mossy boulder pauldrons & branching antlers
-  9. Monster_lesser_demon     - Lesser Demon with V-tapered crimson musculature, ram horns, ribbed bat wings, cloven hooves, spade tail & hellfire cleaver
+  9. Monster_lesser_demon     - Lesser Demon, rebuilt and skinned on the biped rig: a slate brute with a forward hunch, swept horns, wings raised from the back, a spade tail & an ember-edged cleaver
  10. Monster_elvarg_dragon    - Elvarg the Crag Dragon world boss, a new skinned model on the dragon rig: low heavy-shouldered body, wedge head with a jaw, swept horns, crag plates down the spine, raised wings & spade tail
  11. Monster_ashmantle        - Ashmantle the Slag Wyrm, its own skinned body on the dragon rig: heavier chest, slag crown, back plates with glowing seams, clubbed tail
 """
@@ -2812,222 +2812,290 @@ def build_moss_guardian(grid_pos: tuple[float, float, float], mats: dict):
 
 
 # =============================================================================
-# 9. Monster_lesser_demon (Lesser Demon)
+# 9. Monster_lesser_demon (Lesser Demon): rebuilt and skinned on the biped rig (plan M3d)
 # =============================================================================
+# An original demon on the pilot's pattern (docs/superpowers/baseline/models/README.md): a brute
+# with a forward hunch, long arms and a small head under big swept horns, wings raised from the
+# middle of the back, a tail in two bones with a spade, and a cleaver held low and forward on
+# WeaponPivot. Slate hide, ember membrane, eyes, mouth and cleaver edge. Coordinates are
+# three-space like the rest of this file (+Y up, -Z forward). The figure stands at the file's
+# origin (design 6.1.1 rule 2b).
+DEMON_TRIANGLES = 5500  # the builder's own budget, under the manifest's 7,000: what keeps the figure under design 9.1's 160 kB as exported
+DEMON_OCCLUSION = 0.5  # bake_paint's occlusion strength, as the goblin's
+DEMON_VOXEL = 0.025  # the goblin's 0.02 on a figure a third taller
+DEMON_HEIGHT = 2.350  # the shipped demon's height; the new one stays within 5%
+DEMON_COLOURS = {  # as the game shows them
+    "hide": 0x58616C,  # slate, 42% value
+    "hide_dark": 0x3A4049,  # hands and feet, 29% value
+    "membrane": 0x7E3826,  # ember red, 49% value
+    "horn": 0xB3A58B,  # horns, claws, fangs and spade, pale horn, 70% value
+    "blade": 0x4C5057,  # the cleaver's blade, dark iron, 34% value
+    "grip": 0x5A3E2C,  # the cleaver's grip and the loincloth, 35% value
+}
+DEMON_HIDE_TILE = "public/textures/creatures/demon-hide.png"  # the engine's tile for lesser_demon (textures.ts)
+DEMON_LEATHER_TILE = "public/textures/leather.png"  # 'wing' in a material name draws with the leather tile
+
+
+def demon_joints() -> dict:
+    """
+    Joints of the biped rig with the wing and tail bones. The bind pose is the stance, each limb
+    within 20 degrees of the biped reference (design 6.1.1 rule 3): the spine leans forward 19
+    degrees into the neck, the long arms hang out and forward, the knees are bent. The hunch of
+    the back and the head's thrust are mesh. The wings root on the middle of the back.
+    """
+    j = {
+        "Root": (0.0, 0.0, 0.0),
+        "Hips": (0.0, 1.02, 0.06),
+        "Torso": (0.0, 1.30, 0.02),
+        "HeadGroup": (0.0, 1.86, -0.17),
+        "Jaw": (0.0, 1.90, -0.33),
+        "TailPivot": (0.0, 0.98, 0.24),
+        "TailPivot2": (0.0, 0.80, 0.66),
+    }
+    for side, tag in ((-1.0, "Left"), (1.0, "Right")):
+        j[f"{tag}ArmPivot"] = (side * 0.44, 1.72, -0.08)
+        j[f"{tag}ElbowPivot"] = (side * 0.62, 1.31, -0.20)
+        j[f"{tag}Hand"] = (side * 0.80, 0.93, -0.30)
+        j[f"{tag}LegPivot"] = (side * 0.19, 0.98, 0.06)
+        j[f"{tag}KneePivot"] = (side * 0.29, 0.54, -0.08)
+        j[f"{tag}Foot"] = (side * 0.28, 0.11, 0.06)
+        j[f"{tag[0]}Wing"] = (side * 0.16, 1.64, 0.20)
+    j["WeaponPivot"] = j["RightHand"]
+    return j
+
+
+def _demon_body_graph(j: dict) -> tuple[list, list, list, list]:
+    """
+    The stick graph and radii for figkit.organic_body, and the keep balls of hands and feet for
+    _goblin_skin, in Blender space: trunk, neck, arms, legs and tail are one skin. The chest is two
+    wide flat ellipses over a narrow waist, the shoulders and the hump stand as forms of their own,
+    and each limb narrows between its joints.
+    """
+    pts, radii, edges, keep = [], [], [], []
+
+    def chain(start, nodes):
+        prev = start
+        for p, r in nodes:
+            pts.append(t2b(*p))
+            radii.append(r)
+            if prev is not None:
+                edges.append((prev, len(pts) - 1))
+            prev = len(pts) - 1
+        return prev
+
+    def along(a, b, t):
+        return tuple(Vector(a).lerp(Vector(b), t))
+
+    pelvis = chain(None, [((0.0, 1.00, 0.06), (0.24, 0.19))])
+    chest = chain(pelvis, [((0.0, 1.18, 0.02), 0.18), ((0.0, 1.40, -0.04), (0.36, 0.25)), ((0.0, 1.60, -0.08), (0.40, 0.27))])
+    chain(chest, [((0.0, 1.80, -0.15), 0.16), ((0.0, 1.95, -0.26), 0.13)])  # neck, thrust forward into the head
+    chain(chest, [((0.0, 1.76, 0.10), 0.21)])  # the hump: one node standing off the back
+    for side, tag in ((-1.0, "Left"), (1.0, "Right")):
+        shoulder, elbow, hand = j[f"{tag}ArmPivot"], j[f"{tag}ElbowPivot"], Vector(j[f"{tag}Hand"])
+        d = (hand - Vector(elbow)).normalized()
+        chain(chest, [
+            ((side * 0.24, 1.70, -0.07), (0.22, 0.16)),  # collar: the shoulder line slopes from the neck
+            (shoulder, 0.16),
+            (along(shoulder, elbow, 0.6), 0.11),
+            (elbow, 0.12),
+            (along(elbow, hand, 0.35), 0.115),  # the forearm's bulk
+            (tuple(hand - d * 0.10), 0.075),  # wrist
+            (tuple(hand - d * 0.02), 0.105),  # the fist, around the hand joint
+            (tuple(hand + d * 0.10), 0.095),
+        ])
+        keep.append((Vector(t2b(*(hand + d * 0.04))), 0.18))
+        hip, knee, ankle = j[f"{tag}LegPivot"], j[f"{tag}KneePivot"], j[f"{tag}Foot"]
+        chain(pelvis, [
+            (hip, 0.17),
+            (along(hip, knee, 0.6), 0.13),
+            (knee, 0.115),
+            (along(knee, ankle, 0.3), 0.11),  # calf
+            (along(knee, ankle, 0.8), 0.07),
+            # The hoof: one flat slab from the heel under the ankle joint to the toe, cut flat at the ground
+            ((ankle[0], 0.05, ankle[2]), (0.06, 0.08)),
+            ((ankle[0] * 1.03, 0.05, ankle[2] - 0.22), (0.06, 0.09)),
+        ])
+        keep.append((Vector(t2b(ankle[0], 0.05, ankle[2] - 0.10)), 0.20))
+    # The tail leaves the pelvis, runs back and down along its two bones and curls up at the spade
+    chain(pelvis, [(j["TailPivot"], 0.09), (j["TailPivot2"], 0.06), ((0.0, 0.70, 1.00), 0.045), ((0.0, 0.82, 1.24), 0.04)])
+    return pts, edges, radii, keep
+
+
+def _demon_head(mat):
+    """The head: a blocky skull with a heavy brow, a short muzzle and swept ears, fused into one form with hard edges round its planes."""
+    parts = [
+        add_sphere("dem_skull", None, mat, 0.16, 0.15, 0.18, tx=0.0, ty=2.02, tz=-0.28, segs=8, rings=6, smooth=False),
+        add_curved_tube(
+            "dem_brow", None, mat,
+            [(-0.17, 2.09, -0.34, 0.04), (-0.07, 2.07, -0.44, 0.05), (0.0, 2.06, -0.45, 0.045), (0.07, 2.07, -0.44, 0.05), (0.17, 2.09, -0.34, 0.04)],
+            segs=4, smooth=False,
+        ),
+        add_box("dem_muzzle", None, mat, 0.20, 0.13, 0.16, tx=0.0, ty=1.94, tz=-0.45, rx=0.10, bevel=0.0),
+    ]
+    for side in (-1.0, 1.0):
+        parts.append(
+            add_cone_spike(
+                "dem_ear", None, mat, base_r=0.035, length=0.20, tx=side * 0.15, ty=2.04, tz=-0.24,
+                rx=0.20, rz=-side * 1.25, segs=6, flatten_x=2.4, smooth=False,
+            )
+        )
+    return _goblin_fuse(parts, "dem_head", mat, 0.014, 700, soften=1, crease=GOBLIN_CREASE)
+
+
 def build_lesser_demon(grid_pos: tuple[float, float, float], mats: dict):
-    root = create_pivot("Monster_lesser_demon", None, *grid_pos)
-    head_piv = create_pivot("lesser_demon_HeadGroup", root, 0.0, 1.88, -0.73)
-    left_arm = create_pivot("lesser_demon_LeftArmPivot", root, -0.65, 1.45, -0.25)
-    right_arm = create_pivot("lesser_demon_RightArmPivot", root, 0.65, 1.45, -0.25)
-    left_leg = create_pivot("lesser_demon_LeftLegPivot", root, -0.25, 0.95, 0.05)
-    right_leg = create_pivot("lesser_demon_RightLegPivot", root, 0.25, 0.95, 0.05)
+    # grid_pos is not used: a skinned figure stands at the file's origin (design 6.1.1 rule 2b)
+    import rigs  # the biped table
 
-    # Ribbed bat-like demon wings under `lesser_demon_LWing` & `lesser_demon_RWing`
-    for side, w_name in ((-1.0, "lesser_demon_LWing"), (1.0, "lesser_demon_RWing")):
-        wing_piv = create_pivot(w_name, root, side * 0.28, 1.50, 0.18)
-        elbow = (side * 0.48, 0.42, 0.18)
-        tip_top = (side * 1.12, 0.66, 0.28)
-        tip_mid = (side * 1.04, 0.12, 0.26)
-        tip_bot = (side * 0.66, -0.34, 0.22)
-        tip_in = (side * 0.18, -0.38, 0.14)
-        add_limb_tube(f"{w_name}_strut_root", wing_piv, mats["horn"], (0.0, 0.0, 0.0), elbow, 0.045, 0.035, segs=10)
-        for f_i, tip in enumerate((tip_top, tip_mid, tip_bot)):
-            add_limb_tube(f"{w_name}_finger_{f_i}", wing_piv, mats["horn"], elbow, tip, 0.028, 0.010, segs=8)
-        add_wing_web(f"{w_name}_web_1", wing_piv, mats["wing"], elbow, tip_top, tip_mid)
-        add_wing_web(f"{w_name}_web_2", wing_piv, mats["wing"], elbow, tip_mid, tip_bot)
-        add_wing_web(f"{w_name}_web_3", wing_piv, mats["wing"], (0.0, 0.0, 0.0), elbow, tip_in, scallop_dip=0.02)
+    # White, like the goblin's: every colour of the demon is paint. The names give the engine its
+    # families: 'skin' the hide with the demon-hide tile, 'wing' the membrane and loincloth (leather,
+    # both sides drawn), the horn material plain for horns, claws, fangs, spade and the cleaver. The
+    # eyes, mouth and cleaver edge are on the file's own mat_glow_orange.
+    skin = make_mat("mat_skin_lesser_demon_paint", 0xFFFFFF, roughness=0.50, metallic=0.06)
+    wing = make_mat("mat_wing_lesser_demon_paint", 0xFFFFFF, roughness=0.55, metallic=0.04)
+    horn = make_mat("mat_horn_lesser_demon_paint", 0xFFFFFF, roughness=0.42, metallic=0.20)
+    glow = mats["glow_orange"]
+    hide_tile, leather_tile = _goblin_hide_mean(DEMON_HIDE_TILE), _goblin_hide_mean(DEMON_LEATHER_TILE)
+    col = dict(DEMON_COLOURS)
+    for key, tile in (("hide", hide_tile), ("hide_dark", hide_tile), ("membrane", leather_tile), ("grip", leather_tile)):
+        col[key] = _goblin_skin_paint(DEMON_COLOURS[key], tile)
+    j = demon_joints()
+    hard = []  # (object, bone): rigid parts, weight 1 on one bone
 
-    # Jagged obsidian/hellfire demon cleaver blade with glowing orange lava edge under `lesser_demon_RightArmPivot`
-    add_limb_tube(
-        "lesser_demon_cleaver_hilt",
-        right_arm,
-        mats["obsidian"],
-        (0.32, -0.75, -0.20),
-        (0.32, -0.45, -0.54),
-        0.028,
-        0.032,
-        segs=10,
-    )
-    add_box(
-        "lesser_demon_cleaver_blade",
-        right_arm,
-        mats["obsidian"],
-        0.04,
-        0.22,
-        0.68,
-        tx=0.32,
-        ty=-0.23,
-        tz=-0.84,
-        rx=-0.65,
-        bevel=0.02,
-    )
-    add_box(
-        "lesser_demon_cleaver_lava_edge",
-        right_arm,
-        mats["glow_orange"],
-        0.048,
-        0.055,
-        0.66,
-        tx=0.32,
-        ty=-0.31,
-        tz=-0.88,
-        rx=-0.65,
-        bevel=0.01,
-    )
+    def add(obj, bone: str, colour, planes: bool = False):
+        _goblin_tint(obj, colour, planes)
+        hard.append((obj, f"lesser_demon_{bone}"))
 
-    imported_parts = load_imported_character(
-        "blender/examples/red_devil_22787/RedDevil-Ex.blend",
-        ["Devil", "TeethUpper", "TeethLower", "Eye.L", "Eye.R"],
-        target_height=2.35,
-        rot_z_180=True,
-    )
+    def aim(d) -> dict:
+        """The rx and rz that turn a primitive's own +Y axis to the direction d."""
+        d = Vector(d).normalized()
+        return {"rx": math.asin(d.z), "rz": -math.atan2(d.x, d.y)}
 
-    if imported_parts and "Devil" in imported_parts:
-        finalize_obj(
-            "lesser_demon_body",
-            imported_parts["Devil"],
-            root,
-            mat=[mats["skin_lesser_demon"], mats["horn"], mats["horn"]],
-            smooth=True,
-        )
-        if "TeethUpper" in imported_parts:
-            finalize_obj("lesser_demon_teeth_upper", imported_parts["TeethUpper"], root, mat=mats["bone"], smooth=True)
-        if "TeethLower" in imported_parts:
-            finalize_obj("lesser_demon_teeth_lower", imported_parts["TeethLower"], root, mat=mats["bone"], smooth=True)
-        if "Eye.L" in imported_parts:
-            finalize_obj("lesser_demon_eye_l", imported_parts["Eye.L"], root, mat=mats["glow_yellow"], smooth=True, no_outline=True)
-        if "Eye.R" in imported_parts:
-            finalize_obj("lesser_demon_eye_r", imported_parts["Eye.R"], root, mat=mats["glow_yellow"], smooth=True, no_outline=True)
-    else:
-        torso_sections = [
-            (0.72, 0.21, 0.16, 0.0, 0.0, 0.24, 0.01, 0.02),
-            (0.94, 0.19, 0.15, 0.0, 0.0, 0.22, 0.03, 0.03),
-            (1.18, 0.26, 0.19, 0.0, -0.01, 0.26, 0.05, 0.04),
-            (1.44, 0.36, 0.23, 0.0, -0.02, 0.28, 0.07, 0.05),
-            (1.66, 0.38, 0.22, 0.0, -0.01, 0.24, 0.04, 0.04),
-            (1.82, 0.20, 0.16, 0.0, 0.0, 0.18, 0.0, 0.02),
-        ]
-        add_lathe("lesser_demon_torso", root, mats["skin_lesser_demon"], torso_sections, segs=24)
-        add_lathe(
-            "lesser_demon_waist_chain",
-            root,
-            mats["obsidian"],
-            [(0.74, 0.23, 0.18, 0.0, 0.0, 0.25), (0.83, 0.23, 0.18, 0.0, 0.0, 0.25)],
-            segs=20,
-        )
-        add_box("lesser_demon_loincloth", root, mats["obsidian"], 0.18, 0.32, 0.04, tx=0.0, ty=0.62, tz=-0.17)
-        for m_i in range(4):
-            add_cone_spike(
-                f"lesser_demon_dorsal_spike_{m_i}",
-                root,
-                mats["horn"],
-                base_r=0.035,
-                length=0.14,
-                tx=0.0,
-                ty=1.22 + m_i * 0.14,
-                tz=0.19,
-                rx=math.pi * 0.38,
-                segs=8,
-            )
-
-        tail_pts = [
-            (0.0, 0.78, 0.16, 0.065, 0.065),
-            (0.0, 0.62, 0.44, 0.048, 0.048),
-            (0.08, 0.58, 0.76, 0.036, 0.036),
-            (0.14, 0.78, 1.04, 0.028, 0.028),
-            (0.06, 1.06, 1.22, 0.020, 0.020),
-        ]
-        add_curved_tube("lesser_demon_tail", root, mats["skin_lesser_demon"], tail_pts, segs=12)
-        add_cone_spike(
-            "lesser_demon_tail_spade",
-            root,
-            mats["horn"],
-            base_r=0.065,
-            length=0.18,
-            tx=0.06,
-            ty=1.05,
-            tz=1.21,
-            rx=0.55,
-            flatten_x=0.35,
-            segs=8,
+    # Head, jaw and mouth. The mouth glows between brow and jaw; the eyes are ember slits on the
+    # glow (no mesh name holds 'eye': the engine would draw that whole mesh unlit).
+    add(_demon_head(skin), "HeadGroup", col["hide"], planes=True)
+    add(add_sphere("dem_jaw", None, skin, 0.15, 0.06, 0.13, tx=0.0, ty=1.86, tz=-0.40, segs=8, rings=6, smooth=False), "Jaw", col["hide"], planes=True)
+    add(add_sphere("dem_maw", None, glow, 0.11, 0.025, 0.08, tx=0.0, ty=1.91, tz=-0.47, segs=8, rings=5), "HeadGroup", 0xFFFFFF)
+    for side, tag in ((-1.0, "L"), (1.0, "R")):
+        add(add_sphere(f"dem_ember_{tag}", None, glow, 0.05, 0.024, 0.02, tx=side * 0.085, ty=2.02, tz=-0.45, rz=side * 0.30, segs=6, rings=4), "HeadGroup", 0xFFFFFF)
+        add(add_cone_spike(f"dem_fang_{tag}", None, horn, base_r=0.025, length=0.09, tx=side * 0.10, ty=1.87, tz=-0.50, rx=-0.15, segs=5, smooth=False), "Jaw", col["horn"])
+        # The horns: the one feature that names the demon (design 5.2), swept out, up and forward
+        # from the crown, faceted, with the tips over the shoulders
+        add(
+            add_curved_tube(
+                f"dem_horn_{tag}", None, horn,
+                [(side * 0.11, 2.13, -0.26, 0.075), (side * 0.30, 2.22, -0.20, 0.062), (side * 0.46, 2.30, -0.14, 0.046),
+                 (side * 0.56, 2.33, -0.22, 0.03), (side * 0.60, 2.31, -0.34, 0.012)],
+                segs=6, smooth=False,
+            ),
+            "HeadGroup", col["horn"], planes=True,
         )
 
-        add_lathe(
-            "lesser_demon_skull",
-            head_piv,
-            mats["skin_lesser_demon"],
-            [
-                (-0.04, 0.14, 0.15, 0.0, 0.0, 0.22),
-                (0.08, 0.18, 0.20, 0.0, -0.02, 0.24),
-                (0.20, 0.17, 0.19, 0.0, -0.01, 0.22),
-                (0.30, 0.12, 0.14, 0.0, 0.01, 0.18),
-            ],
-            segs=20,
+    # Wings, raised from the middle of the back: the arm and three fingers are struts, the membrane
+    # lies between them. Each wing is rigid on its bone, so it beats as one plate.
+    for side, tag in ((-1.0, "L"), (1.0, "R")):
+        root, wrist = Vector(j[f"{tag}Wing"]), Vector((side * 0.62, 2.18, 0.46))
+        tips = [Vector((side * 1.40, 2.26, 0.50)), Vector((side * 1.46, 1.62, 0.62)), Vector((side * 1.02, 1.06, 0.56))]
+        flank = Vector((side * 0.20, 1.22, 0.27))
+        sunk = root - (wrist - root).normalized() * 0.08  # the arm starts inside the back
+        add(add_limb_tube(f"dem_wing_arm_{tag}", None, skin, tuple(sunk), tuple(wrist), 0.075, 0.05, segs=6, steps=3, smooth=False), f"{tag}Wing", col["hide_dark"], planes=True)
+        for k, tip in enumerate(tips):
+            add(
+                add_limb_tube(f"dem_wing_finger_{tag}_{k}", None, skin, tuple(wrist), tuple(tip), 0.045, 0.022, r_mid=0.034, segs=5, steps=3, smooth=False),
+                f"{tag}Wing", col["hide_dark"], planes=True,
+            )
+        add(
+            add_cone_spike(f"dem_wing_claw_{tag}", None, horn, base_r=0.04, length=0.14, tx=wrist.x, ty=wrist.y + 0.03, tz=wrist.z, segs=5, smooth=False, **aim((side * 0.30, 0.90, -0.30))),
+            f"{tag}Wing", col["horn"], planes=True,
         )
-        for side, s_tag in ((-1.0, "L"), (1.0, "R")):
-            add_sphere(
-                f"lesser_demon_eye_{s_tag}",
-                head_piv,
-                mats["glow_yellow"],
-                0.032,
-                0.020,
-                0.020,
-                tx=side * 0.065,
-                ty=0.14,
-                tz=-0.185,
-                rz=-side * 0.24,
-                no_outline=True,
-            )
-            add_cone_spike(
-                f"lesser_demon_fang_{s_tag}",
-                head_piv,
-                mats["bone"],
-                base_r=0.018,
-                length=0.065,
-                tx=side * 0.055,
-                ty=0.04,
-                tz=-0.19,
-                rx=math.pi,
-                segs=8,
-            )
-            horn_pts = [
-                (side * 0.12, 0.22, -0.02, 0.062, 0.062),
-                (side * 0.28, 0.28, 0.06, 0.050, 0.050),
-                (side * 0.38, 0.42, 0.02, 0.036, 0.036),
-                (side * 0.32, 0.56, -0.10, 0.022, 0.022),
-                (side * 0.22, 0.64, -0.20, 0.008, 0.008),
-            ]
-            add_curved_tube(f"lesser_demon_horn_{s_tag}", head_piv, mats["horn"], horn_pts, segs=12)
+        # The dragon's membrane, every vertex then held by the one wing bone
+        m = _dragon_membrane(
+            f"dem_membrane_{tag}", wing, root, wrist, tips, flank,
+            (f"lesser_demon_{tag}Wing", f"lesser_demon_{tag}Wing_tip", "lesser_demon_Torso"),
+        )
+        add(m, f"{tag}Wing", col["membrane"], planes=True)
 
-        for side, arm_piv, s_tag in ((-1.0, left_arm, "L"), (1.0, right_arm, "R")):
-            elbow = (side * 0.06, -0.30, -0.06)
-            hand = (side * 0.05, -0.58, -0.24)
-            add_limb_tube(f"lesser_demon_uarm_{s_tag}", arm_piv, mats["skin_lesser_demon"], (-side * 0.12, 0.08, 0.0), elbow, 0.145, 0.088, segs=12)
-            add_limb_tube(f"lesser_demon_farm_{s_tag}", arm_piv, mats["skin_lesser_demon"], elbow, hand, 0.092, 0.072, segs=12)
-            add_sphere(f"lesser_demon_hand_{s_tag}", arm_piv, mats["skin_lesser_demon"], 0.075, tx=hand[0], ty=hand[1], tz=hand[2])
+    # Claws: three on each fist, on the hand bone
+    for side, tag in ((-1.0, "Left"), (1.0, "Right")):
+        h = Vector(j[f"{tag}Hand"])
+        d = (h - Vector(j[f"{tag}ElbowPivot"])).normalized()
+        for k, dx in enumerate((-0.05, 0.0, 0.05)):
+            at = h + d * 0.09 + Vector((side * 0.02, 0.0, dx - 0.04))  # rooted inside the fist
+            add(add_cone_spike(f"dem_claw_{tag}_{k}", None, horn, base_r=0.03, length=0.10, tx=at.x, ty=at.y, tz=at.z, segs=5, smooth=False, **aim(d)), f"{tag}Hand", col["horn"])
+    # The tail ends in a flat spade, turned up
+    add(
+        add_cone_spike("dem_tail_spade", None, horn, base_r=0.09, length=0.22, tx=0.0, ty=0.82, tz=1.22, segs=4, flatten_x=2.4, smooth=False, **aim((0.0, 0.6, 0.8))),
+        "TailPivot2", col["horn"], planes=True,
+    )
+    # A short loincloth front and back, on the hips (never on the legs)
+    for name, tz, rx in (("dem_cloth_front", -0.17, -0.12), ("dem_cloth_back", 0.27, 0.12)):
+        flap = add_box(name, None, wing, 0.26, 0.26, 0.04, tx=0.0, ty=0.86, tz=tz, rx=rx, bevel=0.0)
+        heights = [v.co.z for v in flap.data.vertices]
+        for v in flap.data.vertices:
+            v.co.x *= 0.6 + 0.4 * (v.co.z - min(heights)) / (max(heights) - min(heights))
+        add(flap, "Hips", col["grip"])
 
-        for side, piv_name in ((-1.0, "lesser_demon_LeftLegPivot"), (1.0, "lesser_demon_RightLegPivot")):
-            leg_piv = left_leg if side < 0 else right_leg
-            knee = (side * 0.04, -0.28, -0.14)
-            hock = (side * 0.04, -0.50, 0.12)
-            hoof_top = (side * 0.04, -0.70, -0.04)
-            add_limb_tube(f"{piv_name}_thigh", leg_piv, mats["skin_lesser_demon"], (0.0, 0.0, 0.0), knee, 0.125, 0.092, segs=12)
-            add_limb_tube(f"{piv_name}_calf", leg_piv, mats["skin_lesser_demon"], knee, hock, 0.092, 0.068, segs=12)
-            add_limb_tube(f"{piv_name}_fetlock", leg_piv, mats["skin_lesser_demon"], hock, hoof_top, 0.068, 0.058, segs=10)
-            add_box(
-                f"{piv_name}_cloven_hoof",
-                leg_piv,
-                mats["horn"],
-                0.14,
-                0.12,
-                0.18,
-                tx=side * 0.04,
-                ty=-0.72,
-                tz=-0.06,
-                bevel=0.02,
-            )
+    # The cleaver in the right fist, held low and forward, outside the body outline: a grip through
+    # the fist, a heavy blade, and the glowing edge along its bottom
+    hand = Vector(j["RightHand"])
+    fwd = Vector((0.10, -0.20, -1.0)).normalized()
+    add(add_limb_tube("dem_cleaver_grip", None, horn, tuple(hand - fwd * 0.14), tuple(hand + fwd * 0.20), 0.034, 0.034, r_mid=0.034, segs=6, steps=2, smooth=False), "WeaponPivot", col["grip"])
+    tilt = math.asin(-fwd.y)  # the blade lies along fwd: its length is the box's z
+    centre = hand + fwd * 0.56 + Vector((0.0, -0.06, 0.0))
+    add(add_box("dem_cleaver_blade", None, horn, 0.05, 0.30, 0.72, tx=centre.x, ty=centre.y, tz=centre.z, rx=-tilt, ry=math.atan2(-fwd.x, -fwd.z), bevel=0.0), "WeaponPivot", col["blade"], planes=True)
+    edge = centre + Vector((0.0, -0.155 * math.cos(tilt), 0.155 * math.sin(tilt)))
+    add(add_box("dem_cleaver_edge", None, glow, 0.06, 0.04, 0.70, tx=edge.x, ty=edge.y, tz=edge.z, rx=-tilt, ry=math.atan2(-fwd.x, -fwd.z), bevel=0.0), "WeaponPivot", 0xFFFFFF)
 
-    return root
+    # Body: what is left of the triangle budget
+    hard_tris = sum(len(p.vertices) - 2 for obj, _ in hard for p in obj.data.polygons)
+    body_tris = DEMON_TRIANGLES - 40 - hard_tris
+    pts, edges, radii, keep = _demon_body_graph(j)
+    body = _goblin_skin(
+        figkit.organic_body((pts, edges), radii, DEMON_VOXEL, 10**9), "dem_body", skin, body_tris, soften=14, keep=tuple(keep), crease=GOBLIN_CREASE
+    )
+
+    rig = figkit.make_rig("Monster_lesser_demon", rigs.BIPED_TABLE, {k: t2b(*p) for k, p in j.items()}, prefix="lesser_demon")
+
+    # Weight rule 1: the body takes automatic weights from the limb, spine and tail bones only. The
+    # jaw, the weapon mount and the wing bones hold rigid parts, and a Root standing from the ground
+    # to the hips would take the inner legs, so the weighting rig leaves them out and starts Root
+    # inside the pelvis.
+    core = {k: t2b(*p) for k, p in j.items() if k not in ("Jaw", "WeaponPivot", "LWing", "RWing")}
+    core["Root"] = t2b(0.0, 0.96, 0.06)
+    weight_rig = figkit.make_rig("lesser_demon_weight_rig", rigs.BIPED_TABLE, core, prefix="lesser_demon")
+    figkit.auto_weights(body, weight_rig, limb_radius=0.16)
+    # Weight rule 2: Root deforms nothing; its share goes to Hips.
+    figkit.fold_weights(
+        body,
+        {b.name: ([b.name, "lesser_demon_Root"] if b.name == "lesser_demon_Hips" else [b.name]) for b in weight_rig.data.bones if b.name != "lesser_demon_Root"},
+    )
+    for m in list(body.modifiers):
+        body.modifiers.remove(m)
+    weight_data = weight_rig.data
+    bpy.data.objects.remove(weight_rig, do_unlink=True)
+    bpy.data.armatures.remove(weight_data)
+    _goblin_body_tint(body, col["hide"], col["hide_dark"])
+
+    # Weight rule 3: every other part is rigid on one bone.
+    for obj, bone in hard:
+        figkit.hard_weights(obj, bone)
+    for obj in [body] + [obj for obj, _ in hard]:
+        obj.parent = rig
+
+    merged = figkit.merge_by_family(rig)
+    names = {"skin": "lesser_demon_body", "leather": "lesser_demon_membrane", "plain": "lesser_demon_horn", "glow": "lesser_demon_embers"}
+    for ob in merged:
+        ob.name = ob.data.name = names[figkit.get_material_family(ob)]
+    _figure_paint(rig, merged, DEMON_OCCLUSION)
+
+    tris = sum(len(p.vertices) - 2 for ob in merged for p in ob.data.polygons)
+    if tris > DEMON_TRIANGLES:
+        raise ValueError(f"lesser_demon: {tris} triangles, over the budget of {DEMON_TRIANGLES}")
+    cos = [v.co for ob in merged for v in ob.data.vertices]
+    size = [max(c[a] for c in cos) - min(c[a] for c in cos) for a in (0, 2, 1)]  # width, height, depth
+    print(f"[Blender] lesser_demon: {tris} triangles in {len(merged)} meshes; width {size[0]:.3f}, height {size[1]:.3f}, depth {size[2]:.3f}; lowest {min(c.z for c in cos):.4f}")
+    if abs(size[1] / DEMON_HEIGHT - 1.0) > 0.05:
+        raise ValueError(f"lesser_demon: height {size[1]:.3f} is more than 5% from the shipped demon's {DEMON_HEIGHT}")
+    return rig
 
 
 # =============================================================================

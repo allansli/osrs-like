@@ -377,103 +377,12 @@
         1
       ]
     },
-    "lesser_demon_HeadGroup": {
-      "parent": "Monster_lesser_demon",
-      "translation": [
-        0,
-        1.88,
-        -0.73
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ]
-    },
-    "lesser_demon_LeftArmPivot": {
-      "parent": "Monster_lesser_demon",
-      "translation": [
-        -0.65,
-        1.45,
-        -0.25
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ]
-    },
-    "lesser_demon_LeftLegPivot": {
-      "parent": "Monster_lesser_demon",
-      "translation": [
-        -0.25,
-        0.95,
-        0.05
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ]
-    },
-    "lesser_demon_LWing": {
-      "parent": "Monster_lesser_demon",
-      "translation": [
-        -0.28,
-        1.5,
-        0.18
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ]
-    },
-    "lesser_demon_RightArmPivot": {
-      "parent": "Monster_lesser_demon",
-      "translation": [
-        0.65,
-        1.45,
-        -0.25
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ]
-    },
-    "lesser_demon_RightLegPivot": {
-      "parent": "Monster_lesser_demon",
-      "translation": [
-        0.25,
-        0.95,
-        0.05
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ]
-    },
-    "lesser_demon_RWing": {
-      "parent": "Monster_lesser_demon",
-      "translation": [
-        0.28,
-        1.5,
-        0.18
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ]
-    },
     "Monster_lesser_demon": {
       "parent": null,
       "translation": [
-        2.2,
         0,
-        2.2
+        0,
+        0
       ],
       "scale": [
         1,
@@ -657,6 +566,7 @@
     "mat_horn",
     "mat_horn_ashmantle_paint",
     "mat_horn_elvarg_dragon_paint",
+    "mat_horn_lesser_demon_paint",
     "mat_iron",
     "mat_iron_obsidian",
     "mat_leather",
@@ -673,13 +583,13 @@
     "mat_skin_goblin_dark",
     "mat_skin_goblin_paint",
     "mat_skin_hill_giant",
-    "mat_skin_lesser_demon",
+    "mat_skin_lesser_demon_paint",
     "mat_skin_scorpion",
     "mat_skin_scorpion_plate",
     "mat_stone",
-    "mat_wing",
     "mat_wing_ashmantle_paint",
     "mat_wing_elvarg_dragon_paint",
+    "mat_wing_lesser_demon_paint",
     "mat_wood",
     "mat_wood_goblin_paint"
   ],
@@ -844,20 +754,10 @@
     "^hill_giant_torso$",
     "^hill_giant_uarm_L$",
     "^hill_giant_uarm_R$",
-    "^lesser_demon_LWing_finger_-?\\d+$",
-    "^lesser_demon_LWing_strut_root$",
-    "^lesser_demon_LWing_web_-?\\d+$",
-    "^lesser_demon_RWing_finger_-?\\d+$",
-    "^lesser_demon_RWing_strut_root$",
-    "^lesser_demon_RWing_web_-?\\d+$",
     "^lesser_demon_body$",
-    "^lesser_demon_cleaver_blade$",
-    "^lesser_demon_cleaver_hilt$",
-    "^lesser_demon_cleaver_lava_edge$",
-    "^lesser_demon_eye_l$",
-    "^lesser_demon_eye_r$",
-    "^lesser_demon_teeth_lower$",
-    "^lesser_demon_teeth_upper$",
+    "^lesser_demon_embers$",
+    "^lesser_demon_horn$",
+    "^lesser_demon_membrane$",
     "^moss_guardian_LeftLegPivot_knee_stone$",
     "^moss_guardian_LeftLegPivot_root_claw_-?\\d+$",
     "^moss_guardian_LeftLegPivot_trunk$",
@@ -921,7 +821,8 @@
     "figures": {
       "Monster_goblin": "all",
       "Monster_elvarg_dragon": "all",
-      "Monster_ashmantle": "all"
+      "Monster_ashmantle": "all",
+      "Monster_lesser_demon": "all"
     }
   },
   "clips": {
@@ -1557,12 +1458,189 @@
           0,
           0.95
         ]
+      },
+      "lesser_demon_Root": {
+        "parent": "Monster_lesser_demon",
+        "translation": [
+          0,
+          0,
+          0
+        ]
+      },
+      "lesser_demon_Hips": {
+        "parent": "lesser_demon_Root",
+        "translation": [
+          0,
+          1.02,
+          0.06
+        ]
+      },
+      "lesser_demon_Torso": {
+        "parent": "lesser_demon_Hips",
+        "translation": [
+          0,
+          0.28,
+          -0.04
+        ]
+      },
+      "lesser_demon_HeadGroup": {
+        "parent": "lesser_demon_Torso",
+        "translation": [
+          0,
+          0.56,
+          -0.19
+        ]
+      },
+      "lesser_demon_Jaw": {
+        "parent": "lesser_demon_HeadGroup",
+        "translation": [
+          0,
+          0.04,
+          -0.16
+        ]
+      },
+      "lesser_demon_LeftArmPivot": {
+        "parent": "lesser_demon_Torso",
+        "translation": [
+          -0.44,
+          0.42,
+          -0.1
+        ]
+      },
+      "lesser_demon_LeftElbowPivot": {
+        "parent": "lesser_demon_LeftArmPivot",
+        "translation": [
+          -0.18,
+          -0.41,
+          -0.12
+        ]
+      },
+      "lesser_demon_LeftHand": {
+        "parent": "lesser_demon_LeftElbowPivot",
+        "translation": [
+          -0.18,
+          -0.38,
+          -0.1
+        ]
+      },
+      "lesser_demon_RightArmPivot": {
+        "parent": "lesser_demon_Torso",
+        "translation": [
+          0.44,
+          0.42,
+          -0.1
+        ]
+      },
+      "lesser_demon_RightElbowPivot": {
+        "parent": "lesser_demon_RightArmPivot",
+        "translation": [
+          0.18,
+          -0.41,
+          -0.12
+        ]
+      },
+      "lesser_demon_RightHand": {
+        "parent": "lesser_demon_RightElbowPivot",
+        "translation": [
+          0.18,
+          -0.38,
+          -0.1
+        ]
+      },
+      "lesser_demon_WeaponPivot": {
+        "parent": "lesser_demon_RightHand",
+        "translation": [
+          0,
+          0,
+          0
+        ]
+      },
+      "lesser_demon_LWing": {
+        "parent": "lesser_demon_Torso",
+        "translation": [
+          -0.16,
+          0.34,
+          0.18
+        ]
+      },
+      "lesser_demon_RWing": {
+        "parent": "lesser_demon_Torso",
+        "translation": [
+          0.16,
+          0.34,
+          0.18
+        ]
+      },
+      "lesser_demon_LeftLegPivot": {
+        "parent": "lesser_demon_Hips",
+        "translation": [
+          -0.19,
+          -0.04,
+          0
+        ]
+      },
+      "lesser_demon_LeftKneePivot": {
+        "parent": "lesser_demon_LeftLegPivot",
+        "translation": [
+          -0.1,
+          -0.44,
+          -0.14
+        ]
+      },
+      "lesser_demon_LeftFoot": {
+        "parent": "lesser_demon_LeftKneePivot",
+        "translation": [
+          0.01,
+          -0.43,
+          0.14
+        ]
+      },
+      "lesser_demon_RightLegPivot": {
+        "parent": "lesser_demon_Hips",
+        "translation": [
+          0.19,
+          -0.04,
+          0
+        ]
+      },
+      "lesser_demon_RightKneePivot": {
+        "parent": "lesser_demon_RightLegPivot",
+        "translation": [
+          0.1,
+          -0.44,
+          -0.14
+        ]
+      },
+      "lesser_demon_RightFoot": {
+        "parent": "lesser_demon_RightKneePivot",
+        "translation": [
+          -0.01,
+          -0.43,
+          0.14
+        ]
+      },
+      "lesser_demon_TailPivot": {
+        "parent": "lesser_demon_Hips",
+        "translation": [
+          0,
+          -0.04,
+          0.18
+        ]
+      },
+      "lesser_demon_TailPivot2": {
+        "parent": "lesser_demon_TailPivot",
+        "translation": [
+          0,
+          -0.18,
+          0.42
+        ]
       }
     },
     "skinnedRoots": [
       "Monster_goblin",
       "Monster_elvarg_dragon",
-      "Monster_ashmantle"
+      "Monster_ashmantle",
+      "Monster_lesser_demon"
     ],
     "limbs": [
       {
@@ -1915,6 +1993,114 @@
           -0.31,
           0.95
         ]
+      },
+      {
+        "bone": "lesser_demon_Root",
+        "child": "lesser_demon_Hips",
+        "direction": [
+          0,
+          1,
+          0
+        ]
+      },
+      {
+        "bone": "lesser_demon_Hips",
+        "child": "lesser_demon_Torso",
+        "direction": [
+          0,
+          1,
+          0
+        ]
+      },
+      {
+        "bone": "lesser_demon_Torso",
+        "child": "lesser_demon_HeadGroup",
+        "direction": [
+          0,
+          1,
+          0
+        ]
+      },
+      {
+        "bone": "lesser_demon_LeftArmPivot",
+        "child": "lesser_demon_LeftElbowPivot",
+        "direction": [
+          -0.468,
+          -0.884,
+          0
+        ]
+      },
+      {
+        "bone": "lesser_demon_LeftElbowPivot",
+        "child": "lesser_demon_LeftHand",
+        "direction": [
+          -0.528,
+          -0.849,
+          0
+        ]
+      },
+      {
+        "bone": "lesser_demon_LeftLegPivot",
+        "child": "lesser_demon_LeftKneePivot",
+        "direction": [
+          -0.183,
+          -0.983,
+          0
+        ]
+      },
+      {
+        "bone": "lesser_demon_LeftKneePivot",
+        "child": "lesser_demon_LeftFoot",
+        "direction": [
+          0,
+          -1,
+          0
+        ]
+      },
+      {
+        "bone": "lesser_demon_RightArmPivot",
+        "child": "lesser_demon_RightElbowPivot",
+        "direction": [
+          0.468,
+          -0.884,
+          0
+        ]
+      },
+      {
+        "bone": "lesser_demon_RightElbowPivot",
+        "child": "lesser_demon_RightHand",
+        "direction": [
+          0.528,
+          -0.849,
+          0
+        ]
+      },
+      {
+        "bone": "lesser_demon_RightLegPivot",
+        "child": "lesser_demon_RightKneePivot",
+        "direction": [
+          0.183,
+          -0.983,
+          0
+        ]
+      },
+      {
+        "bone": "lesser_demon_RightKneePivot",
+        "child": "lesser_demon_RightFoot",
+        "direction": [
+          0,
+          -1,
+          0
+        ]
+      },
+      {
+        "bone": "lesser_demon_TailPivot",
+        "child": "lesser_demon_TailPivot2",
+        "direction": [
+          0,
+          -0.371,
+          0.928
+        ]
       }
     ],
     "maxLimbDegrees": 20,
@@ -1926,7 +2112,7 @@
   "budget": {
     "triangles": 89894,
     "meshes": 187,
-    "materials": 43,
+    "materials": 44,
     "rawBytes": 5007888,
     "brotliBytes": 1286669
   },
@@ -1981,11 +2167,11 @@
       "brotliBytes": 78835
     },
     "Monster_lesser_demon": {
-      "triangles": 10218,
-      "meshes": 9,
-      "materials": 7,
-      "rawBytes": 501836,
-      "brotliBytes": 164537
+      "triangles": 7000,
+      "meshes": 4,
+      "materials": 5,
+      "rawBytes": 362655,
+      "brotliBytes": 158382
     },
     "Monster_moss_guardian": {
       "triangles": 6968,
