@@ -239,9 +239,7 @@ export function buildGoblinMesh(def: MonsterDef, role: string): MonsterRigLike {
     monsterPart(buckler, new THREE.SphereGeometry(0.06, 10, 8), bronze, 0, 0.05, 0);
   }
 
-  return finishMonster(group, monsterHitbox(0.85, 2.15, 1.05), {
-    headGroup, leftArmPivot, rightArmPivot, leftLegPivot, rightLegPivot
-  });
+  return finishMonster(group, monsterHitbox(0.85, 2.15, 1.05), { headGroup, leftArmPivot, rightArmPivot, leftLegPivot, rightLegPivot });
 }
 
 export function buildScorpionMesh(): MonsterRigLike {
@@ -306,9 +304,7 @@ export function buildScorpionMesh(): MonsterRigLike {
   const rightArmPivot = pincer(false);
   grp.add(leftArmPivot, rightArmPivot);
 
-  return finishMonster(grp, monsterHitbox(1.25, 2.2, 1.05), {
-    leftLegPivot, rightLegPivot, leftArmPivot, rightArmPivot
-  });
+  return finishMonster(grp, monsterHitbox(1.25, 2.2, 1.05), { leftLegPivot, rightLegPivot, leftArmPivot, rightArmPivot });
 }
 
 export function buildDarkWizard(def: MonsterDef): MonsterRigLike {
@@ -380,9 +376,7 @@ export function buildDarkWizard(def: MonsterDef): MonsterRigLike {
   monsterPart(staff, new THREE.TorusGeometry(0.18, 0.018, 6, 14), trim, 0.05, 1.55, -0.02);
   rightArmPivot.add(staff);
 
-  return finishMonster(group, monsterHitbox(0.9, 2.5, 1.25), {
-    headGroup, leftArmPivot, rightArmPivot, leftLegPivot, rightLegPivot
-  });
+  return finishMonster(group, monsterHitbox(0.9, 2.5, 1.25), { headGroup, leftArmPivot, rightArmPivot, leftLegPivot, rightLegPivot });
 }
 
 export function buildDarkRanger(def: MonsterDef): MonsterRigLike {
@@ -437,9 +431,7 @@ export function buildDarkRanger(def: MonsterDef): MonsterRigLike {
   const rightLegPivot = leg(false);
   group.add(leftLegPivot, rightLegPivot);
 
-  return finishMonster(group, monsterHitbox(0.88, 2.4, 1.2), {
-    headGroup, leftArmPivot, rightArmPivot, leftLegPivot, rightLegPivot
-  });
+  return finishMonster(group, monsterHitbox(0.88, 2.4, 1.2), { headGroup, leftArmPivot, rightArmPivot, leftLegPivot, rightLegPivot });
 }
 
 export function buildHillGiant(def: MonsterDef): MonsterRigLike {
@@ -513,9 +505,7 @@ export function buildHillGiant(def: MonsterDef): MonsterRigLike {
   const rightLegPivot = leg(false);
   group.add(leftLegPivot, rightLegPivot);
 
-  return finishMonster(group, monsterHitbox(0.95, 2.6, 1.3), {
-    headGroup, leftArmPivot, rightArmPivot, leftLegPivot, rightLegPivot
-  });
+  return finishMonster(group, monsterHitbox(0.95, 2.6, 1.3), { headGroup, leftArmPivot, rightArmPivot, leftLegPivot, rightLegPivot });
 }
 
 export function buildMossGuardian(def: MonsterDef): MonsterRigLike {
@@ -577,9 +567,7 @@ export function buildMossGuardian(def: MonsterDef): MonsterRigLike {
   const rightLegPivot = rootLeg(false);
   group.add(leftLegPivot, rightLegPivot);
 
-  return finishMonster(group, monsterHitbox(1.05, 2.5, 1.25), {
-    headGroup, leftArmPivot, rightArmPivot, leftLegPivot, rightLegPivot
-  });
+  return finishMonster(group, monsterHitbox(1.05, 2.5, 1.25), { headGroup, leftArmPivot, rightArmPivot, leftLegPivot, rightLegPivot });
 }
 
 export function buildLesserDemon(def: MonsterDef): MonsterRigLike {
@@ -681,9 +669,7 @@ export function buildLesserDemon(def: MonsterDef): MonsterRigLike {
   const rightLegPivot = hoofLeg(false);
   group.add(leftLegPivot, rightLegPivot);
 
-  return finishMonster(group, monsterHitbox(0.95, 2.55, 1.25), {
-    headGroup, leftArmPivot, rightArmPivot, leftLegPivot, rightLegPivot, lWing, rWing
-  });
+  return finishMonster(group, monsterHitbox(0.95, 2.55, 1.25), { headGroup, leftArmPivot, rightArmPivot, leftLegPivot, rightLegPivot, lWing, rWing });
 }
 
 export function buildElvargMesh(def: MonsterDef): MonsterRigLike {
@@ -772,9 +758,7 @@ export function buildElvargMesh(def: MonsterDef): MonsterRigLike {
   const rightLegPivot = dragonLeg(0.8, 0.9);
   grp.add(leftArmPivot, rightArmPivot, leftLegPivot, rightLegPivot);
 
-  return finishMonster(grp, monsterHitbox(2.9, 4.4, 2.2), {
-    leftArmPivot, rightArmPivot, leftLegPivot, rightLegPivot, lWing, rWing
-  });
+  return finishMonster(grp, monsterHitbox(2.9, 4.4, 2.2), { leftArmPivot, rightArmPivot, leftLegPivot, rightLegPivot, lWing, rWing });
 }
 
 export function createMonsterMesh(def: MonsterDef, typeKey: string): MonsterRigLike {
@@ -789,8 +773,7 @@ export function createMonsterMesh(def: MonsterDef, typeKey: string): MonsterRigL
     case 'moss_guardian': return buildMossGuardian(def);
     case 'lesser_demon': return buildLesserDemon(def);
     case 'elvarg_dragon': return buildElvargMesh(def);
-    default:
-      return buildGoblinMesh(def, 'raider');
+    default: return buildGoblinMesh(def, 'raider');
   }
 }
 
@@ -808,6 +791,8 @@ const clipAction = (animator: BlenderHeroAnimator, name: string): THREE.Animatio
 };
 // Walk time scale: the monster's measured speed over the hero's run speed (design 6.5); the leg ratio is in the animator.
 const lastPos = new WeakMap<object, { x: number; z: number }>();
+interface FlinchBase { head: THREE.Quaternion; right: THREE.Quaternion; left: THREE.Quaternion; applied: boolean }
+const flinchBases = new WeakMap<object, FlinchBase>();
 const _flinchAxis = new THREE.Vector3(1, 0, 0);
 const _flinchQ = new THREE.Quaternion();
 
@@ -893,6 +878,14 @@ export function poseMonsterLimbs(m: MonsterEntity, moving: boolean, now: number,
       m.attackAnim = Math.max(0, m.attackAnim - animDt * 3.2);
     }
 
+    const fb = flinchBases.get(m);
+    if (fb && fb.applied) {
+      rig.headGroup!.quaternion.copy(fb.head);
+      rig.rightArmPivot!.quaternion.copy(fb.right);
+      rig.leftArmPivot!.quaternion.copy(fb.left);
+      fb.applied = false;
+    }
+
     animator.update(animDt);
 
     if (m.flinch > 0) {
@@ -901,6 +894,12 @@ export function poseMonsterLimbs(m: MonsterEntity, moving: boolean, now: number,
       rig.group.position.y = groundY + curve * 0.16;
       rig.group.rotation.x = curve * 0.24;
       if (curve > 0) {
+        const b = fb || { head: new THREE.Quaternion(), right: new THREE.Quaternion(), left: new THREE.Quaternion(), applied: false };
+        if (!fb) flinchBases.set(m, b);
+        b.head.copy(rig.headGroup!.quaternion);
+        b.right.copy(rig.rightArmPivot!.quaternion);
+        b.left.copy(rig.leftArmPivot!.quaternion);
+        b.applied = true;
         rig.headGroup!.quaternion.multiply(_flinchQ.setFromAxisAngle(_flinchAxis, -curve * 0.36));
         rig.rightArmPivot!.quaternion.multiply(_flinchQ.setFromAxisAngle(_flinchAxis, curve * 0.45));
         rig.leftArmPivot!.quaternion.multiply(_flinchQ.setFromAxisAngle(_flinchAxis, curve * 0.35));

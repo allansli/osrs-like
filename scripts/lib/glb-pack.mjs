@@ -95,6 +95,10 @@ export function packGlb(buffer) {
             const w1 = vals[i * 4 + 1];
             const w2 = vals[i * 4 + 2];
             const w3 = vals[i * 4 + 3];
+            const sum = w0 + w1 + w2 + w3;
+            if (Math.abs(sum - 1) > 0.01) {
+              throw new Error(`glb-pack: accessor ${accIdx} vertex ${i} weights sum to ${sum}`);
+            }
             const q = [
               Math.round(w0 * 255),
               Math.round(w1 * 255),

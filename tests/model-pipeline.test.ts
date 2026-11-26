@@ -516,3 +516,15 @@ describe('models-promote', () => {
   });
 });
 
+describe('glb-pack: weight sums', () => {
+  it('a tiny GLB with a vertex weighted 0.6 + 0.2 makes packGlb throw', async () => {
+    const mod = (await import(/* @vite-ignore */ new URL('../scripts/lib/glb-pack.mjs', import.meta.url).href)) as {
+      packGlb: (b: Buffer) => Buffer;
+    };
+    const doc = buildTinySkin({ weights: [[0.6, 0.2, 0, 0], [0.5, 0.5, 0, 0], [0.25, 0.25, 0.25, 0.25]] });
+    const raw = packGlb(doc);
+    expect(() => mod.packGlb(raw)).toThrow(/glb-pack: accessor \d+ vertex 0 weights sum to 0\.8/);
+  });
+});
+
+

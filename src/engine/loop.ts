@@ -688,6 +688,7 @@ export function updateMonsters(f: FrameState): void {
         player.sinceCombat = 0;
         const attack = ATTACKS[ev.attackId];
         const cue = cueFor(attack, m.def.style);
+        m.attackAnim = 1;
         const damage = ev.hit ? performMonsterHeavy(m, ev.attackId) : 0;
         SFX.play([...resolvePlan(cue), ...heavyImpactPlan(ev.hit, damage)], true);
       } else if (ev.kind === 'died') {

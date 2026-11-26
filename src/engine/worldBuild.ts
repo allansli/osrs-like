@@ -16,7 +16,7 @@ import { buildHumanoidRig, LEAN_RIG } from './humanoid';
 import { loadBlenderHeroTemplate, upgradeHumanoidRigWithGltf } from './blenderHero';
 import { loadBlenderGearTemplate } from './blenderGear';
 import { buildCapeVisual, buildWeaponVisual } from './playerGear';
-import { mountLoadout, type MountedRig } from './playerMesh';
+import { mountLoadout, moveToTodayPivot, type MountedRig } from './playerMesh';
 import { EMITTERS } from '../data/look';
 import { registerEmitter } from './lighting';
 
@@ -470,9 +470,11 @@ export function createSlayerMaster(x: number, z: number): void {
     if (rig.rightElbowPivot) {
       wepVis.group.position.set(0.19, -0.32, 0.08);
       wepVis.group.rotation.set(-0.2, 0.0, 0.1);
+      moveToTodayPivot(rig.rightElbowPivot, wepVis.group, rig.group);
       rig.rightElbowPivot.add(wepVis.group);
     } else {
       wepVis.group.position.set(0, LEAN_RIG.handY, -0.08);
+      moveToTodayPivot(rig.rightArmPivot, wepVis.group, rig.group);
       rig.rightArmPivot.add(wepVis.group);
     }
     vannakaWep = wepVis.group;
@@ -484,6 +486,7 @@ export function createSlayerMaster(x: number, z: number): void {
     } else {
       capeVis.position.set(0, 0.285, 0.175);
     }
+    moveToTodayPivot(rig.torso, capeVis, rig.group);
     rig.torso.add(capeVis);
     vannakaCape = capeVis;
     addCartoonOutline(vannakaCape, 0.02);

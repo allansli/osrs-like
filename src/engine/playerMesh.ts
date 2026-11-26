@@ -139,7 +139,7 @@ function getBoneRestPosition(bone: THREE.Object3D, root: THREE.Object3D): THREE.
 }
 
 // The one place the joint-move arithmetic lives: shift a node mounted on a skinned pivot so it sits where it did on today's rig.
-function moveToTodayPivot(parent: THREE.Object3D, node: THREE.Object3D, root: THREE.Object3D): void {
+export function moveToTodayPivot(parent: THREE.Object3D, node: THREE.Object3D, root: THREE.Object3D): void {
   if (!(parent.name in TODAY_PIVOT_REST) || !(parent as THREE.Bone).isBone) return;
   const today = TODAY_PIVOT_REST[parent.name];
   const bone = getBoneRestPosition(parent, root);
