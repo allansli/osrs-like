@@ -1,0 +1,571 @@
+{
+  "nodes": {
+    "HeroRoot": {
+      "parent": null,
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    }
+  },
+  "materials": [
+    "Mat_Belt",
+    "Mat_Boots",
+    "Mat_Bracers",
+    "Mat_Eyes",
+    "Mat_Hair",
+    "Mat_Hands",
+    "Mat_Head",
+    "Mat_InnerCollar",
+    "Mat_Legs",
+    "Mat_Sleeves",
+    "Mat_TorsoCoat"
+  ],
+  "toggled": [
+    "Hair",
+    "InnerCollar",
+    "TorsoCoat"
+  ],
+  "meshClasses": [
+    "^Belt$",
+    "^Boots$",
+    "^Bracers$",
+    "^Eyes$",
+    "^Hair$",
+    "^Hands$",
+    "^Head$",
+    "^InnerCollar$",
+    "^Legs$",
+    "^Sleeves$",
+    "^TorsoCoat$"
+  ],
+  "extras": {
+    "Belt": [
+      "part"
+    ],
+    "Boots": [
+      "part"
+    ],
+    "Bracers": [
+      "noOutline",
+      "part"
+    ],
+    "Eyes": [
+      "noOutline",
+      "part"
+    ],
+    "Hair": [
+      "noOutline",
+      "part"
+    ],
+    "Hands": [
+      "noOutline",
+      "part"
+    ],
+    "Head": [
+      "noOutline",
+      "part"
+    ],
+    "InnerCollar": [
+      "part"
+    ],
+    "Legs": [
+      "part"
+    ],
+    "Sleeves": [
+      "part"
+    ],
+    "TorsoCoat": [
+      "part"
+    ]
+  },
+  "centres": {
+    "Boots": [
+      -0.013463,
+      0.224782,
+      -0.045488
+    ],
+    "Hands": [
+      -0.002408,
+      0.924753,
+      0.083645
+    ],
+    "Head": [
+      -0.009584,
+      1.679226,
+      -0.045434
+    ]
+  },
+  "vertexColor": "all",
+  "clips": {
+    "Cast": {
+      "moves": [
+        "HeadGroup",
+        "Hips",
+        "LeftArmPivot",
+        "LeftElbowPivot",
+        "LeftFoot",
+        "LeftKneePivot",
+        "LeftLegPivot",
+        "RightArmPivot",
+        "RightElbowPivot",
+        "RightFoot",
+        "RightKneePivot",
+        "RightLegPivot",
+        "Torso"
+      ]
+    },
+    "Chop": {
+      "moves": [
+        "HeadGroup",
+        "Hips",
+        "LeftArmPivot",
+        "LeftElbowPivot",
+        "LeftFoot",
+        "LeftKneePivot",
+        "LeftLegPivot",
+        "RightArmPivot",
+        "RightElbowPivot",
+        "RightFoot",
+        "RightKneePivot",
+        "RightLegPivot",
+        "Torso"
+      ]
+    },
+    "Death": {
+      "moves": [
+        "HeadGroup",
+        "Hips",
+        "LeftArmPivot",
+        "LeftElbowPivot",
+        "LeftFoot",
+        "LeftKneePivot",
+        "LeftLegPivot",
+        "RightArmPivot",
+        "RightElbowPivot",
+        "RightFoot",
+        "RightKneePivot",
+        "RightLegPivot",
+        "Torso"
+      ]
+    },
+    "Fish": {
+      "moves": [
+        "HeadGroup",
+        "Hips",
+        "LeftArmPivot",
+        "LeftElbowPivot",
+        "LeftFoot",
+        "LeftKneePivot",
+        "LeftLegPivot",
+        "RightArmPivot",
+        "RightElbowPivot",
+        "RightFoot",
+        "RightKneePivot",
+        "RightLegPivot",
+        "Torso"
+      ]
+    },
+    "Idle": {
+      "moves": [
+        "HeadGroup",
+        "Hips",
+        "LeftArmPivot",
+        "LeftElbowPivot",
+        "LeftFoot",
+        "LeftKneePivot",
+        "LeftLegPivot",
+        "RightArmPivot",
+        "RightElbowPivot",
+        "RightFoot",
+        "RightKneePivot",
+        "RightLegPivot",
+        "Torso"
+      ]
+    },
+    "Lunge": {
+      "moves": [
+        "HeadGroup",
+        "Hips",
+        "LeftArmPivot",
+        "LeftElbowPivot",
+        "LeftFoot",
+        "LeftKneePivot",
+        "LeftLegPivot",
+        "RightArmPivot",
+        "RightElbowPivot",
+        "RightFoot",
+        "RightKneePivot",
+        "RightLegPivot",
+        "Torso"
+      ]
+    },
+    "Mine": {
+      "moves": [
+        "HeadGroup",
+        "Hips",
+        "LeftArmPivot",
+        "LeftElbowPivot",
+        "LeftFoot",
+        "LeftKneePivot",
+        "LeftLegPivot",
+        "RightArmPivot",
+        "RightElbowPivot",
+        "RightFoot",
+        "RightKneePivot",
+        "RightLegPivot",
+        "Torso"
+      ]
+    },
+    "Ranged": {
+      "moves": [
+        "HeadGroup",
+        "Hips",
+        "LeftArmPivot",
+        "LeftElbowPivot",
+        "LeftFoot",
+        "LeftKneePivot",
+        "LeftLegPivot",
+        "RightArmPivot",
+        "RightElbowPivot",
+        "RightFoot",
+        "RightKneePivot",
+        "RightLegPivot",
+        "Torso"
+      ]
+    },
+    "Slash": {
+      "moves": [
+        "HeadGroup",
+        "Hips",
+        "LeftArmPivot",
+        "LeftElbowPivot",
+        "LeftFoot",
+        "LeftKneePivot",
+        "LeftLegPivot",
+        "RightArmPivot",
+        "RightElbowPivot",
+        "RightFoot",
+        "RightKneePivot",
+        "RightLegPivot",
+        "Torso"
+      ]
+    },
+    "SpinSlash": {
+      "moves": [
+        "HeadGroup",
+        "Hips",
+        "LeftArmPivot",
+        "LeftElbowPivot",
+        "LeftFoot",
+        "LeftKneePivot",
+        "LeftLegPivot",
+        "RightArmPivot",
+        "RightElbowPivot",
+        "RightFoot",
+        "RightKneePivot",
+        "RightLegPivot",
+        "Torso"
+      ]
+    },
+    "Walk": {
+      "moves": [
+        "HeadGroup",
+        "Hips",
+        "LeftArmPivot",
+        "LeftElbowPivot",
+        "LeftFoot",
+        "LeftKneePivot",
+        "LeftLegPivot",
+        "RightArmPivot",
+        "RightElbowPivot",
+        "RightFoot",
+        "RightKneePivot",
+        "RightLegPivot",
+        "Torso"
+      ]
+    }
+  },
+  "skin": {
+    "skeleton": "biped",
+    "bones": {
+      "Root": {
+        "parent": null,
+        "translation": [
+          0,
+          0,
+          0
+        ]
+      },
+      "Hips": {
+        "parent": "Root",
+        "translation": [
+          -0.011352,
+          0.963163,
+          -0.013803
+        ]
+      },
+      "Torso": {
+        "parent": "Hips",
+        "translation": [
+          0,
+          0.182618,
+          -0.032072
+        ]
+      },
+      "HeadGroup": {
+        "parent": "Torso",
+        "translation": [
+          0.006078,
+          0.358594,
+          0.025375
+        ]
+      },
+      "LeftArmPivot": {
+        "parent": "Torso",
+        "translation": [
+          -0.177717,
+          0.332338,
+          0.025375
+        ]
+      },
+      "LeftElbowPivot": {
+        "parent": "LeftArmPivot",
+        "translation": [
+          -0.13347,
+          -0.249436,
+          0.101501
+        ]
+      },
+      "LeftHand": {
+        "parent": "LeftElbowPivot",
+        "translation": [
+          -0.131282,
+          -0.207863,
+          0.010573
+        ]
+      },
+      "RightArmPivot": {
+        "parent": "Torso",
+        "translation": [
+          0.177717,
+          0.332338,
+          0.025375
+        ]
+      },
+      "RightElbowPivot": {
+        "parent": "RightArmPivot",
+        "translation": [
+          0.13347,
+          -0.249436,
+          0.101501
+        ]
+      },
+      "RightHand": {
+        "parent": "RightElbowPivot",
+        "translation": [
+          0.131282,
+          -0.207863,
+          0.010573
+        ]
+      },
+      "LeftLegPivot": {
+        "parent": "Hips",
+        "translation": [
+          -0.110277,
+          0.043985,
+          -0.032072
+        ]
+      },
+      "LeftKneePivot": {
+        "parent": "LeftLegPivot",
+        "translation": [
+          -0.075618,
+          -0.403298,
+          0.029605
+        ]
+      },
+      "LeftFoot": {
+        "parent": "LeftKneePivot",
+        "translation": [
+          -0.050412,
+          -0.437957,
+          0.031719
+        ]
+      },
+      "RightLegPivot": {
+        "parent": "Hips",
+        "translation": [
+          0.110277,
+          0.043985,
+          -0.032072
+        ]
+      },
+      "RightKneePivot": {
+        "parent": "RightLegPivot",
+        "translation": [
+          0.075618,
+          -0.403298,
+          0.029605
+        ]
+      },
+      "RightFoot": {
+        "parent": "RightKneePivot",
+        "translation": [
+          0.050412,
+          -0.437957,
+          0.031719
+        ]
+      }
+    },
+    "skinnedRoots": [
+      "HeroRoot"
+    ],
+    "sharedClips": [
+      "Cast",
+      "Chop",
+      "Death",
+      "Fish",
+      "Idle",
+      "Lunge",
+      "Mine",
+      "Ranged",
+      "Slash",
+      "SpinSlash",
+      "Walk"
+    ],
+    "limbs": [
+      {
+        "bone": "Root",
+        "child": "Hips",
+        "direction": [
+          0,
+          1,
+          0
+        ]
+      },
+      {
+        "bone": "Hips",
+        "child": "Torso",
+        "direction": [
+          0,
+          1,
+          0
+        ]
+      },
+      {
+        "bone": "Torso",
+        "child": "HeadGroup",
+        "direction": [
+          0,
+          1,
+          0
+        ]
+      },
+      {
+        "bone": "LeftArmPivot",
+        "child": "LeftElbowPivot",
+        "direction": [
+          -0.468,
+          -0.884,
+          0
+        ]
+      },
+      {
+        "bone": "LeftElbowPivot",
+        "child": "LeftHand",
+        "direction": [
+          -0.528,
+          -0.849,
+          0
+        ]
+      },
+      {
+        "bone": "LeftLegPivot",
+        "child": "LeftKneePivot",
+        "direction": [
+          -0.183,
+          -0.983,
+          0
+        ]
+      },
+      {
+        "bone": "LeftKneePivot",
+        "child": "LeftFoot",
+        "direction": [
+          0,
+          -1,
+          0
+        ]
+      },
+      {
+        "bone": "RightArmPivot",
+        "child": "RightElbowPivot",
+        "direction": [
+          0.468,
+          -0.884,
+          0
+        ]
+      },
+      {
+        "bone": "RightElbowPivot",
+        "child": "RightHand",
+        "direction": [
+          0.528,
+          -0.849,
+          0
+        ]
+      },
+      {
+        "bone": "RightLegPivot",
+        "child": "RightKneePivot",
+        "direction": [
+          0.183,
+          -0.983,
+          0
+        ]
+      },
+      {
+        "bone": "RightKneePivot",
+        "child": "RightFoot",
+        "direction": [
+          0,
+          -1,
+          0
+        ]
+      }
+    ],
+    "maxLimbDegrees": 20,
+    "attackClips": {
+      "Cast": 0.25,
+      "Chop": 0.5,
+      "Lunge": 0.333333,
+      "Mine": 0.416667,
+      "Ranged": 0.583333,
+      "Slash": 0.25,
+      "SpinSlash": 0.166667
+    }
+  },
+  "budget": {
+    "triangles": 6000,
+    "meshes": 11,
+    "materials": 11,
+    "rawBytes": 334973,
+    "brotliBytes": 166544
+  },
+  "figures": {
+    "HeroRoot": {
+      "triangles": 6000,
+      "meshes": 11,
+      "materials": 11,
+      "rawBytes": 223578,
+      "brotliBytes": 130677
+    }
+  }
+}

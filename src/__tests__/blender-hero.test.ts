@@ -37,9 +37,13 @@ describe('Blender 5.2 Complete Asset & Composition Pipeline (hero.glb, gear.glb,
   it('hero.glb exports a clean base human (no baked armor/weapons) with all 10 NLA clips and exact LEAN_RIG pivots', async () => {
     const gltf = await parseGlb('../../public/models/hero.glb');
     const clipNames = gltf.animations.map((a) => a.name).sort();
-    expect(clipNames).toEqual(
-      ['Cast', 'Chop', 'Fish', 'Idle', 'Lunge', 'Mine', 'Ranged', 'Slash', 'SpinSlash', 'Walk'].sort()
+    const manifest = JSON.parse(
+      fs.readFileSync(path.resolve(__dirname, '../../tests/fixtures/model-contract/hero.json'), 'utf8')
     );
+    expect(clipNames).toEqual(
+      expect.arrayContaining(['Cast', 'Chop', 'Fish', 'Idle', 'Lunge', 'Mine', 'Ranged', 'Slash', 'SpinSlash', 'Walk'])
+    );
+    expect(clipNames).toEqual(Object.keys(manifest.clips).sort());
 
     // Ensure no baked-in gear meshes exist in hero.glb
     const meshNames: string[] = [];
@@ -53,10 +57,23 @@ describe('Blender 5.2 Complete Asset & Composition Pipeline (hero.glb, gear.glb,
     expect(animator).not.toBeNull();
     expect(rig.group.userData.isBlenderHero).toBe(true);
 
-    expect(rig.torso.position.y).toBeCloseTo(LEAN_RIG.torsoY, 2);
-    expect(rig.headGroup.position.y).toBeCloseTo(LEAN_RIG.headY, 2);
-    expect(rig.leftArmPivot.position.x).toBeCloseTo(-LEAN_RIG.shoulderX, 2);
-    expect(rig.rightArmPivot.position.x).toBeCloseTo(LEAN_RIG.shoulderX, 2);
+    const joints: Record<string, { parent?: string; translation: number[] }> = {
+      ...manifest.nodes,
+      ...(manifest.skin?.bones ?? {})
+    };
+    const manifestAt = (name: string): THREE.Vector3 => {
+      const at = new THREE.Vector3();
+      for (let j = joints[name]; j; j = joints[j.parent ?? '']) at.add(new THREE.Vector3(...j.translation));
+      return at;
+    };
+    const inRigSpace = (o: THREE.Object3D): THREE.Vector3 => {
+      rig.group.updateMatrixWorld(true);
+      return rig.group.worldToLocal(o.getWorldPosition(new THREE.Vector3()));
+    };
+    expect(inRigSpace(rig.torso).y).toBeCloseTo(manifestAt('Torso').y, 2);
+    expect(inRigSpace(rig.headGroup).y).toBeCloseTo(manifestAt('HeadGroup').y, 2);
+    expect(inRigSpace(rig.leftArmPivot).x).toBeCloseTo(manifestAt('LeftArmPivot').x, 2);
+    expect(inRigSpace(rig.rightArmPivot).x).toBeCloseTo(manifestAt('RightArmPivot').x, 2);
     expect(rig.leftLegPivot.position.x).toBeCloseTo(-LEAN_RIG.hipX, 2);
     expect(rig.rightLegPivot.position.x).toBeCloseTo(LEAN_RIG.hipX, 2);
 
