@@ -532,3 +532,175 @@ flock /tmp/claude-blender.lock timeout 600 /usr/bin/blender --background --facto
 - From the side, the banner shows its face and coin, and the pole runs down the back into the socket at the belt.
 - From the back, the pole lies on the back under the fur strap, and the banner hangs to the left of the head.
 - No visible intersection in the rest views.
+
+# MB1: Matron Saltfang's body on the crawler skeleton
+
+Built from `9e91183` plus this task's builder (commit `feat(models-s6c): MB1`), with `BLEND(monsters)` on Blender 5.0.1:
+
+```
+flock /tmp/claude-blender.lock timeout 600 env BLENDER_PATH=/usr/bin/blender node scripts/run-blender.mjs monsters --out scratch/models-build/mb1
+```
+
+The build exits 0 and prints `[Blender] saltfang: 7842 triangles in 3 meshes; width 2.818, height 2.029, length 3.226; lowest -0.0091`. It is packed as `scratch/models-build/mb1-packed`. Every number, sheet and check below comes from that build.
+
+Nothing is promoted: `git status --short public/models blender` prints nothing. MP6 promotes the file. Z4 gives the row `body: 'saltfang'` and its tint.
+
+## Open for the main session
+
+1. **The row's tint.** The content file gives `tintNote: 'salt-white shell, violet sting'` and no hex value. The engine multiplies the tint into every material but the glow, so a dark or warm tint greys the salt carapace and the eggs together. The sheets are untinted. A light tint, or none, keeps the salt white.
+2. **She floats a little in the middle of `Death`.** She plays the scorpion's library, and its `Hips` track is locked to the scorpion's lowest point frame by frame. Measured on the built file through the real loader (13 samples a clip, lowest skinned vertex):
+
+   | Clip | Saltfang's lowest point | The scorpion's | Largest gap in one frame |
+   |---|---|---|---|
+   | `Idle` | −0.004 to −0.002 | −0.000 to 0.000 | 0.004 |
+   | `Walk` | −0.010 to 0.005 | −0.004 to 0.007 | 0.006 |
+   | `Strike` | −0.007 to −0.002 | −0.000 to 0.000 | 0.007 |
+   | `Death` | −0.002 to 0.058 | −0.000 to 0.009 | 0.058 |
+
+   - In `Death`, the gap is in the falling frames (about 0.45 to 0.65 of the clip). Her longer legs lift higher than the scorpion's, so her lowest point is a front tarsus 0.058 above the ground. At modelScale 2.2 that is about 0.13 for a few frames of the fall. The final pose rests on the ground (0.002).
+   - The first build sank 0.043 at the end of `Death`: the sagging left claw's outer pincer went through the ground. The pincers were shortened to the scorpion's reach from the elbow, and the forearm end, chela, claw crystals and pincers were raised by 0.025. The figures above are from the build after that fix.
+   - If the owner sees the float in the game, there are two exits: shorter legs (a narrower stance), or a `Death` of her own (clips of her own, which the plan does not list).
+3. **Brood mechanic.** Design 7.7 and CALL-6.22 leave a brood (eggs or hatchlings to deal with) for the models pass. The egg sacs are only a look: two piles of ten eggs on her back, with no node of their own. If a brood is added later, the eggs could become their own mesh or node.
+4. **`scripts/blender/review_scales.json` has no `saltfang` entry.** `review_render.py` refuses a figure without one. The sheets here use a scratch copy of the renderer with `saltfang: 2.2` added. That file is not in MB1's list. MP6, or the task that renders the roster next, should add the entry.
+5. **`tests/fixtures/monster-families.json`** has no `saltfang` entry, and `tests/monster-merge.test.ts` reads the shipped file. Her family triangle counts for the promote step: `skin` (`saltfang_body`), `plain` (`saltfang_shell`) and `glow` (`saltfang_sting`), 7,842 triangles in all. Read the per-family split off the built file at MP6.
+6. **Emissive.** Only the sting and eyes are emissive, on the file's `mat_glow_purple`, so design 5.4's "at most one" holds.
+7. **Not seen in the engine.** MB1's accept has no capture. MP6's capture should look at three things:
+   - the sting's violet against the cave's light;
+   - the egg piles at the game's camera angle;
+   - the `Death` fall (item 2).
+
+## What was built
+
+`build_saltfang` is called in `main()` after `build_saltback_stalker_kit`.
+- **Rig.** `figkit.make_rig("Monster_saltfang", rigs.CRAWLER_TABLE, scorpion_joints(), prefix="saltfang")`: the scorpion's 20 bones at the scorpion's joints, named `saltfang_<Bone>`. It has no clips. The engine strips the prefix (`stripBonePrefix`) and plays the `scorpion_` library on the model key `scorpion`, as it plays the dragon's on Ashmantle.
+- **Weights.** Every part is hard on one bone, as on the scorpion. The builder stops if any of the 19 bones in `SCORPION_BONES` holds no part, and none does.
+- **No other figure changed.** The primitive hashes of all 16 earlier roots match MK3's build (`scratch/models-build/mk3`).
+
+| Part | Bone | What it is |
+|---|---|---|
+| Prosoma | `HeadGroup` | a faceted salt-white lathe, 0.96 across at its back (the scorpion's is 0.80), with three salt crystals over the brow, six violet eyes, and two bone mandibles |
+| Brood body | `Hips` | six faceted salt plates from z −0.40 to 0.91, at half-widths 0.48, 0.54, 0.58, 0.60, 0.54 and 0.40 (the scorpion's widest is 0.45), widest behind the legs and floored at y 0.31, the scorpion's. Each plate's rim has two crystals a side, leaning out |
+| Egg sacs | `Hips` | two piles of ten eggs (radii 0.075 to 0.115), at x ±0.18 to ±0.42, set on the plates' top by rays. They are clear of the midline the tail passes over in `Strike`. The larger eggs are pale violet grey, and the smaller ones darker |
+| Tail | `TailPivot`, `TailPivot2`, `TailPivot3` | the scorpion's path, its radii times 1.25, in faceted salt segments with chitin rings |
+| Sting | `TailPivot3` | a swollen chitin telson, and two violet prongs (base 0.095, length 0.50) splayed from its sides: the fork |
+| Legs | `LeftLegPivot`, `RightLegPivot` (coxae); `LegL1` to `LegR4` | the scorpion's joints and fans, but longer. The knee is 0.30 out and 0.26 up, and the tip is 0.78 out on the ground (the scorpion's is 0.58), so the stance is 0.4 wider. The legs are thicker, with a ring at each joint and the tarsi in bone |
+| Claws | `LeftArmPivot`, `RightArmPivot`; `LeftElbowPivot`, `RightElbowPivot` | a thicker pedipalp and forearm. The chela is faceted (0.19 × 0.15 × 0.27, against the scorpion's 0.15 × 0.12 × 0.21), with three salt crystals on top. The two bone pincers are no longer from the elbow than the scorpion's (item 2) |
+
+- **Meshes.** There are three skinned meshes, `saltfang_body` (skin, `mat_skin_saltfang_paint`), `saltfang_shell` (plain, `mat_bone_saltfang_paint`) and `saltfang_sting` (glow, `mat_glow_purple`). The file has two new materials, 36 in all. No mesh name holds `eye`.
+- **Paint.** The paint is a corner colour on white materials (pattern step 6), with plane tones on the faceted parts, and `bake_paint` occlusion at 0.5.
+  - The chitin is painted as its colour over the scorpion-chitin tile's mean, linear 0.9033 0.6858 0.3765. The engine draws `skin` with that tile because the row's model key is `scorpion`.
+  - Salt-white cannot be painted over that ochre tile, since the paint would exceed 1. So the salt, the bone and the eggs are on the plain material and painted as they are.
+  - As with the goblin, the renderer has no tile, so the chitin shows grey-blue in the sheets.
+- **Budget.** The builder's own budget is 9,000 triangles, and the manifest's is 14,000.
+
+## Values
+
+Rec. 601 luma and HSV value.
+
+| Colour | Luma | HSV value |
+|---|---|---|
+| Salt `0xB9B1A2` (plates, prosoma, tail segments) | 70% | 73% |
+| Crystal `0xBFBBB1` | 73% | 75% |
+| Bone `0xAEA287` (pincers, mandibles, tarsi) | 64% | 68% |
+| Egg `0x9D8FA6` | 59% | 65% |
+| Egg, dark `0x83758D` | 49% | 55% |
+| Chitin `0x6A5741` (femurs, claws, pedipalps) | 35% | 42% |
+| Chitin, dark `0x4E4030` (tibiae, forearms, telson) | 26% | 31% |
+| Ring `0x3F3326` (joint rings, coxae) | 21% | 25% |
+
+| Rule | Result |
+|---|---|
+| 5.4 range 25% to 75% (HSV value) | met: 25% to 75% |
+| 5.4 floor 18% | met: the darkest paint is the rings at 21% luma |
+| 5.4 at most five materials, one emissive | three materials; one emissive (the sting and eyes) |
+| 5.6 a different black cut-out at 85 px (as for Ashmantle) | met (`mb1-saltfang-silhouette.jpg`). From the front she is a low wide dome with two humps on the back and splayed legs, against the scorpion's narrow body. From the side her egg piles break the back line, and her heavy fork is visible. The stalker's crystal ridge runs along the midline instead |
+| 5.6.2 value 15 points from the base | met. Her main area is the salt at 73%, against the scorpion's ochre shell at 52% (`0x84582A`) |
+| 5.6.3 size | the content file's `modelScale` 2.2 |
+
+## Measured
+
+`node scratch/mb1/stats.mjs` (MK3's). "Packed" is `packGlb` (`node scratch/mb1/pack.mjs`).
+
+| | As exported | Packed |
+|---|---|---|
+| Saltfang triangles / meshes / materials / vertices | 7,842 / 3 / 3 / 8,871 | same |
+| Saltfang raw bytes | 509,624 | 296,720 |
+| **Saltfang Brotli bytes** | 138,400 | **97,479** |
+| Width, height, length | 2.818, 2.029, 3.226 (scorpion 2.423, 1.987, 3.191) | |
+| File raw / Brotli | 4,414,652 / 1,701,909 | 2,692,188 / 1,058,485 |
+| File meshes / materials | 61 / 36 | same |
+
+The packed figure is 97.5 kB against the boss class's 220 kB. The height is 2.1% over the scorpion's, under the builder's 5% check. File Brotli rose from 968,131 to 1,058,485 packed, under the ceiling of 1,270,000.
+
+## Pending manifest and COMPARE
+
+`python3 scratch/mb1/make_pending.py` loads the pending manifest MK3 wrote and adds the following, with nothing else changed:
+- `nodes`: `Monster_saltfang` at the origin;
+- `skin.bones`: the scorpion's 20 bones renamed `saltfang_`, each checked against the built file's node (parent and translation);
+- `skin.skinnedRoots`: `Monster_saltfang`;
+- `skin.limbs`: the scorpion's 8 limbs, renamed;
+- `materials`: `mat_bone_saltfang_paint` and `mat_skin_saltfang_paint`;
+- `meshClasses`: `^saltfang_body$`, `^saltfang_shell$` and `^saltfang_sting$`;
+- `vertexColor.figures.Monster_saltfang`: `all`;
+- `figures.Monster_saltfang`: 14,000 triangles, 4 meshes, 5 materials, raw 296,720 (packed), Brotli 220,000;
+- file `budget`: only the ceilings the packed build exceeds rise. Triangles go from 62,194 to 70,036, meshes from 58 to 61, materials from 34 to 36, and raw bytes from 2,414,397 to 2,719,110. Brotli stays 1,270,000.
+
+`clips` is unchanged: the generated clip list equals MK3's.
+
+| COMPARE | Exit | Result |
+|---|---|---|
+| This build, packed (`node scripts/models-compare.mjs scratch/models-build/mb1-packed/monsters.glb public/models/monsters.glb`), against the pending manifest | **0** | "All contract checks passed", "All budget checks passed". Drift lists the earlier kits' nodes and Saltfang's 21 nodes and 3 meshes |
+| This build, as exported | 2 | Budget only, on the packed ceilings, as for MK1 to MK3. Contract passes |
+
+## Checks
+
+**On the branch at the feat commit:**
+
+| Check | Command | Result |
+|---|---|---|
+| `SUITE` | `flock /tmp/claude-capped.lock scripts/capped.sh npx vitest run` | exit 0: 130 files passed; 1,428 passed, 3 skipped |
+| `TYPES` | `flock /tmp/claude-capped.lock scripts/capped.sh npx tsc --noEmit` | exit 0, no output |
+| `BUILD` | `flock /tmp/claude-capped.lock scripts/capped.sh npm run build` | exit 0. JS chunk 1,097.21 kB (gzip 311.09 kB), CSS 37.73 kB, reported and not a ceiling |
+| `UNTOUCHED` | `git status --short public/models blender` | prints nothing |
+
+**Built-file check (`monster-motion`).** Three scratch tests read `scratch/models-build/mb1-packed/monsters.glb` with the shipped `hero.glb`. They were placed under `tests/` for the run and deleted afterwards; copies are in `scratch/mb1/`.
+- `mb1-motion-built`: `tests/monster-motion.test.ts`, with only its `monsters` load pointed at the built file.
+- `mb1-libraries-built`: `tests/monster-libraries.test.ts`, the same way.
+- `mb1-saltfang-engine`: Ashmantle's motion case, made for Saltfang. It loads through `upgradeMonsterRigWithGltf` on the `scorpion` row with `body: 'saltfang'`, and checks:
+  - `saltfang_body`, `_shell` and `_sting` are present, and `scorpion_body` is absent;
+  - each of the 19 bones in `MONSTER_MOTION.scorpion.bones` carries weight on her skin;
+  - the animator has `Idle`, `Walk`, `Strike` and `Death`;
+  - `Walk` plays and turns `LegL1`;
+  - a plain attack plays `Strike` and turns `TailPivot3`;
+  - it prints the lowest-point table above.
+
+The command:
+
+```
+flock /tmp/claude-capped.lock scripts/capped.sh npx vitest run tests/mb1-saltfang-engine.test.ts tests/mb1-motion-built.test.ts tests/mb1-libraries-built.test.ts tests/monster-kits.test.ts
+```
+
+The result: exit 0, 4 files, 46 passed, 3 skipped.
+- `mb1-libraries-built`: 2 passed.
+- `mb1-motion-built`: 38 passed, 3 skipped.
+- `mb1-saltfang-engine`: 3 passed.
+- `monster-kits`: 6 passed.
+
+## Sheets
+
+`scratch/mb1/render/mb1_render.py` is a scratch script and is not committed. It runs on a scratch copy of `review_render.py` with `saltfang: 2.2` in its scales (item 4). It mounts `Kit_saltback_stalker` on the scorpion's bones at their rest joints for the stalker. The run exits 0:
+
+```
+flock /tmp/claude-blender.lock timeout 600 /usr/bin/blender --background --factory-startup --disable-autoexec --python-exit-code 1 --python scratch/mb1/render/mb1_render.py -- scratch/models-build/mb1/monsters.glb scratch/mb1/sheets
+```
+
+| Sheet | What it shows |
+|---|---|
+| `mb1-saltfang-turnaround.jpg` | Saltfang in `review_render`'s turnaround: front three-quarter, side and back three-quarter, 512 px, 401 px tall |
+| `mb1-saltfang-worst-pose.jpg` | the renderer's worst pose. Every part is rigid on one bone, so nothing tears. The parts follow their bones |
+| `mb1-saltfang-silhouette.jpg` | **the 85 px silhouette sheet**: black cut-outs at distance 26 in a 1080 frame, in triples of scorpion, Saltback Stalker and Saltfang, at scales 1.05, 1.47 and 2.31 (scorpion `scale` 1.05 times each `modelScale`; Saltfang's `scale` assumed 1.05, as a scorpion kind). Each triple is shown from the front, three-quarter, side and back. Heights in px: front 98, 137 and 218; three-quarter 106, 149 and 244; side 108, 152 and 253; back 102, 145 and 236. Widths in px: front 112, 156 and 278 |
+| `mb1-saltfang-against.jpg` | lit and untinted, at one size: the scorpion, the stalker and Saltfang at three-quarter, side and back three-quarter |
+
+**Reading the cut-outs.** Against the other two, she is about 1.8 times as wide as she is tall from the front (the scorpion is 1.1 times). She has two humps either side of the tail's root, a domed body and long splayed legs. From the side, the egg piles make a lumpy back line, and the forked sting shows two points. The stalker's outline is a narrow body with a jagged crystal ridge on the midline.
+
+**Reading the lit sheets.** She reads as salt-white over dark chitin legs and claws, where the scorpion and the stalker are brown. The violet fork and the eyes are the only saturated colour. The egg piles show as two violet-grey clusters on the back. The rim crystals break the carapace's edge.
