@@ -78,77 +78,12 @@
         1
       ]
     },
-    "hill_giant_HeadGroup": {
-      "parent": "Monster_hill_giant",
-      "translation": [
-        0,
-        2.02,
-        0
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ]
-    },
-    "hill_giant_LeftArmPivot": {
-      "parent": "Monster_hill_giant",
-      "translation": [
-        -0.58,
-        1.58,
-        0
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ]
-    },
-    "hill_giant_LeftLegPivot": {
-      "parent": "Monster_hill_giant",
-      "translation": [
-        -0.22,
-        0.78,
-        0
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ]
-    },
-    "hill_giant_RightArmPivot": {
-      "parent": "Monster_hill_giant",
-      "translation": [
-        0.58,
-        1.58,
-        0
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ]
-    },
-    "hill_giant_RightLegPivot": {
-      "parent": "Monster_hill_giant",
-      "translation": [
-        0.22,
-        0.78,
-        0
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ]
-    },
     "Monster_hill_giant": {
       "parent": null,
       "translation": [
-        -3.4,
         0,
-        2.2
+        0,
+        0
       ],
       "scale": [
         1,
@@ -169,77 +104,12 @@
         1
       ]
     },
-    "moss_guardian_HeadGroup": {
-      "parent": "Monster_moss_guardian",
-      "translation": [
-        0.02,
-        1.62,
-        -0.18
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ]
-    },
-    "moss_guardian_LeftArmPivot": {
-      "parent": "Monster_moss_guardian",
-      "translation": [
-        -0.62,
-        1.4,
-        0
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ]
-    },
-    "moss_guardian_LeftLegPivot": {
-      "parent": "Monster_moss_guardian",
-      "translation": [
-        -0.24,
-        0.78,
-        0
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ]
-    },
-    "moss_guardian_RightArmPivot": {
-      "parent": "Monster_moss_guardian",
-      "translation": [
-        0.58,
-        1.38,
-        0
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ]
-    },
-    "moss_guardian_RightLegPivot": {
-      "parent": "Monster_moss_guardian",
-      "translation": [
-        0.26,
-        0.78,
-        0
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ]
-    },
     "Monster_moss_guardian": {
       "parent": null,
       "translation": [
-        -0.6,
         0,
-        2.2
+        0,
+        0
       ],
       "scale": [
         1,
@@ -392,44 +262,40 @@
     }
   },
   "materials": [
-    "mat_bark",
-    "mat_bone",
+    "mat_bark_guardian_paint",
+    "mat_bone_hill_giant_paint",
     "mat_bone_scorpion_paint",
     "mat_bronze_goblin_paint",
     "mat_cloth_chicken_paint",
     "mat_cloth_dark_ranger_paint",
-    "mat_fur",
+    "mat_fur_hill_giant_paint",
     "mat_glow_crimson",
     "mat_glow_emerald",
     "mat_glow_orange",
     "mat_glow_purple",
     "mat_gold_chicken_paint",
-    "mat_horn",
     "mat_horn_ashmantle_paint",
     "mat_horn_elvarg_dragon_paint",
     "mat_horn_lesser_demon_paint",
-    "mat_iron",
-    "mat_iron_obsidian",
-    "mat_leather",
     "mat_leather_dark_ranger_paint",
-    "mat_moss",
+    "mat_moss_guardian_paint",
     "mat_robe_dark_wizard_paint",
     "mat_skin_ashmantle_paint",
     "mat_skin_chicken_paint",
     "mat_skin_dark_wizard_paint",
     "mat_skin_elvarg_dragon_paint",
     "mat_skin_goblin_paint",
-    "mat_skin_hill_giant",
+    "mat_skin_hill_giant_paint",
     "mat_skin_lesser_demon_paint",
     "mat_skin_scorpion_paint",
-    "mat_stone",
+    "mat_stone_guardian_paint",
     "mat_wing_ashmantle_paint",
     "mat_wing_elvarg_dragon_paint",
     "mat_wing_lesser_demon_paint",
-    "mat_wood",
     "mat_wood_dark_ranger_paint",
     "mat_wood_dark_wizard_paint",
-    "mat_wood_goblin_paint"
+    "mat_wood_goblin_paint",
+    "mat_wood_hill_giant_paint"
   ],
   "toggled": [],
   "meshClasses": [
@@ -457,74 +323,18 @@
     "^goblin_body$",
     "^goblin_metal$",
     "^goblin_wood$",
-    "^hill_giant_LeftLegPivot_bare_foot$",
-    "^hill_giant_LeftLegPivot_shin_wrap$",
-    "^hill_giant_LeftLegPivot_thigh$",
-    "^hill_giant_RightLegPivot_bare_foot$",
-    "^hill_giant_RightLegPivot_shin_wrap$",
-    "^hill_giant_RightLegPivot_thigh$",
-    "^hill_giant_armband_L$",
-    "^hill_giant_armband_R$",
-    "^hill_giant_beard_bead_-?\\d+$",
-    "^hill_giant_beard_braid_-?\\d+$",
-    "^hill_giant_beard_main$",
-    "^hill_giant_brow$",
-    "^hill_giant_buckle_horn_L$",
-    "^hill_giant_buckle_horn_R$",
-    "^hill_giant_buckle_socket_L$",
-    "^hill_giant_buckle_socket_R$",
-    "^hill_giant_club_spike_-?\\d+$",
-    "^hill_giant_club_strap_-?\\d+$",
-    "^hill_giant_club_wood$",
-    "^hill_giant_eye_L$",
-    "^hill_giant_eye_R$",
-    "^hill_giant_farm_L$",
-    "^hill_giant_farm_R$",
-    "^hill_giant_fist_L$",
-    "^hill_giant_fist_R$",
-    "^hill_giant_fur_strap$",
-    "^hill_giant_head$",
-    "^hill_giant_nose$",
-    "^hill_giant_pelt_skirt$",
-    "^hill_giant_skull_buckle$",
-    "^hill_giant_torso$",
-    "^hill_giant_uarm_L$",
-    "^hill_giant_uarm_R$",
+    "^hill_giant_body$",
+    "^hill_giant_bone$",
+    "^hill_giant_club$",
+    "^hill_giant_fur$",
     "^lesser_demon_body$",
     "^lesser_demon_embers$",
     "^lesser_demon_horn$",
     "^lesser_demon_membrane$",
-    "^moss_guardian_LeftLegPivot_knee_stone$",
-    "^moss_guardian_LeftLegPivot_root_claw_-?\\d+$",
-    "^moss_guardian_LeftLegPivot_trunk$",
-    "^moss_guardian_RightLegPivot_knee_stone$",
-    "^moss_guardian_RightLegPivot_root_claw_-?\\d+$",
-    "^moss_guardian_RightLegPivot_trunk$",
-    "^moss_guardian_antler_L$",
-    "^moss_guardian_antler_R$",
-    "^moss_guardian_antler_tine_L$",
-    "^moss_guardian_antler_tine_R$",
-    "^moss_guardian_bark_mask$",
-    "^moss_guardian_bark_torso$",
-    "^moss_guardian_boulder_gauntlet$",
-    "^moss_guardian_claw_L_-?\\d+$",
-    "^moss_guardian_crown_moss$",
-    "^moss_guardian_eye_L$",
-    "^moss_guardian_eye_R$",
-    "^moss_guardian_farm_L$",
-    "^moss_guardian_gauntlet_moss$",
-    "^moss_guardian_heart_core$",
-    "^moss_guardian_leaf_cluster_L$",
-    "^moss_guardian_leaf_cluster_R$",
-    "^moss_guardian_pauldron_moss_L$",
-    "^moss_guardian_pauldron_moss_R$",
-    "^moss_guardian_pauldron_stone_L$",
-    "^moss_guardian_pauldron_stone_R$",
-    "^moss_guardian_shroom_cap_-?\\d+$",
-    "^moss_guardian_shroom_stem_-?\\d+$",
-    "^moss_guardian_stone_slab_-?\\d+$",
-    "^moss_guardian_uarm_L$",
-    "^moss_guardian_uarm_R$",
+    "^moss_guardian_bark$",
+    "^moss_guardian_core$",
+    "^moss_guardian_moss$",
+    "^moss_guardian_stone$",
     "^saltback_stalker_(Hips|TailPivot3|LeftElbowPivot|RightElbowPivot)$",
     "^scorpion_body$",
     "^scorpion_bone$",
@@ -544,7 +354,9 @@
       "Monster_dark_wizard": "all",
       "Monster_dark_ranger": "all",
       "Kit_saltback_stalker": "all",
-      "Kit_thornwatch_marksman": "all"
+      "Kit_thornwatch_marksman": "all",
+      "Monster_hill_giant": "all",
+      "Monster_moss_guardian": "all"
     }
   },
   "clips": {
@@ -2176,6 +1988,270 @@
           0,
           0
         ]
+      },
+      "hill_giant_HeadGroup": {
+        "parent": "hill_giant_Torso",
+        "translation": [
+          0,
+          0.88,
+          -0.05
+        ]
+      },
+      "hill_giant_LeftHand": {
+        "parent": "hill_giant_LeftElbowPivot",
+        "translation": [
+          -0.15,
+          -0.413,
+          -0.08
+        ]
+      },
+      "hill_giant_LeftElbowPivot": {
+        "parent": "hill_giant_LeftArmPivot",
+        "translation": [
+          -0.265,
+          -0.424,
+          -0.06
+        ]
+      },
+      "hill_giant_LeftArmPivot": {
+        "parent": "hill_giant_Torso",
+        "translation": [
+          -0.58,
+          0.44,
+          -0.02
+        ]
+      },
+      "hill_giant_WeaponPivot": {
+        "parent": "hill_giant_RightHand",
+        "translation": [
+          0,
+          0,
+          0
+        ]
+      },
+      "hill_giant_RightHand": {
+        "parent": "hill_giant_RightElbowPivot",
+        "translation": [
+          0.15,
+          -0.413,
+          -0.08
+        ]
+      },
+      "hill_giant_RightElbowPivot": {
+        "parent": "hill_giant_RightArmPivot",
+        "translation": [
+          0.265,
+          -0.424,
+          -0.06
+        ]
+      },
+      "hill_giant_RightArmPivot": {
+        "parent": "hill_giant_Torso",
+        "translation": [
+          0.58,
+          0.44,
+          -0.02
+        ]
+      },
+      "hill_giant_Torso": {
+        "parent": "hill_giant_Hips",
+        "translation": [
+          0,
+          0.28,
+          -0.02
+        ]
+      },
+      "hill_giant_LeftFoot": {
+        "parent": "hill_giant_LeftKneePivot",
+        "translation": [
+          -0.01,
+          -0.32,
+          0.06
+        ]
+      },
+      "hill_giant_LeftKneePivot": {
+        "parent": "hill_giant_LeftLegPivot",
+        "translation": [
+          -0.05,
+          -0.36,
+          -0.06
+        ]
+      },
+      "hill_giant_LeftLegPivot": {
+        "parent": "hill_giant_Hips",
+        "translation": [
+          -0.22,
+          -0.08,
+          0
+        ]
+      },
+      "hill_giant_RightFoot": {
+        "parent": "hill_giant_RightKneePivot",
+        "translation": [
+          0.01,
+          -0.32,
+          0.06
+        ]
+      },
+      "hill_giant_RightKneePivot": {
+        "parent": "hill_giant_RightLegPivot",
+        "translation": [
+          0.05,
+          -0.36,
+          -0.06
+        ]
+      },
+      "hill_giant_RightLegPivot": {
+        "parent": "hill_giant_Hips",
+        "translation": [
+          0.22,
+          -0.08,
+          0
+        ]
+      },
+      "hill_giant_Hips": {
+        "parent": "hill_giant_Root",
+        "translation": [
+          0,
+          0.86,
+          0.02
+        ]
+      },
+      "hill_giant_Root": {
+        "parent": null,
+        "translation": [
+          0,
+          0,
+          0
+        ]
+      },
+      "moss_guardian_HeadGroup": {
+        "parent": "moss_guardian_Torso",
+        "translation": [
+          0,
+          0.56,
+          -0.18
+        ]
+      },
+      "moss_guardian_LeftHand": {
+        "parent": "moss_guardian_LeftElbowPivot",
+        "translation": [
+          -0.15,
+          -0.371,
+          -0.09
+        ]
+      },
+      "moss_guardian_LeftElbowPivot": {
+        "parent": "moss_guardian_LeftArmPivot",
+        "translation": [
+          -0.163,
+          -0.365,
+          -0.05
+        ]
+      },
+      "moss_guardian_LeftArmPivot": {
+        "parent": "moss_guardian_Torso",
+        "translation": [
+          -0.6,
+          0.33,
+          0
+        ]
+      },
+      "moss_guardian_RightHand": {
+        "parent": "moss_guardian_RightElbowPivot",
+        "translation": [
+          0.15,
+          -0.371,
+          -0.09
+        ]
+      },
+      "moss_guardian_RightElbowPivot": {
+        "parent": "moss_guardian_RightArmPivot",
+        "translation": [
+          0.163,
+          -0.365,
+          -0.05
+        ]
+      },
+      "moss_guardian_RightArmPivot": {
+        "parent": "moss_guardian_Torso",
+        "translation": [
+          0.6,
+          0.33,
+          0
+        ]
+      },
+      "moss_guardian_Torso": {
+        "parent": "moss_guardian_Hips",
+        "translation": [
+          0,
+          0.22,
+          -0.02
+        ]
+      },
+      "moss_guardian_LeftFoot": {
+        "parent": "moss_guardian_LeftKneePivot",
+        "translation": [
+          0,
+          -0.33,
+          0.05
+        ]
+      },
+      "moss_guardian_LeftKneePivot": {
+        "parent": "moss_guardian_LeftLegPivot",
+        "translation": [
+          -0.05,
+          -0.36,
+          -0.03
+        ]
+      },
+      "moss_guardian_LeftLegPivot": {
+        "parent": "moss_guardian_Hips",
+        "translation": [
+          -0.25,
+          -0.06,
+          -0.02
+        ]
+      },
+      "moss_guardian_RightFoot": {
+        "parent": "moss_guardian_RightKneePivot",
+        "translation": [
+          0,
+          -0.33,
+          0.05
+        ]
+      },
+      "moss_guardian_RightKneePivot": {
+        "parent": "moss_guardian_RightLegPivot",
+        "translation": [
+          0.05,
+          -0.36,
+          -0.03
+        ]
+      },
+      "moss_guardian_RightLegPivot": {
+        "parent": "moss_guardian_Hips",
+        "translation": [
+          0.25,
+          -0.06,
+          -0.02
+        ]
+      },
+      "moss_guardian_Hips": {
+        "parent": "moss_guardian_Root",
+        "translation": [
+          0,
+          0.84,
+          0.02
+        ]
+      },
+      "moss_guardian_Root": {
+        "parent": null,
+        "translation": [
+          0,
+          0,
+          0
+        ]
       }
     },
     "skinnedRoots": [
@@ -2187,7 +2263,9 @@
       "Monster_goblin_archer",
       "Monster_scorpion",
       "Monster_dark_wizard",
-      "Monster_dark_ranger"
+      "Monster_dark_ranger",
+      "Monster_hill_giant",
+      "Monster_moss_guardian"
     ],
     "limbs": [
       {
@@ -3017,6 +3095,204 @@
           -1,
           0
         ]
+      },
+      {
+        "bone": "hill_giant_Root",
+        "child": "hill_giant_Hips",
+        "direction": [
+          0,
+          1,
+          0
+        ]
+      },
+      {
+        "bone": "hill_giant_Hips",
+        "child": "hill_giant_Torso",
+        "direction": [
+          0,
+          1,
+          0
+        ]
+      },
+      {
+        "bone": "hill_giant_Torso",
+        "child": "hill_giant_HeadGroup",
+        "direction": [
+          0,
+          1,
+          0
+        ]
+      },
+      {
+        "bone": "hill_giant_LeftArmPivot",
+        "child": "hill_giant_LeftElbowPivot",
+        "direction": [
+          -0.468,
+          -0.884,
+          0
+        ]
+      },
+      {
+        "bone": "hill_giant_LeftElbowPivot",
+        "child": "hill_giant_LeftHand",
+        "direction": [
+          -0.528,
+          -0.849,
+          0
+        ]
+      },
+      {
+        "bone": "hill_giant_LeftLegPivot",
+        "child": "hill_giant_LeftKneePivot",
+        "direction": [
+          -0.183,
+          -0.983,
+          0
+        ]
+      },
+      {
+        "bone": "hill_giant_LeftKneePivot",
+        "child": "hill_giant_LeftFoot",
+        "direction": [
+          0,
+          -1,
+          0
+        ]
+      },
+      {
+        "bone": "hill_giant_RightArmPivot",
+        "child": "hill_giant_RightElbowPivot",
+        "direction": [
+          0.468,
+          -0.884,
+          0
+        ]
+      },
+      {
+        "bone": "hill_giant_RightElbowPivot",
+        "child": "hill_giant_RightHand",
+        "direction": [
+          0.528,
+          -0.849,
+          0
+        ]
+      },
+      {
+        "bone": "hill_giant_RightLegPivot",
+        "child": "hill_giant_RightKneePivot",
+        "direction": [
+          0.183,
+          -0.983,
+          0
+        ]
+      },
+      {
+        "bone": "hill_giant_RightKneePivot",
+        "child": "hill_giant_RightFoot",
+        "direction": [
+          0,
+          -1,
+          0
+        ]
+      },
+      {
+        "bone": "moss_guardian_Root",
+        "child": "moss_guardian_Hips",
+        "direction": [
+          0,
+          1,
+          0
+        ]
+      },
+      {
+        "bone": "moss_guardian_Hips",
+        "child": "moss_guardian_Torso",
+        "direction": [
+          0,
+          1,
+          0
+        ]
+      },
+      {
+        "bone": "moss_guardian_Torso",
+        "child": "moss_guardian_HeadGroup",
+        "direction": [
+          0,
+          1,
+          0
+        ]
+      },
+      {
+        "bone": "moss_guardian_LeftArmPivot",
+        "child": "moss_guardian_LeftElbowPivot",
+        "direction": [
+          -0.468,
+          -0.884,
+          0
+        ]
+      },
+      {
+        "bone": "moss_guardian_LeftElbowPivot",
+        "child": "moss_guardian_LeftHand",
+        "direction": [
+          -0.528,
+          -0.849,
+          0
+        ]
+      },
+      {
+        "bone": "moss_guardian_LeftLegPivot",
+        "child": "moss_guardian_LeftKneePivot",
+        "direction": [
+          -0.183,
+          -0.983,
+          0
+        ]
+      },
+      {
+        "bone": "moss_guardian_LeftKneePivot",
+        "child": "moss_guardian_LeftFoot",
+        "direction": [
+          0,
+          -1,
+          0
+        ]
+      },
+      {
+        "bone": "moss_guardian_RightArmPivot",
+        "child": "moss_guardian_RightElbowPivot",
+        "direction": [
+          0.468,
+          -0.884,
+          0
+        ]
+      },
+      {
+        "bone": "moss_guardian_RightElbowPivot",
+        "child": "moss_guardian_RightHand",
+        "direction": [
+          0.528,
+          -0.849,
+          0
+        ]
+      },
+      {
+        "bone": "moss_guardian_RightLegPivot",
+        "child": "moss_guardian_RightKneePivot",
+        "direction": [
+          0.183,
+          -0.983,
+          0
+        ]
+      },
+      {
+        "bone": "moss_guardian_RightKneePivot",
+        "child": "moss_guardian_RightFoot",
+        "direction": [
+          0,
+          -1,
+          0
+        ]
       }
     ],
     "maxLimbDegrees": 20,
@@ -3027,11 +3303,11 @@
     }
   },
   "budget": {
-    "triangles": 65678,
-    "meshes": 78,
-    "materials": 38,
-    "rawBytes": 2635191,
-    "brotliBytes": 922802
+    "triangles": 59274,
+    "meshes": 46,
+    "materials": 34,
+    "rawBytes": 2271135,
+    "brotliBytes": 930086
   },
   "figures": {
     "Monster_chicken": {
@@ -3077,18 +3353,18 @@
       "brotliBytes": 72608
     },
     "Monster_hill_giant": {
-      "triangles": 7288,
-      "meshes": 20,
-      "materials": 9,
-      "rawBytes": 356808,
-      "brotliBytes": 65062
+      "triangles": 7000,
+      "meshes": 4,
+      "materials": 5,
+      "rawBytes": 199580,
+      "brotliBytes": 94744
     },
     "Monster_moss_guardian": {
-      "triangles": 6968,
-      "meshes": 20,
-      "materials": 6,
-      "rawBytes": 333552,
-      "brotliBytes": 60698
+      "triangles": 7000,
+      "meshes": 4,
+      "materials": 5,
+      "rawBytes": 141740,
+      "brotliBytes": 35634
     },
     "Monster_lesser_demon": {
       "triangles": 5460,

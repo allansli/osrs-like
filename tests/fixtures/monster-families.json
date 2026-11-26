@@ -100,50 +100,22 @@
   "floor": 2
  },
  "hill_giant": {
-  "meshes": 45,
+  "meshes": 4,
   "triangles": {
-   "skin": 2620,
-   "plain": 1368,
-   "leather": 1284,
-   "wood": 192,
-   "iron": 688,
-   "stone": 576,
-   "eyes": 560
+   "leather": 356,
+   "wood": 96,
+   "plain": 1032,
+   "skin": 4074
   },
   "pivots": {
    "Monster_hill_giant": [
-    "iron",
     "leather",
-    "plain",
-    "skin"
-   ],
-   "hill_giant_RightLegPivot": [
-    "leather",
-    "skin"
-   ],
-   "hill_giant_RightArmPivot": [
-    "iron",
     "plain",
     "skin",
-    "stone",
     "wood"
-   ],
-   "hill_giant_LeftLegPivot": [
-    "leather",
-    "skin"
-   ],
-   "hill_giant_LeftArmPivot": [
-    "leather",
-    "skin"
-   ],
-   "hill_giant_HeadGroup": [
-    "eyes",
-    "leather",
-    "plain",
-    "skin"
    ]
   },
-  "floor": 20
+  "floor": 4
  },
  "lesser_demon": {
   "meshes": 4,
@@ -164,51 +136,22 @@
   "floor": 4
  },
  "moss_guardian": {
-  "meshes": 43,
+  "meshes": 4,
   "triangles": {
-   "stone": 1424,
-   "plain": 192,
-   "glow": 840,
-   "bark": 1200,
-   "wood": 1072,
-   "grass": 1680,
-   "eyes": 560
+   "stone": 560,
+   "grass": 416,
+   "glow": 96,
+   "bark": 1222
   },
   "pivots": {
    "Monster_moss_guardian": [
     "bark",
     "glow",
     "grass",
-    "plain",
     "stone"
-   ],
-   "moss_guardian_RightLegPivot": [
-    "bark",
-    "stone",
-    "wood"
-   ],
-   "moss_guardian_RightArmPivot": [
-    "bark",
-    "grass",
-    "stone"
-   ],
-   "moss_guardian_LeftLegPivot": [
-    "bark",
-    "stone",
-    "wood"
-   ],
-   "moss_guardian_LeftArmPivot": [
-    "bark",
-    "wood"
-   ],
-   "moss_guardian_HeadGroup": [
-    "bark",
-    "eyes",
-    "grass",
-    "wood"
    ]
   },
-  "floor": 20
+  "floor": 4
  },
  "scorpion": {
   "meshes": 3,
