@@ -117,7 +117,7 @@ describe('a hostile progress block', () => {
   });
 
   it('drops a dungeon whose clears is a string', () => {
-    const q = load({ dungeons: { no_such_dungeon: { clears: 'many', best: 1 } } });
+    const q = load({ dungeons: { saltfang_warren: { clears: 'many', best: 1 } } });
     expect(q?.dungeons ?? {}).toEqual({});
   });
 
