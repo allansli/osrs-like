@@ -24,5 +24,14 @@
   "Monster_elvarg_dragon": 1.0,
   "elvarg_dragon": 1.0,
   "Monster_ashmantle": 1.2,
-  "ashmantle": 1.2
+  "ashmantle": 1.2,
+  "Monster_saltfang": 2.31,
+  "saltfang": 2.31,
+  "Monster_kiln_warden": 2.58,
+  "kiln_warden": 2.58,
+  "Kit_cinder_adept": 1.1016,
+  "Kit_slag_brute": 1.736,
+  "Kit_marrowjaw": 2.015,
+  "Kit_saltback_stalker": 1.47,
+  "Kit_thornwatch_marksman": 1.155
 }

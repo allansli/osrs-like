@@ -101,7 +101,7 @@ describe('a def with no kit', () => {
     const gltf = gltfOf(skinnedFigure('scorp'), kitNode('spiked', ['spiked_Arm', 'spiked_Stray']));
     const e = entity('scorp');
     expect(upgradeMonsterRigWithGltf(e, gltf)).toBe(true);
-    expect(e.rig.group.getObjectByName('Stray')).toBeUndefined();
+    expect(e.rig.group.getObjectByName('spiked_Stray')).toBeUndefined();
     const arm = e.rig.group.getObjectByName('Arm')!;
     expect(arm.children).toHaveLength(0);
     expect(e.rig.group.getObjectByName('Hips')).toBeDefined();
