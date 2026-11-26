@@ -3440,7 +3440,7 @@
     "triangles": 61044,
     "meshes": 54,
     "materials": 34,
-    "rawBytes": 2357591,
+    "rawBytes": 2357611,
     "brotliBytes": 1270000
   },
   "figures": {
@@ -3546,7 +3546,7 @@
       "triangles": 1200,
       "meshes": 4,
       "materials": 3,
-      "rawBytes": 40564,
+      "rawBytes": 40584,
       "brotliBytes": 20000
     }
   }

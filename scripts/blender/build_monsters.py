@@ -2951,14 +2951,15 @@ def build_slag_brute_kit():
             add(lame, bone, "basalt", lambda c, n, o=joint: n.dot((c - o).normalized()) < 0.5)
 
     # The hunch: four rows of shingled slabs over the upper back, each slab's face turned to the back's
-    # slope (phi from straight up toward the back) and standing off it, the top row behind the neck at
+    # slope (phi from straight up toward the back) and lying on it (the back's skin is at three z 0.22 to 0.27
+    # between y 1.4 and 1.7), the top row behind the neck at
     # y 1.88, clear of the head's back (three z 0.14); wide and low, nothing above the skull. Ember on the
     # undersides and their chamfers, which show between a slab and the one below
     rows = (  # (x, y, z, phi, yaw, width, thickness, length)
         (0.0, 1.88, 0.30, 0.60, 0.0, 0.66, 0.14, 0.34),
-        (-0.21, 1.68, 0.40, 1.10, 0.25, 0.40, 0.15, 0.30), (0.21, 1.68, 0.40, 1.10, -0.25, 0.40, 0.15, 0.30),
-        (-0.19, 1.46, 0.42, 1.45, 0.30, 0.38, 0.14, 0.28), (0.19, 1.46, 0.42, 1.45, -0.30, 0.38, 0.14, 0.28),
-        (0.0, 1.26, 0.38, 1.75, 0.0, 0.48, 0.12, 0.22),
+        (-0.21, 1.68, 0.33, 1.10, 0.25, 0.40, 0.15, 0.30), (0.21, 1.68, 0.33, 1.10, -0.25, 0.40, 0.15, 0.30),
+        (-0.19, 1.46, 0.35, 1.45, 0.30, 0.38, 0.14, 0.28), (0.19, 1.46, 0.35, 1.45, -0.30, 0.38, 0.14, 0.28),
+        (0.0, 1.26, 0.33, 1.75, 0.0, 0.48, 0.12, 0.22),
     )
     for k, (x, y, z, phi, yaw, w, t, length) in enumerate(rows):
         normal = Vector((math.sin(yaw) * math.sin(phi), math.cos(phi), math.cos(yaw) * math.sin(phi)))
@@ -2966,23 +2967,24 @@ def build_slag_brute_kit():
         along = normal.cross(across).normalized()
         add(_slag_chunk(f"sbr_slab_{k}", plain, (w, t, length), (x, y, z), (across, normal, along), rng), "Torso", "basalt",
             lambda c, n: n.y < -0.3)
-    for k, (x, y, z, lean) in enumerate(((0.0, 1.96, 0.36, 0.0), (-0.24, 1.80, 0.48, 0.35), (0.24, 1.80, 0.48, -0.35))):
+    for k, (x, y, z, lean) in enumerate(((0.0, 1.96, 0.36, 0.0), (-0.24, 1.80, 0.41, 0.35), (0.24, 1.80, 0.41, -0.35))):
         add(add_lathe(f"sbr_knob_{k}", None, plain, [(0.0, 0.07, 0.07), (0.08, 0.055, 0.05), (0.14, 0.012, 0.012)], segs=5,
                       tx=x, ty=y, tz=z, rx=0.75, rz=lean, smooth=False), "Torso", "crust")
 
     # The maul head: three slabs stacked along the club's axis (as _giant_kit carries it, hanging at the
-    # right side), across it 0.52 to 0.60 and fore and aft 0.64 to 0.76 (the lowest the shortest, so its corners
-    # stay off the ground), each turned a little about the axis so their edges stagger; the club's head, straps and spikes (out to
-    # 0.28 from the axis between 0.45 and 0.60 of it) inside them. Ember on the seams between the slabs; the
-    # top slab's upper face, where the handle goes in, stays crust
+    # right side), across it 0.52 to 0.64 (the lowest the widest, over the spikes' tips at 0.28 from the axis at
+    # 0.60 of it) and fore and aft 0.64 to 0.76 (the lowest the shortest, so its corners stay off the ground),
+    # each turned a little about the axis so their edges stagger; the club's head, straps and spikes inside them.
+    # Ember only on the seams between the slabs: the top slab's upper face, where the handle goes in, and the
+    # lowest slab's end face, which faces the camera in the Overhead Slam, stay crust
     hand = Vector(j["RightHand"])
     d = Vector((0.10, -1.0, -0.14)).normalized()
     side = d.cross(Vector((0.0, 0.0, 1.0))).normalized()
     fwd = side.cross(d).normalized()
-    for k, (t, w, h, length, turn) in enumerate(((0.33, 0.52, 0.13, 0.68, 0.10), (0.46, 0.60, 0.13, 0.76, -0.07), (0.595, 0.54, 0.15, 0.64, 0.12))):
+    for k, (t, w, h, length, turn) in enumerate(((0.33, 0.52, 0.13, 0.68, 0.10), (0.46, 0.60, 0.13, 0.76, -0.07), (0.595, 0.64, 0.15, 0.64, 0.12))):
         a = side * math.cos(turn) + fwd * math.sin(turn)
         b = fwd * math.cos(turn) - side * math.sin(turn)
-        hot = (lambda c, n: n.dot(d) > 0.3) if k == 0 else (lambda c, n: abs(n.dot(d)) > 0.3)
+        hot = {0: lambda c, n: n.dot(d) > 0.3, 1: lambda c, n: abs(n.dot(d)) > 0.3, 2: lambda c, n: n.dot(d) < -0.3}[k]
         add(_slag_chunk(f"sbr_maul_{k}", plain, (w, h, length), hand + d * t, (a, d, b), rng, jitter=0.03), "WeaponPivot", "crust", hot)
     return _kit_root("slag_brute", parts, j, SLAG_KIT_TRIANGLES)
 
