@@ -153,3 +153,20 @@ The six-frame front strips (`h4-hero-<clip>-strip.jpg`, SHEETS `--only hero --en
 3. **`manifest.clips` lists each clip's moving nodes as built**, now with `Hips`, `LeftFoot` and `RightFoot` in every clip and `Death` added. `skin.sharedClips` includes `Death`.
 4. **The torso sign change** (above) is a judgement on the kept attack clips. Reverting it is one sign per clip in `build_all_animations`.
 5. `s2/` holds 2.6 MB of sheets after H4. H7's "sheets at most 2 MB" will need a cut.
+
+## H7: the hero promoted (2026-11-26)
+
+`hero.glb` and `blender/hero.blend` are the H3c build with H4's clips, packed by the promote step (Q1, 8-bit normals, weights and colour). Promote key `?v=c56c4135` (SHA-256 `c56c41358592f25e029679181fb0b475fe24667a525c3b11223a4d40e8503588`).
+
+| | Shipped before | Promoted |
+|---|---|---|
+| `hero.glb` raw bytes | 216,844 | 246,604 |
+| `hero.glb` Brotli bytes (the wire size; ceiling 200,000, 150,000 with N-3) | 137,913 | 120,678 |
+| Triangles | 5,304 | 5,216 |
+| Meshes, materials | 18, 18 | 11, 11 |
+| Figure `HeroRoot` Brotli / raw bytes | | 81,167 / 132,252 |
+| Clips | 10 | 11 (`Death`) |
+
+Ceilings of the live manifest are the packed values plus 2%: file raw 251,537 and Brotli 123,092, triangles 5,321; `HeroRoot` raw 134,898, Brotli 82,791, triangles 5,321. `totals.json` is the five shipped files plus 1% (raw 11,735,057, Brotli 3,892,947), as at the monsters promotion. `tests/model-contract.test.ts`'s hero case now reads the pivots from `skin.bones`, the centres `Boots`, `Hands`, `Head` and eleven clips; `tests/model-vertex-colour.test.ts`'s first case expects the painted hero's materials to have `vertexColors` true; `tests/model-cache-key.test.ts` drops the hero from `LEGACY`.
+
+Sheets (SHEETS `--only hero --engine-palette --against` the old file): `h7-hero-against.jpg` (left old, right new), turnaround, silhouette, play distance, worst pose. In-engine captures on the GPU (`h7-capture.json`: NVIDIA RTX 4070, 17 skinned meshes, 16 bones, no page error): `h7-game-idle-close`, `idle-play`, `walk`, `slash-bare` (0.33 s into `Slash`), `plate-idle` and `plate-slash` (rune plate set, helm, shield, bronze scimitar, 109 meshes), `death-900ms` and `death-1700ms` (lying on the last pose), `merchant` (Shopkeeper Bob beside the hero). The game camera is behind the hero in the walk, strike and plate frames, so the face is read in the sheets, not in these.

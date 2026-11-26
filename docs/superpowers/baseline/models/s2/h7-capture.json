@@ -1,0 +1,35 @@
+{
+ "errs": [],
+ "renderer": "ANGLE (Microsoft Corporation, D3D12 (NVIDIA GeForce RTX 4070 Laptop GPU), OpenGL 4.6)",
+ "base": {
+  "skinned": 17,
+  "meshes": 20,
+  "bones": 16,
+  "anim": true
+ },
+ "gear": {
+  "head": "rune_helm",
+  "cape": null,
+  "neck": null,
+  "weapon": "bronze_scimitar",
+  "body": "rune_plate",
+  "shield": "rune_shield",
+  "legs": "rune_legs",
+  "hands": null,
+  "feet": null,
+  "ring": null,
+  "boots": "rune_boots",
+  "gloves": "rune_gloves"
+ },
+ "plate": {
+  "skinned": 17,
+  "meshes": 109,
+  "bones": 16,
+  "anim": true
+ },
+ "merchant": {
+  "name": "Shopkeeper Bob (Grand Emporium)",
+  "x": -7,
+  "z": 5
+ }
+}
