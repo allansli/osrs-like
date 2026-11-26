@@ -5,7 +5,7 @@ import { ITEMS, TIER_COLORS, isStackableInBackpack, type ItemDef } from '../data
 import { SKILLS_META, OSRS_XP_TABLE } from '../data/skills';
 import { PRAYERS, SPELLS, type SpellDef } from '../data/magic';
 import { keepCorrupt, legacyPreview, recoveryExit, LIMIT_BYTES } from '../state/saveRecovery';
-import { readLegacy, SAVE_KEY, type MigratedSave } from '../state/save';
+import { readLegacy, type MigratedSave } from '../state/save';
 
 type PrayerDef = (typeof PRAYERS)[number];
 import {
@@ -520,9 +520,8 @@ function keepFailedText(action: string): string {
     : `Could not keep a backup copy. Click ${action} again to proceed without saving a backup.`;
 }
 
-export function showSaveRecoveryNotice(callbacks: SaveRecoveryNoticeCallbacks): void {
-  const raw = localStorage.getItem(SAVE_KEY);
-  if (raw === null) throw new Error(`save recovery notice opened but ${SAVE_KEY} is missing`);
+/** `raw` is the stored string of the key that was read and could not be used (the main key, or the legacy key it migrated from). */
+export function showSaveRecoveryNotice(raw: string, callbacks: SaveRecoveryNoticeCallbacks): void {
   saveRecoveryRaw = raw;
   currentSaveRecoveryCallbacks = callbacks;
   saveRecoveryAskOnceMoreNew = false;

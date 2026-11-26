@@ -60,8 +60,13 @@ function applyPoseAndCam(migrated: MigratedSave): void {
     }
 }
 
-function holdAndNotify(): void {
-  showSaveRecoveryNotice({
+function holdAndNotify(key: string): void {
+  // The hold comes first, so nothing below can leave a new game free to overwrite the save.
+  saveHold = true;
+  el('save-status-btn').textContent = 'Not saving';
+  const raw = localStorage.getItem(key);
+  if (raw === null) throw new Error(`save recovery: ${key} was read but is now missing`);
+  showSaveRecoveryNotice(raw, {
     onNewGame: () => {
       startNewGame();
       saveHold = false;
@@ -74,8 +79,6 @@ function holdAndNotify(): void {
       saveHold = false;
     }
   });
-  saveHold = true;
-  el('save-status-btn').textContent = 'Not saving';
 }
 
 export function loadGameState(): boolean {
@@ -84,14 +87,14 @@ export function loadGameState(): boolean {
     const migrated = readSave(localStorage);
     if (!migrated) return false;
     if (migrated.corrupt) {
-      holdAndNotify();
+      holdAndNotify(SAVE_KEY);
       return false;
     }
     try {
       applyState(STATE, migrated.state);
     } catch (e) {
       console.error(e);
-      holdAndNotify();
+      holdAndNotify(migrated.migratedFrom ?? SAVE_KEY); // migratedFrom is null when the main key was read
       return false;
     }
 
