@@ -337,6 +337,58 @@
         1,
         1
       ]
+    },
+    "Kit_thornwatch_marksman": {
+      "parent": null,
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "HeadGroup": {
+      "parent": "Kit_thornwatch_marksman",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Torso": {
+      "parent": "Kit_thornwatch_marksman",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "OffhandPivot": {
+      "parent": "Kit_thornwatch_marksman",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
     }
   },
   "materials": [
@@ -476,7 +528,8 @@
     "^saltback_stalker_(Hips|TailPivot3|LeftElbowPivot|RightElbowPivot)$",
     "^scorpion_body$",
     "^scorpion_bone$",
-    "^scorpion_sting$"
+    "^scorpion_sting$",
+    "^thornwatch_marksman_(HeadGroup|Torso|OffhandPivot)$"
   ],
   "extras": {},
   "vertexColor": {
@@ -490,7 +543,8 @@
       "Monster_scorpion": "all",
       "Monster_dark_wizard": "all",
       "Monster_dark_ranger": "all",
-      "Kit_saltback_stalker": "all"
+      "Kit_saltback_stalker": "all",
+      "Kit_thornwatch_marksman": "all"
     }
   },
   "clips": {
@@ -2973,11 +3027,11 @@
     }
   },
   "budget": {
-    "triangles": 64674,
-    "meshes": 75,
+    "triangles": 65678,
+    "meshes": 78,
     "materials": 38,
-    "rawBytes": 2585673,
-    "brotliBytes": 890849
+    "rawBytes": 2635191,
+    "brotliBytes": 922802
   },
   "figures": {
     "Monster_chicken": {
@@ -3063,6 +3117,13 @@
       "materials": 2,
       "rawBytes": 41556,
       "brotliBytes": 12395
+    },
+    "Kit_thornwatch_marksman": {
+      "triangles": 1200,
+      "meshes": 3,
+      "materials": 1,
+      "rawBytes": 46284,
+      "brotliBytes": 16905
     }
   }
 }

@@ -1905,6 +1905,44 @@ def _salt_crystal(name: str, mat, r: float, h: float, tx: float, ty: float, tz: 
                      segs=5, tx=tx, ty=ty, tz=tz, rx=rx, rz=rz, smooth=False)
 
 
+def _kit_root(key: str, parts: dict, j: dict, budget: int):
+    """
+    Kit_<key> at the origin with one child per bone of parts ({bone: [objects]}), each the join of its
+    pieces, named after the bone without the model prefix, its vertices relative to that bone's joint in
+    j, painted with its 'Tint' as Col and without UVs. Refuses a taken name, a piece of more than one
+    material and a kit over budget triangles.
+    """
+    kit = bpy.data.objects.new(f"Kit_{key}", None)
+    bpy.context.collection.objects.link(kit)
+    tris = 0
+    for bone, objs in parts.items():
+        bpy.ops.object.select_all(action="DESELECT")
+        for ob in objs:
+            ob.select_set(True)
+        target = objs[0]
+        bpy.context.view_layer.objects.active = target
+        bpy.ops.object.join()
+        target.name = bone
+        target.data.name = f"{key}_{bone}"
+        if target.name != bone:
+            raise ValueError(f"{key} kit: the piece for bone {bone} was named {target.name!r} (the name is taken)")
+        if len(target.data.materials) != 1:
+            raise ValueError(f"{key} kit: piece {bone} has {len(target.data.materials)} materials, one expected")
+        target.data.transform(Matrix.Translation(-Vector(t2b(*j[bone]))))  # relative to the bone's joint
+        attrs = target.data.color_attributes
+        attrs["Tint"].name = "Col"
+        attrs.active_color = attrs["Col"]
+        attrs.render_color_index = attrs.active_color_index
+        while target.data.uv_layers:  # no figure reads GLB UVs (design 6.3)
+            target.data.uv_layers.remove(target.data.uv_layers[0])
+        target.parent = kit
+        tris += sum(len(p.vertices) - 2 for p in target.data.polygons)
+    print(f"[Blender] {key} kit: {tris} triangles in {len(parts)} pieces")
+    if tris > budget:
+        raise ValueError(f"{key} kit: {tris} triangles, over the budget of {budget}")
+    return kit
+
+
 def build_saltback_stalker_kit(mats: dict):
     """
     The Saltback Stalker's kit (plan K1): Kit_saltback_stalker at the origin, with one child per bone in
@@ -1942,35 +1980,7 @@ def build_saltback_stalker_kit(mats: dict):
         for k, (cz, ch) in enumerate(((-1.34, 0.13), (-1.48, 0.17), (-1.62, 0.12))):
             add(_salt_crystal("ssk_claw_crystal", salt, 0.05, ch, s * (0.47 + 0.03 * k), 0.70, cz, rz=-s * 0.35), bone, "salt")
 
-    kit = bpy.data.objects.new("Kit_saltback_stalker", None)
-    bpy.context.collection.objects.link(kit)
-    tris = 0
-    for bone, objs in parts.items():
-        bpy.ops.object.select_all(action="DESELECT")
-        for ob in objs:
-            ob.select_set(True)
-        target = objs[0]
-        bpy.context.view_layer.objects.active = target
-        bpy.ops.object.join()
-        target.name = bone
-        target.data.name = f"saltback_stalker_{bone}"
-        if target.name != bone:
-            raise ValueError(f"saltback_stalker kit: the piece for bone {bone} was named {target.name!r} (the name is taken)")
-        if len(target.data.materials) != 1:
-            raise ValueError(f"saltback_stalker kit: piece {bone} has {len(target.data.materials)} materials, one expected")
-        target.data.transform(Matrix.Translation(-Vector(t2b(*j[bone]))))  # relative to the bone's joint
-        attrs = target.data.color_attributes
-        attrs["Tint"].name = "Col"
-        attrs.active_color = attrs["Col"]
-        attrs.render_color_index = attrs.active_color_index
-        while target.data.uv_layers:  # no figure reads GLB UVs (design 6.3)
-            target.data.uv_layers.remove(target.data.uv_layers[0])
-        target.parent = kit
-        tris += sum(len(p.vertices) - 2 for p in target.data.polygons)
-    print(f"[Blender] saltback_stalker kit: {tris} triangles in {len(parts)} pieces")
-    if tris > SALTBACK_KIT_TRIANGLES:
-        raise ValueError(f"saltback_stalker kit: {tris} triangles, over the budget of {SALTBACK_KIT_TRIANGLES}")
-    return kit
+    return _kit_root("saltback_stalker", parts, j, SALTBACK_KIT_TRIANGLES)
 
 
 # =============================================================================
@@ -2465,6 +2475,97 @@ def build_dark_ranger(grid_pos: tuple[float, float, float], mats: dict):
     names = {"leather": "dark_ranger_body", "cloth": "dark_ranger_cloak", "wood": "dark_ranger_wood", "glow": "dark_ranger_glow"}
     j = ranger_joints()
     return _build_human("dark_ranger", j, RANGER_RADII, RANGER_TRIANGLES, RANGER_HEIGHT, own, "leather", names, _ranger_kit(j, col, own), _ranger_colour(col))
+
+
+# --- 6b. Kit_thornwatch_marksman: the Thornwatch Marksman's kit on the ranger (plan K2, design 5.6) ---------------
+# The ranger plus three rigid pieces of its own, each one mesh named after the ranger bone it rides on, as
+# K1's: a wreath of thorns round the hood (HeadGroup), a tall bramble quiver on the back over the right
+# shoulder (Torso; the bare name Hips is K1's, and the ranger's own hip quiver cannot be hidden, so this
+# one is a second, on the back), and a longbow (OffhandPivot) that swallows the ranger's recurve: its arc
+# runs along the recurve's, fatter, and its limbs reach past both tips, with a fatter string on the
+# recurve string's own line. Painted on the ranger's own wood material (each colour over the wood tile's
+# mean, as _human_paint does), so the kit adds no material; Stage 4's tint multiplies it.
+THORNWATCH_KIT_TRIANGLES = 1200
+THORNWATCH_COLOURS = {  # as the game shows them before Stage 4's tint
+    "bramble": 0x9A8A68,  # the vines and the quiver's weave, weathered pale: 32% luma under Stage 4's tint, over the cloak's 23%
+    "thorn": 0xB4A482,  # thorn points, as light as the wood tile lets a paint go: 38% under the tint, 15 points over the cloak
+    "bow": 0x6E4C30,  # darker than the ranger's 0x8A6440, 18% under the tint (design 5.4's floor)
+    "string": 0xB4A482,
+    "fletch": 0xB0A07E,
+}
+
+
+def build_thornwatch_marksman_kit():
+    """
+    The Thornwatch Marksman's kit (plan K2): Kit_thornwatch_marksman at the origin with the children
+    HeadGroup, Torso and OffhandPivot (_kit_root). Built after build_dark_ranger, on its wood material.
+    """
+    wood = bpy.data.materials["mat_wood_dark_ranger_paint"]  # build_dark_ranger's
+    col = {k: _goblin_skin_paint(c, _goblin_hide_mean(WOOD_TILE)) for k, c in THORNWATCH_COLOURS.items()}
+    j = ranger_joints()
+    parts = {"HeadGroup": [], "Torso": [], "OffhandPivot": []}
+
+    def add(obj, bone: str, colour: str, planes: bool = True):
+        _goblin_tint(obj, col[colour], planes)
+        parts[bone].append(obj)
+
+    def aim(d) -> dict:
+        d = Vector(d).normalized()
+        return {"rx": math.asin(d.z), "rz": -math.atan2(d.x, d.y)}
+
+    def spike(name: str, r: float, length: float, at, d):
+        """A four-sided spike of base radius r along d from at: three rings, a cheaper cone than add_cone_spike's seven."""
+        return add_lathe(name, None, wood, [(0.0, r, r), (length * 0.5, r * 0.55, r * 0.55), (length, 0.004, 0.004)],
+                         segs=4, tx=at.x, ty=at.y, tz=at.z, smooth=False, **aim(d))
+
+    def thorn(at, d, length: float, bone: str):
+        add(spike("tmk_thorn", 0.03, length, at, d), bone, "thorn")
+
+    # The wreath: a bramble ring round the hood, higher at the brow than behind, and eleven thorns standing
+    # out of it, up and out, long and short in turn, so the head's outline is a crown of spikes
+    c, rx, rz = Vector((0.0, 1.95, -0.10)), 0.205, 0.215
+    ring = []
+    for k in range(13):
+        a = 2.0 * math.pi * k / 12
+        ring.append((c.x + rx * math.sin(a), c.y + 0.05 * math.cos(a), c.z - rz * math.cos(a), 0.03))
+    add(add_curved_tube("tmk_wreath", None, wood, ring, segs=5, smooth=False), "HeadGroup", "bramble")
+    for k in range(11):
+        a = 2.0 * math.pi * (k + 0.5) / 11
+        out = Vector((math.sin(a), 0.0, -math.cos(a)))
+        at = Vector((c.x + rx * out.x, c.y + 0.05 * math.cos(a), c.z + rz * out.z))
+        thorn(at, out + Vector((0.0, 0.9, 0.0)), 0.20 if k % 2 else 0.13, "HeadGroup")
+
+    # The quiver: tall, on the back from the left hip to over the right shoulder, clear of the cloak; a
+    # bramble vine wound round it with thorns, and five fletched arrows out of its mouth
+    lo, hi = Vector((-0.14, 0.95, 0.54)), Vector((0.26, 2.05, 0.30))
+    q = (hi - lo).normalized()
+    side = q.cross(Vector((0.0, 0.0, 1.0))).normalized()
+    back = side.cross(q).normalized()
+    add(add_limb_tube("tmk_quiver", None, wood, tuple(lo), tuple(hi), 0.085, 0.10, r_mid=0.09, segs=7, steps=3, smooth=False), "Torso", "bramble")
+    vine = []
+    for k in range(15):
+        t, a = 0.06 + 0.88 * k / 14, 4.0 * math.pi * k / 14
+        p = lo.lerp(hi, t) + (side * math.cos(a) + back * math.sin(a)) * (0.10 + 0.015 * t)
+        vine.append((p.x, p.y, p.z, 0.024))
+        if k % 3 == 1:
+            thorn(p, side * math.cos(a) + back * math.sin(a), 0.11, "Torso")
+    add(add_curved_tube("tmk_quiver_vine", None, wood, vine, segs=4, smooth=False), "Torso", "bramble")
+    for k, (ds, db) in enumerate(((-0.04, -0.02), (0.035, -0.03), (0.0, 0.035), (-0.045, 0.03), (0.045, 0.02))):
+        at = hi + q * 0.02 + side * ds + back * db
+        add(spike(f"tmk_fletch_{k}", 0.04, 0.20, at, q + (side * ds + back * db) * 4.0), "Torso", "fletch")
+
+    # The longbow: the ranger's recurve arc (rng_bow, the same points) 0.014 fatter, its limbs carried on past
+    # each recurve tip, bulging forward and back to a nock on the recurve string's line, 0.40 higher and 0.26
+    # lower; the string along that line, fatter, from nock to nock. The low tip stays 0.1 off the ground
+    h = Vector(j["LeftHand"]) + Vector((-0.035, 0.0, 0.0))
+    string_z = lambda y: 0.18 + (y + 0.60) * 0.01 / 1.32  # the recurve string runs (0.72, 0.19) to (-0.60, 0.18)
+    arc = [(0.015, 1.16, 0.15, 0.03), (0.0, 1.10, string_z(1.10), 0.034), (0.008, 1.02, 0.15, 0.036), (0.02, 0.92, 0.12, 0.036), (0.02, 0.82, 0.13, 0.036),
+           (0.0, 0.72, 0.19, 0.038), (-0.012, 0.52, 0.09, 0.044), (-0.012, 0.26, 0.016, 0.048), (0.0, 0.0, 0.0, 0.052),
+           (-0.012, -0.26, 0.016, 0.048), (-0.012, -0.47, 0.09, 0.044), (0.0, -0.60, 0.18, 0.038), (0.02, -0.70, 0.12, 0.036),
+           (0.012, -0.80, 0.14, 0.034), (0.0, -0.86, string_z(-0.86), 0.034), (0.015, -0.90, 0.15, 0.03)]
+    add(add_curved_tube("tmk_bow", None, wood, [(h.x + x, h.y + y, h.z + z, r) for x, y, z, r in arc], segs=6, smooth=False), "OffhandPivot", "bow")
+    add(add_limb_tube("tmk_string", None, wood, (h.x, h.y + 1.10, h.z + string_z(1.10)), (h.x, h.y - 0.86, h.z + string_z(-0.86)), 0.025, 0.025, r_mid=0.025, segs=4, steps=2), "OffhandPivot", "string", planes=False)
+    return _kit_root("thornwatch_marksman", parts, j, THORNWATCH_KIT_TRIANGLES)
 
 
 # =============================================================================
@@ -4105,6 +4206,7 @@ def main():
 
     # Back row (Z = +2.4 -> Blender Y = -2.4, behind front row)
     build_dark_ranger((-6.0, 0.0, 2.2), mats)
+    build_thornwatch_marksman_kit()
     build_hill_giant((-3.4, 0.0, 2.2), mats)
     build_moss_guardian((-0.6, 0.0, 2.2), mats)
     build_lesser_demon((2.2, 0.0, 2.2), mats)
