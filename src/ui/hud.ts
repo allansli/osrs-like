@@ -513,6 +513,12 @@ let currentSaveRecoveryCallbacks: SaveRecoveryNoticeCallbacks | null = null;
 let saveRecoveryAskOnceMoreNew = false;
 let saveRecoveryAskOnceMoreOlder = false;
 let saveRecoveryRaw = '';
+let saveRecoveryFailedKey = '';
+
+/** While the notice is open the rest of the page is inert, so no key or click can reach another control. */
+function setPageInert(except: HTMLElement, inert: boolean): void {
+  for (const c of Array.from(document.body.children)) if (c !== except) (c as HTMLElement).inert = inert;
+}
 
 function keepFailedText(action: string): string {
   return saveRecoveryRaw.length > LIMIT_BYTES
@@ -521,8 +527,9 @@ function keepFailedText(action: string): string {
 }
 
 /** `raw` is the stored string of the key that was read and could not be used (the main key, or the legacy key it migrated from). */
-export function showSaveRecoveryNotice(raw: string, callbacks: SaveRecoveryNoticeCallbacks): void {
+export function showSaveRecoveryNotice(raw: string, callbacks: SaveRecoveryNoticeCallbacks, failedKey: string): void {
   saveRecoveryRaw = raw;
+  saveRecoveryFailedKey = failedKey;
   currentSaveRecoveryCallbacks = callbacks;
   saveRecoveryAskOnceMoreNew = false;
   saveRecoveryAskOnceMoreOlder = false;
@@ -543,7 +550,7 @@ export function showSaveRecoveryNotice(raw: string, callbacks: SaveRecoveryNotic
   fallbackBox.hidden = true;
   fallbackText.value = '';
 
-  const preview = legacyPreview(localStorage);
+  const preview = legacyPreview(localStorage, saveRecoveryFailedKey);
   if (preview) {
     olderBtn.hidden = false;
     olderBtn.textContent = `Load older save (${preview.gp.toLocaleString()} GP, Total Lv ${preview.totalLevel})`;
@@ -555,7 +562,11 @@ export function showSaveRecoveryNotice(raw: string, callbacks: SaveRecoveryNotic
     saveRecoveryWired = true;
 
     document.addEventListener('keydown', (ev) => {
-      if (ev.code === 'Escape' && modal.classList.contains('open')) ev.stopImmediatePropagation();
+      if (!modal.classList.contains('open')) return;
+      // Only Tab, Enter and Space aimed at the notice's own controls pass; input.ts's window listener sees nothing else.
+      const own = ev.target instanceof Node && modal.contains(ev.target);
+      if (own && (ev.code === 'Tab' || ev.code === 'Enter' || ev.code === 'Space')) return;
+      ev.stopImmediatePropagation();
     }, true);
 
     el('save-recovery-new-btn').addEventListener('click', () => {
@@ -568,13 +579,14 @@ export function showSaveRecoveryNotice(raw: string, callbacks: SaveRecoveryNotic
         }
       }
       saveRecoveryAskOnceMoreNew = false;
+      currentSaveRecoveryCallbacks!.onNewGame(); // a throw leaves the notice open
       modal.classList.remove('open');
-      currentSaveRecoveryCallbacks!.onNewGame();
+      setPageInert(modal, false);
       updateAllUI();
     });
 
     olderBtn.addEventListener('click', () => {
-      const legacy = readLegacy(localStorage);
+      const legacy = readLegacy(localStorage, undefined, saveRecoveryFailedKey);
       if (!legacy) throw new Error('save recovery: Load Older Save clicked but no legacy save can be read');
       const result = keepCorrupt(localStorage, saveRecoveryRaw);
       if (!recoveryExit('older', result)) {
@@ -585,8 +597,9 @@ export function showSaveRecoveryNotice(raw: string, callbacks: SaveRecoveryNotic
         }
       }
       saveRecoveryAskOnceMoreOlder = false;
+      currentSaveRecoveryCallbacks!.onLoadOlder(legacy); // a throw leaves the notice open
       modal.classList.remove('open');
-      currentSaveRecoveryCallbacks!.onLoadOlder(legacy);
+      setPageInert(modal, false);
       updateAllUI();
     });
 
@@ -617,4 +630,7 @@ export function showSaveRecoveryNotice(raw: string, callbacks: SaveRecoveryNotic
   }
 
   modal.classList.add('open');
+  setPageInert(modal, true);
+  (document.activeElement as HTMLElement | null)?.blur();
+  el('save-recovery-new-btn').focus();
 }

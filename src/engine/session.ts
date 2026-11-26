@@ -78,7 +78,7 @@ function holdAndNotify(key: string): void {
       applyLoadedStateToHud();
       saveHold = false;
     }
-  });
+  }, key);
 }
 
 export function loadGameState(): boolean {
