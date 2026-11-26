@@ -77,7 +77,9 @@ describe('the motion table', () => {
 
 function skinnedMeshesOf(gltf: GLTF, key: string): THREE.SkinnedMesh[] {
   const out: THREE.SkinnedMesh[] = [];
-  gltf.scene.getObjectByName(`Monster_${key}`)?.traverse((o) => {
+  const node = gltf.scene.getObjectByName(`Monster_${key}`);
+  expect(node, `Monster_${key} is in monsters.glb`).toBeDefined();
+  node!.traverse((o) => {
     if ((o as THREE.SkinnedMesh).isSkinnedMesh) out.push(o as THREE.SkinnedMesh);
   });
   return out;
@@ -105,7 +107,7 @@ function weightedBones(meshes: THREE.SkinnedMesh[], key: string): { all: Set<str
 describe('a clip row names every bone its clips rotate', () => {
   // The biped library clips live in hero.glb; a row's `bones` may not be empty or short of a track's bone.
   for (const key of MODEL_KEYS) {
-    const clips = MONSTER_MOTION[key]?.clips;
+    const clips = MONSTER_MOTION[key].clips;
     it.skipIf(clips === undefined || MONSTER_MOTION[key].skeleton !== 'biped')(`${key}`, () => {
       const names = Object.values(clips as Record<string, string>);
       const found = hero.animations.filter((a) => names.includes(a.name));
@@ -193,7 +195,7 @@ function check(model: string, m: Animated, piv: Record<string, THREE.Object3D>, 
 describe('a row without clips reproduces the old branch at progress 0, 0.5 and 1', () => {
   for (const model of MODEL_KEYS) {
     // A row that has moved to clips (the goblin from M1b, later rows with their rebuilds) leaves this case.
-    const hasClips = MONSTER_MOTION[model]?.clips !== undefined;
+    const hasClips = MONSTER_MOTION[model].clips !== undefined;
     describe.skipIf(hasClips)(model, () => {
       it('wind-up', () => {
         for (const p of [0, 0.5, 1]) {
