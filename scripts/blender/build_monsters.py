@@ -187,78 +187,6 @@ def get_blend_object(blend_rel_path: str, obj_name: str) -> bpy.types.Object | N
     return obj
 
 
-def load_imported_character(blend_rel_path: str, mesh_names: list[str], target_height: float, rot_z_180: bool = True):
-    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-    blend_file = os.path.join(repo_root, blend_rel_path)
-    if not os.path.exists(blend_file):
-        return None
-    try:
-        with bpy.data.libraries.load(blend_file) as (df, dt):
-            # Also pull in the armature: eyes/teeth are bone-parented to it, so their
-            # world matrices are only correct when the armature is evaluated.
-            wanted = [o for o in mesh_names if o in df.objects]
-            if "Armature" in df.objects and "Armature" not in wanted:
-                wanted.append("Armature")
-            dt.objects = wanted
-        for o in dt.objects:
-            if o.name not in bpy.context.collection.objects:
-                bpy.context.collection.objects.link(o)
-
-        # Force rest pose so bone-parented parts line up with the (armature-free) rest-pose body.
-        for o in dt.objects:
-            if o.type == 'ARMATURE':
-                o.data.pose_position = 'REST'
-
-        for o in dt.objects:
-            if o.type == 'MESH':
-                for m in list(o.modifiers):
-                    if m.type == 'ARMATURE':
-                        o.modifiers.remove(m)
-        bpy.context.view_layer.update()
-        
-        main_obj = next((o for o in dt.objects if o.name in mesh_names and o.type == 'MESH'), None)
-        if not main_obj:
-            for o in dt.objects:
-                bpy.data.objects.remove(o, do_unlink=True)
-            return None
-            
-        raw_verts = [main_obj.matrix_world @ v.co for v in main_obj.data.vertices]
-        min_x = min(v.x for v in raw_verts)
-        max_x = max(v.x for v in raw_verts)
-        min_y = min(v.y for v in raw_verts)
-        max_y = max(v.y for v in raw_verts)
-        min_z = min(v.z for v in raw_verts)
-        max_z = max(v.z for v in raw_verts)
-        mid_x = (min_x + max_x) * 0.5
-        mid_y = (min_y + max_y) * 0.5
-        h = max_z - min_z
-        scale = target_height / h if h > 0.001 else 1.0
-        
-        rot_m = Matrix.Rotation(math.pi, 4, 'Z') if rot_z_180 else Matrix.Identity(4)
-        scale_m = Matrix.Scale(scale, 4)
-        trans_m = Matrix.Translation(Vector((-mid_x, -mid_y, -min_z)))
-        xform = scale_m @ rot_m @ trans_m
-        
-        result_bms = {}
-        for mname in mesh_names:
-            o = next((obj for obj in dt.objects if obj.name == mname and obj.type == 'MESH'), None)
-            if not o:
-                o = next((obj for obj in dt.objects if obj.name.startswith(mname) and obj.type == 'MESH'), None)
-            if o:
-                bm = bmesh.new()
-                bm.from_mesh(o.data)
-                bm.transform(o.matrix_world)
-                bm.transform(xform)
-                result_bms[mname] = bm
-                
-        for o in dt.objects:
-            bpy.data.objects.remove(o, do_unlink=True)
-        return result_bms
-    except Exception as e:
-        print(f"[load_imported_character] Error loading {blend_rel_path}: {e}")
-        return None
-
-
 def add_imported_submesh(
     name: str,
     parent: bpy.types.Object,
@@ -698,7 +626,6 @@ def build_materials() -> dict:
         "skin_scorpion_plate": make_mat("mat_skin_scorpion_plate", 0x24170E, roughness=0.32, metallic=0.20),
         "skin_hill_giant": make_mat("mat_skin_hill_giant", 0x9D7A5E, roughness=0.65, metallic=0.02),
         "skin_moss_guardian": make_mat("mat_skin_moss_guardian", 0x384A32, roughness=0.72, metallic=0.04),
-        "skin_lesser_demon": make_mat("mat_skin_lesser_demon", 0x5D1B1B, roughness=0.48, metallic=0.05),
         "skin_elvarg_dragon": make_mat("mat_skin_elvarg_dragon", 0x334235, roughness=0.45, metallic=0.12),
         # Shared materials
         "cloth": make_mat("mat_cloth", 0x4A3F32, roughness=0.75, metallic=0.02),
@@ -718,7 +645,6 @@ def build_materials() -> dict:
         "gold": make_mat("mat_gold", 0x9E8046, roughness=0.38, metallic=0.65),
         "bone": make_mat("mat_bone", 0xD4CBB8, roughness=0.52, metallic=0.06),
         "horn": make_mat("mat_horn", 0x1E1A17, roughness=0.45, metallic=0.12),
-        "wing": make_mat("mat_wing", 0x421818, roughness=0.55, metallic=0.08),
         "wing_dragon": make_mat("mat_wing_dragon", 0x4A3E2A, roughness=0.55, metallic=0.08),
         "comb_red": make_mat("mat_cloth_comb", 0x8A2020, roughness=0.48, metallic=0.04),
         "beak_yellow": make_mat("mat_gold_beak", 0xA87824, roughness=0.45, metallic=0.10),
