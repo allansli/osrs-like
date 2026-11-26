@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as THREE from 'three';
 import { MONSTER_TYPES } from '../src/data/world';
-import { performMonsterRetaliation } from '../src/engine/actions';
+import { performMonsterHeavy, performMonsterRetaliation } from '../src/engine/actions';
 import { G, player, type MonsterEntity, type ResourceNodeEntity } from '../src/engine/context';
 import { STATE } from '../src/state/gameState';
 import { createMonsterLogic } from '../src/state/monsterAi';
@@ -24,25 +24,30 @@ const stubEl = (): Record<string, unknown> => ({
 });
 vi.stubGlobal('document', { createElement: stubEl, getElementById: stubEl, querySelector: stubEl, querySelectorAll: () => [] });
 
-// The hero's mesh is not built here; the hit's flash is a look, not the rule under test.
+// The hero's mesh is not built here; a hit's flash, stop, flinch, push and camera kick are looks, not the rule under test.
 vi.mock('../src/engine/reactions', async (orig) => {
   const actual = await orig<typeof import('../src/engine/reactions')>();
-  return { ...actual, flash: () => {} };
+  const none = () => {};
+  return { ...actual, flash: none, hitStop: none, flinchHero: none, knockBack: none, cameraKick: none };
 });
 vi.mock('../src/state/combat', async (orig) => {
   const actual = await orig<typeof import('../src/state/combat')>();
-  return { ...actual, rollMonsterHit: () => ({ dmg: 2, dragonfire: false, absorbed: false }) };
+  return {
+    ...actual,
+    rollMonsterHit: () => ({ dmg: 2, dragonfire: false, absorbed: false }),
+    rollMonsterAttack: () => ({ dmg: 5 })
+  };
 });
 
-function goblin(): MonsterEntity {
+function monster(typeKey: string): MonsterEntity {
   const group = new THREE.Group();
   group.position.set(1.5, 0, 0);
   const m = {
-    id: 'g1',
-    typeKey: 'goblin',
-    def: MONSTER_TYPES.goblin,
+    id: `${typeKey}_1`,
+    typeKey,
+    def: MONSTER_TYPES[typeKey],
     rig: { group, hitbox: new THREE.Mesh() },
-    logic: createMonsterLogic('goblin', 1.5, 0),
+    logic: createMonsterLogic(typeKey, 1.5, 0),
     pos: group.position,
     labelEl: stubEl(),
     flinch: 0,
@@ -70,7 +75,7 @@ describe('CALL-6.29 (b): a hit stops the gather', () => {
   });
 
   it('an idle hero hit once fights back (Stage 4)', () => {
-    const m = goblin();
+    const m = monster('goblin');
     G.monstersList.push(m);
     player.targetEntity = null;
     performMonsterRetaliation(m);
@@ -79,12 +84,31 @@ describe('CALL-6.29 (b): a hit stops the gather', () => {
   });
 
   it('a gathering hero hit once is no longer gathering, and fights back', () => {
-    const m = goblin();
+    const m = monster('goblin');
     G.monstersList.push(m);
     player.targetEntity = { type: 'resource', ref: tree };
     performMonsterRetaliation(m);
     expect(STATE.hp).toBe(48);
     expect(targetType(), 'the gather has ended').not.toBe('resource');
     expect(targetType(), "Stage 4's auto-retaliation answers the hit").toBe('monster');
+  });
+
+  // The moss guardians at the yews and magic trees also land their heavy (Rootquake) through performMonsterHeavy.
+  it('a gathering hero hit once by a heavy is no longer gathering, and fights back', () => {
+    const m = monster('moss_guardian');
+    G.monstersList.push(m);
+    player.targetEntity = { type: 'resource', ref: tree };
+    expect(performMonsterHeavy(m, 'rootquake')).toBe(5);
+    expect(STATE.hp).toBe(45);
+    expect(targetType(), 'the gather has ended').not.toBe('resource');
+    expect(targetType(), "Stage 4's auto-retaliation answers the hit").toBe('monster');
+  });
+
+  it('an idle hero hit once by a heavy fights back (Stage 4)', () => {
+    const m = monster('moss_guardian');
+    G.monstersList.push(m);
+    player.targetEntity = null;
+    expect(performMonsterHeavy(m, 'rootquake')).toBe(5);
+    expect(targetType()).toBe('monster');
   });
 });
