@@ -89,3 +89,67 @@ All from the H3c build (sha256 `e252f59f...68ea1ef`). **A sheet shows the paint 
 | `h3c-hero-plate-rest.jpg`, `-plate-worst` | the same renderer with today's plate set mounted, `Hair`, `TorsoCoat` and `InnerCollar` hidden as the engine does | No ear, hand or limb outside the armour |
 
 Heights measured by the renderer: turnaround 414 px in a 512 tile; play distance 396, 249 and 82 px. The `h3b-*` sheets are kept as H3b's record.
+
+## H4: the biped library (2026-11-25)
+
+`scripts/blender/build_hero.py` and the pending manifest `tests/fixtures/model-contract/pending/hero.json` only; nothing is promoted (`git status --short public/models blender` prints nothing). N-6 is "no", so there is no `Hurt`: eleven clips, eleven strips.
+
+### The build
+
+`flock /tmp/claude-blender.lock timeout 600 env BLENDER_PATH=/usr/bin/blender node scripts/run-blender.mjs hero --out scratch/models-build` exits 0 (sha256 `3d8f9933...4d429d`). COMPARE exits 0: Contract and Budget pass against the pending manifest.
+
+| | H3c | H4 | Pending ceiling |
+|---|---|---|---|
+| File raw bytes | 292,568 | 331,656 | 334,973 (was 298,989) |
+| File Brotli bytes | 151,418 | 164,895 | 166,544 (was 156,663) |
+| Figure raw / Brotli (geometry, unchanged) | 217,908 / 124,808 | 217,908 / 124,808 | 223,578 / 130,677 |
+
+**The file ceilings were raised**, to the build plus 1% (the manifest's own margin): the clips add 39,088 raw and 13,477 Brotli bytes (a `Hips` position track and two `Foot` tracks on every clip, and `Death`). The geometry is unchanged. H7's wire limit is 200,000 (150,000 with N-3, which packs geometry, not clips); 164,895 is today's unpacked size.
+
+### What changed
+
+| Item | What was built |
+|---|---|
+| Pose tables | `pose_table`: each clip is a few named poses on even frames (12 a second at 24), each with the ease of the move into it (`io`, `in` for a strike or a fall, `out` for an impact or a landing, `lin`, or `cr`, a Catmull-Rom curve through the neighbours, for the loops). Euler numbers are interpolated per frame, then turned into quaternions, so `SpinSlash`'s two turns survive. `build_action` keeps H3a's chain conversion and frame count, so every clip keeps its length |
+| Feet on the ground | `build_action` measures the posed body per frame and sets the `Hips` height so its lowest point is at the ground (every vertex follows `Hips`; none is on `Root`), and keys each `Foot` level with the ground. Walk's heights are smoothed round the cycle and may let a foot 1 cm into the ground. Logged per clip: every clip's lowest point is 0.000 except Walk (-0.010 to +0.015). The authored dips of today's clips are gone; the bend of the knees sets the height |
+| Torso pitch sign | The shipped clips lean the torso **back** where their author meant forward: +x on an upright bone tips it toward +z, and the hero faces -z (eyes at z -0.13 to -0.09). Measured on `public/models/hero.glb`, the torso top moves back 0.24 in `Lunge` while it moves forward, back 0.24 at `Chop`'s strike and 0.14 at `Slash`'s. H4 writes a forward lean as negative x: `Slash`, `Chop`, `Mine` and `SpinSlash` have their torso pitch and the head's counter-pitch turned round; `Walk` leans 0.03 forward (today 0.06 back); `Fish` leans to the water and looks down. **This changes the kept attack clips on purpose**; the arm numbers and beat timing are today's |
+| Idle | Two breaths a loop, the weight from one leg to the other (a knee gives 0.09), a look to the right of 0.11. Head range 0.15 rad (today 0.03) |
+| Walk | Keys every 4 frames: passing, reach, contact, taking the weight. The swing knee folds 0.85 at the passing and the leg lands straight; the torso turns the trailing shoulder forward by 0.07 (range 0.14, today 0.04); the head turns back by half of it and stays level; elbows swing with the arms. Today's phase and stride (0.48 to 0.55) |
+| Slash | Today's arm numbers at the beats; the elbow cocks to 1.00 in the wind-up and opens to 0.20 on the strike (range 0.80, today 0.05); a 2-frame overshoot is the impact |
+| Lunge | Re-made: draw back (arm -0.35, elbow 1.10, torso coiled back), then a thrust of hips pitch -0.10 and torso pitch -0.27 into a bent front knee, arm 1.36 and elbow straight. Torso range 0.58 (today 0.24) |
+| Ranged | Today's draw; the string hand snaps back on the release at frame 20 and the bow arm kicks |
+| Cast | The torso leads: it gathers back 0.10 at frame 6, reaches forward -0.20 at frame 10, before the arms arrive at 1.50 at frame 14; two pulses. Torso range 0.35 (today 0.12) |
+| Chop, Mine | Today's arm swing; elbows fold on the raise (1.10) and open on the strike (0.25); knees give on the impact |
+| Fish | The rod hand twitches up, drops, waits, tugs: arm range 0.38 (today 0.10); elbows and knees move |
+| SpinSlash | A coil (torso yaw -0.45, frame 4), then the two turns at one speed (`in`, `lin`, `out` matched), a settle. The head trails by 0.32 at most and ends square to the chest; today it ended 1.9 rad behind it (0.85 of the torso's yaw) |
+| Death | 27 frames, 1.083 s (1.1 is between frames 26 and 27). Recoil (head and chest snap back), the knees buckle (1.1), the body tips back on `Hips` (1.57 at frame 22), a small bounce, lying on its back with one knee up, arms out, head turned; the last pose (frame 26) is the lying one. The feet are kept level with the hips, so the lying toes point up |
+| Elbows and knees | Every clip now moves both |
+
+### Beats of each attack strip (frames at 24 a second)
+
+| Clip | Anticipation (manifest `skin.attackClips`) | Strike | Follow-through / settle |
+|---|---|---|---|
+| Slash | 6 (0.25 s) | 6 to 10, impact 12 | 16, settle 24 |
+| Lunge | 8 (0.333 s) | 8 to 12, extend 14 | recover 24 |
+| Ranged | 14 (0.583 s, full draw) | release 18 to 20 | recover 30 |
+| Cast | 6 (0.25 s, gather) | lead 10, cast 14 | pulses 18 and 22, recover 28 |
+| Chop | 12 (0.5 s) | 12 to 16, impact 18 | recover 26 |
+| Mine | 10 (0.417 s) | 10 to 14, impact 16 | recover 24 |
+| SpinSlash | 4 (0.167 s, coil) | 8 to 18 (the turns) | 22, settle 24 |
+
+The six-frame front strips (`h4-hero-<clip>-strip.jpg`, SHEETS `--only hero --engine-palette --clips`) are evenly spaced and can miss a two-frame strike, so each clip also has a side strip at its keys with the frame drawn in (`h4-hero-<clip>-side.jpg`, scratch wrapper over `review_render.py`). The glTF importer starts every NLA strip at frame 1; the side strips add the strip's start, `review_render.py`'s `--clips` strips do not (it reads `action.frame_range`), so its tiles are one frame early. That renderer is not in this task's files.
+
+### Checks
+
+- `tests/hero-model.test.ts`, copied to `scratch/h4/t/` with only the file path pointed at the build: **23 of 25 pass**, every motion, skin and mesh case. The two frozen samples fail in the hero loader (`addCartoonOutline`: `skinnedMesh.boundingSphere` is null, `materials.ts:199`), as at H3b and H3c: the loader is H5b's.
+- The two samples measured on the built clips with three's `AnimationMixer` on the file's own scene (supporting evidence, not the test): 0.2 s into `Walk`, `LeftLegPivot` x is 0.350 (> 0.01); 0.15 s into `Slash` at time scale 1.2, `RightArmPivot` x is -0.435 (> 0.05 in size).
+- Clip lengths from three: Cast 1.1250, Chop 1.0417, Death 1.0833, Fish 1.4583, Idle 1.9583, Lunge 0.9583, Mine 0.9583, Ranged 1.2083, Slash 0.9583, SpinSlash 0.9583, Walk 1.2917. These are the shipped lengths, plus Death.
+- `node scripts/models-clipcheck.mjs` exits 1 on every clip. This is expected: H3a's check asserts the clips are unchanged, and H4 changes them. Its report is in `scratch/h4/clipcheck.txt`.
+
+### Open for the main session
+
+1. **The frozen samples have no home in the manifest.** A manifest clip entry takes only `moves` (`models-compare.mjs` refuses other keys), and `models-compare.mjs` is not in H4's files. They stay in `hero-model.test.ts` and `blender-hero.test.ts`.
+2. **CAPTURE(hero), walking, striking and falling: not taken.** It goes through `upgradeHumanoidRigWithGltf`, which fails on the skinned file until H5b (plan, "Lanes 1"). The same applies to `Death`'s clamp and to `HeroClipName` gaining `Death`.
+3. **`manifest.clips` lists each clip's moving nodes as built**, now with `Hips`, `LeftFoot` and `RightFoot` in every clip and `Death` added. `skin.sharedClips` includes `Death`.
+4. **The torso sign change** (above) is a judgement on the kept attack clips. Reverting it is one sign per clip in `build_all_animations`.
+5. `s2/` holds 2.6 MB of sheets after H4. H7's "sheets at most 2 MB" will need a cut.
