@@ -140,8 +140,42 @@ export const MONSTER_MOTION: Record<string, MonsterMotionRow> = {
     }
   },
   elvarg_dragon: {
+    // The dragon library in monsters.glb (plan D2b); Ashmantle shares this row through its model key.
     skeleton: 'dragon',
-    bones: [],
+    bones: [
+      'Hips',
+      'Torso',
+      'Neck1',
+      'Neck2',
+      'HeadGroup',
+      'Jaw',
+      'LeftArmPivot',
+      'LeftElbowPivot',
+      'RightArmPivot',
+      'RightElbowPivot',
+      'LeftLegPivot',
+      'LeftKneePivot',
+      'RightLegPivot',
+      'RightKneePivot',
+      'LWing',
+      'LWing2',
+      'RWing',
+      'RWing2',
+      'TailPivot',
+      'TailPivot2',
+      'TailPivot3'
+    ],
+    clips: {
+      idle: 'Idle',
+      walk: 'Walk',
+      attack: 'Bite',
+      // The wind-up's clip. poseMonsterLimbs still holds `attack` during a wind-up; Bite and WingBuffet share
+      // the anticipation key, so either one held there is a true telegraph.
+      windup: 'WingBuffet',
+      death: 'Death'
+    },
+    anticipation: 0.333333,
+    // Today's head and wing swing, kept for the frames before monsters.glb arrives.
     codeAttack: {
       headBase: -0.35,
       headProgress: 0.65,

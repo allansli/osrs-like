@@ -491,3 +491,86 @@ describe('Death', () => {
     expect(death.time, 'the clip is at its last pose when the rules timer ends').toBeGreaterThanOrEqual(death.getClip().duration - 0.05);
   });
 });
+
+// --- the dragon on its own library (plan D2b; declared: replaces the dragon's row of the old-branch case) ---------
+
+const dragonManifestPath = ['pending/monsters.json', 'monsters.json']
+  .map((f) => path.resolve(__dirname, 'fixtures/model-contract', f))
+  .find((f) => fs.existsSync(f))!;
+const dragonManifest = JSON.parse(fs.readFileSync(dragonManifestPath, 'utf8')) as {
+  skin: { attackClips?: Record<string, number> };
+};
+const DRAGON_CLIPS = ['Idle', 'Walk', 'Bite', 'WingBuffet', 'Death'];
+// The shipped file keeps the old rigid dragon until its promotion; these cases run against the built file.
+const dragonBuilt = monsters.animations.some((a) => a.name === 'Bite');
+
+describe('the dragon plays its own library', () => {
+  it('its row names Idle, Walk, Bite, Death and WingBuffet, and its anticipation is the library\'s', () => {
+    const row = MONSTER_MOTION.elvarg_dragon;
+    expect(row.skeleton).toBe('dragon');
+    expect(row.clips).toMatchObject({ idle: 'Idle', walk: 'Walk', attack: 'Bite', windup: 'WingBuffet', death: 'Death' });
+    expect(dragonManifest.skin.attackClips?.Bite).toBeCloseTo(row.anticipation!, 5);
+    expect(dragonManifest.skin.attackClips?.WingBuffet).toBeCloseTo(row.anticipation!, 5);
+  });
+
+  it.skipIf(!dragonBuilt)('its clips rotate only the bones the row names, and move only Hips', () => {
+    const row = MONSTER_MOTION.elvarg_dragon;
+    for (const name of DRAGON_CLIPS) {
+      const clip = monsters.animations.find((a) => a.name === name);
+      expect(clip, `${name} is in monsters.glb`).toBeDefined();
+      for (const track of clip!.tracks) {
+        const [node, prop] = track.name.split('.');
+        expect(node.startsWith('elvarg_dragon_'), `${name}: ${track.name} is on a dragon bone`).toBe(true);
+        const bone = node.slice('elvarg_dragon_'.length);
+        if (prop === 'position') expect(bone, `${name}: the one position track`).toBe('Hips');
+        else expect(prop, `${name}: ${track.name}`).toBe('quaternion');
+        expect(row.bones).toContain(bone);
+      }
+    }
+  });
+
+  it.skipIf(!dragonBuilt)('the wind-up holds Bite at progress times the anticipation, and Death ends lying within DYING_SECS', () => {
+    const group = new THREE.Group();
+    const hitbox = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1));
+    group.add(hitbox);
+    const m = {
+      typeKey: 'elvarg_dragon',
+      modelKey: 'elvarg_dragon',
+      def: MONSTER_TYPES.elvarg_dragon,
+      rig: { group, hitbox },
+      logic: { state: 'idle', windup: null },
+      pos: group.position,
+      flinch: 0,
+      attackAnim: 0
+    } as unknown as Animated;
+    expect(upgradeMonsterRigWithGltf(m, monsters, hero)).toBe(true);
+    expect(m.animator).toBeDefined();
+    for (let i = 0; i < 10; i++) frame(m, true);
+    expect(bone(m, 'LeftArmPivot').quaternion.angleTo(new THREE.Quaternion()), 'a fore leg swings in Walk').toBeGreaterThan(0.01);
+
+    const bite = m.animator!.actions.get('Bite' as HeroClipName)!;
+    windup(m, 0);
+    frame(m, false);
+    windup(m, 1);
+    frame(m, false);
+    expect(bite.time).toBeCloseTo(MONSTER_MOTION.elvarg_dragon.anticipation!, 3);
+    windup(m, -1);
+    m.attackAnim = 1;
+    for (let i = 0; i < 6; i++) frame(m, false, 1 / 60);
+    expect(bite.time).toBeGreaterThan(MONSTER_MOTION.elvarg_dragon.anticipation! + 0.02);
+
+    const death = m.animator!.actions.get(DEATH)!;
+    const hipsRest = bone(m, 'Hips').position.y;
+    const dt = 1 / 60;
+    m.logic.state = 'dying';
+    let left = DYING_SECS;
+    while (left > dt) {
+      poseMonsterDying(m, left, dt);
+      left -= dt;
+    }
+    poseMonsterDying(m, left, dt);
+    expect(m.rig.group.rotation.x, 'no group topple').toBe(0);
+    expect(death.time).toBeGreaterThanOrEqual(death.getClip().duration - 0.05);
+    expect(bone(m, 'Hips').position.y, 'the body lies lower than it stood').toBeLessThan(hipsRest - 0.03);
+  });
+});

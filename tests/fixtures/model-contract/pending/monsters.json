@@ -903,7 +903,133 @@
       "Monster_elvarg_dragon": "all"
     }
   },
-  "clips": {},
+  "clips": {
+    "Bite": {
+      "moves": [
+        "elvarg_dragon_HeadGroup",
+        "elvarg_dragon_Hips",
+        "elvarg_dragon_Jaw",
+        "elvarg_dragon_LWing",
+        "elvarg_dragon_LWing2",
+        "elvarg_dragon_LeftArmPivot",
+        "elvarg_dragon_LeftElbowPivot",
+        "elvarg_dragon_LeftKneePivot",
+        "elvarg_dragon_LeftLegPivot",
+        "elvarg_dragon_Neck1",
+        "elvarg_dragon_Neck2",
+        "elvarg_dragon_RWing",
+        "elvarg_dragon_RWing2",
+        "elvarg_dragon_RightArmPivot",
+        "elvarg_dragon_RightElbowPivot",
+        "elvarg_dragon_RightKneePivot",
+        "elvarg_dragon_RightLegPivot",
+        "elvarg_dragon_TailPivot",
+        "elvarg_dragon_TailPivot2",
+        "elvarg_dragon_TailPivot3",
+        "elvarg_dragon_Torso"
+      ]
+    },
+    "Death": {
+      "moves": [
+        "elvarg_dragon_HeadGroup",
+        "elvarg_dragon_Hips",
+        "elvarg_dragon_Jaw",
+        "elvarg_dragon_LWing",
+        "elvarg_dragon_LWing2",
+        "elvarg_dragon_LeftArmPivot",
+        "elvarg_dragon_LeftElbowPivot",
+        "elvarg_dragon_LeftKneePivot",
+        "elvarg_dragon_LeftLegPivot",
+        "elvarg_dragon_Neck1",
+        "elvarg_dragon_Neck2",
+        "elvarg_dragon_RWing",
+        "elvarg_dragon_RWing2",
+        "elvarg_dragon_RightArmPivot",
+        "elvarg_dragon_RightElbowPivot",
+        "elvarg_dragon_RightKneePivot",
+        "elvarg_dragon_RightLegPivot",
+        "elvarg_dragon_TailPivot",
+        "elvarg_dragon_TailPivot2",
+        "elvarg_dragon_TailPivot3",
+        "elvarg_dragon_Torso"
+      ]
+    },
+    "Idle": {
+      "moves": [
+        "elvarg_dragon_HeadGroup",
+        "elvarg_dragon_Hips",
+        "elvarg_dragon_Jaw",
+        "elvarg_dragon_LWing",
+        "elvarg_dragon_LWing2",
+        "elvarg_dragon_LeftArmPivot",
+        "elvarg_dragon_LeftElbowPivot",
+        "elvarg_dragon_LeftKneePivot",
+        "elvarg_dragon_LeftLegPivot",
+        "elvarg_dragon_Neck1",
+        "elvarg_dragon_Neck2",
+        "elvarg_dragon_RWing",
+        "elvarg_dragon_RWing2",
+        "elvarg_dragon_RightArmPivot",
+        "elvarg_dragon_RightElbowPivot",
+        "elvarg_dragon_RightKneePivot",
+        "elvarg_dragon_RightLegPivot",
+        "elvarg_dragon_TailPivot",
+        "elvarg_dragon_TailPivot2",
+        "elvarg_dragon_TailPivot3",
+        "elvarg_dragon_Torso"
+      ]
+    },
+    "Walk": {
+      "moves": [
+        "elvarg_dragon_HeadGroup",
+        "elvarg_dragon_Hips",
+        "elvarg_dragon_Jaw",
+        "elvarg_dragon_LWing",
+        "elvarg_dragon_LWing2",
+        "elvarg_dragon_LeftArmPivot",
+        "elvarg_dragon_LeftElbowPivot",
+        "elvarg_dragon_LeftKneePivot",
+        "elvarg_dragon_LeftLegPivot",
+        "elvarg_dragon_Neck1",
+        "elvarg_dragon_Neck2",
+        "elvarg_dragon_RWing",
+        "elvarg_dragon_RWing2",
+        "elvarg_dragon_RightArmPivot",
+        "elvarg_dragon_RightElbowPivot",
+        "elvarg_dragon_RightKneePivot",
+        "elvarg_dragon_RightLegPivot",
+        "elvarg_dragon_TailPivot",
+        "elvarg_dragon_TailPivot2",
+        "elvarg_dragon_TailPivot3",
+        "elvarg_dragon_Torso"
+      ]
+    },
+    "WingBuffet": {
+      "moves": [
+        "elvarg_dragon_HeadGroup",
+        "elvarg_dragon_Hips",
+        "elvarg_dragon_Jaw",
+        "elvarg_dragon_LWing",
+        "elvarg_dragon_LWing2",
+        "elvarg_dragon_LeftArmPivot",
+        "elvarg_dragon_LeftElbowPivot",
+        "elvarg_dragon_LeftKneePivot",
+        "elvarg_dragon_LeftLegPivot",
+        "elvarg_dragon_Neck1",
+        "elvarg_dragon_Neck2",
+        "elvarg_dragon_RWing",
+        "elvarg_dragon_RWing2",
+        "elvarg_dragon_RightArmPivot",
+        "elvarg_dragon_RightElbowPivot",
+        "elvarg_dragon_RightKneePivot",
+        "elvarg_dragon_RightLegPivot",
+        "elvarg_dragon_TailPivot",
+        "elvarg_dragon_TailPivot2",
+        "elvarg_dragon_TailPivot3",
+        "elvarg_dragon_Torso"
+      ]
+    }
+  },
   "skin": {
     "skeleton": "biped",
     "bones": {
@@ -1467,14 +1593,18 @@
         ]
       }
     ],
-    "maxLimbDegrees": 20
+    "maxLimbDegrees": 20,
+    "attackClips": {
+      "Bite": 0.333333,
+      "WingBuffet": 0.333333
+    }
   },
   "budget": {
     "triangles": 77894,
     "meshes": 183,
     "materials": 40,
-    "rawBytes": 4330986,
-    "brotliBytes": 993303
+    "rawBytes": 4387857,
+    "brotliBytes": 1042228
   },
   "figures": {
     "Monster_chicken": {

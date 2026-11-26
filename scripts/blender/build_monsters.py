@@ -3437,7 +3437,195 @@ def build_elvarg_dragon(grid_pos: tuple[float, float, float], mats: dict):
     for got, shipped, what in zip(size, DRAGON_BOUNDS, ("width", "height", "length")):
         if abs(got / shipped - 1.0) > 0.05:
             raise ValueError(f"dragon: {what} {got:.3f} is more than 5% from the shipped dragon's {shipped}")
+    build_dragon_library(rig, merged)
     return rig
+
+
+# =============================================================================
+# The dragon library (plan D2b, design 6.5): Idle, Walk, Bite, WingBuffet, Death on the dragon's bones
+# =============================================================================
+# Pose tables on the hero's twelve-a-second grid (build_hero.pose_table), rotation only, plus the
+# measured Hips height that holds the lowest point of the body on the ground. Every rotation is a
+# three-space Euler triple in three's YZX order, local to the bone's parent (every rest rotation is
+# identity, so a bone's axes are the figure's). The figure faces -z: +x lifts a forward bone (neck,
+# head, tail tip goes down) and swings a hanging leg forward; -x opens the jaw and folds a hock back,
+# and +x lifts a fore foot (the lower fore leg slants forward, so folding it back would dig it in); -z raises the left wing and +z the right; +y sweeps the left wing back, -y the right.
+# Bite and WingBuffet share the anticipation key (frame 8), so the motion row's one anticipation time
+# holds for either attack clip.
+DRAGON_ANTICIPATION_FRAME = 8
+DRAGON_BONES = (
+    "Hips", "Torso", "Neck1", "Neck2", "HeadGroup", "Jaw",
+    "LeftArmPivot", "LeftElbowPivot", "RightArmPivot", "RightElbowPivot",
+    "LeftLegPivot", "LeftKneePivot", "RightLegPivot", "RightKneePivot",
+    "LWing", "LWing2", "RWing", "RWing2", "TailPivot", "TailPivot2", "TailPivot3",
+)
+
+
+def _dragon_clip_tables(pose_table):
+    Z = (0.0, 0.0, 0.0)
+    rest = {b: Z for b in DRAGON_BONES}
+
+    def mirror(pose):
+        """Left and right swapped: a leg's numbers move to the other side; y and z change sign."""
+        out = {}
+        for b, (x, y, z) in pose.items():
+            o = b.replace("Left", "#").replace("Right", "Left").replace("#", "Right")
+            if o == b:
+                o = b.replace("LWing", "#").replace("RWing", "LWing").replace("#", "RWing")
+            out[o] = (x, -y, -z)
+        return out
+
+    # Idle: a slow breath through neck, jaw and wings; the tail and head sway out of phase.
+    idle_a = {"Neck1": (-0.03, 0.0, 0.0), "Neck2": (0.04, 0.03, 0.0), "HeadGroup": (0.02, 0.10, 0.0), "Jaw": (-0.04, 0.0, 0.0),
+              "Torso": (0.0, 0.0, 0.012), "LWing": (0.0, 0.0, 0.04), "RWing": (0.0, 0.0, -0.04), "LWing2": (0.0, 0.0, 0.03), "RWing2": (0.0, 0.0, -0.03),
+              "TailPivot": (0.0, 0.08, 0.0), "TailPivot2": (0.0, 0.05, 0.0), "TailPivot3": (0.0, 0.02, 0.0)}
+    idle_b = {"Neck1": (0.02, 0.0, 0.0), "Neck2": (-0.02, 0.0, 0.0), "HeadGroup": (-0.02, 0.0, 0.0), "Jaw": (-0.10, 0.0, 0.0),
+              "LWing": (0.0, 0.0, 0.07), "RWing": (0.0, 0.0, -0.07), "LWing2": (0.0, 0.0, 0.05), "RWing2": (0.0, 0.0, -0.05),
+              "TailPivot": (0.0, 0.0, 0.0), "TailPivot2": (0.0, 0.08, 0.0), "TailPivot3": (0.0, 0.10, 0.0)}
+    idle_c = dict(mirror(idle_a), Jaw=(-0.04, 0.0, 0.0))
+    idle = pose_table("Idle", 48, rest, [
+        (0, "rest", {}, "cr"), (12, "breathe in", idle_a, "cr"), (24, "full", idle_b, "cr"),
+        (36, "breathe out", idle_c, "cr"), (48, "rest", {}, "cr"),
+    ], loop=True)
+
+    # Walk: a diagonal gait (left fore with right hind), front legs 0.40 and hind legs 0.55 so both
+    # pairs step about 1.0 a stance; the swinging pair folds elbow and hock to clear the ground.
+    reach = {"LeftArmPivot": (0.40, 0.0, 0.0), "RightLegPivot": (0.55, 0.0, 0.0),
+             "RightArmPivot": (-0.40, 0.0, 0.0), "RightElbowPivot": (0.10, 0.0, 0.0),
+             "LeftLegPivot": (-0.55, 0.0, 0.0), "LeftKneePivot": (-0.20, 0.0, 0.0),
+             "Torso": (0.0, -0.03, 0.03), "Hips": (0.0, 0.03, -0.02), "Neck2": (0.0, 0.05, 0.0), "HeadGroup": (0.02, 0.0, 0.0),
+             "TailPivot": (0.0, -0.10, 0.0), "TailPivot2": (0.0, -0.04, 0.0), "TailPivot3": (0.0, 0.04, 0.0),
+             "LWing": (0.0, 0.0, -0.02), "RWing": (0.0, 0.0, 0.02), "Jaw": (-0.04, 0.0, 0.0)}
+    passing = {"RightElbowPivot": (0.50, 0.0, 0.0), "RightArmPivot": (0.05, 0.0, 0.0), "LeftKneePivot": (-0.70, 0.0, 0.0), "LeftLegPivot": (0.05, 0.0, 0.0),
+               "HeadGroup": (-0.04, 0.0, 0.0), "Neck1": (0.02, 0.0, 0.0), "TailPivot2": (0.0, -0.10, 0.0), "TailPivot3": (0.0, -0.08, 0.0),
+               "LWing": (0.0, 0.0, 0.04), "RWing": (0.0, 0.0, -0.04), "LWing2": (0.0, 0.0, 0.03), "RWing2": (0.0, 0.0, -0.03), "Jaw": (-0.04, 0.0, 0.0)}
+    walk = pose_table("Walk", 16, rest, [
+        (0, "reach", reach, "cr"), (4, "pass", passing, "cr"), (8, "reach other", mirror(reach), "cr"),
+        (12, "pass other", mirror(passing), "cr"), (16, "reach", reach, "cr"),
+    ], loop=True)
+
+    a = DRAGON_ANTICIPATION_FRAME
+    # Bite: the neck rears and the jaw opens with the wings lifted (the telegraph), the head drives
+    # down and forward, the jaw snaps shut, the body settles.
+    bite = pose_table("Bite", 20, rest, [
+        (0, "rest", {}, "io"),
+        (a, "rear", {"Neck1": (0.30, 0.0, 0.0), "Neck2": (0.18, 0.0, 0.0), "HeadGroup": (0.10, 0.0, 0.0), "Jaw": (-0.45, 0.0, 0.0),
+                     "LWing": (0.0, 0.0, -0.22), "RWing": (0.0, 0.0, 0.22), "LWing2": (0.0, 0.0, -0.12), "RWing2": (0.0, 0.0, 0.12),
+                     "LeftArmPivot": (-0.06, 0.0, 0.0), "RightArmPivot": (-0.06, 0.0, 0.0), "TailPivot": (-0.12, 0.0, 0.0), "TailPivot2": (-0.06, 0.0, 0.0)}, "io"),
+        (12, "strike", {"Neck1": (-0.32, 0.0, 0.0), "Neck2": (-0.28, 0.0, 0.0), "HeadGroup": (-0.12, 0.0, 0.0), "Jaw": (-0.55, 0.0, 0.0),
+                        "LWing": (0.0, 0.0, 0.10), "RWing": (0.0, 0.0, -0.10), "LeftArmPivot": (0.10, 0.0, 0.0), "RightArmPivot": (0.10, 0.0, 0.0),
+                        "TailPivot": (0.08, 0.0, 0.0), "TailPivot2": (0.04, 0.0, 0.0)}, "in"),
+        (14, "snap", {"Neck1": (-0.30, 0.0, 0.0), "Neck2": (-0.22, 0.0, 0.0), "HeadGroup": (-0.18, 0.0, 0.0), "Jaw": (0.02, 0.0, 0.0),
+                      "LWing": (0.0, 0.0, 0.08), "RWing": (0.0, 0.0, -0.08), "LeftArmPivot": (0.08, 0.0, 0.0), "RightArmPivot": (0.08, 0.0, 0.0),
+                      "TailPivot": (0.06, 0.0, 0.0)}, "out"),
+        (20, "settle", {}, "io"),
+    ])
+
+    # WingBuffet: the raised pose Stage 4's wind-up showed, now a motion: wings up and back, then one
+    # beat down and forward, kept above the ground (the tips stay clear, or the ground lock would lift
+    # the body), and the follow-through.
+    buffet = pose_table("WingBuffet", 24, rest, [
+        (0, "rest", {}, "io"),
+        (a, "raise", {"LWing": (0.0, 0.20, -0.60), "RWing": (0.0, -0.20, 0.60), "LWing2": (0.0, 0.0, -0.35), "RWing2": (0.0, 0.0, 0.35),
+                      "Neck1": (0.22, 0.0, 0.0), "Neck2": (0.10, 0.0, 0.0), "HeadGroup": (0.08, 0.0, 0.0), "Jaw": (-0.25, 0.0, 0.0),
+                      "LeftArmPivot": (-0.08, 0.0, 0.0), "RightArmPivot": (-0.08, 0.0, 0.0), "TailPivot": (-0.10, 0.0, 0.0)}, "io"),
+        (12, "beat", {"LWing": (0.0, -0.30, 0.18), "RWing": (0.0, 0.30, -0.18), "LWing2": (0.0, 0.0, 0.12), "RWing2": (0.0, 0.0, -0.12),
+                      "Neck1": (-0.12, 0.0, 0.0), "Neck2": (-0.10, 0.0, 0.0), "HeadGroup": (-0.05, 0.0, 0.0), "Jaw": (-0.40, 0.0, 0.0),
+                      "LeftArmPivot": (0.06, 0.0, 0.0), "RightArmPivot": (0.06, 0.0, 0.0), "TailPivot": (0.06, 0.0, 0.0)}, "in"),
+        (16, "follow", {"LWing": (0.0, -0.20, 0.12), "RWing": (0.0, 0.20, -0.12), "LWing2": (0.0, 0.0, 0.08), "RWing2": (0.0, 0.0, -0.08),
+                        "Neck1": (-0.08, 0.0, 0.0), "Neck2": (-0.05, 0.0, 0.0), "Jaw": (-0.20, 0.0, 0.0)}, "out"),
+        (24, "settle", {}, "io"),
+    ])
+
+    # Death: a recoil, the legs buckle, the body falls onto its belly rolled a little to the left with
+    # the legs splayed, neck and head down on the ground, wings folded back along the body.
+    fall = {"LeftArmPivot": (0.35, 0.0, -0.95), "RightArmPivot": (0.35, 0.0, 0.85), "LeftElbowPivot": (0.80, 0.0, 0.0), "RightElbowPivot": (0.70, 0.0, 0.0),
+            "LeftLegPivot": (0.45, 0.0, -0.85), "RightLegPivot": (0.40, 0.0, 0.80), "LeftKneePivot": (-1.20, 0.0, 0.0), "RightKneePivot": (-1.10, 0.0, 0.0),
+            "Hips": (-0.04, 0.0, 0.16), "Neck1": (-0.35, 0.0, 0.0), "Neck2": (-0.25, 0.20, 0.0), "HeadGroup": (-0.15, 0.35, 0.15), "Jaw": (-0.35, 0.0, 0.0),
+            "LWing": (0.0, 0.50, 0.10), "LWing2": (0.0, 0.40, 0.15), "RWing": (0.0, -0.50, -0.10), "RWing2": (0.0, -0.40, -0.15),
+            "TailPivot": (0.15, 0.25, 0.0), "TailPivot2": (0.10, 0.25, 0.0), "TailPivot3": (0.05, 0.20, 0.0)}
+    death = pose_table("Death", 26, rest, [
+        (0, "rest", {}, "io"),
+        (6, "recoil", {"Neck1": (0.25, 0.0, 0.0), "Neck2": (0.15, 0.0, 0.0), "HeadGroup": (0.20, 0.0, 0.0), "Jaw": (-0.50, 0.0, 0.0),
+                       "LWing": (0.0, 0.0, -0.25), "RWing": (0.0, 0.0, 0.25), "TailPivot": (-0.15, 0.0, 0.0), "Hips": (0.04, 0.0, 0.0)}, "out"),
+        (12, "buckle", {"LeftArmPivot": (0.25, 0.0, 0.0), "RightArmPivot": (0.25, 0.0, 0.0), "LeftElbowPivot": (0.35, 0.0, 0.0), "RightElbowPivot": (0.30, 0.0, 0.0),
+                        "LeftLegPivot": (0.35, 0.0, 0.0), "RightLegPivot": (0.35, 0.0, 0.0), "LeftKneePivot": (-0.70, 0.0, 0.0), "RightKneePivot": (-0.70, 0.0, 0.0),
+                        "Hips": (0.0, 0.0, 0.06), "Neck1": (-0.10, 0.0, 0.0), "Neck2": (-0.15, 0.0, 0.0), "HeadGroup": (-0.10, 0.0, 0.0), "Jaw": (-0.30, 0.0, 0.0),
+                        "LWing": (0.0, 0.0, 0.05), "RWing": (0.0, 0.0, -0.05)}, "io"),
+        (20, "fall", fall, "in"),
+        (24, "bounce", dict(fall, Hips=(-0.04, 0.0, 0.14), Neck1=(-0.30, 0.0, 0.0), HeadGroup=(-0.10, 0.35, 0.15)), "out"),
+        (26, "still", dict(fall, Neck1=(-0.36, 0.0, 0.0), HeadGroup=(-0.18, 0.38, 0.18), Jaw=(-0.25, 0.0, 0.0)), "io"),
+    ])
+    return [("Idle", idle, 48, True), ("Walk", walk, 16, True), ("Bite", bite, 20, False),
+            ("WingBuffet", buffet, 24, False), ("Death", death, 26, False)]
+
+
+def build_dragon_library(rig, meshes):
+    """
+    Keys the five clips on the dragon's armature, one NLA track each. Frames 0 to the clip's last key
+    are keyed (a one-shot ends on its settle or held pose, a loop's last frame repeats its first). The
+    Hips height is measured per frame so the posed body's lowest point is on the ground; loops are
+    smoothed round the cycle and may let a foot 0.01 into the ground, as the hero's Walk.
+    """
+    import build_hero  # the pose-table sampler, its eases and the lowest-point probe (H4)
+
+    prefix = "elvarg_dragon_"
+    hips = rig.pose.bones[prefix + "Hips"]
+    for name, sample, frames, loop in _dragon_clip_tables(build_hero.pose_table):
+        rig.animation_data_create()
+        action = bpy.data.actions.new(name=name)
+        rig.animation_data.action = action
+        last = frames  # loops and one-shots alike key their last key's frame
+        poses = [sample(f / float(frames)) for f in range(last + 1)]
+        for f, pose in enumerate(poses):
+            for b, value in pose.items():
+                pb = rig.pose.bones[prefix + b]
+                pb.rotation_mode = "QUATERNION"
+                pb.rotation_quaternion = Euler(value, "XZY").to_quaternion()
+                pb.keyframe_insert(data_path="rotation_quaternion", frame=f)
+            hips.location = Vector()
+            hips.keyframe_insert(data_path="location", frame=f)
+        earlier = [tr for tr in rig.animation_data.nla_tracks]
+        for tr in earlier:
+            tr.mute = True
+        lock = []
+        for f in range(last + 1):
+            bpy.context.scene.frame_set(f)
+            lock.append(-build_hero._lowest(meshes))
+        heights = list(lock)
+        if loop:
+            n = len(heights) - 1  # the last frame is the first
+            ring = heights[:n]
+            for _ in range(4):
+                ring = [max(lock[i] - build_hero.GROUND_SINK, (ring[i - 1] + 2 * ring[i] + ring[(i + 1) % n]) / 4) for i in range(n)]
+            heights = ring + [ring[0]]
+        for f, h in enumerate(heights):
+            hips.location = Vector((0.0, h, 0.0))
+            hips.keyframe_insert(data_path="location", frame=f)
+        lows = []
+        for f in range(last + 1):
+            bpy.context.scene.frame_set(f)
+            lo = build_hero._lowest(meshes)
+            lows.append(lo)
+            held = lo >= -build_hero.GROUND_SINK - build_hero.GROUND_TOL if loop else abs(lo) <= build_hero.GROUND_TOL
+            if not held:
+                raise ValueError(f"dragon {name} frame {f}: lowest point {lo:+.4f} after the ground lock")
+        bpy.context.scene.frame_set(0)
+        for tr in earlier:
+            tr.mute = False
+        track = rig.animation_data.nla_tracks.new()
+        track.name = name
+        strip = track.strips.new(name, 0, action)
+        strip.name = name
+        rig.animation_data.action = None
+        for pb in rig.pose.bones:
+            pb.rotation_mode = "QUATERNION"
+            pb.rotation_quaternion = (1.0, 0.0, 0.0, 0.0)
+            pb.location = Vector()
+        keys = ", ".join(f"{n} {k}" for k, n in sample.keys)
+        print(f"[Blender] dragon {name}: {last + 1} frames, {last / build_hero.FPS:.4f} s; keys {keys}; "
+              f"Hips height {min(heights):+.3f} to {max(heights):+.3f}, lowest point {min(lows):+.3f} to {max(lows):+.3f}")
+    bpy.context.view_layer.update()
 
 
 # =============================================================================
@@ -3541,6 +3729,8 @@ def main():
         export_yup=True,
         export_extras=True,
         export_vertex_color="ACTIVE",  # the goblin's paint layer; no other figure has a colour layer (plan S2)
+        export_animation_mode="ACTIONS",  # the dragon library (D2b): one animation per NLA track, as the hero's
+        export_optimize_animation_keep_anim_armature=False,
     )
     print(f"[Blender] Exported glTF binary: {glb_path}")
 
