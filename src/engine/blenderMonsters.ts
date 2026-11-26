@@ -225,7 +225,7 @@ export function upgradeMonsterRigWithGltf(
       // Optional by contract (callers that do not pose the figure pass no hero file); spawnMonster throws when the hero file failed to load.
       if (heroGltf) attachBipedAnimator(mObj, modelKey, heroGltf);
     } else {
-      attachMonsterGltfAnimator(mObj, modelKey, nodeKey, gltf);
+      attachMonsterGltfAnimator(mObj, modelKey, gltf);
     }
   }
 
@@ -287,12 +287,12 @@ function attachBipedAnimator(mObj: MonsterEntityLike, modelKey: string, heroSour
 function attachMonsterGltfAnimator(
   mObj: MonsterEntityLike,
   modelKey: string,
-  nodeKey: string,
   monstersGltf: GLTF
 ): void {
   let cached = modelClipsCache.get(modelKey);
   if (!cached) {
-    const stripped = stripClipPrefix(monstersGltf.animations, nodeKey);
+    // The library's tracks carry the prefix of the figure that authored it (the model key), never a body's (design 6.1).
+    const stripped = stripClipPrefix(monstersGltf.animations, modelKey);
     const clonedClips = stripped.map((c) => c.clone());
     cached = { clips: clonedClips, walkLegRatio: 1.0 };
     modelClipsCache.set(modelKey, cached);
