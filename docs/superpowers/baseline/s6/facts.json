@@ -1,0 +1,473 @@
+{
+ "renderer": "ANGLE (Microsoft Corporation, D3D12 (NVIDIA GeForce RTX 4070 Laptop GPU), OpenGL 4.6)",
+ "camps": {
+  "a1_scorpions_new_hero": {
+   "file": "a1-scorpions-new-hero.jpg",
+   "levels": null,
+   "placedAt": [
+    48,
+    33
+   ],
+   "watchedSecs": 4,
+   "hpBefore": 10,
+   "firstHit": {
+    "atSecs": 1,
+    "hp": 7.04,
+    "target": {
+     "type": "monster",
+     "name": "King Scorpion",
+     "state": "attack"
+    }
+   },
+   "last": {
+    "hp": 2.8,
+    "target": {
+     "type": "monster",
+     "name": "King Scorpion",
+     "state": "attack"
+    },
+    "chat": [
+     "King Scorpion attacks!",
+     "King Scorpion attacks!"
+    ]
+   },
+   "pageErrors": []
+  },
+  "a2_scorpions_strong_hero": {
+   "file": "a2-scorpions-strong-hero.jpg",
+   "levels": {
+    "attack": 99,
+    "strength": 99,
+    "defence": 99,
+    "hitpoints": 99,
+    "ranged": 99,
+    "magic": 99,
+    "prayer": 99
+   },
+   "placedAt": [
+    48,
+    33
+   ],
+   "watchedSecs": 10,
+   "hpBefore": 99,
+   "firstHit": null,
+   "last": {
+    "hp": 99,
+    "target": null,
+    "chat": [
+     "You arrive with nothing. The tracker under your health shows your first task: speak with the task master in the courtyard.",
+     "The courtyard holds the Bank booth, the General Store, and the Anvil. Walk up to use them. Press F1–F6 to switch panels and Esc to close a window."
+    ]
+   },
+   "pageErrors": []
+  },
+  "b_three_kettle_passive": {
+   "file": "b-three-kettle-passive.jpg",
+   "levels": null,
+   "placedAt": [
+    17,
+    12
+   ],
+   "watchedSecs": 10,
+   "hpBefore": 10,
+   "firstHit": null,
+   "last": {
+    "hp": 10,
+    "target": null,
+    "chat": [
+     "You arrive with nothing. The tracker under your health shows your first task: speak with the task master in the courtyard.",
+     "The courtyard holds the Bank booth, the General Store, and the Anvil. Walk up to use them. Press F1–F6 to switch panels and Esc to close a window."
+    ]
+   },
+   "pageErrors": []
+  }
+ },
+ "yewRunPictures": [
+  {
+   "attempt": 0,
+   "clicks": [
+    0.01,
+    4.07
+   ],
+   "hit": true,
+   "frameBefore": {
+    "t": 6.141,
+    "hp": 61,
+    "target": "resource",
+    "monster": null,
+    "pos": [
+     -97.1,
+     -24.06
+    ]
+   },
+   "frameOfHit": {
+    "t": 6.164,
+    "hp": 49,
+    "target": null,
+    "monster": null,
+    "pos": [
+     -97.26,
+     -24.16
+    ]
+   },
+   "gatheringWhenHit": true,
+   "chat": [
+    "Gathered Sacred Yew Logs.",
+    "Moss Guardian attacks!"
+   ],
+   "pageErrors": []
+  }
+ ],
+ "yewRun10Attempts": [
+  {
+   "attempt": 0,
+   "clicks": [
+    0.02,
+    9.84
+   ],
+   "hit": true,
+   "frameBefore": {
+    "t": 17.691,
+    "hp": 61,
+    "target": "resource",
+    "monster": null,
+    "pos": [
+     -97.76,
+     -24.45
+    ],
+    "moving": true
+   },
+   "frameOfHit": {
+    "t": 17.718,
+    "hp": 54,
+    "target": null,
+    "monster": null,
+    "pos": [
+     -97.92,
+     -24.55
+    ],
+    "moving": true
+   },
+   "gatheringWhenHit": false,
+   "walkingToTreeWhenHit": true,
+   "after2_5s": {
+    "hp": 54.63,
+    "target": null
+   },
+   "chat": [
+    "Gathered Sacred Yew Logs.",
+    "Moss Guardian attacks!"
+   ],
+   "pageErrors": []
+  },
+  {
+   "attempt": 1,
+   "clicks": [
+    0.01,
+    1.09
+   ],
+   "hit": true,
+   "frameBefore": {
+    "t": 41.016,
+    "hp": 61,
+    "target": null,
+    "monster": null,
+    "pos": [
+     -99.4,
+     -25.44
+    ],
+    "moving": false
+   },
+   "frameOfHit": {
+    "t": 41.045,
+    "hp": 46,
+    "target": "monster",
+    "monster": "Moss Guardian",
+    "pos": [
+     -99.4,
+     -25.44
+    ],
+    "moving": false
+   },
+   "gatheringWhenHit": false,
+   "walkingToTreeWhenHit": false,
+   "after2_5s": {
+    "hp": 31.63,
+    "target": {
+     "type": "monster",
+     "name": "Moss Guardian",
+     "state": "attack"
+    }
+   },
+   "chat": [
+    "Moss Guardian attacks!",
+    "Gathered Sacred Yew Logs."
+   ],
+   "pageErrors": []
+  },
+  {
+   "attempt": 2,
+   "clicks": [
+    0.01,
+    1.08
+   ],
+   "hit": false,
+   "frameBefore": null,
+   "frameOfHit": null,
+   "gatheringWhenHit": false,
+   "walkingToTreeWhenHit": false,
+   "chat": [
+    "Moss Guardian attacks!",
+    "Gathered Sacred Yew Logs."
+   ],
+   "pageErrors": []
+  },
+  {
+   "attempt": 3,
+   "clicks": [
+    0.01,
+    1.71
+   ],
+   "hit": true,
+   "frameBefore": {
+    "t": 3.824,
+    "hp": 61,
+    "target": "resource",
+    "monster": null,
+    "pos": [
+     -97.1,
+     -24.06
+    ],
+    "moving": true
+   },
+   "frameOfHit": {
+    "t": 3.849,
+    "hp": 59,
+    "target": null,
+    "monster": null,
+    "pos": [
+     -97.26,
+     -24.16
+    ],
+    "moving": true
+   },
+   "gatheringWhenHit": false,
+   "walkingToTreeWhenHit": true,
+   "after2_5s": {
+    "hp": 44.63,
+    "target": {
+     "type": "monster",
+     "name": "Moss Guardian",
+     "state": "attack"
+    }
+   },
+   "chat": [
+    "Gathered Sacred Yew Logs.",
+    "Moss Guardian attacks!"
+   ],
+   "pageErrors": []
+  },
+  {
+   "attempt": 4,
+   "clicks": [
+    0.01,
+    9.39
+   ],
+   "hit": false,
+   "frameBefore": null,
+   "frameOfHit": null,
+   "gatheringWhenHit": false,
+   "walkingToTreeWhenHit": false,
+   "chat": [
+    "Moss Guardian attacks!",
+    "Gathered Sacred Yew Logs."
+   ],
+   "pageErrors": []
+  },
+  {
+   "attempt": 5,
+   "clicks": [
+    0.01,
+    11.56
+   ],
+   "hit": true,
+   "frameBefore": {
+    "t": 21.15,
+    "hp": 61,
+    "target": "resource",
+    "monster": null,
+    "pos": [
+     -97.1,
+     -24.06
+    ],
+    "moving": true
+   },
+   "frameOfHit": {
+    "t": 21.175,
+    "hp": 59,
+    "target": null,
+    "monster": null,
+    "pos": [
+     -97.26,
+     -24.16
+    ],
+    "moving": true
+   },
+   "gatheringWhenHit": false,
+   "walkingToTreeWhenHit": true,
+   "after2_5s": {
+    "hp": 45.64,
+    "target": {
+     "type": "monster",
+     "name": "Moss Guardian",
+     "state": "attack"
+    }
+   },
+   "chat": [
+    "Gathered Sacred Yew Logs.",
+    "Moss Guardian attacks!"
+   ],
+   "pageErrors": []
+  },
+  {
+   "attempt": 6,
+   "clicks": [
+    0.01,
+    1.7
+   ],
+   "hit": true,
+   "frameBefore": {
+    "t": 4.122,
+    "hp": 61,
+    "target": "resource",
+    "monster": null,
+    "pos": [
+     -98.41,
+     -24.85
+    ],
+    "moving": true
+   },
+   "frameOfHit": {
+    "t": 4.148,
+    "hp": 46,
+    "target": null,
+    "monster": null,
+    "pos": [
+     -98.58,
+     -24.95
+    ],
+    "moving": true
+   },
+   "gatheringWhenHit": false,
+   "walkingToTreeWhenHit": true,
+   "after2_5s": {
+    "hp": 46.63,
+    "target": null
+   },
+   "chat": [
+    "Gathered Sacred Yew Logs.",
+    "Moss Guardian attacks!"
+   ],
+   "pageErrors": []
+  },
+  {
+   "attempt": 7,
+   "clicks": [
+    0.02,
+    1.08
+   ],
+   "hit": true,
+   "frameBefore": {
+    "t": 4.096,
+    "hp": 61,
+    "target": "resource",
+    "monster": null,
+    "pos": [
+     -97.59,
+     -24.35
+    ],
+    "moving": true
+   },
+   "frameOfHit": {
+    "t": 4.119,
+    "hp": 53,
+    "target": null,
+    "monster": null,
+    "pos": [
+     -97.75,
+     -24.45
+    ],
+    "moving": true
+   },
+   "gatheringWhenHit": false,
+   "walkingToTreeWhenHit": true,
+   "after2_5s": {
+    "hp": 53.64,
+    "target": null
+   },
+   "chat": [
+    "Gathered Sacred Yew Logs.",
+    "Moss Guardian attacks!"
+   ],
+   "pageErrors": []
+  },
+  {
+   "attempt": 8,
+   "clicks": [
+    0.01,
+    1.13
+   ],
+   "hit": false,
+   "frameBefore": null,
+   "frameOfHit": null,
+   "gatheringWhenHit": false,
+   "walkingToTreeWhenHit": false,
+   "chat": [
+    "Moss Guardian attacks!",
+    "Gathered Sacred Yew Logs."
+   ],
+   "pageErrors": []
+  },
+  {
+   "attempt": 9,
+   "clicks": [
+    0.01,
+    1.66
+   ],
+   "hit": true,
+   "frameBefore": {
+    "t": 3.974,
+    "hp": 61,
+    "target": "resource",
+    "monster": null,
+    "pos": [
+     -97.76,
+     -24.45
+    ],
+    "moving": true
+   },
+   "frameOfHit": {
+    "t": 3.994,
+    "hp": 48,
+    "target": null,
+    "monster": null,
+    "pos": [
+     -97.92,
+     -24.55
+    ],
+    "moving": true
+   },
+   "gatheringWhenHit": false,
+   "walkingToTreeWhenHit": true,
+   "after2_5s": {
+    "hp": 48.63,
+    "target": null
+   },
+   "chat": [
+    "Gathered Sacred Yew Logs.",
+    "Moss Guardian attacks!"
+   ],
+   "pageErrors": []
+  }
+ ]
+}
