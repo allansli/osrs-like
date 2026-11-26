@@ -2989,6 +2989,140 @@ def build_slag_brute_kit():
     return _kit_root("slag_brute", parts, j, SLAG_KIT_TRIANGLES)
 
 
+# --- 7c. Kit_marrowjaw: Marrowjaw the Tollmaster's kit on the hill giant (Stage 6 plan MK3, design 7.5) ------------
+# The giant plus rigid pieces of its own, each one mesh named marrowjaw_<Bone> after the giant bone it rides on,
+# as MK1's and MK2's: a crown made of a beast's lower jaw, worn round the top of the skull above the brow, its
+# teeth standing up and its two hinges rising at the back (HeadGroup); over each shoulder ball a pauldron of
+# three great ribs arching from the chest to the shoulder blade, centred on the arm's joint so it turns with the
+# arm, and one tusk rising up and back from it (Left/RightArmPivot); and the toll banner on the back: a pole
+# seated in a socket at the belt, tucked under the fur strap, standing well above the head, with a cross-bar
+# and a swallow-tailed banner hung from it to the left, a brass toll coin on both its faces (Torso). Where
+# MK2's brute is low and wide with nothing above the skull, Marrowjaw's kit is vertical: the teeth, the
+# tusks and the banner are what the black cut-out keeps. All on the giant's plain bone material (no tile, so
+# the colours are painted as they are): the kit adds no material and no emissive.
+MARROW_KIT_TRIANGLES = 1200
+MARROW_COLOURS = {  # as the game shows them before Stage 6's tint
+    "bone": 0xBCAC8C,  # the giant's own bone (74% value): the jaw, the teeth, the ribs' tips, the tusks
+    "old": 0xA49474,  # the ribs and the jaw's underside, older bone, 64% value
+    "paint": 0x8C3424,  # war paint on the middle rib and the hinges, 30% luma, 55% value
+    "banner": 0x7A2C22,  # the banner, 25% luma, 48% value
+    "wood": 0x6E5034,  # the pole and the cross-bar, the giant's club wood, 43% value
+    "hide": 0x6E4E32,  # the socket and the binding, the giant's pelt, 43% value
+    "brass": 0xB08C3C,  # the toll coins and the pole's cap, 56% luma, 69% value
+}
+
+
+def build_marrowjaw_kit():
+    """
+    Marrowjaw's kit (plan MK3): Kit_marrowjaw at the origin with the children marrowjaw_HeadGroup,
+    _LeftArmPivot, _RightArmPivot and _Torso (_kit_root). Built after build_hill_giant, on its bone material.
+    """
+    plain = bpy.data.materials["mat_bone_hill_giant_paint"]  # build_hill_giant's
+    j = giant_joints()
+    parts = {"HeadGroup": [], "LeftArmPivot": [], "RightArmPivot": [], "Torso": []}
+
+    def add(obj, bone: str, colour: str, planes: bool = True):
+        _goblin_tint(obj, MARROW_COLOURS[colour], planes)
+        parts[bone].append(obj)
+
+    def aim(d) -> dict:
+        d = Vector(d).normalized()
+        return {"rx": math.asin(d.z), "rz": -math.atan2(d.x, d.y)}
+
+    def tooth(name: str, r: float, length: float, at, d, segs: int = 4):
+        """A faceted tooth or tusk of base radius r along d from at."""
+        return add_lathe(name, None, plain, [(0.0, r, r * 0.8), (length * 0.55, r * 0.6, r * 0.5), (length, 0.004, 0.004)],
+                         segs=segs, tx=at.x, ty=at.y, tz=at.z, smooth=False, **aim(d))
+
+    # The jaw crown: a horseshoe of bone round the skull at y 2.27, where the head is 0.31 across and 0.36 deep
+    # about three z -0.08 (measured on the built giant), so the band (0.03 by 0.045) rests on it above the brow
+    # and the ears; open at the back, where the jaw's two hinges rise 0.2 and lean out. Teeth stand on it, the
+    # canines at the front corners the tallest
+    cz, ax, az, cy = -0.08, 0.200, 0.222, 2.27
+    ring = []
+    for k in range(13):
+        t = math.radians(-138.0 + 23.0 * k)
+        ring.append((ax * math.sin(t), cy + 0.012 * (1.0 - math.cos(t)), cz - az * math.cos(t), 0.030, 0.045))
+    add(add_curved_tube("mjw_jaw", None, plain, ring, segs=5, smooth=False), "HeadGroup", "bone")
+    for s in (-1.0, 1.0):
+        t = math.radians(138.0)
+        base = Vector((s * ax * math.sin(t), cy + 0.012 * (1.0 - math.cos(t)), cz - az * math.cos(t)))
+        hinge = [(*base, 0.032, 0.045), (*(base + Vector((s * 0.03, 0.11, 0.03))), 0.030, 0.040), (*(base + Vector((s * 0.06, 0.20, 0.07))), 0.034, 0.034)]
+        add(add_curved_tube("mjw_hinge", None, plain, hinge, segs=5, smooth=False), "HeadGroup", "paint")
+        top = base + Vector((s * 0.06, 0.20, 0.07))
+        add(add_sphere("mjw_knuckle", None, plain, 0.045, 0.035, 0.05, tx=top.x, ty=top.y + 0.02, tz=top.z, segs=5, rings=4, smooth=False), "HeadGroup", "bone")
+    for deg, length, r in ((14.0, 0.07, 0.026), (40.0, 0.17, 0.034), (66.0, 0.09, 0.030), (92.0, 0.08, 0.030)):
+        for s in (-1.0, 1.0):
+            t = math.radians(s * deg)
+            at = Vector((ax * math.sin(t), cy + 0.03, cz - az * math.cos(t)))
+            out = Vector((math.sin(t), 0.0, -math.cos(t)))
+            add(tooth("mjw_tooth", r, length, at, Vector((0.0, 1.0, 0.0)) + out * 0.25), "HeadGroup", "bone")
+
+    # The rib pauldrons: three ribs over each shoulder ball (radius 0.20 at the arm's joint), in planes across the
+    # arm, 0.06 in, 0.04 and 0.13 out from the joint along it, each arching from the chest over the top to the
+    # shoulder blade 0.05 clear of the ball; the middle one war-painted. One tusk rises from the top, up and
+    # back and a little out, clear of the head when the arm is raised
+    for s, tag in ((-1.0, "Left"), (1.0, "Right")):
+        bone = f"{tag}ArmPivot"
+        joint = Vector(j[bone])
+        up = Vector((s * math.sin(0.55), math.cos(0.55), 0.0))
+        along = Vector((s * math.cos(0.55), -math.sin(0.55), 0.0))
+        fore = Vector((0.0, 0.0, 1.0))
+        for k, (o, colour) in enumerate(((-0.06, "old"), (0.04, "paint"), (0.13, "old"))):
+            radius = math.sqrt(0.20**2 - o**2) + 0.05
+            c = joint + along * o
+            pts = []
+            for i in range(7):
+                p = math.radians(-95.0 + 190.0 * i / 6)
+                w = 0.05 if 0 < i < 6 else 0.03
+                pts.append((*(c + up * (radius * math.cos(p)) + fore * (radius * math.sin(p))), w, 0.032))
+            add(add_curved_tube(f"mjw_rib_{tag[0]}{k}", None, plain, pts, segs=4, smooth=False), bone, colour)
+        root = joint + up * 0.22 + fore * 0.05
+        add(tooth(f"mjw_tusk_{tag[0]}", 0.055, 0.34, root, up * 0.9 + fore * 0.45 + Vector((s * 0.25, 0.0, 0.0)), segs=5), bone, "bone")
+
+    # The toll banner: a pole at x -0.16, three z 0.335, seated in a hide socket at the belt (the back's skin is
+    # at three z 0.27 to 0.30 there) and tucked under the fur strap at y 1.5, rising to y 3.22; a cross-bar at
+    # y 3.12 turned 35 degrees back from the figure's left, so the banner shows from the front, the side and the
+    # back; the banner hung from it, 0.46 wide and 0.70 deep with a swallow-tail, two-sided, a brass coin on each
+    # face; a brass cap on the pole
+    px, pz = -0.16, 0.335
+    add(add_lathe("mjw_pole", None, plain, [(0.92, 0.036, 0.036), (3.22, 0.030, 0.030)], segs=6, tx=px, tz=pz, smooth=False), "Torso", "wood")
+    add(add_lathe("mjw_socket", None, plain, [(0.90, 0.050, 0.050), (0.97, 0.060, 0.060), (1.10, 0.054, 0.054)], segs=6, tx=px, tz=pz, smooth=False), "Torso", "hide")
+    add(add_lathe("mjw_binding", None, plain, [(1.27, 0.046, 0.046), (1.33, 0.046, 0.046)], segs=6, tx=px, tz=pz, cap_ends=False, smooth=False), "Torso", "hide")
+    add(add_lathe("mjw_cap", None, plain, [(3.20, 0.045, 0.045), (3.26, 0.04, 0.04), (3.36, 0.004, 0.004)], segs=6, tx=px, tz=pz, smooth=False), "Torso", "brass")
+    bar = Vector((-math.cos(math.radians(35.0)), 0.0, math.sin(math.radians(35.0))))
+    pole_top = Vector((px, 3.12, pz))
+    add(add_curved_tube("mjw_bar", None, plain, [(*(pole_top - bar * 0.04), 0.024), (*(pole_top + bar * 0.54), 0.022)], segs=5, smooth=False), "Torso", "wood")
+    normal = bar.cross(Vector((0.0, 1.0, 0.0))).normalized()
+    width, depth, cols, rows = 0.46, 0.70, 4, 5
+    bm = bmesh.new()
+    grid = []
+    for r in range(rows + 1):
+        line = []
+        for c in range(cols + 1):
+            u, v = c / cols, r / rows
+            down = depth * v - (0.16 * (1.0 - abs(2.0 * u - 1.0)) if r == rows else 0.0)  # the swallow-tail
+            p = pole_top + bar * (0.05 + width * u) + Vector((0.0, -0.03 - down, 0.0)) + normal * (0.025 * math.sin(math.pi * u * 2.0) * v)
+            line.append(bm.verts.new(t2b(*p)))
+        grid.append(line)
+    for r in range(rows):
+        for c in range(cols):
+            bm.faces.new((grid[r][c], grid[r][c + 1], grid[r + 1][c + 1], grid[r + 1][c]))
+    bm.normal_update()
+    flag = finalize_obj("mjw_banner", bm, None, plain, smooth=False)
+    solid = flag.modifiers.new("cloth", "SOLIDIFY")
+    solid.thickness, solid.offset, solid.use_rim = 0.02, 0.0, True
+    bpy.context.view_layer.objects.active = flag
+    bpy.ops.object.modifier_apply(modifier=solid.name)
+    add(flag, "Torso", "banner")
+    centre = pole_top + bar * (0.05 + width * 0.5) + Vector((0.0, -0.03 - depth * 0.42, 0.0))
+    for side in (-1.0, 1.0):
+        at = centre + normal * side * 0.03
+        add(add_lathe(f"mjw_coin", None, plain, [(0.0, 0.095, 0.095), (0.012, 0.095, 0.095)], segs=6, tx=at.x, ty=at.y, tz=at.z, smooth=False, **aim(normal * side)),
+            "Torso", "brass")
+    return _kit_root("marrowjaw", parts, j, MARROW_KIT_TRIANGLES)
+
+
 # =============================================================================
 # 8. Monster_moss_guardian (Moss Guardian): kept and re-rigged on the biped rig (plan M3c)
 # =============================================================================
@@ -4385,6 +4519,7 @@ def main():
     build_thornwatch_marksman_kit()
     build_hill_giant((-3.4, 0.0, 2.2), mats)
     build_slag_brute_kit()
+    build_marrowjaw_kit()
     build_moss_guardian((-0.6, 0.0, 2.2), mats)
     build_lesser_demon((2.2, 0.0, 2.2), mats)
     build_elvarg_dragon((6.2, 0.0, 2.6), mats)

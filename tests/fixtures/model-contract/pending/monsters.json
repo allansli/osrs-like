@@ -389,6 +389,71 @@
         1,
         1
       ]
+    },
+    "Kit_marrowjaw": {
+      "parent": null,
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "marrowjaw_HeadGroup": {
+      "parent": "Kit_marrowjaw",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "marrowjaw_LeftArmPivot": {
+      "parent": "Kit_marrowjaw",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "marrowjaw_RightArmPivot": {
+      "parent": "Kit_marrowjaw",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "marrowjaw_Torso": {
+      "parent": "Kit_marrowjaw",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
     }
   },
   "materials": [
@@ -462,6 +527,7 @@
     "^lesser_demon_embers$",
     "^lesser_demon_horn$",
     "^lesser_demon_membrane$",
+    "^marrowjaw_(HeadGroup|LeftArmPivot|RightArmPivot|Torso)$",
     "^moss_guardian_bark$",
     "^moss_guardian_core$",
     "^moss_guardian_moss$",
@@ -490,7 +556,8 @@
       "Monster_hill_giant": "all",
       "Monster_moss_guardian": "all",
       "Kit_cinder_adept": "all",
-      "Kit_slag_brute": "all"
+      "Kit_slag_brute": "all",
+      "Kit_marrowjaw": "all"
     }
   },
   "clips": {
@@ -3437,10 +3504,10 @@
     }
   },
   "budget": {
-    "triangles": 61044,
-    "meshes": 54,
+    "triangles": 62194,
+    "meshes": 58,
     "materials": 34,
-    "rawBytes": 2357611,
+    "rawBytes": 2414397,
     "brotliBytes": 1270000
   },
   "figures": {
@@ -3547,6 +3614,13 @@
       "meshes": 4,
       "materials": 3,
       "rawBytes": 40584,
+      "brotliBytes": 20000
+    },
+    "Kit_marrowjaw": {
+      "triangles": 1200,
+      "meshes": 4,
+      "materials": 3,
+      "rawBytes": 52580,
       "brotliBytes": 20000
     }
   }
