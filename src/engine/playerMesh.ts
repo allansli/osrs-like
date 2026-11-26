@@ -109,6 +109,42 @@ export type MountedRig = HumanoidRig & { [K in GearKey]?: THREE.Object3D | null 
 // The rig types its materials as Lambert; the recolouring below has always set metalness and roughness on them.
 type PbrMat = THREE.MeshLambertMaterial & { metalness: number; roughness: number };
 
+const TODAY_PIVOT_REST: Record<string, [number, number, number]> = {
+  Torso: [0, 1.24, 0],
+  HeadGroup: [0, 1.86, 0],
+  LeftArmPivot: [-0.28, 1.5, 0],
+  RightArmPivot: [0.28, 1.5, 0],
+  LeftElbowPivot: [-0.28, 1.24, 0],
+  RightElbowPivot: [0.28, 1.24, 0],
+  LeftLegPivot: [-0.11, 0.9, 0],
+  RightLegPivot: [0.11, 0.9, 0],
+  LeftKneePivot: [-0.11, 0.52, 0],
+  RightKneePivot: [0.11, 0.52, 0]
+};
+
+function getBoneRestPosition(bone: THREE.Object3D, root: THREE.Object3D): THREE.Vector3 {
+  let pos: THREE.Vector3 | null = null;
+  root.traverse((obj) => {
+    if (pos) return;
+    const sm = obj as THREE.SkinnedMesh;
+    if (sm.isSkinnedMesh && sm.skeleton) {
+      const idx = sm.skeleton.bones.indexOf(bone as THREE.Bone);
+      if (idx !== -1 && sm.skeleton.boneInverses[idx]) {
+        pos = new THREE.Vector3().setFromMatrixPosition(sm.skeleton.boneInverses[idx].clone().invert());
+      }
+    }
+  });
+  if (pos) return pos;
+
+  const p = new THREE.Vector3();
+  let curr: THREE.Object3D | null = bone;
+  while (curr && curr !== root) {
+    p.add(curr.position);
+    curr = curr.parent;
+  }
+  return p;
+}
+
 export function mountLoadout(rig: MountedRig, items: LoadoutItems): void {
   const rArm = rig.rightArmPivot;
   const lArm = rig.leftArmPivot;
@@ -128,6 +164,13 @@ export function mountLoadout(rig: MountedRig, items: LoadoutItems): void {
 
   const mount = (parent: THREE.Object3D | null | undefined, node: THREE.Object3D | null | undefined, key: GearKey): void => {
     if (!parent || !node) return;
+    if (parent.name && parent.name in TODAY_PIVOT_REST && (parent as THREE.Bone).isBone) {
+      const today = TODAY_PIVOT_REST[parent.name];
+      const bone = getBoneRestPosition(parent, rig.group);
+      node.position.x += today[0] - bone.x;
+      node.position.y += today[1] - bone.y;
+      node.position.z += today[2] - bone.z;
+    }
     parent.add(node);
     rig[key] = node;
   };
@@ -247,8 +290,8 @@ export function mountLoadout(rig: MountedRig, items: LoadoutItems): void {
   const headItem = equip('head');
   const showHair = headShowsHair(headItem);
   if (rig.hairCap) rig.hairCap.visible = showHair;
-  if (headG) {
-    headG.traverse((ch: THREE.Object3D) => {
+  if (rig.group) {
+    rig.group.traverse((ch: THREE.Object3D) => {
       if (
         ch.name.startsWith('Hair') ||
         ch.name.startsWith('CrownSpike_') ||
@@ -274,8 +317,8 @@ export function mountLoadout(rig: MountedRig, items: LoadoutItems): void {
     mount(lArm, body.left, 'bodyArmL');
     mount(rArm, body.right, 'bodyArmR');
   }
-  if (torso) {
-    torso.traverse((ch: THREE.Object3D) => {
+  if (rig.group) {
+    rig.group.traverse((ch: THREE.Object3D) => {
       if (
         ch.name === 'TorsoCoat' ||
         ch.name.startsWith('OuterCoat_') ||
@@ -411,6 +454,13 @@ export function rebuildPlayerEquipmentMeshes(): void {
     );
     cue.rotation.x = Math.PI / 2;
     cue.position.y = LEAN_RIG.beltY - LEAN_RIG.torsoY;
+    if (torso.name && torso.name in TODAY_PIVOT_REST && (torso as THREE.Bone).isBone) {
+      const today = TODAY_PIVOT_REST[torso.name];
+      const bone = getBoneRestPosition(torso, player.parts.group);
+      cue.position.x += today[0] - bone.x;
+      cue.position.y += today[1] - bone.y;
+      cue.position.z += today[2] - bone.z;
+    }
     cue.userData.setBonusCue = true;
     cue.userData.noOutline = true;
     torso.add(cue);
