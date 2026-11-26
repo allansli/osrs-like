@@ -50,7 +50,7 @@ Built with `BLEND(monsters)` on Blender 5.0.1 from `ebc78ac` plus this task's bu
   | `Idle` | 48 loop | 2.000 s | | claws open and close, tail sway, sting bob |
   | `Walk` | 16 loop | 0.667 s | | alternating tetrapod gait: L1, R2, L3, R4 against R1, L2, R3, L4; each leg ±0.22 rad, the swinging set lifted 0.28 |
   | `Strike` | 20 | 0.833 s | frame 8, 0.333333 s | tail rears and the sting draws back, claws rise and spread; then the tail whips over the head and the sting drives down in front |
-  | `Death` | 26 | 1.083 s | | the legs curl up 0.85 rad, the body drops 0.225 onto its plates, rolled; claws sag, tail falls back and sideways |
+  | `Death` | 26 | 1.083 s | | the legs lift 0.85 rad, raised out to the sides (seen only in the front-view strip), the body drops 0.225 onto its plates, rolled; claws sag, tail falls back and sideways |
 
   Rotation ranges (renderer log), in radians:
 
@@ -110,6 +110,7 @@ Ceilings move as follows:
 
 The worktree is HEAD with this task's files, the packed build over `public/models/monsters.glb`, the pending manifest over the live one, and the staged clips on the live scorpion row. That is what K4 ships. The script is `scratch/m3b/wt.sh`, not committed.
 
+- K4's promote path, read-only: `models-promote.mjs` packs the build and runs COMPARE with `--manifest-dir tests/fixtures/model-contract`. The packed build under that command **exits 0**. `scripts/models-clipcheck.mjs` is hero-only.
 - `ONE(tests/monster-motion.test.ts)` with `tests/monster-libraries.test.ts`: **54 passed, 36 skipped, 0 failed**. These ran and passed:
   - `scorpion` in "every bone a row names exists on that model's skeleton and has weight" (19 bones);
   - "a row plays from monsters.glb only clips that the monsters.glb in the tree carries";
@@ -138,5 +139,7 @@ The worktree is HEAD with this task's files, the packed build over `public/model
 - **The grid**, row by row:
   - three-quarter (walking), side, `Strike` at 0.383 s (cocked, claws spread);
   - `Strike` at 0.617 s (the sting down in front), at 8.5, at 26;
-  - a framing from behind that the scorpion walked out of, and the Saltback Stalker three-quarter (Stage 4's tint, scale 1.792).
-- **Every scorpion and stalker in view**: three skinned meshes with vertex colours and `FACET_CUT`, one skeleton, an animator with exactly `Idle`, `Walk`, `Strike` and `Death`. It plays `Idle` and `Walk` as it wanders and `Strike` when `attackAnim` is set. `rig.headGroup`, `leftArmPivot` and `leftLegPivot` are bones. Two rows of the job found no scorpion within 3 of the framing (it had walked off) and record `null`.
+  - from behind, and the Saltback Stalker three-quarter (Stage 4's tint, scale 1.792).
+- **Every scorpion and stalker in view**: three skinned meshes with vertex colours and `FACET_CUT`, one skeleton, an animator with exactly `Idle`, `Walk`, `Strike` and `Death`. It plays `Idle` and `Walk` as it wanders and `Strike` when `attackAnim` is set. `rig.headGroup`, `leftArmPivot` and `leftLegPivot` are bones. The side and back rows record `null`: the job's lookup found no scorpion within 3 of the framing's position at that moment, while the pictures show one.
+- **Not seen in the engine**: the held wind-up (the Saltback Stalker's `tail_lash` is Stage 4's heavy, so it holds `Strike` in a fight) and `Death`. `tests/monster-libraries.test.ts` covers both against the built file: the wind-up holds `Strike` at the anticipation and releases it, and `Death` ends lying within `DYING_SECS`. Both are left for OM-S6.
+- **Slice sheet budget**: `s6/` holds 780 kB of its 2 MB, with M3e, K1, K2 and K4 still to add. `m3b-ingame-strike.jpg` is a full-size copy of one grid cell and can go first.

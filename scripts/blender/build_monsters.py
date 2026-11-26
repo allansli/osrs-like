@@ -1866,8 +1866,8 @@ def _scorpion_clip_tables(pose_table):
         (14, "hold", {k: tuple(v * 0.9 for v in val) for k, val in hit.items()}, "out"), (20, "settle", {}, "io"),
     ])
 
-    # Death: a recoil, the legs buckle and curl up under the body, which drops onto its plates rolled
-    # a little; the claws sag and the tail falls back and to the side.
+    # Death: a recoil, the legs buckle and lift, raised out to the sides, as the body drops onto its
+    # plates rolled a little; the claws sag and the tail falls back and to the side.
     fall = {**legs(every, lift=0.85), "LeftArmPivot": (-0.20, 0.25, 0.0), "RightArmPivot": (-0.20, -0.20, 0.0),
             "LeftElbowPivot": (0.0, 0.30, 0.0), "RightElbowPivot": (0.0, -0.30, 0.0), "TailPivot": (0.55, 0.45, 0.0),
             "TailPivot2": (0.30, 0.20, 0.0), "TailPivot3": (0.45, 0.15, 0.0), "Hips": (0.0, 0.10, 0.10), "HeadGroup": (-0.08, 0.0, 0.0)}
