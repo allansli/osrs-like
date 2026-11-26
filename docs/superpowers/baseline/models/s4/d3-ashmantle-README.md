@@ -24,7 +24,7 @@ The engine multiplies Stage 4's `tint` (0x8a8580) into every material but the gl
 | Horn / crust | 0xB8AD90, 72% | 0x7A756E, 48% | 24 |
 | Glow | `mat_glow_orange` (maw) | `mat_glow_orange` (maw, eyes, seams) | |
 
-In the game (capture below) the body reads near black with its planes faint, the crust grey and the seams orange; the dragon on the next hill reads green. Whether the hide should sit nearer its 23% limit is a call for OM-S4.
+Measured in the game (`play-distance.png` of the capture, one frame, noon, both figures lit alike): the HSV value of Ashmantle's grey body pixels has median 20% (quartiles 14% and 22%); the dragon's green hide pixels on the far hill have median 30% (27% and 40%). Plane tones, occlusion and shading pull both under their paint targets, so the measured hide gap is about 10 points, not 18. A lighter hide narrows it (the tint caps it at about 40%); a darker one loses the planes, which already read faint. The crust reads grey and the seams orange. Which way to move is a call for OM-S4.
 
 ## Measured
 
@@ -52,7 +52,7 @@ In a game where Ashmantle spawns first, neither dragon moves. The fix is one lin
 ## Sheets
 
 - `d3-ashmantle-turnaround.jpg`, `-silhouette.jpg`, `-worst-pose.jpg`, `-play-distance.jpg` (halved): `SHEETS(--only elvarg_dragon,ashmantle --worst)` of the build. The offline render has no tint, so the paint looks lilac there; the game multiplies it grey.
-- `d3-dragon-ashmantle-silhouette-85px.jpg`: the roster silhouette of the two at the hero's 85 px scale, Ashmantle at `modelScale` 1.2 (`review_scales.json`): the crown, the plates' blocky ridge and the club change the outline.
-- `d3-ashmantle-ingame.jpg` (numbers in `d3-ashmantle-ingame-rows.json`): CAPTURE at Ashmantle's arena, NVIDIA GPU (`scripts/capture-gpu.mjs`), `vite preview` of a build of a throw-away copy of this branch with the built `monsters.glb`, the pending manifest, `body: 'ashmantle'` on the row and the staged clips on the live dragon row (what D5 ships), the one-line strip fix above, and debug hooks (`__DEBUG.G`, `getTerrainHeight`). Top: three-quarter, side and play distance (the green dragon on the far hill); bottom: `WingBuffet` held under the `ember_cone` telegraph, a plain `Bite`, `Walk` on the way back to the arena. Every mesh has `FACET_CUT` and vertex colours; `scale` 1.2.
+- `d3-dragon-ashmantle-silhouette-85px.jpg`: the roster silhouette of the two at the hero's 85 px scale, Ashmantle at `modelScale` 1.2 (`review_scales.json`). It is front-on, so it shows the crown and the heavier trunk; the plates' blocky ridge and the club are in the side view of `d3-ashmantle-silhouette.jpg`.
+- `d3-ashmantle-ingame.jpg` (numbers in `d3-ashmantle-ingame-rows.json`): CAPTURE at Ashmantle's arena, NVIDIA GPU (`scripts/capture-gpu.mjs`), `vite preview` of a build of a throw-away copy of this branch with the built `monsters.glb`, the pending manifest, `body: 'ashmantle'` on the row and the staged clips on the live dragon row (what D5 ships), the one-line strip fix above, and debug hooks (`__DEBUG.G`, `getTerrainHeight`). Top: three-quarter, side and play distance (the green dragon on the far hill); these are named `idle-*` in the rows but Ashmantle was already in its `attack` state, between strikes. Bottom: `WingBuffet` held under the `ember_cone` telegraph, a plain `Bite`, `Walk` on the way back to the arena (`return`). The four named meshes have `FACET_CUT` and vertex colours, colour 0x8a8580 (the tint) on all but the embers; the four unnamed entries in the rows are their outline shells. `scale` 1.2.
 
 `s4/` was 2,266,458 bytes before D3, over the 2 MB a slice may hold; D3 adds 327,466 (2,593,924 in all). Cutting it is open for the main session.
