@@ -20,7 +20,7 @@ const LANES = [
     { id: 'G2', kind: 'agy', note: 'task G2 together with the CALL-6.29 (b) change table 0.5 names for it' },
   ] },
   { name: 'mod', dir: 'S6-mod', branch: 'cs/models', tasks: [
-    { id: 'MK1', kind: 'work', model: 'opus', part: MODRULES + 'The rest of task MK1 (commits 34e67f4 and 8448fa9 hold the kit): the declared kit-case edit of tests/monster-models.test.ts and the emissive owner look check in the README, as the latest O-6.1b.6 amendment says; SUITE must be green again' },
+    { id: 'MK1', kind: 'work', model: 'opus', part: MODRULES + 'The rest of task MK1 (commits 34e67f4 and 8448fa9 hold the kit): the declared kit-case edit of tests/monster-models.test.ts and the emissive owner look check in the README, as the latest O-6.1b.6 amendment says; SUITE must be green again. Also an art fix from the main session, who judged the committed sheet mk1-adept-against.jpg: the hood reads as an oversized grey box sitting above the head, wider than the shoulders and taller than the face, so the figure no longer makes sense as a person wearing a hood. Rebuild it fitted: it wraps the skull and falls to the shoulders, its opening frames the face and beard, its peak no higher than the old hat brim, ember lining visible only at the opening; keep the brazier. Redo the four sheets' and README's numbers' and judge the side view too' },
     { id: 'MK2', kind: 'work', model: 'opus', part: MODRULES + 'Task MK2 of the plan section O-6.1b.6, in full' },
     { id: 'MK3', kind: 'work', model: 'opus', part: MODRULES + 'Task MK3 of the plan section O-6.1b.6, in full' },
     { id: 'MB1', kind: 'work', model: 'opus', part: MODRULES + 'Task MB1 of the plan section O-6.1b.6, in full' },
