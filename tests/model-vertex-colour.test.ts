@@ -110,11 +110,11 @@ describe('vertex colour reaches the engine materials (H6; red until H6b)', () =>
     }
   });
 
-  it("the goblin's materials have vertexColors true and every other monster's false", async () => {
+  it("the hero's and the goblin's materials have vertexColors true and every other monster's false", async () => {
     const hero = await parseShipped('hero.glb');
     const rig = buildHumanoidRig();
     expect(upgradeHumanoidRigWithGltf(rig, hero)).not.toBeNull();
-    for (const m of materialsOf(figureMeshes(rig.group))) expect(m.vertexColors).toBe(false);
+    for (const m of materialsOf(figureMeshes(rig.group).filter((o) => o !== rig.hitbox))) expect(m.vertexColors).toBe(true);
 
     const monsters = await parseShipped('monsters.glb');
     const keys = monsters.scene.children.filter((c) => c.name.startsWith('Monster_')).map((c) => c.name.slice(8));

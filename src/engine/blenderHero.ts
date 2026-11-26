@@ -143,7 +143,7 @@ export class BlenderHeroAnimator {
   }
 }
 
-export function loadBlenderHeroTemplate(url = '/models/hero.glb?v=kai4503_v5'): Promise<GLTF | null> {
+export function loadBlenderHeroTemplate(url = '/models/hero.glb?v=c56c4135'): Promise<GLTF | null> {
   if (typeof window === 'undefined' || typeof document === 'undefined') {
     return Promise.resolve(null);
   }

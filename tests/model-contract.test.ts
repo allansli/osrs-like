@@ -53,12 +53,14 @@ describe('shipped files satisfy their manifest (Contract and Budget)', () => {
 
   it('the manifest holds the hero contract of design 8.1', () => {
     const hero = JSON.parse(fs.readFileSync(path.join(CONTRACT, 'hero.json'), 'utf8'));
-    for (const n of ['HeroRoot', 'Torso', 'HeadGroup', 'LeftArmPivot', 'RightArmPivot', 'LeftElbowPivot', 'RightElbowPivot', 'LeftLegPivot', 'RightLegPivot', 'LeftKneePivot', 'RightKneePivot']) {
-      expect(hero.nodes[n], n).toBeDefined();
+    expect(hero.nodes.HeroRoot).toBeDefined();
+    // the skinned hero (H7): the pivots of design 8.1 are bones of the same names
+    for (const n of ['Torso', 'HeadGroup', 'LeftArmPivot', 'RightArmPivot', 'LeftElbowPivot', 'RightElbowPivot', 'LeftLegPivot', 'RightLegPivot', 'LeftKneePivot', 'RightKneePivot']) {
+      expect(hero.skin.bones[n], n).toBeDefined();
     }
-    expect(Object.keys(hero.centres).sort()).toEqual(['Boot_L', 'Boot_R', 'Hand_L', 'Hand_R', 'Head']);
+    expect(Object.keys(hero.centres).sort()).toEqual(['Boots', 'Hands', 'Head']);
     expect(hero.toggled).toEqual(expect.arrayContaining(['Hair', 'TorsoCoat']));
-    expect(Object.keys(hero.clips)).toHaveLength(10);
+    expect(Object.keys(hero.clips)).toHaveLength(11);
     expect(hero.figures.HeroRoot.triangles).toBeGreaterThan(0);
   });
 
