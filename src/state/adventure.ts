@@ -3,6 +3,7 @@ import { getLevelForXp } from '../data/skills';
 import { creditGp } from './economy';
 import { addItem, canAddItem } from './inventory';
 import { noteGather as markGather, noteSmelt as markSmelt } from './quests';
+import { bump } from './progress';
 import type { GameState, SlayerTask } from './types';
 import type { DeathOutcome } from './sustain';
 
@@ -659,6 +660,7 @@ export function claimQuest(state: GameState, questId: string): ClaimResult {
 }
 
 export function noteGather(state: GameState, itemId: string): void {
+  bump(state, `gather:${itemId}`);
   markGather(state, itemId);
 }
 
@@ -676,6 +678,7 @@ export interface KillResult {
 }
 
 export function registerKill(state: GameState, typeKey: string): KillResult {
+  bump(state, `kill:${typeKey}`);
   const quests = state.quests;
   const boss = BOSSES[typeKey];
   if (boss?.title) quests.title = boss.title;

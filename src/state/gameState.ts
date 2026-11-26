@@ -1,6 +1,6 @@
 import { getLevelForXp, SKILL_KEYS } from '../data/skills';
 import { copyQuests, defaultQuests, STARTER_ARRIVAL } from './quests';
-import type { GameState, QtyMode } from './types';
+import type { GameState, Progress, QtyMode } from './types';
 
 export const BACKPACK_SIZE = 28;
 /** Room for every armor set (33 pairs + helms, weapons, shields) plus resource stacks. */
@@ -100,6 +100,19 @@ export function createNewGameState(): GameState {
 
 export const STATE = createDefaultState();
 
+function copyProgress(p?: Progress): Progress | undefined {
+  if (!p) return undefined;
+  return {
+    story: p.story ? { ...p.story } : undefined,
+    stats: p.stats ? { ...p.stats } : undefined,
+    diary: p.diary ? [...p.diary] : undefined,
+    dungeons: p.dungeons
+      ? Object.fromEntries(Object.entries(p.dungeons).map(([k, v]) => [k, { ...v }]))
+      : undefined,
+    bossDownUntil: p.bossDownUntil ? { ...p.bossDownUntil } : undefined
+  };
+}
+
 export function cloneState(state: GameState = createDefaultState()): GameState {
   return {
     ...state,
@@ -109,7 +122,8 @@ export function cloneState(state: GameState = createDefaultState()): GameState {
     inventory: state.inventory.map((s) => ({ ...s })),
     bank: state.bank.map((s) => ({ ...s })),
     shrines: { ...state.shrines },
-    quests: copyQuests(state.quests)
+    quests: copyQuests(state.quests),
+    progress: copyProgress(state.progress)
   };
 }
 
@@ -145,4 +159,5 @@ export function applyState(target: GameState, next: GameState): void {
   target.bank = next.bank.map((s) => ({ ...s }));
   target.shrines = { ...next.shrines };
   target.quests = copyQuests(next.quests);
+  target.progress = copyProgress(next.progress);
 }

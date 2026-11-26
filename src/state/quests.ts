@@ -1,4 +1,11 @@
-import type { QuestFlags } from './types';
+import type { Progress, QuestFlags } from './types';
+
+function bump(state: { progress?: Progress }, key: string, n = 1): void {
+  if (!state.progress) state.progress = {};
+  if (!state.progress.stats) state.progress.stats = {};
+  const current = state.progress.stats[key] ?? 0;
+  state.progress.stats[key] = Math.min(2147483647, current + n);
+}
 
 export const STARTER_ARRIVAL = 'arrival';
 
@@ -108,7 +115,8 @@ export function noteCook(state: { quests: QuestFlags }): void {
   state.quests.cookedMeal = true;
 }
 
-export function noteBury(state: { quests: QuestFlags }): void {
+export function noteBury(state: { quests: QuestFlags; progress?: Progress }): void {
+  bump(state, 'bury');
   state.quests.buriedBones = true;
 }
 

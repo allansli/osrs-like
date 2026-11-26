@@ -10,6 +10,7 @@ import { normalizeQuests } from './quests';
 import { initialShrines } from './shrines';
 import { QUEST_DEFS, SLAYER_BANDS, STARTER_QUESTS } from './adventure';
 import { isWalkable } from './collision';
+import { isEmptyProgress, normalizeProgress } from './progress';
 import type { GameState, SavedCam, SavedPose } from './types';
 
 export const SAVE_KEY = 'gielinor_hero_save_v1';
@@ -28,7 +29,7 @@ function num(value: unknown, fallback = 0): number {
   return Number.isFinite(n) ? n : fallback;
 }
 
-export function migrateLegacySave(raw: unknown, source: string | null = null): MigratedSave {
+export function migrateLegacySave(raw: unknown, source: string | null = null, now: number = Date.now()): MigratedSave {
   const data = (raw && typeof raw === 'object' ? raw : {}) as Record<string, any>;
   const state = createDefaultState();
 
@@ -85,6 +86,8 @@ export function migrateLegacySave(raw: unknown, source: string | null = null): M
   }
   state.shrines.lumbridge = true;
 
+  state.progress = normalizeProgress(data.progress, now);
+
   state.quests = normalizeQuests(data.quests);
   const validQuestIds = new Set([...QUEST_DEFS.map((q) => q.id), ...STARTER_QUESTS.map((q) => q.id)]);
   state.quests.claimed = Array.from(new Set(state.quests.claimed.filter((id) => validQuestIds.has(id))));
@@ -136,7 +139,7 @@ export function migrateLegacySave(raw: unknown, source: string | null = null): M
 }
 
 export function serializeState(state: GameState, pose: SavedPose | null, cam: SavedCam | null): string {
-  return JSON.stringify({
+  const out: Record<string, unknown> = {
     version: 4,
     game: 'Gielinor Hero',
     savedAt: Date.now(),
@@ -163,7 +166,11 @@ export function serializeState(state: GameState, pose: SavedPose | null, cam: Sa
     quests: state.quests,
     playerPos: pose,
     cam
-  });
+  };
+  if (state.progress && !isEmptyProgress(state.progress)) {
+    out.progress = state.progress;
+  }
+  return JSON.stringify(out);
 }
 
 export interface StorageLike {
@@ -174,17 +181,17 @@ export interface StorageLike {
 
 const CORRUPT_KEY = 'gielinor_hero_save_v1_corrupt';
 
-export function readSave(storage: StorageLike): MigratedSave | null {
+export function readSave(storage: StorageLike, now: number = Date.now()): MigratedSave | null {
   const mainRaw = storage.getItem(SAVE_KEY);
   if (mainRaw) {
     try {
       const parsed = JSON.parse(mainRaw);
-      return migrateLegacySave(parsed, SAVE_KEY);
+      return migrateLegacySave(parsed, SAVE_KEY, now);
     } catch {
       if (!storage.getItem(CORRUPT_KEY)) {
         storage.setItem(CORRUPT_KEY, mainRaw);
       }
-      const corrupt = migrateLegacySave({});
+      const corrupt = migrateLegacySave({}, null, now);
       corrupt.corrupt = true;
       return corrupt;
     }
@@ -194,7 +201,7 @@ export function readSave(storage: StorageLike): MigratedSave | null {
     const raw = storage.getItem(key);
     if (!raw) continue;
     try {
-      return migrateLegacySave(JSON.parse(raw), key);
+      return migrateLegacySave(JSON.parse(raw), key, now);
     } catch {
       continue;
     }

@@ -48,6 +48,14 @@ export interface QuestFlags {
   lanternVow?: true;
 }
 
+export interface Progress {
+  story?: Record<string, number>;
+  stats?: Record<string, number>;
+  diary?: string[];
+  dungeons?: Record<string, { clears: number; best: number }>;
+  bossDownUntil?: Record<string, number>;
+}
+
 export interface GameState {
   gp: number;
   xpMultiplier: number;
@@ -73,6 +81,7 @@ export interface GameState {
   bank: ItemStack[];
   shrines: Record<string, boolean>;
   quests: QuestFlags;
+  progress?: Progress;
 }
 
 export interface SavedPose {
