@@ -92,26 +92,31 @@ export function upgradeMonsterRigWithGltf(
   const template = gltf.scene.getObjectByName(`Monster_${nodeKey}`);
   if (!template) return false;
 
-  const isSkinned = hasSkin(template);
-  if (isSkinned) {
-    fixCullSpheres(template);
+  if (!hasSkin(template)) {
+    let hasColor = false;
+    template.traverse((obj) => {
+      if ((obj as THREE.Mesh).geometry?.getAttribute('color')) hasColor = true;
+    });
+    if (!hasColor) {
+      console.warn(`Monster_${nodeKey} is not skinned, refusing to upgrade`);
+      return false;
+    }
   }
-  const cloned = isSkinned ? cloneFigure(template) : template.clone(true);
+  fixCullSpheres(template);
+  const cloned = cloneFigure(template);
   if (!cloned) return false;
 
   cloned.position.set(0, 0, 0);
   cloned.rotation.set(0, 0, 0);
   cloned.scale.set(1, 1, 1);
 
-  if (isSkinned) {
-    stripBonePrefix(cloned, nodeKey);
-  }
+  stripBonePrefix(cloned, nodeKey);
 
   if (mObj.def.kit) {
     const kitTemplate = gltf.scene.getObjectByName(`Kit_${mObj.def.kit}`);
     if (!kitTemplate) return false;
     for (const child of kitTemplate.children) {
-      const clonedChild = child.clone(true);
+      const clonedChild = child.clone();
       let bone: THREE.Bone | null = null;
       cloned.traverse((obj) => {
         if (!bone && (obj as THREE.Bone).isBone && obj.name === child.name) {

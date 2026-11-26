@@ -289,24 +289,16 @@ describe('the skinned path (S0; red until S1b)', () => {
     expect(spy).toHaveBeenCalledTimes(1);
   });
 
-  it('the rigid figure in the same file takes the rigid path and is unchanged', async () => {
+  it('the rigid figure in the same file is refused with a console warning', async () => {
     const gltf = await loadPair();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     const e = entity('crate');
-    expect(upgradeMonsterRigWithGltf(e, gltf)).toBe(true);
-    let skinnedOrBone = false;
-    e.rig.group.traverse((o) => {
-      if ((o as THREE.SkinnedMesh).isSkinnedMesh || (o as THREE.Bone).isBone) skinnedOrBone = true;
-    });
-    expect(skinnedOrBone).toBe(false);
-    expect(e.rig.headGroup!.name).toBe('crate_HeadGroup'); // no prefix strip on the rigid path
-    expect((e.rig.headGroup as THREE.Bone).isBone).toBeFalsy();
-    const mesh = e.rig.group.getObjectByName('crate_box') as THREE.Mesh;
-    expect(mesh.isMesh).toBe(true);
-    const shell = shellOf(mesh) as THREE.Mesh;
-    expect((shell as unknown as THREE.SkinnedMesh).isSkinnedMesh).toBeUndefined();
-    expect((shell.material as THREE.ShaderMaterial).vertexShader).not.toContain('skinning_vertex');
-    // the rigid template is untouched
-    expect(gltf.scene.getObjectByName('Monster_crate')!.position.toArray()).toEqual([6, 0, 2]);
+    const before = [...e.rig.group.children];
+    expect(upgradeMonsterRigWithGltf(e, gltf)).toBe(false);
+    expect(warn).toHaveBeenCalled();
+    expect(String(warn.mock.calls[0][0])).toContain('crate');
+    expect(e.rig.group.children).toEqual(before);
+    expect(e.rig.group.userData.isBlenderMonster).toBeUndefined();
   });
 
   it('writing rotation.x on a bone moves a vertex weighted to it', async () => {

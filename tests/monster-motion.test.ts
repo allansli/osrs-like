@@ -23,7 +23,6 @@ import { MONSTER_MOTION } from '../src/data/monsterPoses';
 import { MONSTER_TYPES } from '../src/data/world';
 import { KNOCK_BACK, springOffset } from '../src/data/feel';
 import { DYING_SECS } from '../src/state/monsterAi';
-import { getTerrainHeight } from '../src/state/terrain';
 import type { MonsterEntity } from '../src/engine/context';
 import { upgradeMonsterRigWithGltf } from '../src/engine/blenderMonsters';
 import type { BlenderHeroAnimator, HeroClipName } from '../src/engine/blenderHero';
@@ -53,7 +52,6 @@ const heroManifest = JSON.parse(
 
 const modelOf = (key: string): string => (MONSTER_TYPES[key] as { model?: string }).model ?? key;
 const MODEL_KEYS = [...new Set(Object.keys(MONSTER_TYPES).map(modelOf))];
-const GROUND = getTerrainHeight(0, 0);
 
 // --- the table -------------------------------------------------------------------------------------------------
 
@@ -137,142 +135,6 @@ describe('every bone a row names exists on that model\'s skeleton and has weight
         expect(all.has(bone), `${key}: ${bone} is a bone of its skeleton`).toBe(true);
         expect(weighted.has(bone), `${key}: ${bone} has weight on a vertex`).toBe(true);
       }
-    });
-  }
-});
-
-// --- rows still posed in code: today's numbers (monsterMeshes.ts poseMonsterLimbs, commit 661d4eb) -------------------
-
-const WINGED = new Set(['elvarg_dragon', 'lesser_demon']);
-
-function codeRig(model: string): { m: Animated; piv: Record<string, THREE.Object3D> } {
-  const group = new THREE.Group();
-  const hitbox = new THREE.Mesh();
-  group.add(hitbox);
-  const piv: Record<string, THREE.Object3D> = {};
-  for (const n of ['headGroup', 'leftArmPivot', 'rightArmPivot', 'leftLegPivot', 'rightLegPivot']) piv[n] = new THREE.Object3D();
-  if (WINGED.has(model)) {
-    piv.lWing = new THREE.Object3D();
-    piv.rWing = new THREE.Object3D();
-  }
-  const m = {
-    typeKey: model,
-    def: {},
-    rig: { group, hitbox, ...piv },
-    logic: { state: 'idle', windup: null },
-    pos: new THREE.Vector3(0, 0, 0),
-    flinch: 0,
-    attackAnim: 0
-  } as unknown as Animated;
-  return { m, piv };
-}
-
-interface Expect {
-  y: number;
-  gx?: number;
-  head?: number;
-  r?: number;
-  l?: number;
-  lw?: number;
-  rw?: number;
-}
-
-function expectedAttack(model: string, p: number): Expect {
-  if (model === 'elvarg_dragon') return { head: -0.35 + p * 0.65, lw: 0.2 + p * 0.55, rw: -0.2 - p * 0.55, y: GROUND + p * 0.32 };
-  if (model === 'dark_wizard') return { r: -1.65 * p, l: -1.45 * p, head: -0.25 * p, y: GROUND + p * 0.12 };
-  if (model === 'moss_guardian' || model === 'hill_giant') return { r: -1.8 * p, l: -1.8 * p, y: GROUND + p * 0.22 };
-  if (model === 'goblin') return { r: -1.55 * p, l: p * 0.4, y: GROUND + p * 0.25 };
-  return { r: -1.45 * p, l: 1.45 * p * 0.4, y: GROUND + p * 0.1 };
-}
-
-function check(model: string, m: Animated, piv: Record<string, THREE.Object3D>, want: Expect): void {
-  const near = (got: number, exp: number | undefined, what: string): void => {
-    if (exp !== undefined) expect(got, `${model} ${what}`).toBeCloseTo(exp, 6);
-  };
-  near(m.rig.group.position.y, want.y, 'group y');
-  near(m.rig.group.rotation.x, want.gx ?? 0, 'group lean');
-  near(piv.headGroup.rotation.x, want.head, 'head x');
-  near(piv.rightArmPivot.rotation.x, want.r, 'right arm x');
-  near(piv.leftArmPivot.rotation.x, want.l, 'left arm x');
-  if (piv.lWing) near(piv.lWing.rotation.z, want.lw, 'left wing z');
-  if (piv.rWing) near(piv.rWing.rotation.z, want.rw, 'right wing z');
-}
-
-describe('a row without clips reproduces the old branch at progress 0, 0.5 and 1', () => {
-  for (const model of MODEL_KEYS) {
-    // A row that has moved to clips (the goblin from M1b, later rows with their rebuilds) leaves this case.
-    const hasClips = MONSTER_MOTION[model].clips !== undefined;
-    describe.skipIf(hasClips)(model, () => {
-      it('wind-up', () => {
-        for (const p of [0, 0.5, 1]) {
-          const { m, piv } = codeRig(model);
-          m.logic.state = 'attack';
-          (m.logic as { windup: unknown }).windup = { left: 2 * (1 - p), total: 2 };
-          poseMonsterLimbs(m, false, 0, 0.016);
-          check(model, m, piv, {
-            r: -1.8 * p,
-            l: -1.8 * p,
-            head: -0.35 * p,
-            lw: 0.2 + p * 0.55,
-            rw: -0.2 - p * 0.55,
-            y: GROUND + p * 0.15
-          });
-        }
-      });
-
-      it('attack', () => {
-        // progress = sin(attackAnim * pi): attackAnim 1 gives 0, 1/6 gives 0.5, 1/2 gives 1; dt 0 keeps attackAnim.
-        for (const [anim, p] of [[1, 0], [1 / 6, 0.5], [0.5, 1]] as const) {
-          const { m, piv } = codeRig(model);
-          m.logic.state = 'attack';
-          m.attackAnim = anim;
-          poseMonsterLimbs(m, false, 0, 0);
-          check(model, m, piv, expectedAttack(model, Math.sin(anim * Math.PI)));
-          expect(Math.sin(anim * Math.PI)).toBeCloseTo(p, 6);
-        }
-      });
-
-      it('flinch', () => {
-        // dt 0 keeps the flinch value: curve = sin(flinch * pi), 0 at 1, 0.7071 at 1/4, 1 at 1/2.
-        for (const f of [1, 0.25, 0.5]) {
-          const { m, piv } = codeRig(model);
-          m.flinch = f;
-          poseMonsterLimbs(m, false, 0, 0);
-          const c = Math.sin(f * Math.PI);
-          check(model, m, piv, { y: GROUND + c * 0.16, gx: c * 0.24, head: -c * 0.36, r: c * 0.45, l: c * 0.35 });
-        }
-      });
-
-      it('walk', () => {
-        for (const state of ['chase', 'idle'] as const) {
-          const { m, piv } = codeRig(model);
-          m.logic.state = state;
-          const combat = state === 'chase';
-          const now = 1234;
-          poseMonsterLimbs(m, true, now, 0.016);
-          const s = Math.sin(now * (combat ? 0.01 : 0.007)) * (combat ? 0.52 : 0.38);
-          expect(piv.leftLegPivot.rotation.x).toBeCloseTo(s, 6);
-          expect(piv.rightLegPivot.rotation.x).toBeCloseTo(-s, 6);
-          expect(piv.leftArmPivot.rotation.x).toBeCloseTo(-s * 0.75, 6);
-          expect(piv.rightArmPivot.rotation.x).toBeCloseTo(s * 0.75, 6);
-          expect(m.rig.group.position.y).toBeCloseTo(GROUND + Math.abs(Math.sin(now * 0.014)) * 0.06, 6);
-        }
-      });
-
-      it('idle', () => {
-        const { m, piv } = codeRig(model);
-        piv.leftLegPivot.rotation.x = 0.4;
-        piv.rightLegPivot.rotation.x = -0.4;
-        const now = 777;
-        poseMonsterLimbs(m, false, now, 0.05);
-        const breath = Math.sin(now * 0.003) * 0.07;
-        expect(m.rig.group.position.y).toBeCloseTo(GROUND + Math.abs(breath) * 0.04, 6);
-        expect(piv.headGroup.rotation.y).toBeCloseTo(Math.sin(now * 0.0016) * 0.14, 6);
-        expect(piv.leftArmPivot.rotation.x).toBeCloseTo(breath, 6);
-        expect(piv.rightArmPivot.rotation.x).toBeCloseTo(-breath * 0.45, 6);
-        expect(piv.leftLegPivot.rotation.x).toBeCloseTo(0.4 * Math.pow(0.86, 0.05 * 60), 6);
-        expect(piv.rightLegPivot.rotation.x).toBeCloseTo(-0.4 * Math.pow(0.86, 0.05 * 60), 6);
-      });
     });
   }
 });

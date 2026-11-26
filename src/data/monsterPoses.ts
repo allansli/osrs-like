@@ -34,6 +34,7 @@ export interface MonsterMotionRow {
   clips?: MonsterMotionClips;
   anticipation?: number;
   codeAttack?: CodeAttackPose;
+  code_posed?: boolean;
 }
 
 export const MONSTER_MOTION: Record<string, MonsterMotionRow> = {
@@ -71,6 +72,7 @@ export const MONSTER_MOTION: Record<string, MonsterMotionRow> = {
   chicken: {
     skeleton: 'biped',
     bones: [],
+    code_posed: true,
     codeAttack: {
       rightArmX: -1.45,
       leftArmX: 0.58,
