@@ -435,3 +435,11 @@ What they hold, as facts:
 - **Feet**: the dark tone is in the paint (numbers in row 5 above); under the renderer's light the difference from the shin is small in the turnaround. In the side view the dark notch between shin and toe box is the baked occlusion in the crease, not a hole: the body's closed-skin check passes.
 - **Worst pose**: no gap and no vertex off the body is visible; spear, shield, belt, loincloth and thumbs follow their bones.
 - A render cannot show the paint under the engine's `cut` shade or the tile: that is S3d's capture.
+
+## The pattern on the hero's head (task H3c, 2026-11-25)
+
+Three additions to the pilot's pattern, from the hero (`scripts/blender/build_hero.py`; record in `s2/README.md`):
+
+- **A form whose silhouette is its character is built from chosen faces, not fused.** A voxel remesh and a decimate turned the hero's spiked hair into a smooth cap. The hair is now a flat-faced cap and hand-placed flat-faced blades, left as separate closed shells in one rigid mesh; the builder holds it inside the old form's bounds and checks that the surface under it is covered.
+- **Where the engine's material is white, the paint is the colour.** Iris and pupil are faces of the one `Eyes` mesh with their colours in `COLOR_0`; no mesh or material is added. The engine must draw that material with `vertexColors`.
+- **Skin is shaded warm.** A skin part's paint value v is written as (v^0.70, v, v^1.25) times a warm multiplier, so planes turned from the light do not go grey.
