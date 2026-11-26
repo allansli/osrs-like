@@ -34,7 +34,7 @@
   - Contoured `LatheGeometry` character torsos, flared tunics, marble chalice altars, castle towers, and Sheikah teleport shrines with floating gyroscopic rings.
   - Curved `CatmullRomCurve3` + `TubeGeometry` tree trunks and branches with billowing multi-sphere canopies and 900 instanced tapered grass blades.
   - Beveled `ExtrudeGeometry` scimitars, longswords, greatswords, and kiteshields.
-- **Skinned Faceted Figures**: The hero, the castle guards and every monster are skinned meshes on three shared skeletons (biped, crawler, dragon). Blender scripts in `scripts/blender/` build them as carved, hard-edged bodies, painted per vertex. Each skeleton has one clip library, so a goblin swings with the hero's own `Slash`, and Ashmantle moves with the dragon's clips. The models are 2.04 MB on the wire (Brotli), down from 3.74 MB.
+- **Skinned Faceted Figures**: The hero, the castle guards and every monster are skinned meshes on three shared skeletons (biped, crawler, dragon). Blender scripts in `scripts/blender/` build them as carved, hard-edged bodies, painted per vertex. Each skeleton has one clip library, so a goblin swings with the hero's own `Slash`, and Ashmantle moves with the dragon's clips. The model files compress to 2.04 MB with Brotli (quality 3, measured locally), down from 3.74 MB.
 - **Smooth Chase Camera**: Behind-character third-person camera with smooth `lerp` tracking, mouse-drag/keyboard orbit, zoom, and soft `PCFSoftShadowMap` shadows.
 
 ### 2. Full OldSchool RuneScape Mechanics
@@ -194,9 +194,10 @@ The game uses third-party 3D assets from Blend Swap. The shipped one under Creat
 
 - "Game Anime RPG Character" (Kai, the player character, also the base of the guards and townspeople) by uchiha007, CC-BY 3.0, http://www.blendswap.com/blends/view/26667
 
-The props and the weapons are CC0 Blend Swap assets. Every monster, the dragon and the lesser demon included, is an original model built by the scripts in `scripts/blender/`. Two assets no longer ship but are still credited, because earlier releases carried them:
+The props and the weapons are CC0 Blend Swap assets. Every monster, the dragon and the lesser demon included, is an original model built by the scripts in `scripts/blender/`. These assets no longer ship but are still credited, because earlier releases carried them:
 
 - "Dragon Rig And Textures" (the old dragon) by yoji, CC-BY 3.0, http://www.blendswap.com/blends/view/21036. Its source stays in the repository.
+- "Red Devil" (the old lesser demon), Blend Swap blend 93774, CC0. Its source stays in the repository.
 - "Rigged Knight in Armor" (the old guard) by Xali, Blend Swap blend 28541, CC0. Its source was removed.
 
 [CREDITS.md](./CREDITS.md) lists every third-party asset with its title, author, source and licence.

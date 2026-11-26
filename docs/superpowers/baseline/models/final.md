@@ -92,7 +92,7 @@ The two misses M0p carried to Slice 8 are closed. They were closed at D5, and th
 
 | | colour | shadow | HUD |
 |---|---|---|---|
-| merge-only before M0p | 637 | 1152 | 1794 calls, 605k |
+| before M0p (unmerged monsters) | 637 | 1152 | 1794 calls, 605k |
 | M0p | 357 | 684 | 1041 calls, 604k |
 | S3 (`s1/README.md`, pilot goblins, the rest rigid) | | | 741 with the five goblins in view (controlled) |
 | D5 | 236 | 506 | 741 calls, 486k |
@@ -118,7 +118,7 @@ The check follows `docs/superpowers/baseline/g2/leak-check.md` and Stage 5's G-6
 
 The run is not vacuous:
 - all 200 attacks set the attack animation;
-- 193 of them took HP off the goblin (the other 7 missed);
+- 193 of them took HP off the goblin (the other 7 took none; a miss and an early return were not told apart);
 - no attack was refused;
 - the 20 swaps alternated two different mounted mesh sets (`Gear_scimitar_*` against `Gear_sword_*` on the plate body and legs, 22 meshes each).
 
@@ -134,6 +134,8 @@ The run is not vacuous:
 | CSS | at most 45 kB | 37.73 kB | pass |
 | Fonts | at most 120 kB | 69.78 kB | pass |
 | Models on the wire | 3.76 MB | 2.04 MB local Brotli q3 | pass (preview `curl` open) |
+| Textures | unchanged | not re-measured (80 GPU textures at the camp, steady through the leak check) | not re-measured |
+| Startup work added | about 66,000 height samples, one scatter build, one merge per prop | not re-measured | not re-measured |
 | GPU geometries after 200 attacks and 20 gear swaps | back to the start value | 2190 to 2189 | pass |
 
 **F2, the JS chunk.** The R0 base `0a1d0dc` (main with Stages 4 and 5 merged, built in a throw-away worktree with the same capped `vite build`) ships 1,083.55 kB, 0.18 kB under Stage 5's limit. This branch ships 1,096.64 kB, so the models pass adds 13.09 kB of script. That covers the skinned path, the monster animator and the motion table, the kit and body fields, and `mountLoadout`. The models-pass design sets no JS budget, and no plan task measured the chunk. **For the owner:** accept the +13.09 kB and raise Stage 5's JS limit, as for Stage 4 (+36 kB, 2026-11-15), or name code to cut.
@@ -171,10 +173,10 @@ Stage 6 receives:
    - `scripts/run-blender.mjs` (`--out`, never the shipped folders), `scripts/models-compare.mjs` (Contract, Budget, Drift) and `scripts/models-promote.mjs` (packs hero and monsters with `scripts/lib/glb-pack.mjs`, N-3);
    - `scripts/blender/review_render.py` (sheets) and `scripts/capture-gpu.mjs` (in-engine captures);
    - the README in this directory (how a sheet is made and what it proves).
-2. **The figure kit** `scripts/blender/figkit.py`, used by every builder: `make_rig`, `organic_body`, `auto_weights`, `hard_weights`, `fold_weights`, `merge_by_family`, `make_clip`, paint and export.
+2. **The figure kit** `scripts/blender/figkit.py`, used by every builder: `make_rig`, `organic_body`, `segment_weights`, `auto_weights`, `hard_weights`, `fold_weights`, `merge_parts`, `merge_by_family`, `bake_paint`, `make_clip` and `export_glb`.
 3. **Three skeletons and their clip libraries:**
 
-   | Skeleton | Bones | Clips, in the file | Authored on |
+   | Skeleton | Core bones (design 6.1.2; optional `Jaw`, `WeaponPivot`, `OffhandPivot` and the like on top) | Clips, in the file | Authored on |
    |---|---|---|---|
    | biped | 16 | 11, in `hero.glb` | the hero |
    | crawler | 20 | `Idle`, `Walk`, `Strike`, `Death` | the scorpion |
@@ -252,5 +254,6 @@ None of these is done.
    - S6: the stalker's three-point sting, the marksman's two quivers, and the kit-salt value gap;
    - S7: the giant's `Slash` and the guardian's `Chop`, and the one glow;
    - S4: Ashmantle's hide at the 18% floor.
-4. **F1 and F2**: an owner decision for each.
-5. **OM-F**: accept the stage. This blocks the pull request.
+4. **OM-S2 and OM-S3** (hero; gear and guards): no recorded answer found in the plan's or the design's review log.
+5. **F1 and F2**: an owner decision for each.
+6. **OM-F**: accept the stage. This blocks the pull request.
