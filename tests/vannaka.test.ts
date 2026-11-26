@@ -83,38 +83,27 @@ describe('RF5: Vannaka gear alignment on the skinned hero', () => {
     G.scene.add(playerRig.group);
     G.scene.updateMatrixWorld(true);
 
-    // Find sword on Vannaka and player
-    const findSword = (root: THREE.Object3D) => {
-      let found: THREE.Object3D | null = null;
-      root.traverse((o) => {
-        if (!found && o.name.toLowerCase().includes('sword') || (o.parent?.name === 'RightElbowPivot' || o.parent?.name === 'RightArmPivot') && o !== o.parent.children[0]) {
-          found = o;
-        }
-      });
-      return found ?? (root.getObjectByName('RightElbowPivot')?.children.find((c) => c.type === 'Group') ?? null);
-    };
-
-    // Find cape on Vannaka and player
-    const findCape = (root: THREE.Object3D) => {
-      const torso = root.getObjectByName('Torso') || root.getObjectByName('rig.torso');
-      return torso?.children.find((c) => c.name.includes('cape') || c.type === 'Group') ?? null;
-    };
-
-    const vSword = findSword(vannakaGroup)!;
-    const pSword = mounted.wepMesh || findSword(playerRig.group)!;
-    expect(vSword).toBeDefined();
+    // The exact nodes: the gear groups are the last children added to the hero's right elbow pivot and torso
+    const vElbow = vannakaGroup.getObjectByName('RightElbowPivot')!;
+    const vTorso = vannakaGroup.getObjectByName('Torso')!;
+    expect(vElbow).toBeDefined();
+    expect(vTorso).toBeDefined();
+    const vSword = vElbow.children[vElbow.children.length - 1];
+    const vCape = vTorso.children[vTorso.children.length - 1];
+    const pSword = mounted.wepMesh!;
+    const pCape = mounted.capeMesh!;
+    expect(vSword.type).toBe('Group');
+    expect(vCape.type).toBe('Group');
     expect(pSword).toBeDefined();
+    expect(pCape).toBeDefined();
+    expect(pSword.parent).toBe(playerRig.group.getObjectByName('RightElbowPivot'));
+    expect(pCape.parent).toBe(playerRig.group.getObjectByName('Torso'));
 
     const vSwordWorld = new THREE.Vector3();
     const pSwordWorld = new THREE.Vector3();
     vSword.getWorldPosition(vSwordWorld);
     pSword.getWorldPosition(pSwordWorld);
     expect(vSwordWorld.distanceTo(pSwordWorld)).toBeLessThan(0.01);
-
-    const vCape = findCape(vannakaGroup)!;
-    const pCape = mounted.capeMesh || findCape(playerRig.group)!;
-    expect(vCape).toBeDefined();
-    expect(pCape).toBeDefined();
 
     const vCapeWorld = new THREE.Vector3();
     const pCapeWorld = new THREE.Vector3();

@@ -6,6 +6,7 @@ import { GLTFLoader, type GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { MONSTER_TYPES } from '../src/data/world';
 import type { MonsterEntity } from '../src/engine/context';
 import { upgradeMonsterRigWithGltf } from '../src/engine/blenderMonsters';
+import { BlenderHeroAnimator } from '../src/engine/blenderHero';
 import { poseMonsterLimbs } from '../src/engine/monsterMeshes';
 import { hitStop } from '../src/engine/reactions';
 
@@ -50,7 +51,7 @@ function makeDragon(): MonsterEntity {
   if (rig.headGroup) pivots.headGroup = rig.headGroup;
   if (rig.leftArmPivot) pivots.leftArmPivot = rig.leftArmPivot;
   if (rig.rightArmPivot) pivots.rightArmPivot = rig.rightArmPivot;
-  (m as { animator: unknown }).animator = new (m.animator!.constructor as any)(rig.group, [constantIdle], pivots);
+  (m as { animator: unknown }).animator = new BlenderHeroAnimator(rig.group, [constantIdle], pivots);
 
   return m;
 }
