@@ -14,7 +14,7 @@
    {
     "mesh": "elvarg_dragon_body",
     "type": "MeshLambertMaterial",
-    "cut": false,
+    "cut": true,
     "vertexColors": true,
     "flat": true,
     "side": 2,
@@ -24,7 +24,7 @@
    {
     "mesh": "elvarg_dragon_horn",
     "type": "MeshLambertMaterial",
-    "cut": false,
+    "cut": true,
     "vertexColors": true,
     "flat": true,
     "side": 2,
@@ -34,7 +34,7 @@
    {
     "mesh": "elvarg_dragon_maw",
     "type": "MeshLambertMaterial",
-    "cut": false,
+    "cut": true,
     "vertexColors": true,
     "flat": true,
     "side": 2,
@@ -44,7 +44,7 @@
    {
     "mesh": "elvarg_dragon_membrane",
     "type": "MeshLambertMaterial",
-    "cut": false,
+    "cut": true,
     "vertexColors": true,
     "flat": true,
     "side": 2,
@@ -58,9 +58,9 @@
    1
   ],
   "size": [
-   11.49,
+   11.6,
    4.46,
-   8.71
+   8.8
   ],
   "pivots": [
    "headGroup:bone HeadGroup",
