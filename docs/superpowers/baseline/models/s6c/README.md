@@ -704,3 +704,183 @@ flock /tmp/claude-blender.lock timeout 600 /usr/bin/blender --background --facto
 **Reading the cut-outs.** Against the other two, she is about 1.8 times as wide as she is tall from the front (the scorpion is 1.1 times). She has two humps either side of the tail's root, a domed body and long splayed legs. From the side, the egg piles make a lumpy back line, and the forked sting shows two points. The stalker's outline is a narrow body with a jagged crystal ridge on the midline.
 
 **Reading the lit sheets.** She reads as salt-white over dark chitin legs and claws, where the scorpion and the stalker are brown. The violet fork and the eyes are the only saturated colour. The egg piles show as two violet-grey clusters on the back. The rim crystals break the carapace's edge.
+
+# MB2: the Kiln Warden's body on the moss guardian's biped skeleton
+
+Built from `e3e3490` plus this task's builder (commit `feat(models-s6c): MB2`), with `BLEND(monsters)` on Blender 5.0.1:
+
+```
+flock /tmp/claude-blender.lock timeout 600 env BLENDER_PATH=/usr/bin/blender node scripts/run-blender.mjs monsters --out scratch/models-build/mb2
+```
+
+The build exits 0 and prints `[Blender] kiln_warden: 2148 triangles in 3 meshes; width 2.485, height 2.435, depth 1.090; lowest 0.0000`. It is packed as `scratch/models-build/mb2-packed`. Every number, sheet and check below comes from that build.
+
+Nothing is promoted: `git status --short public/models blender` prints nothing. MP6 promotes the file. U1 gives the row `body: 'kiln_warden'` and its tint.
+
+## Open for the main session
+
+1. **The row's tint.** The content file gives `tintNote: 'fired clay, glowing seams, no moss'` and no hex value. The engine multiplies the tint into the clay and the iron, but not into the glow. The clay is already painted fired clay, so a clay-coloured tint would darken it twice. The sheets are untinted. No tint, or a light warm one, keeps the clay's 66%. The seams are glow geometry, not paint, so no tint hides them.
+2. **The chimney goes into the ground at the end of `Death`.** The Warden plays the hero file's `Death` as the guardian does: it falls on its back, and the chimney behind the right shoulder points into the floor. Measured on the built file through the real loader (13 samples a clip, lowest skinned vertex):
+
+   | Clip | The Warden's lowest point | The guardian's | Largest gap in one frame |
+   |---|---|---|---|
+   | `Idle` | −0.000 to 0.001 | −0.000 to 0.001 | 0.000 |
+   | `Walk` | −0.005 to 0.021 | −0.005 to 0.021 | 0.008 |
+   | `Chop` | 0.005 to 0.013 | 0.005 to 0.013 | 0.000 |
+   | `Death` | −0.409 to 0.028 | −0.254 to 0.032 | 0.155 |
+
+   - In `Death`, the gap is in the last third of the clip. The guardian already sinks 0.254 there, with its back slab. The Warden's lowest point is the chimney's iron cap, 0.41 under the ground in the last frame, which is about 1.06 at the row's scale of 2.58.
+   - The fix is a shorter chimney. With its top under about 2.25, it would sink no more than the guardian's back slab does, but the figure would then be 2.29 tall, 8% under the guardian's 2.489, so it would fail the builder's 5% height check. The other fix is a `Death` of its own, which the plan does not list. Both are the owner's choice.
+3. **`scripts/blender/review_scales.json` has no `kiln_warden` entry,** and still has no `saltfang` entry either (MB1 item 4). The sheets here use a scratch copy of the renderer with `kiln_warden: 2.58` added (the guardian's `scale` 1.72 times the row's `modelScale` 1.5). That file is not in MB2's list. MP6 adds the entry.
+4. **`tests/fixtures/monster-families.json`** has no `kiln_warden` entry. Its families for the promote step are `stone` (`kiln_warden_clay`), `metal` (`kiln_warden_iron`) and `glow` (`kiln_warden_core`), 2,148 triangles in all. Read the per-family split off the built file at MP6.
+5. **The triangle count is low for a boss.** At 2,148 triangles it is under the guardian's 2,294, against a builder budget of 9,000 and a manifest ceiling of 14,000. That fits the faceted look of the guardian, whose blocks it replaces one for one. Rivets, bevelled hammer faces or brick courses on the chimney would spend more, if the owner wants more detail at close range.
+6. **Emissive.** The core, the eye slit, the six seams and the chimney's embers all use the file's `mat_glow_orange` in one mesh, so design 5.4's "at most one" emissive holds. Every glow part rides `Torso` or `HeadGroup`, so none of them swings out of its mesh's sphere the way `dark_wizard_glow` does (`final.md`, engine items).
+7. **Not seen in the engine.** MB2's accept has no capture. MP6's capture should look at three things:
+   - the glow against the Underkiln's light;
+   - the hammer heads in `Chop` at the game's camera angle;
+   - the end of `Death` (item 2).
+
+## What was built
+
+`build_kiln_warden` is called in `main()` after `build_moss_guardian`.
+- **Rig.** `figkit.make_rig("Monster_kiln_warden", rigs.BIPED_TABLE, guardian_joints(), prefix="kiln_warden")` gives the guardian's 16 bones at the guardian's joints, named `kiln_warden_<Bone>`. The figure has no clips. The engine strips the prefix and plays the hero file's library on the model key `moss_guardian` (`Idle`, `Walk`, `Chop`, `Death`).
+  - The joints are the guardian's unchanged, for two reasons. `attachBipedAnimator` caches the scaled clips by the model key, so both figures must share one `Hips` height. And the manifest's bone translations are the guardian's.
+- **Weights.** Every part is hard on one bone. The builder stops if any of the 13 bones in `MONSTER_MOTION.moss_guardian.bones` (`KILN_BONES`) holds no part, and none does.
+- **No other figure changed.** The primitive hashes of all 17 earlier roots match MB1's build (`scratch/models-build/mb1`).
+
+| Part | Bone | What it is |
+|---|---|---|
+| Pelvis and belt | `Hips` | a squared clay block from y 0.64 to the waist, in the dark clay, with an iron belt |
+| Chest | `Torso` | a barrel kiln of clay, squared a little (lathe `sq` 0.3), 1.10 across at its widest against the guardian's 0.96, from y 0.97 to 1.80, leaning into the head, with two iron hoops |
+| Furnace mouth | `Torso` | open in front: an iron frame 0.58 by 0.50 (lintel, sill, two jambs), three iron grate bars 0.05 thick, and a glowing core behind them |
+| Seams | `Torso` | six glowing zigzag cracks, 0.056 across, on the chest's sides and back. Each is laid through three points found by rays cast from outside onto the chest |
+| Chimney | `Torso` | behind the right shoulder, the one asymmetry: a squared clay flue from y 1.40 to 2.28, 0.40 across, leaning back, with an iron cap to y 2.40 and a glowing ember disc in its throat |
+| Head | `HeadGroup` | a squat kiln dome sunk between the shoulders, with a clay crown, an iron visor round it, a glowing slit 0.30 by 0.055 for eyes, and an iron brow over the slit |
+| Shoulders | `LeftArmPivot`, `RightArmPivot` | faceted clay domes in the light clay, each with an iron rim |
+| Arms | the arm and elbow pivots, `LeftHand`, `RightHand` | a clay upper arm, an iron elbow, a clay forearm thickening to the wrist with an iron cuff, a clay fist, and an iron hammer head (0.36 by 0.32 by 0.58, its long side fore and aft) with a wider striking face at each end |
+| Legs | leg and knee pivots, `LeftFoot`, `RightFoot` | a clay thigh, an iron knee, a clay shin flaring to the foot, and an iron-shod foot with a turned-up toe plate |
+
+- **Meshes.** There are three skinned meshes:
+  - `kiln_warden_clay`, the `stone` family, on `mat_stone_kiln_warden_paint`. It draws with the stone tile.
+  - `kiln_warden_iron`, the `metal` family, on `mat_iron_kiln_warden_paint`. It draws with the iron tile.
+  - `kiln_warden_core`, the `glow` family, on `mat_glow_orange`.
+
+  The file has two new materials, 38 in all. No mesh name holds `eye`, and no material name holds `skin` (which would draw with the guardian's moss-bark tile), `moss` or `bark`.
+- **Paint.** The paint is a corner colour on white materials (pattern step 6), with plane tones on the faceted parts and `bake_paint` occlusion at 0.5. Clay is painted over the stone tile's mean (linear 0.5580 0.5805 0.5155), and iron over the iron tile's mean (0.5366 0.6448 0.8042).
+  - The renderer has no tiles, so the sheets show the paint without its grain.
+
+## Values
+
+Rec. 601 luma and HSV value.
+
+| Colour | Luma | HSV value |
+|---|---|---|
+| Clay, light `0xB97A52` (shoulder domes, crown) | 53% | 73% |
+| Clay `0xA8643F` (chest, head, arms, thighs) | 46% | 66% |
+| Clay, dark `0x84503A` (pelvis, shins, chimney, fists) | 36% | 52% |
+| Iron `0x5C5854` (hoops, belt, visor, rims, cuffs, hammer heads, chimney cap) | 35% | 36% |
+| Iron, dark `0x45413D` (furnace frame, grate bars, elbows, knees, feet, striking faces, brow) | 26% | 27% |
+
+| Rule | Result |
+|---|---|
+| 5.4 range 25% to 75% (HSV value) | met: 27% to 73% |
+| 5.4 floor 18% | met: the darkest paint is the dark iron, at 26% luma |
+| 5.4 at most five materials, one emissive | three materials; one emissive (core, slit, seams, embers) |
+| 5.6 a different black cut-out at 85 px (as for Ashmantle) | met (`mb2-kiln-warden-silhouette.jpg`). From the front, the guardian has two branching antlers over a narrow head, claws on one hand and a boulder on the other. The Warden has a flat kiln top with a square chimney beside it, broad domed shoulders, and two block hammers. From the side, its chimney stands behind the head, where the guardian has antler tips |
+| 5.6.2 value 15 points from the base | met. The Warden's main area is clay at 66%, against the guardian's bark at 37% (`0x5E4A36`), and the hue moves from brown, grey and moss green to fired red |
+| 5.6.3 size | the content file's `modelScale` 1.5 |
+
+## Measured
+
+`node scratch/mb1/stats.mjs` (MB1's). "Packed" is `packGlb` (`node scratch/mb1/pack.mjs`).
+
+| | As exported | Packed |
+|---|---|---|
+| Warden triangles / meshes / materials / vertices | 2,148 / 3 / 3 / 4,116 | same |
+| Warden raw bytes | 227,944 | 129,160 |
+| **Warden Brotli bytes** | 48,378 | **33,451** |
+| Width, height, depth | 2.485, 2.435, 1.090 (guardian 2.240, 2.500, 0.879) | |
+| File raw / Brotli | 4,647,320 / 1,748,481 | 2,826,220 / 1,095,340 |
+| File meshes / materials | 64 / 38 | same |
+
+- The packed figure is 33.5 kB, against the boss class's 220 kB.
+- The height is 2.6% under the guardian's 2.500 as built (the builder compares it with the shipped 2.489), inside the builder's 5% check.
+- File Brotli rose from MB1's 1,058,485 to 1,095,340 packed, under the ceiling of 1,270,000.
+
+## Pending manifest and COMPARE
+
+`python3 -I scratch/mb2/make_pending.py` loads the pending manifest that MB1 wrote and adds the following, changing nothing else:
+- `nodes`: `Monster_kiln_warden` at the origin;
+- `skin.bones`: the guardian's 16 bones renamed `kiln_warden_`, each checked against the built file's node (its parent and translation);
+- `skin.skinnedRoots`: `Monster_kiln_warden`;
+- `skin.limbs`: the guardian's 11 limbs, renamed;
+- `materials`: `mat_iron_kiln_warden_paint` and `mat_stone_kiln_warden_paint`;
+- `meshClasses`: `^kiln_warden_clay$`, `^kiln_warden_core$` and `^kiln_warden_iron$`;
+- `vertexColor.figures.Monster_kiln_warden`: `all`;
+- `figures.Monster_kiln_warden`: 14,000 triangles, 4 meshes, 5 materials, raw 129,160 (packed), Brotli 220,000;
+- the file `budget`: only the ceilings that the packed build exceeds rise:
+  - triangles, from 70,036 to 72,184;
+  - meshes, from 61 to 64;
+  - materials, from 36 to 38;
+  - raw bytes, from 2,719,110 to 2,854,483;
+  - Brotli stays at 1,270,000.
+
+| COMPARE | Exit | Result |
+|---|---|---|
+| This build, packed (`node scripts/models-compare.mjs scratch/models-build/mb2-packed/monsters.glb public/models/monsters.glb`), against the pending manifest | **0** | "All contract checks passed", "All budget checks passed" |
+| This build, as exported | 2 | It fails on Budget only, against the packed ceilings, as MK1 to MB1 did. Contract passes |
+
+## Checks
+
+**On the branch at the feat commit (`b1ed0e5`):**
+
+| Check | Command | Result |
+|---|---|---|
+| `SUITE` | `flock /tmp/claude-capped.lock scripts/capped.sh npx vitest run` | exit 0: 130 files passed; 1,428 tests passed, 3 skipped |
+| `TYPES` | `flock /tmp/claude-capped.lock scripts/capped.sh npx tsc --noEmit` | exit 0, no output |
+| `BUILD` | `flock /tmp/claude-capped.lock scripts/capped.sh npm run build` | exit 0. The JS chunk is 1,097.21 kB (gzip 311.09 kB) and the CSS 37.73 kB. Reported, not a ceiling |
+| `UNTOUCHED` | `git status --short public/models blender` | prints nothing |
+
+**Built-file check (`monster-motion`).** Three scratch tests read `scratch/models-build/mb2-packed/monsters.glb` with the shipped `hero.glb`. They were placed under `tests/` for the run and deleted afterwards. Copies are in `scratch/mb2/`.
+- `mb2-motion-built`: `tests/monster-motion.test.ts`, with only its `monsters` load pointed at the built file.
+- `mb2-libraries-built`: `tests/monster-libraries.test.ts`, changed the same way.
+- `mb2-kiln-engine`: loads the figure through `upgradeMonsterRigWithGltf` on the `moss_guardian` row with `body: 'kiln_warden'`, and checks that:
+  - `kiln_warden_clay`, `_iron` and `_core` are present, and `moss_guardian_bark` is absent;
+  - each mesh draws its paint (`vertexColors`);
+  - each of the 13 bones in `MONSTER_MOTION.moss_guardian.bones` carries weight on its skin;
+  - the animator has `Idle`, `Walk`, `Chop` and `Death`;
+  - `Walk` plays and turns `LeftLegPivot`;
+  - a plain attack plays `Chop` and turns `RightArmPivot`.
+
+  It also prints the lowest-point table above.
+
+The command:
+
+```
+flock /tmp/claude-capped.lock scripts/capped.sh npx vitest run tests/mb2-kiln-engine.test.ts tests/mb2-motion-built.test.ts tests/mb2-libraries-built.test.ts tests/monster-kits.test.ts
+```
+
+It exits 0: 4 files, 46 tests passed, 3 skipped.
+- `mb2-kiln-engine`: 3 passed.
+- `mb2-motion-built`: 38 passed, 3 skipped.
+- `mb2-libraries-built`: 2 passed.
+- `monster-kits`: 6 passed.
+
+## Sheets
+
+`scratch/mb2/render/mb2_render.py` is a scratch script and is not committed. It runs on a scratch copy of `review_render.py`, with `kiln_warden: 2.58` added to its scales (item 3). The run exits 0:
+
+```
+flock /tmp/claude-blender.lock timeout 600 /usr/bin/blender --background --factory-startup --disable-autoexec --python-exit-code 1 --python scratch/mb2/render/mb2_render.py -- scratch/models-build/mb2/monsters.glb scratch/mb2/sheets
+```
+
+| Sheet | What it shows |
+|---|---|
+| `mb2-kiln-warden-turnaround.jpg` | the Warden in `review_render`'s turnaround: front three-quarter, side and back three-quarter, at 512 px (433 px tall) |
+| `mb2-kiln-warden-worst-pose.jpg` | the renderer's worst pose. Every part is rigid on one bone, so nothing tears. Each block follows its bone, and the joints open between blocks as they do on the guardian |
+| `mb2-kiln-warden-silhouette.jpg` | **the 85 px silhouette sheet**: black cut-outs at distance 26 in a 1080 frame, in triples: the guardian at 1.72, the Warden at the same 1.72, and the Warden at its game scale of 2.58. Each triple is shown from the front, three-quarter, side and back. Heights in px: front 188, 192 and 288; three-quarter 197, 195 and 294; side 199, 190 and 288; back 191, 181 and 273. Widths in px: front 172, 194 and 292 |
+| `mb2-kiln-warden-against.jpg` | lit and untinted, at one size: the guardian and the Warden at front three-quarter, side and back three-quarter |
+
+**Reading the cut-outs.** At the same scale, the two are about the same height, but the Warden is wider, about 1.0 times as wide as it is tall from the front against the guardian's 0.9. In place of antlers it has a flat kiln top with one square chimney rising beside the head on the right. Its shoulders are broad domes, and both arms end in block hammers, where the guardian has a claw and a boulder. From the side, the chimney stands behind the head, and the hammer heads stick out fore and aft.
+
+**Reading the lit sheets.** The Warden reads as fired red clay banded in dark iron, where the guardian is grey stone and brown bark with moss. Saturated colour appears in three places only: the orange core behind the grate, the eye slit and the seams. From behind, the seams and the chimney carry the read.
