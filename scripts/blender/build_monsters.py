@@ -1223,7 +1223,7 @@ def _goblin_skin_paint(hex_colour: int, tile: list) -> list:
     return paint
 
 
-def _goblin_tint(obj, colour, planes: bool = False) -> None:
+def _goblin_tint(obj, colour, planes: bool = False, tone: tuple = GOBLIN_PLANE_TONE) -> None:
     """
     A 'Tint' colour on every face corner, which the paint layer multiplies. All the goblin's
     materials are white, so the tint is the colour itself: a hex colour, or linear RGB for the
@@ -1231,7 +1231,7 @@ def _goblin_tint(obj, colour, planes: bool = False) -> None:
     tone of the face's plane (_goblin_plane_tones).
     """
     tint = list(hex_to_rgba(colour)[:3]) if isinstance(colour, int) else colour
-    tones = _goblin_plane_tones(obj) if planes else [1.0] * len(obj.data.polygons)
+    tones = _goblin_plane_tones(obj, tone) if planes else [1.0] * len(obj.data.polygons)
     cols = []
     for p, tone in zip(obj.data.polygons, tones):
         cols += [*(c * tone for c in tint), 1.0] * len(p.vertices)
@@ -1476,7 +1476,7 @@ def _goblin_head(mat):
     return _goblin_fuse(parts, "gob_head", mat, 0.012, 800, soften=3, crease=GOBLIN_CREASE)
 
 
-def _goblin_plane_tones(body) -> list:
+def _goblin_plane_tones(body, tone: tuple = GOBLIN_PLANE_TONE) -> list:
     """
     One tone per face of a part, the same for every face of a plane (plan S2c). A plane is the
     smooth faces joined by edges that are not hard, or one flat face of a faceted part; its tone
@@ -1505,7 +1505,7 @@ def _goblin_plane_tones(body) -> list:
                             plane[g.index] = len(tones)
                             stack.append(g)
         s = normal.dot(GOBLIN_PLANE_LIGHT) / area  # a plane that wraps round a form averages to no tone
-        tones.append(1.0 + s * (GOBLIN_PLANE_TONE[1] if s > 0.0 else -GOBLIN_PLANE_TONE[0]))
+        tones.append(1.0 + s * (tone[1] if s > 0.0 else -tone[0]))
         areas.append(area)
     bm.free()
     total = sum(areas)
@@ -3173,7 +3173,7 @@ def _dragon_head(mat):
     return _goblin_fuse(parts, "drg_head", mat, 0.025, DRAGON_HEAD_TRIANGLES, soften=1, crease=GOBLIN_CREASE)
 
 
-def _dragon_body_tint(body, spine: list, hide: list, dark: list, belly: list) -> None:
+def _dragon_body_tint(body, spine: list, hide: list, dark: list, belly: list, tones3: tuple = (GOBLIN_PLANE_TONE,) * 3) -> None:
     """
     Paint rule of the body: one band of belly from the throat to the tail's tip (the faces under the
     spine's line that do not look up, within three quarters of the spine's half height of the
@@ -3198,10 +3198,10 @@ def _dragon_body_tint(body, spine: list, hide: list, dark: list, belly: list) ->
             e.smooth = False
     bm.to_mesh(body.data)
     bm.free()
-    tones = _goblin_plane_tones(body)
+    by_tone = {t: _goblin_plane_tones(body, t) for t in set(tones3)}  # tones3: the plane tone of hide, belly and dark
     cols = []
-    for p, k, tone in zip(polys, kind, tones):
-        cols += [*(c * tone for c in (hide, belly, dark)[k]), 1.0] * len(p.vertices)
+    for i, (p, k) in enumerate(zip(polys, kind)):
+        cols += [*(c * by_tone[tones3[k]][i] for c in (hide, belly, dark)[k]), 1.0] * len(p.vertices)
     body.data.color_attributes.new("Tint", "FLOAT_COLOR", "CORNER").data.foreach_set("color", cols)
     print(f"[Blender] dragon body faces: {kind.count(1)} belly, {kind.count(2)} foot, of {len(kind)}")
 
@@ -3642,12 +3642,19 @@ def build_dragon_library(rig, meshes):
 ASHMANTLE_TRIANGLES = 9600  # the builder's own budget, under the manifest's 12,000: what the wire ceiling allows
 ASHMANTLE_TINT = 0x8A8580  # Stage 4's tint on the ashmantle row (src/data/world.ts)
 ASHMANTLE_COLOURS = {  # as the game shows them, value against the dragon's (DRAGON_COLOURS)
-    "hide": 0x34302C,  # charcoal ash, 20% (dragon 38%)
-    "hide_dark": 0x221F1C,  # feet and wing struts, 13% (dragon 29%)
+    "hide": 0x302C29,  # charcoal ash, 19% (dragon 38%)
+    "hide_dark": 0x2E2A26,  # feet and wing struts, 18%, design 5.4's floor (dragon 29%)
     "membrane": 0x3A2A24,  # 23% (dragon 50%)
     "belly": 0x5A534B,  # ash grey, 35% (dragon 62%)
     "crust": 0x7A756E,  # crown, plates, club and claws, pale cooled slag, 48% (dragon's horn 72%)
 }
+# Plane tones (GOBLIN_PLANE_TONE's form): the dark hide and membrane take a wide one, so its lit
+# planes stand well clear of its shade planes in the game; belly and crust keep a narrow one, as
+# their paint is near the top of what the tile and tint leave.
+ASHMANTLE_WIDE_TONE = (-0.40, 1.00)
+ASHMANTLE_NARROW_TONE = (-0.25, 0.30)
+ASHMANTLE_TONES = {"hide": ASHMANTLE_WIDE_TONE, "hide_dark": ASHMANTLE_WIDE_TONE, "membrane": ASHMANTLE_WIDE_TONE,
+                   "belly": ASHMANTLE_NARROW_TONE, "crust": ASHMANTLE_NARROW_TONE}
 ASHMANTLE_HEAVY = {  # three-space node of the dragon's stick graph -> radius factor: the heavier chest and neck base
     (0.0, 1.27, -0.40): 1.28,  # chest
     (0.0, 1.48, -0.92): 1.26,  # withers
@@ -3656,11 +3663,11 @@ ASHMANTLE_HEAVY = {  # three-space node of the dragon's stick graph -> radius fa
 }
 
 
-def _ashmantle_paint(hex_colour: int, tile: list) -> list:
+def _ashmantle_paint(hex_colour: int, tile: list, tone: tuple) -> list:
     """The paint that shows hex_colour in the game on a mesh the tile and Stage 4's tint multiply."""
     tint = hex_to_rgba(ASHMANTLE_TINT)
     paint = [c / (m * t) for c, m, t in zip(hex_to_rgba(hex_colour), tile, tint)]
-    if max(paint) > 1.0 / (1.0 + GOBLIN_PLANE_TONE[1]):
+    if max(paint) > 1.0 / (1.0 + tone[1]):
         raise ValueError(f"ashmantle: colour {hex_colour:#08x} over its tile and the tint is too light to paint: {paint}")
     return paint
 
@@ -3693,12 +3700,13 @@ def build_ashmantle(mats: dict):
     glow = mats["glow_orange"]  # the seams, the maw and the eyes: the engine draws it lit and never tints it
     scale_tile, leather_tile = _goblin_hide_mean(DRAGON_SCALE_TILE), _goblin_hide_mean(DRAGON_LEATHER_TILE)
     tiles = {"hide": scale_tile, "hide_dark": scale_tile, "belly": scale_tile, "membrane": leather_tile, "crust": [1.0, 1.0, 1.0]}
-    col = {k: _ashmantle_paint(v, tiles[k]) for k, v in ASHMANTLE_COLOURS.items()}
+    col = {k: _ashmantle_paint(v, tiles[k], ASHMANTLE_TONES[k]) for k, v in ASHMANTLE_COLOURS.items()}
     j = dragon_joints()
     hard = []  # (object, bone): rigid parts, weight 1 on one bone
 
     def add(obj, bone: str, colour, planes: bool = False):
-        _goblin_tint(obj, colour, planes)
+        tone = next((ASHMANTLE_TONES[k] for k, c in col.items() if c is colour), ASHMANTLE_NARROW_TONE)
+        _goblin_tint(obj, colour, planes, tone)
         hard.append((obj, prefix + bone))
 
     def aim(d) -> dict:
@@ -3756,7 +3764,7 @@ def build_ashmantle(mats: dict):
             f"{tag}Wing2", col["crust"], planes=True,
         )
         m = _dragon_membrane(f"ash_membrane_{tag}", wing, root, wrist, tips, flank, (f"{prefix}{tag}Wing", f"{prefix}{tag}Wing2", f"{prefix}Hips"))
-        _goblin_tint(m, col["membrane"], planes=True)
+        _goblin_tint(m, col["membrane"], planes=True, tone=ASHMANTLE_TONES["membrane"])
         membranes.append(m)
 
     for side, tag in ((-1.0, "Left"), (1.0, "Right")):
@@ -3825,7 +3833,7 @@ def build_ashmantle(mats: dict):
     weight_data = weight_rig.data
     bpy.data.objects.remove(weight_rig, do_unlink=True)
     bpy.data.armatures.remove(weight_data)
-    _dragon_body_tint(body, spine_line, col["hide"], col["hide_dark"], col["belly"])
+    _dragon_body_tint(body, spine_line, col["hide"], col["hide_dark"], col["belly"], tuple(ASHMANTLE_TONES[k] for k in ("hide", "belly", "hide_dark")))
 
     for obj, bone in hard:
         figkit.hard_weights(obj, bone)

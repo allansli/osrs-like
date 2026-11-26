@@ -72,8 +72,8 @@
    1.2
   ],
   "pos": [
-   -101.54249019504397,
-   55.20640127485385
+   -100.63452979776257,
+   54.19764416713229
   ]
  },
  "shots": [
@@ -85,7 +85,7 @@
    "state": "attack",
    "walk": [
     true,
-    0.035
+    0.606
    ],
    "bite": [
     false,
@@ -107,7 +107,7 @@
    "state": "attack",
    "walk": [
     true,
-    0.446
+    0.354
    ],
    "bite": [
     false,
@@ -129,11 +129,11 @@
    "state": "attack",
    "walk": [
     true,
-    0.194
+    0.117
    ],
    "bite": [
     true,
-    0.2
+    0.217
    ],
    "buffet": [
     false,
@@ -141,7 +141,7 @@
     0
    ],
    "windup": null,
-   "attackAnim": 0.36
+   "attackAnim": 0.307
   },
   {
    "name": "play-distance",
@@ -151,7 +151,7 @@
    "state": "attack",
    "walk": [
     true,
-    0.498
+    0.468
    ],
    "bite": [
     false,
@@ -170,7 +170,7 @@
    "state": "attack",
    "walk": [
     true,
-    0.276
+    0.209
    ],
    "bite": [
     true,
@@ -189,7 +189,7 @@
    "state": "attack",
    "walk": [
     true,
-    0.145
+    0.079
    ],
    "bite": [
     false,
@@ -198,17 +198,17 @@
    "buffet": [
     false,
     true,
-    0.179
+    0.173
    ],
    "windup": "ember_cone",
    "attackAnim": 0
   },
   {
    "name": "walk",
-   "state": "return",
+   "state": "attack",
    "walk": [
     true,
-    0.048
+    0.596
    ],
    "bite": [
     false,
@@ -217,7 +217,7 @@
    "buffet": [
     false,
     true,
-    0.235
+    0.225
    ],
    "windup": null,
    "attackAnim": 0
