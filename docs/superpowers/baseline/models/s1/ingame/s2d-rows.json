@@ -1,0 +1,1044 @@
+{
+ "label": "s2d",
+ "skinnedMonsters": 5,
+ "monsters": {
+  "chicken": 4,
+  "goblin": 5,
+  "goblin_archer": 2,
+  "dark_wizard": 3,
+  "dark_ranger": 2,
+  "hill_giant": 4,
+  "scorpion": 5,
+  "moss_guardian": 4,
+  "lesser_demon": 6,
+  "elvarg_dragon": 1,
+  "saltback_stalker": 3,
+  "thornwatch_marksman": 2,
+  "ashmantle": 1
+ },
+ "inspect": {
+  "goblin": {
+   "meshes": 7,
+   "skinnedBodyMeshes": 3,
+   "outlineShells": 3,
+   "outlineShellsVisibleAtLoad": 0,
+   "skinnedShells": 3,
+   "distinctSkeletons": 1,
+   "boneTextures": 1
+  },
+  "goblin_archer": {
+   "meshes": 54,
+   "skinnedBodyMeshes": 0,
+   "outlineShells": 25,
+   "outlineShellsVisibleAtLoad": 0,
+   "skinnedShells": 0,
+   "distinctSkeletons": 0,
+   "boneTextures": 0
+  }
+ },
+ "renderer": "ANGLE (Microsoft Corporation, D3D12 (NVIDIA GeForce RTX 4070 Laptop GPU), OpenGL 4.6)",
+ "perf": [
+  {
+   "colour": 258,
+   "shadow": 558,
+   "frames": 60,
+   "hud": "838 calls • 580k tris",
+   "benchMs": 5.266,
+   "inView": {
+    "goblin": 4,
+    "goblin_archer": 1,
+    "scorpion": 2,
+    "lesser_demon": 2
+   }
+  },
+  {
+   "colour": 252,
+   "shadow": 559,
+   "frames": 60,
+   "hud": "803 calls • 568k tris",
+   "benchMs": 4.844,
+   "inView": {
+    "goblin": 3,
+    "scorpion": 2,
+    "lesser_demon": 2
+   }
+  },
+  {
+   "colour": 247,
+   "shadow": 554,
+   "frames": 60,
+   "hud": "807 calls • 573k tris",
+   "benchMs": 4.938,
+   "inView": {
+    "goblin": 5,
+    "goblin_archer": 1,
+    "scorpion": 2,
+    "lesser_demon": 2
+   }
+  }
+ ],
+ "cost": {
+  "withGoblins": {
+   "colour": 213,
+   "shadow": 528,
+   "hud": "741 calls • 550k tris",
+   "benchMs": 3.629,
+   "goblinsInView": 5
+  },
+  "withoutGoblins": {
+   "colour": 198,
+   "shadow": 513,
+   "hud": "711 calls • 506k tris",
+   "benchMs": 2.681,
+   "goblinsInView": 0
+  }
+ },
+ "edge-in": {
+  "sx": 1219,
+  "visible": true
+ },
+ "edge-half": {
+  "sx": 1279,
+  "visible": true
+ },
+ "edge-left-half": {
+  "sx": -40,
+  "visible": true
+ },
+ "closeFrontToCamera": {
+  "raider": true,
+  "archer": true
+ },
+ "leakKills": {
+  "kills": 30,
+  "before": {
+   "geometries": 2358,
+   "textures": 32,
+   "programs": 24
+  },
+  "after": {
+   "geometries": 2358,
+   "textures": 32,
+   "programs": 24
+  },
+  "ms": 6026
+ },
+ "leakSpawnDispose": {
+  "before": {
+   "geometries": 2358,
+   "textures": 32,
+   "programs": 24
+  },
+  "after": {
+   "geometries": 2358,
+   "textures": 32,
+   "programs": 24
+  },
+  "listDelta": 0
+ },
+ "leakControl": {
+  "before": {
+   "geometries": 2358,
+   "textures": 32,
+   "programs": 24
+  },
+  "undisposed": {
+   "geometries": 2378,
+   "textures": 37,
+   "programs": 24
+  },
+  "afterDispose": {
+   "geometries": 2358,
+   "textures": 32,
+   "programs": 24
+  }
+ },
+ "clips": {
+  "names": [
+   "Walk",
+   "Slash"
+  ],
+  "tracks": {
+   "Walk": [
+    20,
+    1.333
+   ],
+   "Slash": [
+    20,
+    1
+   ]
+  },
+  "hipsRest": 0.6935999989509583
+ },
+ "sphere": {
+  "Walk-0": [
+   {
+    "name": "goblin_body",
+    "shell": false,
+    "verts": 3277,
+    "radius": 1.884,
+    "maxDist": 1.067,
+    "outside": 0
+   },
+   {
+    "name": "",
+    "shell": true,
+    "verts": 3277,
+    "radius": 1.967,
+    "maxDist": 1.067,
+    "outside": 0
+   },
+   {
+    "name": "goblin_metal",
+    "shell": false,
+    "verts": 316,
+    "radius": 1.706,
+    "maxDist": 1.21,
+    "outside": 0
+   },
+   {
+    "name": "",
+    "shell": true,
+    "verts": 316,
+    "radius": 1.789,
+    "maxDist": 1.21,
+    "outside": 0
+   },
+   {
+    "name": "goblin_wood",
+    "shell": false,
+    "verts": 64,
+    "radius": 1.774,
+    "maxDist": 1.078,
+    "outside": 0
+   },
+   {
+    "name": "",
+    "shell": true,
+    "verts": 64,
+    "radius": 1.857,
+    "maxDist": 1.078,
+    "outside": 0
+   }
+  ],
+  "Walk-1": [
+   {
+    "name": "goblin_body",
+    "shell": false,
+    "verts": 3277,
+    "radius": 1.884,
+    "maxDist": 1.075,
+    "outside": 0
+   },
+   {
+    "name": "",
+    "shell": true,
+    "verts": 3277,
+    "radius": 1.967,
+    "maxDist": 1.075,
+    "outside": 0
+   },
+   {
+    "name": "goblin_metal",
+    "shell": false,
+    "verts": 316,
+    "radius": 1.706,
+    "maxDist": 1.216,
+    "outside": 0
+   },
+   {
+    "name": "",
+    "shell": true,
+    "verts": 316,
+    "radius": 1.789,
+    "maxDist": 1.216,
+    "outside": 0
+   },
+   {
+    "name": "goblin_wood",
+    "shell": false,
+    "verts": 64,
+    "radius": 1.774,
+    "maxDist": 1.043,
+    "outside": 0
+   },
+   {
+    "name": "",
+    "shell": true,
+    "verts": 64,
+    "radius": 1.857,
+    "maxDist": 1.043,
+    "outside": 0
+   }
+  ],
+  "Walk-2": [
+   {
+    "name": "goblin_body",
+    "shell": false,
+    "verts": 3277,
+    "radius": 1.884,
+    "maxDist": 1.092,
+    "outside": 0
+   },
+   {
+    "name": "",
+    "shell": true,
+    "verts": 3277,
+    "radius": 1.967,
+    "maxDist": 1.092,
+    "outside": 0
+   },
+   {
+    "name": "goblin_metal",
+    "shell": false,
+    "verts": 316,
+    "radius": 1.706,
+    "maxDist": 1.216,
+    "outside": 0
+   },
+   {
+    "name": "",
+    "shell": true,
+    "verts": 316,
+    "radius": 1.789,
+    "maxDist": 1.216,
+    "outside": 0
+   },
+   {
+    "name": "goblin_wood",
+    "shell": false,
+    "verts": 64,
+    "radius": 1.774,
+    "maxDist": 1.031,
+    "outside": 0
+   },
+   {
+    "name": "",
+    "shell": true,
+    "verts": 64,
+    "radius": 1.857,
+    "maxDist": 1.031,
+    "outside": 0
+   }
+  ],
+  "Walk-3": [
+   {
+    "name": "goblin_body",
+    "shell": false,
+    "verts": 3277,
+    "radius": 1.884,
+    "maxDist": 1.075,
+    "outside": 0
+   },
+   {
+    "name": "",
+    "shell": true,
+    "verts": 3277,
+    "radius": 1.967,
+    "maxDist": 1.075,
+    "outside": 0
+   },
+   {
+    "name": "goblin_metal",
+    "shell": false,
+    "verts": 316,
+    "radius": 1.706,
+    "maxDist": 1.216,
+    "outside": 0
+   },
+   {
+    "name": "",
+    "shell": true,
+    "verts": 316,
+    "radius": 1.789,
+    "maxDist": 1.216,
+    "outside": 0
+   },
+   {
+    "name": "goblin_wood",
+    "shell": false,
+    "verts": 64,
+    "radius": 1.774,
+    "maxDist": 1.043,
+    "outside": 0
+   },
+   {
+    "name": "",
+    "shell": true,
+    "verts": 64,
+    "radius": 1.857,
+    "maxDist": 1.043,
+    "outside": 0
+   }
+  ],
+  "Walk-4": [
+   {
+    "name": "goblin_body",
+    "shell": false,
+    "verts": 3277,
+    "radius": 1.884,
+    "maxDist": 1.067,
+    "outside": 0
+   },
+   {
+    "name": "",
+    "shell": true,
+    "verts": 3277,
+    "radius": 1.967,
+    "maxDist": 1.067,
+    "outside": 0
+   },
+   {
+    "name": "goblin_metal",
+    "shell": false,
+    "verts": 316,
+    "radius": 1.706,
+    "maxDist": 1.21,
+    "outside": 0
+   },
+   {
+    "name": "",
+    "shell": true,
+    "verts": 316,
+    "radius": 1.789,
+    "maxDist": 1.21,
+    "outside": 0
+   },
+   {
+    "name": "goblin_wood",
+    "shell": false,
+    "verts": 64,
+    "radius": 1.774,
+    "maxDist": 1.078,
+    "outside": 0
+   },
+   {
+    "name": "",
+    "shell": true,
+    "verts": 64,
+    "radius": 1.857,
+    "maxDist": 1.078,
+    "outside": 0
+   }
+  ],
+  "Walk-5": [
+   {
+    "name": "goblin_body",
+    "shell": false,
+    "verts": 3277,
+    "radius": 1.884,
+    "maxDist": 1.091,
+    "outside": 0
+   },
+   {
+    "name": "",
+    "shell": true,
+    "verts": 3277,
+    "radius": 1.967,
+    "maxDist": 1.091,
+    "outside": 0
+   },
+   {
+    "name": "goblin_metal",
+    "shell": false,
+    "verts": 316,
+    "radius": 1.706,
+    "maxDist": 1.221,
+    "outside": 0
+   },
+   {
+    "name": "",
+    "shell": true,
+    "verts": 316,
+    "radius": 1.789,
+    "maxDist": 1.221,
+    "outside": 0
+   },
+   {
+    "name": "goblin_wood",
+    "shell": false,
+    "verts": 64,
+    "radius": 1.774,
+    "maxDist": 1.127,
+    "outside": 0
+   },
+   {
+    "name": "",
+    "shell": true,
+    "verts": 64,
+    "radius": 1.857,
+    "maxDist": 1.127,
+    "outside": 0
+   }
+  ],
+  "Slash-0": [
+   {
+    "name": "goblin_body",
+    "shell": false,
+    "verts": 3277,
+    "radius": 1.884,
+    "maxDist": 1.084,
+    "outside": 0
+   },
+   {
+    "name": "",
+    "shell": true,
+    "verts": 3277,
+    "radius": 1.967,
+    "maxDist": 1.084,
+    "outside": 0
+   },
+   {
+    "name": "goblin_metal",
+    "shell": false,
+    "verts": 316,
+    "radius": 1.706,
+    "maxDist": 1.21,
+    "outside": 0
+   },
+   {
+    "name": "",
+    "shell": true,
+    "verts": 316,
+    "radius": 1.789,
+    "maxDist": 1.21,
+    "outside": 0
+   },
+   {
+    "name": "goblin_wood",
+    "shell": false,
+    "verts": 64,
+    "radius": 1.774,
+    "maxDist": 1.084,
+    "outside": 0
+   },
+   {
+    "name": "",
+    "shell": true,
+    "verts": 64,
+    "radius": 1.857,
+    "maxDist": 1.084,
+    "outside": 0
+   }
+  ],
+  "Slash-1": [
+   {
+    "name": "goblin_body",
+    "shell": false,
+    "verts": 3277,
+    "radius": 1.884,
+    "maxDist": 1.095,
+    "outside": 0
+   },
+   {
+    "name": "",
+    "shell": true,
+    "verts": 3277,
+    "radius": 1.967,
+    "maxDist": 1.095,
+    "outside": 0
+   },
+   {
+    "name": "goblin_metal",
+    "shell": false,
+    "verts": 316,
+    "radius": 1.706,
+    "maxDist": 1.23,
+    "outside": 0
+   },
+   {
+    "name": "",
+    "shell": true,
+    "verts": 316,
+    "radius": 1.789,
+    "maxDist": 1.23,
+    "outside": 0
+   },
+   {
+    "name": "goblin_wood",
+    "shell": false,
+    "verts": 64,
+    "radius": 1.774,
+    "maxDist": 1.215,
+    "outside": 0
+   },
+   {
+    "name": "",
+    "shell": true,
+    "verts": 64,
+    "radius": 1.857,
+    "maxDist": 1.215,
+    "outside": 0
+   }
+  ],
+  "Slash-2": [
+   {
+    "name": "goblin_body",
+    "shell": false,
+    "verts": 3277,
+    "radius": 1.884,
+    "maxDist": 1.103,
+    "outside": 0
+   },
+   {
+    "name": "",
+    "shell": true,
+    "verts": 3277,
+    "radius": 1.967,
+    "maxDist": 1.103,
+    "outside": 0
+   },
+   {
+    "name": "goblin_metal",
+    "shell": false,
+    "verts": 316,
+    "radius": 1.706,
+    "maxDist": 1.217,
+    "outside": 0
+   },
+   {
+    "name": "",
+    "shell": true,
+    "verts": 316,
+    "radius": 1.789,
+    "maxDist": 1.217,
+    "outside": 0
+   },
+   {
+    "name": "goblin_wood",
+    "shell": false,
+    "verts": 64,
+    "radius": 1.774,
+    "maxDist": 1.277,
+    "outside": 0
+   },
+   {
+    "name": "",
+    "shell": true,
+    "verts": 64,
+    "radius": 1.857,
+    "maxDist": 1.277,
+    "outside": 0
+   }
+  ],
+  "Slash-3": [
+   {
+    "name": "goblin_body",
+    "shell": false,
+    "verts": 3277,
+    "radius": 1.884,
+    "maxDist": 1.107,
+    "outside": 0
+   },
+   {
+    "name": "",
+    "shell": true,
+    "verts": 3277,
+    "radius": 1.967,
+    "maxDist": 1.107,
+    "outside": 0
+   },
+   {
+    "name": "goblin_metal",
+    "shell": false,
+    "verts": 316,
+    "radius": 1.706,
+    "maxDist": 1.157,
+    "outside": 0
+   },
+   {
+    "name": "",
+    "shell": true,
+    "verts": 316,
+    "radius": 1.789,
+    "maxDist": 1.157,
+    "outside": 0
+   },
+   {
+    "name": "goblin_wood",
+    "shell": false,
+    "verts": 64,
+    "radius": 1.774,
+    "maxDist": 1.109,
+    "outside": 0
+   },
+   {
+    "name": "",
+    "shell": true,
+    "verts": 64,
+    "radius": 1.857,
+    "maxDist": 1.109,
+    "outside": 0
+   }
+  ],
+  "Slash-4": [
+   {
+    "name": "goblin_body",
+    "shell": false,
+    "verts": 3277,
+    "radius": 1.884,
+    "maxDist": 1.115,
+    "outside": 0
+   },
+   {
+    "name": "",
+    "shell": true,
+    "verts": 3277,
+    "radius": 1.967,
+    "maxDist": 1.115,
+    "outside": 0
+   },
+   {
+    "name": "goblin_metal",
+    "shell": false,
+    "verts": 316,
+    "radius": 1.706,
+    "maxDist": 1.112,
+    "outside": 0
+   },
+   {
+    "name": "",
+    "shell": true,
+    "verts": 316,
+    "radius": 1.789,
+    "maxDist": 1.112,
+    "outside": 0
+   },
+   {
+    "name": "goblin_wood",
+    "shell": false,
+    "verts": 64,
+    "radius": 1.774,
+    "maxDist": 1.25,
+    "outside": 0
+   },
+   {
+    "name": "",
+    "shell": true,
+    "verts": 64,
+    "radius": 1.857,
+    "maxDist": 1.25,
+    "outside": 0
+   }
+  ],
+  "Slash-5": [
+   {
+    "name": "goblin_body",
+    "shell": false,
+    "verts": 3277,
+    "radius": 1.884,
+    "maxDist": 1.089,
+    "outside": 0
+   },
+   {
+    "name": "",
+    "shell": true,
+    "verts": 3277,
+    "radius": 1.967,
+    "maxDist": 1.089,
+    "outside": 0
+   },
+   {
+    "name": "goblin_metal",
+    "shell": false,
+    "verts": 316,
+    "radius": 1.706,
+    "maxDist": 1.186,
+    "outside": 0
+   },
+   {
+    "name": "",
+    "shell": true,
+    "verts": 316,
+    "radius": 1.789,
+    "maxDist": 1.186,
+    "outside": 0
+   },
+   {
+    "name": "goblin_wood",
+    "shell": false,
+    "verts": 64,
+    "radius": 1.774,
+    "maxDist": 1.022,
+    "outside": 0
+   },
+   {
+    "name": "",
+    "shell": true,
+    "verts": 64,
+    "radius": 1.857,
+    "maxDist": 1.022,
+    "outside": 0
+   }
+  ],
+  "stand": [
+   {
+    "name": "goblin_body",
+    "shell": false,
+    "verts": 3277,
+    "radius": 1.884,
+    "maxDist": 1.102,
+    "outside": 0
+   },
+   {
+    "name": "",
+    "shell": true,
+    "verts": 3277,
+    "radius": 1.967,
+    "maxDist": 1.102,
+    "outside": 0
+   },
+   {
+    "name": "goblin_metal",
+    "shell": false,
+    "verts": 316,
+    "radius": 1.706,
+    "maxDist": 1.191,
+    "outside": 0
+   },
+   {
+    "name": "",
+    "shell": true,
+    "verts": 316,
+    "radius": 1.789,
+    "maxDist": 1.191,
+    "outside": 0
+   },
+   {
+    "name": "goblin_wood",
+    "shell": false,
+    "verts": 64,
+    "radius": 1.774,
+    "maxDist": 1.082,
+    "outside": 0
+   },
+   {
+    "name": "",
+    "shell": true,
+    "verts": 64,
+    "radius": 1.857,
+    "maxDist": 1.082,
+    "outside": 0
+   }
+  ],
+  "walk": [
+   {
+    "name": "goblin_body",
+    "shell": false,
+    "verts": 3277,
+    "radius": 1.884,
+    "maxDist": 1.102,
+    "outside": 0
+   },
+   {
+    "name": "",
+    "shell": true,
+    "verts": 3277,
+    "radius": 1.967,
+    "maxDist": 1.102,
+    "outside": 0
+   },
+   {
+    "name": "goblin_metal",
+    "shell": false,
+    "verts": 316,
+    "radius": 1.706,
+    "maxDist": 1.192,
+    "outside": 0
+   },
+   {
+    "name": "",
+    "shell": true,
+    "verts": 316,
+    "radius": 1.789,
+    "maxDist": 1.192,
+    "outside": 0
+   },
+   {
+    "name": "goblin_wood",
+    "shell": false,
+    "verts": 64,
+    "radius": 1.774,
+    "maxDist": 1.09,
+    "outside": 0
+   },
+   {
+    "name": "",
+    "shell": true,
+    "verts": 64,
+    "radius": 1.857,
+    "maxDist": 1.09,
+    "outside": 0
+   }
+  ],
+  "attack": [
+   {
+    "name": "goblin_body",
+    "shell": false,
+    "verts": 3277,
+    "radius": 1.884,
+    "maxDist": 1.102,
+    "outside": 0
+   },
+   {
+    "name": "",
+    "shell": true,
+    "verts": 3277,
+    "radius": 1.967,
+    "maxDist": 1.102,
+    "outside": 0
+   },
+   {
+    "name": "goblin_metal",
+    "shell": false,
+    "verts": 316,
+    "radius": 1.706,
+    "maxDist": 1.155,
+    "outside": 0
+   },
+   {
+    "name": "",
+    "shell": true,
+    "verts": 316,
+    "radius": 1.789,
+    "maxDist": 1.155,
+    "outside": 0
+   },
+   {
+    "name": "goblin_wood",
+    "shell": false,
+    "verts": 64,
+    "radius": 1.774,
+    "maxDist": 1.254,
+    "outside": 0
+   },
+   {
+    "name": "",
+    "shell": true,
+    "verts": 64,
+    "radius": 1.857,
+    "maxDist": 1.254,
+    "outside": 0
+   }
+  ],
+  "windup": [
+   {
+    "name": "goblin_body",
+    "shell": false,
+    "verts": 3277,
+    "radius": 1.884,
+    "maxDist": 1.11,
+    "outside": 0
+   },
+   {
+    "name": "",
+    "shell": true,
+    "verts": 3277,
+    "radius": 1.967,
+    "maxDist": 1.11,
+    "outside": 0
+   },
+   {
+    "name": "goblin_metal",
+    "shell": false,
+    "verts": 316,
+    "radius": 1.706,
+    "maxDist": 1.154,
+    "outside": 0
+   },
+   {
+    "name": "",
+    "shell": true,
+    "verts": 316,
+    "radius": 1.789,
+    "maxDist": 1.154,
+    "outside": 0
+   },
+   {
+    "name": "goblin_wood",
+    "shell": false,
+    "verts": 64,
+    "radius": 1.774,
+    "maxDist": 1.254,
+    "outside": 0
+   },
+   {
+    "name": "",
+    "shell": true,
+    "verts": 64,
+    "radius": 1.857,
+    "maxDist": 1.254,
+    "outside": 0
+   }
+  ],
+  "flinch": [
+   {
+    "name": "goblin_body",
+    "shell": false,
+    "verts": 3277,
+    "radius": 1.884,
+    "maxDist": 1.109,
+    "outside": 0
+   },
+   {
+    "name": "",
+    "shell": true,
+    "verts": 3277,
+    "radius": 1.967,
+    "maxDist": 1.109,
+    "outside": 0
+   },
+   {
+    "name": "goblin_metal",
+    "shell": false,
+    "verts": 316,
+    "radius": 1.706,
+    "maxDist": 1.182,
+    "outside": 0
+   },
+   {
+    "name": "",
+    "shell": true,
+    "verts": 316,
+    "radius": 1.789,
+    "maxDist": 1.182,
+    "outside": 0
+   },
+   {
+    "name": "goblin_wood",
+    "shell": false,
+    "verts": 64,
+    "radius": 1.774,
+    "maxDist": 0.995,
+    "outside": 0
+   },
+   {
+    "name": "",
+    "shell": true,
+    "verts": 64,
+    "radius": 1.857,
+    "maxDist": 0.995,
+    "outside": 0
+   }
+  ]
+ },
+ "cull": {
+  "attack": {
+   "samples": 74,
+   "boneVisibleButMeshCulled": []
+  },
+  "windup": {
+   "samples": 74,
+   "boneVisibleButMeshCulled": []
+  },
+  "stand": {
+   "samples": 74,
+   "boneVisibleButMeshCulled": []
+  }
+ },
+ "distPx": [
+  516.1226381098033,
+  442.49223873681524
+ ],
+ "errors": []
+}

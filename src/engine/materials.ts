@@ -27,10 +27,38 @@ export function isSharedOutlineMaterial(m: THREE.Material): boolean {
   return false;
 }
 
-function outlineMaterial(thickness: number, color: number): THREE.ShaderMaterial {
-  const key = `${thickness}:${color}`;
+function outlineMaterial(thickness: number, color: number, skinned = false): THREE.ShaderMaterial {
+  const key = `${thickness}:${color}${skinned ? ':skinned' : ''}`;
   const cached = outlineCache.get(key);
   if (cached) return cached;
+  const vertexShader = skinned
+    ? `
+      uniform float uThickness;
+      attribute vec3 outlineNormal;
+      #include <skinning_pars_vertex>
+      void main() {
+        vec3 objectNormal = outlineNormal;
+        #include <skinbase_vertex>
+        #include <skinnormal_vertex>
+        #include <begin_vertex>
+        #include <skinning_vertex>
+        vec4 viewPos = modelViewMatrix * vec4(transformed, 1.0);
+        vec3 viewNorm = normalize(normalMatrix * objectNormal);
+        viewPos.xy += viewNorm.xy * uThickness;
+        viewPos.z -= uThickness * 2.5 + 0.045;
+        gl_Position = projectionMatrix * viewPos;
+      }
+    `
+    : `
+      uniform float uThickness;
+      void main() {
+        vec4 viewPos = modelViewMatrix * vec4(position, 1.0);
+        vec3 viewNorm = normalize(normalMatrix * normal);
+        viewPos.xy += viewNorm.xy * uThickness;
+        viewPos.z -= uThickness * 2.5 + 0.045;
+        gl_Position = projectionMatrix * viewPos;
+      }
+    `;
   const mat = new THREE.ShaderMaterial({
     side: THREE.BackSide,
     depthWrite: true,
@@ -41,16 +69,7 @@ function outlineMaterial(thickness: number, color: number): THREE.ShaderMaterial
       uColor: { value: new THREE.Color(color) },
       uThickness: { value: thickness }
     },
-    vertexShader: `
-      uniform float uThickness;
-      void main() {
-        vec4 viewPos = modelViewMatrix * vec4(position, 1.0);
-        vec3 viewNorm = normalize(normalMatrix * normal);
-        viewPos.xy += viewNorm.xy * uThickness;
-        viewPos.z -= uThickness * 2.5 + 0.045;
-        gl_Position = projectionMatrix * viewPos;
-      }
-    `,
+    vertexShader,
     fragmentShader: `
       uniform vec3 uColor;
       void main() {
@@ -73,6 +92,83 @@ function isSkippableOutline(obj: THREE.Object3D): boolean {
 }
 
 /**
+ * Skinned outline push direction (plan S1d): per vertex, the normalised sum of the normals of every
+ * vertex at the same position, so the split copies of a hard edge push the same way.
+ * Two documented cases:
+ * - no `normal` attribute: no `outlineNormal` is written, so the shader reads the absent attribute
+ *   as zero, exactly as it read the absent `normal` before S1d. Every skinned primitive of the four
+ *   s3b builds carries NORMAL; only the hand-built fixture tests/fixtures/models/skinned-pair.glb lacks it.
+ * - copies whose normals cancel (opposed faces at one position, as on goblin_body in the s3b
+ *   one-material builds): the sum has no direction, so each copy keeps its own normal.
+ */
+const OUTLINE_ZERO_SUM = 1e-4;
+
+function computeOutlineNormals(geometry: THREE.BufferGeometry): void {
+  if (geometry.getAttribute('outlineNormal')) return;
+  const normAttr = geometry.getAttribute('normal');
+  if (!normAttr) return;
+  const posAttr = geometry.getAttribute('position');
+  const count = posAttr.count;
+  const outlineNormals = new Float32Array(count * 3);
+
+  const order = new Int32Array(count);
+  for (let i = 0; i < count; i++) order[i] = i;
+  order.sort((a, b) => posAttr.getX(a) - posAttr.getX(b));
+
+  const EPS = 1e-5;
+
+  for (let k = 0; k < count; k++) {
+    const i = order[k];
+    const xi = posAttr.getX(i);
+    const yi = posAttr.getY(i);
+    const zi = posAttr.getZ(i);
+
+    let sumX = 0;
+    let sumY = 0;
+    let sumZ = 0;
+
+    for (let back = k; back >= 0; back--) {
+      const j = order[back];
+      const dx = posAttr.getX(j) - xi;
+      if (Math.abs(dx) > EPS) break;
+      const dy = posAttr.getY(j) - yi;
+      const dz = posAttr.getZ(j) - zi;
+      if (Math.sqrt(dx * dx + dy * dy + dz * dz) < EPS) {
+        sumX += normAttr.getX(j);
+        sumY += normAttr.getY(j);
+        sumZ += normAttr.getZ(j);
+      }
+    }
+
+    for (let fwd = k + 1; fwd < count; fwd++) {
+      const j = order[fwd];
+      const dx = posAttr.getX(j) - xi;
+      if (Math.abs(dx) > EPS) break;
+      const dy = posAttr.getY(j) - yi;
+      const dz = posAttr.getZ(j) - zi;
+      if (Math.sqrt(dx * dx + dy * dy + dz * dz) < EPS) {
+        sumX += normAttr.getX(j);
+        sumY += normAttr.getY(j);
+        sumZ += normAttr.getZ(j);
+      }
+    }
+
+    let len = Math.sqrt(sumX * sumX + sumY * sumY + sumZ * sumZ);
+    if (len < OUTLINE_ZERO_SUM) {
+      sumX = normAttr.getX(i);
+      sumY = normAttr.getY(i);
+      sumZ = normAttr.getZ(i);
+      len = Math.sqrt(sumX * sumX + sumY * sumY + sumZ * sumZ);
+    }
+    outlineNormals[i * 3] = sumX / len;
+    outlineNormals[i * 3 + 1] = sumY / len;
+    outlineNormals[i * 3 + 2] = sumZ / len;
+  }
+
+  geometry.setAttribute('outlineNormal', new THREE.Float32BufferAttribute(outlineNormals, 3));
+}
+
+/**
  * Inverted-hull ink outline. Skips invisible colliders and meshes already outlined.
  * Pushes silhouette outward in view XY and biases view Z back so internal intersecting
  * sub-meshes (foliage clusters, castle blocks, armor overlays) never poke black spots through surfaces.
@@ -88,22 +184,35 @@ export function addCartoonOutline(rootOrMesh: THREE.Object3D, thickness = 0.028,
   rootOrMesh.traverse((obj) => {
     if (obj !== rootOrMesh) consider(obj);
   });
-  const mat = outlineMaterial(thickness, color);
   meshes.forEach((mesh) => {
     if (mesh.children.some((child) => child.userData?.isOutline)) return;
-    const shell = new THREE.Mesh(mesh.geometry, mat);
+    const isSkinned = Boolean((mesh as THREE.SkinnedMesh).isSkinnedMesh);
+    const mat = outlineMaterial(thickness, color, isSkinned);
+    let shell: THREE.Mesh;
+    if (isSkinned) {
+      const skinnedMesh = mesh as THREE.SkinnedMesh;
+      computeOutlineNormals(skinnedMesh.geometry);
+      const skinnedShell = new THREE.SkinnedMesh(mesh.geometry, mat);
+      skinnedShell.bind(skinnedMesh.skeleton, skinnedMesh.bindMatrix);
+      const margin = thickness * 1.5 + 0.05;
+      const meshSphere = skinnedMesh.boundingSphere;
+      skinnedShell.boundingSphere = new THREE.Sphere(meshSphere!.center.clone(), meshSphere!.radius + margin);
+      shell = skinnedShell;
+    } else {
+      shell = new THREE.Mesh(mesh.geometry, mat);
+      if (!mesh.geometry.boundingSphere) {
+        mesh.geometry.computeBoundingSphere();
+      }
+      if (mesh.geometry.boundingSphere) {
+        shell.geometry.boundingSphere = mesh.geometry.boundingSphere.clone();
+        shell.geometry.boundingSphere.radius += thickness * 1.5 + 0.05;
+      }
+    }
     shell.userData.isOutline = true;
     shell.castShadow = false;
     shell.receiveShadow = false;
     shell.frustumCulled = true;
     shell.visible = false;
-    if (!mesh.geometry.boundingSphere) {
-      mesh.geometry.computeBoundingSphere();
-    }
-    if (mesh.geometry.boundingSphere) {
-      shell.geometry.boundingSphere = mesh.geometry.boundingSphere.clone();
-      shell.geometry.boundingSphere.radius += thickness * 1.5 + 0.05;
-    }
     mesh.add(shell);
   });
 }

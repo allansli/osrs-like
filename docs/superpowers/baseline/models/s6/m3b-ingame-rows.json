@@ -1,0 +1,302 @@
+{
+ "errs": [],
+ "rows": [
+  {
+   "name": "scorpion-threeq",
+   "row": {
+    "x": 45.52163031760949,
+    "z": 41.122867914376535,
+    "yaw": 2.6,
+    "pitch": 0.25,
+    "distance": 6
+   },
+   "monsters": [
+    {
+     "pos": [
+      44.1,
+      42
+     ],
+     "state": "idle",
+     "windup": false,
+     "animator": true,
+     "clips": [
+      "Death",
+      "Idle",
+      "Walk",
+      "Strike"
+     ],
+     "running": [
+      "Death@0.000w1.00",
+      "Idle@1.323w0.00",
+      "Walk@0.532w1.00",
+      "Strike@0.000w1.00"
+     ],
+     "skinned": 3,
+     "painted": 3,
+     "cut": 3,
+     "skeletons": 1,
+     "scale": 1.28,
+     "pivots": {
+      "head": "Bone:HeadGroup",
+      "lArm": "Bone:LeftArmPivot",
+      "lLeg": "Bone:LeftLegPivot",
+      "lWing": null,
+      "rWing": null
+     },
+     "wingZ": null,
+     "legX": 0
+    }
+   ]
+  },
+  {
+   "name": "scorpion-side",
+   "row": {
+    "x": 44.26941354367877,
+    "z": 40.37432117005738,
+    "yaw": -1.571,
+    "pitch": 0.22,
+    "distance": 6
+   },
+   "monsters": [
+    null
+   ]
+  },
+  {
+   "name": "scorpion-strike",
+   "row": {
+    "x": 46.125868540700466,
+    "z": 42.78416324870754,
+    "yaw": -1.571,
+    "pitch": 0.22,
+    "distance": 6
+   },
+   "monsters": [
+    {
+     "pos": [
+      45.8,
+      44.3
+     ],
+     "state": "idle",
+     "windup": false,
+     "animator": true,
+     "clips": [
+      "Death",
+      "Idle",
+      "Walk",
+      "Strike"
+     ],
+     "running": [
+      "Death@0.000w1.00",
+      "Idle@1.830w0.00",
+      "Walk@0.086w0.00",
+      "Strike@0.383w1.00"
+     ],
+     "skinned": 3,
+     "painted": 3,
+     "cut": 3,
+     "skeletons": 1,
+     "scale": 1.28,
+     "pivots": {
+      "head": "Bone:HeadGroup",
+      "lArm": "Bone:LeftArmPivot",
+      "lLeg": "Bone:LeftLegPivot",
+      "lWing": null,
+      "rWing": null
+     },
+     "wingZ": null,
+     "legX": 0
+    },
+    {
+     "pos": [
+      45.5,
+      44
+     ],
+     "state": "idle",
+     "windup": false,
+     "animator": true,
+     "clips": [
+      "Death",
+      "Idle",
+      "Walk",
+      "Strike"
+     ],
+     "running": [
+      "Death@0.000w1.00",
+      "Idle@0.063w0.00",
+      "Walk@0.317w0.00",
+      "Strike@0.617w1.00"
+     ],
+     "skinned": 3,
+     "painted": 3,
+     "cut": 3,
+     "skeletons": 1,
+     "scale": 1.28,
+     "pivots": {
+      "head": "Bone:HeadGroup",
+      "lArm": "Bone:LeftArmPivot",
+      "lLeg": "Bone:LeftLegPivot",
+      "lWing": null,
+      "rWing": null
+     },
+     "wingZ": null,
+     "legX": 0
+    }
+   ]
+  },
+  {
+   "name": "scorpion-back",
+   "row": {
+    "x": 43.77677006665624,
+    "z": 44.53717398404807,
+    "yaw": -0.5,
+    "pitch": 0.3,
+    "distance": 6
+   },
+   "monsters": [
+    null
+   ]
+  },
+  {
+   "name": "scorpion-8.5",
+   "row": {
+    "x": 48.31205093916308,
+    "z": 49.74397420226561,
+    "yaw": 3.142,
+    "pitch": 0.3,
+    "distance": 8.5
+   },
+   "monsters": [
+    {
+     "pos": [
+      46.3,
+      47
+     ],
+     "state": "idle",
+     "windup": false,
+     "animator": true,
+     "clips": [
+      "Death",
+      "Idle",
+      "Walk",
+      "Strike"
+     ],
+     "running": [
+      "Death@0.000w1.00",
+      "Idle@0.213w1.00",
+      "Walk@0.229w0.00",
+      "Strike@0.000w1.00"
+     ],
+     "skinned": 3,
+     "painted": 3,
+     "cut": 3,
+     "skeletons": 1,
+     "scale": 1.28,
+     "pivots": {
+      "head": "Bone:HeadGroup",
+      "lArm": "Bone:LeftArmPivot",
+      "lLeg": "Bone:LeftLegPivot",
+      "lWing": null,
+      "rWing": null
+     },
+     "wingZ": null,
+     "legX": 0
+    }
+   ]
+  },
+  {
+   "name": "scorpion-26",
+   "row": {
+    "x": 47.932389759780364,
+    "z": 46.97992691814209,
+    "yaw": 3.142,
+    "pitch": 0.3,
+    "distance": 26
+   },
+   "monsters": [
+    {
+     "pos": [
+      47,
+      46.7
+     ],
+     "state": "idle",
+     "windup": false,
+     "animator": true,
+     "clips": [
+      "Death",
+      "Idle",
+      "Walk",
+      "Strike"
+     ],
+     "running": [
+      "Death@0.000w1.00",
+      "Idle@1.396w0.00",
+      "Walk@0.574w1.00",
+      "Strike@0.000w1.00"
+     ],
+     "skinned": 3,
+     "painted": 3,
+     "cut": 3,
+     "skeletons": 1,
+     "scale": 1.28,
+     "pivots": {
+      "head": "Bone:HeadGroup",
+      "lArm": "Bone:LeftArmPivot",
+      "lLeg": "Bone:LeftLegPivot",
+      "lWing": null,
+      "rWing": null
+     },
+     "wingZ": null,
+     "legX": 0
+    }
+   ]
+  },
+  {
+   "name": "stalker-threeq",
+   "row": {
+    "x": 108.00853188696526,
+    "z": 107.66887358767923,
+    "yaw": 2.6,
+    "pitch": 0.25,
+    "distance": 7
+   },
+   "monsters": [
+    {
+     "pos": [
+      106.1,
+      106.1
+     ],
+     "state": "idle",
+     "windup": false,
+     "animator": true,
+     "clips": [
+      "Death",
+      "Idle",
+      "Walk",
+      "Strike"
+     ],
+     "running": [
+      "Death@0.000w1.00",
+      "Idle@0.609w1.00",
+      "Walk@0.206w0.00",
+      "Strike@0.000w1.00"
+     ],
+     "skinned": 3,
+     "painted": 3,
+     "cut": 3,
+     "skeletons": 1,
+     "scale": 1.792,
+     "pivots": {
+      "head": "Bone:HeadGroup",
+      "lArm": "Bone:LeftArmPivot",
+      "lLeg": "Bone:LeftLegPivot",
+      "lWing": null,
+      "rWing": null
+     },
+     "wingZ": null,
+     "legX": 0
+    }
+   ]
+  }
+ ],
+ "renderer": "ANGLE (Microsoft Corporation, D3D12 (NVIDIA GeForce RTX 4070 Laptop GPU), OpenGL 4.6)"
+}

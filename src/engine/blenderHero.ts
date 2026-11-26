@@ -3,6 +3,7 @@ import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { loadGltfOnce } from './gltf';
 import { LEAN_RIG, type HumanoidRig } from './humanoid';
 import { addCartoonOutline, facetMaterial } from './materials';
+import { cloneFigure, fixCullSpheres, hasSkin } from './skinned';
 import { albedoMaterial, creatureAlbedoId, sealAlbedoUvs } from './textures';
 
 export type HeroClipName =
@@ -15,7 +16,8 @@ export type HeroClipName =
   | 'Chop'
   | 'Mine'
   | 'Fish'
-  | 'SpinSlash';
+  | 'SpinSlash'
+  | 'Death';
 
 const REST_POSITIONS: Record<string, [number, number, number]> = {
   Torso: [0, LEAN_RIG.torsoY, 0],
@@ -34,6 +36,8 @@ export class BlenderHeroAnimator {
   private pivots: Record<string, THREE.Object3D>;
   private isMoving = false;
   private walkSpeedRatio = 1.0;
+  // Hero leg length over the figure's: stretches Walk's time scale so shorter legs do not slide (design 6.5).
+  private walkLegRatio = 1.0;
   private blend = 0.0; // 0.0 = full idle, 1.0 = full walk
 
   constructor(
@@ -49,6 +53,9 @@ export class BlenderHeroAnimator {
       const action = this.mixer.clipAction(clip);
       if (name === 'Idle' || name === 'Walk') {
         action.setLoop(THREE.LoopRepeat, Infinity);
+      } else if (name === 'Death') {
+        action.setLoop(THREE.LoopOnce, 1);
+        action.clampWhenFinished = true;
       } else {
         action.setLoop(THREE.LoopOnce, 1);
         action.clampWhenFinished = false;
@@ -58,8 +65,10 @@ export class BlenderHeroAnimator {
 
     this.mixer.addEventListener('finished', (e) => {
       if (this.activeOneShot && e.action === this.activeOneShot) {
-        this.activeOneShot.fadeOut(0.12);
-        this.activeOneShot = null;
+        if (!e.action.clampWhenFinished) {
+          this.activeOneShot.fadeOut(0.12);
+          this.activeOneShot = null;
+        }
       }
     });
 
@@ -79,6 +88,48 @@ export class BlenderHeroAnimator {
     this.walkSpeedRatio = Math.max(0.1, speedRatio);
   }
 
+  setWalkLegRatio(legRatio: number): void {
+    this.walkLegRatio = legRatio;
+  }
+
+  /** Holds a one-shot clip at `time` seconds (a scrubbed wind-up); `releaseHeld` lets it play on from there. */
+  holdOneShot(clipName: HeroClipName, time: number): void {
+    const action = this.actions.get(clipName);
+    if (!action) throw new Error(`holdOneShot: no clip ${clipName}`);
+    if (this.activeOneShot !== action) {
+      if (this.activeOneShot) this.activeOneShot.fadeOut(0.08);
+      this.activeOneShot = action;
+      action.reset();
+      action.setLoop(THREE.LoopOnce, 1);
+      action.clampWhenFinished = false;
+      action.setEffectiveTimeScale(1);
+      action.play();
+    }
+    action.paused = true;
+    action.setEffectiveWeight(1);
+    action.time = time;
+  }
+
+  releaseHeld(): void {
+    if (this.activeOneShot) this.activeOneShot.paused = false;
+  }
+
+  /** Fades out a held one-shot that was never released: a cancelled wind-up, which must not strike. */
+  cancelHeld(): void {
+    const held = this.activeOneShot;
+    if (!held || !held.paused) return;
+    held.fadeOut(0.12);
+    this.activeOneShot = null;
+  }
+
+  /** Stops every one-shot at once, except `keep`: a death must not blend with a wind-up or a strike, and a respawn clears Death. */
+  stopOneShots(keep?: HeroClipName): void {
+    for (const [name, action] of this.actions) {
+      if (name !== 'Idle' && name !== 'Walk' && name !== keep) action.stop();
+    }
+    this.activeOneShot = null;
+  }
+
   setMoving(isMoving: boolean): void {
     this.isMoving = isMoving;
     this.currentLocomotion = isMoving ? 'Walk' : 'Idle';
@@ -89,6 +140,13 @@ export class BlenderHeroAnimator {
   }
 
   playAction(clipName: HeroClipName, timeScale = 1.15): void {
+    if (clipName === 'Idle') {
+      if (this.activeOneShot) {
+        this.activeOneShot.fadeOut(0.12);
+        this.activeOneShot = null;
+      }
+      return;
+    }
     const action = this.actions.get(clipName);
     if (!action) return;
     if (this.activeOneShot && this.activeOneShot !== action) {
@@ -118,15 +176,18 @@ export class BlenderHeroAnimator {
       walk.setEffectiveWeight(w * baseWeight);
       idle.setEffectiveWeight((1.0 - w) * baseWeight);
 
-      const targetTimeScale = 0.85 + this.walkSpeedRatio * 0.90;
+      const targetTimeScale = (0.85 + this.walkSpeedRatio * 0.90) * this.walkLegRatio;
       walk.setEffectiveTimeScale(targetTimeScale);
     }
 
     this.mixer.update(dt);
+    for (const p of Object.values(this.pivots)) {
+      p.quaternion.normalize();
+    }
   }
 }
 
-export function loadBlenderHeroTemplate(url = '/models/hero.glb?v=kai4503_v5'): Promise<GLTF | null> {
+export function loadBlenderHeroTemplate(url = '/models/hero.glb?v=c56c4135'): Promise<GLTF | null> {
   if (typeof window === 'undefined' || typeof document === 'undefined') {
     return Promise.resolve(null);
   }
@@ -153,8 +214,13 @@ export function upgradeHumanoidRigWithGltf(
   legsHex = 0x2a2522,
   opts: HeroUpgradeOptions = {}
 ): BlenderHeroAnimator | null {
-  const clonedScene = gltf.scene.clone(true);
-  const heroRoot = clonedScene.getObjectByName('HeroRoot') || clonedScene;
+  const template = gltf.scene.getObjectByName('HeroRoot') || gltf.scene;
+  const isSkinned = hasSkin(template);
+  if (isSkinned) {
+    fixCullSpheres(template);
+  }
+  const heroRoot = isSkinned ? cloneFigure(template) : template.clone(true);
+  if (!heroRoot) return null;
 
   const torso = heroRoot.getObjectByName('Torso') as THREE.Group | undefined;
   const headGroup = heroRoot.getObjectByName('HeadGroup') as THREE.Group | undefined;
@@ -172,22 +238,33 @@ export function upgradeHumanoidRigWithGltf(
     return null;
   }
 
+  let hasVertexColors = false;
+  heroRoot.traverse((obj) => {
+    if (hasVertexColors) return;
+    const mesh = obj as THREE.Mesh;
+    if (mesh.isMesh && mesh.geometry.getAttribute('color')) {
+      hasVertexColors = true;
+    }
+  });
+
+  const extra = hasVertexColors ? { vertexColors: true } : {};
+
   const skinColor = opts.skinHex ?? 0xf5d8c2;
-  const skinMat = albedoMaterial(skinColor, creatureAlbedoId('skin'));
-  const lipsMat = albedoMaterial(0xd08878, creatureAlbedoId('skin'));
-  const tunicMat = albedoMaterial(opts.tunicHex ?? tunicHex, 'gear:cloth');
-  const innerTunicMat = albedoMaterial(0x282b2e, 'gear:cloth');
-  const tunicTrimMat = albedoMaterial(0xeee5d2, 'gear:cloth');
-  const waistSashMat = albedoMaterial(0x1e2022, 'gear:cloth');
-  const bracerMat = albedoMaterial(0x4e3524, 'gear:leather');
-  const legsMat = albedoMaterial(opts.legsHex ?? legsHex, 'gear:cloth');
-  const hairMat = albedoMaterial(hairHex, creatureAlbedoId('hair'));
-  const bootMat = albedoMaterial(opts.bootHex ?? 0x342418, 'gear:leather');
-  const gloveMat = albedoMaterial(skinColor, creatureAlbedoId('skin'));
-  const beltLeatherMat = albedoMaterial(0x1e2022, 'gear:leather');
-  const goldMat = facetMaterial({ color: 0x8f7d4e, emissive: 0x5e4f2b, emissiveIntensity: 0.12 });
-  const eyeWhiteMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
-  const pupilMat = new THREE.MeshBasicMaterial({ color: 0x227cd4 });
+  const skinMat = albedoMaterial(skinColor, creatureAlbedoId('skin'), extra);
+  const lipsMat = albedoMaterial(0xd08878, creatureAlbedoId('skin'), extra);
+  const tunicMat = albedoMaterial(opts.tunicHex ?? tunicHex, 'gear:cloth', extra);
+  const innerTunicMat = albedoMaterial(0x282b2e, 'gear:cloth', extra);
+  const tunicTrimMat = albedoMaterial(0xeee5d2, 'gear:cloth', extra);
+  const waistSashMat = albedoMaterial(0x1e2022, 'gear:cloth', extra);
+  const bracerMat = albedoMaterial(0x4e3524, 'gear:leather', extra);
+  const legsMat = albedoMaterial(opts.legsHex ?? legsHex, 'gear:cloth', extra);
+  const hairMat = albedoMaterial(hairHex, creatureAlbedoId('hair'), extra);
+  const bootMat = albedoMaterial(opts.bootHex ?? 0x342418, 'gear:leather', extra);
+  const gloveMat = albedoMaterial(skinColor, creatureAlbedoId('skin'), extra);
+  const beltLeatherMat = albedoMaterial(0x1e2022, 'gear:leather', extra);
+  const goldMat = facetMaterial({ color: 0x8f7d4e, emissive: 0x5e4f2b, emissiveIntensity: 0.12, ...extra });
+  const eyeWhiteMat = new THREE.MeshBasicMaterial({ color: 0xffffff, ...extra });
+  const pupilMat = new THREE.MeshBasicMaterial({ color: 0x227cd4, ...extra });
 
   let chestMesh: THREE.Mesh | null = null;
   let beltMesh: THREE.Mesh | null = null;

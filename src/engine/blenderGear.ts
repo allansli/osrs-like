@@ -15,7 +15,7 @@ export function hasBlenderGearTemplate(): boolean {
   return loadedGearRoot !== null;
 }
 
-export function loadBlenderGearTemplate(url = '/models/gear.glb?v=headgear_v8'): Promise<GLTF | null> {
+export function loadBlenderGearTemplate(url = '/models/gear.glb?v=8a3c0d1b'): Promise<GLTF | null> {
   if (typeof window === 'undefined' || typeof document === 'undefined') {
     return Promise.resolve(null);
   }
@@ -55,6 +55,17 @@ export function cloneBlenderGearNode(
   cloned.rotation.set(0, 0, 0);
   cloned.scale.set(1, 1, 1);
 
+  let hasVertexColors = false;
+  cloned.traverse((obj) => {
+    if (hasVertexColors) return;
+    const mesh = obj as THREE.Mesh;
+    if (mesh.isMesh && mesh.geometry.getAttribute('color')) {
+      hasVertexColors = true;
+    }
+  });
+
+  const extra = hasVertexColors ? { vertexColors: true } : {};
+
   const primaryHex = item.color ?? 0x9ca3af;
   const trimHex = item.trim || item.color || 0xfacc15;
   const glowHex = opts.glowHex ?? (item.trim || item.color || 0xfde047);
@@ -62,22 +73,25 @@ export function cloneBlenderGearNode(
 
   const primaryMat = albedoMaterial(primaryHex, albedoForItem(item), {
     ...(opts.doubleSided ? { side: THREE.DoubleSide } : {}),
+    ...extra,
     ...(opts.primaryExtra || {})
   });
   const trimMat = facetMaterial({
     color: trimHex,
+    ...extra,
     ...(opts.trimExtra || {})
   });
   const glowMat = facetMaterial({
     color: glowHex,
     emissive: glowHex,
-    emissiveIntensity: glowIntensity
+    emissiveIntensity: glowIntensity,
+    ...extra
   });
-  const woodMat = albedoMaterial(0x3e2c1c, 'wood');
-  const leatherMat = albedoMaterial(0x241a13, 'leather');
-  const darkMat = facetMaterial({ color: 0x1a1e24 });
-  const whiteMat = facetMaterial({ color: 0xd8dbdf });
-  const crimsonMat = facetMaterial({ color: 0x6c2323 });
+  const woodMat = albedoMaterial(0x3e2c1c, 'wood', extra);
+  const leatherMat = albedoMaterial(0x241a13, 'leather', extra);
+  const darkMat = facetMaterial({ color: 0x1a1e24, ...extra });
+  const whiteMat = facetMaterial({ color: 0xd8dbdf, ...extra });
+  const crimsonMat = facetMaterial({ color: 0x6c2323, ...extra });
 
   cloned.traverse((obj) => {
     const mesh = obj as THREE.Mesh;

@@ -562,6 +562,9 @@ export function handlePlayerDeath(): void {
   if (outcome.kind === 'lost') {
     updateSkillsPanel();
   }
+  if (player.blenderAnimator) {
+    player.blenderAnimator.playAction('Death', 1);
+  }
   updateAllUI();
 }
 
@@ -583,6 +586,9 @@ export function finishRespawn(): void {
   const notice = deathNotice(outcome);
   delete player.deathOutcome;
   addChatMessage(`<b>${notice.title}</b> ${notice.body}`, 'combat');
+  if (player.blenderAnimator) {
+    player.blenderAnimator.playAction('Idle');
+  }
   updateAllUI();
 }
 

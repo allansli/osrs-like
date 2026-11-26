@@ -1,0 +1,96 @@
+{
+ "renderer": "ANGLE (Microsoft Corporation, D3D12 (NVIDIA GeForce RTX 4070 Laptop GPU), OpenGL 4.6)",
+ "rows": [
+  {
+   "pose": "model-hero-close",
+   "tier": "balanced",
+   "screen": 1151,
+   "fbo": 1023,
+   "frames": 61,
+   "hud": "2178 calls • 675k tris",
+   "hp": 99,
+   "pos": [
+    "0.0",
+    "0.0"
+   ]
+  },
+  {
+   "pose": "model-hero-play",
+   "tier": "balanced",
+   "screen": 1087,
+   "fbo": 991,
+   "frames": 60,
+   "hud": "2088 calls • 663k tris",
+   "hp": 99,
+   "pos": [
+    "0.0",
+    "0.0"
+   ]
+  },
+  {
+   "pose": "model-guards",
+   "tier": "balanced",
+   "screen": 122,
+   "fbo": 965,
+   "frames": 60,
+   "hud": "1077 calls • 593k tris",
+   "hp": 99,
+   "pos": [
+    "0.0",
+    "-15.0"
+   ]
+  },
+  {
+   "pose": "model-camp-goblin",
+   "tier": "balanced",
+   "screen": 665,
+   "fbo": 1150,
+   "frames": 60,
+   "hud": "1776 calls • 603k tris",
+   "hp": 99,
+   "pos": [
+    "13.0",
+    "8.0"
+   ]
+  },
+  {
+   "pose": "model-camp-dunes",
+   "tier": "balanced",
+   "screen": 326,
+   "fbo": 781,
+   "frames": 60,
+   "hud": "1137 calls • 377k tris",
+   "hp": 99,
+   "pos": [
+    "48.0",
+    "44.0"
+   ]
+  },
+  {
+   "pose": "model-camp-pass",
+   "tier": "balanced",
+   "screen": 247,
+   "fbo": 411,
+   "frames": 60,
+   "hud": "609 calls • 435k tris",
+   "hp": 99,
+   "pos": [
+    "-19.0",
+    "55.0"
+   ]
+  },
+  {
+   "pose": "model-camp-dragon",
+   "tier": "balanced",
+   "screen": 52,
+   "fbo": 114,
+   "frames": 60,
+   "hud": "166 calls • 318k tris",
+   "hp": 99,
+   "pos": [
+    "-102.0",
+    "92.0"
+   ]
+  }
+ ]
+}

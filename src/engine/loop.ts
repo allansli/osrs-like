@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { MONSTER_MOTION } from '../data/monsterPoses';
 import { output, currentQuality, applyQualityTier } from './renderer';
 import { nextTier, TIER_LABELS } from './post';
 import { playerChoseTier } from './photo';
@@ -31,7 +32,7 @@ import {
   spawnExpandingRing,
   spawnLevelUpFireworks
 } from './vfx';
-import { poseMonsterDying, poseMonsterLimbs } from './monsterMeshes';
+import { poseMonsterDying, poseMonsterLimbs, resetMonsterMotion } from './monsterMeshes';
 import { syncWhipGeometry } from './playerMesh';
 import {
   renderMinimap,
@@ -687,6 +688,7 @@ export function updateMonsters(f: FrameState): void {
         player.sinceCombat = 0;
         const attack = ATTACKS[ev.attackId];
         const cue = cueFor(attack, m.def.style);
+        m.attackAnim = 1;
         const damage = ev.hit ? performMonsterHeavy(m, ev.attackId) : 0;
         SFX.play([...resolvePlan(cue), ...heavyImpactPlan(ev.hit, damage)], true);
       } else if (ev.kind === 'died') {
@@ -716,6 +718,7 @@ export function updateMonsters(f: FrameState): void {
     if (prevState === 'dead') {
       if (events.some(e => e.kind === 'respawned')) {
         m.flinch = 0;
+        resetMonsterMotion(m);
         m.pos.set(L.x, getTerrainHeight(L.x, L.z), L.z);
         m.rig.group.rotation.set(0, 0, 0);
         m.rig.group.visible = true;
@@ -723,7 +726,8 @@ export function updateMonsters(f: FrameState): void {
       continue;
     }
 
-    if (m.rig.lWing && m.rig.rWing) {
+    const hasClips = Boolean(MONSTER_MOTION[m.modelKey ?? m.typeKey].clips);
+    if (!hasClips && m.rig.lWing && m.rig.rWing) {
       const flap = Math.sin(f.now * 0.006) * 0.35;
       m.rig.lWing.rotation.z = 0.22 + flap;
       m.rig.rWing.rotation.z = -0.22 - flap;

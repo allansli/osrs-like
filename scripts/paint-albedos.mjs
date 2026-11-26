@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 import { crc32, deflateSync } from 'node:zlib';
 
 const SIZE = 256;
-const root = join(dirname(fileURLToPath(import.meta.url)), '..', 'public', 'textures');
+const root = process.argv[2] || join(dirname(fileURLToPath(import.meta.url)), '..', 'public', 'textures');
 
 function hash(ix, iy, seed) {
   let n = Math.imul(ix + seed * 13, 374761393) + Math.imul(iy + seed * 7, 668265263);
@@ -269,6 +269,12 @@ const creatures = {
     const pore = fbm(u, v, 13, 5, 8);
     let col = mix([214, 214, 150], [96, 120, 48], pore);
     col = mix(col, [230, 220, 160], wart);
+    const luma = (col[0] + col[1] + col[2]) / 3;
+    col = [
+      luma + 0.45 * (col[0] - luma),
+      luma + 0.45 * (col[1] - luma),
+      luma + 0.45 * (col[2] - luma)
+    ];
     return col;
   },
   'scorpion-chitin'(u, v) {

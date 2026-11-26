@@ -1,0 +1,51 @@
+diff --git a/src/engine/loop.ts b/src/engine/loop.ts
+index f011008..024343a 100644
+--- a/src/engine/loop.ts
++++ b/src/engine/loop.ts
+@@ -645,6 +645,7 @@ export function updateMonsters(f: FrameState): void {
+ 
+   for (let k = 0; k < n; k++) {
+     const m = G.monstersList[(startIdx + k) % n];
++    if ((m as any).__hold) { if ((m as any).__hold !== 'clip') poseMonsterLimbs(m, (m as any).__hold === 'walk', f.now, f.dt); continue; }
+     const L = m.logic;
+     const prevState = L.state;
+     const prevTimer = L.timer;
+diff --git a/src/engine/monsterMeshes.ts b/src/engine/monsterMeshes.ts
+index bff7b55..a0c04ad 100644
+--- a/src/engine/monsterMeshes.ts
++++ b/src/engine/monsterMeshes.ts
+@@ -811,6 +811,10 @@ export function poseMonsterLimbs(m: MonsterEntity, moving: boolean, now: number,
+   const rig = m.rig;
+   if (!rig || m.logic.state === 'dying') return;
+ 
++  const hold = (m as any).__hold;
++  if (hold === 'flinch') m.flinch = 0.5;
++  if (hold === 'attack') m.attackAnim = 0.5;
++  if (hold) m.logic.windup = hold === 'windup' ? { attackId: 'x', left: 0.15, total: 1, ox: 0, oz: 0, dx: 0, dz: 1 } : null;
+   const groundY = getTerrainHeight(m.pos.x, m.pos.z);
+   // Hit stop freezes the pose time of the flinch and the attack swing (design 6.5).
+   const animDt = isHitStopped(m) ? 0 : dt;
+diff --git a/src/engine/runtime.ts b/src/engine/runtime.ts
+index 40994bd..380b21b 100644
+--- a/src/engine/runtime.ts
++++ b/src/engine/runtime.ts
+@@ -1,4 +1,10 @@
+ import { player, camState, G } from './context';
++import { poseMonsterLimbs } from './monsterMeshes';
++import { spawnMonster } from './spawns';
++import { disposeObject3D } from './dispose';
++import { getTerrainHeight } from '../state/terrain';
++import * as THREE from 'three';
++import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+ import { SFX } from './audio';
+ import { rebuildPlayerEquipmentMeshes } from './playerMesh';
+ import { cycleTimeOfDay } from './worldMesh';
+@@ -209,7 +215,7 @@ export function boot(): void {
+     });
+     const startReg = WORLD_REGIONS.find(r => r.id === STATE.currentRegion) || WORLD_REGIONS[0];
+     triggerRegionBanner(startReg);
+-    (window as unknown as { __DEBUG?: unknown }).__DEBUG = { STATE, player, camState, rebuildPlayerEquipmentMeshes, ITEMS, look: createLookHooks() };
++    (window as unknown as { __DEBUG?: unknown }).__DEBUG = { STATE, player, camState, rebuildPlayerEquipmentMeshes, ITEMS, look: createLookHooks(), G, poseMonsterLimbs, spawnMonster, disposeObject3D, getTerrainHeight, THREE, GLTFLoader };
+     requestAnimationFrame(gameLoop);
+   });
+ }

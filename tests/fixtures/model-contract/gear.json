@@ -1,0 +1,1150 @@
+{
+  "nodes": {
+    "Gear_ahrim-staff": {
+      "parent": null,
+      "translation": [
+        1.56,
+        3,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_amulet": {
+      "parent": null,
+      "translation": [
+        3.3,
+        -1.05,
+        -0.55
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_ancient-bow": {
+      "parent": null,
+      "translation": [
+        3.12,
+        3.4,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_ancient-staff": {
+      "parent": null,
+      "translation": [
+        0.78,
+        3,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_arcane-shield": {
+      "parent": null,
+      "translation": [
+        -0.45,
+        2,
+        -0.15
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_armadyl-helm": {
+      "parent": null,
+      "translation": [
+        2.22,
+        1.98,
+        -0.15
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_ava": {
+      "parent": null,
+      "translation": [
+        0.15,
+        2,
+        -0.15
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_bandos-chest_torso": {
+      "parent": null,
+      "translation": [
+        -0.84,
+        0.85,
+        -0.35
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_blowpipe": {
+      "parent": null,
+      "translation": [
+        5.46,
+        3.05,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_book": {
+      "parent": null,
+      "translation": [
+        -1.3,
+        2,
+        -0.15
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_boots_L": {
+      "parent": null,
+      "translation": [
+        -4.15,
+        -0.1,
+        -0.55
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_boots_R": {
+      "parent": null,
+      "translation": [
+        -3.85,
+        -0.1,
+        -0.55
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_bow": {
+      "parent": null,
+      "translation": [
+        2.34,
+        3.4,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_cape": {
+      "parent": null,
+      "translation": [
+        -1.35,
+        2,
+        -0.15
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_circlet": {
+      "parent": null,
+      "translation": [
+        4.67,
+        1.98,
+        -0.15
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_crossbow": {
+      "parent": null,
+      "translation": [
+        3.9,
+        3.4,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_defender": {
+      "parent": null,
+      "translation": [
+        -4.65,
+        2,
+        -0.15
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_dhide-body_torso": {
+      "parent": null,
+      "translation": [
+        0.84,
+        0.85,
+        -0.35
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_dhide-chaps_legL": {
+      "parent": null,
+      "translation": [
+        0.73,
+        0.51,
+        -0.35
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_dhide-chaps_legR": {
+      "parent": null,
+      "translation": [
+        0.95,
+        0.51,
+        -0.35
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_dhide-chaps_torso": {
+      "parent": null,
+      "translation": [
+        0.84,
+        0.85,
+        -0.35
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_elysian": {
+      "parent": null,
+      "translation": [
+        -3,
+        2,
+        -0.15
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_eternal-boots_L": {
+      "parent": null,
+      "translation": [
+        0.35,
+        -0.1,
+        -0.55
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_eternal-boots_R": {
+      "parent": null,
+      "translation": [
+        0.65,
+        -0.1,
+        -0.55
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_gloves_L": {
+      "parent": null,
+      "translation": [
+        1.84,
+        -0.22,
+        -0.55
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_gloves_R": {
+      "parent": null,
+      "translation": [
+        2.16,
+        -0.22,
+        -0.55
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_greataxe": {
+      "parent": null,
+      "translation": [
+        -2.34,
+        3,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_greatsword": {
+      "parent": null,
+      "translation": [
+        -3.12,
+        2.9,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_helm": {
+      "parent": null,
+      "translation": [
+        0.75,
+        1.98,
+        -0.15
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_hood": {
+      "parent": null,
+      "translation": [
+        3.69,
+        1.98,
+        -0.15
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_horned-helm": {
+      "parent": null,
+      "translation": [
+        1.73,
+        1.98,
+        -0.15
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_hylian-shield": {
+      "parent": null,
+      "translation": [
+        -2.15,
+        2,
+        -0.15
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_infinity-hat": {
+      "parent": null,
+      "translation": [
+        3.11,
+        2.48,
+        -0.15
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_kiteshield": {
+      "parent": null,
+      "translation": [
+        -3.85,
+        2,
+        -0.15
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_lava-cape": {
+      "parent": null,
+      "translation": [
+        -0.6,
+        2,
+        -0.15
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_mace": {
+      "parent": null,
+      "translation": [
+        -1.56,
+        3.2,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_neitiznot-helm": {
+      "parent": null,
+      "translation": [
+        1.24,
+        1.98,
+        -0.15
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_pegasian-boots_L": {
+      "parent": null,
+      "translation": [
+        -1.15,
+        -0.1,
+        -0.55
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_pegasian-boots_R": {
+      "parent": null,
+      "translation": [
+        -0.85,
+        -0.1,
+        -0.55
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_plate-body_torso": {
+      "parent": null,
+      "translation": [
+        -4.2,
+        0.85,
+        -0.35
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_platelegs_legL": {
+      "parent": null,
+      "translation": [
+        -4.31,
+        0.51,
+        -0.35
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_platelegs_legR": {
+      "parent": null,
+      "translation": [
+        -4.09,
+        0.51,
+        -0.35
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_primordial-boots_L": {
+      "parent": null,
+      "translation": [
+        -2.65,
+        -0.1,
+        -0.55
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_primordial-boots_R": {
+      "parent": null,
+      "translation": [
+        -2.35,
+        -0.1,
+        -0.55
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_ring": {
+      "parent": null,
+      "translation": [
+        4.3,
+        -0.2,
+        -0.55
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_robe-skirt_torso": {
+      "parent": null,
+      "translation": [
+        2.52,
+        0.85,
+        -0.35
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_robe-top_armL": {
+      "parent": null,
+      "translation": [
+        2.24,
+        1.11,
+        -0.35
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_robe-top_armR": {
+      "parent": null,
+      "translation": [
+        2.8,
+        1.11,
+        -0.35
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_robe-top_torso": {
+      "parent": null,
+      "translation": [
+        2.52,
+        0.85,
+        -0.35
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_robin-hat": {
+      "parent": null,
+      "translation": [
+        3.2,
+        1.98,
+        -0.15
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_scimitar": {
+      "parent": null,
+      "translation": [
+        -4.68,
+        3.05,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_shadow-staff": {
+      "parent": null,
+      "translation": [
+        7.02,
+        3.05,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_sheikah-mask": {
+      "parent": null,
+      "translation": [
+        4.18,
+        1.98,
+        -0.15
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_staff": {
+      "parent": null,
+      "translation": [
+        0,
+        3,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_sword": {
+      "parent": null,
+      "translation": [
+        -3.9,
+        3.05,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_tassets_legL": {
+      "parent": null,
+      "translation": [
+        -0.95,
+        0.51,
+        -0.35
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_tassets_legR": {
+      "parent": null,
+      "translation": [
+        -0.73,
+        0.51,
+        -0.35
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_tassets_torso": {
+      "parent": null,
+      "translation": [
+        -0.84,
+        0.85,
+        -0.35
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_trim-plate_torso": {
+      "parent": null,
+      "translation": [
+        -2.52,
+        0.85,
+        -0.35
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_trousers_legL": {
+      "parent": null,
+      "translation": [
+        4.09,
+        0.51,
+        -0.35
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_trousers_legR": {
+      "parent": null,
+      "translation": [
+        4.31,
+        0.51,
+        -0.35
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_trousers_torso": {
+      "parent": null,
+      "translation": [
+        4.2,
+        0.85,
+        -0.35
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_tunic_torso": {
+      "parent": null,
+      "translation": [
+        4.2,
+        0.85,
+        -0.35
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_twisted-bow": {
+      "parent": null,
+      "translation": [
+        6.24,
+        3.05,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_twisted-buckler": {
+      "parent": null,
+      "translation": [
+        1.25,
+        2,
+        -0.15
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_wand": {
+      "parent": null,
+      "translation": [
+        -0.78,
+        3.35,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_ward": {
+      "parent": null,
+      "translation": [
+        0.4,
+        2,
+        -0.15
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_whip": {
+      "parent": null,
+      "translation": [
+        4.68,
+        3.1,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Gear_wizard-hat": {
+      "parent": null,
+      "translation": [
+        2.71,
+        1.98,
+        -0.15
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    }
+  },
+  "materials": [
+    "gear_crimson",
+    "gear_dark",
+    "gear_glow",
+    "gear_leather",
+    "gear_primary",
+    "gear_trim",
+    "gear_white",
+    "gear_wood"
+  ],
+  "toggled": [
+    "Gear_dhide-chaps_legL_04_gear_leather",
+    "Gear_dhide-chaps_legR_04_gear_leather",
+    "Gear_trousers_legL_04_gear_leather",
+    "Gear_trousers_legR_04_gear_leather"
+  ],
+  "meshClasses": [
+    "^Gear_ahrim-staff_-?\\d+_gear_dark$",
+    "^Gear_ahrim-staff_-?\\d+_gear_glow$",
+    "^Gear_ahrim-staff_-?\\d+_gear_primary$",
+    "^Gear_ahrim-staff_-?\\d+_gear_trim$",
+    "^Gear_ahrim-staff_-?\\d+_gear_wood$",
+    "^Gear_amulet_-?\\d+_gear_glow$",
+    "^Gear_amulet_-?\\d+_gear_trim$",
+    "^Gear_ancient-bow_-?\\d+_gear_glow$",
+    "^Gear_ancient-bow_-?\\d+_gear_glow_string$",
+    "^Gear_ancient-bow_-?\\d+_gear_primary$",
+    "^Gear_ancient-bow_-?\\d+_gear_trim$",
+    "^Gear_ancient-staff_-?\\d+_gear_dark$",
+    "^Gear_ancient-staff_-?\\d+_gear_glow$",
+    "^Gear_ancient-staff_-?\\d+_gear_trim$",
+    "^Gear_arcane-shield_-?\\d+_gear_glow$",
+    "^Gear_arcane-shield_-?\\d+_gear_leather$",
+    "^Gear_arcane-shield_-?\\d+_gear_primary$",
+    "^Gear_arcane-shield_-?\\d+_gear_trim$",
+    "^Gear_armadyl-helm_-?\\d+_gear_glow$",
+    "^Gear_armadyl-helm_-?\\d+_gear_primary$",
+    "^Gear_armadyl-helm_-?\\d+_gear_trim$",
+    "^Gear_armadyl-helm_-?\\d+_gear_white$",
+    "^Gear_ava_-?\\d+_gear_glow$",
+    "^Gear_ava_-?\\d+_gear_leather$",
+    "^Gear_ava_-?\\d+_gear_primary$",
+    "^Gear_ava_-?\\d+_gear_trim$",
+    "^Gear_ava_-?\\d+_gear_white$",
+    "^Gear_bandos-chest_torso_-?\\d+_gear_leather$",
+    "^Gear_bandos-chest_torso_-?\\d+_gear_primary$",
+    "^Gear_bandos-chest_torso_-?\\d+_gear_trim$",
+    "^Gear_bandos-chest_torso_-?\\d+_gear_white$",
+    "^Gear_blowpipe_-?\\d+_gear_dark$",
+    "^Gear_blowpipe_-?\\d+_gear_glow$",
+    "^Gear_blowpipe_-?\\d+_gear_primary$",
+    "^Gear_blowpipe_-?\\d+_gear_trim$",
+    "^Gear_book_-?\\d+_gear_glow$",
+    "^Gear_book_-?\\d+_gear_primary$",
+    "^Gear_book_-?\\d+_gear_trim$",
+    "^Gear_book_-?\\d+_gear_white$",
+    "^Gear_boots_L_-?\\d+_gear_primary$",
+    "^Gear_boots_L_-?\\d+_gear_trim$",
+    "^Gear_boots_R_-?\\d+_gear_primary$",
+    "^Gear_boots_R_-?\\d+_gear_trim$",
+    "^Gear_bow_-?\\d+_gear_leather$",
+    "^Gear_bow_-?\\d+_gear_primary$",
+    "^Gear_bow_-?\\d+_gear_trim$",
+    "^Gear_bow_-?\\d+_gear_white_string$",
+    "^Gear_cape_-?\\d+_gear_glow$",
+    "^Gear_cape_-?\\d+_gear_primary$",
+    "^Gear_cape_-?\\d+_gear_trim$",
+    "^Gear_circlet_-?\\d+_gear_glow$",
+    "^Gear_circlet_-?\\d+_gear_trim$",
+    "^Gear_crossbow_-?\\d+_gear_dark$",
+    "^Gear_crossbow_-?\\d+_gear_glow$",
+    "^Gear_crossbow_-?\\d+_gear_leather$",
+    "^Gear_crossbow_-?\\d+_gear_primary$",
+    "^Gear_crossbow_-?\\d+_gear_trim$",
+    "^Gear_crossbow_-?\\d+_gear_white_string$",
+    "^Gear_defender_-?\\d+_gear_glow$",
+    "^Gear_defender_-?\\d+_gear_leather$",
+    "^Gear_defender_-?\\d+_gear_primary$",
+    "^Gear_defender_-?\\d+_gear_trim$",
+    "^Gear_dhide-body_torso_-?\\d+_gear_leather$",
+    "^Gear_dhide-body_torso_-?\\d+_gear_primary$",
+    "^Gear_dhide-body_torso_-?\\d+_gear_trim$",
+    "^Gear_dhide-chaps_legL_-?\\d+_gear_glow$",
+    "^Gear_dhide-chaps_legL_-?\\d+_gear_leather$",
+    "^Gear_dhide-chaps_legL_-?\\d+_gear_primary$",
+    "^Gear_dhide-chaps_legL_-?\\d+_gear_trim$",
+    "^Gear_dhide-chaps_legR_-?\\d+_gear_glow$",
+    "^Gear_dhide-chaps_legR_-?\\d+_gear_leather$",
+    "^Gear_dhide-chaps_legR_-?\\d+_gear_primary$",
+    "^Gear_dhide-chaps_legR_-?\\d+_gear_trim$",
+    "^Gear_dhide-chaps_torso_-?\\d+_gear_leather$",
+    "^Gear_dhide-chaps_torso_-?\\d+_gear_trim$",
+    "^Gear_elysian_-?\\d+_gear_glow$",
+    "^Gear_elysian_-?\\d+_gear_leather$",
+    "^Gear_elysian_-?\\d+_gear_primary$",
+    "^Gear_elysian_-?\\d+_gear_trim$",
+    "^Gear_eternal-boots_L_-?\\d+_gear_glow$",
+    "^Gear_eternal-boots_L_-?\\d+_gear_primary$",
+    "^Gear_eternal-boots_L_-?\\d+_gear_trim$",
+    "^Gear_eternal-boots_R_-?\\d+_gear_glow$",
+    "^Gear_eternal-boots_R_-?\\d+_gear_primary$",
+    "^Gear_eternal-boots_R_-?\\d+_gear_trim$",
+    "^Gear_gloves_L_-?\\d+_gear_primary$",
+    "^Gear_gloves_L_-?\\d+_gear_trim$",
+    "^Gear_gloves_R_-?\\d+_gear_primary$",
+    "^Gear_gloves_R_-?\\d+_gear_trim$",
+    "^Gear_greataxe_-?\\d+_gear_dark$",
+    "^Gear_greataxe_-?\\d+_gear_glow$",
+    "^Gear_greataxe_-?\\d+_gear_leather$",
+    "^Gear_greataxe_-?\\d+_gear_primary$",
+    "^Gear_greataxe_-?\\d+_gear_trim$",
+    "^Gear_greataxe_-?\\d+_gear_wood$",
+    "^Gear_greatsword_-?\\d+_gear_primary$",
+    "^Gear_greatsword_-?\\d+_gear_trim$",
+    "^Gear_helm_-?\\d+_gear_crimson$",
+    "^Gear_helm_-?\\d+_gear_dark$",
+    "^Gear_helm_-?\\d+_gear_glow$",
+    "^Gear_helm_-?\\d+_gear_primary$",
+    "^Gear_helm_-?\\d+_gear_trim$",
+    "^Gear_hood_-?\\d+_gear_glow$",
+    "^Gear_hood_-?\\d+_gear_primary$",
+    "^Gear_hood_-?\\d+_gear_trim$",
+    "^Gear_horned-helm_-?\\d+_gear_dark$",
+    "^Gear_horned-helm_-?\\d+_gear_primary$",
+    "^Gear_horned-helm_-?\\d+_gear_trim$",
+    "^Gear_hylian-shield_-?\\d+_gear_crimson$",
+    "^Gear_hylian-shield_-?\\d+_gear_leather$",
+    "^Gear_hylian-shield_-?\\d+_gear_primary$",
+    "^Gear_hylian-shield_-?\\d+_gear_trim$",
+    "^Gear_infinity-hat_-?\\d+_gear_glow$",
+    "^Gear_infinity-hat_-?\\d+_gear_primary$",
+    "^Gear_infinity-hat_-?\\d+_gear_trim$",
+    "^Gear_kiteshield_-?\\d+_gear_primary$",
+    "^Gear_kiteshield_-?\\d+_gear_trim$",
+    "^Gear_lava-cape_-?\\d+_gear_dark$",
+    "^Gear_lava-cape_-?\\d+_gear_glow$",
+    "^Gear_lava-cape_-?\\d+_gear_primary$",
+    "^Gear_mace_-?\\d+_gear_glow$",
+    "^Gear_mace_-?\\d+_gear_leather$",
+    "^Gear_mace_-?\\d+_gear_primary$",
+    "^Gear_mace_-?\\d+_gear_trim$",
+    "^Gear_mace_-?\\d+_gear_wood$",
+    "^Gear_neitiznot-helm_-?\\d+_gear_glow$",
+    "^Gear_neitiznot-helm_-?\\d+_gear_primary$",
+    "^Gear_neitiznot-helm_-?\\d+_gear_trim$",
+    "^Gear_neitiznot-helm_-?\\d+_gear_white$",
+    "^Gear_pegasian-boots_L_-?\\d+_gear_primary$",
+    "^Gear_pegasian-boots_L_-?\\d+_gear_trim$",
+    "^Gear_pegasian-boots_L_-?\\d+_gear_white$",
+    "^Gear_pegasian-boots_R_-?\\d+_gear_primary$",
+    "^Gear_pegasian-boots_R_-?\\d+_gear_trim$",
+    "^Gear_pegasian-boots_R_-?\\d+_gear_white$",
+    "^Gear_plate-body_torso_-?\\d+_gear_primary$",
+    "^Gear_plate-body_torso_-?\\d+_gear_trim$",
+    "^Gear_platelegs_legL_-?\\d+_gear_primary$",
+    "^Gear_platelegs_legL_-?\\d+_gear_trim$",
+    "^Gear_platelegs_legR_-?\\d+_gear_primary$",
+    "^Gear_platelegs_legR_-?\\d+_gear_trim$",
+    "^Gear_primordial-boots_L_-?\\d+_gear_glow$",
+    "^Gear_primordial-boots_L_-?\\d+_gear_primary$",
+    "^Gear_primordial-boots_L_-?\\d+_gear_trim$",
+    "^Gear_primordial-boots_R_-?\\d+_gear_glow$",
+    "^Gear_primordial-boots_R_-?\\d+_gear_primary$",
+    "^Gear_primordial-boots_R_-?\\d+_gear_trim$",
+    "^Gear_ring_-?\\d+_gear_glow$",
+    "^Gear_ring_-?\\d+_gear_trim$",
+    "^Gear_robe-skirt_torso_-?\\d+_gear_glow$",
+    "^Gear_robe-skirt_torso_-?\\d+_gear_primary$",
+    "^Gear_robe-skirt_torso_-?\\d+_gear_trim$",
+    "^Gear_robe-top_armL_-?\\d+_gear_primary$",
+    "^Gear_robe-top_armL_-?\\d+_gear_trim$",
+    "^Gear_robe-top_armR_-?\\d+_gear_primary$",
+    "^Gear_robe-top_armR_-?\\d+_gear_trim$",
+    "^Gear_robe-top_torso_-?\\d+_gear_glow$",
+    "^Gear_robe-top_torso_-?\\d+_gear_primary$",
+    "^Gear_robe-top_torso_-?\\d+_gear_trim$",
+    "^Gear_robin-hat_-?\\d+_gear_crimson$",
+    "^Gear_robin-hat_-?\\d+_gear_leather$",
+    "^Gear_robin-hat_-?\\d+_gear_primary$",
+    "^Gear_robin-hat_-?\\d+_gear_trim$",
+    "^Gear_scimitar_-?\\d+_gear_primary$",
+    "^Gear_scimitar_-?\\d+_gear_trim$",
+    "^Gear_shadow-staff_-?\\d+_gear_glow$",
+    "^Gear_shadow-staff_-?\\d+_gear_trim$",
+    "^Gear_shadow-staff_-?\\d+_gear_wood$",
+    "^Gear_sheikah-mask_-?\\d+_gear_dark$",
+    "^Gear_sheikah-mask_-?\\d+_gear_glow$",
+    "^Gear_sheikah-mask_-?\\d+_gear_trim$",
+    "^Gear_staff_-?\\d+_gear_glow$",
+    "^Gear_staff_-?\\d+_gear_leather$",
+    "^Gear_staff_-?\\d+_gear_trim$",
+    "^Gear_staff_-?\\d+_gear_wood$",
+    "^Gear_sword_-?\\d+_gear_primary$",
+    "^Gear_sword_-?\\d+_gear_trim$",
+    "^Gear_tassets_legL_-?\\d+_gear_primary$",
+    "^Gear_tassets_legL_-?\\d+_gear_trim$",
+    "^Gear_tassets_legR_-?\\d+_gear_primary$",
+    "^Gear_tassets_legR_-?\\d+_gear_trim$",
+    "^Gear_tassets_torso_-?\\d+_gear_glow$",
+    "^Gear_tassets_torso_-?\\d+_gear_primary$",
+    "^Gear_tassets_torso_-?\\d+_gear_trim$",
+    "^Gear_trim-plate_torso_-?\\d+_gear_glow$",
+    "^Gear_trim-plate_torso_-?\\d+_gear_primary$",
+    "^Gear_trim-plate_torso_-?\\d+_gear_trim$",
+    "^Gear_trousers_legL_-?\\d+_gear_leather$",
+    "^Gear_trousers_legL_-?\\d+_gear_primary$",
+    "^Gear_trousers_legR_-?\\d+_gear_leather$",
+    "^Gear_trousers_legR_-?\\d+_gear_primary$",
+    "^Gear_trousers_torso_-?\\d+_gear_trim$",
+    "^Gear_tunic_torso_-?\\d+_gear_glow$",
+    "^Gear_tunic_torso_-?\\d+_gear_leather$",
+    "^Gear_tunic_torso_-?\\d+_gear_primary$",
+    "^Gear_tunic_torso_-?\\d+_gear_trim$",
+    "^Gear_tunic_torso_-?\\d+_gear_white$",
+    "^Gear_tunic_torso_-?\\d+_gear_wood$",
+    "^Gear_twisted-bow_-?\\d+_gear_glow$",
+    "^Gear_twisted-bow_-?\\d+_gear_leather$",
+    "^Gear_twisted-bow_-?\\d+_gear_trim$",
+    "^Gear_twisted-bow_-?\\d+_gear_wood$",
+    "^Gear_twisted-buckler_-?\\d+_gear_glow$",
+    "^Gear_twisted-buckler_-?\\d+_gear_trim$",
+    "^Gear_twisted-buckler_-?\\d+_gear_white$",
+    "^Gear_twisted-buckler_-?\\d+_gear_wood$",
+    "^Gear_wand_-?\\d+_gear_glow$",
+    "^Gear_wand_-?\\d+_gear_trim$",
+    "^Gear_wand_-?\\d+_gear_wood$",
+    "^Gear_ward_-?\\d+_gear_glow$",
+    "^Gear_ward_-?\\d+_gear_primary$",
+    "^Gear_ward_-?\\d+_gear_trim$",
+    "^Gear_whip_-?\\d+_gear_crimson$",
+    "^Gear_whip_-?\\d+_gear_dark$",
+    "^Gear_whip_-?\\d+_gear_glow$",
+    "^Gear_whip_-?\\d+_gear_leather$",
+    "^Gear_whip_-?\\d+_gear_trim$",
+    "^Gear_wizard-hat_-?\\d+_gear_glow$",
+    "^Gear_wizard-hat_-?\\d+_gear_leather$",
+    "^Gear_wizard-hat_-?\\d+_gear_primary$",
+    "^Gear_wizard-hat_-?\\d+_gear_trim$"
+  ],
+  "extras": {},
+  "vertexColor": "none",
+  "clips": {},
+  "budget": {
+    "triangles": 74975,
+    "meshes": 230,
+    "materials": 8,
+    "rawBytes": 1908327,
+    "brotliBytes": 690000
+  }
+}
