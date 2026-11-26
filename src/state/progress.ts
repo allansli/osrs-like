@@ -119,12 +119,10 @@ export function normalizeProgress(raw: unknown, now: number, claimed: readonly s
           ) {
             const clears = Math.floor(rec.clears);
             const best = Math.floor(rec.best);
-            if (clears >= 0 && best >= 0) {
-              dungeons[id] = {
-                clears: Math.min(MAX_STAT, clears),
-                best: Math.min(MAX_STAT, best)
-              };
-            }
+            dungeons[id] = {
+              clears: Math.max(0, Math.min(MAX_STAT, clears)),
+              best: Math.max(0, Math.min(MAX_STAT, best))
+            };
           }
         }
       }
