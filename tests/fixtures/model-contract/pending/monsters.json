@@ -272,6 +272,71 @@
         1,
         1
       ]
+    },
+    "Kit_saltback_stalker": {
+      "parent": null,
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Hips": {
+      "parent": "Kit_saltback_stalker",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "TailPivot3": {
+      "parent": "Kit_saltback_stalker",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "LeftElbowPivot": {
+      "parent": "Kit_saltback_stalker",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "RightElbowPivot": {
+      "parent": "Kit_saltback_stalker",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
     }
   },
   "materials": [
@@ -408,6 +473,7 @@
     "^moss_guardian_stone_slab_-?\\d+$",
     "^moss_guardian_uarm_L$",
     "^moss_guardian_uarm_R$",
+    "^saltback_stalker_(Hips|TailPivot3|LeftElbowPivot|RightElbowPivot)$",
     "^scorpion_body$",
     "^scorpion_bone$",
     "^scorpion_sting$"
@@ -423,7 +489,8 @@
       "Monster_goblin_archer": "all",
       "Monster_scorpion": "all",
       "Monster_dark_wizard": "all",
-      "Monster_dark_ranger": "all"
+      "Monster_dark_ranger": "all",
+      "Kit_saltback_stalker": "all"
     }
   },
   "clips": {
@@ -2906,11 +2973,11 @@
     }
   },
   "budget": {
-    "triangles": 63688,
-    "meshes": 71,
+    "triangles": 64674,
+    "meshes": 75,
     "materials": 38,
-    "rawBytes": 2540021,
-    "brotliBytes": 879149
+    "rawBytes": 2585673,
+    "brotliBytes": 890849
   },
   "figures": {
     "Monster_chicken": {
@@ -2989,6 +3056,13 @@
       "materials": 4,
       "rawBytes": 354756,
       "brotliBytes": 160517
+    },
+    "Kit_saltback_stalker": {
+      "triangles": 1200,
+      "meshes": 4,
+      "materials": 2,
+      "rawBytes": 41556,
+      "brotliBytes": 12395
     }
   }
 }

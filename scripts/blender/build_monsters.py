@@ -1880,6 +1880,100 @@ def _scorpion_clip_tables(pose_table):
 
 
 # =============================================================================
+# 4b. Kit_saltback_stalker: the Saltback Stalker's kit on the scorpion (plan K1, design 5.6)
+# =============================================================================
+# A clone of the scorpion plus rigid pieces of its own: salt crystals standing on the back plates, a
+# forked double sting flanking the scorpion's own, and heavier salt-crusted claws. The engine adds each
+# child of Kit_saltback_stalker under the scorpion bone of the same name, keeping the child's own
+# transform, so each child is one rigid mesh named after its bone, at identity, whose vertices are
+# relative to that bone's joint (every rest rotation is identity). Nothing of the scorpion is hidden:
+# every piece is added over it. The paint is a corner colour on the scorpion's own white materials
+# (mat_bone_scorpion_paint, plain; mat_glow_crimson for the prongs), so the kit adds no material, and
+# Stage 4's tint multiplies it with the rest of the figure.
+SALTBACK_KIT_TRIANGLES = 1200
+SALTBACK_COLOURS = {  # as the game shows them before Stage 4's tint
+    "salt": 0xE4DED0,  # crystal faces (89% value)
+    "crust": 0xC9C1B0,  # the claw shells and the flank crystals (79%)
+    "glow": 0xFFFFFF,
+}
+SALTBACK_BONES = ("Hips", "TailPivot3", "LeftElbowPivot", "RightElbowPivot")
+
+
+def _salt_crystal(name: str, mat, r: float, h: float, tx: float, ty: float, tz: float, rx: float = 0.0, rz: float = 0.0):
+    """A five-sided faceted crystal of base radius r and height h, growing along +y before the rotation."""
+    return add_lathe(name, None, mat, [(0.0, r, r * 0.8), (h * 0.55, r * 0.8, r * 0.64), (h, 0.004, 0.004)],
+                     segs=5, tx=tx, ty=ty, tz=tz, rx=rx, rz=rz, smooth=False)
+
+
+def build_saltback_stalker_kit(mats: dict):
+    """
+    The Saltback Stalker's kit (plan K1): Kit_saltback_stalker at the origin, with one child per bone in
+    SALTBACK_BONES, each the join of its pieces, named after the bone without the scorpion_ prefix.
+    """
+    salt = bpy.data.materials["mat_bone_scorpion_paint"]  # build_scorpion's; the kit is built after it
+    glow = mats["glow_crimson"]
+    j = scorpion_joints()
+    parts = {b: [] for b in SALTBACK_BONES}
+
+    def add(obj, bone: str, colour: str):
+        _goblin_tint(obj, SALTBACK_COLOURS[colour])
+        parts[bone].append(obj)
+
+    # The back: on each carapace plate a tall crystal on the spine, leaning back, and one each side
+    # leaning out, so the back's outline is a jagged ridge from the side and a crown from the front
+    for pz, pw, h in zip((-0.28, -0.06, 0.16, 0.38, 0.58), (0.42, 0.45, 0.43, 0.38, 0.30), (0.20, 0.28, 0.32, 0.26, 0.18)):
+        add(_salt_crystal("ssk_ridge", salt, 0.075, h, 0.0, 0.70, pz, rx=0.28), "Hips", "salt")
+        for side in (-1.0, 1.0):
+            add(_salt_crystal("ssk_flank", salt, 0.06, h * 0.55, side * pw * 0.66, 0.66, pz + 0.03, rz=-side * 0.75), "Hips", "crust")
+
+    # The fork: two prongs from the telson's sides, splayed out from the scorpion's own sting
+    for side in (-1.0, 1.0):
+        add(add_cone_spike("ssk_prong", None, glow, base_r=0.055, length=0.36, tx=side * 0.07, ty=1.86, tz=-0.10,
+                           rx=-math.pi * 0.66, ry=-side * 0.50, curve_bend=-0.08, segs=6, smooth=False), "TailPivot3", "glow")
+
+    # The claws: a faceted shell over the forearm, a heavier shell over the chela, and three crystals on top
+    for s, tag in ((-1.0, "Left"), (1.0, "Right")):
+        bone = f"{tag}ElbowPivot"
+        elbow = j[bone]
+        add(add_limb_tube("ssk_sleeve", None, salt, elbow, (s * 0.46, 0.56, -1.38), 0.095, 0.11, segs=6, steps=3,
+                          smooth=False), bone, "crust")
+        add(add_sphere("ssk_shell", None, salt, 0.20, 0.155, 0.27, tx=s * 0.47, ty=0.58, tz=-1.50, ry=-s * 0.22,
+                       segs=7, rings=5, smooth=False), bone, "crust")
+        for k, (cz, ch) in enumerate(((-1.34, 0.13), (-1.48, 0.17), (-1.62, 0.12))):
+            add(_salt_crystal("ssk_claw_crystal", salt, 0.05, ch, s * (0.47 + 0.03 * k), 0.70, cz, rz=-s * 0.35), bone, "salt")
+
+    kit = bpy.data.objects.new("Kit_saltback_stalker", None)
+    bpy.context.collection.objects.link(kit)
+    tris = 0
+    for bone, objs in parts.items():
+        bpy.ops.object.select_all(action="DESELECT")
+        for ob in objs:
+            ob.select_set(True)
+        target = objs[0]
+        bpy.context.view_layer.objects.active = target
+        bpy.ops.object.join()
+        target.name = bone
+        target.data.name = f"saltback_stalker_{bone}"
+        if target.name != bone:
+            raise ValueError(f"saltback_stalker kit: the piece for bone {bone} was named {target.name!r} (the name is taken)")
+        if len(target.data.materials) != 1:
+            raise ValueError(f"saltback_stalker kit: piece {bone} has {len(target.data.materials)} materials, one expected")
+        target.data.transform(Matrix.Translation(-Vector(t2b(*j[bone]))))  # relative to the bone's joint
+        attrs = target.data.color_attributes
+        attrs["Tint"].name = "Col"
+        attrs.active_color = attrs["Col"]
+        attrs.render_color_index = attrs.active_color_index
+        while target.data.uv_layers:  # no figure reads GLB UVs (design 6.3)
+            target.data.uv_layers.remove(target.data.uv_layers[0])
+        target.parent = kit
+        tris += sum(len(p.vertices) - 2 for p in target.data.polygons)
+    print(f"[Blender] saltback_stalker kit: {tris} triangles in {len(parts)} pieces")
+    if tris > SALTBACK_KIT_TRIANGLES:
+        raise ValueError(f"saltback_stalker kit: {tris} triangles, over the budget of {SALTBACK_KIT_TRIANGLES}")
+    return kit
+
+
+# =============================================================================
 # 5 and 6. Monster_dark_wizard and Monster_dark_ranger: rebuilt on the biped rig (plan M3e)
 # =============================================================================
 # Two humans on the pilot's pattern (docs/superpowers/baseline/models/README.md), built as the demon is:
@@ -4006,6 +4100,7 @@ def main():
     build_goblin((-3.0, 0.0, -2.0), mats)
     build_goblin_archer((-0.8, 0.0, -2.0), mats)
     build_scorpion((1.8, 0.0, -2.0), mats)
+    build_saltback_stalker_kit(mats)
     build_dark_wizard((4.4, 0.0, -2.0), mats)
 
     # Back row (Z = +2.4 -> Blender Y = -2.4, behind front row)
