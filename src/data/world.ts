@@ -124,6 +124,7 @@ export const MONSTER_TYPES: Record<string, MonsterDef> = {
     ],
     pattern: 'scorpion',
     model: 'scorpion',
+    kit: 'saltback_stalker',
     tint: 0x6b6470,
     modelScale: 1.4
   },
@@ -148,6 +149,7 @@ export const MONSTER_TYPES: Record<string, MonsterDef> = {
     ],
     pattern: 'dark_ranger',
     model: 'dark_ranger',
+    kit: 'thornwatch_marksman',
     tint: 0x7fb069,
     modelScale: 1.1
   },
