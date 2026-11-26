@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 const ROOT = path.resolve(__dirname, '..');
 const totals = JSON.parse(fs.readFileSync(path.join(ROOT, 'tests/fixtures/model-contract/totals.json'), 'utf8'));
 // Files not promoted by this pass yet keep their hand-named key; each moves to its hash at its own promotion.
-const LEGACY = new Set(['gear']);
+const LEGACY = new Set<string>();
 
 describe('model cache keys', () => {
   for (const [name, { file, url }] of Object.entries(totals.loaders) as [string, { file: string; url: string }][]) {
