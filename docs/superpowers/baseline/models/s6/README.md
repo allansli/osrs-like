@@ -351,7 +351,7 @@ Ceilings:
 | `m3e-wizard-worst-pose`, `m3e-ranger-worst-pose` | the renderer's worst pose. The hat, collar, beard, cloak and hood follow their bones, and no gap opens |
 | `m3e-wizard-stride`, `m3e-ranger-stride` | the skirt swings with the forward thigh; its hem lifts at the front and the back leg's boot shows behind it. The cloak hangs behind both legs |
 | `m3e-wizard-strike`, `m3e-ranger-strike` | the wizard's arms raised with the staff, and the ranger's bow drawn, under the hand-set poses |
-| `m3e-roster-silhouette` | the whole file, unfiltered, at the 26-distance size |
+| `m3e-roster-silhouette` | the whole file, unfiltered, at the 26-distance size, from a second run with no `--only`: `SHEETS(scratch/models-build/m3e/monsters.glb, …)`. Left to right: chicken, goblin, goblin archer, scorpion, dark wizard, dark ranger, hill giant, moss guardian, lesser demon, the dragon, Ashmantle |
 
 On the roster sheet the wizard (brim, crown and staff), the ranger (peaked hood, triangle cloak, bow line) and the two goblins (spear and shield; hood and bow, a head shorter) have four different outlines. The silhouette and play-distance sheets are left out of the tree for the slice's bytes; they are in `scratch/m3e/sheets`.
 
