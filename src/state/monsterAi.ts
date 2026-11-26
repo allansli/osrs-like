@@ -4,7 +4,6 @@
 import { BOSSES, CADENCE_SECS, PATTERNS, type BossDef } from '../data/attacks';
 import { MONSTER_TYPES } from '../data/world';
 import { isInSafeZone, type CampDef } from '../data/worldMap';
-import { monsterThreatColor } from './adventure';
 import { moveWithCollision } from './collision';
 import {
   escapeStall,
@@ -97,6 +96,27 @@ const WANDER_SPEED = 1.8;
 export const ATTACK_INTERVAL = 1.65;
 export const DYING_SECS = 0.85;
 export const DEAD_SECS = 7.5;
+
+/** The smallest sight radius: about a melee strike (2.9). A hero far above a monster must walk into it to be attacked. */
+export const SIGHT_MIN = 3;
+/** Combat levels above the monster at which its sight reaches the minimum. */
+export const SIGHT_GAP = 10;
+
+/**
+ * How far an idle member of an AGGRESSIVE camp sees the hero.
+ * `base` is the camp's aggroRadius (9 for melee, 12 for ranged and magic). At or below the monster's level the radius is
+ * `base`; it falls in a straight line to SIGHT_MIN at SIGHT_GAP levels above, and stays there.
+ * `keepsSight` is data on the camp: the pass sentries, boss camps and every dungeon camp never shrink.
+ * A passive camp never calls this: it never starts a fight.
+ */
+export function sightRadius(base: number, monsterLevel: number, heroCombat: number, keepsSight: boolean, gap = SIGHT_GAP): number {
+  const floor = Math.min(base, SIGHT_MIN);
+  if (keepsSight) return base;
+  const over = heroCombat - monsterLevel;
+  if (over <= 0) return base;
+  if (over >= gap) return floor;
+  return base - (base - floor) * (over / gap);
+}
 
 /** Aggression grace after load, teleport and respawn (design 6.5). */
 export const AGGRO_GRACE_MS = 3000;
@@ -442,11 +462,15 @@ export function stepMonster(m: MonsterLogic, world: StepWorld): MonsterEvent[] {
     camp.aggressive &&
     !world.playerDown &&
     !world.playerSafe &&
-    world.playerCombat != null &&
-    monsterThreatColor(m.level, world.playerCombat) !== 'green'
+    world.playerCombat != null
   ) {
     const distToPlayer = Math.hypot(world.playerX - m.x, world.playerZ - m.z);
-    const aggroRadius = camp.aggroRadius ?? (m.style === 'magic' || m.style === 'ranged' ? 12 : 9);
+    const aggroRadius = sightRadius(
+      camp.aggroRadius ?? (m.style === 'magic' || m.style === 'ranged' ? 12 : 9),
+      m.level,
+      world.playerCombat,
+      !!camp.keepsSight
+    );
     const distPlayerToCamp = Math.hypot(world.playerX - camp.x, world.playerZ - camp.z);
 
     if (distToPlayer <= aggroRadius && distPlayerToCamp <= camp.radius) {
