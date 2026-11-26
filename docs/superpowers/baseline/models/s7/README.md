@@ -86,7 +86,7 @@ Meshes:
 | knees | stone cap and bark shin |
 | feet | stone block and three root claws |
 
-The antlers, tines and claws are thickened to at least 0.046 across (design 5.3).
+The tubes are thickened to at least 0.044 across (design 5.3): antler tips 0.048, tines 0.046, mushroom stems 0.044. The cones (claws, root claws, and on the giant the buckle horns and club spikes) taper to a point, as the demon's claws do.
 
 Paint:
 
@@ -113,7 +113,7 @@ Each colour is divided by the mean of its tile: bark, stone, or grass for the mo
 | Leg, knee, foot (right) | (0.22, 0.78, 0.02), (0.27, 0.42, −0.04), (0.28, 0.10, 0.02); today (0.22, 0.78, 0) | (0.25, 0.78, 0), (0.30, 0.42, −0.03), (0.30, 0.09, 0.02); today −0.24 and 0.26 at 0.78 |
 | Mount | `WeaponPivot` at the right hand | none |
 
-Every pivot of today's is within 0.05 of its bone's joint.
+Every pivot of today's is within 0.05 of its bone's joint. The giant's `HeadGroup` sits on that bound: z is −0.05 (COMPARE's Drift prints −0.0500000007). The guardian's joints are made symmetric, and its arm joints moved up to 0.022 to do so (the feat commit says 0.02).
 
 ## Measured
 
@@ -197,6 +197,7 @@ Ceilings:
 | `m3c-giant-turnaround`, `m3c-guardian-turnaround` | three sides |
 | `m3c-giant-against`, `m3c-guardian-against` | shipped figure left, new figure right |
 | `m3c-giant-worst-pose`, `m3c-guardian-worst-pose` | the renderer's worst pose. The giant's skin bends at shoulder, elbow, hip and knee without tearing, and the strap follows the twist. The guardian's blocks stay on their joints under the stone caps |
+| `m3c-giant-silhouette`, `m3c-guardian-silhouette`, `m3c-giant-play-distance`, `m3c-guardian-play-distance` | the black cut-outs, and crops at 5.4, 8.5 and 26. Measured heights: the giant 809, 504 and 162 px; the guardian 968, 592 and 188 px |
 | `m3c-roster-silhouette` | the eleven bodies at the 26-distance size (`--only` the eleven, as at K4). Left to right: chicken, raider, archer, scorpion, wizard, ranger, giant (club hanging at the side, wide fists), guardian (antlers, gauntlet block), demon, dragon, Ashmantle. Every outline is different |
 
 **Capture**: `m3c-ingame.jpg` (a labelled grid at 960 px) and `m3c-ingame-rows.json`.
@@ -208,7 +209,7 @@ Ceilings:
   1. giant walking; `Slash` at 0.183 s; `Slash` at 0.450 s (the club swung out; a second giant stands near the camera);
   2. giant mid-`Walk` from the front (face, braids, buckle); giant `Idle`; three giants at 26;
   3. guardian `Idle`; `Chop` at 0.350 s; `Chop` at 0.767 s;
-  4. guardian mid-`Walk`; from behind; at dusk, where the core is the one light on the figure.
+  4. guardian mid-`Walk`; from behind; after sunset (phase 0.80, labelled "dusk"), where the core is the one light on the figure.
 - **Every giant and guardian in view**:
   - four skinned meshes, all with vertex colours and `FACET_CUT`, on one skeleton;
   - an animator with the hero library's eleven clips, playing `Idle` and `Walk` as it wanders and `Slash` or `Chop` when `attackAnim` is set;
@@ -219,8 +220,8 @@ Ceilings:
   | | Bark | Stone | Moss | Gap, stone over bark |
   |---|---|---|---|---|
   | Noon, mean (median) | 31.8 (30.8) | 59.2 (56.9) | 63.7 | **27.4** (26.1) |
-  | Dusk, mean | 9.3 | 26.4 | 21.6 | 17.1 |
+  | After sunset (phase 0.80, between the 0.77 key and night at 0.82), mean | 9.3 | 26.4 | 21.6 | 17.1 |
 
-  The 20-point gap holds at noon. At dusk everything darkens, and the gap is 17.
+  The 20-point gap holds at noon. After sunset everything darkens, and the gap is 17.
 - **Not seen in the engine**: `Death`, and a held wind-up (Stage 4's `overhead_slam` and `rootquake`). `monster-motion`'s generic cases cover both through the hero library's clips.
-- **Slice sheet budget**: `s7/` holds about 520 kB of its 2 MB, with M4c still to add. The scripts are `scratch/m3c/` (`bs.sh`, `sh.sh`, `wt.sh`, `make_pending.py`, `cap/job.mjs`), not committed.
+- **Slice sheet budget**: `s7/` holds about 830 kB of its 2 MB, with M4c still to add. The scripts are `scratch/m3c/` (`bs.sh`, `sh.sh`, `wt.sh`, `make_pending.py`, `cap/job.mjs`), not committed.
