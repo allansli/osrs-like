@@ -3725,9 +3725,13 @@ def build_ashmantle(mats: dict):
     j = dragon_joints()
     hard = []  # (object, bone): rigid parts, weight 1 on one bone
 
-    def add(obj, bone: str, colour, planes: bool = False):
-        tone = next((ASHMANTLE_TONES[k] for k, c in col.items() if c is colour), ASHMANTLE_NARROW_TONE)
-        _goblin_tint(obj, colour, planes, tone)
+    def add(obj, bone: str, part: str, planes: bool = False):
+        """part is a key of ASHMANTLE_COLOURS (its paint and tone), or 'glow' (white, no planes)."""
+        if part == "glow":
+            assert not planes, f"ashmantle: {obj.name} on the glow takes no plane tones"
+            _goblin_tint(obj, 0xFFFFFF)
+        else:
+            _goblin_tint(obj, col[part], planes, ASHMANTLE_TONES[part])
         hard.append((obj, prefix + bone))
 
     def aim(d) -> dict:
@@ -3736,22 +3740,22 @@ def build_ashmantle(mats: dict):
         return {"rx": math.asin(d.z), "rz": -math.atan2(d.x, d.y)}
 
     # Head and jaw as the dragon's; the eyes are ember slits on the glow, the maw glows between the teeth
-    add(_dragon_head(skin), "HeadGroup", col["hide"], planes=True)
+    add(_dragon_head(skin), "HeadGroup", "hide", planes=True)
     add(
         add_curved_tube(
             "ash_jaw", None, skin,
             [(0.0, 2.68, -2.50, 0.25, 0.10), (0.0, 2.58, -2.95, 0.21, 0.09), (0.0, 2.46, -3.30, 0.14, 0.07), (0.0, 2.42, -3.46, 0.08, 0.05)],
             segs=6, smooth=False,
         ),
-        "Jaw", col["belly"], planes=True,
+        "Jaw", "belly", planes=True,
     )
-    add(add_sphere("ash_maw", None, glow, 0.15, 0.04, 0.36, tx=0.0, ty=2.57, tz=-3.05, rx=-0.18, segs=8, rings=5), "HeadGroup", 0xFFFFFF)
+    add(add_sphere("ash_maw", None, glow, 0.15, 0.04, 0.36, tx=0.0, ty=2.57, tz=-3.05, rx=-0.18, segs=8, rings=5), "HeadGroup", "glow")
     for side, tag in ((-1.0, "L"), (1.0, "R")):
-        add(add_sphere(f"ash_ember_{tag}", None, glow, 0.03, 0.026, 0.085, tx=side * 0.29, ty=2.95, tz=-2.76, rz=side * 0.3, segs=6, rings=4), "HeadGroup", 0xFFFFFF)
+        add(add_sphere(f"ash_ember_{tag}", None, glow, 0.03, 0.026, 0.085, tx=side * 0.29, ty=2.95, tz=-2.76, rz=side * 0.3, segs=6, rings=4), "HeadGroup", "glow")
         for k, (tz, tx, ty) in enumerate(((-3.44, 0.085, 2.61), (-3.26, 0.14, 2.64), (-3.06, 0.185, 2.67))):
-            add(add_cone_spike(f"ash_fang_{tag}_{k}", None, crust, base_r=0.036, length=0.13, tx=side * tx, ty=ty, tz=tz, rx=math.pi, segs=5), "HeadGroup", col["crust"])
+            add(add_cone_spike(f"ash_fang_{tag}_{k}", None, crust, base_r=0.036, length=0.13, tx=side * tx, ty=ty, tz=tz, rx=math.pi, segs=5), "HeadGroup", "crust")
         for k, (tz, tx, ty) in enumerate(((-3.36, 0.10, 2.49), (-3.14, 0.16, 2.56))):
-            add(add_cone_spike(f"ash_tusk_{tag}_{k}", None, crust, base_r=0.036, length=0.12, tx=side * tx, ty=ty, tz=tz, segs=5), "Jaw", col["crust"])
+            add(add_cone_spike(f"ash_tusk_{tag}_{k}", None, crust, base_r=0.036, length=0.12, tx=side * tx, ty=ty, tz=tz, segs=5), "Jaw", "crust")
     # The slag crown: blunt crags rooted inside the skull, tallest at the back, in an arc over the brow
     crown = [  # (x, z, length, base radius, direction)
         (0.0, -2.30, 0.62, 0.17, (0.0, 0.80, 0.60)),
@@ -3763,7 +3767,7 @@ def build_ashmantle(mats: dict):
         for side in ((1.0,) if x == 0.0 else (-1.0, 1.0)):
             add(
                 add_cone_spike(f"ash_crown_{k}", None, crust, base_r=base, length=length + 0.12, tx=side * x, ty=2.96, tz=z, segs=5, smooth=False, **aim((side * d[0], d[1], d[2]))),
-                "HeadGroup", col["crust"], planes=True,
+                "HeadGroup", "crust", planes=True,
             )
 
     # Wings: the dragon's struts and membranes, on Ashmantle's bones and in its colours
@@ -3773,16 +3777,16 @@ def build_ashmantle(mats: dict):
         tips = [Vector((side * 5.20, 2.55, -0.10)), Vector((side * 4.45, 1.75, 1.15)), Vector((side * 3.05, 1.45, 1.85))]
         flank = Vector((side * 0.35, 1.40, 0.75))
         sunk = root - (wrist - root).normalized() * 0.12
-        add(add_limb_tube(f"ash_wing_arm_{tag}", None, skin, tuple(sunk), tuple(wrist), 0.19, 0.12, segs=6, steps=3, smooth=False), f"{tag}Wing", col["hide"], planes=True)
-        add(add_sphere(f"ash_wing_wrist_{tag}", None, crust, 0.14, tx=wrist.x, ty=wrist.y, tz=wrist.z, segs=6, rings=4, smooth=False), f"{tag}Wing2", col["hide_dark"], planes=True)
+        add(add_limb_tube(f"ash_wing_arm_{tag}", None, skin, tuple(sunk), tuple(wrist), 0.19, 0.12, segs=6, steps=3, smooth=False), f"{tag}Wing", "hide", planes=True)
+        add(add_sphere(f"ash_wing_wrist_{tag}", None, crust, 0.14, tx=wrist.x, ty=wrist.y, tz=wrist.z, segs=6, rings=4, smooth=False), f"{tag}Wing2", "hide_dark", planes=True)
         for k, tip in enumerate(tips):
             add(
                 add_limb_tube(f"ash_wing_finger_{tag}_{k}", None, crust, tuple(wrist), tuple(tip), 0.085, 0.035, r_mid=0.06, segs=5, steps=3, smooth=False),
-                f"{tag}Wing2", col["hide_dark"], planes=True,
+                f"{tag}Wing2", "hide_dark", planes=True,
             )
         add(
             add_cone_spike(f"ash_wing_claw_{tag}", None, crust, base_r=0.08, length=0.58, tx=wrist.x, ty=wrist.y + 0.08, tz=wrist.z, segs=5, smooth=False, **aim((side * 0.10, 0.93, -0.35))),
-            f"{tag}Wing2", col["crust"], planes=True,
+            f"{tag}Wing2", "crust", planes=True,
         )
         m = _dragon_membrane(f"ash_membrane_{tag}", wing, root, wrist, tips, flank, (f"{prefix}{tag}Wing", f"{prefix}{tag}Wing2", f"{prefix}Hips"))
         _goblin_tint(m, col["membrane"], planes=True, tone=ASHMANTLE_TONES["membrane"])
@@ -3793,15 +3797,15 @@ def build_ashmantle(mats: dict):
             for k, dx in enumerate((-0.15, 0.0, 0.15)):
                 add(
                     add_cone_spike(f"ash_claw_{bone}_{k}", None, crust, base_r=0.08, length=0.26, tx=side * x + dx, ty=0.10, tz=z, segs=5, smooth=False, **aim((dx * 0.8, -0.12, -1.0))),
-                    bone, col["crust"], planes=True,
+                    bone, "crust", planes=True,
                 )
     # The club: a faceted knot of slag round the tail's tip, with blunt knobs
     club = Vector((0.0, 0.56, 3.26))
-    add(add_sphere("ash_club", None, crust, 0.40, 0.34, 0.44, tx=club.x, ty=club.y, tz=club.z, segs=6, rings=5, smooth=False), "TailPivot3", col["crust"], planes=True)
+    add(add_sphere("ash_club", None, crust, 0.40, 0.34, 0.44, tx=club.x, ty=club.y, tz=club.z, segs=6, rings=5, smooth=False), "TailPivot3", "crust", planes=True)
     for k, d in enumerate(((0.0, 1.0, 0.2), (1.0, 0.25, 0.1), (-1.0, 0.25, 0.1), (0.0, 0.2, 1.0), (0.7, 0.6, 0.6), (-0.7, 0.6, 0.6))):
         dn = Vector(d).normalized()
         at = club + Vector((dn.x * 0.30, dn.y * 0.24, dn.z * 0.34))
-        add(add_cone_spike(f"ash_club_knob_{k}", None, crust, base_r=0.13, length=0.26, tx=at.x, ty=at.y, tz=at.z, segs=4, smooth=False, **aim(d)), "TailPivot3", col["crust"], planes=True)
+        add(add_cone_spike(f"ash_club_knob_{k}", None, crust, base_r=0.13, length=0.26, tx=at.x, ty=at.y, tz=at.z, segs=4, smooth=False, **aim(d)), "TailPivot3", "crust", planes=True)
 
     # Body: what is left of the triangle budget after the rigid parts and the back plates (three boxes each)
     plates = [  # (z along the spine, length, height)
@@ -3827,11 +3831,11 @@ def build_ashmantle(mats: dict):
         bone = next(b for b, end in spine if z < end)
         # A box is centred on its point: each stands with its foot 0.10 inside the back
         base = hit.z - 0.10
-        add(add_box(f"ash_seam_{k}", None, glow, 0.05, height + 0.08, half * 0.80, tx=0.0, ty=base + (height + 0.08) / 2.0, tz=z, rx=0.25, bevel=0.0), bone, 0xFFFFFF)
+        add(add_box(f"ash_seam_{k}", None, glow, 0.05, height + 0.08, half * 0.80, tx=0.0, ty=base + (height + 0.08) / 2.0, tz=z, rx=0.25, bevel=0.0), bone, "glow")
         for side in (-1.0, 1.0):
             add(
                 add_box(f"ash_plate_{k}", None, crust, 0.07, height, half, tx=side * 0.06, ty=base + height / 2.0, tz=z, rx=0.25, rz=-side * 0.10, bevel=0.0),
-                bone, col["crust"], planes=True,
+                bone, "crust", planes=True,
             )
 
     rig = figkit.make_rig("Monster_ashmantle", rigs.DRAGON_TABLE, {k: t2b(*p) for k, p in j.items()}, prefix="ashmantle")
