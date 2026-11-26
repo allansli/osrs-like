@@ -32,6 +32,7 @@ from mathutils import Vector, Euler, Matrix
 sys.dont_write_bytecode = True
 sys.path.insert(0, os.path.dirname(__file__))
 import paths
+import figkit
 
 
 # =============================================================================
@@ -3129,12 +3130,19 @@ def main():
             pass
     BLEND_ASSET_CACHE.clear()
 
+    # Merge-only pass (plan G2b): one merge_parts call per Gear_* root, toggled names and _04_ ordinals kept.
+    for obj in [o for o in bpy.data.objects if o.name.startswith("Gear_") and o.parent is None]:
+        figkit.merge_parts(obj)
+
     blend_path = paths.blend_path("gear")
     glb_path = paths.glb_path("gear")
 
+    # No TEXCOORD_0 (design K2): the engine re-projects every UV. A joined mesh cannot share the
+    # index buffers the exporter shared between identical pieces, which cost 63 kB on the wire.
     bpy.ops.export_scene.gltf(
         filepath=paths.glb_path("gear"),
         export_format="GLB",
+        export_texcoords=False,
         export_yup=True,
         export_extras=True,
         export_animations=False,

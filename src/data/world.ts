@@ -36,6 +36,8 @@ export type MonsterDef = {
   model?: string;
   tint?: number;
   modelScale?: number;
+  kit?: string;
+  body?: string;
 };
 
 export const MONSTER_TYPES: Record<string, MonsterDef> = {

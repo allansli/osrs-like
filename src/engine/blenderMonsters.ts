@@ -34,6 +34,8 @@ export interface MonsterEntityLike {
     scale?: number;
     tint?: number;
     modelScale?: number;
+    kit?: string;
+    body?: string;
   };
   rig: MonsterRigLike;
   pos: THREE.Vector3;
@@ -79,7 +81,8 @@ function findPivot(root: THREE.Object3D, prefix: string, suffix: string): THREE.
  */
 export function upgradeMonsterRigWithGltf(mObj: MonsterEntityLike, gltf: GLTF): boolean {
   const modelKey = mObj.modelKey ?? mObj.typeKey;
-  const template = gltf.scene.getObjectByName(`Monster_${modelKey}`);
+  const nodeKey = mObj.def.body ?? modelKey;
+  const template = gltf.scene.getObjectByName(`Monster_${nodeKey}`);
   if (!template) return false;
 
   const isSkinned = hasSkin(template);
@@ -94,7 +97,26 @@ export function upgradeMonsterRigWithGltf(mObj: MonsterEntityLike, gltf: GLTF): 
   cloned.scale.set(1, 1, 1);
 
   if (isSkinned) {
-    stripBonePrefix(cloned, modelKey);
+    stripBonePrefix(cloned, nodeKey);
+  }
+
+  if (mObj.def.kit) {
+    const kitTemplate = gltf.scene.getObjectByName(`Kit_${mObj.def.kit}`);
+    if (!kitTemplate) return false;
+    for (const child of kitTemplate.children) {
+      const clonedChild = child.clone(true);
+      let bone: THREE.Bone | null = null;
+      cloned.traverse((obj) => {
+        if (!bone && (obj as THREE.Bone).isBone && obj.name === child.name) {
+          bone = obj as THREE.Bone;
+        }
+      });
+      if (bone) {
+        (bone as THREE.Bone).add(clonedChild);
+      } else {
+        cloned.add(clonedChild);
+      }
+    }
   }
 
   const speciesKey =

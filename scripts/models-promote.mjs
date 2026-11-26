@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { packGlb } from './lib/glb-pack.mjs';
 
 function sha256(b) {
   return createHash('sha256').update(b).digest('hex');
@@ -80,6 +81,14 @@ function main() {
   if (!fs.existsSync(builtGlb)) {
     console.error(`Built model file not found: ${builtGlb}`);
     process.exit(1);
+  }
+
+  if (name === 'hero' || name === 'monsters') {
+    const raw = fs.readFileSync(builtGlb);
+    const packed = packGlb(raw);
+    if (!packed.equals(raw)) {
+      fs.writeFileSync(builtGlb, packed);
+    }
   }
 
   if (

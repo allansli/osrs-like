@@ -384,7 +384,7 @@ Gear bands, gear to budget and bending gear moved to the follow-up stage (decisi
 - **Tier**: sonnet.
 - **Depends**: P4.
 - **Files**: `tests/gear-merge.test.ts` (new), `tests/fixtures/gear-families.json` (new: triangles per engine material family per node, computed from today's file by the rule of `blenderGear.ts` 93-116).
-- **Change**: for every `Gear_*` node of the shipped file, triangles per material family equal the fixture; meshes per node at most 4, except nodes whose fixture has more than 4 families.
+- **Change**: for every `Gear_*` node of the shipped file, triangles per material family equal the fixture; meshes per node at most 4 plus each kept toggled `_leg[LR]_04_` mesh (F1 never joins those), except nodes whose fixture has more than 4 families (then one per family plus the kept ones).
 - **Accept**: the family case passes today; the mesh-count case is red until G6.
 - **Must not change**: `src/`.
 
@@ -833,4 +833,16 @@ S4 then promotes, as written, with the S2 amendments' extra steps.
 ### After S3d (2026-11-25)
 
 S3d (59e5c23): P-a, P-b, P-d and the draw-call half of P-c met for the one build; the fable art read calls the figure carved in the game and ready to ship, with two builder refinements that do not block (a chest-to-belly step with `GOBLIN_PLANE_SPREAD` about 30 degrees, paid for in shield segments; an instep on the foot and a wider toe box). They are carried to M1 (the goblin family), with the thumb and the other small items of the S3d read. The outline's view-space z push (gaps on upward-facing edges) stays with Slice 8. S4 runs now: promote the S2d build, with the S2 amendments' extra steps (the staged three-families entry over the goblin entry of `tests/fixtures/monster-families.json` and the staged file deleted; `pending/monsters.one-material.json` deleted; `totals.json` by its rule; the declared replacement in `tests/model-vertex-colour.test.ts`; the `?v=` key and `tests/model-cache-key.test.ts`).
+
+### Lanes 1 (2026-11-25, main session)
+
+Three lanes ran in their own worktrees. **Gear** (G2, G2b) and **engine** (Q1, B1) are verified and merged into `feat/models-pass` (91c25fe, e77c6b3). `tests/gear-merge.test.ts` is red against the shipped `gear.glb` (52 cases, meshes per root) until G6 promotes the merged file: the test-first window of rule 0.3.4, closed at G6. **Hero**: H1, H2 and H3a are verified on `feat/models-pass-hero`; H3b's verification stopped on two Accept items that cannot run before H5b's skinned loader (`ONE(tests/gear-mount.test.ts)` against the built hero, and CAPTURE(hero)). **Amended**: both move from H3b's Accept to H5b's (run against the built hero in a throw-away worktree once the loader is in), and H3b is judged on its sheets, BG and the rest of its Accept.
+
+#### H3c The hero keeps its character [CLAUDE]
+- **Tier**: fable; opus verifies.
+- **Depends**: H3b.
+- **Files**: as H3b.
+- **Why**: the main session's read of H3b's sheets (`s2/h3b-hero-against.jpg`, `h3b-hero-head-close.jpg`): the carved body, the joints and the hands are better than today's, but the head lost what today's hero is recognised by: the spiky, swept hair became a smooth cap, the blue irises became blank white, and the face reads as a pale mannequin. The owner asked for models that make sense with good definition, without losing the game's essence.
+- **Change**: the hair a carved mass of a few large swept spikes that keep today's silhouette (read against `before-hero-turnaround.jpg` and the head-close sheet's top row), each spike a chosen plane, no strand thinner than design 5.3's 0.044; irises in today's blue with a dark pupil, on the rigid `Eyes` mesh; the face's skin warmer, with plane tones like the goblin's (S2c) on cheek, brow, nose and jaw; ears that read at 8.5. Triangle and byte ceilings as H3b's.
+- **Accept**: BG; the H3b sheets re-rendered with today's hero beside the new one; the README's pattern updated.
 
