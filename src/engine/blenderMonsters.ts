@@ -7,7 +7,7 @@ import { addCartoonOutline, facetMaterial } from './materials';
 import { cloneFigure, fixCullSpheres, hasSkin, stripBonePrefix, stripClipPrefix } from './skinned';
 import { albedoMaterial, offsetAlbedoPhase, sealAlbedoUvs, speciesAlbedo } from './textures';
 
-export function loadBlenderMonstersTemplate(url = '/models/monsters.glb?v=11081170'): Promise<GLTF | null> {
+export function loadBlenderMonstersTemplate(url = '/models/monsters.glb?v=633fc1f3'): Promise<GLTF | null> {
   if (typeof window === 'undefined' || typeof document === 'undefined') {
     return Promise.resolve(null);
   }
@@ -109,11 +109,16 @@ export function upgradeMonsterRigWithGltf(
   if (mObj.def.kit) {
     const kitTemplate = gltf.scene.getObjectByName(`Kit_${mObj.def.kit}`);
     if (!kitTemplate) return false;
+    const kitPrefix = `${mObj.def.kit}_`;
     for (const child of kitTemplate.children) {
+      if (!child.name.startsWith(kitPrefix)) {
+        throw new Error(`Kit_${mObj.def.kit} child '${child.name}' lacks the '${kitPrefix}' prefix`);
+      }
+      const boneName = child.name.slice(kitPrefix.length);
       const clonedChild = child.clone();
       let bone: THREE.Bone | null = null;
       cloned.traverse((obj) => {
-        if (!bone && (obj as THREE.Bone).isBone && obj.name === child.name) {
+        if (!bone && (obj as THREE.Bone).isBone && obj.name === boneName) {
           bone = obj as THREE.Bone;
         }
       });

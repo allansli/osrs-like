@@ -884,3 +884,11 @@ flock /tmp/claude-blender.lock timeout 600 /usr/bin/blender --background --facto
 **Reading the cut-outs.** At the same scale, the two are about the same height, but the Warden is wider, about 1.0 times as wide as it is tall from the front against the guardian's 0.9. In place of antlers it has a flat kiln top with one square chimney rising beside the head on the right. Its shoulders are broad domes, and both arms end in block hammers, where the guardian has a claw and a boulder. From the side, the chimney stands behind the head, and the hammer heads stick out fore and aft.
 
 **Reading the lit sheets.** The Warden reads as fired red clay banded in dark iron, where the guardian is grey stone and brown bark with moss. Saturated colour appears in three places only: the orange core behind the grate, the eye slit and the seams. From behind, the seams and the chimney carry the read.
+
+## MP6 promote (2026-11-26)
+
+Built fresh from the branch head with `BLEND(monsters)` (Blender 5.0.1, 4,647,320 raw bytes before packing), packed to 8-bit by `scripts/models-promote.mjs`, compared against the pending manifest (Contract and Budget pass), promoted: `public/models/monsters.glb` 2,826,220 raw, 1,095,340 Brotli, `?v=633fc1f3`. The five new nodes (`Kit_cinder_adept`, `Kit_slag_brute`, `Kit_marrowjaw`, `Monster_saltfang`, `Monster_kiln_warden`) ship.
+
+- Loader: `upgradeMonsterRigWithGltf` attaches each kit child to the bone named by the child's name without the `<kit>_` prefix, and throws when a child lacks the prefix (declared at O-6.1b.6).
+- Follow-through: `totals.json` (key, and raw ceiling by its rule: 7,720,388 x 1.01; Brotli stays at the X2 ceiling 2,600,000, sum 2,217,891), `monster-families.json` (saltfang and kiln_warden entries, computed by the rule of `tests/monster-merge.test.ts`; the eleven existing entries reproduce unchanged), `model-vertex-colour.test.ts` (painted set gains both bodies), `monster-kits.test.ts` (fixture kit children carry the `<kit>_` prefix, plus one case for the throw).
+- Not done: the roster silhouette sheet and in-engine captures. `review_render.py` stops with "no in-game scale for figure 'saltfang'" because `scripts/blender/review_scales.json` has no entries for the new figures and kits (not in MP6's file list); per-figure sheets are the MK1 to MB2 ones above.
