@@ -10,13 +10,20 @@ These assets are read by the generator scripts in `scripts/blender/`, and the re
 
 | Asset | Author | Source | Licence | Used in |
 |---|---|---|---|---|
-| "Dragon Rig And Textures" (the dragon) | yoji | http://www.blendswap.com/blends/view/21036 | Creative Commons Attribution 3.0 (CC-BY 3.0) | `monsters.glb`, from `blender/examples/dragon_3826/` |
 | "Game Anime RPG Character" (Kai, the player character) | uchiha007 | http://www.blendswap.com/blends/view/26667 | Creative Commons Attribution 3.0 (CC-BY 3.0) | `hero.glb`, from `blender/examples/Game Anime RPG Character.zip` |
-| "Red Devil" | not recorded in the licence file | http://www.blendswap.com/blends/view/93774 | Creative Commons Zero 1.0 (CC0) | `monsters.glb`, from `blender/examples/red_devil_22787/` |
 | "Medieval Props" | Daniel74 | http://www.blendswap.com/blends/view/55083 | Creative Commons Zero (CC0) | `world.glb`, from `blender/examples/medieval_props_6679/` |
 | "Low-Poly Weapons" | Drummyfish (3D models), based on a 2D weapon collection by Cethiel | http://www.blendswap.com/blends/view/93850 | Creative Commons Zero 1.0 (CC0) | `gear.glb`, from `blender/examples/weapons_22839/` |
 
-The CC-BY 3.0 licence requires credit to the author: the dragon is by yoji and Kai is by uchiha007 (https://creativecommons.org/licenses/by/3.0/). CC0 assets need no credit; they are credited anyway.
+The CC-BY 3.0 licence requires credit to the author: Kai is by uchiha007 and the old dragon, kept below, is by yoji (https://creativecommons.org/licenses/by/3.0/). CC0 assets need no credit; they are credited anyway.
+
+## Kept in the repository, not shipped
+
+These sources stay under `blender/examples/` with their licence files, but no shipped model is built from them any more: `monsters.glb` now holds an original dragon, Ashmantle and an original lesser demon.
+
+| Asset | Author | Source | Licence | Was used in |
+|---|---|---|---|---|
+| "Dragon Rig And Textures" (the dragon) | yoji | http://www.blendswap.com/blends/view/21036 | Creative Commons Attribution 3.0 (CC-BY 3.0) | was `monsters.glb` (the dragon, until the dragon was rebuilt as an original model); the source stays in `blender/examples/dragon_3826/` |
+| "Red Devil" | not recorded in the licence file | http://www.blendswap.com/blends/view/93774 | Creative Commons Zero 1.0 (CC0) | was `monsters.glb` (the lesser demon, until it was rebuilt as an original model); the source stays in `blender/examples/red_devil_22787/` |
 
 ## Source removed; credit kept
 

@@ -195,103 +195,12 @@
         1
       ]
     },
-    "elvarg_dragon_HeadGroup": {
-      "parent": "Monster_elvarg_dragon",
-      "translation": [
-        0,
-        1.56,
-        -3.18
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ]
-    },
-    "elvarg_dragon_LeftArmPivot": {
-      "parent": "Monster_elvarg_dragon",
-      "translation": [
-        -1.1,
-        0.95,
-        -1.4
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ]
-    },
-    "elvarg_dragon_LeftLegPivot": {
-      "parent": "Monster_elvarg_dragon",
-      "translation": [
-        -1.25,
-        0.95,
-        1.2
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ]
-    },
-    "elvarg_dragon_LWing": {
-      "parent": "Monster_elvarg_dragon",
-      "translation": [
-        -2.73,
-        2.44,
-        -0.53
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ]
-    },
-    "elvarg_dragon_RightArmPivot": {
-      "parent": "Monster_elvarg_dragon",
-      "translation": [
-        1.1,
-        0.95,
-        -1.4
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ]
-    },
-    "elvarg_dragon_RightLegPivot": {
-      "parent": "Monster_elvarg_dragon",
-      "translation": [
-        1.25,
-        0.95,
-        1.2
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ]
-    },
-    "elvarg_dragon_RWing": {
-      "parent": "Monster_elvarg_dragon",
-      "translation": [
-        2.73,
-        2.44,
-        -0.53
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ]
-    },
     "Monster_elvarg_dragon": {
       "parent": null,
       "translation": [
-        6.2,
         0,
-        2.6
+        0,
+        0
       ],
       "scale": [
         1,
@@ -468,103 +377,12 @@
         1
       ]
     },
-    "lesser_demon_HeadGroup": {
-      "parent": "Monster_lesser_demon",
-      "translation": [
-        0,
-        1.88,
-        -0.73
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ]
-    },
-    "lesser_demon_LeftArmPivot": {
-      "parent": "Monster_lesser_demon",
-      "translation": [
-        -0.65,
-        1.45,
-        -0.25
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ]
-    },
-    "lesser_demon_LeftLegPivot": {
-      "parent": "Monster_lesser_demon",
-      "translation": [
-        -0.25,
-        0.95,
-        0.05
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ]
-    },
-    "lesser_demon_LWing": {
-      "parent": "Monster_lesser_demon",
-      "translation": [
-        -0.28,
-        1.5,
-        0.18
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ]
-    },
-    "lesser_demon_RightArmPivot": {
-      "parent": "Monster_lesser_demon",
-      "translation": [
-        0.65,
-        1.45,
-        -0.25
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ]
-    },
-    "lesser_demon_RightLegPivot": {
-      "parent": "Monster_lesser_demon",
-      "translation": [
-        0.25,
-        0.95,
-        0.05
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ]
-    },
-    "lesser_demon_RWing": {
-      "parent": "Monster_lesser_demon",
-      "translation": [
-        0.28,
-        1.5,
-        0.18
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ]
-    },
     "Monster_lesser_demon": {
       "parent": null,
       "translation": [
-        2.2,
         0,
-        2.2
+        0,
+        0
       ],
       "scale": [
         1,
@@ -714,6 +532,19 @@
         1,
         1
       ]
+    },
+    "Monster_ashmantle": {
+      "parent": null,
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
     }
   },
   "materials": [
@@ -733,6 +564,9 @@
     "mat_gold",
     "mat_gold_beak",
     "mat_horn",
+    "mat_horn_ashmantle_paint",
+    "mat_horn_elvarg_dragon_paint",
+    "mat_horn_lesser_demon_paint",
     "mat_iron",
     "mat_iron_obsidian",
     "mat_leather",
@@ -740,24 +574,31 @@
     "mat_moss",
     "mat_robe",
     "mat_robe_trim",
+    "mat_skin_ashmantle_paint",
     "mat_skin_chicken",
     "mat_skin_chicken_tail",
     "mat_skin_chicken_wing",
-    "mat_skin_elvarg_dragon",
+    "mat_skin_elvarg_dragon_paint",
     "mat_skin_goblin",
     "mat_skin_goblin_dark",
     "mat_skin_goblin_paint",
     "mat_skin_hill_giant",
-    "mat_skin_lesser_demon",
+    "mat_skin_lesser_demon_paint",
     "mat_skin_scorpion",
     "mat_skin_scorpion_plate",
     "mat_stone",
-    "mat_wing",
+    "mat_wing_ashmantle_paint",
+    "mat_wing_elvarg_dragon_paint",
+    "mat_wing_lesser_demon_paint",
     "mat_wood",
     "mat_wood_goblin_paint"
   ],
   "toggled": [],
   "meshClasses": [
+    "^ashmantle_body$",
+    "^ashmantle_crust$",
+    "^ashmantle_embers$",
+    "^ashmantle_membrane$",
     "^chicken_LWing$",
     "^chicken_LWing_feather_-?\\d+$",
     "^chicken_LeftLegPivot_drumstick$",
@@ -832,8 +673,9 @@
     "^dark_wizard_stole_rune_-?\\d+$",
     "^dark_wizard_void_skull$",
     "^elvarg_dragon_body$",
-    "^elvarg_dragon_eye_-?\\d+$",
-    "^elvarg_dragon_teeth_-?\\d+$",
+    "^elvarg_dragon_horn$",
+    "^elvarg_dragon_maw$",
+    "^elvarg_dragon_membrane$",
     "^goblin_archer_LeftLegPivot_calf$",
     "^goblin_archer_LeftLegPivot_claw_-?\\d+$",
     "^goblin_archer_LeftLegPivot_foot$",
@@ -912,20 +754,10 @@
     "^hill_giant_torso$",
     "^hill_giant_uarm_L$",
     "^hill_giant_uarm_R$",
-    "^lesser_demon_LWing_finger_-?\\d+$",
-    "^lesser_demon_LWing_strut_root$",
-    "^lesser_demon_LWing_web_-?\\d+$",
-    "^lesser_demon_RWing_finger_-?\\d+$",
-    "^lesser_demon_RWing_strut_root$",
-    "^lesser_demon_RWing_web_-?\\d+$",
     "^lesser_demon_body$",
-    "^lesser_demon_cleaver_blade$",
-    "^lesser_demon_cleaver_hilt$",
-    "^lesser_demon_cleaver_lava_edge$",
-    "^lesser_demon_eye_l$",
-    "^lesser_demon_eye_r$",
-    "^lesser_demon_teeth_lower$",
-    "^lesser_demon_teeth_upper$",
+    "^lesser_demon_embers$",
+    "^lesser_demon_horn$",
+    "^lesser_demon_membrane$",
     "^moss_guardian_LeftLegPivot_knee_stone$",
     "^moss_guardian_LeftLegPivot_root_claw_-?\\d+$",
     "^moss_guardian_LeftLegPivot_trunk$",
@@ -987,10 +819,139 @@
   "extras": {},
   "vertexColor": {
     "figures": {
-      "Monster_goblin": "all"
+      "Monster_goblin": "all",
+      "Monster_elvarg_dragon": "all",
+      "Monster_ashmantle": "all",
+      "Monster_lesser_demon": "all"
     }
   },
-  "clips": {},
+  "clips": {
+    "Bite": {
+      "moves": [
+        "elvarg_dragon_HeadGroup",
+        "elvarg_dragon_Hips",
+        "elvarg_dragon_Jaw",
+        "elvarg_dragon_LWing",
+        "elvarg_dragon_LWing2",
+        "elvarg_dragon_LeftArmPivot",
+        "elvarg_dragon_LeftElbowPivot",
+        "elvarg_dragon_LeftKneePivot",
+        "elvarg_dragon_LeftLegPivot",
+        "elvarg_dragon_Neck1",
+        "elvarg_dragon_Neck2",
+        "elvarg_dragon_RWing",
+        "elvarg_dragon_RWing2",
+        "elvarg_dragon_RightArmPivot",
+        "elvarg_dragon_RightElbowPivot",
+        "elvarg_dragon_RightKneePivot",
+        "elvarg_dragon_RightLegPivot",
+        "elvarg_dragon_TailPivot",
+        "elvarg_dragon_TailPivot2",
+        "elvarg_dragon_TailPivot3",
+        "elvarg_dragon_Torso"
+      ]
+    },
+    "Death": {
+      "moves": [
+        "elvarg_dragon_HeadGroup",
+        "elvarg_dragon_Hips",
+        "elvarg_dragon_Jaw",
+        "elvarg_dragon_LWing",
+        "elvarg_dragon_LWing2",
+        "elvarg_dragon_LeftArmPivot",
+        "elvarg_dragon_LeftElbowPivot",
+        "elvarg_dragon_LeftKneePivot",
+        "elvarg_dragon_LeftLegPivot",
+        "elvarg_dragon_Neck1",
+        "elvarg_dragon_Neck2",
+        "elvarg_dragon_RWing",
+        "elvarg_dragon_RWing2",
+        "elvarg_dragon_RightArmPivot",
+        "elvarg_dragon_RightElbowPivot",
+        "elvarg_dragon_RightKneePivot",
+        "elvarg_dragon_RightLegPivot",
+        "elvarg_dragon_TailPivot",
+        "elvarg_dragon_TailPivot2",
+        "elvarg_dragon_TailPivot3",
+        "elvarg_dragon_Torso"
+      ]
+    },
+    "Idle": {
+      "moves": [
+        "elvarg_dragon_HeadGroup",
+        "elvarg_dragon_Hips",
+        "elvarg_dragon_Jaw",
+        "elvarg_dragon_LWing",
+        "elvarg_dragon_LWing2",
+        "elvarg_dragon_LeftArmPivot",
+        "elvarg_dragon_LeftElbowPivot",
+        "elvarg_dragon_LeftKneePivot",
+        "elvarg_dragon_LeftLegPivot",
+        "elvarg_dragon_Neck1",
+        "elvarg_dragon_Neck2",
+        "elvarg_dragon_RWing",
+        "elvarg_dragon_RWing2",
+        "elvarg_dragon_RightArmPivot",
+        "elvarg_dragon_RightElbowPivot",
+        "elvarg_dragon_RightKneePivot",
+        "elvarg_dragon_RightLegPivot",
+        "elvarg_dragon_TailPivot",
+        "elvarg_dragon_TailPivot2",
+        "elvarg_dragon_TailPivot3",
+        "elvarg_dragon_Torso"
+      ]
+    },
+    "Walk": {
+      "moves": [
+        "elvarg_dragon_HeadGroup",
+        "elvarg_dragon_Hips",
+        "elvarg_dragon_Jaw",
+        "elvarg_dragon_LWing",
+        "elvarg_dragon_LWing2",
+        "elvarg_dragon_LeftArmPivot",
+        "elvarg_dragon_LeftElbowPivot",
+        "elvarg_dragon_LeftKneePivot",
+        "elvarg_dragon_LeftLegPivot",
+        "elvarg_dragon_Neck1",
+        "elvarg_dragon_Neck2",
+        "elvarg_dragon_RWing",
+        "elvarg_dragon_RWing2",
+        "elvarg_dragon_RightArmPivot",
+        "elvarg_dragon_RightElbowPivot",
+        "elvarg_dragon_RightKneePivot",
+        "elvarg_dragon_RightLegPivot",
+        "elvarg_dragon_TailPivot",
+        "elvarg_dragon_TailPivot2",
+        "elvarg_dragon_TailPivot3",
+        "elvarg_dragon_Torso"
+      ]
+    },
+    "WingBuffet": {
+      "moves": [
+        "elvarg_dragon_HeadGroup",
+        "elvarg_dragon_Hips",
+        "elvarg_dragon_Jaw",
+        "elvarg_dragon_LWing",
+        "elvarg_dragon_LWing2",
+        "elvarg_dragon_LeftArmPivot",
+        "elvarg_dragon_LeftElbowPivot",
+        "elvarg_dragon_LeftKneePivot",
+        "elvarg_dragon_LeftLegPivot",
+        "elvarg_dragon_Neck1",
+        "elvarg_dragon_Neck2",
+        "elvarg_dragon_RWing",
+        "elvarg_dragon_RWing2",
+        "elvarg_dragon_RightArmPivot",
+        "elvarg_dragon_RightElbowPivot",
+        "elvarg_dragon_RightKneePivot",
+        "elvarg_dragon_RightLegPivot",
+        "elvarg_dragon_TailPivot",
+        "elvarg_dragon_TailPivot2",
+        "elvarg_dragon_TailPivot3",
+        "elvarg_dragon_Torso"
+      ]
+    }
+  },
   "skin": {
     "skeleton": "biped",
     "bones": {
@@ -1145,10 +1106,541 @@
           0,
           0
         ]
+      },
+      "elvarg_dragon_Jaw": {
+        "parent": "elvarg_dragon_HeadGroup",
+        "translation": [
+          0,
+          -0.06,
+          -0.24
+        ]
+      },
+      "elvarg_dragon_HeadGroup": {
+        "parent": "elvarg_dragon_Neck2",
+        "translation": [
+          0,
+          0.36,
+          -0.88
+        ]
+      },
+      "elvarg_dragon_Neck2": {
+        "parent": "elvarg_dragon_Neck1",
+        "translation": [
+          0,
+          0.71,
+          -0.55
+        ]
+      },
+      "elvarg_dragon_Neck1": {
+        "parent": "elvarg_dragon_Torso",
+        "translation": [
+          0,
+          0.39,
+          -0.95
+        ]
+      },
+      "elvarg_dragon_LeftElbowPivot": {
+        "parent": "elvarg_dragon_LeftArmPivot",
+        "translation": [
+          -0.23,
+          -0.68,
+          0.06
+        ]
+      },
+      "elvarg_dragon_LeftArmPivot": {
+        "parent": "elvarg_dragon_Torso",
+        "translation": [
+          -0.8,
+          -0.06,
+          -0.72
+        ]
+      },
+      "elvarg_dragon_RightElbowPivot": {
+        "parent": "elvarg_dragon_RightArmPivot",
+        "translation": [
+          0.23,
+          -0.68,
+          0.06
+        ]
+      },
+      "elvarg_dragon_RightArmPivot": {
+        "parent": "elvarg_dragon_Torso",
+        "translation": [
+          0.8,
+          -0.06,
+          -0.72
+        ]
+      },
+      "elvarg_dragon_LWing2": {
+        "parent": "elvarg_dragon_LWing",
+        "translation": [
+          -1.8,
+          1.1,
+          0.1
+        ]
+      },
+      "elvarg_dragon_LWing": {
+        "parent": "elvarg_dragon_Torso",
+        "translation": [
+          -0.42,
+          0.52,
+          -0.55
+        ]
+      },
+      "elvarg_dragon_RWing2": {
+        "parent": "elvarg_dragon_RWing",
+        "translation": [
+          1.8,
+          1.1,
+          0.1
+        ]
+      },
+      "elvarg_dragon_RWing": {
+        "parent": "elvarg_dragon_Torso",
+        "translation": [
+          0.42,
+          0.52,
+          -0.55
+        ]
+      },
+      "elvarg_dragon_Torso": {
+        "parent": "elvarg_dragon_Hips",
+        "translation": [
+          0,
+          0.36,
+          -0.95
+        ]
+      },
+      "elvarg_dragon_LeftKneePivot": {
+        "parent": "elvarg_dragon_LeftLegPivot",
+        "translation": [
+          -0.11,
+          -0.42,
+          -0.07
+        ]
+      },
+      "elvarg_dragon_LeftLegPivot": {
+        "parent": "elvarg_dragon_Hips",
+        "translation": [
+          -0.62,
+          0,
+          0.07
+        ]
+      },
+      "elvarg_dragon_RightKneePivot": {
+        "parent": "elvarg_dragon_RightLegPivot",
+        "translation": [
+          0.11,
+          -0.42,
+          -0.07
+        ]
+      },
+      "elvarg_dragon_RightLegPivot": {
+        "parent": "elvarg_dragon_Hips",
+        "translation": [
+          0.62,
+          0,
+          0.07
+        ]
+      },
+      "elvarg_dragon_TailPivot3": {
+        "parent": "elvarg_dragon_TailPivot2",
+        "translation": [
+          0,
+          -0.2,
+          0.65
+        ]
+      },
+      "elvarg_dragon_TailPivot2": {
+        "parent": "elvarg_dragon_TailPivot",
+        "translation": [
+          0,
+          -0.22,
+          0.75
+        ]
+      },
+      "elvarg_dragon_TailPivot": {
+        "parent": "elvarg_dragon_Hips",
+        "translation": [
+          0,
+          -0.02,
+          0.65
+        ]
+      },
+      "elvarg_dragon_Hips": {
+        "parent": "elvarg_dragon_Root",
+        "translation": [
+          0,
+          1,
+          0
+        ]
+      },
+      "elvarg_dragon_Root": {
+        "parent": null,
+        "translation": [
+          0,
+          0,
+          0.95
+        ]
+      },
+      "ashmantle_Jaw": {
+        "parent": "ashmantle_HeadGroup",
+        "translation": [
+          0,
+          -0.06,
+          -0.24
+        ]
+      },
+      "ashmantle_HeadGroup": {
+        "parent": "ashmantle_Neck2",
+        "translation": [
+          0,
+          0.36,
+          -0.88
+        ]
+      },
+      "ashmantle_Neck2": {
+        "parent": "ashmantle_Neck1",
+        "translation": [
+          0,
+          0.71,
+          -0.55
+        ]
+      },
+      "ashmantle_Neck1": {
+        "parent": "ashmantle_Torso",
+        "translation": [
+          0,
+          0.39,
+          -0.95
+        ]
+      },
+      "ashmantle_LeftElbowPivot": {
+        "parent": "ashmantle_LeftArmPivot",
+        "translation": [
+          -0.23,
+          -0.68,
+          0.06
+        ]
+      },
+      "ashmantle_LeftArmPivot": {
+        "parent": "ashmantle_Torso",
+        "translation": [
+          -0.8,
+          -0.06,
+          -0.72
+        ]
+      },
+      "ashmantle_RightElbowPivot": {
+        "parent": "ashmantle_RightArmPivot",
+        "translation": [
+          0.23,
+          -0.68,
+          0.06
+        ]
+      },
+      "ashmantle_RightArmPivot": {
+        "parent": "ashmantle_Torso",
+        "translation": [
+          0.8,
+          -0.06,
+          -0.72
+        ]
+      },
+      "ashmantle_LWing2": {
+        "parent": "ashmantle_LWing",
+        "translation": [
+          -1.8,
+          1.1,
+          0.1
+        ]
+      },
+      "ashmantle_LWing": {
+        "parent": "ashmantle_Torso",
+        "translation": [
+          -0.42,
+          0.52,
+          -0.55
+        ]
+      },
+      "ashmantle_RWing2": {
+        "parent": "ashmantle_RWing",
+        "translation": [
+          1.8,
+          1.1,
+          0.1
+        ]
+      },
+      "ashmantle_RWing": {
+        "parent": "ashmantle_Torso",
+        "translation": [
+          0.42,
+          0.52,
+          -0.55
+        ]
+      },
+      "ashmantle_Torso": {
+        "parent": "ashmantle_Hips",
+        "translation": [
+          0,
+          0.36,
+          -0.95
+        ]
+      },
+      "ashmantle_LeftKneePivot": {
+        "parent": "ashmantle_LeftLegPivot",
+        "translation": [
+          -0.11,
+          -0.42,
+          -0.07
+        ]
+      },
+      "ashmantle_LeftLegPivot": {
+        "parent": "ashmantle_Hips",
+        "translation": [
+          -0.62,
+          0,
+          0.07
+        ]
+      },
+      "ashmantle_RightKneePivot": {
+        "parent": "ashmantle_RightLegPivot",
+        "translation": [
+          0.11,
+          -0.42,
+          -0.07
+        ]
+      },
+      "ashmantle_RightLegPivot": {
+        "parent": "ashmantle_Hips",
+        "translation": [
+          0.62,
+          0,
+          0.07
+        ]
+      },
+      "ashmantle_TailPivot3": {
+        "parent": "ashmantle_TailPivot2",
+        "translation": [
+          0,
+          -0.2,
+          0.65
+        ]
+      },
+      "ashmantle_TailPivot2": {
+        "parent": "ashmantle_TailPivot",
+        "translation": [
+          0,
+          -0.22,
+          0.75
+        ]
+      },
+      "ashmantle_TailPivot": {
+        "parent": "ashmantle_Hips",
+        "translation": [
+          0,
+          -0.02,
+          0.65
+        ]
+      },
+      "ashmantle_Hips": {
+        "parent": "ashmantle_Root",
+        "translation": [
+          0,
+          1,
+          0
+        ]
+      },
+      "ashmantle_Root": {
+        "parent": null,
+        "translation": [
+          0,
+          0,
+          0.95
+        ]
+      },
+      "lesser_demon_Root": {
+        "parent": "Monster_lesser_demon",
+        "translation": [
+          0,
+          0,
+          0
+        ]
+      },
+      "lesser_demon_Hips": {
+        "parent": "lesser_demon_Root",
+        "translation": [
+          0,
+          1.02,
+          0.06
+        ]
+      },
+      "lesser_demon_Torso": {
+        "parent": "lesser_demon_Hips",
+        "translation": [
+          0,
+          0.28,
+          -0.04
+        ]
+      },
+      "lesser_demon_HeadGroup": {
+        "parent": "lesser_demon_Torso",
+        "translation": [
+          0,
+          0.56,
+          -0.19
+        ]
+      },
+      "lesser_demon_Jaw": {
+        "parent": "lesser_demon_HeadGroup",
+        "translation": [
+          0,
+          0.04,
+          -0.16
+        ]
+      },
+      "lesser_demon_LeftArmPivot": {
+        "parent": "lesser_demon_Torso",
+        "translation": [
+          -0.44,
+          0.42,
+          -0.1
+        ]
+      },
+      "lesser_demon_LeftElbowPivot": {
+        "parent": "lesser_demon_LeftArmPivot",
+        "translation": [
+          -0.18,
+          -0.41,
+          -0.12
+        ]
+      },
+      "lesser_demon_LeftHand": {
+        "parent": "lesser_demon_LeftElbowPivot",
+        "translation": [
+          -0.18,
+          -0.38,
+          -0.1
+        ]
+      },
+      "lesser_demon_RightArmPivot": {
+        "parent": "lesser_demon_Torso",
+        "translation": [
+          0.44,
+          0.42,
+          -0.1
+        ]
+      },
+      "lesser_demon_RightElbowPivot": {
+        "parent": "lesser_demon_RightArmPivot",
+        "translation": [
+          0.18,
+          -0.41,
+          -0.12
+        ]
+      },
+      "lesser_demon_RightHand": {
+        "parent": "lesser_demon_RightElbowPivot",
+        "translation": [
+          0.18,
+          -0.38,
+          -0.1
+        ]
+      },
+      "lesser_demon_WeaponPivot": {
+        "parent": "lesser_demon_RightHand",
+        "translation": [
+          0,
+          0,
+          0
+        ]
+      },
+      "lesser_demon_LWing": {
+        "parent": "lesser_demon_Torso",
+        "translation": [
+          -0.16,
+          0.34,
+          0.18
+        ]
+      },
+      "lesser_demon_RWing": {
+        "parent": "lesser_demon_Torso",
+        "translation": [
+          0.16,
+          0.34,
+          0.18
+        ]
+      },
+      "lesser_demon_LeftLegPivot": {
+        "parent": "lesser_demon_Hips",
+        "translation": [
+          -0.19,
+          -0.04,
+          0
+        ]
+      },
+      "lesser_demon_LeftKneePivot": {
+        "parent": "lesser_demon_LeftLegPivot",
+        "translation": [
+          -0.1,
+          -0.44,
+          -0.14
+        ]
+      },
+      "lesser_demon_LeftFoot": {
+        "parent": "lesser_demon_LeftKneePivot",
+        "translation": [
+          0.01,
+          -0.43,
+          0.14
+        ]
+      },
+      "lesser_demon_RightLegPivot": {
+        "parent": "lesser_demon_Hips",
+        "translation": [
+          0.19,
+          -0.04,
+          0
+        ]
+      },
+      "lesser_demon_RightKneePivot": {
+        "parent": "lesser_demon_RightLegPivot",
+        "translation": [
+          0.1,
+          -0.44,
+          -0.14
+        ]
+      },
+      "lesser_demon_RightFoot": {
+        "parent": "lesser_demon_RightKneePivot",
+        "translation": [
+          -0.01,
+          -0.43,
+          0.14
+        ]
+      },
+      "lesser_demon_TailPivot": {
+        "parent": "lesser_demon_Hips",
+        "translation": [
+          0,
+          -0.04,
+          0.18
+        ]
+      },
+      "lesser_demon_TailPivot2": {
+        "parent": "lesser_demon_TailPivot",
+        "translation": [
+          0,
+          -0.18,
+          0.42
+        ]
       }
     },
     "skinnedRoots": [
-      "Monster_goblin"
+      "Monster_goblin",
+      "Monster_elvarg_dragon",
+      "Monster_ashmantle",
+      "Monster_lesser_demon"
     ],
     "limbs": [
       {
@@ -1249,87 +1741,458 @@
           -1,
           0
         ]
+      },
+      {
+        "bone": "elvarg_dragon_Root",
+        "child": "elvarg_dragon_Hips",
+        "direction": [
+          0,
+          1,
+          0
+        ]
+      },
+      {
+        "bone": "elvarg_dragon_Hips",
+        "child": "elvarg_dragon_Torso",
+        "direction": [
+          0,
+          0.6,
+          -0.8
+        ]
+      },
+      {
+        "bone": "elvarg_dragon_Torso",
+        "child": "elvarg_dragon_Neck1",
+        "direction": [
+          0,
+          0.6,
+          -0.8
+        ]
+      },
+      {
+        "bone": "elvarg_dragon_Neck1",
+        "child": "elvarg_dragon_Neck2",
+        "direction": [
+          0,
+          0.6,
+          -0.8
+        ]
+      },
+      {
+        "bone": "elvarg_dragon_Neck2",
+        "child": "elvarg_dragon_HeadGroup",
+        "direction": [
+          0,
+          0.6,
+          -0.8
+        ]
+      },
+      {
+        "bone": "elvarg_dragon_HeadGroup",
+        "child": "elvarg_dragon_Jaw",
+        "direction": [
+          0,
+          0,
+          -1
+        ]
+      },
+      {
+        "bone": "elvarg_dragon_LeftArmPivot",
+        "child": "elvarg_dragon_LeftElbowPivot",
+        "direction": [
+          0,
+          -1,
+          0
+        ]
+      },
+      {
+        "bone": "elvarg_dragon_RightArmPivot",
+        "child": "elvarg_dragon_RightElbowPivot",
+        "direction": [
+          0,
+          -1,
+          0
+        ]
+      },
+      {
+        "bone": "elvarg_dragon_LeftLegPivot",
+        "child": "elvarg_dragon_LeftKneePivot",
+        "direction": [
+          0,
+          -1,
+          0
+        ]
+      },
+      {
+        "bone": "elvarg_dragon_RightLegPivot",
+        "child": "elvarg_dragon_RightKneePivot",
+        "direction": [
+          0,
+          -1,
+          0
+        ]
+      },
+      {
+        "bone": "elvarg_dragon_LWing",
+        "child": "elvarg_dragon_LWing2",
+        "direction": [
+          -0.85,
+          0.52,
+          0
+        ]
+      },
+      {
+        "bone": "elvarg_dragon_RWing",
+        "child": "elvarg_dragon_RWing2",
+        "direction": [
+          0.85,
+          0.52,
+          0
+        ]
+      },
+      {
+        "bone": "elvarg_dragon_TailPivot",
+        "child": "elvarg_dragon_TailPivot2",
+        "direction": [
+          0,
+          -0.31,
+          0.95
+        ]
+      },
+      {
+        "bone": "elvarg_dragon_TailPivot2",
+        "child": "elvarg_dragon_TailPivot3",
+        "direction": [
+          0,
+          -0.31,
+          0.95
+        ]
+      },
+      {
+        "bone": "ashmantle_Root",
+        "child": "ashmantle_Hips",
+        "direction": [
+          0,
+          1,
+          0
+        ]
+      },
+      {
+        "bone": "ashmantle_Hips",
+        "child": "ashmantle_Torso",
+        "direction": [
+          0,
+          0.6,
+          -0.8
+        ]
+      },
+      {
+        "bone": "ashmantle_Torso",
+        "child": "ashmantle_Neck1",
+        "direction": [
+          0,
+          0.6,
+          -0.8
+        ]
+      },
+      {
+        "bone": "ashmantle_Neck1",
+        "child": "ashmantle_Neck2",
+        "direction": [
+          0,
+          0.6,
+          -0.8
+        ]
+      },
+      {
+        "bone": "ashmantle_Neck2",
+        "child": "ashmantle_HeadGroup",
+        "direction": [
+          0,
+          0.6,
+          -0.8
+        ]
+      },
+      {
+        "bone": "ashmantle_HeadGroup",
+        "child": "ashmantle_Jaw",
+        "direction": [
+          0,
+          0,
+          -1
+        ]
+      },
+      {
+        "bone": "ashmantle_LeftArmPivot",
+        "child": "ashmantle_LeftElbowPivot",
+        "direction": [
+          0,
+          -1,
+          0
+        ]
+      },
+      {
+        "bone": "ashmantle_RightArmPivot",
+        "child": "ashmantle_RightElbowPivot",
+        "direction": [
+          0,
+          -1,
+          0
+        ]
+      },
+      {
+        "bone": "ashmantle_LeftLegPivot",
+        "child": "ashmantle_LeftKneePivot",
+        "direction": [
+          0,
+          -1,
+          0
+        ]
+      },
+      {
+        "bone": "ashmantle_RightLegPivot",
+        "child": "ashmantle_RightKneePivot",
+        "direction": [
+          0,
+          -1,
+          0
+        ]
+      },
+      {
+        "bone": "ashmantle_LWing",
+        "child": "ashmantle_LWing2",
+        "direction": [
+          -0.85,
+          0.52,
+          0
+        ]
+      },
+      {
+        "bone": "ashmantle_RWing",
+        "child": "ashmantle_RWing2",
+        "direction": [
+          0.85,
+          0.52,
+          0
+        ]
+      },
+      {
+        "bone": "ashmantle_TailPivot",
+        "child": "ashmantle_TailPivot2",
+        "direction": [
+          0,
+          -0.31,
+          0.95
+        ]
+      },
+      {
+        "bone": "ashmantle_TailPivot2",
+        "child": "ashmantle_TailPivot3",
+        "direction": [
+          0,
+          -0.31,
+          0.95
+        ]
+      },
+      {
+        "bone": "lesser_demon_Root",
+        "child": "lesser_demon_Hips",
+        "direction": [
+          0,
+          1,
+          0
+        ]
+      },
+      {
+        "bone": "lesser_demon_Hips",
+        "child": "lesser_demon_Torso",
+        "direction": [
+          0,
+          1,
+          0
+        ]
+      },
+      {
+        "bone": "lesser_demon_Torso",
+        "child": "lesser_demon_HeadGroup",
+        "direction": [
+          0,
+          1,
+          0
+        ]
+      },
+      {
+        "bone": "lesser_demon_LeftArmPivot",
+        "child": "lesser_demon_LeftElbowPivot",
+        "direction": [
+          -0.468,
+          -0.884,
+          0
+        ]
+      },
+      {
+        "bone": "lesser_demon_LeftElbowPivot",
+        "child": "lesser_demon_LeftHand",
+        "direction": [
+          -0.528,
+          -0.849,
+          0
+        ]
+      },
+      {
+        "bone": "lesser_demon_LeftLegPivot",
+        "child": "lesser_demon_LeftKneePivot",
+        "direction": [
+          -0.183,
+          -0.983,
+          0
+        ]
+      },
+      {
+        "bone": "lesser_demon_LeftKneePivot",
+        "child": "lesser_demon_LeftFoot",
+        "direction": [
+          0,
+          -1,
+          0
+        ]
+      },
+      {
+        "bone": "lesser_demon_RightArmPivot",
+        "child": "lesser_demon_RightElbowPivot",
+        "direction": [
+          0.468,
+          -0.884,
+          0
+        ]
+      },
+      {
+        "bone": "lesser_demon_RightElbowPivot",
+        "child": "lesser_demon_RightHand",
+        "direction": [
+          0.528,
+          -0.849,
+          0
+        ]
+      },
+      {
+        "bone": "lesser_demon_RightLegPivot",
+        "child": "lesser_demon_RightKneePivot",
+        "direction": [
+          0.183,
+          -0.983,
+          0
+        ]
+      },
+      {
+        "bone": "lesser_demon_RightKneePivot",
+        "child": "lesser_demon_RightFoot",
+        "direction": [
+          0,
+          -1,
+          0
+        ]
+      },
+      {
+        "bone": "lesser_demon_TailPivot",
+        "child": "lesser_demon_TailPivot2",
+        "direction": [
+          0,
+          -0.371,
+          0.928
+        ]
       }
     ],
-    "maxLimbDegrees": 20
+    "maxLimbDegrees": 20,
+    "attackClips": {
+      "Bite": 0.333333,
+      "WingBuffet": 0.333333
+    }
   },
   "budget": {
-    "triangles": 98644,
-    "meshes": 182,
-    "materials": 38,
-    "rawBytes": 4896485,
-    "brotliBytes": 1415426
+    "triangles": 74724,
+    "meshes": 156,
+    "materials": 44,
+    "rawBytes": 3445563,
+    "brotliBytes": 830666
   },
   "figures": {
     "Monster_chicken": {
       "triangles": 4680,
       "meshes": 13,
       "materials": 6,
-      "rawBytes": 299120,
-      "brotliBytes": 56059
-    },
-    "Monster_dark_ranger": {
-      "triangles": 5340,
-      "meshes": 23,
-      "materials": 8,
-      "rawBytes": 330096,
-      "brotliBytes": 58346
-    },
-    "Monster_dark_wizard": {
-      "triangles": 3980,
-      "meshes": 18,
-      "materials": 9,
-      "rawBytes": 244704,
-      "brotliBytes": 44023
-    },
-    "Monster_elvarg_dragon": {
-      "triangles": 34750,
-      "meshes": 3,
-      "materials": 3,
-      "rawBytes": 879924,
-      "brotliBytes": 669660
+      "rawBytes": 230112,
+      "brotliBytes": 46237
     },
     "Monster_goblin": {
-      "triangles": 5000,
-      "meshes": 4,
-      "materials": 5,
-      "rawBytes": 219716,
-      "brotliBytes": 115540
+      "triangles": 4360,
+      "meshes": 3,
+      "materials": 3,
+      "rawBytes": 129772,
+      "brotliBytes": 69536
     },
     "Monster_goblin_archer": {
       "triangles": 6640,
       "meshes": 28,
       "materials": 11,
-      "rawBytes": 415176,
-      "brotliBytes": 76896
-    },
-    "Monster_hill_giant": {
-      "triangles": 7288,
-      "meshes": 20,
-      "materials": 9,
-      "rawBytes": 464520,
-      "brotliBytes": 78835
-    },
-    "Monster_lesser_demon": {
-      "triangles": 10218,
-      "meshes": 9,
-      "materials": 7,
-      "rawBytes": 501836,
-      "brotliBytes": 164537
-    },
-    "Monster_moss_guardian": {
-      "triangles": 6968,
-      "meshes": 20,
-      "materials": 6,
-      "rawBytes": 435920,
-      "brotliBytes": 70540
+      "rawBytes": 318600,
+      "brotliBytes": 61765
     },
     "Monster_scorpion": {
       "triangles": 10488,
       "meshes": 19,
       "materials": 6,
-      "rawBytes": 669168,
-      "brotliBytes": 120432
+      "rawBytes": 512976,
+      "brotliBytes": 95733
+    },
+    "Monster_dark_wizard": {
+      "triangles": 3980,
+      "meshes": 18,
+      "materials": 9,
+      "rawBytes": 187824,
+      "brotliBytes": 34911
+    },
+    "Monster_dark_ranger": {
+      "triangles": 5340,
+      "meshes": 23,
+      "materials": 8,
+      "rawBytes": 253488,
+      "brotliBytes": 48482
+    },
+    "Monster_hill_giant": {
+      "triangles": 7288,
+      "meshes": 20,
+      "materials": 9,
+      "rawBytes": 356808,
+      "brotliBytes": 65062
+    },
+    "Monster_moss_guardian": {
+      "triangles": 6968,
+      "meshes": 20,
+      "materials": 6,
+      "rawBytes": 333552,
+      "brotliBytes": 60698
+    },
+    "Monster_lesser_demon": {
+      "triangles": 5460,
+      "meshes": 4,
+      "materials": 4,
+      "rawBytes": 209112,
+      "brotliBytes": 92433
+    },
+    "Monster_elvarg_dragon": {
+      "triangles": 9960,
+      "meshes": 4,
+      "materials": 4,
+      "rawBytes": 354048,
+      "brotliBytes": 157719
+    },
+    "Monster_ashmantle": {
+      "triangles": 9560,
+      "meshes": 4,
+      "materials": 4,
+      "rawBytes": 354756,
+      "brotliBytes": 160517
     }
   }
 }

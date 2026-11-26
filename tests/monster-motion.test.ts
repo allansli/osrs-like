@@ -19,7 +19,7 @@ import path from 'node:path';
 import * as THREE from 'three';
 import { describe, expect, it, vi } from 'vitest';
 import { GLTFLoader, type GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { MONSTER_MOTION, PENDING_DRAGON_CLIPS } from '../src/data/monsterPoses';
+import { MONSTER_MOTION } from '../src/data/monsterPoses';
 import { MONSTER_TYPES } from '../src/data/world';
 import { KNOCK_BACK, springOffset } from '../src/data/feel';
 import { DYING_SECS } from '../src/state/monsterAi';
@@ -29,6 +29,12 @@ import { upgradeMonsterRigWithGltf } from '../src/engine/blenderMonsters';
 import type { BlenderHeroAnimator, HeroClipName } from '../src/engine/blenderHero';
 import { poseMonsterDying, poseMonsterLimbs } from '../src/engine/monsterMeshes';
 import { hitStop, knockBack, updateReactions } from '../src/engine/reactions';
+
+// The dragon's clips as D5 names them on the live row (plan D5 promote amendments); the export they came from is gone.
+const PENDING_DRAGON_CLIPS = {
+  clips: { idle: 'Idle', walk: 'Walk', attack: 'Bite', windup: 'WingBuffet', death: 'Death' },
+  anticipation: 0.333333
+};
 
 vi.stubGlobal('window', { matchMedia: () => ({ matches: false }) });
 

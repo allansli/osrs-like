@@ -155,6 +155,13 @@ export const MONSTER_MOTION: Record<string, MonsterMotionRow> = {
       'TailPivot',
       'TailPivot2'
     ],
+    clips: {
+      idle: 'Idle',
+      walk: 'Walk',
+      attack: 'Slash',
+      death: 'Death'
+    },
+    anticipation: 0.25,
     codeAttack: {
       rightArmX: -1.45,
       leftArmX: 0.58,
@@ -186,6 +193,14 @@ export const MONSTER_MOTION: Record<string, MonsterMotionRow> = {
       'TailPivot2',
       'TailPivot3'
     ],
+    clips: {
+      idle: 'Idle',
+      walk: 'Walk',
+      attack: 'Bite',
+      windup: 'WingBuffet',
+      death: 'Death'
+    },
+    anticipation: 0.333333,
     codeAttack: {
       headBase: -0.35,
       headProgress: 0.65,
@@ -196,33 +211,4 @@ export const MONSTER_MOTION: Record<string, MonsterMotionRow> = {
       y: 0.32
     }
   }
-};
-
-// The dragon's clips (plan D2b), staged until D5 promotes the monsters.glb that carries them, as a pending manifest
-// is (plan 0.3.5): the shipped file has no animations, so naming them on the live row before then makes the
-// animator throw on Ashmantle's wind-up and on every dragon death. D5's promote commit sets the live row's `clips`
-// and `anticipation` to these, in the same commit as the GLB.
-export const PENDING_DRAGON_CLIPS: Pick<Required<MonsterMotionRow>, 'clips' | 'anticipation'> = {
-  clips: {
-    idle: 'Idle',
-    walk: 'Walk',
-    attack: 'Bite',
-    windup: 'WingBuffet',
-    death: 'Death'
-  },
-  anticipation: 0.333333
-};
-
-// The rebuilt demon's clips (plan M3d): the biped library of the hero file, staged as the dragon's are until D5
-// promotes the monsters.glb that carries the skinned demon. The shipped demon is rigid and has no Hips bone, so naming
-// clips on the live row before then makes the biped animator throw on every demon spawn. D5's promote commit sets the
-// live row's `clips` and `anticipation` to these, in the same commit as the GLB.
-export const PENDING_DEMON_CLIPS: Pick<Required<MonsterMotionRow>, 'clips' | 'anticipation'> = {
-  clips: {
-    idle: 'Idle',
-    walk: 'Walk',
-    attack: 'Slash',
-    death: 'Death'
-  },
-  anticipation: 0.25
 };

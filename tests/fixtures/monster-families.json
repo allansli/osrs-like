@@ -111,20 +111,22 @@
   "floor": 18
  },
  "elvarg_dragon": {
-  "meshes": 5,
+  "meshes": 4,
   "triangles": {
-   "plain": 8928,
-   "eyes": 640,
-   "skin": 25182
+   "leather": 96,
+   "glow": 80,
+   "plain": 2592,
+   "skin": 7192
   },
   "pivots": {
    "Monster_elvarg_dragon": [
-    "eyes",
+    "glow",
+    "leather",
     "plain",
     "skin"
    ]
   },
-  "floor": 3
+  "floor": 4
  },
  "goblin": {
   "meshes": 3,
@@ -237,35 +239,22 @@
   "floor": 20
  },
  "lesser_demon": {
-  "meshes": 24,
+  "meshes": 4,
   "triangles": {
-   "plain": 2926,
-   "leather": 144,
-   "glow": 108,
-   "iron": 228,
-   "eyes": 1920,
-   "skin": 4892
+   "leather": 120,
+   "plain": 804,
+   "glow": 188,
+   "skin": 4348
   },
   "pivots": {
    "Monster_lesser_demon": [
-    "eyes",
+    "glow",
+    "leather",
     "plain",
     "skin"
-   ],
-   "lesser_demon_RWing": [
-    "leather",
-    "plain"
-   ],
-   "lesser_demon_RightArmPivot": [
-    "glow",
-    "iron"
-   ],
-   "lesser_demon_LWing": [
-    "leather",
-    "plain"
    ]
   },
-  "floor": 10
+  "floor": 4
  },
  "moss_guardian": {
   "meshes": 43,
@@ -347,5 +336,23 @@
    ]
   },
   "floor": 19
+ },
+ "ashmantle": {
+  "meshes": 4,
+  "triangles": {
+   "leather": 96,
+   "glow": 296,
+   "plain": 3242,
+   "skin": 5926
+  },
+  "pivots": {
+   "Monster_ashmantle": [
+    "glow",
+    "leather",
+    "plain",
+    "skin"
+   ]
+  },
+  "floor": 4
  }
 }
