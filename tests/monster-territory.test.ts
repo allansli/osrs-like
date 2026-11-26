@@ -256,14 +256,20 @@ describe('monster territory: rules', () => {
     expect(st(m)).toBe('dying');
   });
 
-  it('an aggressive camp ignores a player whose combat level is above the monster\'s', () => {
+  it('an aggressive camp attacks at any level, from a distance that shrinks', () => {
     const rand = seeded(12);
     const c = camp('aggro_level', CX, CZ, 12, true);
+    // One level above, 2 units away: it comes (Stage 2's rule ignored this hero).
     const above = monster('goblin', c);
+    expect(kinds(stepMonster(above, world(CX + 2, CZ, DT, rand, { camps: [c], playerCombat: above.level + 1 })))).toContain('aggro');
+    // Ten levels above, the sight is SIGHT_MIN (3): not at 3.5, at 2.9.
+    const far = monster('goblin', c);
     for (let i = 0; i < 50; i++) {
-      expect(kinds(stepMonster(above, world(CX + 2, CZ, DT, rand, { camps: [c], playerCombat: above.level + 1 })))).toEqual([]);
+      expect(kinds(stepMonster(far, world(CX + 3.5, CZ, DT, rand, { camps: [c], playerCombat: far.level + 10 })))).toEqual([]);
     }
-    expect(st(above)).toBe('idle');
+    expect(st(far)).toBe('idle');
+    const near = monster('goblin', c);
+    expect(kinds(stepMonster(near, world(CX + 2.9, CZ, DT, rand, { camps: [c], playerCombat: near.level + 10 })))).toContain('aggro');
 
     // Equal level is a yellow threat: it comes.
     const equal = monster('goblin', c);

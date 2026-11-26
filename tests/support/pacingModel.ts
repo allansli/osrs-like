@@ -14,7 +14,6 @@ import {
   SLAYER_BANDS,
   STARTER_QUESTS,
   combatLevel,
-  monsterThreatColor,
   pickSlayerBand,
   type SlayerBand
 } from '../../src/state/adventure';
@@ -36,6 +35,7 @@ import {
   smeltFor,
   type Ledger
 } from './starterChain';
+import { packAttackers } from './packAttackers';
 
 export type { Ledger };
 
@@ -138,7 +138,7 @@ export function fight(state: GameState, typeKey: string): { win: boolean; secs: 
   const { maxHit, accuracy } = playerAttackProfile(state);
   const killSecs = (m.hp / (playerHitChance(accuracy, m.def) * meanRoll(maxHit))) * TICK_SEC;
   const pack = campCounts.largestAggressive[typeKey] || 0;
-  const attackers = pack > 0 && monsterThreatColor(m.level, combatLevel(state)) !== 'green' ? pack : 1;
+  const attackers = packAttackers(pack, m, combatLevel(state));
   const taken = attackers * (killSecs / ATTACK_INTERVAL) * monsterHitChance(typeKey, state) * meanRoll(m.maxHit);
   const maxHp = state.skills.hitpoints.lvl;
   const win = taken <= WIN_SHARE * maxHp && attackers * m.maxHit < maxHp;
