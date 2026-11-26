@@ -63,6 +63,7 @@ import {
   windupPlan
 } from '../state/soundPlan';
 import { STATE } from '../state/gameState';
+import { clearBossDown } from '../state/progress';
 import { getEquipmentBonuses, tickMarks, type EquipmentBonuses } from '../state/combat';
 import { moveWithCollision } from '../state/collision';
 import { inCombat, isDown, isPlayerSafe, stepMonster, tickWindupGates } from '../state/monsterAi';
@@ -717,6 +718,7 @@ export function updateMonsters(f: FrameState): void {
 
     if (prevState === 'dead') {
       if (events.some(e => e.kind === 'respawned')) {
+        clearBossDown(STATE, m.typeKey);
         m.flinch = 0;
         resetMonsterMotion(m);
         m.pos.set(L.x, getTerrainHeight(L.x, L.z), L.z);

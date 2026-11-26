@@ -24,7 +24,7 @@ import {
   spawnProjectile
 } from './vfx';
 import { addChatMessage, showBanner, updateTargetHud, updateAllUI, updateSkillsPanel, refreshCombatStyleLocks, requestUiRefresh, el } from '../ui/hud';
-import { clearBossDown, noteBossDown } from '../state/progress';
+import { noteBossDown } from '../state/progress';
 import { STATE } from '../state/gameState';
 import { prepareAttack, playerAttackProfile, playerHitChance, rollMonsterHit, rollMonsterAttack, addMark, mitigateDamage } from '../state/combat';
 import { creditGp, fishDepletes, gatherChance, rollDrops } from '../state/economy';
@@ -431,10 +431,6 @@ export function handleMonsterDeath(monster: MonsterEntity): void {
   }
   if (rareBeam) spawnRareLootBeam(monster.pos);
   requestUiRefresh();
-}
-
-export function handleMonsterRespawn(monster: MonsterEntity): void {
-  clearBossDown(STATE, monster.typeKey);
 }
 
 function maybeRetaliate(monster: MonsterEntity): void {
