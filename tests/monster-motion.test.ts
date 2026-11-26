@@ -614,6 +614,16 @@ function dragonPlaysItsLibrary(): void {
   expect(bite.isRunning(), 'a plain attack plays Bite').toBe(true);
   expect(buffet.isRunning()).toBe(false);
 
+  // A cancelled wind-up (no strike) fades the held WingBuffet and never starts Bite.
+  for (let i = 0; i < 60; i++) frame(m, false, 1 / 60);
+  windup(m, 0.5);
+  frame(m, false, 1 / 60);
+  expect(buffet.paused, 'WingBuffet held again').toBe(true);
+  windup(m, -1);
+  for (let i = 0; i < 20; i++) frame(m, false, 1 / 60);
+  expect(buffet.isRunning(), 'the cancelled WingBuffet has faded').toBe(false);
+  expect(bite.isRunning(), 'a cancel never strikes').toBe(false);
+
   const death = m.animator!.actions.get(DEATH)!;
   const hipsRest = bone(m, 'Hips').position.y;
   const dt = 1 / 60;
