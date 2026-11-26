@@ -591,9 +591,9 @@ def pose_table(name, frames, base, keys, loop=False):
 
 
 def _lowest(meshes):
-    """The lowest point of the posed body (Blender z, the figure's height) and of the Boots."""
+    """The lowest point of the posed body (Blender z, the figure's height)."""
     dg = bpy.context.evaluated_depsgraph_get()
-    low, boots = math.inf, math.inf
+    low = math.inf
     for ob in meshes:
         ev = ob.evaluated_get(dg)
         me = ev.to_mesh()
@@ -603,9 +603,7 @@ def _lowest(meshes):
         z = (co.reshape(-1, 3) @ mw[2, :3]) + mw[2, 3]
         ev.to_mesh_clear()
         low = min(low, float(z.min()))
-        if ob.name == "Boots":
-            boots = float(z.min())
-    return low, boots
+    return low
 
 
 def build_action(rig, action_name: str, total_frames: int, sample_fn, feet_level_with="ground", smooth_loop=False):
@@ -646,13 +644,13 @@ def build_action(rig, action_name: str, total_frames: int, sample_fn, feet_level
             pb.keyframe_insert(data_path="rotation_quaternion", frame=f)
         for side in ("Left", "Right"):
             tilt = pose[f"{side}LegPivot"][0] + pose[f"{side}KneePivot"][0]
-            if feet_level_with == "ground":
-                tilt += pose.get("Hips", ZERO)[0]
+            if feet_level_with == "ground" and "Hips" in pose:  # only clips whose base pose names Hips turn it
+                tilt += pose["Hips"][0]
             pb = rig.pose.bones[f"{side}Foot"]
             pb.rotation_mode = "QUATERNION"
             pb.rotation_quaternion = Euler((-tilt, 0.0, 0.0), "XZY").to_quaternion()
             pb.keyframe_insert(data_path="rotation_quaternion", frame=f)
-        offset = pose.get("HipsPos", ZERO)
+        offset = pose["HipsPos"]
         assert offset[1] == 0.0, f"{action_name}: HipsPos height is measured, not authored"
         hips.location = Vector(offset)
         hips.keyframe_insert(data_path="location", frame=f)
@@ -664,20 +662,20 @@ def build_action(rig, action_name: str, total_frames: int, sample_fn, feet_level
     lock = []
     for f in range(total_frames):  # a Hips move shifts every vertex alike (no vertex is on Root)
         bpy.context.scene.frame_set(f)
-        lock.append(-_lowest(meshes)[0])
+        lock.append(-_lowest(meshes))
     heights = list(lock)
     if smooth_loop:
         for _ in range(4):
             n = len(heights)
             heights = [max(lock[i] - GROUND_SINK, (heights[i - 1] + 2 * heights[i] + heights[(i + 1) % n]) / 4) for i in range(n)]
     for f, pose in enumerate(poses):
-        hips.location = Vector(pose.get("HipsPos", ZERO)) + Vector((0.0, heights[f], 0.0))
+        hips.location = Vector(pose["HipsPos"]) + Vector((0.0, heights[f], 0.0))
         hips.keyframe_insert(data_path="location", frame=f)
     lows = []
     for f in range(total_frames):
         bpy.context.scene.frame_set(f)
-        lows.append(_lowest(meshes))
-        lo = lows[-1][0]
+        lo = _lowest(meshes)
+        lows.append(lo)
         held = lo >= -GROUND_SINK - GROUND_TOL if smooth_loop else abs(lo) <= GROUND_TOL
         assert held, f"{action_name} frame {f}: lowest point {lo:+.4f} after the ground lock"
     bpy.context.scene.frame_set(0)
@@ -695,7 +693,7 @@ def build_action(rig, action_name: str, total_frames: int, sample_fn, feet_level
         pb.location = Vector()
     keys = ", ".join(f"{n} {k}" for k, n in sample_fn.keys)
     print(f"[BlenderHero] {action_name}: {total_frames} frames, {(total_frames - 1) / FPS:.4f} s; keys {keys}; "
-          f"Hips height {min(heights):+.3f} to {max(heights):+.3f}, lowest point {min(lo for lo, _ in lows):+.3f} to {max(lo for lo, _ in lows):+.3f}; "
+          f"Hips height {min(heights):+.3f} to {max(heights):+.3f}, lowest point {min(lows):+.3f} to {max(lows):+.3f}; "
           f"Hips height per frame (cm) {' '.join(str(round(100 * h)) for h in heights)}")
     return lows, heights
 
@@ -709,7 +707,7 @@ ZERO = (0.0, 0.0, 0.0)
 
 def _rest(**over):
     pose = {
-        "Torso": ZERO, "HeadGroup": ZERO,
+        "Torso": ZERO, "HeadGroup": ZERO, "HipsPos": ZERO,
         "LeftArmPivot": (0.10, 0.05, 0.28), "RightArmPivot": (0.10, -0.05, -0.28),
         "LeftElbowPivot": (0.60, 0.0, 0.0), "RightElbowPivot": (0.50, 0.0, 0.0),
         "LeftLegPivot": ZERO, "RightLegPivot": ZERO, "LeftKneePivot": ZERO, "RightKneePivot": ZERO,
@@ -943,7 +941,7 @@ def build_all_animations(rig):
            "LeftKneePivot": _x(-0.60), "RightKneePivot": _x(-0.10), "Torso": _x(0.02), "HeadGroup": (0.10, 0.45, 0.0),
            "LeftArmPivot": (0.0, 0.05, -1.00), "RightArmPivot": (0.0, -0.05, 1.05),
            "LeftElbowPivot": _x(0.35), "RightElbowPivot": _x(0.30)}
-    death = pose_table("Death", 27, _rest(Torso=_x(-0.025), HeadGroup=_x(0.015), Hips=ZERO, HipsPos=ZERO), [
+    death = pose_table("Death", 27, _rest(Torso=_x(-0.025), HeadGroup=_x(0.015), Hips=ZERO), [
         (0, "hit", {}, "io"),
         (4, "recoil", {"Torso": (0.22, 0.10, 0.05), "HeadGroup": (0.32, 0.10, 0.0),
                        "LeftArmPivot": (-0.25, 0.05, 0.05), "RightArmPivot": (-0.30, -0.05, -0.10),
