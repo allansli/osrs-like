@@ -491,3 +491,132 @@ These come from `scratch/k1/kit_render.py` (not committed). It is `review_render
 - Three-quarter and side: the back is a jagged ridge where the scorpion's is smooth, the claws end in spiked clubs, and the sting has two extra prongs.
 
 `s6/` holds 1.50 MB of its 2 MB after K1 (118 kB of it K1's).
+
+# K2: the Thornwatch Marksman kit on the dark ranger
+
+Built with `BLEND(monsters)` on Blender 5.0.1 from `dda126c` plus this task's builder (`flock /tmp/claude-blender.lock timeout 600 env BLENDER_PATH=/usr/bin/blender node scripts/run-blender.mjs monsters --out scratch/models-build/k2`, exit 0). Nothing is promoted: `git status --short public/models blender` prints nothing. K4 promotes. The row's `kit` field is K3's.
+
+## Open for the main session
+
+1. **Two quivers.** The bare name `Hips` is K1's (item 2 of K1's list), and a kit cannot hide the ranger's own hip quiver. So the bramble quiver rides `Torso` and sits on the back, from the left hip to over the right shoulder, and the marksman shows both quivers. From the front the hip quiver is mostly behind the cloak's edge (`k2-marksman-against.jpg`, top row). This is for the owner at OM-S6, as K1's three-point sting was.
+2. **K1's kit code is shared, not copied.** The join, name, joint-offset, paint and budget loop of `build_saltback_stalker_kit` is now `_kit_root(key, parts, j, budget)`, called by both kits. `Kit_saltback_stalker`'s primitive hashes are identical to K1's build (below).
+3. **Not checked in a clip.** K2's Accept has no CAPTURE, and none was taken. Two things are worth a look in the K4 capture, while the `Ranged` clip plays:
+   - the right hand drawing back near the quiver's mouth over the right shoulder;
+   - the longbow's low tip, which is 0.10 above the ground at rest (0.11 at `modelScale` 1.1).
+4. **An unfiltered SHEETS run of `monsters.glb` still stops on `Kit_` roots** (K1's item 1). There are now two such roots.
+5. **K4 adds nothing for this kit** beyond the file and the pending manifest: no clip, no material, no `monster-families.json` entry and no cache key of its own. Checked with a full `SUITE` in a throw-away worktree (`scratch/k2/wt2.sh`), set up as K4 ships it:
+   - the packed build over `public/models/monsters.glb`;
+   - the pending manifest moved over the live one;
+   - the staged scorpion, wizard and ranger clips on their live rows;
+   - both variant rows given their `kit`.
+
+   Result: **9 failures in 4 files**, all K4's promote follow-through from M3e's list: `model-cache-key` (monsters key), `model-contract` totals, `model-vertex-colour`, and six `monster-merge` cases (scorpion, wizard, ranger). Every `monster-models` case passes, "the two variant rows name their kits" included, and so does the scratch placement test.
+
+## What was built
+
+`build_thornwatch_marksman_kit`, called in `main()` after `build_dark_ranger`. `Monster_dark_ranger` and every other builder are unchanged.
+
+`Kit_thornwatch_marksman` stands at the origin with an identity transform. It has three children, one per bone. Each child is one rigid mesh named after the ranger bone it rides on, at an identity transform, with its vertices relative to that bone's joint (`ranger_joints()`; every biped rest rotation is identity).
+
+| Child (bone) | Mesh | What it is |
+|---|---|---|
+| `HeadGroup` | `thornwatch_marksman_HeadGroup` | the wreath: a bramble ring round the hood, 0.05 higher at the brow than behind, and eleven thorns standing up and out of it, 0.20 and 0.13 long in turn. The head's outline becomes a crown of spikes, 0.65 across against the hood's 0.37 |
+| `Torso` | `thornwatch_marksman_Torso` | the quiver: a seven-sided tube 1.17 long, from the left hip to over the right shoulder, standing clear of the cloak. A bramble vine is wound twice round it, five thorns stand on the vine, and five fletchings come out of the mouth, which ends 0.2 above the hood's crown |
+| `OffhandPivot` | `thornwatch_marksman_OffhandPivot` | the longbow. It follows the ranger's recurve (`rng_bow`'s points) 0.014 fatter, so the recurve is inside it, and its limbs carry on past each recurve tip, 0.40 higher and 0.26 lower, to a nock on the recurve string's own line. The string runs along that line at radius 0.025 against the recurve string's 0.022, so the old string is inside the new one. 2.09 tall against 1.46 |
+
+- **Additive only.** Every piece goes over the ranger.
+- **Faceted.** Every piece is flat-shaded and carries plane tones (`_goblin_tint` with planes), as the ranger's own parts do. The thorns and fletchings are four-sided three-ring spikes, a third of the cost of `add_cone_spike`'s.
+- **Paint.** A corner colour on the ranger's own `mat_wood_dark_ranger_paint`, each colour over the wood tile's mean, as `_human_paint` does. The kit adds no material, and the file stays at 38. Every kit primitive carries `COLOR_0` (the manifest lists `Kit_thornwatch_marksman` as its own `all` unit). UV layers are dropped.
+- **Triangles**: 1,004 of the 1,200 allowed (the builder stops over 1,200). Three meshes, one material.
+- **Names**: no node or mesh name in the file carries a `.001` suffix, and no node name is duplicated.
+
+## Values
+
+Stage 4's tint `0x7fb069` multiplies every non-glow mesh of the marksman, the kit included (linear multiply). Rec. 601 luma, the measure K1 used:
+
+| | Before the tint | With the tint |
+|---|---|---|
+| Kit bramble `0x9A8A68` (wreath ring, quiver, vine) | 54% | 32% |
+| Kit thorns `0xB4A482` (thorns, string) | 65% | 38% |
+| Kit longbow `0x6E4C30` | 33% | 18% |
+| Ranger cloak `0x5F6B47` | 39% | 23% |
+| Ranger tunic `0x6F7B4D` | 45% | 26% |
+| Ranger bow `0x8A6440` | 42% | 24% |
+
+- The thorns stand 15 points over the marksman's own cloak, and the bramble 9 points over it. The longbow sits at design 5.4's 18% floor.
+- The marksman's cloak against the ranger's is 23% against 39%, 16 points. That is the tint's work, Stage 4's.
+
+## Measured
+
+| | As exported | Packed |
+|---|---|---|
+| Kit triangles / meshes / materials | 1,004 / 3 / 1 | same |
+| Kit raw bytes | 70,440 | 46,284 |
+| Kit Brotli bytes | 21,201 | 16,573 |
+| File raw / Brotli | 4,010,076 / 1,440,165 | 2,609,100 / 913,665 |
+| File meshes / materials / triangles | 78 / 38 / 65,678 | same |
+
+Design 9.1's kit row is 20 kB on the wire; the packed kit is 16.6 kB. The two kits together are 28.7 kB of the 40 kB.
+
+**Untouched figures**: against K1's build (`scratch/models-build/k1`):
+- the primitive hashes of all eleven `Monster_` figures and of `Kit_saltback_stalker` are identical (`scratch/k2/stats.mjs`, `scratch/m3a/stats.mjs` extended to `Kit_` roots);
+- all nine animations are identical by channel targets, key times and values (`scratch/k2/anim-hash.txt`).
+
+## Pending manifest and COMPARE
+
+`tests/fixtures/model-contract/pending/monsters.json` is K1's with:
+- `nodes`: `Kit_thornwatch_marksman` (no parent) and its three children (parent `Kit_thornwatch_marksman`), all at translation 0 and scale 1;
+- `meshClasses`: `^thornwatch_marksman_(HeadGroup|Torso|OffhandPivot)$`;
+- `vertexColor.figures.Kit_thornwatch_marksman`: `all`;
+- `figures.Kit_thornwatch_marksman`: 1,200 triangles, 3 meshes, 1 material, raw 46,284, Brotli 16,905 (packed plus 2%);
+- file `budget` from the packed build by its margins: triangles 65,678, meshes 78, materials 38, raw 2,635,191, Brotli 922,802.
+
+No other figure's ceiling moved. The material set and the clips are unchanged.
+
+**COMPARE of the packed build** (`node scripts/models-compare.mjs scratch/models-build/k2-packed/monsters.glb public/models/monsters.glb`) **exits 0**: Contract and Budget pass. **COMPARE of the as-exported build exits 2**, on Budget only (28 ceilings, all packed numbers). Contract passes. The packed build's `?v=` key would be `daf83d2d`.
+
+## Checks
+
+**On the branch:**
+
+| Check | Result |
+|---|---|
+| `SUITE` | 1 failed, 1,434 passed, 33 skipped. The one failure is `monster-models` "the two variant rows name their kits" (K3, known red) |
+| `TYPES` | exit 0, no output |
+| `BUILD` | exit 0 |
+| `UNTOUCHED` | prints nothing |
+
+**In a throw-away worktree** (`scratch/k2/wt.sh`): HEAD with this task's files, the packed build over `public/models/monsters.glb`, and a scratch test (`scratch/k2/kit-engine.test.ts`, not committed). That test loads the file through `GLTFLoader` and `upgradeMonsterRigWithGltf` with `kit: 'thornwatch_marksman'`, and checks:
+- each of the three pieces is a mesh under the bone of its name;
+- `getObjectByName` and `PropertyBinding.findNode` find the bone, not the kit mesh of the same name, for all three names, so clips still bind to the bones;
+- no rig pivot the loader resolves (`headGroup` and the rest) is a kit mesh;
+- each piece's world bounds equal its own bounds moved by that bone's joint, within 1e-4;
+- its material has `vertexColors` and carries the tint `7fb069`;
+- turning `OffhandPivot` moves the bow;
+- without the kit field, no piece is added.
+
+| Run | Result |
+|---|---|
+| `tests/k2-kit-engine.test.ts` | 2 passed |
+| `tests/monster-kits.test.ts` | 6 passed |
+
+World bounds of the pieces at rest (figure space):
+- wreath: x ±0.33, y 1.87 to 2.12;
+- quiver: x −0.22 to 0.41, y 0.92 to 2.29, z 0.16 to 0.68, behind the cloak;
+- longbow: y 0.10 to 2.20.
+
+## Sheets
+
+These come from `scratch/k2/kit_render.py` (not committed). It is K1's `kit_render.py` with each kit child moved to its bone's rest joint, the way the engine mounts it.
+
+| Sheet | What it shows |
+|---|---|
+| `k2-marksman-silhouette.jpg` | black cut-outs at the roster's camera (distance 26, 1080 frame), in pairs, ranger then marksman: front, three-quarter, side and back. The ranger is at its review scale 1.05 and the marksman at 1.155 (1.05 × Stage 4's `modelScale` 1.1). Heights in px: front 103 and 120, three-quarter 104 and 118, side 102 and 118, back 97 and 111 |
+| `k2-marksman-against.jpg` | lit, three-quarter (top row), side (middle row) and from behind (bottom row): the ranger, the marksman untinted, the marksman with Stage 4's tint. The renderer has no albedo tile, so the untinted kit reads lighter than the wood tile shows it in the game |
+
+**Reading the cut-outs:**
+- In every view the head is a crown of spikes where the ranger's is a single peaked hood.
+- A tall quiver with fletchings stands over the right shoulder, above the head.
+- The bow runs from the knee to above the head where the ranger's spans the thigh to the shoulder.
+
+`s6/` holds 1.67 MB of its 2 MB after K2 (108 kB of it K2's).
