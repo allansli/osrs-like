@@ -13,33 +13,58 @@ Built with `BLEND(monsters)` on Blender 5.0.1 (`build_ashmantle` in `scripts/ble
 
 ## Values against the dragon's
 
-The engine multiplies Stage 4's `tint` (0x8a8580) into every material but the glow, after the tile. Each paint is therefore the colour wanted in the game over the tile's mean and over the tint (`_ashmantle_paint`). The highest value the hide can reach under the tint is about 40%, so it cannot be 15 points lighter than the dragon's 38%; every part goes darker instead, and the embers carry the light. No part is painted under design 5.4's 18% floor.
+The engine multiplies Stage 4's `tint` (0x8a8580) into every material except the glow, after the tile. Each paint is therefore the colour wanted in the game divided by the tile's mean and by the tint (`_ashmantle_paint`). Under the tint the hide can reach about 40% at most. That is too close to the dragon's 38% to be 15 points lighter, so every part goes darker and the embers carry the light. No part is painted under design 5.4's 18% floor.
 
 | Part | Dragon (`DRAGON_COLOURS`) | Ashmantle (`ASHMANTLE_COLOURS`) | Gap | Plane tone (shade, lit) |
 |---|---|---|---|---|
-| Hide | 0x3F6139, 38% | 0x302C29, 19% | 19 | wide, (-0.40, +1.00) |
-| Feet and wing struts | 0x2E4A2E, 29% | 0x2E2A26, 18% (the floor) | 11 | wide |
+| Hide | 0x3F6139, 38% | 0x2E2B28, 18% (the floor) | 20 | wide, (-0.40, +0.85) |
+| Feet and wing struts | 0x2E4A2E, 29% | 0x2E2A26, 18% (the floor) | **11** | wide |
 | Membrane | 0x80402E, 50% | 0x3A2A24, 23% | 27 | wide |
 | Belly | 0x9E8748, 62% | 0x5A534B, 35% | 27 | narrow, (-0.25, +0.30) |
 | Horn / crust | 0xB8AD90, 72% | 0x7A756E, 48% | 24 | narrow |
 | Glow | `mat_glow_orange` (maw) | `mat_glow_orange` (maw, eyes, seams) | | |
 
-The plane tone is the vertex-colour factor each carved plane takes from its normal against the key light (`_goblin_plane_tones`; the goblin and the dragon use (-0.25, +0.15)). On a hide this dark the narrow tone left the lit planes a few points over the shade planes, and the figure read as one black mass in the game. Ashmantle's dark parts therefore take the wide tone: a plane facing the light is painted up to twice as light, so the carving shows. Belly and crust keep a narrow one, as their paint is near the top of what the tile and the tint leave (`_ashmantle_paint` refuses a paint the lit tone would push over 1). The feet and wing struts went from 13% up to the 18% floor, so their gap to the dragon's dark tone is 11 points, not 15. The hide went from 20% to 19% so the measured gap below stays at 15 or more with the brighter lit planes.
+The plane tone is a vertex-colour factor. Each carved plane takes it from its normal measured against the key light (`_goblin_plane_tones`). The goblin and the dragon use (-0.25, +0.15). On a hide this dark, that narrow tone put the lit planes only a few points above the shade planes, and the figure read as one black mass in the game. So Ashmantle's dark parts take a wide tone: a plane facing the light is painted up to 1.85 times as light. Belly and crust keep a narrow tone, because their paint is already near the top of what the tile and tint leave. `_ashmantle_paint` refuses any paint that the lit tone would push over 1.
+
+The first build painted the hide at 20% and the feet and wing struts at 13%. The feet and struts go up to the floor. That leaves them 11 points from the dragon's dark tone, which is under 15. The hide goes down to the floor, so the brighter lit planes do not close the measured gap below. Hide and feet now share one value; the feet are told apart by the dragon-scale tile and their own planes. Design 5.4's floor and design 5.6's 15 points, read part by part, cannot both hold for the feet. That choice is open for the owner.
 
 ### Measured in the game, like for like
 
-Throw-away copy of this branch with the built `monsters.glb`, the pending manifest, `body: 'ashmantle'`, the staged dragon clips and a capture patch (`__DEBUG` exposes `THREE`, `G`, `getTerrainHeight`; a monster with `__tick` set is left out of `updateMonsters`). NVIDIA GPU, `balanced`, noon (`phase(0.5)`), clear. The dragon is moved beside Ashmantle (13 units along x, same heading), both frozen in their bind pose, the hero and the other monsters hidden. Three cameras at distance 26 (a: yaw 0.6, pitch 0.4; b: yaw 0.3, pitch 0.6; c: yaw 0.9, pitch 0.6). Each frame is taken twice: as drawn, and with every named mesh of the two figures swapped for a flat, unlit key colour, which gives each part's pixels exactly. The number is the median HSV value (max of R, G, B) of a part's pixels in the frame as drawn.
+**Setup.** This was a throw-away copy of this branch. It had:
+- the built `monsters.glb` and the pending manifest;
+- `body: 'ashmantle'` and the staged dragon clips;
+- a capture patch: `__DEBUG` exposes `THREE`, `G` and `getTerrainHeight`, and `updateMonsters` skips a monster with `__tick` set.
 
-| Part, view | Ashmantle before | Ashmantle now | Dragon now | Gap now |
+The run used the NVIDIA GPU, `balanced`, noon (`phase(0.5)`) and clear weather. The dragon is moved beside Ashmantle, 13 units along x with the same heading. Both are frozen in their bind pose: the clips are stopped and `skeleton.pose()` is called. The hero and the other monsters are hidden. There are three cameras at distance 26:
+- a: yaw 0.6, pitch 0.4;
+- b: yaw 0.3, pitch 0.6;
+- c: yaw 0.9, pitch 0.6.
+
+**Method.** Each frame is taken twice: once as drawn, and once with every named mesh of the two figures swapped for a flat, unlit key colour. The second frame picks out each part's pixels exactly. Each number is the median HSV value (the max of R, G and B) of a part's pixels in the frame as drawn.
+
+**Repeatability.** The repainted build was run five times: three runs at hide 19% with the lit tone +1.00, then two runs of the final paint. Both runs of the final paint agree to 0.4. The first build was measured once in the same setup.
+
+| Part, view | First build | Now (worst of two runs) | Dragon | Gap now |
 |---|---|---|---|---|
-| Hide (body mesh), a | 10.6 (quartiles 7.5, 19.6) | 12.2 (7.5, 23.9) | 29.4 | **17.2** |
-| Hide, b | 13.7 (8.6, 21.6) | 18.8 (9.0, 25.5) | 34.1 | **15.3** |
-| Hide, c | 14.9 (8.2, 21.6) | 20.8 (9.0, 27.1) | 36.5 | **15.7** |
-| Crust against horn, a / b / c | 22.0 / 22.0 / 26.3 | 22.4 / 22.4 / 26.3 | 57.3 / 56.1 / 58.0 | 34.9 / 33.7 / 31.7 |
-| Membrane, a / b / c | 25.5 / 24.7 / 25.1 | 28.6 / 27.1 / 27.8 | 22.4 / 66.7 / 54.5 | -6.2 / 39.6 / 26.7 |
-| Whole figure without glow, a / b / c | 21.2 / 22.0 / 21.6 | 22.0 / 23.5 / 23.5 | 31.4 / 49.8 / 39.6 | 9.4 / 26.3 / 16.1 |
+| Hide (body mesh), a | 10.2 (quartiles 7.1, 18.8) | 11.0 (7.1, 21.6) | 29.4 | **18.4** |
+| Hide, b | 13.7 (8.6, 21.2) | 17.6 (8.6, 23.1) | 33.7 | **16.1** |
+| Hide, c | 14.5 (8.2, 21.2) | 19.2 (8.6, 24.3) | 36.5 | **17.3** |
+| Crust against horn, a / b / c | 22.0 / 22.0 / 25.9 | 22.0 / 22.4 / 25.9 | 56.9 / 55.7 / 58.0 | 34.9 / 33.3 / 32.1 |
+| Membrane, a / b / c | 25.1 / 24.3 / 24.3 | 27.5 / 26.3 / 27.1 | 20.8 / 65.1 / 49.0 | **-6.7** / 38.8 / 21.9 |
+| Whole figure without glow, a / b / c | 19.4 / 21.6 / 20.8 | 21.6 / 22.0 / 22.0 | 31.0 / 48.6 / 38.8 | **9.4** / 26.6 / 16.8 |
 
-The main colour, the hide, is 15 or more points under the dragon's in all three views (design 5.6 item 2). The hide's upper quartile, its lit planes, went from 20-22% to 24-27%, and its spread between quartiles from 12-13 points to 16-18 points. `d3-ashmantle-values.jpg` shows view b before (left) and now (right). Two rows are under 15. In view a the dragon's membrane is lit from behind and reads at 22%, under Ashmantle's. The whole-figure gap in view a is 9.4 for the same reason, since in that view the dragon's visible area is mostly membrane. These numbers come from the angle and are not a paint choice: a membrane darker than 7% would be a void. The README's earlier 10-point figure compared Ashmantle near the camera with the dragon on a far hill, measured over different parts, so it did not compare like with like.
+**What is met.** The hide is the main colour. In every view it is 16 or more points under the dragon's (design 5.6 item 2, read on the main colour).
+
+**Definition.** The hide's lit planes (upper quartile) went from 19-21% to 22-24%. Its spread between quartiles went from 12-13 points to 14-16 points. That is a modest gain. The tint and the gap requirement both cap how light the lit planes can go. `d3-ashmantle-values.jpg` shows view b, the first build on the left and now on the right.
+
+**Still under 15 (open):**
+- **Feet and wing struts**: 11 points on the paint targets, set by the floor (above).
+- **Membrane, view a**: the dragon's membrane is lit from behind and reads at 21%, under Ashmantle's. No membrane value can fix this short of a void.
+- **Whole figure, view a**: 9.4, for the same reason, since in that view the dragon's visible area is mostly membrane.
+
+Whether design 5.6's 15 points are read on the main colour, part by part, or on the whole figure is not settled by the design. It is proposed in the plan's "D3 amendments" for the main session or the owner to decide.
+
+**Earlier figure.** The README's earlier 10-point figure was not like for like. It compared Ashmantle near the camera with the dragon on a far hill, over different parts.
 
 ## Measured
 
@@ -48,14 +73,20 @@ The main colour, the hide, is 15 or more points under the dragon's in all three 
 | Triangles | 9,560 (builder budget 9,600, manifest 12,000) | 9,960 |
 | Meshes / materials | 4 / 4 | 4 / 4 |
 | Width, height, length | 10.413, 3.601, 7.395 (length +4.1% of the old dragon's 7.101; the builder stops at 5%) | 10.413, 3.601, 7.094 |
-| Figure raw bytes | 609,396 (ceiling 613,705) | 605,088 |
-| Figure Brotli bytes, as exported | **262,606** (ceiling 267,112; design 9.1: 275 kB) | 269,694 |
-| Figure Brotli bytes, packed by `packGlb` (Q1) | **154,968** (design 9.1 with N-3: 190 kB) | 154,626 |
-| `monsters.glb` raw / Brotli | 4,960,072 / 1,275,761 (ceilings 5,007,888 / 1,286,669) | |
+| Figure raw bytes | 608,980 (ceiling 613,705) | 605,088 |
+| Figure Brotli bytes, as exported | **262,170** (ceiling 267,112; design 9.1: 275 kB) | 269,694 |
+| Figure Brotli bytes, packed by `packGlb` (Q1) | **154,589** (design 9.1 with N-3: 190 kB) | 154,626 |
+| `monsters.glb` raw / Brotli | 4,959,656 / 1,275,753 (ceilings 5,007,888 / 1,286,669) | |
 
-The repaint changes only the `COLOR_0` of `ashmantle_body`, `ashmantle_crust` and `ashmantle_membrane`. The plane tones split a few more vertices, which adds 1,768 raw bytes. Every other accessor of the file, the dragon's included, and all 110 animation channels (five dragon clips, 22 channels each) are byte-identical to the first D3 build (771 of the 784 accessor and channel hashes are the same; the 13 that differ are attributes of those three meshes). COMPARE: Contract and Budget pass against the pending manifest, which is unchanged by the repair.
+The repaint changes only the `COLOR_0` of `ashmantle_body`, `ashmantle_crust` and `ashmantle_membrane`. The plane tones split a few more vertices, which adds 1,352 raw bytes. Everything else in the file, including the dragon, is byte-identical to the first D3 build, and so are all 110 animation channels (five dragon clips, 22 channels each). In numbers: 771 of the 784 accessor and channel hashes match, and the 13 that differ are attributes of those three meshes. COMPARE: Contract and Budget pass against the pending manifest, which the repair does not change.
 
-Pending manifest: `Monster_ashmantle` node, 22 `ashmantle_` bones and 14 limbs copied from the dragon's, the skinned root, `vertexColor` `all`, four mesh classes, three materials, the figure's ceilings (12,000 triangles, 4 meshes, 5 materials, raw 613,705 and Brotli 267,112, the first build plus 1% and 2%), and the file's (triangles 89,894, meshes 187, materials 43, raw 5,007,888, Brotli 1,286,669). `clips` and `attackClips` are unchanged.
+**Pending manifest.** It holds:
+- the `Monster_ashmantle` node, 22 `ashmantle_` bones, and 14 limbs copied from the dragon's;
+- the skinned root, `vertexColor` `all`, four mesh classes and three materials;
+- the figure's ceilings: 12,000 triangles, 4 meshes, 5 materials, raw 613,705 and Brotli 267,112 (the first build plus 1% and 2%);
+- the file's ceilings: triangles 89,894, meshes 187, materials 43, raw 5,007,888, Brotli 1,286,669.
+
+`clips` and `attackClips` are unchanged.
 
 ## The dragon's clips on Ashmantle's body (fixed in the D3 repair)
 
@@ -69,4 +100,4 @@ Pending manifest: `Monster_ashmantle` node, 22 `ashmantle_` bones and 14 limbs c
 
 - `d3-ashmantle-values.jpg`: view b of the like-for-like value measurement, the first build (left) and the repainted one (right), Ashmantle in front and the dragon behind.
 
-`s4/` was 2,266,458 bytes before D3, over the 2 MB a slice may hold; D3 adds 412,188 (2,678,646 in all). Cutting it is open for the main session.
+`s4/` was 2,266,458 bytes before D3, over the 2 MB a slice may hold; D3 adds 395,798 (2,662,256 in all). Cutting it is open for the main session.

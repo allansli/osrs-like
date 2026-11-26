@@ -3642,7 +3642,7 @@ def build_dragon_library(rig, meshes):
 ASHMANTLE_TRIANGLES = 9600  # the builder's own budget, under the manifest's 12,000: what the wire ceiling allows
 ASHMANTLE_TINT = 0x8A8580  # Stage 4's tint on the ashmantle row (src/data/world.ts)
 ASHMANTLE_COLOURS = {  # as the game shows them, value against the dragon's (DRAGON_COLOURS)
-    "hide": 0x302C29,  # charcoal ash, 19% (dragon 38%)
+    "hide": 0x2E2B28,  # charcoal ash, 18%, the floor (dragon 38%)
     "hide_dark": 0x2E2A26,  # feet and wing struts, 18%, design 5.4's floor (dragon 29%)
     "membrane": 0x3A2A24,  # 23% (dragon 50%)
     "belly": 0x5A534B,  # ash grey, 35% (dragon 62%)
@@ -3651,7 +3651,7 @@ ASHMANTLE_COLOURS = {  # as the game shows them, value against the dragon's (DRA
 # Plane tones (GOBLIN_PLANE_TONE's form): the dark hide and membrane take a wide one, so its lit
 # planes stand well clear of its shade planes in the game; belly and crust keep a narrow one, as
 # their paint is near the top of what the tile and tint leave.
-ASHMANTLE_WIDE_TONE = (-0.40, 1.00)
+ASHMANTLE_WIDE_TONE = (-0.40, 0.85)
 ASHMANTLE_NARROW_TONE = (-0.25, 0.30)
 ASHMANTLE_TONES = {"hide": ASHMANTLE_WIDE_TONE, "hide_dark": ASHMANTLE_WIDE_TONE, "membrane": ASHMANTLE_WIDE_TONE,
                    "belly": ASHMANTLE_NARROW_TONE, "crust": ASHMANTLE_NARROW_TONE}

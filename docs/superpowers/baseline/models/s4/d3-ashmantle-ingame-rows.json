@@ -72,8 +72,8 @@
    1.2
   ],
   "pos": [
-   -100.63452979776257,
-   54.19764416713229
+   -100.63435165422672,
+   54.197669952411765
   ]
  },
  "shots": [
@@ -85,7 +85,7 @@
    "state": "attack",
    "walk": [
     true,
-    0.606
+    0.59
    ],
    "bite": [
     false,
@@ -107,7 +107,7 @@
    "state": "attack",
    "walk": [
     true,
-    0.354
+    0.338
    ],
    "bite": [
     false,
@@ -129,7 +129,7 @@
    "state": "attack",
    "walk": [
     true,
-    0.117
+    0.085
    ],
    "bite": [
     true,
@@ -151,7 +151,7 @@
    "state": "attack",
    "walk": [
     true,
-    0.468
+    0.469
    ],
    "bite": [
     false,
@@ -170,11 +170,11 @@
    "state": "attack",
    "walk": [
     true,
-    0.209
+    0.225
    ],
    "bite": [
     true,
-    0.133
+    0.117
    ],
    "buffet": [
     false,
@@ -182,14 +182,14 @@
     0
    ],
    "windup": null,
-   "attackAnim": 0.573
+   "attackAnim": 0.627
   },
   {
    "name": "windup",
    "state": "attack",
    "walk": [
     true,
-    0.079
+    0.11
    ],
    "bite": [
     false,
@@ -208,7 +208,7 @@
    "state": "attack",
    "walk": [
     true,
-    0.596
+    0.627
    ],
    "bite": [
     false,
@@ -230,6 +230,7 @@
   "attack+b",
   "attack+b",
   "attack+b",
+  "attack+b",
   "attack",
   "attack",
   "attack",
@@ -250,7 +251,6 @@
   "attack+b",
   "attack+b",
   "attack+b",
-  "attack",
   "attack",
   "attack",
   "attack",
