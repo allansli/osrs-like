@@ -670,10 +670,37 @@ def build_materials() -> dict:
 # =============================================================================
 # 1. Monster_chicken
 # =============================================================================
-def build_chicken(grid_pos: tuple[float, float, float], mats: dict):
-    root = create_pivot("Monster_chicken", None, *grid_pos)
+# Kept and re-rigged (plan M3a): the segment counts that bring today's 4,680 triangles under 2,500
+CHICKEN_TRIANGLES = 2500
+CHICKEN_OCCLUSION = 0.35  # bake_paint's default occlusion: the chicken keeps today's look
+CHICKEN_SEGS = {"body": 12, "neck": 10, "comb": 6, "wing": 8, "feather": 5, "tail": 6, "drumstick": 8, "shank": 6, "toe": 5, "talon": 4}
 
-    # Plump feathered chicken body along Z (fore-aft)
+
+def build_chicken(grid_pos: tuple[float, float, float], mats: dict):
+    """
+    The chicken, kept and re-rigged (plan M3a, design 4.6): today's shape, its parts fused into three
+    skinned meshes on the biped rig, every part hard-weighted to one bone. It never plays a shared clip:
+    the engine poses it in code with today's numbers, on bones of today's names. The legs swing on
+    LeftLegPivot and RightLegPivot at today's places; the wings are on LWing and RWing, which the engine
+    looks up by those names and flaps (loop.ts), at each wing's root. Every rig row is flagged code_posed,
+    so the 20-degree bind rule does not hold for it, and the manifest lists none of its limbs.
+    grid_pos is not used: a skinned figure stands at the file's origin (design 6.1.1 rule 2b).
+    """
+    import rigs
+
+    # White: the paint is the colour. Each part keeps today's material colour as its paint, so the engine,
+    # which multiplies the same tiles as before ('skin' the feather tile, 'cloth' the cloth tile, 'gold'
+    # none), shows today's chicken. The material names keep today's family words.
+    skin = make_mat("mat_skin_chicken_paint", 0xFFFFFF, roughness=0.62, metallic=0.02)
+    comb = make_mat("mat_cloth_chicken_paint", 0xFFFFFF, roughness=0.48, metallic=0.04)
+    beak = make_mat("mat_gold_chicken_paint", 0xFFFFFF, roughness=0.45, metallic=0.10)
+    hard = []  # (object, bone)
+
+    def add(obj, bone: str, colour: int):
+        _goblin_tint(obj, colour)
+        hard.append((obj, f"chicken_{bone}"))
+
+    # Plump feathered body along Z (fore-aft)
     body_sections = [
         (-0.28, 0.08, 0.08, 0.0, 0.36, 0.10, 0.01, 0.0),
         (-0.20, 0.16, 0.15, 0.0, 0.34, 0.12, 0.03, 0.01),
@@ -682,9 +709,9 @@ def build_chicken(grid_pos: tuple[float, float, float], mats: dict):
         (0.18, 0.15, 0.15, 0.0, 0.37, 0.12, 0.01, 0.03),
         (0.26, 0.09, 0.10, 0.0, 0.41, 0.08, 0.0, 0.02),
     ]
-    add_lathe("chicken_body", root, mats["skin_chicken"], body_sections, segs=20, axis="Z")
+    add(add_lathe("chk_body", None, skin, body_sections, segs=CHICKEN_SEGS["body"], axis="Z"), "Hips", 0xE8E0D0)
 
-    # S-curved neck & head rising at the front (-Z)
+    # S-curved neck and head rising at the front (-Z)
     neck_pts = [
         (0.0, 0.36, -0.18, 0.11, 0.11),
         (0.0, 0.45, -0.24, 0.09, 0.095),
@@ -692,379 +719,146 @@ def build_chicken(grid_pos: tuple[float, float, float], mats: dict):
         (0.0, 0.62, -0.23, 0.085, 0.09),
         (0.0, 0.67, -0.24, 0.065, 0.07),
     ]
-    add_curved_tube("chicken_neck_head", root, mats["skin_chicken"], neck_pts, segs=16)
+    add(add_curved_tube("chk_neck_head", None, skin, neck_pts, segs=CHICKEN_SEGS["neck"]), "HeadGroup", 0xE8E0D0)
 
-    # Multi-lobed serrated red comb (`chicken_comb`)
+    # Multi-lobed serrated red comb. Today's builder moved only the last 12 vertices of each lobe, so the
+    # shipped comb has a sliver down to the ground (its bounds reach y -0.038); each lobe's own vertices move here.
     comb_bm = bmesh.new()
-    comb_lobes = [
+    for lx, ly, lz, r_base, h_lobe in (
         (0.0, 0.69, -0.29, 0.026, 0.055),
         (0.0, 0.72, -0.25, 0.030, 0.075),
         (0.0, 0.71, -0.20, 0.028, 0.068),
         (0.0, 0.68, -0.16, 0.022, 0.050),
-    ]
-    for lx, ly, lz, r_base, h_lobe in comb_lobes:
-        bmesh.ops.create_cone(
-            comb_bm,
-            cap_ends=True,
-            cap_tris=True,
-            segments=10,
-            radius1=r_base,
-            radius2=0.004,
-            depth=h_lobe,
-        )
-        for v in comb_bm.verts[-12:]:
+    ):
+        n = CHICKEN_SEGS["comb"]
+        lobe = bmesh.ops.create_cone(comb_bm, cap_ends=True, cap_tris=True, segments=n, radius1=r_base, radius2=0.004, depth=h_lobe)
+        for v in lobe["verts"]:
             v.co.x *= 0.45
             bx, by, bz = xform_pt(v.co.x, v.co.z + h_lobe * 0.4, v.co.y, lx, ly, lz)
             v.co.x, v.co.y, v.co.z = bx, by, bz
-    finalize_obj("chicken_comb", comb_bm, root, mats["comb_red"], smooth=True)
+    add(finalize_obj("chk_comb", comb_bm, None, comb, smooth=True), "HeadGroup", 0x8A2020)
 
-    # Hanging red wattle under chin
-    add_sphere("chicken_wattle_L", root, mats["comb_red"], 0.018, 0.042, 0.024, tx=-0.016, ty=0.56, tz=-0.29)
-    add_sphere("chicken_wattle_R", root, mats["comb_red"], 0.018, 0.042, 0.024, tx=0.016, ty=0.56, tz=-0.29)
-
-    # Sharp hooked yellow beak (upper & lower)
-    add_cone_spike(
-        "chicken_beak_upper",
-        root,
-        mats["beak_yellow"],
-        base_r=0.034,
-        length=0.11,
-        tx=0.0,
-        ty=0.62,
-        tz=-0.29,
-        rx=-math.pi * 0.52,
-        curve_bend=-0.022,
-        segs=10,
-        flatten_x=0.82,
-    )
-    add_cone_spike(
-        "chicken_beak_lower",
-        root,
-        mats["beak_yellow"],
-        base_r=0.026,
-        length=0.085,
-        tx=0.0,
-        ty=0.595,
-        tz=-0.285,
-        rx=-math.pi * 0.46,
-        segs=8,
-        flatten_x=0.78,
-    )
-
-    # Alert beaded eyes
-    for side, s_tag in ((-1.0, "L"), (1.0, "R")):
-        add_sphere(
-            f"chicken_eye_{s_tag}",
-            root,
-            mats["horn"],
-            0.016,
-            0.016,
-            0.016,
-            tx=side * 0.068,
-            ty=0.635,
-            tz=-0.255,
-            no_outline=True,
+    # Hanging red wattle under the chin
+    for side in (-1.0, 1.0):
+        add(
+            add_sphere("chk_wattle", None, comb, 0.018, 0.042, 0.024, tx=side * 0.016, ty=0.56, tz=-0.29, segs=6, rings=5),
+            "HeadGroup",
+            0x8A2020,
         )
 
-    # Layered side wing feathers (`chicken_LWing`, `chicken_RWing`)
-    for side, w_name in ((-1.0, "chicken_LWing"), (1.0, "chicken_RWing")):
+    # Hooked yellow beak (upper and lower)
+    add(
+        add_cone_spike(
+            "chk_beak_upper", None, beak, base_r=0.034, length=0.11, tx=0.0, ty=0.62, tz=-0.29,
+            rx=-math.pi * 0.52, curve_bend=-0.022, segs=6, flatten_x=0.82,
+        ),
+        "HeadGroup",
+        0xA87824,
+    )
+    add(
+        add_cone_spike(
+            "chk_beak_lower", None, beak, base_r=0.026, length=0.085, tx=0.0, ty=0.595, tz=-0.285,
+            rx=-math.pi * 0.46, segs=6, flatten_x=0.78,
+        ),
+        "HeadGroup",
+        0xA87824,
+    )
+
+    # Beaded eyes, 0.046 across (0.032 until M3a: nothing on screen under 0.044, design 5.3). No object's
+    # name holds 'eye': the engine draws a whole mesh unlit by that word.
+    for side in (-1.0, 1.0):
+        add(add_sphere("chk_bead", None, beak, 0.023, 0.023, 0.020, tx=side * 0.07, ty=0.635, tz=-0.255, segs=6, rings=5), "HeadGroup", 0x1E1A17)
+
+    # Layered side wing feathers, each wing on its own bone
+    for side, bone in ((-1.0, "LWing"), (1.0, "RWing")):
         wing_sec = [
             (-0.14, 0.028, 0.085, side * 0.19, 0.37, 0.15),
             (-0.04, 0.038, 0.115, side * 0.21, 0.36, 0.15),
             (0.08, 0.034, 0.105, side * 0.20, 0.37, 0.15),
             (0.18, 0.018, 0.065, side * 0.17, 0.39, 0.15),
         ]
-        add_lathe(w_name, root, mats["skin_chicken_wing"], wing_sec, segs=14, axis="Z")
+        add(add_lathe("chk_wing", None, skin, wing_sec, segs=CHICKEN_SEGS["wing"], axis="Z"), bone, 0xD6C8AE)
         for f_idx in range(3):
-            add_cone_spike(
-                f"{w_name}_feather_{f_idx}",
-                root,
-                mats["skin_chicken"],
-                base_r=0.026,
-                length=0.14,
-                tx=side * (0.195 - f_idx * 0.008),
-                ty=0.39 - f_idx * 0.035,
-                tz=0.08,
-                rx=math.pi * 0.44 + f_idx * 0.08,
-                ry=side * 0.12,
-                flatten_x=0.38,
+            add(
+                add_cone_spike(
+                    "chk_feather", None, skin, base_r=0.026, length=0.14, tx=side * (0.195 - f_idx * 0.008),
+                    ty=0.39 - f_idx * 0.035, tz=0.08, rx=math.pi * 0.44 + f_idx * 0.08, ry=side * 0.12,
+                    flatten_x=0.38, segs=CHICKEN_SEGS["feather"],
+                ),
+                bone,
+                0xE8E0D0,
             )
 
     # Fanned tail plumage (5 arched tail feathers)
     for t_idx in range(-2, 3):
         ang_fan = t_idx * 0.24
-        add_curved_tube(
-            f"chicken_tail_feather_{t_idx+2}",
-            root,
-            mats["skin_chicken_tail"] if abs(t_idx) >= 1 else mats["skin_chicken"],
-            [
-                (t_idx * 0.025, 0.40, 0.22, 0.026, 0.012),
-                (math.sin(ang_fan) * 0.09, 0.51, 0.31, 0.036, 0.012),
-                (math.sin(ang_fan) * 0.15, 0.58 - abs(t_idx) * 0.02, 0.40, 0.028, 0.010),
-                (math.sin(ang_fan) * 0.19, 0.54 - abs(t_idx) * 0.03, 0.48, 0.008, 0.005),
-            ],
-            segs=10,
+        add(
+            add_curved_tube(
+                "chk_tail",
+                None,
+                skin,
+                [
+                    (t_idx * 0.025, 0.40, 0.22, 0.026, 0.012),
+                    (math.sin(ang_fan) * 0.09, 0.51, 0.31, 0.036, 0.012),
+                    (math.sin(ang_fan) * 0.15, 0.58 - abs(t_idx) * 0.02, 0.40, 0.028, 0.010),
+                    (math.sin(ang_fan) * 0.19, 0.54 - abs(t_idx) * 0.03, 0.48, 0.008, 0.005),
+                ],
+                segs=CHICKEN_SEGS["tail"],
+            ),
+            "Hips",
+            0x9E7846 if abs(t_idx) >= 1 else 0xE8E0D0,
         )
 
-    # Leg pivots at (-0.10, 0.24, 0.04) and (0.10, 0.24, 0.04)
-    for side, piv_name in ((-1.0, "chicken_LeftLegPivot"), (1.0, "chicken_RightLegPivot")):
-        leg_piv = create_pivot(piv_name, root, side * 0.10, 0.24, 0.04)
-        # Feathered drumstick top + scaly yellow shank down to y = -0.22
-        add_limb_tube(
-            f"{piv_name}_drumstick",
-            leg_piv,
-            mats["skin_chicken"],
-            (0.0, 0.04, 0.0),
-            (0.0, -0.07, 0.02),
-            0.052,
-            0.024,
-            segs=10,
-        )
-        add_limb_tube(
-            f"{piv_name}_shank",
-            leg_piv,
-            mats["beak_yellow"],
-            (0.0, -0.06, 0.02),
-            (0.0, -0.22, -0.01),
-            0.018,
-            0.015,
-            segs=8,
-        )
-        # 3 forward toes + 1 back spur resting on ground y = -0.24
-        for toe_i, toe_ang in enumerate((-0.42, 0.0, 0.42)):
+    # Legs on LeftLegPivot (-0.10, 0.24, 0.04) and RightLegPivot (0.10, 0.24, 0.04), as today: the whole
+    # leg swings on that bone. Points are given leg-local as before and moved to the pivot.
+    joints = {"Root": (0.0, 0.0, 0.0), "Hips": (0.0, 0.36, 0.0), "Torso": (0.0, 0.40, -0.14), "HeadGroup": (0.0, 0.46, -0.21)}
+    for side, tag in ((-1.0, "Left"), (1.0, "Right")):
+        px, py, pz = side * 0.10, 0.24, 0.04
+        joints[f"{tag}LegPivot"] = (px, py, pz)
+        joints[f"{tag}KneePivot"] = (px, py - 0.11, pz + 0.01)
+        joints[f"{tag}Foot"] = (px, py - 0.22, pz - 0.01)
+        # The biped's arm bones exist and carry nothing; the wings hinge at their roots
+        joints[f"{tag}ArmPivot"] = (side * 0.15, 0.40, -0.08)
+        joints[f"{tag}ElbowPivot"] = (side * 0.20, 0.36, 0.0)
+        joints[f"{tag}Hand"] = (side * 0.20, 0.34, 0.08)
+
+        def at(p):
+            return (px + p[0], py + p[1], pz + p[2])
+
+        bone = f"{tag}LegPivot"
+        add(add_limb_tube("chk_drumstick", None, skin, at((0.0, 0.04, 0.0)), at((0.0, -0.07, 0.02)), 0.052, 0.024, segs=CHICKEN_SEGS["drumstick"]), bone, 0xE8E0D0)
+        add(add_limb_tube("chk_shank", None, beak, at((0.0, -0.06, 0.02)), at((0.0, -0.22, -0.01)), 0.018, 0.015, segs=CHICKEN_SEGS["shank"]), bone, 0xA87824)
+        # 3 forward toes and talons resting on the ground
+        for toe_ang in (-0.42, 0.0, 0.42):
             dx = math.sin(toe_ang) * 0.095
             dz = -math.cos(toe_ang) * 0.105
-            add_limb_tube(
-                f"{piv_name}_toe_{toe_i}",
-                leg_piv,
-                mats["beak_yellow"],
-                (0.0, -0.22, -0.01),
-                (dx, -0.235, -0.01 + dz),
-                0.013,
-                0.007,
-                segs=8,
+            add(add_limb_tube("chk_toe", None, beak, at((0.0, -0.22, -0.01)), at((dx, -0.235, -0.01 + dz)), 0.013, 0.007, segs=CHICKEN_SEGS["toe"]), bone, 0xA87824)
+            t = at((dx, -0.235, -0.01 + dz))
+            add(
+                add_cone_spike("chk_talon", None, beak, base_r=0.008, length=0.032, tx=t[0], ty=t[1], tz=t[2], rx=-math.pi * 0.48, ry=-toe_ang, segs=CHICKEN_SEGS["talon"]),
+                bone,
+                0x1E1A17,
             )
-            add_cone_spike(
-                f"{piv_name}_talon_{toe_i}",
-                leg_piv,
-                mats["horn"],
-                base_r=0.008,
-                length=0.032,
-                tx=dx,
-                ty=-0.235,
-                tz=-0.01 + dz,
-                rx=-math.pi * 0.48,
-                ry=-toe_ang,
-                segs=6,
-            )
+    joints["LWing"] = (-0.16, 0.42, 0.0)
+    joints["RWing"] = (0.16, 0.42, 0.0)
 
-    return root
+    table = [row._replace(flag="code_posed") for row in rigs.BIPED_TABLE]
+    rig = figkit.make_rig("Monster_chicken", table, {k: t2b(*p) for k, p in joints.items()}, prefix="chicken")
+    for obj, bone in hard:
+        figkit.hard_weights(obj, bone)
+        obj.parent = rig
 
+    merged = figkit.merge_by_family(rig)
+    names = {"skin": "chicken_body", "cloth": "chicken_comb", "plain": "chicken_beak"}
+    for ob in merged:
+        ob.name = ob.data.name = names[figkit.get_material_family(ob)]
+    _figure_paint(rig, merged, CHICKEN_OCCLUSION)
 
-# =============================================================================
-# Shared Goblin Anatomy Helper (used by Goblin Raider & Goblin Archer)
-# =============================================================================
-def build_goblin_base(key: str, grid_pos: tuple[float, float, float], mats: dict, is_archer: bool = False):
-    root = create_pivot(f"Monster_{key}", None, *grid_pos)
-
-    # Hunched muscular green goblin torso with broad deltoid shoulders, rib definition & lean forward
-    torso_sections = [
-        (0.66, 0.17, 0.12, 0.0, 0.02, 0.22, 0.01, 0.01),
-        (0.80, 0.16, 0.11, 0.0, 0.01, 0.18, 0.02, 0.02),
-        (0.96, 0.21, 0.15, 0.0, -0.01, 0.24, 0.035, 0.03),
-        (1.14, 0.29, 0.18, 0.0, -0.04, 0.28, 0.045, 0.04),
-        (1.30, 0.38, 0.19, 0.0, -0.07, 0.28, 0.035, 0.03),
-        (1.42, 0.20, 0.14, 0.0, -0.07, 0.18, 0.0, 0.02),
-    ]
-    add_lathe(f"{key}_torso", root, mats["skin_goblin"], torso_sections, segs=22, axis="Y")
-
-    # Rib definition ridges on side of torso
-    for r_i, ry_pos in enumerate((0.92, 1.01, 1.10)):
-        for side in (-1.0, 1.0):
-            add_curved_tube(
-                f"{key}_rib_{r_i}_{'L' if side < 0 else 'R'}",
-                root,
-                mats["skin_goblin_dark"],
-                [
-                    (side * 0.07, ry_pos, -0.14, 0.018, 0.014),
-                    (side * 0.18, ry_pos + 0.02, -0.08, 0.020, 0.015),
-                    (side * 0.21, ry_pos + 0.05, 0.03, 0.015, 0.012),
-                ],
-                segs=8,
-                no_outline=True,
-            )
-
-    # Stitched leather waist belt + bronze buckle + tattered loincloth
-    add_lathe(
-        f"{key}_belt",
-        root,
-        mats["leather"],
-        [
-            (0.68, 0.175, 0.135, 0.0, 0.02, 0.25),
-            (0.77, 0.172, 0.132, 0.0, 0.015, 0.25),
-        ],
-        segs=20,
-    )
-    add_box(f"{key}_buckle", root, mats["bronze"], 0.09, 0.08, 0.04, tx=0.0, ty=0.725, tz=-0.125)
-    # Front and back tattered loincloth flaps
-    add_box(f"{key}_loincloth_front", root, mats["cloth"], 0.18, 0.28, 0.03, tx=0.0, ty=0.56, tz=-0.12, rx=-0.08)
-    add_box(f"{key}_loincloth_back", root, mats["cloth"], 0.20, 0.26, 0.03, tx=0.0, ty=0.56, tz=0.14, rx=0.10)
-
-    # Stitched leather chest harness / bandolier strap
-    add_curved_tube(
-        f"{key}_harness_strap",
-        root,
-        mats["leather"],
-        [
-            (-0.22, 1.34, -0.06, 0.032, 0.016),
-            (-0.04, 1.08, -0.17, 0.034, 0.016),
-            (0.16, 0.76, -0.12, 0.032, 0.016),
-            (0.18, 0.76, 0.12, 0.032, 0.016),
-            (-0.02, 1.10, 0.13, 0.034, 0.016),
-            (-0.22, 1.34, -0.06, 0.032, 0.016),
-        ],
-        segs=10,
-    )
-
-    # HeadGroup pivot at (0, 1.48, -0.08)
-    head_piv = create_pivot(f"{key}_HeadGroup", root, 0.0, 1.48, -0.08)
-    skull_sections = [
-        (-0.04, 0.11, 0.11, 0.0, 0.0, 0.15),
-        (0.04, 0.17, 0.18, 0.0, -0.02, 0.20),
-        (0.14, 0.19, 0.20, 0.0, -0.02, 0.22),
-        (0.24, 0.17, 0.18, 0.0, -0.01, 0.18),
-        (0.31, 0.11, 0.12, 0.0, 0.01, 0.12),
-    ]
-    add_lathe(f"{key}_skull", head_piv, mats["skin_goblin"], skull_sections, segs=20)
-
-    # Heavy scowling brow ridge
-    add_curved_tube(
-        f"{key}_brow_ridge",
-        head_piv,
-        mats["skin_goblin_dark"],
-        [
-            (-0.14, 0.18, -0.15, 0.028, 0.024),
-            (-0.06, 0.16, -0.20, 0.035, 0.028),
-            (0.0, 0.145, -0.21, 0.032, 0.026),
-            (0.06, 0.16, -0.20, 0.035, 0.028),
-            (0.14, 0.18, -0.15, 0.028, 0.024),
-        ],
-        segs=10,
-    )
-
-    # Long hooked warty goblin nose
-    add_cone_spike(
-        f"{key}_nose",
-        head_piv,
-        mats["skin_goblin"],
-        base_r=0.048,
-        length=0.17,
-        tx=0.0,
-        ty=0.12,
-        tz=-0.18,
-        rx=-math.pi * 0.56,
-        curve_bend=-0.045,
-        segs=10,
-        flatten_x=0.75,
-    )
-
-    # Glowing yellow goblin eyes
-    for side, s_tag in ((-1.0, "L"), (1.0, "R")):
-        add_sphere(
-            f"{key}_eye_{s_tag}",
-            head_piv,
-            mats["glow_yellow"],
-            0.032,
-            0.024,
-            0.022,
-            tx=side * 0.075,
-            ty=0.135,
-            tz=-0.185,
-            rz=side * -0.22,
-            no_outline=True,
-        )
-
-    # Protruding lower jaw + 2 sharp lower fangs
-    add_box(f"{key}_jaw", head_piv, mats["skin_goblin_dark"], 0.18, 0.07, 0.16, tx=0.0, ty=0.02, tz=-0.12, bevel=0.02)
-    for side, s_tag in ((-1.0, "L"), (1.0, "R")):
-        add_cone_spike(
-            f"{key}_fang_{s_tag}",
-            head_piv,
-            mats["bone"],
-            base_r=0.016,
-            length=0.065,
-            tx=side * 0.058,
-            ty=0.045,
-            tz=-0.195,
-            rx=-0.15,
-            segs=8,
-        )
-        # Long bat-like pointed goblin ears sweeping out and back
-        add_cone_spike(
-            f"{key}_ear_{s_tag}",
-            head_piv,
-            mats["skin_goblin"],
-            base_r=0.048,
-            length=0.26,
-            tx=side * 0.16,
-            ty=0.14,
-            tz=-0.02,
-            rx=0.22,
-            rz=-side * 1.28,
-            curve_bend=0.04,
-            segs=10,
-            flatten_x=0.45,
-        )
-
-    # Bowed goblin legs under LeftLegPivot (-0.16, 0.70, 0) & RightLegPivot (0.16, 0.70, 0)
-    for side, piv_name in ((-1.0, f"{key}_LeftLegPivot"), (1.0, f"{key}_RightLegPivot")):
-        leg_piv = create_pivot(piv_name, root, side * 0.16, 0.70, 0.0)
-        knee = (side * 0.06, -0.32, -0.07)
-        ankle = (side * 0.02, -0.62, 0.02)
-        add_limb_tube(f"{piv_name}_thigh", leg_piv, mats["skin_goblin"], (0.0, 0.0, 0.0), knee, 0.095, 0.072, segs=12)
-        add_limb_tube(f"{piv_name}_calf", leg_piv, mats["skin_goblin"], knee, ankle, 0.075, 0.052, segs=12)
-        # Wrapped cloth ankle wraps
-        add_limb_tube(
-            f"{piv_name}_wrap",
-            leg_piv,
-            mats["cloth"],
-            (side * 0.03, -0.46, -0.02),
-            ankle,
-            0.066,
-            0.056,
-            segs=10,
-        )
-        # 3-clawed goblin foot at y = -0.66..-0.70
-        add_box(
-            f"{piv_name}_foot",
-            leg_piv,
-            mats["skin_goblin_dark"],
-            0.12,
-            0.07,
-            0.20,
-            tx=side * 0.02,
-            ty=-0.66,
-            tz=-0.05,
-            bevel=0.02,
-        )
-        for c_i, c_off in enumerate((-0.038, 0.0, 0.038)):
-            add_cone_spike(
-                f"{piv_name}_claw_{c_i}",
-                leg_piv,
-                mats["horn"],
-                base_r=0.014,
-                length=0.055,
-                tx=side * 0.02 + c_off,
-                ty=-0.67,
-                tz=-0.15,
-                rx=-math.pi * 0.48,
-                segs=6,
-            )
-
-    left_arm_piv = create_pivot(f"{key}_LeftArmPivot", root, -0.46, 1.28, -0.08)
-    right_arm_piv = create_pivot(f"{key}_RightArmPivot", root, 0.46, 1.28, -0.08)
-
-    return root, head_piv, left_arm_piv, right_arm_piv
+    tris = sum(len(p.vertices) - 2 for ob in merged for p in ob.data.polygons)
+    if tris > CHICKEN_TRIANGLES:
+        raise ValueError(f"chicken: {tris} triangles, over the budget of {CHICKEN_TRIANGLES}")
+    print(f"[Blender] chicken: {tris} triangles in {len(merged)} meshes")
+    return rig
 
 
 # =============================================================================
@@ -1079,6 +873,8 @@ GOBLIN_OCCLUSION = 0.5  # bake_paint's occlusion strength for the goblin (0.35 b
 GOBLIN_PLANE_SPREAD = math.radians(40.0)  # a plane holds the faces within this angle of its first face
 GOBLIN_PLANE_MIN = 0.01  # a plane under this share of the skin's area joins a neighbour
 GOBLIN_CREASE = math.radians(32.0)  # body edges sharper than this are hard; the rest stay smooth
+GOBLIN_KIN_SPREAD = math.radians(30.0)  # the raider's and the archer's body planes (M3a): a step between chest and belly
+GOBLIN_SHIELD_SEGS = 12  # the raider's shield rim and planks (18 until M3a), which pay for the narrower planes
 # Plane tone (plan S2c, widened at S2d): a plane facing GOBLIN_PLANE_LIGHT is 15% lighter, one facing
 # away 25% darker. The engine's cut shade bands only the planes the key reaches; on the shade side
 # the tone is all that parts one plane from the next.
@@ -1164,7 +960,7 @@ def _goblin_tint(obj, colour, planes: bool = False, tone: tuple = GOBLIN_PLANE_T
     obj.data.color_attributes.new("Tint", "FLOAT_COLOR", "CORNER").data.foreach_set("color", cols)
 
 
-def _goblin_skin(ob, name: str, mat, triangles: int, soften: int, keep: tuple = (), crease: float | None = None):
+def _goblin_skin(ob, name: str, mat, triangles: int, soften: int, keep: tuple = (), crease: float | None = None, spread: float = GOBLIN_PLANE_SPREAD):
     """
     Rounds a voxel skin (soften smoothing passes), cuts it flat at the ground, decimates it to its
     triangle count, validates, names it and gives it its one material. keep is (centre, radius)
@@ -1172,7 +968,7 @@ def _goblin_skin(ob, name: str, mat, triangles: int, soften: int, keep: tuple = 
     1.6 radii: the passes shrink a limb's end to a stump, and a hand or a foot has to keep its
     shape. crease is an angle: every edge whose faces meet more sharply is marked hard, and so is
     every edge between two planes of _goblin_planes, so the exporter splits its vertices and the
-    form reads as carved planes; None leaves all smooth.
+    form reads as carved planes; None leaves all smooth. spread is _goblin_planes' angle.
     """
     bpy.context.view_layer.objects.active = ob
     smooth = ob.modifiers.new("Soften", "SMOOTH")
@@ -1212,7 +1008,7 @@ def _goblin_skin(ob, name: str, mat, triangles: int, soften: int, keep: tuple = 
         assert open_edges == 0, f"{name}: {open_edges} of {len(bm.edges)} edges do not have exactly two faces; the skin must be closed before its hard edges are marked"
         euler = len(bm.verts) - len(bm.edges) + len(bm.faces)
         assert euler == 2, f"{name}: vertices less edges plus faces is {euler}, not 2; the skin has tunnels or loose pieces"
-        plane = _goblin_planes(bm, crease)
+        plane = _goblin_planes(bm, crease, spread)
         for e in bm.edges:
             e.smooth = plane[e.link_faces[0].index] == plane[e.link_faces[1].index] and e.calc_face_angle() < crease
         bm.to_mesh(ob.data)
@@ -1220,10 +1016,10 @@ def _goblin_skin(ob, name: str, mat, triangles: int, soften: int, keep: tuple = 
     return ob
 
 
-def _goblin_planes(bm, crease: float) -> list:
+def _goblin_planes(bm, crease: float, spread: float = GOBLIN_PLANE_SPREAD) -> list:
     """
     The body's faces sorted into planes (plan S2c): from the largest free face, a plane grows across
-    every edge under the crease angle to faces within GOBLIN_PLANE_SPREAD of that first face's
+    every edge under the crease angle to faces within spread (GOBLIN_PLANE_SPREAD) of that first face's
     normal, so a limb comes out as four or five sides. A plane under GOBLIN_PLANE_MIN of the skin's
     area then joins the neighbour it faces most nearly. The edges between two planes are marked
     hard with the creases, so the hard edges close round each plane; edges over an angle alone
@@ -1243,7 +1039,7 @@ def _goblin_planes(bm, crease: float) -> list:
                 if e.calc_face_angle() >= crease:
                     continue
                 for g in e.link_faces:
-                    if plane[g.index] < 0 and g.normal.angle(seed.normal) < GOBLIN_PLANE_SPREAD:
+                    if plane[g.index] < 0 and g.normal.angle(seed.normal) < spread:
                         plane[g.index] = len(normals)
                         queue.append(g)
         normals.append(normal.normalized())
@@ -1330,18 +1126,20 @@ def _goblin_body_graph(j: dict) -> tuple[list, list, list, list]:
             (knee, 0.098),
             (along(knee, ankle, 0.3), 0.08),  # calf
             (along(knee, ankle, 0.8), 0.052),
-            # The foot: one flat slab from the heel under the ankle joint to the toe box, 0.185 in
-            # front. Both nodes are at one height, 0.05 tall, and reach under the ground, where
+            # The foot: a slab from the heel under the ankle joint to the toe box, 0.185 in front.
+            # Heel and toe box are at one height, 0.05 tall, and reach under the ground, where
             # _goblin_skin cuts them flat. On this level edge the skin modifier's second radius is
-            # the one across the foot: 0.062 at the heel, 0.075 at the toe box (0.16 wide as built).
+            # the one across the foot: 0.062 at the heel, 0.09 at the toe box.
             ((ankle[0], 0.045, 0.03), (0.05, 0.062)),
-            ((ankle[0] * 1.03, 0.045, -0.155), (0.05, 0.075)),
+            # The instep (M3a): the top of the foot rises from the toe box to the ankle
+            ((ankle[0] * 1.015, 0.07, -0.06), (0.065, 0.07)),
+            ((ankle[0] * 1.03, 0.045, -0.155), (0.05, 0.09)),  # toe box 0.09 across (0.075 until M3a)
         ])
         keep.append((Vector(t2b(ankle[0], 0.04, -0.07)), 0.17))
     return pts, edges, radii, keep
 
 
-def _goblin_belt(body, mat):
+def _goblin_belt(body, mat, tag: str = "gob"):
     """
     The belt, laid on the finished body: sixteen rays from the body's axis at two heights find its
     surface, and the band stands 0.02 outside it, with a lip turned in above and below. A lathe of
@@ -1359,14 +1157,14 @@ def _goblin_belt(body, mat):
             out = Vector((math.cos(a), math.sin(a), 0.0))
             hit = tree.ray_cast(Vector(t2b(0.0, y, 0.03)), out)[0]
             if hit is None:
-                raise ValueError(f"goblin: the belt's ray at height {y}, angle {a:.2f} leaves the body without a hit")
+                raise ValueError(f"{tag}: the belt's ray at height {y}, angle {a:.2f} leaves the body without a hit")
             ring.append(bm.verts.new(hit + out * gap))
         rings.append(ring)
     for lo, hi in zip(rings, rings[1:]):
         for i in range(GOBLIN_BELT_SEGS):
             k = (i + 1) % GOBLIN_BELT_SEGS
             bm.faces.new((lo[i], lo[k], hi[k], hi[i]))
-    return finalize_obj("gob_belt", bm, None, mat)
+    return finalize_obj(f"{tag}_belt", bm, None, mat)
 
 
 def _goblin_head(mat):
@@ -1494,45 +1292,139 @@ def _figure_paint(rig, merged: list, ao: float) -> None:
         ob.modifiers.new("Armature", "ARMATURE").object = rig
 
 
-def build_goblin(grid_pos: tuple[float, float, float], mats: dict):
-    # grid_pos is not used: a skinned figure stands at the file's origin (design 6.1.1 rule 2b)
-    import rigs  # the biped table; imported here because only this builder is skinned (plan S2)
+def _build_goblin_kin(key: str, tag: str, colours: dict, kit):
+    """
+    One goblin of the raider's rig and proportions (the pilot's pattern, README): the kit's rigid parts
+    first, then the body from what is left of the triangle budget, the belt laid on it, the rig named
+    Monster_<key> with bones <key>_<Bone>, the weights, the tint, a merge by family into <key>_body,
+    <key>_wood and <key>_metal, and the paint. kit(add, j, col, mats, aim) builds the head and every other
+    rigid part through add(obj, bone, colour, planes) and returns a check of the finished body, or None.
+    tag prefixes the objects the build makes, so two goblins never share a name.
+    """
+    import rigs  # the biped table; imported here because only the skinned builders read it (plan S2)
 
     # White: vertex colour multiplies the material's colour and can only darken it, so every colour
-    # of the raider is paint. The wood and the metal family have a white material of the goblin's own
-    # too (the engine picks a family by 'wood' and 'bronze' in the name): on the shared mat_wood and
-    # mat_bronze, wood stopped at 24% value and bronze at 48%.
-    skin = make_mat("mat_skin_goblin_paint", 0xFFFFFF, roughness=0.58, metallic=0.04)
-    wood = make_mat("mat_wood_goblin_paint", 0xFFFFFF, roughness=0.70, metallic=0.02)
-    metal = make_mat("mat_bronze_goblin_paint", 0xFFFFFF, roughness=0.45, metallic=0.65)
+    # is paint. The wood and the metal family have a white material of the goblin's own too (the engine
+    # picks a family by 'wood' and 'bronze' in the name): on the shared mat_wood and mat_bronze, wood
+    # stopped at 24% value and bronze at 48%.
+    mats = {
+        "skin": make_mat("mat_skin_goblin_paint", 0xFFFFFF, roughness=0.58, metallic=0.04),
+        "wood": make_mat("mat_wood_goblin_paint", 0xFFFFFF, roughness=0.70, metallic=0.02),
+        "metal": make_mat("mat_bronze_goblin_paint", 0xFFFFFF, roughness=0.45, metallic=0.65),
+    }
     tile = _goblin_hide_mean(GOBLIN_HIDE_TILE)
-    col = dict(GOBLIN_COLOURS, skin=_goblin_skin_paint(GOBLIN_COLOURS["skin"], tile), skin_dark=_goblin_skin_paint(GOBLIN_COLOURS["skin_dark"], tile))
+    col = dict(colours, skin=_goblin_skin_paint(colours["skin"], tile), skin_dark=_goblin_skin_paint(colours["skin_dark"], tile))
     j = goblin_joints()
     hard = []  # (object, bone): rigid parts, weight 1 on one bone
 
-    def add(obj, bone: str, colour: int, planes: bool = False):
+    def add(obj, bone: str, colour, planes: bool = False):
         _goblin_tint(obj, colour, planes)
-        hard.append((obj, f"goblin_{bone}"))
+        hard.append((obj, f"{key}_{bone}"))
 
     def aim(d) -> dict:
         """The rx and rz that turn a primitive's own +Y axis to the unit vector d."""
         return {"rx": math.asin(d.z), "rz": -math.atan2(d.x, d.y)}
 
+    check = kit(add, j, col, mats, aim)
+
+    # Body: what is left of the triangle budget, with hard edges so its planes read (plan S2b)
+    hard_tris = sum(len(p.vertices) - 2 for obj, _ in hard for p in obj.data.polygons)
+    body_tris = GOBLIN_TRIANGLES - 40 - hard_tris - GOBLIN_BELT_SEGS * 6
+    pts, edges, radii, keep = _goblin_body_graph(j)
+    # organic_body's own decimate is left out (a ceiling it never reaches): the skin is softened first.
+    # Fourteen passes round the skin modifier's square limbs and leave the joints standing.
+    body = _goblin_skin(
+        figkit.organic_body((pts, edges), radii, 0.02, 10**9), f"{tag}_body", mats["skin"], body_tris, soften=14, keep=tuple(keep),
+        crease=GOBLIN_CREASE, spread=GOBLIN_KIN_SPREAD,
+    )
+    if check:
+        check(body)
+    # The belt hangs from the hips like the loincloth, on the paint material like it (leather is
+    # lighter than the shared mat_wood), and is laid on the finished body
+    add(_goblin_belt(body, mats["skin"], tag), "Hips", col["leather"])
+
+    for obj in [body] + [obj for obj, _ in hard]:
+        obj.data.transform(Matrix.Scale(GOBLIN_SCALE, 4))
+    j = {k: tuple(c * GOBLIN_SCALE for c in p) for k, p in j.items()}
+    rig = figkit.make_rig(f"Monster_{key}", rigs.BIPED_TABLE, {k: t2b(*p) for k, p in j.items()}, prefix=key)
+
+    # Weight rule 1: the body takes automatic weights from the sixteen limb bones only. Jaw and the
+    # two hand mounts hold rigid parts, and a Root bone standing from the ground to the hips would
+    # take the inner legs, so the weighting rig leaves the three out and starts Root inside the pelvis.
+    core = {k: t2b(*p) for k, p in j.items() if k not in ("Jaw", "WeaponPivot", "OffhandPivot")}
+    core["Root"] = t2b(0.0, 0.64 * GOBLIN_SCALE, 0.04 * GOBLIN_SCALE)
+    weight_rig = figkit.make_rig(f"{key}_weight_rig", rigs.BIPED_TABLE, core, prefix=key)
+    figkit.auto_weights(body, weight_rig, limb_radius=0.12 * GOBLIN_SCALE)
+    # Weight rule 2: Root deforms nothing; its share goes to Hips.
+    figkit.fold_weights(
+        body,
+        {b.name: ([b.name, f"{key}_Root"] if b.name == f"{key}_Hips" else [b.name]) for b in weight_rig.data.bones if b.name != f"{key}_Root"},
+    )
+    for m in list(body.modifiers):
+        body.modifiers.remove(m)
+    weight_data = weight_rig.data
+    bpy.data.objects.remove(weight_rig, do_unlink=True)
+    bpy.data.armatures.remove(weight_data)
+    _goblin_body_tint(body, col["skin"], col["skin_dark"])
+
+    # Weight rule 3: every other part is rigid on one bone.
+    for obj, bone in hard:
+        figkit.hard_weights(obj, bone)
+    for obj in [body] + [obj for obj, _ in hard]:
+        obj.parent = rig
+
+    merged = figkit.merge_by_family(rig)
+    names = {"skin": f"{key}_body", "wood": f"{key}_wood", "metal": f"{key}_metal"}
+    for ob in merged:
+        ob.name = ob.data.name = names[figkit.get_material_family(ob)]
+
+    _figure_paint(rig, merged, GOBLIN_OCCLUSION)
+
+    tris = sum(len(p.vertices) - 2 for ob in merged for p in ob.data.polygons)
+    if tris > GOBLIN_TRIANGLES:
+        raise ValueError(f"{key}: {tris} triangles, over the budget of {GOBLIN_TRIANGLES}")
+    print(f"[Blender] {key}: {tris} triangles in {len(merged)} meshes")
+    return rig
+
+
+def _goblin_eyes(add, skin, col, tag: str) -> None:
+    """Yellow irises, each with a dark pupil standing just proud of it, 0.048 wide: nothing on the face is thinner than 0.044."""
+    for side, s in ((-1.0, "L"), (1.0, "R")):
+        iris = add_sphere(f"{tag}_iris_{s}", None, skin, 0.055, 0.04, 0.022, tx=side * 0.10, ty=1.505, tz=-0.522, rz=side * -0.25, segs=8, rings=6)
+        add(iris, "HeadGroup", col["iris"])
+        pupil = add_sphere(f"{tag}_pupil_{s}", None, skin, 0.024, 0.028, 0.014, tx=side * 0.10, ty=1.505, tz=-0.536, rz=side * -0.25, segs=8, rings=5)
+        add(pupil, "HeadGroup", col["pupil"])
+
+
+def _goblin_flaps(add, skin, colour, tag: str) -> None:
+    """The loincloth hangs from the hips, never from the legs: two flaps 0.22 long, tapering to 0.6 of their width at the hem."""
+    for name, tz, rx in ((f"{tag}_cloth_front", -0.16, -0.10), (f"{tag}_cloth_back", 0.19, 0.10)):
+        flap = add_box(name, None, skin, 0.20, 0.22, 0.05, tx=0.0, ty=0.57, tz=tz, rx=rx, bevel=0.0)
+        heights = [v.co.z for v in flap.data.vertices]
+        for v in flap.data.vertices:
+            v.co.x *= 0.6 + 0.4 * (v.co.z - min(heights)) / (max(heights) - min(heights))
+        add(flap, "Hips", colour)
+
+
+def _goblin_thumbs(add, j, skin, col, aim, tag: str) -> None:
+    """A thumb on each fist: a blunt flat-faced block on the hand bone, lying up along the fist's inner front, half of it standing out of the fist."""
+    for side, hand in ((-1.0, "Left"), (1.0, "Right")):
+        h = Vector(j[f"{hand}Hand"])
+        thumb = add_box(
+            f"{tag}_thumb_{hand[0]}", None, skin, 0.055, 0.13, 0.06, tx=h.x - side * 0.075, ty=h.y + 0.045, tz=h.z - 0.10,
+            bevel=0.0, **aim(Vector((-side * 0.15, 0.80, -0.58)).normalized()),
+        )
+        add(thumb, f"{hand}Hand", col["skin_dark"], planes=True)
+
+
+def _raider_kit(add, j, col, mats, aim):
+    """The raider's head and kit: lantern jaw and tusks, one pauldron, a spear in the right hand and a round shield on the left forearm."""
+    skin, wood, metal = mats["skin"], mats["wood"], mats["metal"]
     # Head: rigid with the head bone, its planes toned like the body's. The irises are their own
     # vertices, so the paint stays crisp.
     add(_goblin_head(skin), "HeadGroup", col["skin"], planes=True)
+    _goblin_eyes(add, skin, col, "gob")
     for side, tag in ((-1.0, "L"), (1.0, "R")):
-        add(
-            add_sphere(f"gob_iris_{tag}", None, skin, 0.055, 0.04, 0.022, tx=side * 0.10, ty=1.505, tz=-0.522, rz=side * -0.25, segs=8, rings=6),
-            "HeadGroup",
-            col["iris"],
-        )
-        # A dark pupil standing just proud of the iris, 0.048 wide: nothing on the face is thinner than 0.044
-        add(
-            add_sphere(f"gob_pupil_{tag}", None, skin, 0.024, 0.028, 0.014, tx=side * 0.10, ty=1.505, tz=-0.536, rz=side * -0.25, segs=8, rings=5),
-            "HeadGroup",
-            col["pupil"],
-        )
         # Underbite tusks rise from the jaw's front corners, outside the iris column and ending under it
         add(
             add_cone_spike(f"gob_fang_{tag}", None, skin, base_r=0.036, length=0.10, tx=side * 0.17, ty=1.33, tz=-0.585, rx=-0.10, rz=-side * 0.18, segs=6),
@@ -1551,34 +1443,14 @@ def build_goblin(grid_pos: tuple[float, float, float], mats: dict):
     add(add_sphere("gob_jaw", None, skin, 0.23, 0.10, 0.20, tx=0.0, ty=1.30, tz=-0.44, segs=8, rings=6, smooth=False), "Jaw", col["skin"], planes=True)
     add(add_sphere("gob_mouth", None, skin, 0.185, 0.03, 0.15, tx=0.0, ty=1.395, tz=-0.44, segs=10, rings=6), "HeadGroup", col["mouth"])
 
-    # Loincloth and belt hang from the hips, never from the legs
-    # Each flap is 0.22 long (0.30 before S2d) from the same top edge, and tapers to 0.6 of its width
-    for name, tz, rx in (("gob_cloth_front", -0.16, -0.10), ("gob_cloth_back", 0.19, 0.10)):
-        flap = add_box(name, None, skin, 0.20, 0.22, 0.05, tx=0.0, ty=0.57, tz=tz, rx=rx, bevel=0.0)
-        heights = [v.co.z for v in flap.data.vertices]
-        for v in flap.data.vertices:
-            v.co.x *= 0.6 + 0.4 * (v.co.z - min(heights)) / (max(heights) - min(heights))
-        add(flap, "Hips", col["rust_cloth"])
+    _goblin_flaps(add, skin, col["rust_cloth"], "gob")
     add(
         add_sphere("gob_pauldron", None, metal, 0.15, 0.10, 0.15, tx=-0.33, ty=1.28, tz=-0.10, rz=0.35, segs=6, rings=5, smooth=False),
         "LeftArmPivot",
         col["rust"],
         planes=True,
     )
-
-    # A thumb on each fist: a blunt flat-faced block on the hand bone, lying up along the shaft on the
-    # fist's inner front, half of it standing out of the fist
-    for side, tag in ((-1.0, "Left"), (1.0, "Right")):
-        h = Vector(j[f"{tag}Hand"])
-        add(
-            add_box(
-                f"gob_thumb_{tag[0]}", None, skin, 0.055, 0.13, 0.06, tx=h.x - side * 0.075, ty=h.y + 0.045, tz=h.z - 0.10,
-                bevel=0.0, **aim(Vector((-side * 0.15, 0.80, -0.58)).normalized()),
-            ),
-            f"{tag}Hand",
-            col["skin_dark"],
-            planes=True,
-        )
+    _goblin_thumbs(add, j, skin, col, aim, "gob")
 
     # Spear in the right hand: butt on the ground outside the foot, head up, out and back, clear of the
     # body outline and, side-on, behind the skull instead of across the face (S2d)
@@ -1592,190 +1464,164 @@ def build_goblin(grid_pos: tuple[float, float, float], mats: dict):
         col["rust"],
     )
     add(
-        add_cone_spike(
-            "gob_spear_head", None, metal, base_r=0.03, length=0.32, tx=top.x, ty=top.y, tz=top.z,
-            segs=8, flatten_x=2.6, **aim(d),
-        ),
+        add_cone_spike("gob_spear_head", None, metal, base_r=0.03, length=0.32, tx=top.x, ty=top.y, tz=top.z, segs=8, flatten_x=2.6, **aim(d)),
         "WeaponPivot",
         col["bronze"],
     )
 
     # Round shield on the left forearm, facing out and forward. Its face lies along the forearm and stands
     # 0.15 off the forearm's axis, so the fist (0.133 from that axis at most) is behind the planks, not through them.
+    # Twelve sides (eighteen until M3a): they pay for the body's narrower planes.
     f = _goblin_limb_dir(j["LeftElbowPivot"], j["LeftHand"])
     n = Vector((-0.80, 0.10, -0.59))
     n = (n - f * n.dot(f)).normalized()
     c = (Vector(j["LeftElbowPivot"]) + Vector(j["LeftHand"])) / 2.0 + n * 0.15
     face = aim(n)
-    add(add_lathe("gob_shield_rim", None, metal, [(-0.02, 0.30, 0.30), (0.02, 0.30, 0.30)], segs=18, tx=c.x, ty=c.y, tz=c.z, **face), "OffhandPivot", col["bronze"])
-    add(add_lathe("gob_shield_wood", None, wood, [(-0.026, 0.27, 0.27), (0.026, 0.27, 0.27)], segs=18, tx=c.x, ty=c.y, tz=c.z, **face), "OffhandPivot", col["wood"])
+    segs = GOBLIN_SHIELD_SEGS
+    add(add_lathe("gob_shield_rim", None, metal, [(-0.02, 0.30, 0.30), (0.02, 0.30, 0.30)], segs=segs, tx=c.x, ty=c.y, tz=c.z, **face), "OffhandPivot", col["bronze"])
+    add(add_lathe("gob_shield_wood", None, wood, [(-0.026, 0.27, 0.27), (0.026, 0.27, 0.27)], segs=segs, tx=c.x, ty=c.y, tz=c.z, **face), "OffhandPivot", col["wood"])
     boss = c + n * 0.03
     add(add_sphere("gob_shield_boss", None, metal, 0.09, tx=boss.x, ty=boss.y, tz=boss.z, segs=6, rings=4, smooth=False), "OffhandPivot", col["bronze"], planes=True)
 
-    # Body: what is left of the triangle budget, with hard edges so its planes read (plan S2b)
-    hard_tris = sum(len(p.vertices) - 2 for obj, _ in hard for p in obj.data.polygons)
-    body_tris = GOBLIN_TRIANGLES - 40 - hard_tris - GOBLIN_BELT_SEGS * 6
-    pts, edges, radii, keep = _goblin_body_graph(j)
-    # organic_body's own decimate is left out (a ceiling it never reaches): the skin is softened first.
-    # Fourteen passes round the skin modifier's square limbs and leave the joints standing.
-    body = _goblin_skin(
-        figkit.organic_body((pts, edges), radii, 0.02, 10**9), "gob_body", skin, body_tris, soften=14, keep=tuple(keep), crease=GOBLIN_CREASE
-    )
-    # No skin in front of the shield's planks: the fist stays behind them
-    cb, nb = Vector(t2b(*c)), Vector(t2b(*n))
-    through = sum(1 for v in body.data.vertices if (v.co - cb).dot(nb) > 0.026 and ((v.co - cb) - nb * (v.co - cb).dot(nb)).length < 0.27)
-    if through:
-        raise ValueError(f"goblin: {through} body vertices stand in front of the shield's planks")
-    # The belt hangs from the hips like the loincloth, on the paint material like it (leather is
-    # lighter than the shared mat_wood), and is laid on the finished body
-    add(_goblin_belt(body, skin), "Hips", col["leather"])
+    def no_skin_through_the_shield(body):
+        cb, nb = Vector(t2b(*c)), Vector(t2b(*n))
+        through = sum(1 for v in body.data.vertices if (v.co - cb).dot(nb) > 0.026 and ((v.co - cb) - nb * (v.co - cb).dot(nb)).length < 0.27)
+        if through:
+            raise ValueError(f"goblin: {through} body vertices stand in front of the shield's planks")
 
-    for obj in [body] + [obj for obj, _ in hard]:
-        obj.data.transform(Matrix.Scale(GOBLIN_SCALE, 4))
-    j = {k: tuple(c * GOBLIN_SCALE for c in p) for k, p in j.items()}
-    rig = figkit.make_rig("Monster_goblin", rigs.BIPED_TABLE, {k: t2b(*p) for k, p in j.items()}, prefix="goblin")
+    return no_skin_through_the_shield
 
-    # Weight rule 1: the body takes automatic weights from the sixteen limb bones only. Jaw and the
-    # two hand mounts hold rigid parts, and a Root bone standing from the ground to the hips would
-    # take the inner legs, so the weighting rig leaves the three out and starts Root inside the pelvis.
-    core = {k: t2b(*p) for k, p in j.items() if k not in ("Jaw", "WeaponPivot", "OffhandPivot")}
-    core["Root"] = t2b(0.0, 0.64 * GOBLIN_SCALE, 0.04 * GOBLIN_SCALE)
-    weight_rig = figkit.make_rig("goblin_weight_rig", rigs.BIPED_TABLE, core, prefix="goblin")
-    figkit.auto_weights(body, weight_rig, limb_radius=0.12 * GOBLIN_SCALE)
-    # Weight rule 2: Root deforms nothing; its share goes to Hips.
-    figkit.fold_weights(
-        body,
-        {b.name: ([b.name, "goblin_Root"] if b.name == "goblin_Hips" else [b.name]) for b in weight_rig.data.bones if b.name != "goblin_Root"},
-    )
-    for m in list(body.modifiers):
-        body.modifiers.remove(m)
-    weight_data = weight_rig.data
-    bpy.data.objects.remove(weight_rig, do_unlink=True)
-    bpy.data.armatures.remove(weight_data)
-    _goblin_body_tint(body, col["skin"], col["skin_dark"])
 
-    # Weight rule 3: every other part is rigid on one bone.
-    for obj, bone in hard:
-        figkit.hard_weights(obj, bone)
-    for obj in [body] + [obj for obj, _ in hard]:
-        obj.parent = rig
-
-    merged = figkit.merge_by_family(rig)
-    names = {"skin": "goblin_body", "wood": "goblin_wood", "metal": "goblin_metal"}
-    for ob in merged:
-        ob.name = ob.data.name = names[figkit.get_material_family(ob)]
-
-    _figure_paint(rig, merged, GOBLIN_OCCLUSION)
-
-    tris = sum(len(p.vertices) - 2 for ob in merged for p in ob.data.polygons)
-    if tris > GOBLIN_TRIANGLES:
-        raise ValueError(f"goblin: {tris} triangles, over the budget of {GOBLIN_TRIANGLES}")
-    print(f"[Blender] goblin: {tris} triangles in {len(merged)} meshes")
-    return rig
+def build_goblin(grid_pos: tuple[float, float, float], mats: dict):
+    # grid_pos is not used: a skinned figure stands at the file's origin (design 6.1.1 rule 2b)
+    return _build_goblin_kin("goblin", "gob", GOBLIN_COLOURS, _raider_kit)
 
 
 # =============================================================================
-# 3. Monster_goblin_archer (Goblin Archer)
+# 3. Monster_goblin_archer (Goblin Archer): rebuilt on the raider's rig and proportions (plan M3a)
 # =============================================================================
-def build_goblin_archer(grid_pos: tuple[float, float, float], mats: dict):
-    root, head_piv, left_arm, right_arm = build_goblin_base("goblin_archer", grid_pos, mats, is_archer=True)
+# Its own head (a hood the long ears come through, a longer hooked nose, a narrow chin with two small
+# fangs), a lighter skin than the raider's (design 5.4: the ranged role lighter than the brute), a
+# recurve bow held out on the left hand and a tall quiver standing over the right shoulder.
+ARCHER_COLOURS = dict(
+    GOBLIN_COLOURS,
+    skin=0x7C8656,  # 53% value, ten points over the raider's
+    skin_dark=0x575E3E,  # 37%
+    hood=0x524436,  # dark brown cowl and loincloth, 32%
+    fletch=0xC9BFA6,
+)
 
-    # Dark stitched archer hood/cowl over goblin_archer_HeadGroup (ears poking out the sides!)
-    hood_sections = [
-        (-0.05, 0.15, 0.15, 0.0, 0.02, 0.20),
-        (0.06, 0.19, 0.20, 0.0, 0.01, 0.22),
-        (0.18, 0.21, 0.22, 0.0, 0.0, 0.22),
-        (0.28, 0.18, 0.21, 0.0, 0.04, 0.18),
-        (0.36, 0.11, 0.16, 0.0, 0.12, 0.12),
-        (0.41, 0.03, 0.06, 0.0, 0.22, 0.08),
-    ]
-    add_lathe("goblin_archer_hood", head_piv, mats["cloth_dark"], hood_sections, segs=18)
 
-    # Leather quiver on back stuffed with 5 feathered arrows
-    add_lathe(
-        "goblin_archer_quiver",
-        root,
-        mats["leather"],
-        [
-            (0.88, 0.058, 0.048),
-            (1.36, 0.075, 0.062),
-        ],
-        segs=14,
-        tx=0.12,
-        ty=0.0,
-        tz=0.16,
-        rz=-0.22,
-        rx=0.14,
-    )
-    for a_i in range(5):
-        ox = 0.08 + (a_i - 2) * 0.022
-        oz = 0.16 + ((a_i % 2) - 0.5) * 0.025
-        add_limb_tube(
-            f"goblin_archer_arrow_{a_i}",
-            root,
-            mats["wood"],
-            (ox, 1.28, oz),
-            (ox - 0.06, 1.56, oz + 0.04),
-            0.008,
-            0.008,
-            segs=6,
-        )
+def _archer_head(mat):
+    """The archer's head: the raider's skull with a lighter brow, a longer hooked nose and ears swept back to come through the hood."""
+    parts = [
+        add_sphere("gar_skull", None, mat, 0.24, 0.24, 0.25, tx=0.0, ty=1.50, tz=-0.30, segs=16, rings=12),
+        add_curved_tube(
+            "gar_brow",
+            None,
+            mat,
+            [
+                (-0.19, 1.605, -0.43, 0.034),
+                (-0.09, 1.59, -0.52, 0.042),
+                (0.0, 1.575, -0.54, 0.036),
+                (0.09, 1.59, -0.52, 0.042),
+                (0.19, 1.605, -0.43, 0.034),
+            ],
+            segs=8,
+        ),
         add_cone_spike(
-            f"goblin_archer_fletch_{a_i}",
-            root,
-            mats["skin_chicken"],
-            base_r=0.022,
-            length=0.07,
-            tx=ox - 0.06,
-            ty=1.52,
-            tz=oz + 0.04,
-            rz=0.22,
-            flatten_x=0.35,
-            segs=6,
-        )
-
-    # Left & Right arms with leather archer bracers on forearms
-    for side, arm_piv, s_tag in ((-1.0, left_arm, "L"), (1.0, right_arm, "R")):
-        elbow = (side * 0.05, -0.22, -0.05)
-        hand = (side * 0.04, -0.38, -0.24)
-        add_limb_tube(f"goblin_archer_uarm_{s_tag}", arm_piv, mats["skin_goblin"], (-side * 0.10, 0.04, 0.0), elbow, 0.092, 0.058, segs=12)
-        add_limb_tube(f"goblin_archer_farm_{s_tag}", arm_piv, mats["skin_goblin"], elbow, hand, 0.060, 0.048, segs=12)
-        add_limb_tube(
-            f"goblin_archer_bracer_{s_tag}",
-            arm_piv,
-            mats["leather"],
-            (elbow[0] * 0.85, -0.26, -0.09),
-            (hand[0] * 1.02, -0.36, -0.21),
-            0.066,
-            0.056,
-            segs=10,
-        )
-        add_sphere(f"goblin_archer_hand_{s_tag}", arm_piv, mats["skin_goblin_dark"], 0.054, tx=hand[0], ty=hand[1], tz=hand[2])
-
-    # Carved recurve shortbow with taut string under `goblin_archer_RightArmPivot`
-    bow_pts = [
-        (0.06, 0.14, -0.14, 0.012, 0.014),
-        (0.06, 0.04, -0.28, 0.022, 0.026),
-        (0.06, -0.18, -0.36, 0.028, 0.034),
-        (0.06, -0.38, -0.30, 0.032, 0.036),
-        (0.06, -0.58, -0.36, 0.028, 0.034),
-        (0.06, -0.80, -0.28, 0.022, 0.026),
-        (0.06, -0.90, -0.14, 0.012, 0.014),
+            "gar_nose", None, mat, base_r=0.06, length=0.27, tx=0.0, ty=1.50, tz=-0.52,
+            rx=-math.pi * 0.56, curve_bend=-0.075, segs=10, flatten_x=0.72,
+        ),
     ]
-    add_curved_tube("goblin_archer_bow", right_arm, mats["wood"], bow_pts, segs=10)
-    add_limb_tube(
-        "goblin_archer_bowstring",
-        right_arm,
-        mats["bone"],
-        (0.06, 0.13, -0.14),
-        (0.06, -0.89, -0.14),
-        0.005,
-        0.005,
-        segs=6,
-        no_outline=True,
+    for side in (-1.0, 1.0):
+        # flatten_x above 1: the ear is a blade seen broad from the front; swept further back than the raider's
+        parts.append(
+            add_cone_spike(
+                "gar_ear", None, mat, base_r=0.03, length=0.50, tx=side * 0.19, ty=1.55, tz=-0.22,
+                rx=0.48, rz=-side * 1.05, curve_bend=0.06, segs=10, flatten_x=3.2,
+            )
+        )
+    return _goblin_fuse(parts, "gar_head", mat, 0.012, 800, soften=3, crease=GOBLIN_CREASE)
+
+
+def _archer_hood(mat):
+    """
+    The cowl: a faceted shell over the skull, open in front of the face below the brow's top, with the
+    ears passing through its sides; it hangs down the sides of the neck and the back to the hump, so it
+    reads as a hood and not as a cap.
+    """
+    c = Vector((0.0, 1.49, -0.24))
+    hood = add_sphere("gar_hood", None, mat, 0.29, 0.34, 0.31, tx=c.x, ty=c.y, tz=c.z, segs=10, rings=8, smooth=False)
+    cb = Vector(t2b(*c))
+    bm = bmesh.new()
+    bm.from_mesh(hood.data)
+    # Blender space: +Y is the figure's front, +Z up
+    opening = [f for f in bm.faces if f.calc_center_median().y > cb.y + 0.04 and f.calc_center_median().z < 1.66]
+    bmesh.ops.delete(bm, geom=opening, context="FACES")
+    bm.to_mesh(hood.data)
+    bm.free()
+    return hood
+
+
+def _archer_kit(add, j, col, mats, aim):
+    skin, wood = mats["skin"], mats["wood"]
+    add(_archer_head(skin), "HeadGroup", col["skin"], planes=True)
+    _goblin_eyes(add, skin, col, "gar")
+    add(_archer_hood(skin), "HeadGroup", col["hood"], planes=True)
+    # The hood's point droops back from its crown
+    d = Vector((0.0, -0.15, 1.0)).normalized()
+    add(add_cone_spike("gar_hood_point", None, skin, base_r=0.10, length=0.32, tx=0.0, ty=1.66, tz=0.0, segs=6, smooth=False, **aim(d)), "HeadGroup", col["hood"], planes=True)
+    # A narrow chin, faceted, with two small fangs rising from its corners; the mouth a dark slab
+    add(add_sphere("gar_jaw", None, skin, 0.17, 0.085, 0.165, tx=0.0, ty=1.315, tz=-0.43, segs=8, rings=6, smooth=False), "Jaw", col["skin"], planes=True)
+    add(add_sphere("gar_mouth", None, skin, 0.15, 0.028, 0.13, tx=0.0, ty=1.395, tz=-0.45, segs=10, rings=6), "HeadGroup", col["mouth"])
+    for side in (-1.0, 1.0):
+        add(
+            add_cone_spike("gar_fang", None, skin, base_r=0.028, length=0.07, tx=side * 0.11, ty=1.34, tz=-0.555, rx=-0.10, rz=-side * 0.12, segs=6),
+            "Jaw",
+            col["bone"],
+        )
+    _goblin_flaps(add, skin, col["hood"], "gar")
+    _goblin_thumbs(add, j, skin, col, aim, "gar")
+
+    # A leather bracer on the bow arm's forearm
+    e, h = Vector(j["LeftElbowPivot"]), Vector(j["LeftHand"])
+    add(
+        add_limb_tube("gar_bracer", None, skin, tuple(e.lerp(h, 0.30)), tuple(e.lerp(h, 0.78)), 0.088, 0.074, r_mid=0.084, segs=8, steps=3, smooth=False),
+        "LeftElbowPivot",
+        col["leather"],
+        planes=True,
     )
 
-    return root
+    # The tall quiver on the back, standing over the right shoulder: a faceted leather case from the hips to
+    # above the head's height, with the fletchings of four arrows out of its mouth
+    lo, hi = Vector((0.24, 0.86, 0.155)), Vector((0.15, 1.53, 0.255))
+    q = (hi - lo).normalized()
+    add(add_limb_tube("gar_quiver", None, skin, tuple(lo), tuple(hi), 0.075, 0.085, r_mid=0.08, segs=8, steps=3, smooth=False), "Torso", col["leather"], planes=True)
+    add(add_limb_tube("gar_quiver_lip", None, skin, tuple(hi - q * 0.06), tuple(hi + q * 0.01), 0.096, 0.096, r_mid=0.096, segs=8, steps=2, smooth=False), "Torso", col["hood"])
+    for k, (dx, dz) in enumerate(((-0.035, -0.02), (0.03, -0.025), (-0.02, 0.03), (0.035, 0.025))):
+        at = hi + q * 0.02 + Vector((dx, 0.0, dz))
+        fd = (q + Vector((dx, 0.0, dz)) * 4.0).normalized()
+        add(add_cone_spike(f"gar_fletch_{k}", None, wood, base_r=0.036, length=0.15, tx=at.x, ty=at.y, tz=at.z, segs=4, flatten_x=0.7, smooth=False, **aim(fd)), "Torso", col["fletch"])
+
+    # The recurve bow in the left hand, held out at the side and upright: the grip in the fist is its most
+    # forward point, the limbs sweep back to the tips and flick forward, the string runs tip to tip behind it.
+    # Nothing on it is thinner than 0.044 (design 5.3), so the string is too.
+    h = Vector(j["LeftHand"]) + Vector((-0.035, 0.0, 0.0))
+    arc = [(0.012, 0.62, 0.11, 0.022), (0.0, 0.56, 0.15, 0.024), (-0.01, 0.40, 0.07, 0.028), (-0.01, 0.20, 0.012, 0.032), (0.0, 0.0, 0.0, 0.036),
+           (-0.01, -0.20, 0.012, 0.032), (-0.01, -0.36, 0.07, 0.028), (0.0, -0.46, 0.14, 0.024), (0.012, -0.51, 0.10, 0.022)]
+    add(add_curved_tube("gar_bow", None, wood, [(h.x + x, h.y + y, h.z + z, r) for x, y, z, r in arc], segs=6, smooth=False), "OffhandPivot", col["wood"], planes=True)
+    add(
+        add_limb_tube("gar_string", None, wood, (h.x, h.y + 0.56, h.z + 0.15), (h.x, h.y - 0.46, h.z + 0.14), 0.022, 0.022, r_mid=0.022, segs=4, steps=2),
+        "OffhandPivot",
+        col["bone"],
+    )
+    return None
+
+
+def build_goblin_archer(grid_pos: tuple[float, float, float], mats: dict):
+    # grid_pos is not used: a skinned figure stands at the file's origin (design 6.1.1 rule 2b)
+    return _build_goblin_kin("goblin_archer", "gar", ARCHER_COLOURS, _archer_kit)
 
 
 # =============================================================================

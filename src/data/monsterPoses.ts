@@ -79,7 +79,22 @@ export const MONSTER_MOTION: Record<string, MonsterMotionRow> = {
   },
   goblin_archer: {
     skeleton: 'biped',
-    bones: [],
+    // The rebuilt archer's bones (plan M3a): the raider's rig; its clips are staged as PENDING_ARCHER_CLIPS until M4a.
+    bones: [
+      'Hips',
+      'Torso',
+      'HeadGroup',
+      'LeftArmPivot',
+      'LeftElbowPivot',
+      'RightArmPivot',
+      'RightElbowPivot',
+      'LeftLegPivot',
+      'LeftKneePivot',
+      'LeftFoot',
+      'RightLegPivot',
+      'RightKneePivot',
+      'RightFoot'
+    ],
     codeAttack: {
       rightArmX: -1.45,
       leftArmX: 0.58,
@@ -211,4 +226,18 @@ export const MONSTER_MOTION: Record<string, MonsterMotionRow> = {
       y: 0.32
     }
   }
+};
+
+// The rebuilt archer's clips (plan M3a): the biped library of the hero file, shooting with `Ranged`; its anticipation
+// is the hero manifest's `Ranged` key. Staged as the dragon's and the demon's were: the shipped archer is rigid and has
+// no Hips bone, so naming the clips on the live row now would make every archer spawn throw. M4a's promote commit sets
+// the live row's `clips` and `anticipation` to these and removes the export.
+export const PENDING_ARCHER_CLIPS: Pick<Required<MonsterMotionRow>, 'clips' | 'anticipation'> = {
+  clips: {
+    idle: 'Idle',
+    walk: 'Walk',
+    attack: 'Ranged',
+    death: 'Death'
+  },
+  anticipation: 0.583333
 };
