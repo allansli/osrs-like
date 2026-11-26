@@ -369,3 +369,117 @@ On the roster sheet the wizard (brim, crown and staff), the ranger (peaked hood,
   - `rig.headGroup` is a bone.
 - **Not seen in the engine**: `Death`, and a stride seen square from the side.
 - **Slice sheet budget**: `s6/` holds 1.38 MB of its 2 MB after M3e (about 590 kB of it M3e's), with K1, K2 and K4 still to add. `m3b-ingame-strike.jpg` (85 kB) can still go first.
+
+# K1: the Saltback Stalker kit on the scorpion
+
+Built with `BLEND(monsters)` on Blender 5.0.1 from `da74139` plus this task's builder (`flock /tmp/claude-blender.lock timeout 600 env BLENDER_PATH=/usr/bin/blender node scripts/run-blender.mjs monsters --out scratch/models-build/k1`, exit 0, about 10 s). Nothing is promoted: `git status --short public/models blender` prints nothing. K4 promotes. The row's `kit` field is K3's.
+
+## Open for the main session
+
+1. **An unfiltered SHEETS run of `monsters.glb` now stops.** `review_render.py`'s `find_roots` takes every parentless object with meshes, so `Kit_saltback_stalker` is a root, and `get_scale` raises `KeyError: no in-game scale for figure 'Kit_saltback_stalker'` (run with `--only Kit_saltback_stalker`, exit 1). Every `--only <figure>` run is unaffected. K4's roster sheet is unfiltered, so before it `review_render.py` should skip `Kit_` roots (or mount them, as `scratch/k1/kit_render.py` does), or `review_scales.json` gains an entry. Neither file is in K1's list.
+2. **For K2: the bare names `Hips`, `TailPivot3`, `LeftElbowPivot` and `RightElbowPivot` are taken.** Kit children are named after their bone without the model prefix (the engine matches them after `stripBonePrefix`, and D4 reads them so), and Blender object names are unique in the file. A second kit child named `Hips` would export as `Hips.001` and attach to no bone. The marksman's kit rides `HeadGroup`, `Torso` and `OffhandPivot` without trouble, but a piece on `Hips` (the quiver) collides. Either it goes on `Torso`, or the kit-child naming needs a rule (for example a `<kit>__` prefix that the engine strips), which is a B1 and D4 change.
+3. **K4 adds nothing for the kit** beyond the promote of the file and the pending manifest: no clip, no material, no `vertexColor` change outside the manifest, no `monster-families.json` entry (`tests/monster-merge.test.ts` reads `Monster_` roots).
+
+## What was built
+
+`build_saltback_stalker_kit`, called in `main()` after `build_scorpion`. `Monster_scorpion` and every other builder are unchanged.
+
+- **`Kit_saltback_stalker`** stands at the origin with an identity transform. It has four children, one per bone, each one rigid mesh named after the scorpion bone it rides on, at an identity transform, with its vertices relative to that bone's joint. `upgradeMonsterRigWithGltf` adds each child under the bone of the same name and keeps the child's transform. Every rest rotation is identity, so the piece lands at joint + vertex. The children:
+
+  | Child (bone) | Mesh | What it is | Material |
+  |---|---|---|---|
+  | `Hips` | `saltback_stalker_Hips` | salt crystals on the five carapace plates: a tall one on the spine of each plate, leaning back (0.18 to 0.32 tall), and one each side leaning out (0.10 to 0.18) | `mat_bone_scorpion_paint` |
+  | `TailPivot3` | `saltback_stalker_TailPivot3` | the fork: two prongs from the telson's sides (base 0.11 across, 0.36 long), splayed 0.5 rad out each side of the scorpion's own sting | `mat_glow_crimson` |
+  | `LeftElbowPivot`, `RightElbowPivot` | `saltback_stalker_<Bone>` | the heavier claw: a faceted sleeve over the forearm, a faceted shell over the chela (0.40 by 0.31 by 0.54, larger than the chela it covers) and three crystals on top | `mat_bone_scorpion_paint` |
+
+- **Additive only.** The base figure cannot be hidden by a kit, so each piece goes over the scorpion: the crystals over the plates, the prongs beside the sting, the shells over the claws.
+- **Faceted.** Every piece is flat-shaded (`smooth=False`), five-sided crystals and seven-sided shells: chosen planes, in the pilot's manner.
+- **Paint.** A corner colour on the scorpion's own white materials, so the kit adds no material: the file stays at 38. Every kit primitive carries `COLOR_0` (the manifest lists `Kit_saltback_stalker` as its own `all` unit). UV layers are dropped. Colours, before Stage 4's tint: salt `0xE4DED0` (crystals) and crust `0xC9C1B0` (flank crystals, sleeves, shells); the prongs `0xFFFFFF` on the glow.
+- **Triangles**: 986 of the 1,200 allowed (the builder stops over 1,200). Four meshes, two materials.
+- **Names**: no node or mesh name in the file carries a `.001` suffix and no node name is duplicated; the builder stops if a child does not get its bone's name.
+
+## Values
+
+Stage 4's tint `0x6b6470` multiplies every non-glow mesh of the stalker, the kit included (linear multiply, as the engine does). Rec. 601 luma, the measure of the scorpion's own table (shell `0x84582A` 37%):
+
+| | Before the tint | With the tint |
+|---|---|---|
+| Kit salt `0xE4DED0` | 87% | 35% (`#5f565a`) |
+| Kit crust `0xC9C1B0` | 76% | 30% (`#534a4b`) |
+| Scorpion shell `0x84582A` | 37% | 13% (`#341d0c`) |
+| Scorpion bone `0xC2B293` | 71% | 27% (`#50433d`) |
+
+- The stalker's kit against its own shell: 35% against 13%, 22 points.
+- The stalker's shell against the scorpion's: 13% against 37%, 24 points (the tint's work, Stage 4's).
+- The kit salt against the scorpion's shell is only 2 points apart (35% against 37%). Against the scorpion the stalker differs by its darker body with pale crust, not by the crust alone. The owner reads it at OM-S6.
+
+## Measured
+
+| | As exported | Packed |
+|---|---|---|
+| Kit triangles / meshes / materials | 986 / 4 / 2 | same |
+| Kit raw bytes | 62,940 | 41,556 |
+| Kit Brotli bytes | 14,273 | 12,151 |
+| File raw / Brotli | 3,936,988 / 1,419,636 | 2,560,072 / 882,029 |
+| File meshes / materials / triangles | 75 / 38 / 64,674 | same |
+
+Design 9.1's row gives the two kits 40 kB together.
+
+**Untouched figures**: against a build of HEAD before this task (`scratch/models-build/k1-base`):
+- the primitive hashes of all eleven `Monster_` figures, the scorpion included, are identical;
+- all nine animations are identical by channel targets, key times and values (`scratch/k1/anim-hash.txt`).
+
+## Pending manifest and COMPARE
+
+`tests/fixtures/model-contract/pending/monsters.json` is M3e's with:
+- `nodes`: `Kit_saltback_stalker` (no parent) and its four children (parent `Kit_saltback_stalker`), all at translation 0 and scale 1;
+- `meshClasses`: `^saltback_stalker_(Hips|TailPivot3|LeftElbowPivot|RightElbowPivot)$`;
+- `vertexColor.figures.Kit_saltback_stalker`: `all`;
+- `figures.Kit_saltback_stalker`: 1,200 triangles, 4 meshes, 2 materials, raw 41,556, Brotli 12,395 (packed plus 2%);
+- file `budget` from the packed build by its margins: triangles 64,674, meshes 75, materials 38, raw 2,585,673, Brotli 890,849.
+
+No other figure's ceiling moved. The material set and the clips are unchanged. The kit is not a skinned root.
+
+**COMPARE of the packed build** (`node scripts/models-compare.mjs scratch/models-build/k1-packed/monsters.glb public/models/monsters.glb`) **exits 0**: Contract and Budget pass. **COMPARE of the as-exported build exits 2**, on Budget only (26 ceilings, all packed numbers). Contract passes.
+
+## Checks
+
+**On the branch:**
+
+| Check | Result |
+|---|---|
+| `SUITE` | 1 failed, 1,434 passed, 33 skipped. The one failure is `monster-models` "the two variant rows name their kits" (K3, known red) |
+| `TYPES` | exit 0, no output |
+| `BUILD` | exit 0 |
+| `UNTOUCHED` | prints nothing |
+
+**In a throw-away worktree** (`scratch/k1/wt.sh`): HEAD with this task's files, the packed build over `public/models/monsters.glb`, the stalker row given `kit: 'saltback_stalker'` (K3's change, there only), and a scratch test (`scratch/k1/kit-engine.test.ts`, not committed). That test loads the file through `GLTFLoader` and `upgradeMonsterRigWithGltf` and checks:
+- each of the four pieces is a mesh under the bone of its name;
+- its world bounds equal its own bounds moved by that bone's joint, within 1e-4;
+- its material has `vertexColors`, and the non-glow pieces carry the tint `6b6470`;
+- turning `TailPivot3` moves its piece.
+
+| Run | Result |
+|---|---|
+| `tests/k1-kit-engine.test.ts`, the placement case | passed |
+| `tests/k1-kit-engine.test.ts`, "without the kit field" | failed, as it must there: the row carries the kit in that worktree. It passed in the run without the row change |
+| `tests/monster-kits.test.ts` | 6 passed |
+| `tests/monster-models.test.ts`, "saltback_stalker: its kit is a Kit_ node whose children name bones of its model" | passed |
+| `tests/monster-models.test.ts`, "the two variant rows name their kits" | failed: the marksman's kit is K2's |
+
+World bounds of the pieces at rest (figure space): back crystals y 0.62 to 1.01; the fork y 1.62 to 1.90 and z −0.34 to −0.07, at the sting; the claws from x ±0.27 to ±0.67 and z −1.77 to −1.14.
+
+## Sheets
+
+These come from `scratch/k1/kit_render.py` (not committed). It is `review_render.py`'s renderer with each kit child moved to its bone's rest joint, the way the engine mounts it. `review_render.py` cannot mount a kit.
+
+| Sheet | What it shows |
+|---|---|
+| `k1-stalker-silhouette.jpg` | black cut-outs at the roster's camera (distance 26, 1080 frame), in pairs, scorpion then stalker: front, three-quarter, side. The scorpion is at its review scale 1.28 and the stalker at 1.792 (1.28 × Stage 4's `modelScale` 1.4). Heights in px: front 120 and 166, three-quarter 129 and 182, side 132 and 187 |
+| `k1-stalker-against.jpg` | lit, three-quarter (top row) and side (bottom row): the scorpion, the stalker untinted, the stalker with Stage 4's tint. The renderer has no albedo tile |
+
+**Reading the cut-outs:**
+- Front: the crystal crown along the back and the crusted claws widen the top and the claw ends.
+- Three-quarter and side: the back is a jagged ridge where the scorpion's is smooth, the claws end in spiked clubs, and the sting has two extra prongs.
+
+`s6/` holds 1.50 MB of its 2 MB after K1 (118 kB of it K1's).
