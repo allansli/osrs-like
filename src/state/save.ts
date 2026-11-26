@@ -180,8 +180,9 @@ export interface StorageLike {
 
 const CORRUPT_KEY = 'gielinor_hero_save_v1_corrupt';
 
-export function readLegacy(storage: StorageLike, now: number = Date.now()): MigratedSave | null {
+export function readLegacy(storage: StorageLike, now: number = Date.now(), skipKey?: string): MigratedSave | null {
   for (const key of LEGACY_SAVE_KEYS) {
+    if (key === skipKey) continue;
     const raw = storage.getItem(key);
     if (!raw) continue;
     try {

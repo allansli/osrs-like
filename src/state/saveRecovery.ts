@@ -76,8 +76,8 @@ export function shouldAutosave(hold: boolean): boolean {
   return !hold;
 }
 
-export function legacyPreview(storage: StorageLike): LegacyPreview | null {
-  const migrated = readLegacy(storage, 0);
+export function legacyPreview(storage: StorageLike, skipKey?: string): LegacyPreview | null {
+  const migrated = readLegacy(storage, 0, skipKey);
   if (!migrated || !migrated.migratedFrom) return null;
   const totalLevel = SKILL_KEYS.reduce((n, k) => n + migrated.state.skills[k].lvl, 0);
   return { key: migrated.migratedFrom, gp: migrated.state.gp, totalLevel };
