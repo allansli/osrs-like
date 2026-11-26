@@ -4,6 +4,8 @@ import { weaponSpecial, adventureTracker, slayerCard, combatLevel } from '../sta
 import { ITEMS, TIER_COLORS, isStackableInBackpack, type ItemDef } from '../data/items';
 import { SKILLS_META, OSRS_XP_TABLE } from '../data/skills';
 import { PRAYERS, SPELLS, type SpellDef } from '../data/magic';
+import { keepCorrupt, legacyPreview, recoveryExit } from '../state/saveRecovery';
+import { readLegacy, SAVE_KEY } from '../state/save';
 
 type PrayerDef = (typeof PRAYERS)[number];
 import {
@@ -499,4 +501,113 @@ export function moveItemTooltip(ev: MouseEvent): void {
 
 export function hideItemTooltip(): void {
   el('item-tooltip').style.display = 'none';
+}
+
+export interface SaveRecoveryNoticeCallbacks {
+  onNewGame: () => void;
+  onLoadOlder: (state: typeof STATE) => void;
+}
+
+let saveRecoveryWired = false;
+let currentSaveRecoveryCallbacks: SaveRecoveryNoticeCallbacks | null = null;
+let saveRecoveryAskOnceMoreNew = false;
+let saveRecoveryAskOnceMoreOlder = false;
+
+export function showSaveRecoveryNotice(callbacks: SaveRecoveryNoticeCallbacks): void {
+  if (typeof document === 'undefined') return;
+  currentSaveRecoveryCallbacks = callbacks;
+  saveRecoveryAskOnceMoreNew = false;
+  saveRecoveryAskOnceMoreOlder = false;
+
+  const modal = el('save-recovery-modal');
+  const title = el('save-recovery-title');
+  const msg = el('save-recovery-msg');
+  const warn = el('save-recovery-warn');
+  const olderBtn = el('save-recovery-older-btn');
+  const fallbackBox = el('save-recovery-fallback-box');
+  const fallbackText = el<HTMLTextAreaElement>('save-recovery-fallback-text');
+  const copyStatus = el('save-recovery-copy-status');
+
+  title.textContent = 'Save File Error';
+  msg.textContent = 'The saved character could not be loaded because the save file is corrupted or could not be applied.';
+  warn.textContent = '';
+  copyStatus.textContent = '';
+  fallbackBox.hidden = true;
+  fallbackText.value = '';
+
+  const preview = legacyPreview(localStorage);
+  if (preview) {
+    olderBtn.hidden = false;
+    olderBtn.textContent = `Load older save (${preview.gp.toLocaleString()} GP, Total Lv ${preview.totalLevel})`;
+  } else {
+    olderBtn.hidden = true;
+  }
+
+  if (!saveRecoveryWired) {
+    saveRecoveryWired = true;
+
+    el('save-recovery-new-btn').addEventListener('click', () => {
+      const raw = localStorage.getItem(SAVE_KEY) ?? '';
+      const result = keepCorrupt(localStorage, raw);
+      if (!recoveryExit('new', result)) {
+        if (!saveRecoveryAskOnceMoreNew) {
+          saveRecoveryAskOnceMoreNew = true;
+          warn.textContent = 'Could not keep a backup copy. Click Start New Game again to proceed without saving a backup.';
+          return;
+        }
+      }
+      saveRecoveryAskOnceMoreNew = false;
+      modal.classList.remove('open');
+      currentSaveRecoveryCallbacks?.onNewGame();
+      updateAllUI();
+    });
+
+    olderBtn.addEventListener('click', () => {
+      const raw = localStorage.getItem(SAVE_KEY) ?? '';
+      const result = keepCorrupt(localStorage, raw);
+      if (!recoveryExit('older', result)) {
+        if (!saveRecoveryAskOnceMoreOlder) {
+          saveRecoveryAskOnceMoreOlder = true;
+          warn.textContent = 'Could not keep a backup copy. Click Load Older Save again to proceed without saving a backup.';
+          return;
+        }
+      }
+      saveRecoveryAskOnceMoreOlder = false;
+      modal.classList.remove('open');
+      const legacy = readLegacy(localStorage);
+      if (legacy) {
+        currentSaveRecoveryCallbacks?.onLoadOlder(legacy.state);
+      }
+      updateAllUI();
+    });
+
+    el('save-recovery-copy-btn').addEventListener('click', () => {
+      const raw = localStorage.getItem(SAVE_KEY) ?? '';
+      const showFallback = () => {
+        fallbackBox.hidden = false;
+        fallbackText.value = raw;
+        fallbackText.readOnly = true;
+        try {
+          fallbackText.select();
+        } catch {}
+        copyStatus.textContent = 'Save text shown below. Copy it manually:';
+      };
+
+      try {
+        if (typeof navigator !== 'undefined' && navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+          navigator.clipboard.writeText(raw).then(() => {
+            copyStatus.textContent = 'Save text copied to clipboard.';
+          }).catch(() => {
+            showFallback();
+          });
+        } else {
+          showFallback();
+        }
+      } catch {
+        showFallback();
+      }
+    });
+  }
+
+  modal.classList.add('open');
 }

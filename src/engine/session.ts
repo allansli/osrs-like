@@ -6,13 +6,20 @@ import { STARTER_ARRIVAL } from '../state/quests';
 import { readSave, writeSave, SAVE_KEY, LEGACY_SAVE_KEYS, sanitizeCam } from '../state/save';
 import { matchCheat, matchToolsCode, applySkillsPlus10, applyGold200k } from '../state/cheats';
 import { AGGRO_GRACE_MS } from '../state/monsterAi';
-import { el, addChatMessage, showBanner, updateAllUI } from '../ui/hud';
+import { el, addChatMessage, showBanner, updateAllUI, showSaveRecoveryNotice } from '../ui/hud';
 import { closeModals } from '../ui/playerActions';
 
 let resetting = false;
+export let saveHold = false;
 
 export function saveGameState(): void {
   if (resetting) return;
+  if (saveHold) {
+    try {
+      el('save-status-btn').textContent = 'Not saving';
+    } catch {}
+    return;
+  }
   try {
     const pose = (player && player.pos) ? {
       x: Number(player.pos.x.toFixed(2)),
@@ -45,13 +52,40 @@ export function loadGameState(): boolean {
     const migrated = readSave(localStorage);
     if (!migrated) return false;
     if (migrated.corrupt) {
-      addChatMessage('Save file was corrupt; backed up to <b>gielinor_hero_save_v1_corrupt</b>.', 'combat');
+      saveHold = true;
+      try {
+        el('save-status-btn').textContent = 'Not saving';
+      } catch {}
+      showSaveRecoveryNotice({
+        onNewGame: () => {
+          startNewGame();
+          saveHold = false;
+        },
+        onLoadOlder: (legacyState) => {
+          applyState(STATE, legacyState);
+          saveHold = false;
+        }
+      });
       return false;
     }
     try {
       applyState(STATE, migrated.state);
     } catch (e) {
       console.error(e);
+      saveHold = true;
+      try {
+        el('save-status-btn').textContent = 'Not saving';
+      } catch {}
+      showSaveRecoveryNotice({
+        onNewGame: () => {
+          startNewGame();
+          saveHold = false;
+        },
+        onLoadOlder: (legacyState) => {
+          applyState(STATE, legacyState);
+          saveHold = false;
+        }
+      });
       return false;
     }
 

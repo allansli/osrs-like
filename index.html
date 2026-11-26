@@ -421,6 +421,27 @@
   </div>
 </div>
 
+<div class="modal-backdrop" id="save-recovery-modal">
+  <div class="modal-window ui-panel" role="dialog" aria-modal="true" aria-labelledby="save-recovery-title">
+    <div class="modal-header">
+      <h2 id="save-recovery-title">Save Recovery</h2>
+    </div>
+    <div class="modal-body">
+      <div id="save-recovery-msg" class="modal-subtext"></div>
+      <div id="save-recovery-warn" class="modal-subtext save-recovery-warn"></div>
+      <div class="settings-grid save-recovery-settings-grid">
+        <button class="hud-btn" type="button" id="save-recovery-new-btn">Start New Game</button>
+        <button class="hud-btn" type="button" id="save-recovery-older-btn" hidden>Load Older Save</button>
+        <button class="hud-btn" type="button" id="save-recovery-copy-btn">Copy Save Text</button>
+      </div>
+      <div id="save-recovery-fallback-box" class="save-recovery-fallback-box" hidden>
+        <textarea id="save-recovery-fallback-text" readonly rows="6" class="save-recovery-text-fallback"></textarea>
+      </div>
+      <div id="save-recovery-copy-status" class="modal-subtext save-recovery-copy-status"></div>
+    </div>
+  </div>
+</div>
+
 <div id="item-tooltip"></div>
 <script type="module" src="/src/main.ts"></script>
 

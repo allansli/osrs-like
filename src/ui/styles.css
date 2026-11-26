@@ -2067,6 +2067,12 @@
   .current-zone-footer { color: var(--ui-brass); font-weight: 700; }
   .modal-subtext { margin-bottom: 10px; font-size: 0.75rem; color: var(--ui-bone-dim); }
   .xptable-skill-summary { margin-bottom: 10px; padding: 8px 12px; background: var(--ui-slate-1); border: 1px solid var(--ui-brass); border-radius: 6px; font-size: 0.75rem; }
+  #save-recovery-modal .modal-window { max-width: 540px; }
+  .save-recovery-warn { color: var(--ui-ember); font-weight: 700; margin-top: 8px; }
+  .save-recovery-settings-grid { margin-top: 12px; }
+  .save-recovery-fallback-box { margin-top: 12px; }
+  .save-recovery-text-fallback { width: 100%; box-sizing: border-box; background: var(--ui-slate-1); color: var(--ui-bone); font-family: monospace; font-size: 0.75rem; padding: 8px; border: 1px solid var(--ui-brass); border-radius: 4px; resize: vertical; }
+  .save-recovery-copy-status { margin-top: 8px; }
 
   :focus-visible {
     outline: 2px solid var(--ui-brass);
