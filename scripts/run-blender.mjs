@@ -30,9 +30,7 @@ const BUILD_SCRIPTS = {
   world: 'scripts/blender/build_world.py'
 };
 
-const EXTRA_MODES = {
-  guard: 'scripts/blender/export_guard.py'
-};
+const EXTRA_MODES = {};
 
 const mode = process.argv[2] || 'hero';
 

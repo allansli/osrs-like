@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { loadGltfOnce } from './gltf';
 import { G } from './context';
 import { disposeObject3D } from './dispose';
 import { WORLD_REGIONS, type RegionDef } from '../data/world';
@@ -531,18 +530,15 @@ export function createMerchantNPC(x: number, z: number, name: string, tunicColor
   });
 }
 
-export function loadBlenderGuardTemplate(): Promise<GLTF | null> {
-  if (typeof window === 'undefined' || typeof document === 'undefined') {
-    return Promise.resolve(null);
-  }
-  return loadGltfOnce('/models/guard.glb');
-}
-
 export function createCastleGuard(x: number, z: number, name: string, rotY = 0): void {
   const y = getTerrainHeight(x, z);
-  const grp = new THREE.Group();
-  grp.position.set(x, y, z);
-  grp.rotation.y = rotY;
+  const rig = buildHumanoidRig(0x80898f, 0xfacc15, 0x80898f, 1.0);
+  rig.hitbox.geometry.dispose();
+  rig.hitbox.geometry = new THREE.CylinderGeometry(0.45, 0.45, 1.85, 8);
+  rig.hitbox.position.y = 0.92;
+
+  rig.group.position.set(x, y, z);
+  rig.group.rotation.y = rotY;
 
   const uData = {
     type: 'interactive',
@@ -551,33 +547,30 @@ export function createCastleGuard(x: number, z: number, name: string, rotY = 0):
     dialogue: 'Halt! Welcome to Lumbridge Castle, adventurer. Keep your weapons sheathed within the courtyard.',
     interactRadius: 3.5
   };
-  grp.userData = uData;
+  rig.group.userData = { ...uData };
+  rig.hitbox.userData = { ...uData };
 
-  const hitbox = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.45, 0.45, 1.85, 8),
-    new THREE.MeshBasicMaterial({ visible: false })
-  );
-  hitbox.position.y = 0.92;
-  hitbox.userData = uData;
-  grp.add(hitbox);
-  G.worldInteractiveObjects.push(hitbox);
-  G.scene.add(grp);
-  G.npcList.push({ pos: grp.position, name, color: '#94a3b8', yOffset: 2.5 });
+  G.worldInteractiveObjects.push(rig.hitbox);
+  G.scene.add(rig.group);
+  G.npcList.push({ pos: rig.group.position, name, color: '#94a3b8', yOffset: 2.5 });
 
-  loadBlenderGuardTemplate().then((gltf: GLTF | null) => {
-    if (!gltf) return;
-    const cloned = gltf.scene.clone(true);
-    cloned.position.set(0, 0, 0);
-    cloned.traverse((obj: THREE.Object3D) => {
-      const m = obj as THREE.Mesh;
-      if (m.isMesh) {
-        m.castShadow = true;
-        m.receiveShadow = false;
-        m.userData = { ...m.userData, ...uData };
-      }
-    });
-    grp.add(cloned);
-    addCartoonOutline(cloned, 0.024);
+  Promise.all([loadBlenderHeroTemplate(), loadBlenderGearTemplate()]).then(([heroGltf]) => {
+    if (heroGltf) {
+      const anim = upgradeHumanoidRigWithGltf(rig, heroGltf, 0x80898f, 0xfacc15, 0x80898f, { isPlayer: false });
+      if (anim) G.npcAnimatorsList.push(anim);
+    }
+    const guardSteel = 0x80898f;
+    const goldTrim = 0xfacc15;
+    const items = {
+      head: { id: 'steel_helm', slot: 'head', iconKind: 'head', color: guardSteel, trim: goldTrim } as unknown as ItemDef,
+      body: { id: 'steel_plate', slot: 'body', iconKind: 'body', color: guardSteel, trim: goldTrim } as unknown as ItemDef,
+      legs: { id: 'steel_legs', slot: 'legs', iconKind: 'legs', color: guardSteel, trim: goldTrim } as unknown as ItemDef,
+      shield: { id: 'steel_shield', slot: 'shield', iconKind: 'kiteshield', color: guardSteel, trim: goldTrim } as unknown as ItemDef,
+      weapon: { id: 'steel_sword', slot: 'weapon', iconKind: 'sword', color: guardSteel, trim: goldTrim } as unknown as ItemDef
+    };
+    const mounted: MountedRig = rig;
+    mountLoadout(mounted, items);
+    addCartoonOutline(rig.group, LEAN_RIG.outline);
   });
 }
 
