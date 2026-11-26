@@ -10,30 +10,40 @@ This is a repair round. The first MK1 run left no commit on `cs/models`, so the 
 Built with `BLEND(monsters)` on Blender 5.0.1 from `d83bc9a` plus this task's builder:
 
 ```
-flock /tmp/claude-blender.lock timeout 600 env BLENDER_PATH=/usr/bin/blender node scripts/run-blender.mjs monsters --out scratch/models-build/mk1
+flock /tmp/claude-blender.lock timeout 600 env BLENDER_PATH=/usr/bin/blender node scripts/run-blender.mjs monsters --out scratch/models-build/mk1b
 ```
 
-The build exits 0 in about 10 s. Nothing is promoted: `git status --short public/models blender` prints nothing. MP6 promotes the file and makes the loader and test change of the amendment. D4 gives the row its `kit`.
+The build exits 0 in about 10 s.
+
+**Art fix (second round, main session's judgement of `mk1-adept-against.jpg`).** The first hood read as an oversized grey box above the head: wider than the shoulders (1.26 at the hem) and taller than the face (peak at y 2.67). The figure no longer read as a person in a hood. The hood is now fitted:
+- it wraps the skull and falls to the shoulders;
+- its opening frames the face and beard;
+- its top stops at y 2.00, under the old hat brim;
+- the ember lining shows only at the opening.
+
+The brazier, fire and ember are unchanged. Every number, sheet and check below is from that rebuild, in `scratch/models-build/mk1b`, packed as `mk1b-packed`.
+
+Nothing is promoted: `git status --short public/models blender` prints nothing. MP6 promotes the file and makes the loader change of the amendment; MK1 made its declared test edit. D4 gives the row its `kit`.
 
 ## Open for the main session
 
-1. **SUITE has two known red cases until MP6.** `tests/monster-models.test.ts` reads the pending manifest when one exists. Its kit case expects each child of `Kit_saltback_stalker` and `Kit_thornwatch_marksman` to be a bare bone name. Those children are now `saltback_stalker_<Bone>` and `thornwatch_marksman_<Bone>`, so two cases fail:
-   - `saltback_stalker_Hips names a bone of scorpion`;
-   - `thornwatch_marksman_HeadGroup names a bone of dark_ranger`.
-
-   The amendment gives that case's new assertion (each child carries the `<kit>_` prefix, and the name without it is a bone) to MP6 as a declared edit, together with the loader. The test is frozen for MK1, so it was not touched. Every other test passes.
+1. **The fitted hood no longer hides the hat, and the hat shows on the adept.** A kit only adds pieces: the loader's kit loop attaches children and hides nothing, and no engine code hides a monster mesh by name. The hat (brim 0.96 across at y 2.00 to 2.05, crown tip at y 2.47) is part of the wizard's skinned robe mesh. Any hood that hid it would be at least 0.97 wide at brow height and reach y 2.5, which is the box the main session rejected. So the hood is worn **under** the hat: its open top ring (y 1.995) is covered by the brim, and the adept reads as a person in a grey hood and mantle with the wizard's hat on top.
+   - The silhouette element that survives 85 px is now the brazier and its fire, the flame over the left hand and the mantle's bulk on the shoulders, not the head's outline (see Values).
+   - If the owner wants the hat gone, there are two exits:
+     - a declared change at MP6: the wizard's hat becomes its own named mesh, and the loader hides it when a row has a kit (this touches `_wizard_kit`, `blenderMonsters.ts` and the wizard's manifest entry);
+     - accepting a hood large enough to swallow the hat, as the first round built.
+   - The owner decides this on the sheets.
+   - **The kit case is resolved.** `tests/monster-models.test.ts`'s kit case was edited, as the amendment declares (commit `test(MK1)`). It reads the pending manifest when one exists, and it asserts two things for each child of a `Kit_` node: the child carries the `<kit>_` prefix, and the name without the prefix is a bone of the model. SUITE is green (Checks).
 2. **The shipped loader cannot mount a prefixed child.** `upgradeMonsterRigWithGltf` (`blenderMonsters.ts` 116) matches a child to a bone by exact name. It would add every prefixed piece to the figure's root, not to its bone. So the file must not ship before MP6's loader change; the amendment already puts both in one commit. The scratch placement test below runs MP6's rule by hand.
-3. **The hood is as wide as the hat it hides.** A kit cannot hide its base, so the hood has to swallow the wizard's hat. The hat's brim is 0.96 across (radius 0.48 by 0.46 round (0, 2.0, −0.12)), and its crown bends back to a tip at (0.10, 2.47, 0.31).
-   - The hood is 1.01 across at the brim and 1.26 at the shoulder hem.
-   - It reads as a deep cowl with a short mantle and a peak that droops back. Its mouth is open on the face, the violet glints and the beard, and the inside is lit ember.
-   - Because it rides `HeadGroup` rigidly, the mantle turns with the head. In the worst pose (head turned 0.8 rad) the mantle swings over the shoulders and shows its lining (`mk1-adept-worst-pose.jpg`).
-
-   Whether the size "makes sense" is the owner's call on the sheets and at MP6.
+3. **The hood's size.** The hood is 0.82 across at the shoulder hem (y 1.55), about the shoulders' width (the shoulder balls reach ±0.36). It is 0.52 across at y 1.90 and 0.37 at its top (y 2.00).
+   - It stands clear of the skull by 0.08 to 0.16, and of the wizard's high collar (0.52 across at y 1.86) behind the head.
+   - Because it rides `HeadGroup` rigidly, the mantle turns with the head. In the worst pose (head turned 0.8 rad) it swings over the shoulders. It is small enough now to stay mostly behind the raised arm (`mk1-adept-worst-pose.jpg`).
+   - **Emissive (OM-S6c, owner look check, not a defect):** the adept shows two glows, the wizard's violet glints under the brow and the kit's orange fire. The amendment allows a kit's fire its own emissive beside the base's.
 4. **No tint yet.** The content file gives the row only `tintNote: 'ash grey robe, ember trim'` and no hex value, so the sheets are untinted. Design 5.6's 15 value points depend on that tint (D4's row).
 5. **Not seen in the engine.** MK1's accept has no capture, and none was taken. MP6's capture should look at three things:
    - the outline pass on the hood's inner shell;
-   - the right arm, which passes through the hood's side in `Cast`, as it already crosses the hat's brim;
-   - the face and glints under the hood's lip, which a camera looking down will likely hide.
+   - the right arm in `Cast`, against the mantle's side (not checked on the fitted hood; the first round's hood was crossed by it, as the hat's brim is);
+   - the face and glints, which sit under the hat's brim inside the hood's mouth, and which a camera looking down may hide (not checked on the fitted hood).
 6. **MK2 and MK3**: under the amendment, every bone is free for a new kit (children are `slag_brute_<Bone>` and `marrowjaw_<Bone>`). The naming no longer blocks them.
 
 ## What was built
@@ -44,7 +54,7 @@ For `Kit_saltback_stalker` and `Kit_thornwatch_marksman`, only the child node na
 
 | Child (bone) | What it is | Material |
 |---|---|---|
-| `cinder_adept_HeadGroup` | the hood: a faceted 14-sided bell over the head and hat, from a mantle hem at y 1.60 (radius 0.60 by 0.56) to a peak at y 2.64 that droops back to z 0.40. It is a solidified shell 0.03 thick with its rims filled. The mouth is cut where the face is: the faces with three-space z < −0.30 between the rings at y 1.60 and 1.95. A ring at 1.95 keeps the faces from 1.95 to 2.04 whole, so the brim (y 2.00 to 2.05, front edge at z −0.58) stays inside the hood. A first build without that ring opened the mouth to 2.04 and showed the brim's edge. Outside it is ash grey with plane tones; every face that looks into the hood is painted ember | `mat_robe_dark_wizard_paint` (the wizard's own) |
+| `cinder_adept_HeadGroup` | the hood: a fitted, faceted 14-sided cowl worn under the hat. Six rings: a mantle hem at y 1.56 (radius 0.41 by 0.33), then 1.68 and 1.80 over the shoulders, then 1.90 and 1.97 round the skull. An open top ring at y 1.995 (0.185 by 0.21) sits just under the brim (y 2.00), so the brim covers it. It is a solidified shell 0.03 thick with its rims filled. The mouth is the three front columns (faces with three-space z < −0.28) from the hem to y 1.97. It is about 0.32 across at the face and frames the face, the glints and the beard. The band from 1.97 to 1.995 stays whole as a brow under the brim. Outside it is ash grey with plane tones. Ember is painted only on the inner faces of the front half (three z < −0.05), which the mouth shows. Two earlier cuts of this round (z < −0.17, then −0.21) took five columns and left the hood as two side flaps | `mat_robe_dark_wizard_paint` (the wizard's own) |
 | `cinder_adept_WeaponPivot` | an eight-sided faceted iron bowl, 0.345 long and 0.265 at the lip, starting 0.05 under the staff head. It swallows the wizard's three prongs and purple orb (the orb has radius 0.10, 0.13 up the staff). Above it sit an ember band round the rim and four iron tines (0.24) leaning out | `mat_wood_dark_wizard_paint` (the wizard's own) |
 | `cinder_adept_RightHand` | the fire: one six-sided flame 0.52 tall out of the bowl, and six tongues (0.22 and 0.30) leaning out round it | `mat_glow_orange` |
 | `cinder_adept_LeftHand` | an ember held 0.15 over the open left hand: a faceted coal (0.085) with three tongues | `mat_glow_orange` |
@@ -54,10 +64,10 @@ For `Kit_saltback_stalker` and `Kit_thornwatch_marksman`, only the child node na
   - no code under `src/` names `WeaponPivot`, `RightHand` or `LeftHand` (`grep -rn -i "weaponPivot\|'RightHand'\|'LeftHand'\|rightHand\b" src/` prints nothing), so neither the wind-up nor the flinch poses them.
 
   They therefore move as one.
-- **Additive only.** Each piece goes over the wizard. The hat, prongs and orb are inside the hood and the bowl.
+- **Additive only.** Each piece goes over the wizard. The prongs and orb are inside the bowl. The hat stays visible on top of the hood (open item 1).
 - **Faceted.** Every piece is flat-shaded. The hood's outside and the iron carry plane tones; the lining, the rim and the fire are flat colour.
 - **Paint**, before any tint: hood `0x5E5852`, lining and rim `0xBC5C28` (over the cloth tile's mean on the robe material, over the wood tile's mean on the wood material, as `_human_paint` does), iron `0x4A423C`, fire `0xFFFFFF` on the glow material (as the wizard's orb is). No material is added: the file stays at 34. Every kit primitive carries `COLOR_0`, and the manifest lists `Kit_cinder_adept` as its own `all` unit. UV layers are dropped.
-- **Budget**: 1,060 of the 1,200 triangles allowed, 4 meshes (the ceiling of final.md item 6), 3 materials. The builder stops over 1,200.
+- **Budget**: 836 of the 1,200 triangles allowed, 4 meshes (the ceiling of final.md item 6), 3 materials. The builder stops over 1,200.
 
 ## Values
 
@@ -77,9 +87,9 @@ The checks are design 5.4 (value range 25% to 75%, nothing under 18%) and 5.6 (a
 |---|---|
 | 5.4 range 25% to 75% (HSV value) | met: hood 37%, lining and rim 74%, iron 29%. The first build's rim `0xC8642A` was 78%; it was changed and rebuilt. The fire is the one glow, which 5.4 allows |
 | 5.4 floor 18% | met: the darkest kit paint is the iron at 27% luma |
-| 5.4 at most one emissive, at most five materials | met: the kit adds glow on `mat_glow_orange` only. The wizard's purple orb is inside the bowl. The glints, which keep the wizard's glow, sit inside the hood's mouth |
-| 5.6.1 a silhouette element that survives 85 px | met: the peaked hood replaces the pointed hat with its brim, and the brazier and fire stand above the head (`mk1-adept-silhouette.jpg`) |
-| 5.6.2 value 15 points from the base | the figure's value is set by the row's tint, which is D4's (item 4). Piece against piece, the hood's outside is 11 points of luma over the robe (35 against 24) and 18 over the hat it hides (17) |
+| 5.4 at most one emissive, at most five materials | two emissives on the figure: the wizard's violet glints and the kit's orange fire (on `mat_glow_orange`). The wizard's purple orb is inside the bowl. The amendment allows the kit's fire its own emissive, so this is owner look check OM-S6c, not a defect. Three materials in the kit |
+| 5.6.1 a silhouette element that survives 85 px | met by the staff head: the brazier with its fire stands above the hat in every view, where the wizard's staff ends in a small orb at hat height. The flame over the left hand and the mantle's bulk on the shoulders add to it. The head's outline is the wizard's (pointed hat and brim), because the fitted hood sits under it (item 1) (`mk1-adept-silhouette.jpg`) |
+| 5.6.2 value 15 points from the base | the figure's value is set by the row's tint, which is D4's (item 4). Piece against piece, the hood's outside is 11 points of luma over the robe (35 against 24) |
 | 5.6.3 size | the content file's `modelScale` 1.08 (D4's row) |
 
 ## Measured
@@ -88,13 +98,13 @@ The checks are design 5.4 (value range 25% to 75%, nothing under 18%) and 5.6 (a
 
 | | As exported | Packed |
 |---|---|---|
-| Kit triangles / meshes / materials | 1,060 / 4 / 3 | same |
-| Kit raw bytes | 72,824 | 47,900 |
-| Kit Brotli bytes | 19,791 | 15,460 |
-| File raw / Brotli | 3,767,300 / 1,527,910 | 2,300,336 / 938,308 |
-| File meshes / materials / triangles | 50 / 34 / 60,334 | same |
+| Kit triangles / meshes / materials | 836 / 4 / 3 | same |
+| Kit raw bytes | 57,144 | 37,596 |
+| Kit Brotli bytes | 15,531 | 12,194 |
+| File raw / Brotli | 3,751,616 / 1,522,982 | 2,290,028 / 934,404 |
+| File meshes / materials / triangles | 50 / 34 / 60,110 | same |
 
-The packed kit is 15.5 kB against the 20 kB kit ceiling.
+The packed kit is 12.2 kB against the 20 kB kit ceiling. The first round's kit was 1,060 triangles and 15.5 kB packed.
 
 **Untouched figures**: compared with a build of `d83bc9a` without this task (`scratch/models-build/base`, built the same way), the primitive hashes of all 13 roots are identical. That covers every `Monster_` figure, `dark_wizard` among them, and both renamed kits.
 
@@ -107,30 +117,33 @@ The packed kit is 15.5 kB against the 20 kB kit ceiling.
   - all of them at translation 0 and scale 1;
 - `meshClasses`: `^cinder_adept_(HeadGroup|WeaponPivot|RightHand|LeftHand)$`;
 - `vertexColor.figures.Kit_cinder_adept`: `all`;
-- `figures.Kit_cinder_adept`: 1,200 triangles, 4 meshes, 3 materials, raw 47,900 (packed), Brotli 20,000. These are the kit row of final.md item 6 and the two shipped kits' entries;
-- file `budget`: only the ceilings the packed build exceeds are raised, to `buildManifest`'s numbers for it: triangles from 59,274 to 60,334, meshes from 46 to 50, and raw bytes from 2,271,135 to 2,323,340. Brotli stays 1,270,000 and materials stay 34.
+- `figures.Kit_cinder_adept`: 1,200 triangles, 4 meshes, 3 materials, raw 37,596 (packed), Brotli 20,000. These are the kit row of final.md item 6 and the two shipped kits' entries;
+- file `budget`: only the ceilings the packed build exceeds are raised, to `buildManifest`'s numbers for it: triangles from 59,274 to 60,110, meshes from 46 to 50, and raw bytes from 2,271,135 to 2,312,929. The script was rerun on the new build. The first round's numbers (60,334 and 2,323,340) are gone. Brotli stays 1,270,000 and materials stay 34.
 
 No other figure's ceiling moved. The material set and the clips are unchanged.
 
 | COMPARE | Exit | Result |
 |---|---|---|
 | Base build of `d83bc9a`, packed, against the live manifest | 0 | Contract and Budget pass |
-| This build, packed (`scratch/models-build/mk1-packed/monsters.glb`), against the pending manifest | **0** | Contract and Budget pass. Drift lists:<ul><li>the seven renamed kit children, each added under its new name and removed under its old one;</li><li>the five new kit nodes and four new kit meshes;</li><li>`goblin_body` and `goblin_archer_body` changing bytes, as they do in the base build.</li></ul> |
-| This build, as exported | 2 | Budget only, on the packed ceilings, as for K1 and K2. Contract passes |
+| This build, packed (`scratch/models-build/mk1b-packed/monsters.glb`), against the pending manifest | **0** | Contract and Budget pass. Drift lists:<ul><li>the seven renamed kit children, each added under its new name and removed under its old one;</li><li>the five new kit nodes and four new kit meshes;</li><li>`goblin_body` and `goblin_archer_body` changing bytes, as they do in the base build.</li></ul> |
+| This build, as exported | 2 | Budget only (25 lines), on the packed ceilings, as for K1 and K2. Contract passes |
 
 ## Checks
 
-**On the branch at the builder commit:**
+**On the branch after the art fix** (`test(MK1)` and the builder commit):
 
 | Check | Command | Result |
 |---|---|---|
-| `SUITE` | `flock /tmp/claude-capped.lock scripts/capped.sh npx vitest run` | exit 1: 129 of 130 files pass; 2 failed, 1,426 passed, 3 skipped. The two failures are the `monster-models` kit cases of item 1 (MP6's declared edit) |
+| `ONE` | `flock /tmp/claude-capped.lock scripts/capped.sh npx vitest run tests/monster-models.test.ts` | exit 0: 19 passed, the two kit cases among them |
+| `SUITE` | `flock /tmp/claude-capped.lock scripts/capped.sh npx vitest run` | exit 0: 130 files passed; 1,428 passed, 3 skipped |
 | `TYPES` | `flock /tmp/claude-capped.lock scripts/capped.sh npx tsc --noEmit` | exit 0, no output |
 | `BUILD` | `flock /tmp/claude-capped.lock scripts/capped.sh npm run build` | exit 0. JS chunk 1,097.21 kB (gzip 311.09 kB), CSS 37.73 kB, reported and not a ceiling |
 | `UNTOUCHED` | `git status --short public/models blender` | prints nothing |
 
+The untouched-figures check was repeated on the new build: all 13 roots hash as in the base build of `d83bc9a`. Only `cinder_adept` is new.
+
 **Built-file check (`monster-motion`)**, run in this worktree:
-- Setup: the packed build copied over `public/models/monsters.glb`, and a scratch placement test copied to `tests/mk1-kit-engine.test.ts`.
+- Setup: the packed build (`mk1b-packed`) copied over `public/models/monsters.glb`, and a scratch placement test copied to `tests/mk1-kit-engine.test.ts`.
 - Command: `flock /tmp/claude-capped.lock scripts/capped.sh npx vitest run tests/monster-motion.test.ts tests/monster-libraries.test.ts tests/monster-kits.test.ts tests/mk1-kit-engine.test.ts`.
 - Afterwards: the file was restored with `git checkout public/models/monsters.glb` and the scratch test was deleted.
 
@@ -151,7 +164,7 @@ World bounds of the pieces at rest (figure space):
 
 | Piece | x | y | z |
 |---|---|---|---|
-| Hood | ±0.63 | 1.60 to 2.67 | −0.65 to 0.57 |
+| Hood | ±0.41 | 1.55 to 2.00 | −0.32 to 0.30 |
 | Brazier | 0.28 to 0.84 | 2.02 to 2.56 | −0.48 to 0.08 |
 | Fire | 0.36 to 0.78 | 2.30 to 2.85 | −0.41 to 0.01 |
 | Ember | −0.70 to −0.53 | 1.12 to 1.43 | −0.29 to −0.13 |
@@ -161,17 +174,23 @@ World bounds of the pieces at rest (figure space):
 The sheets come from `scratch/mk1/kit_render.py`, which is not committed. It drives `review_render.py`'s renderer, the same as K2's `kit_render.py`, with one difference: each kit child is bone-parented to the wizard bone its name gives (without the `cinder_adept_` prefix), at the bone's rest joint. It therefore follows a pose the way the engine mounts it. The run exits 0:
 
 ```
-flock /tmp/claude-blender.lock timeout 600 /usr/bin/blender --background --factory-startup --disable-autoexec --python-exit-code 1 --python scratch/mk1/kit_render.py -- scratch/models-build/mk1/monsters.glb scratch/mk1/sheets
+flock /tmp/claude-blender.lock timeout 600 /usr/bin/blender --background --factory-startup --disable-autoexec --python-exit-code 1 --python scratch/mk1/kit_render.py -- scratch/models-build/mk1b/monsters.glb scratch/mk1/sheets-b
 ```
 
 | Sheet | What it shows |
 |---|---|
 | `mk1-adept-turnaround.jpg` | the adept, from `review_render`'s turnaround: front three-quarter, side and back three-quarter, 512 px, 444 px tall |
 | `mk1-adept-worst-pose.jpg` | the adept in `review_render`'s worst pose: crouch, right arm overhead, trunk twisted, head turned. The brazier and fire stay on the staff head and the ember on the left hand. The hood turns with the head |
-| `mk1-adept-silhouette.jpg` | **the 85 px silhouette sheet** (design 5.6): black cut-outs at the roster's camera (distance 26, 1080 frame), in pairs of wizard then adept, from the front, three-quarter, side and back. The wizard is at review scale 1.02 and the adept at 1.1016 (× the content file's `modelScale` 1.08). Heights in px: front 115 and 135, three-quarter 119 and 138, side 119 and 139, back 110 and 138 |
+| `mk1-adept-silhouette.jpg` | **the 85 px silhouette sheet** (design 5.6): black cut-outs at the roster's camera (distance 26, 1080 frame), in pairs of wizard then adept, from the front, three-quarter, side and back. The wizard is at review scale 1.02 and the adept at 1.1016 (× the content file's `modelScale` 1.08). Heights in px: front 115 and 135, three-quarter 119 and 137, side 119 and 138, back 110 and 138 |
 | `mk1-adept-against.jpg` | lit and untinted, the wizard then the adept, at three-quarter (top) and side (bottom) |
 
 **Reading the cut-outs:**
-- The wizard's pointed hat with its wide flat brim becomes a peaked cowl that falls to the shoulders.
-- The staff ends in a wide bowl with flame tongues standing above the hood in every view, where the wizard's ends in a small orb at hat height.
+- The head keeps the wizard's pointed hat and brim. The fitted hood under it adds a mantle that rounds and thickens the shoulders.
+- The staff ends in a wide bowl with flame tongues standing above the hat in every view, where the wizard's ends in a small orb at hat height. This is the element that tells the two apart at 85 px.
 - A flame shape stands over the left hand.
+
+**Reading the lit sheets (side view judged too):**
+- From the front three-quarter, the hood's grey sides and its ember edge frame the face and beard under the brim. The figure reads as a person in a hood with a hat on top.
+- From the side, the mantle falls from under the brim over the back and shoulders, and the hood's top is not seen. The mantle stands off the back: its hem reaches three z 0.30 at y 1.55, where the wizard's collar ends at 0.18 (y 1.86) and the back of the skull at 0.02. Above the shoulders, only the hat stands proud of the head.
+- From the back, a grey cowl covers the nape and shoulders.
+- Nothing intersects visibly in the rest views. In the worst pose, the rigid mantle turns with the head and partly crosses the raised right arm, as the first round's did.
