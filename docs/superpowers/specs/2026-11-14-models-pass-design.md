@@ -640,7 +640,7 @@ The wire ceilings are redone from measurement (3.5 S9): a smooth 5,000-triangle 
 | Large (giant, guardian, demon; Stage 6 captain) | 7,000 | 4 | 5 | 160 kB | 110 kB |
 | Boss (dragon; Stage 6 dungeon boss) | 14,000 | 4 | 5 | 320 kB | 220 kB |
 | Ashmantle | 12,000 | 4 | 5 | 275 kB | 190 kB |
-| Kit | 1,200 | 2 rigid | 3 | 20 kB | 20 kB |
+| Kit | 1,200 | 4 rigid (owner, 2026-11-26) | 3 | 20 kB | 20 kB |
 | Hero body | 6,000 | 11 | as today | 200 kB with twelve clips | 150 kB |
 | One gear piece (follow-up stage) | as today | as merged | | | |
 
@@ -994,3 +994,7 @@ S3c (55cf85d) on the S2c builds and the S1d engine: P-a and P-d met; P-b met for
 
 The owner answered "1 A 2 A 3 A 4 A" to the four OM-P questions: (1) body route (a), the stick-graph body carved with hard edges; (2) three material families (skin, wood, metal), decision N-4; (3) **accept**: every later figure follows the pilot's pattern; (4) both engine options: painted skinned figures take the three-band `cut` shade (6.1.3 amended: `facetMaterial` is still not edited, the figure's material asks for `shade: 'cut'`), and the goblin-hide tile is greyer (chroma kept at 45% around each pixel's luma; mean 221, 234, 143 to 209, 215, 174; it also tints today's archer until the archer is rebuilt). S2d, S3d and S4 follow (plan "After OM-P").
 
+
+### X2 kit meshes (2026-11-26)
+
+X2 found both kits over the design's 2 rigid meshes (Saltback Stalker 4, Thornwatch Marksman 3), every other kit number within its ceiling. Merging them would need skinning, since each piece sits on its own bone. The owner chose to raise the kit mesh ceiling to 4 ("A", 2026-11-26); table 9.1's kit row reads 4 rigid. Cost: at most 2 draw calls per variant on screen.

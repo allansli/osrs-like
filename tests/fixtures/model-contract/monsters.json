@@ -3389,14 +3389,14 @@
     },
     "Kit_saltback_stalker": {
       "triangles": 1200,
-      "meshes": 2,
+      "meshes": 4,
       "materials": 3,
       "rawBytes": 41556,
       "brotliBytes": 20000
     },
     "Kit_thornwatch_marksman": {
       "triangles": 1200,
-      "meshes": 2,
+      "meshes": 4,
       "materials": 3,
       "rawBytes": 46284,
       "brotliBytes": 20000
