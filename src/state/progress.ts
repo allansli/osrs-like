@@ -40,6 +40,32 @@ export function stat(state: { progress?: Progress }, key: string): number {
   return state.progress?.stats?.[key] ?? 0;
 }
 
+export function noteBossDown(state: { progress?: Progress }, typeKey: string, now: number): void {
+  const boss = BOSSES[typeKey];
+  if (!boss) return;
+  const hasCamp = CAMPS.some((c) => c.members.some((m) => m.type === typeKey));
+  if (!hasCamp) return;
+  if (!state.progress) {
+    state.progress = {};
+  }
+  if (!state.progress.bossDownUntil) {
+    state.progress.bossDownUntil = {};
+  }
+  state.progress.bossDownUntil[typeKey] = now + boss.respawnSecs * 1000;
+}
+
+export function bossBackIn(state: { progress?: Progress }, typeKey: string, now: number): number {
+  const until = state.progress?.bossDownUntil?.[typeKey];
+  if (until === undefined || until <= now) return 0;
+  return (until - now) / 1000;
+}
+
+export function clearBossDown(state: { progress?: Progress }, typeKey: string): void {
+  if (state.progress?.bossDownUntil) {
+    delete state.progress.bossDownUntil[typeKey];
+  }
+}
+
 export function isEmptyProgress(progress?: Progress): boolean {
   if (!progress) return true;
   if (progress.story && Object.keys(progress.story).length > 0) return false;
