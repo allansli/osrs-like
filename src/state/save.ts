@@ -86,11 +86,10 @@ export function migrateLegacySave(raw: unknown, source: string | null = null, no
   }
   state.shrines.lumbridge = true;
 
-  state.progress = normalizeProgress(data.progress, now);
-
   state.quests = normalizeQuests(data.quests);
   const validQuestIds = new Set([...QUEST_DEFS.map((q) => q.id), ...STARTER_QUESTS.map((q) => q.id)]);
   state.quests.claimed = Array.from(new Set(state.quests.claimed.filter((id) => validQuestIds.has(id))));
+  state.progress = normalizeProgress(data.progress, now, state.quests.claimed);
   if (state.quests.slayer) {
     const band = SLAYER_BANDS.find((b) => b.monster === state.quests.slayer?.monster);
     if (band) {

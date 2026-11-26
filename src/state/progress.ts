@@ -1,5 +1,5 @@
 import { BOSSES } from '../data/attacks';
-import { FORGE_RECIPES } from '../data/recipes';
+import { FORGE_RECIPES } from '../data/recipeTable';
 import { MONSTER_TYPES, RESOURCE_NODES_DEF } from '../data/world';
 import { CAMPS } from '../data/worldMap';
 import type { Progress } from './types';
@@ -7,15 +7,9 @@ import type { Progress } from './types';
 const MAX_STAT = 2147483647;
 
 const statKeysSet = new Set<string>();
-for (const k of Object.keys(MONSTER_TYPES)) {
-  statKeysSet.add(`kill:${k}`);
-}
-for (const n of Object.values(RESOURCE_NODES_DEF)) {
-  statKeysSet.add(`gather:${(n as { item: string }).item}`);
-}
-for (const r of FORGE_RECIPES) {
-  statKeysSet.add(`craft:${r.id}`);
-}
+for (const k of Object.keys(MONSTER_TYPES)) statKeysSet.add(`kill:${k}`);
+for (const n of Object.values(RESOURCE_NODES_DEF)) statKeysSet.add(`gather:${(n as { item: string }).item}`);
+for (const r of FORGE_RECIPES) statKeysSet.add(`craft:${r.id}`);
 statKeysSet.add('bury');
 statKeysSet.add('vows');
 statKeysSet.add('deaths');
@@ -23,30 +17,10 @@ statKeysSet.add('deaths');
 export const STAT_KEYS: readonly string[] = Object.freeze(Array.from(statKeysSet));
 const STAT_SET = new Set(STAT_KEYS);
 
-const STORY_QUEST_STAGES: Record<string, number> = {
-  ml_wards: 4,
-  ml_east: 5,
-  ml_salt: 5,
-  ml_hollow: 5,
-  ml_pass: 4,
-  ml_kiln: 5,
-  ml_ash: 4,
-  sq_steel: 3,
-  sq_hides: 3,
-  sq_binding: 3,
-  sq_kettle: 3,
-  sq_toll: 3,
-  sq_vow: 3
-};
-
+// Q2 (STORY_QUESTS), Y2 (diary table) and Z2 (DUNGEONS) add these tables; until then the reader knows no ids in these families.
+const STORY_QUEST_STAGES: Record<string, number> = {};
 const KNOWN_DIARY_TIERS = new Set<string>();
-for (const region of ['lumbridge', 'varrock', 'desert', 'woods', 'wilderness']) {
-  for (const tier of ['easy', 'medium', 'hard']) {
-    KNOWN_DIARY_TIERS.add(`${region}:${tier}`);
-  }
-}
-
-const KNOWN_DUNGEONS = ['saltfang_warren', 'underkiln'] as const;
+const KNOWN_DUNGEONS: readonly string[] = [];
 
 export function bump(state: { progress?: Progress }, key: string, n = 1): void {
   if (!STAT_SET.has(key)) {
@@ -76,7 +50,7 @@ export function isEmptyProgress(progress?: Progress | null): boolean {
   return true;
 }
 
-export function normalizeProgress(raw: unknown, now = 0): Progress | undefined {
+export function normalizeProgress(raw: unknown, now: number, claimed: readonly string[]): Progress | undefined {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
   const data = raw as Record<string, unknown>;
   const result: Progress = {};
@@ -85,7 +59,7 @@ export function normalizeProgress(raw: unknown, now = 0): Progress | undefined {
     const rawStory = data.story as Record<string, unknown>;
     const story: Record<string, number> = {};
     for (const [id, stageCount] of Object.entries(STORY_QUEST_STAGES)) {
-      if (Object.hasOwn(rawStory, id)) {
+      if (!claimed.includes(id) && Object.hasOwn(rawStory, id)) {
         const val = rawStory[id];
         if (typeof val === 'number' && Number.isInteger(val) && val >= 0 && val < stageCount) {
           story[id] = val;
@@ -171,7 +145,7 @@ export function normalizeProgress(raw: unknown, now = 0): Progress | undefined {
         if (typeof val === 'number' && Number.isFinite(val)) {
           const epochMs = Math.floor(val);
           if (epochMs > now) {
-            const respawnSecs = BOSSES[typeKey]?.respawnSecs ?? 0;
+            const respawnSecs = BOSSES[typeKey].respawnSecs;
             const maxTime = now + respawnSecs * 1000;
             bossDownUntil[typeKey] = Math.min(epochMs, maxTime);
           }

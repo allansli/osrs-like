@@ -1,11 +1,5 @@
+import { bump } from './progress';
 import type { Progress, QuestFlags } from './types';
-
-function bump(state: { progress?: Progress }, key: string, n = 1): void {
-  if (!state.progress) state.progress = {};
-  if (!state.progress.stats) state.progress.stats = {};
-  const current = state.progress.stats[key] ?? 0;
-  state.progress.stats[key] = Math.min(2147483647, current + n);
-}
 
 export const STARTER_ARRIVAL = 'arrival';
 
