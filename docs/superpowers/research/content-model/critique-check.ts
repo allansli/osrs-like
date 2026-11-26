@@ -18,11 +18,8 @@ const sell = (id: string) => unitSellPrice(items[id] as never);
 type Drop = { id?: string; chance: number; gp?: [number, number]; qty?: number };
 type M = { name: string; level: number; hp: number; def: number; drops: Drop[] };
 const mons: Record<string, M> = {};
-for (const [k, m] of Object.entries(MONSTER_TYPES as unknown as Record<string, M>)) {
-  // Stage 3: equipment drops x0.05 (dragon 0.05 flat) -- same overlay as model.ts
-  mons[k] = { ...m, drops: m.drops.map((d) => (d.id && items[d.id]?.type === 'equip' ? { ...d, chance: k === 'elvarg_dragon' ? C.S3.DRAGON_GEAR_DROP : d.chance * C.S3.GEAR_DROP_MULT } : d)) };
-}
-for (const [k, m] of Object.entries(C.S4_MONSTERS)) mons[k] = m as unknown as M;
+// Stages 3 and 4 are merged: the game's own rows (R0 deleted the overlays).
+for (const [k, m] of Object.entries(MONSTER_TYPES as unknown as Record<string, M>)) mons[k] = m;
 for (const [k, m] of Object.entries(C.NEW_MONSTERS)) mons[k] = m as unknown as M;
 for (const [k, add] of Object.entries(C.ADDED_DROPS)) mons[k] = { ...mons[k], drops: [...mons[k].drops, ...add] };
 const coin = (m: M) => m.drops.filter((d) => d.gp).reduce((s, d) => s + d.chance * (d.gp![0] + d.gp![1]) / 2, 0);

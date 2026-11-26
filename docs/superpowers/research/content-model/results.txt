@@ -1,8 +1,7 @@
 
 === 1. Loops: where each non-equipment item comes from and where it goes
-today: 24 open
+today: 18 open
   salmon           source: SHOP ONLY      use: consume
-  swordfish        source: SHOP ONLY      use: consume
   anglerfish       source: SHOP ONLY      use: consume
   hearty_elixir    source: SHOP ONLY      use: consume
   saradomin_brew   source: SHOP ONLY      use: consume
@@ -11,11 +10,6 @@ today: 24 open
   feather          source: SHOP ONLY      use: craft
   bronze_bolts     source: SHOP ONLY      use: shoot
   ashes            source: craft          use: NONE (sell only)
-  bronze_bar       source: craft          use: NONE (sell only)
-  iron_bar         source: craft          use: NONE (sell only)
-  mithril_bar      source: craft          use: NONE (sell only)
-  gold_bar         source: craft          use: NONE (sell only)
-  runite_bar       source: craft          use: NONE (sell only)
   air_rune         source: SHOP ONLY      use: cast
   mind_rune        source: SHOP ONLY      use: cast
   water_rune       source: SHOP ONLY      use: cast
@@ -30,7 +24,7 @@ after Stage 6: 4 open
   anglerfish       source: SHOP ONLY      use: consume
   saradomin_brew   source: SHOP ONLY      use: consume
   bronze_bolts     source: SHOP ONLY      use: shoot
-equipment with a recipe: today 19, after Stage 6 47 (of 211)
+equipment with a recipe: today 19, after Stage 6 47 (of 212)
 
 === 2. Stage 3 rule G3.3 on the new recipes: output sells for at most 2.5 times what the inputs sell for
   smelt_steel            smithing    req 10 xp   40  in 1 iron_ore + 1 coal            out 1 steel_bar          ratio 1.98
@@ -215,7 +209,7 @@ level target            coins | ranged TODAY bronze | AFTER bronze bought | AFTE
     fire_staff, wind_strike: 10 -> 5; fire_bolt: 17 -> 8; wind_strike with mystic_might: 12 -> 6 (accuracy 41.5, unchanged)
     hazel_staff (Stage 3's starter staff, magic bonus 4), wind_strike at Magic 1: 6 -> 3 (accuracy 21.5, unchanged)
 
-=== 6. Placement: people, nodes, camps and doors against the world as it is on main
+=== 6. Placement: people, nodes, camps and doors against the merged world (Stages 1 to 5)
   Bran Tolley      (4, 12) walkable true, safe zone lumbridge, aggressive camp no, nearest station 3.8, nearest path 10.0, height 0.00
   Odalys Venn      (-8, -6) walkable true, safe zone lumbridge, aggressive camp no, nearest station 11.0, nearest path 6.3, height 0.00
   Pell Greaves     (12, -8) walkable true, safe zone no, aggressive camp no, nearest station 4.5, nearest path 9.5, height 0.00
@@ -225,14 +219,14 @@ level target            coins | ranged TODAY bronze | AFTER bronze bought | AFTE
   Corin Ashby      (-5, 48) walkable true, safe zone no, aggressive camp no, nearest station 40.9, nearest path 8.4, height 1.04
   bench_dunes      (62, 68) walkable true, aggressive camp no, nearest station 6.3, nearest person 2.8, safe zone desert
   bench_town       (8, 14) walkable true, aggressive camp no, nearest station 6.0, nearest person 4.5, safe zone no
-  coal_rock        (106, -6) walkable true, walkable ground within 1, aggressive camp no, nearest existing node 11.3, safe zone no
-  coal_rock        (108, -12) walkable true, walkable ground within 1, aggressive camp no, nearest existing node 8.5, safe zone no
-  coal_rock        (104, 0) walkable true, walkable ground within 1, aggressive camp no, nearest existing node 12.2, safe zone no
-  runestone_rock   (-44, -6) walkable true, walkable ground within 1, aggressive camp no, nearest existing node 24.4, safe zone no
-  runestone_rock   (-48, -4) walkable true, walkable ground within 1, aggressive camp no, nearest existing node 26.8, safe zone no
-  camp cinder_circle  centre (-0.7, 72.7) radius 11, reach 15: gaps camp 2.0, safe zone 39.8, path 5.3, node 27.9, Ashmantle arena 70.0; open cells 709/709; height range 0.8; region none
-  camp brute_shelf    centre (-2.0, 102.0) radius 9, reach 13: gaps camp 23.8, safe zone 49.0, path 33.7, node 47.9, Ashmantle arena 79.9; open cells 529/529; height range 0.8; region none
-  camp tollmaster     centre (4.0, -70.0) radius 9, reach 15: gaps camp 28.7, safe zone 41.1, path 51.0, node 7.5, Ashmantle arena 130.1; open cells 709/709; height range 1.2; region none
+  coal_rock        (106, -6) walkable true, walkable ground within 1, aggressive camp no, nearest existing node 11.3, nearest woods tree 145.0, safe zone no
+  coal_rock        (108, -12) walkable true, walkable ground within 1, aggressive camp no, nearest existing node 8.5, nearest woods tree 145.7, safe zone no
+  coal_rock        (104, 0) walkable true, walkable ground within 1, aggressive camp no, nearest existing node 12.2, nearest woods tree 144.5, safe zone no
+  runestone_rock   (-45, -9) walkable true, walkable ground within 1, aggressive camp no, nearest existing node 22.1, nearest woods tree 5.1, safe zone no
+  runestone_rock   (-42, -3) walkable true, walkable ground within 1, aggressive camp no, nearest existing node 21.1, nearest woods tree 5.5, safe zone no
+  camp cinder_circle  centre (-0.7, 72.7) radius 11, reach 15: gaps camp 2.0, safe zone 39.8, path 5.3, node 27.9, Ashmantle arena 70.0, woods tree 69.0; open cells 709/709; height range 0.8; region none
+  camp brute_shelf    centre (-2.0, 102.0) radius 9, reach 13: gaps camp 23.8, safe zone 49.0, path 33.7, node 47.9, Ashmantle arena 79.9, woods tree 95.2; open cells 529/529; height range 0.8; region none
+  camp tollmaster     centre (4.0, -70.0) radius 9, reach 15: gaps camp 4.1, safe zone 41.1, path 51.0, node 7.5, Ashmantle arena 130.1, woods tree 37.5; open cells 709/709; height range 1.2; region none
   new camps cinder_circle and brute_shelf: gap 1.4
   new camps cinder_circle and tollmaster: gap 112.7
   new camps brute_shelf and tollmaster: gap 144.1
@@ -279,8 +273,8 @@ level target            coins | ranged TODAY bronze | AFTER bronze bought | AFTE
   new ids: 26 items, 3 nodes, 49 recipes, 6 monster types, 13 story quests, 7 people, 2 dungeons, 2 skills
 
 === 10. Save: size of the new optional block at its bounds
-  stat keys 133; diary tiers 15; diary tasks 75
-  default save today 2139 bytes; the new block at every bound 4977 bytes; two new skills add about 76 bytes
+  stat keys 134; diary tiers 15; diary tasks 75
+  default save today 2139 bytes; the new block at every bound 5005 bytes; two new skills add about 76 bytes
 
 === 11. Where a player stands at hours 3, 10 and 30 (estimates from Stage 3 section 5.5; never asserted)
   Stage 3 route A3 at 1x, model-optimal: adamant (level 30) at 56 min, rune (40) at 1.8 h, dragon (60) at 5.4 h; a real player about double.

@@ -2,34 +2,6 @@
 // against the game's real tables and rules. Nothing here is imported by the game.
 import type { Attack, BossConfig } from './boss';
 
-// ------------------------------------------------------------------ overlays for stages not in this tree
-/** Stage 3 design 7.1 (approved, being implemented on origin/feat/start-pacing; data tasks D3-D6 not landed there yet). */
-export const S3 = {
-  GEAR_MARKUP: 10,
-  GEAR_DROP_MULT: 0.05,
-  DRAGON_GEAR_DROP: 0.05,
-  // 7.1 item 5: forging takes bars
-  recipeInputs: {
-    smith_bronze_legs: { bronze_bar: 2 }, smith_bronze_plate: { bronze_bar: 3 },
-    smith_iron_scim: { iron_bar: 2 }, smith_iron_legs: { iron_bar: 2 }, smith_iron_plate: { iron_bar: 3 },
-    smith_mith_scim: { mithril_bar: 3 }, smith_mith_legs: { mithril_bar: 3 }, smith_mith_plate: { mithril_bar: 4 },
-    smith_rune_scim: { runite_bar: 4 }, smith_rune_legs: { runite_bar: 4 }, smith_rune_plate: { runite_bar: 5 },
-    smith_gilded_legs: { rune_legs: 1, gold_bar: 3 }, smith_gilded_plate: { rune_plate: 1, gold_bar: 3 },
-    fletch_willow_bow: { willow_logs: 3 }, fletch_maple_bow: { maple_logs: 4 }, fletch_yew_bow: { yew_logs: 5 }, fletch_magic_bow: { magic_logs: 6 }
-  } as Record<string, Record<string, number>>,
-  recipeReq: { smith_gilded_legs: 46, smith_gilded_plate: 48, smelt_iron: 5, smelt_mithril: 20, smelt_runite: 40 } as Record<string, number>,
-  bounties: { scorpion: 300, dark_wizard: 400, hill_giant: 600, moss_guardian: 1100, lesser_demon: 1800 } as Record<string, number>
-};
-
-/** Stage 4 design 6.8 and 6.4 (approved, not started): the two shipped monsters and the boss. */
-export const S4_MONSTERS = {
-  saltback_stalker: { name: 'Saltback Stalker', level: 34, hp: 58, maxHit: 12, atk: 32, def: 28, scale: 1.05, style: 'melee', bodyColor: 0, accentColor: 0, kind: 'scorpion',
-    drops: [{ id: 'big_bones', chance: 1 }, { gp: [140, 340], chance: 0.95 }, { id: 'lobster', chance: 0.4 }] },
-  thornwatch_marksman: { name: 'Thornwatch Marksman', level: 38, hp: 54, maxHit: 13, atk: 36, def: 26, scale: 1.05, style: 'ranged', bodyColor: 0, accentColor: 0, kind: 'archer',
-    drops: [{ id: 'big_bones', chance: 1 }, { gp: [160, 400], chance: 0.95 }, { id: 'bronze_arrow', chance: 1 }, { id: 'swordfish', chance: 0.3 }] }
-} as const;
-export const S4_ASHMANTLE_ARENA = { x: -102, z: 54, radius: 12, margin: 6 };
-
 // ------------------------------------------------------------------ new items (price is the list price; sells at 65%)
 export const NEW_ITEMS: Record<string, { name: string; type: string; price: number }> = {
   // smithing
@@ -75,7 +47,9 @@ export const NEW_NODES: Record<string, { name: string; skill: string; req: numbe
 /** Overworld placements of the new nodes (checked by model.ts against the Stage 2 world rules). */
 export const NEW_NODE_PLACEMENTS = [
   { type: 'coal_rock', x: 106, z: -6 }, { type: 'coal_rock', x: 108, z: -12 }, { type: 'coal_rock', x: 104, z: 0 },
-  { type: 'runestone_rock', x: -44, z: -6 }, { type: 'runestone_rock', x: -48, z: -4 }
+  // R0 (2026-11-26): moved from (-44, -6) and (-48, -4). Stage 5's woods trees stand there: (-48, -4) is a tree cell and
+  // (-44, -6) is 4.3 from a tree centre, under tests/woods-trees.test.ts's 4.5. The nearest spots that pass every check.
+  { type: 'runestone_rock', x: -45, z: -9 }, { type: 'runestone_rock', x: -42, z: -3 }
 ];
 
 // ------------------------------------------------------------------ new recipes

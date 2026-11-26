@@ -1,12 +1,15 @@
-// Stage 6 content model. Reads the game's real tables and pure rules, lays the approved Stage 3 and Stage 4
-// numbers over them (content.ts: S3, S4_MONSTERS), adds the Stage 6 proposal and prints every number the design quotes.
+// Stage 6 content model. Reads the game's real tables and pure rules (Stages 1 to 5 and the models pass merged; R0 deleted
+// the S3 and S4_MONSTERS overlays), adds the Stage 6 proposal and prints every number the design quotes.
 // Deterministic: no clock, no random source. Run with run.sh; the output is committed as results.txt.
-import { ITEMS, unitSellPrice } from '../../../../src/data/items';
+import { GEAR_MARKUP, ITEMS, unitSellPrice } from '../../../../src/data/items';
+import { BOSS_ARENA_MARGIN, BOSSES } from '../../../../src/data/attacks';
 import { FORGE_RECIPES } from '../../../../src/data/recipes';
 import { MONSTER_TYPES, RESOURCE_NODES_DEF, WORLD_REGIONS } from '../../../../src/data/world';
 import { SPELLS } from '../../../../src/data/magic';
 import { CAMPS, PATHS, SAFE_ZONES } from '../../../../src/data/worldMap';
 import { NODE_PLACEMENTS } from '../../../../src/data/placements';
+import { WOODS_TREES } from '../../../../src/data/woodsTrees';
+import { CAMERA_FAR, HORIZON_APRON } from '../../../../src/data/look';
 import { OSRS_XP_TABLE } from '../../../../src/data/skills';
 import { isWalkable, nearestOnPolyline } from '../../../../src/state/collision';
 import { getTerrainHeight } from '../../../../src/state/terrain';
@@ -29,16 +32,12 @@ const sell = (id: string) => { if (!items[id]) throw new Error('unknown item ' +
 
 type R = { id: string; name: string; skill: string; req: number; xp: number; input: Record<string, number>; output?: string; outputQty?: number; kind?: string };
 const recipesToday: R[] = FORGE_RECIPES as R[];
-const recipesS3: R[] = recipesToday.map((r) => ({ ...r, input: C.S3.recipeInputs[r.id] || r.input, req: C.S3.recipeReq[r.id] ?? r.req }));
-const recipesS6: R[] = [...recipesS3, ...C.NEW_RECIPES];
+const recipesS6: R[] = [...recipesToday, ...C.NEW_RECIPES];
 
 type M = { name: string; level: number; hp: number; maxHit: number; atk: number; def: number; style: string; drops: { id?: string; chance: number; gp?: [number, number]; qty?: number }[] };
 const monstersToday = MONSTER_TYPES as unknown as Record<string, M>;
 const monsters: Record<string, M> = {};
-for (const [k, m] of Object.entries(monstersToday)) {
-  monsters[k] = { ...m, drops: m.drops.map((d) => (d.id && items[d.id]?.type === 'equip' ? { ...d, chance: k === 'elvarg_dragon' ? C.S3.DRAGON_GEAR_DROP : +(d.chance * C.S3.GEAR_DROP_MULT).toFixed(4) } : d)) };
-}
-for (const [k, m] of Object.entries(C.S4_MONSTERS)) monsters[k] = { ...(m as unknown as M), drops: [...m.drops] as M['drops'] };
+for (const [k, m] of Object.entries(monstersToday)) monsters[k] = { ...m, drops: [...m.drops] };
 for (const [k, m] of Object.entries(C.NEW_MONSTERS)) monsters[k] = m as unknown as M;
 for (const [k, add] of Object.entries(C.ADDED_DROPS)) monsters[k] = { ...monsters[k], drops: [...monsters[k].drops, ...add] };
 const meanCoin = (m: M) => m.drops.filter((d) => d.gp).reduce((s, d) => s + d.chance * (d.gp![0] + d.gp![1]) / 2, 0);
@@ -121,14 +120,14 @@ for (const [a, b] of [['craft_green_chaps', 'craft_green_body'], ['craft_blue_ch
   const ra = C.NEW_RECIPES.find((r) => r.id === a)!, rb = C.NEW_RECIPES.find((r) => r.id === b)!;
   const mat = Object.keys(ra.input)[0], need = ra.input[mat] + rb.input[mat];
   const srcs = Object.entries(monsters).flatMap(([k, m]) => m.drops.filter((d) => d.id === mat && d.chance < 1).map((d) => `${k} ${Math.round(need / (d.chance * (d.qty || 1)))} kills`));
-  p(`    ${items[rb.output!].name} + ${items[ra.output!].name}: ${need} ${mat}  <- ${srcs.join(' or ')}; shop price of the pair ${(items[ra.output!].price + items[rb.output!].price) * C.S3.GEAR_MARKUP} GP`);
+  p(`    ${items[rb.output!].name} + ${items[ra.output!].name}: ${need} ${mat}  <- ${srcs.join(' or ')}; shop price of the pair ${(items[ra.output!].price + items[rb.output!].price) * GEAR_MARKUP} GP`);
 }
 p(`  embers: all fifteen diary tiers pay ${C.DIARY_REGIONS.length * C.DIARY_TIERS.reduce((t, d) => t + d.xp, 0)} XP in all; put into one skill from level 1 that is level ${(() => { let l = 1; const x = C.DIARY_REGIONS.length * C.DIARY_TIERS.reduce((t, d) => t + d.xp, 0); while (l < 99 && OSRS_XP_TABLE[l + 1] <= x) l++; return l; })()}; one hard-tier ember is ${(40000 / 72000 * 60).toFixed(0)} minutes of a level-67 fighter's experience in one melee skill (section 11)`);
 p('  melee kits by the forge (bars for sword + legs + body):');
 for (const [tier, ids] of Object.entries({ steel: ['smith_steel_sword', 'smith_steel_legs', 'smith_steel_plate'], black: ['smith_black_scim', 'smith_black_legs', 'smith_black_plate'], adamant: ['smith_addy_scim', 'smith_addy_legs', 'smith_addy_plate'], dragon: ['smith_wyrm_scim', 'smith_wyrm_legs', 'smith_wyrm_chain'] })) {
   const rs = ids.map((i) => C.NEW_RECIPES.find((r) => r.id === i)!);
   const bar = Object.keys(rs[0].input)[0], n = rs.reduce((s, r) => s + r.input[bar], 0);
-  p(`    ${tier}: ${n} ${bar}, Smithing ${rs[0].req} to ${rs[2].req}; shop price of the kit ${rs.reduce((s, r) => s + items[r.output!].price, 0) * C.S3.GEAR_MARKUP} GP`);
+  p(`    ${tier}: ${n} ${bar}, Smithing ${rs[0].req} to ${rs[2].req}; shop price of the kit ${rs.reduce((s, r) => s + items[r.output!].price, 0) * GEAR_MARKUP} GP`);
 }
 
 // ---------------------------------------------------------------- 5. the three styles: today, and after the rebalance (design 7.12)
@@ -174,7 +173,7 @@ function dps(style: 'melee' | 'ranged' | 'magic', lvl: number, target: M, o: Opt
   const cost = style === 'ranged' ? items.bronze_arrow.price : Object.entries(runes).reduce((t, [r, q]) => t + items[r].price * q, 0);
   const hc = Math.min(0.94, Math.max(0.22, acc / (acc + (target.def * 1.1 + 4) * 0.75)));
   const avg = hc * (1 + (maxHit * (maxHit + 1)) / 2) / (maxHit + 1);
-  const price = ids.reduce((t, i) => t + (ITEMS as Record<string, AnyItem>)[i].price, 0) * C.S3.GEAR_MARKUP;
+  const price = ids.reduce((t, i) => t + (ITEMS as Record<string, AnyItem>)[i].price, 0) * GEAR_MARKUP;
   return { avg, maxHit, cost, def: bon.def, ids, price, spell: sp?.id || '', runes };
 }
 const AFTER = C.STYLE_AFTER, SWING = 0.6;
@@ -268,8 +267,12 @@ p('5d. The values the declared test replacements take (Stage 3, tests/combat-pro
   p(`    hazel_staff (Stage 3's starter staff, magic bonus 4), wind_strike at Magic 1: ${magicMax(C.STYLE_TODAY, 6, 4, 1)} -> ${magicMax(AFTER, 6, 4, 1)} (accuracy 21.5, unchanged)`);
 }
 
-// ---------------------------------------------------------------- 6. placement against the Stage 2 world
-h('6. Placement: people, nodes, camps and doors against the world as it is on main');
+// ---------------------------------------------------------------- 6. placement against the merged world
+h('6. Placement: people, nodes, camps and doors against the merged world (Stages 1 to 5)');
+// R0: Stage 5's woods trees (isWalkable already blocks their cells). tests/woods-trees.test.ts also holds every resource
+// node 4.5 from a tree centre (TARGET_CLEAR) and every camp's radius + 2 clear of one (CAMP_EXTRA); the same two rules here.
+const treeCentres = WOODS_TREES.map(([i, j]) => [-118 + i + 0.5, -118 + j + 0.5]);
+const nearestTree = (x: number, z: number) => Math.min(...treeCentres.map(([a, b]) => Math.hypot(a - x, b - z)));
 const aggressive = CAMPS.filter((c) => c.aggressive);
 const inAggro = (x: number, z: number) => aggressive.find((c) => Math.hypot(x - c.x, z - c.z) <= c.radius + 4);
 const inSafe = (x: number, z: number) => SAFE_ZONES.find((s) => Math.hypot(x - s.x, z - s.z) <= s.radius);
@@ -290,12 +293,14 @@ for (const n of C.NEW_NODE_PLACEMENTS) {
   const ag = inAggro(n.x, n.z);
   let near = 99; for (let a = 0; a < 32; a++) for (const r of [1, 2, 3]) { const x = n.x + r * Math.cos(a * Math.PI / 16), z = n.z + r * Math.sin(a * Math.PI / 16); if (isWalkable(x, z)) near = Math.min(near, r); }
   const other = Math.min(...NODE_PLACEMENTS.map((q) => Math.hypot(q.x - n.x, q.z - n.z)));
-  p(`  ${n.type.padEnd(16)} (${n.x}, ${n.z}) walkable ${isWalkable(n.x, n.z)}, walkable ground within ${near}, aggressive camp ${ag ? ag.id : 'no'}, nearest existing node ${other.toFixed(1)}, safe zone ${inSafe(n.x, n.z)?.id || 'no'}`);
-  check(isWalkable(n.x, n.z) && !ag && other >= 3 && Math.abs(n.x) <= 116 && Math.abs(n.z) <= 116, `${n.type} at ${n.x},${n.z}`);
+  const tree = nearestTree(n.x, n.z);
+  p(`  ${n.type.padEnd(16)} (${n.x}, ${n.z}) walkable ${isWalkable(n.x, n.z)}, walkable ground within ${near}, aggressive camp ${ag ? ag.id : 'no'}, nearest existing node ${other.toFixed(1)}, nearest woods tree ${tree.toFixed(1)}, safe zone ${inSafe(n.x, n.z)?.id || 'no'}`);
+  check(isWalkable(n.x, n.z) && !ag && other >= 3 && tree >= 4.5 && Math.abs(n.x) <= 116 && Math.abs(n.z) <= 116, `${n.type} at ${n.x},${n.z}`);
 }
 const leash = (c: { x: number; z: number; radius: number }) => c.radius + 4;
 const mk = (members: { x: number; z: number }[]) => { const cx = members.reduce((s, m) => s + m.x, 0) / members.length, cz = members.reduce((s, m) => s + m.z, 0) / members.length; return { x: cx, z: cz, radius: Math.ceil(Math.max(...members.map((m) => Math.hypot(m.x - cx, m.z - cz))) + 4.5) }; };
-const arenas = [{ id: 'ashmantle', ...C.S4_ASHMANTLE_ARENA }];
+const ashCamp = CAMPS.find((c) => c.id === 'ashmantle')!;
+const arenas = [{ id: 'ashmantle', x: ashCamp.x, z: ashCamp.z, radius: BOSSES.ashmantle.arenaRadius, margin: BOSS_ARENA_MARGIN }];
 for (const c of C.NEW_CAMPS) {
   const circle = mk(c.members), r = (c as { arenaRadius?: number }).arenaRadius ?? circle.radius;
   const reach = (c as { arenaRadius?: number }).arenaRadius ? r + 6 : leash(circle);
@@ -306,8 +311,9 @@ for (const c of C.NEW_CAMPS) {
   const gapArena = Math.min(...arenas.map((a) => Math.hypot(a.x - circle.x, a.z - circle.z) - a.radius - a.margin - reach));
   let open = 0, cells = 0; for (let x = -reach; x <= reach; x++) for (let z = -reach; z <= reach; z++) if (Math.hypot(x, z) <= reach) { cells++; if (isWalkable(circle.x + x, circle.z + z)) open++; }
   const hs: number[] = []; for (let x = -r; x <= r; x += 1) for (let z = -r; z <= r; z += 1) if (Math.hypot(x, z) <= r) hs.push(getTerrainHeight(circle.x + x, circle.z + z));
-  p(`  camp ${c.id.padEnd(14)} centre (${circle.x.toFixed(1)}, ${circle.z.toFixed(1)}) radius ${r}, reach ${reach}: gaps camp ${gapCamp.toFixed(1)}, safe zone ${gapSafe.toFixed(1)}, path ${gapPath.toFixed(1)}, node ${gapNode.toFixed(1)}, Ashmantle arena ${gapArena.toFixed(1)}; open cells ${open}/${cells}; height range ${(Math.max(...hs) - Math.min(...hs)).toFixed(1)}; region ${WORLD_REGIONS.find((g) => Math.hypot(g.x - circle.x, g.z - circle.z) <= g.radius)?.id || 'none'}`);
-  check(gapCamp >= 0 && gapSafe >= 0 && gapPath >= 0 && gapNode >= 0 && gapArena >= 0 && open === cells && c.members.every((m) => isWalkable(m.x, m.z)), `camp ${c.id}`);
+  const gapTree = nearestTree(circle.x, circle.z) - circle.radius - 2;
+  p(`  camp ${c.id.padEnd(14)} centre (${circle.x.toFixed(1)}, ${circle.z.toFixed(1)}) radius ${r}, reach ${reach}: gaps camp ${gapCamp.toFixed(1)}, safe zone ${gapSafe.toFixed(1)}, path ${gapPath.toFixed(1)}, node ${gapNode.toFixed(1)}, Ashmantle arena ${gapArena.toFixed(1)}, woods tree ${gapTree.toFixed(1)}; open cells ${open}/${cells}; height range ${(Math.max(...hs) - Math.min(...hs)).toFixed(1)}; region ${WORLD_REGIONS.find((g) => Math.hypot(g.x - circle.x, g.z - circle.z) <= g.radius)?.id || 'none'}`);
+  check(gapCamp >= 0 && gapSafe >= 0 && gapPath >= 0 && gapNode >= 0 && gapArena >= 0 && gapTree > 0 && open === cells && c.members.every((m) => isWalkable(m.x, m.z)), `camp ${c.id}`);
 }
 {
   const cs = C.NEW_CAMPS.map((c) => ({ id: c.id, k: mk(c.members), arena: (c as { arenaRadius?: number }).arenaRadius }));
@@ -349,14 +355,15 @@ for (const d of C.DUNGEONS) {
   check(fit >= boss.arenaRadius!, `${d.id} arena fits its room`);
   check(Object.values(d.rooms).every((r) => r[0] >= 2 && r[1] >= 2 && r[2] <= n - 2 && r[3] <= n - 2), `${d.id} rooms inside the zone`);
   check(Math.min(...Object.values(d.rooms).map((r) => Math.min(r[2] - r[0], r[3] - r[1]))) >= 6, `${d.id} no room or corridor under 6 wide`);
-  // Critique fix: Stage 5 raises the camera far plane to 460 and adds a horizon apron out to radius 240 around the origin
-  // (Stage 5 design 6.4), and the camera stands up to 26 from the hero. The nearest zone cell, less the camera's reach,
-  // must be farther than 460 from the apron's outer edge. (The sky dome follows the camera and is hidden in a zone: Z6.)
-  const near = Math.min(...[[d.origin[0], d.origin[1]], [d.origin[0], d.origin[1] + n], [d.origin[0] + n, d.origin[1]], [d.origin[0] + n, d.origin[1] + n]].map(([x, z]) => Math.hypot(x, z)), Math.abs(d.origin[0])) - 26 - 240;
-  p(`    nearest zone cell to the Stage 5 horizon apron (radius 240), less the camera's 26: ${near.toFixed(0)} (camera far plane 460)`);
-  check(near > 460, `${d.id} beyond Stage 5's camera far plane (460) from the horizon apron: ${near.toFixed(0)}`);
+  // Critique fix: Stage 5's camera far plane (CAMERA_FAR) and horizon apron out to HORIZON_APRON.outer around the origin
+  // (src/data/look.ts; R0 reads the constants), and the camera stands up to 26 from the hero. The nearest zone cell, less the
+  // camera's reach, must be farther than the far plane from the apron's outer edge. (The sky dome follows the camera and is
+  // hidden in a zone: Z6.)
+  const near = Math.min(...[[d.origin[0], d.origin[1]], [d.origin[0], d.origin[1] + n], [d.origin[0] + n, d.origin[1]], [d.origin[0] + n, d.origin[1] + n]].map(([x, z]) => Math.hypot(x, z)), Math.abs(d.origin[0])) - 26 - HORIZON_APRON.outer;
+  p(`    nearest zone cell to the Stage 5 horizon apron (radius ${HORIZON_APRON.outer}), less the camera's 26: ${near.toFixed(0)} (camera far plane ${CAMERA_FAR})`);
+  check(near > CAMERA_FAR, `${d.id} beyond Stage 5's camera far plane (${CAMERA_FAR}) from the horizon apron: ${near.toFixed(0)}`);
 }
-check(Math.abs(C.DUNGEONS[0].origin[1] - C.DUNGEONS[1].origin[1]) - 112 > 240, 'zones well apart');
+check(Math.abs(C.DUNGEONS[0].origin[1] - C.DUNGEONS[1].origin[1]) - 112 > HORIZON_APRON.outer, 'zones well apart');
 
 // ---------------------------------------------------------------- 8. what a run takes and pays
 h('8. A dungeon run against open ground: coin per second, the same overheads on both sides');

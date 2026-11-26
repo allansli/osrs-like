@@ -1,18 +1,18 @@
 #!/bin/bash
 # Stage 6 content model. Bundles each script with the repo's own esbuild (they import the real tables and pure
-# functions of src/), runs it under a memory cap with an empty environment and writes its output:
+# functions of src/), runs it with an empty environment and a 1 GB heap (the 3 GB cap is scripts/capped.sh's) and writes its output:
 #   model.ts -> results.txt        loops, the 2.5 rule, drops, skills on the XP curve, gear ladders, placement,
 #                                  dungeon geometry, names, save size, hours
 #   check.ts -> check-results.txt  the three new bosses and Stage 4's Ashmantle through Stage 4's positional fight,
 #                                  each row with today's attack formula and with the style rebalance
 #   aggro-check.ts -> aggro-results.txt  the aggression rule (aggro.ts): the radius function, Stage 2's stepMonster with
 #                                  the rule patched into a COPY of src/state/monsterAi.ts, and Stage 2's gate simulation
-# pacing-rerun.sh (its own script: it reads origin/main, where Stage 3 is merged) runs Stage 3's pacing test under the rule.
-# second-pass.sh (its own script, also on origin/main) is the second-pass check: the style band at every level, chain-pulls,
+# pacing-rerun.sh (its own script) runs Stage 3's pacing test under the rule, on the working tree.
+# second-pass.sh (its own script, also on the working tree) is the second-pass check: the style band at every level, chain-pulls,
 # the high trees and the Kilnglass variants.
-# content.ts holds the proposal as data (and the Stage 3 and Stage 4 numbers this tree does not have yet).
-# fight.ts and boss.ts are copies from branch feat/combat-weight at 732cb8c (see the header of fight.ts).
-# Usage, from the repository root: bash docs/superpowers/research/content-model/run.sh
+# content.ts holds the proposal as data (R0 removed its Stage 3 and Stage 4 overlays: those stages are merged).
+# fight.ts runs Stage 4's positional fight on the game's own rules, boss.ts reads Ashmantle from the game (see their headers).
+# Usage, from the repository root, behind the memory cap: scripts/capped.sh bash docs/superpowers/research/content-model/run.sh
 set -euo pipefail
 here="$(cd "$(dirname "$0")" && pwd)"
 root="$(cd "$here/../../../.." && pwd)"
@@ -36,8 +36,7 @@ for name in model check aggro-check; do
     --alias:@patched/monsterAi="$out/monsterAi.patched.ts" --outfile="$out/$name.mjs"
 done
 run() {
-  env -i HOME="$HOME" PATH="$PATH" XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-}" DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-}" \
-    systemd-run --user --scope -q -p MemoryMax=1G -p MemorySwapMax=0 node "$out/$1.mjs"
+  env -i HOME="$HOME" PATH="$PATH" node --max-old-space-size=1024 "$out/$1.mjs"
 }
 status=0
 run model | tee "$here/results.txt" || status=1

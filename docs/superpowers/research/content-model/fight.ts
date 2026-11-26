@@ -1,57 +1,44 @@
-// STAGE 6 COPY of docs/superpowers/research/combat-model/fight.ts from branch feat/combat-weight at 732cb8c (Stage 4 is not
-// merged into this tree). Edits, all marked: (1) `f.prayer`: the Fighter type gains `prayer?: string`, and a prayer potion
-// re-lights that prayer instead of always Protect from Magic; (2) `STYLE`: the three numbers of the Stage 6 style rebalance
-// (design 7.12) are read from this object, whose defaults are today's formula, so every caller that does not set it gets
-// Stage 4's arithmetic unchanged; (3) `f.ammo`: the max-hit points of the arrow or bolt a ranged fighter shoots (0 = bronze).
-// boss.ts beside it is an unchanged copy. When Stage 4 lands, plan task R0 replaces both copies by imports.
-// The positional boss fight (written by the Stage 4 critique as check.ts, 2026-11-14; extended for the owner's
-// decisions of the same day). The hero has a position, shapes are tested geometrically at the resolve, the hero
-// keeps attacking until it reacts, and after a dodge it clicks the boss again and, if out of reach, walks back.
-// Added in the revision: hitpoints regenerate during the fight, ranged and magic heroes (they stand 11 from the
-// boss, its own reach, and attack from anywhere within 13.5), the boss as a parameter, damage by source.
+// The positional boss fight of Stage 4 (its design 6.4), for this stage's three bosses and Stage 4's Ashmantle.
+// R0 (2026-11-26), on the merged tree: this was a copy of Stage 4's research model; it now runs on the game's own rules,
+// as Stage 4's shipped model tests/support/bossModel.ts does: inShape for every shape, rollMonsterHit and rollMonsterAttack
+// for the boss (so the marks multiply after mitigation and dragonfire is resolveDragonfire), addMark / tickMarks with the
+// boss's own mark row, regenRate, FOOD_CD_SECS, CADENCE_SECS, BOSS_FIRST_ENTRY_SECS, TICK_SEC, the opening roar and each
+// phase's shift, the phase floor of crossPhase (Math.round), and bossModel's own `seeded`.
+// bossModel.ts itself cannot be imported in its place: its fight is fixed to Ashmantle, to Stage 4's fighters and to
+// playerAttackProfile. What stays this file's own, all used by check.ts:
+//   (1) the boss is a parameter (a BossConfig; a boss with no BOSSES row is registered there, as check.ts registers its
+//       MONSTER_TYPES row, so rollMonsterAttack applies its marks);
+//   (2) `f.prayer`: a prayer potion re-lights that prayer instead of always Protect from Magic;
+//   (3) `STYLE`: the three numbers of the style rebalance (design 7.12) and (4) `f.ammo`, the arrow's max-hit points. The
+//       hero's swing is playerAttackProfile and playerHitChance; with the rebalance or an arrow it is the same expression
+//       with STYLE's numbers, and with today's numbers and no arrow every swing asserts that it equals playerAttackProfile;
+//   (5) `f.autoRetaliate`, `f.capFrac`, `f.regen`, `f.eatCd`, and the damage by source.
+import { BOSS_FIRST_ENTRY_SECS, BOSSES, CADENCE_SECS, type AttackDef, type BossDef } from '../../../../src/data/attacks';
 import { MONSTER_TYPES } from '../../../../src/data/world';
 import { ITEMS } from '../../../../src/data/items';
 import { SPELLS } from '../../../../src/data/catalog';
-import { getEquipmentBonuses, rollMonsterHit } from '../../../../src/state/combat';
-import { resolveDragonfire } from '../../../../src/state/adventure';
+import { TICK_SEC } from '../../../../src/engine/context';
+import { addMark, getEquipmentBonuses, playerAttackProfile, playerHitChance, rollMonsterAttack, rollMonsterHit, tickMarks, type Marks } from '../../../../src/state/combat';
 import { createDefaultState } from '../../../../src/state/gameState';
+import { FOOD_CD_SECS, regenRate } from '../../../../src/state/sustain';
+import { inShape } from '../../../../src/state/telegraph';
 import type { GameState } from '../../../../src/state/types';
-import { BOSS_KEY, BOSS_ROW, type Attack, type BossConfig } from './boss';
+import { seeded } from '../../../../tests/support/bossModel';
+import type { Attack, BossConfig } from './boss';
 
-// The new boss is not in the game's tables yet: register its row so rollMonsterHit and the swing read it.
-(MONSTER_TYPES as Record<string, unknown>)[BOSS_KEY] = BOSS_ROW;
-
-export function seeded(seed: number): () => number {
-  let a = (seed * 2654435761) >>> 0;
-  return () => {
-    a = (a + 0x6d2b79f5) >>> 0;
-    let t = a;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
+export { seeded };
 const lognormal = (r: () => number, med: number, sg: number) =>
   med * Math.exp(sg * Math.sqrt(-2 * Math.log(Math.max(1e-9, r()))) * Math.cos(2 * Math.PI * r()));
 
-export const CAD = 1.65, TICK = 0.6, RUN = 11.5, BODY = 0.3, EAT_CD = 1.8;
-export const REGEN_IN_COMBAT = 0.25; // HP per second, today's rate (design 6.6)
+export const CAD = CADENCE_SECS, TICK = TICK_SEC, RUN = 11.5, BODY = 0.3, EAT_CD = FOOD_CD_SECS;
+export const REGEN_IN_COMBAT = regenRate(0); // the whole fight is "in combat"
 const STAND = { melee: 2.9, ranged: 11, magic: 11 }; // the boss (magic, reach 11) closes to 11 of a far hero
 const REACH = { melee: 2.9, ranged: 13.5, magic: 13.5 }; // input.ts stop distances
 
 type V = { x: number; z: number };
 type Locked = { a: Attack; ox: number; oz: number; dx: number; dz: number; at: number };
-function inside(l: Locked, p: V): boolean {
-  const s = l.a.shape;
-  const rx = p.x - l.ox, rz = p.z - l.oz, d = Math.hypot(rx, rz);
-  if (s.type === 'circle') return d <= s.radius;
-  if (s.type === 'ring') return d >= s.inner && d <= s.outer;
-  if (s.type === 'line') throw new Error('no boss attack is a line');
-  if (d > s.length) return false;
-  if (d < 1e-9) return true;
-  return Math.acos(Math.max(-1, Math.min(1, (rx * l.dx + rz * l.dz) / d))) <= (s.halfAngleDeg * Math.PI) / 180;
-}
-/** Shortest way out for a point inside: the destination. */
+const inside = (l: Locked, p: V) => inShape(l.a.shape, l.ox, l.oz, l.dx, l.dz, p.x, p.z);
+/** Shortest way out for a point inside: the destination (Stage 4's model, unchanged). */
 function escape(l: Locked, p: V): V {
   const s = l.a.shape;
   const rx = p.x - l.ox, rz = p.z - l.oz, d = Math.hypot(rx, rz) || 1e-6;
@@ -68,21 +55,20 @@ function escape(l: Locked, p: V): V {
     return { x: p.x + ux * out, z: p.z + uz * out };
   }
   if (s.type === 'line') throw new Error('no boss attack is a line');
-  // cone: sideways to the nearer edge, or out of the far end
+  // cone: sideways to the nearer edge (along that edge's outward normal), or out of the far end
   const half = (s.halfAngleDeg * Math.PI) / 180;
   const cos = (rx * l.dx + rz * l.dz) / d, phi = Math.acos(Math.max(-1, Math.min(1, cos)));
   const side = d * Math.sin(half - phi) + BODY, fwd = s.length - d + BODY;
   if (fwd < side) return { x: p.x + ux * fwd, z: p.z + uz * fwd };
-  // Straight across the nearer edge: along that edge's outward normal. (The critique's check stepped
-  // perpendicular to the axis, which leaves a cone only when it is narrow; at 45 degrees it does not.)
   const sgn = (l.dx * rz - l.dz * rx) >= 0 ? 1 : -1;
   const ang = sgn * (half + Math.PI / 2), nx = l.dx * Math.cos(ang) - l.dz * Math.sin(ang), nz = l.dx * Math.sin(ang) + l.dz * Math.cos(ang);
   return { x: p.x + nx * side, z: p.z + nz * side };
 }
 
 export type Style = 'melee' | 'ranged' | 'magic';
-/** The style numbers of the attack formula. Defaults are today's (Stage 3's playerAttackProfile); check.ts sets the rebalance. */
-export const STYLE = { rangedBase: 2, rangedGear: 0.22, magicScale: 1 };
+/** The style numbers of the attack formula. Defaults are today's (playerAttackProfile); check.ts sets the rebalance. */
+export const STYLE_DEFAULT = { rangedBase: 2, rangedGear: 0.22, magicScale: 1 };
+export const STYLE = { ...STYLE_DEFAULT };
 export function profile(style: Style, lvl: number, hp: number, prayer: number, gear: Record<string, string>, prayers: string[], spell = 'blood_barrage'): GameState {
   const s = createDefaultState();
   const trained = style === 'melee' ? ['attack', 'strength', 'defence'] : [style, 'defence'];
@@ -96,26 +82,41 @@ export function profile(style: Style, lvl: number, hp: number, prayer: number, g
   s.activePrayers = new Set(prayers);
   return s;
 }
-/** One attack of the hero, transcribed from performPlayerAttack (actions.ts 104-121, 179-182). [damage, heal]. */
-function swing(s: GameState, typeKey: string, r: () => number, ammo = 0): [number, number] {
+/** The max hit playerAttackProfile gives, with STYLE's numbers and the arrow's points (design 7.12's expressions). */
+function maxHitWith(s: GameState, ammo: number): number {
   const bon = getEquipmentBonuses(s);
-  let maxHit: number, acc: number, healRatio = 0;
-  if (s.combatStyle === 'ranged') {
-    maxHit = Math.max(2, Math.floor(STYLE.rangedBase + s.skills.ranged.lvl * 0.35 + bon.rng * STYLE.rangedGear + ammo));
-    acc = s.skills.ranged.lvl * 1.4 + bon.rng + 12;
-  } else if (s.combatStyle === 'magic') {
-    const sp = SPELLS.find((x: { id: string }) => x.id === s.activeSpell) as { maxHit: number; healRatio?: number };
-    maxHit = Math.max(3, Math.floor((sp.maxHit + s.skills.magic.lvl * 0.22 + bon.mag * 0.18) * STYLE.magicScale));
-    acc = s.skills.magic.lvl * 1.5 + bon.mag + 16;
-    healRatio = sp.healRatio || 0;
-  } else {
-    maxHit = Math.max(2, Math.floor(1.5 + (s.skills.strength.lvl + 1) * 0.32 + bon.str * 0.22));
-    acc = (s.skills.attack.lvl + 2) * 1.35 + bon.atk + 12;
+  const prayRng = s.activePrayers.has('sharp_eye') ? 1.2 : 1, prayMag = s.activePrayers.has('mystic_might') ? 1.2 : 1;
+  if (s.combatStyle === 'rapid' || s.combatStyle === 'ranged') {
+    return Math.max(2, Math.floor((STYLE.rangedBase + s.skills.ranged.lvl * 0.35 + bon.rng * STYLE.rangedGear + ammo) * prayRng));
   }
-  const defRoll = MONSTER_TYPES[typeKey].def * 1.1 + 4;
-  const hc = Math.min(0.94, Math.max(0.22, acc / (acc + defRoll * 0.75)));
+  if (s.combatStyle === 'magic') {
+    const sp = SPELLS.find((x: { id: string }) => x.id === s.activeSpell) as { maxHit: number };
+    return Math.max(3, Math.floor((sp.maxHit + s.skills.magic.lvl * 0.22 + bon.mag * 0.18) * STYLE.magicScale * prayMag));
+  }
+  return playerAttackProfile(s).maxHit; // melee is not rebalanced
+}
+const isToday = () => STYLE.rangedBase === STYLE_DEFAULT.rangedBase && STYLE.rangedGear === STYLE_DEFAULT.rangedGear && STYLE.magicScale === STYLE_DEFAULT.magicScale;
+/** One attack of the hero: playerAttackProfile and playerHitChance, the damage roll and the spell's heal of actions.ts. */
+function swing(s: GameState, typeKey: string, r: () => number, ammo = 0): [number, number] {
+  const prof = playerAttackProfile(s);
+  const maxHit = maxHitWith(s, ammo);
+  if (isToday() && ammo === 0 && maxHit !== prof.maxHit) throw new Error(`fight: max hit ${maxHit} is not playerAttackProfile's ${prof.maxHit}`);
+  const healRatio = s.combatStyle === 'magic' ? ((SPELLS.find((x: { id: string }) => x.id === s.activeSpell) as { healRatio?: number }).healRatio || 0) : 0;
+  const hc = playerHitChance(prof.accuracy, MONSTER_TYPES[typeKey].def);
   const dmg = r() < hc ? Math.max(1, Math.floor(r() * (maxHit + 1))) : 0;
   return [dmg, dmg > 0 && healRatio ? Math.max(1, Math.floor(dmg * healRatio)) : 0];
+}
+/** The game's BossDef for a boss: its own row when it has one, else one registered from the config (marks as Ashmantle's). */
+function bossDef(boss: BossConfig): BossDef {
+  const own = BOSSES[boss.typeKey];
+  if (own) return own;
+  const def: BossDef = {
+    respawnSecs: 0, arenaRadius: 0, openingShiftMs: boss.openingShiftMs ?? 0,
+    mark: { step: boss.markStep, max: BOSSES.ashmantle.mark.max, secs: BOSSES.ashmantle.mark.secs },
+    phases: boss.phases.map((p) => ({ ...p, shiftMs: p.shiftMs ?? 2000 }))
+  };
+  BOSSES[boss.typeKey] = def;
+  return def;
 }
 
 export type Fighter = {
@@ -125,12 +126,16 @@ export type Fighter = {
 export type Outcome = { win: boolean; t: number; oneShot: number; heavies: number; dodged: number; by: Record<string, number> };
 
 export function fight(f: Fighter, boss: BossConfig, seed: number): Outcome {
+  const def = bossDef(boss);
   const r = seeded(seed), s = f.make();
+  s.quests.dragonfireWard = f.ward;
   const HP = boss.hp, PH = boss.phases, A = boss.attacks;
   const stand = STAND[f.style], reach = REACH[f.style];
   const regen = f.regen ?? REGEN_IN_COMBAT, eatEvery = f.eatCd ?? EAT_CD;
-  let bossHp = HP, ph = 0, idx = 0, t = 0, next = 0, shift = 0;
-  let eatCd = 0, potCd = 0, atkCd = 0, food = f.food, pots = f.pots, marks = 0, markT = 0;
+  let bossHp = HP, ph = 0, idx = 0, t = 0, next = 0;
+  let shift = (boss.openingShiftMs ?? 0) / 1000; // the opening roar: untouchable, no attack
+  let eatCd = 0, potCd = 0, atkCd = 0, food = f.food, pots = f.pots;
+  const marks: Marks = { count: 0, left: 0 };
   let pos: V = { x: stand, z: 0 };        // where the hero is (or will be when the current move ends)
   let moveEnd = 0;                          // the hero is still on its old spot until moveEnd
   let prev: V = { ...pos };
@@ -144,19 +149,18 @@ export function fight(f: Fighter, boss: BossConfig, seed: number): Outcome {
   const dt = 0.02;
   const out = (win: boolean): Outcome => ({ win, t, oneShot, heavies, dodged, by });
   function hurtHeavy(L: Locked) {
-    let d = Math.floor(L.a.power! * (0.75 + 0.25 * r()) * (1 + boss.markStep * marks));
-    marks = Math.min(4, marks + 1); markT = 12;
-    if (L.a.style === 'fire') d = (f.ward || s.activePrayers.has('prot_magic')) ? Math.floor(d * 0.25) : resolveDragonfire(d, s).damage;
-    else if (L.a.style === 'melee' && s.activePrayers.has('prot_melee')) d = Math.floor(d * 0.2);
+    let d = rollMonsterAttack(boss.typeKey, L.a as AttackDef, s, marks, r).dmg;
+    addMark(marks, def);
     if (f.capFrac) d = Math.min(d, Math.floor(s.maxHp * f.capFrac));
     lastHitFrom = s.hp; s.hp -= d; by[L.a.id] = (by[L.a.id] || 0) + d;
   }
   while (t < 900) {
-    t += dt; eatCd -= dt; potCd -= dt; atkCd -= dt; markT -= dt; if (markT <= 0) marks = 0;
-    if (s.hp > 0 && s.hp < s.maxHp) s.hp = Math.min(s.maxHp, s.hp + regen * dt); // the whole fight is "in combat"
+    t += dt; eatCd -= dt; potCd -= dt; atkCd -= dt;
+    tickMarks(marks, dt);
+    if (s.hp > 0 && s.hp < s.maxHp) s.hp = Math.min(s.maxHp, s.hp + regen * dt);
     if (s.activePrayers.size) { s.prayerPts -= 0.35 * dt; if (s.prayerPts <= 0) s.activePrayers.clear(); }
     if (pots > 0 && potCd <= 0 && s.skills.prayer.lvl >= 25 && s.prayerPts < 6) { pots--; potCd = EAT_CD; s.prayerPts = Math.min(s.maxPrayerPts, s.prayerPts + 18); s.activePrayers.add(f.prayer ?? 'prot_magic'); }
-    if (shift > 0) { shift -= dt; next = t + 1.0; pending = []; }
+    if (shift > 0) { shift -= dt; next = t + BOSS_FIRST_ENTRY_SECS; pending = []; }
     else if (t >= next) {
       const P = PH[ph], id = P.pattern[idx++ % P.pattern.length];
       if (id === 'basic') {
@@ -175,8 +179,7 @@ export function fight(f: Fighter, boss: BossConfig, seed: number): Outcome {
     }
     for (const L of pending) if (t >= L.reactAt && t < L.at) {
       L.reactAt = Infinity;
-      const p = pos; // react from where the hero is heading
-      if (inside(L, p)) { moveTo(escape(L, p)); away = true; backAt = Infinity; waitBasic = false; }
+      if (inside(L, pos)) { moveTo(escape(L, pos)); away = true; backAt = Infinity; waitBasic = false; }
     }
     for (const L of pending) if (t >= L.at) {
       if (inside(L, here())) hurtHeavy(L); else dodged++;
@@ -199,12 +202,12 @@ export function fight(f: Fighter, boss: BossConfig, seed: number): Outcome {
     const swinging = !away && t >= moveEnd && Math.hypot(p.x, p.z) <= reach + 1e-6;
     if (swinging && atkCd <= 0 && shift <= 0) {
       atkCd = TICK;
-      const floor = Math.ceil(HP * PH[ph].untilHpFrac);
+      const floor = Math.round(HP * PH[ph].untilHpFrac); // crossPhase's threshold
       const [dmg, healed] = swing(s, boss.typeKey, r, f.ammo ?? 0);
       if (healed) s.hp = Math.min(s.maxHp, s.hp + healed);
       bossHp = Math.max(floor, bossHp - dmg);
       if (bossHp <= 0) return out(true);
-      if (bossHp <= floor && ph < PH.length - 1) { ph++; idx = 0; shift = 2.0; pending = []; }
+      if (bossHp <= floor && ph < PH.length - 1) { ph++; idx = 0; shift = (PH[ph].shiftMs ?? 2000) / 1000; pending = []; }
     }
   }
   return out(false);

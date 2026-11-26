@@ -1,58 +1,71 @@
+=== Ashmantle: fight.ts against Stage 4's shipped model (tests/support/bossModel.ts), today's formula, seeds 1 to 500
+fighter                                    shipped win%  mean s | fight.ts win%  mean s
+A melee, prepared, moves                           99.4     105 |          99.4     105
+B melee, prepared, never moves                      0.0       0 |           0.0       0
+C melee, prepared, +300 ms                         98.8     107 |          98.8     107
+F melee, level 50 rune, unprepared                  0.2     190 |           0.2     190
+G melee, level 50, never moves                      0.0       0 |           0.0       0
+R ranged, prepared, moves                          99.0      63 |          99.0      63
+R ranged, never moves                               0.0       0 |           0.0       0
+M magic, prepared, moves                          100.0      50 |         100.0      50
+M magic, never moves                                0.2      25 |           0.2      25
+FR ranged, level 50, unprepared                     1.0     114 |           1.0     114
+FM magic, level 50, unprepared                     10.8      68 |          10.8      68
 
 === Marrowjaw the Tollmaster (level 40, 560 hitpoints, basic max hit 21 melee; 2 phases)
     Do you step off the spot? One mechanic at a time, with long warnings: the first boss teaches the language.
 fighter                                                             combat   bound        | today: win%  mean s | rebalanced, bronze arrows: win%  mean s | rebalanced, arrow of the level: win%  mean s  arrow
 melee 35, adamant, 10 lobsters, moves                                   43   >= 85        |       96.3      61 |       96.3      61              |              (as the column before)
-the same, +300 ms (trackpad)                                            43   >= 70        |       95.8      61 |       95.8      61              |              (as the column before)
+the same, +300 ms (trackpad)                                            43   >= 70        |       96.0      61 |       96.0      61              |              (as the column before)
 the same, never moves                                                   43   <= 25        |        0.0       0 |        0.0       0              |              (as the column before)
-melee 22, mithril, 8 trout, moves                                       27   <= 35        |       26.5      93 |       26.5      93              |              (as the column before)
-ranged 35, yew bow, blue hides, moves                                   37   >= 85        |       99.9      26 |       99.6      45              |       99.6      41   +2
-magic 35, mystic, ice burst, moves                                      37   >= 85        |      100.0      22 |       99.7      42              |              (as the column before)
+melee 22, mithril, 8 trout, moves                                       27   <= 35        |       26.6      93 |       26.6      93              |              (as the column before)
+ranged 35, yew bow, blue hides, moves                                   37   >= 85        |       99.9      26 |       99.6      45              |       99.7      41   +2
+magic 35, mystic, ice burst, moves                                      37   >= 85        |      100.0      22 |       99.8      41              |              (as the column before)
 
 === Matron Saltfang (level 48, 960 hitpoints, basic max hit 36 melee; 3 phases)
     Can you keep up? Its tempo rises in every phase: the fight is won by ending it, so food and damage are the plan.
 fighter                                                             combat   bound        | today: win%  mean s | rebalanced, bronze arrows: win%  mean s | rebalanced, arrow of the level: win%  mean s  arrow
-melee 50, rune, Protect from Melee, 16 swordfish, 2 potions             62   >= 85        |       99.4      89 |       99.4      89              |              (as the column before)
-the same, +300 ms                                                       62   >= 65        |       81.3      93 |       81.3      93              |              (as the column before)
+melee 50, rune, Protect from Melee, 16 swordfish, 2 potions             62   >= 85        |       99.6      89 |       99.6      89              |              (as the column before)
+the same, +300 ms                                                       62   >= 65        |       82.5      93 |       82.5      93              |              (as the column before)
 the same, never moves                                                   62   <= 5         |        0.0       0 |        0.0       0              |              (as the column before)
-the same, no food                                                       62   information  |       82.5      89 |       82.5      89              |              (as the column before)
-melee 38, adamant, no prayer, 10 lobsters                               46   <= 15        |       10.4     127 |       10.4     127              |              (as the column before)
-at the door: melee 41, rune, Protect from Melee, 12 lobsters, 1 potion    51   information  |       96.3     101 |       96.3     101              |              (as the column before)
-ranged 50, magic bow, red hides, Protect from Melee, 16 swordfish       54   >= 85        |      100.0      45 |       99.6      80              |       99.6      70   +4
+the same, no food                                                       62   information  |       82.6      89 |       82.6      89              |              (as the column before)
+melee 38, adamant, no prayer, 10 lobsters                               46   <= 15        |       10.3     127 |       10.3     127              |              (as the column before)
+at the door: melee 41, rune, Protect from Melee, 12 lobsters, 1 potion    51   information  |       97.0     101 |       97.0     101              |              (as the column before)
+ranged 50, magic bow, red hides, Protect from Melee, 16 swordfish       54   >= 85        |      100.0      45 |       99.6      80              |       99.7      70   +4
 magic 50, infinity, blood barrage, Protect from Melee                   54   >= 85        |      100.0      34 |      100.0      64              |              (as the column before)
 
 === The Kiln Warden (level 80, 2000 hitpoints, basic max hit 64 melee; 3 phases)
     Can you hold the band? The ring burns everything far, the vent everything near: only a strip 3 to 6 units out is safe through both.
 fighter                                                             combat   bound        | today: win%  mean s | rebalanced, bronze arrows: win%  mean s | rebalanced, arrow of the level: win%  mean s  arrow
-melee 70, dragon, Protect from Melee, 20 sharks, 4 potions              86   >= 85        |       96.7      99 |       96.7      99              |              (as the column before)
+melee 70, dragon, Protect from Melee, 20 sharks, 4 potions              86   >= 85        |       96.8      99 |       96.8      99              |              (as the column before)
 the same, +300 ms                                                       86   >= 65        |       95.6     101 |       95.6     101              |              (as the column before)
-the same, never moves                                                   86   <= 5         |        0.0       0 |        0.0       0              |              (as the column before)
+the same, never moves                                                   86   <= 5         |        0.1      71 |        0.1      71              |              (as the column before)
 the same, no prayer                                                     86   information  |       56.8     102 |       56.8     102              |              (as the column before)
 melee 55, rune, no prayer, 12 lobsters                                  65   <= 15        |        2.9     168 |        2.9     168              |              (as the column before)
-at the door: melee 58, rune, Protect from Melee, 16 sharks, 2 potions    72   information  |       77.3     157 |       77.3     157              |              (as the column before)
+at the door: melee 58, rune, Protect from Melee, 16 sharks, 2 potions    72   information  |       77.4     157 |       77.4     157              |              (as the column before)
 ranged 70, crossbow, black hides, Protect from Melee                    74   >= 85        |       94.3      63 |       87.3     116              |       89.1     102   +6
 the same, never moves                                                   74   <= 5         |        0.0       0 |        0.0       0              |        0.0       0   +6
-magic 70, robes, blood barrage, Protect from Melee                      74   >= 85        |       99.3      58 |       98.0     114              |              (as the column before)
+magic 70, robes, blood barrage, Protect from Melee                      74   >= 85        |       99.3      57 |       98.0     114              |              (as the column before)
 the same, never moves                                                   74   <= 5         |        0.0       0 |        0.0       0              |              (as the column before)
 
 === Ashmantle the Slag Wyrm, Stage 4's boss, row unchanged (level 110, 1400 hitpoints, basic max hit 72 magic)
     Stage 4's proof rows and thresholds (its design 6.4).
 fighter                                                             combat   bound        | today: win%  mean s | rebalanced, bronze arrows: win%  mean s | rebalanced, arrow of the level: win%  mean s  arrow
-A melee, prepared, moves                                                86   >= 85        |       98.9     103 |       98.9     103              |              (as the column before)
+A melee, prepared, moves                                                86   >= 85        |       99.2     104 |       99.2     104              |              (as the column before)
 B melee, prepared, never moves                                          86   <= 5         |        0.0       0 |        0.0       0              |              (as the column before)
-C melee, prepared, +300 ms (trackpad)                                   86   >= 65        |       96.8     104 |       96.8     104              |              (as the column before)
-C2 melee, prepared, +500 ms                                             86   information  |       77.9     103 |       77.9     103              |              (as the column before)
-D melee, prepared, no food                                              86   information  |       72.1     101 |       72.1     101              |              (as the column before)
-E melee, level 60, dragon kit                                           74   information  |       94.5     113 |       94.5     113              |              (as the column before)
-F melee, level 50 rune, unprepared                                      60   <= 15        |        0.1     181 |        0.1     181              |              (as the column before)
+C melee, prepared, +300 ms (trackpad)                                   86   >= 65        |       97.2     106 |       97.2     106              |              (as the column before)
+C2 melee, prepared, +500 ms                                             86   information  |       79.3     105 |       79.3     105              |              (as the column before)
+D melee, prepared, no food                                              86   information  |       73.0     102 |       73.0     102              |              (as the column before)
+E melee, level 60, dragon kit                                           74   information  |       94.7     115 |       94.7     115              |              (as the column before)
+F melee, level 50 rune, unprepared                                      60   <= 15        |        0.1     173 |        0.1     173              |              (as the column before)
 G melee, level 50, never moves                                          60   <= 5         |        0.0       0 |        0.0       0              |              (as the column before)
-R ranged, prepared, moves                                               74   >= 85        |       98.5      61 |       97.5     108              |       98.5      93   +6
-R ranged, +300 ms                                                       74   information  |       96.7      62 |       94.3     111              |       95.5      96   +6
+R ranged, prepared, moves                                               74   >= 85        |       98.8      63 |       98.1     110              |       97.9      96   +6
+R ranged, +300 ms                                                       74   information  |       96.8      64 |       94.1     113              |       95.3      98   +6
 R ranged, never moves                                                   74   <= 5         |        0.0       0 |        0.0       0              |        0.0       0   +6
-M magic, prepared, moves                                                74   >= 85        |      100.0      47 |       99.6      93              |              (as the column before)
-M magic, +300 ms                                                        74   information  |       99.3      48 |       97.9      95              |              (as the column before)
-M magic, never moves                                                    74   <= 5         |        0.1      21 |        0.0       0              |              (as the column before)
-FR ranged, level 50, unprepared                                         51   <= 15        |        1.8     110 |        0.1     182              |        0.3     154   +4
-FM magic, level 50, unprepared                                          51   <= 15        |        9.2      67 |        0.9     132              |              (as the column before)
+M magic, prepared, moves                                                74   >= 85        |       99.8      49 |       99.5      95              |              (as the column before)
+M magic, +300 ms                                                        74   information  |       99.3      50 |       97.6      98              |              (as the column before)
+M magic, never moves                                                    74   <= 5         |        0.3      25 |        0.0       0              |              (as the column before)
+FR ranged, level 50, unprepared                                         51   <= 15        |        1.1     111 |        0.1     166              |        0.3     154   +4
+FM magic, level 50, unprepared                                          51   <= 15        |       10.4      69 |        0.4     147              |              (as the column before)
 
 EVERY BOUND HOLDS, WITH TODAY'S FORMULA AND WITH THE REBALANCE

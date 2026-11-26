@@ -1,7 +1,7 @@
 #!/bin/bash
 # Stage 3's pacing proof under the aggression rule of design 7.13 (pacing-results.txt).
-# It runs Stage 3's own tests/pacing.test.ts, UNEDITED, from origin/main (Stage 3 merged there; this tree is older;
-# PACE_REF overrides the ref), bundled with a stand-in for vitest (vitest-stub.ts), three times:
+# It runs Stage 3's own tests/pacing.test.ts, UNEDITED, from the working tree (R0, 2026-11-26: the merged tree of
+# Stages 1 to 5 and the models pass; PACE_REF=<ref> reads a git ref instead, where git works), bundled with a stand-in for vitest (vitest-stub.ts), three times:
 #   1. before:      Stage 3's model as committed. Must reproduce the table in its baseline document.
 #   2. convention:  one modelling change alone: the pack of a type is counted over camps that do not keep their sight
 #                   (the pass sentries are a gate, not a training ground). Stage 2's rule otherwise. Shows what the
@@ -11,15 +11,21 @@
 #                   found that the convention of block 2 changes no number here either, so it is not part of the rule.
 # Only tests/support/pacingModel.ts is patched; the script stops if an anchor is missing.
 # The test suite is not run: this is the model, under the same 1 GB cap as run.sh.
-# Usage, from the repository root: bash docs/superpowers/research/content-model/pacing-rerun.sh [gap ...]
+# Usage, from the repository root, behind the memory cap: scripts/capped.sh bash docs/superpowers/research/content-model/pacing-rerun.sh [gap ...]
 # With no argument it runs the chosen gap (10, aggro.ts SIGHT_GAP) and, for the owner to see the lever, 5 and 20.
 set -euo pipefail
 here="$(cd "$(dirname "$0")" && pwd)"
 root="$(cd "$here/../../../.." && pwd)"
-ref="${PACE_REF:-origin/main}"
+ref="${PACE_REF:-}"
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
-git -C "$root" archive "$ref" src tests/support tests/pacing.test.ts | tar -x -C "$tmp"
+if [ -n "$ref" ]; then
+  git -C "$root" archive "$ref" src tests/support tests/pacing.test.ts | tar -x -C "$tmp"
+  label="$ref at $(git -C "$root" rev-parse --short "$ref")"
+else
+  tar -C "$root" -c src tests/support tests/pacing.test.ts | tar -x -C "$tmp"
+  label="the working tree"
+fi
 ln -s "$root/node_modules" "$tmp/node_modules"
 cp "$here/aggro.ts" "$tmp/tests/support/aggro.ts"
 cp "$here/vitest-stub.ts" "$tmp/vitest-stub.ts"
@@ -28,8 +34,7 @@ cp "$model" "$tmp/pacingModel.orig.ts"
 bundle_and_run() { # $1 = gap
   "$root/node_modules/.bin/esbuild" "$tmp/tests/pacing.test.ts" --bundle --platform=node --format=esm --log-level=error \
     --alias:vitest="$tmp/vitest-stub.ts" --define:__SIGHT_GAP__="$1" --outfile="$tmp/tests/support/run.mjs"
-  env -i HOME="$HOME" PATH="$PATH" XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-}" DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-}" \
-    systemd-run --user --scope -q -p MemoryMax=1G -p MemorySwapMax=0 node "$tmp/tests/support/run.mjs"
+  env -i HOME="$HOME" PATH="$PATH" node --max-old-space-size=1024 "$tmp/tests/support/run.mjs"
 }
 patch_model() { # $1 = convention | after
   cp "$tmp/pacingModel.orig.ts" "$model"
@@ -47,7 +52,7 @@ JS
 }
 gaps=("$@"); [ ${#gaps[@]} -eq 0 ] && gaps=(10 5 20)
 {
-  echo "Stage 3's tests/pacing.test.ts from $ref at $(git -C "$root" rev-parse --short "$ref"), unedited, three models."
+  echo "Stage 3's tests/pacing.test.ts from $label, unedited, three models."
   echo; echo "=== 1. before: Stage 3's model as committed"
   bundle_and_run 10
   echo; echo "=== 2. convention only: the pack is counted over camps that do not keep their sight; Stage 2's rule otherwise"

@@ -1,4 +1,4 @@
-Second-pass check against origin/main at db15263
+Second-pass check against the working tree
 
 A. The style band at every level (times melee's damage per second; "spread" is the fastest over the slowest)
   -- standard kit (best ordinary weapon, body, legs), arrow of the level
@@ -64,10 +64,10 @@ A. The style band at every level (times melee's damage per second; "spread" is t
 
 B. A hero 10 or 30 combat levels above an aggressive camp fights one member for 60 s, standing still (patched rule).
    Other members that join, per fight (mean, most), 200 seeds per member; the hero stands toward the camp centre.
-  +10 levels, 2 from the target: wizards (3) 0.03/1; rangers (2) 0.25/1; giants (4) 0.00/0; dune_nest_west (3) 0.07/1; dune_nest_east (2) 0.05/1; deep_woods_west (2) 0.33/1; deep_woods_south (2) 0.69/1; slagfall_terrace (2) 0.00/0
-  +10 levels, 7 from the target: wizards (3) 1.19/2; rangers (2) 0.92/1; giants (4) 0.56/2; dune_nest_west (3) 1.11/2; dune_nest_east (2) 0.85/1; deep_woods_west (2) 0.94/1; deep_woods_south (2) 0.97/1; slagfall_terrace (2) 0.51/1
-  +30 levels, 2 from the target: wizards (3) 0.03/1; rangers (2) 0.25/1; giants (4) 0.00/0; dune_nest_west (3) 0.07/1; dune_nest_east (2) 0.05/1; deep_woods_west (2) 0.33/1; deep_woods_south (2) 0.69/1; slagfall_terrace (2) 0.00/0
-  +30 levels, 7 from the target: wizards (3) 1.19/2; rangers (2) 0.92/1; giants (4) 0.56/2; dune_nest_west (3) 1.11/2; dune_nest_east (2) 0.85/1; deep_woods_west (2) 0.94/1; deep_woods_south (2) 0.97/1; slagfall_terrace (2) 0.51/1
+  +10 levels, 2 from the target: wizards (3) 0.03/1; rangers (2) 0.25/1; giants (4) 0.00/0; dune_nest_west (3) 0.07/1; dune_nest_east (2) 0.05/1; deep_woods_west (2) 0.33/1; deep_woods_south (2) 0.69/1; slagfall_terrace (2) 0.00/0; saltback_shore (3) 1.78/2; thornwatch (2) 0.93/1
+  +10 levels, 7 from the target: wizards (3) 1.19/2; rangers (2) 0.92/1; giants (4) 0.56/2; dune_nest_west (3) 1.11/2; dune_nest_east (2) 0.85/1; deep_woods_west (2) 0.94/1; deep_woods_south (2) 0.97/1; slagfall_terrace (2) 0.51/1; saltback_shore (3) 1.98/2; thornwatch (2) 1.00/1
+  +30 levels, 2 from the target: wizards (3) 0.03/1; rangers (2) 0.25/1; giants (4) 0.00/0; dune_nest_west (3) 0.07/1; dune_nest_east (2) 0.05/1; deep_woods_west (2) 0.33/1; deep_woods_south (2) 0.69/1; slagfall_terrace (2) 0.00/0; saltback_shore (3) 1.78/2; thornwatch (2) 0.93/1
+  +30 levels, 7 from the target: wizards (3) 1.19/2; rangers (2) 0.92/1; giants (4) 0.56/2; dune_nest_west (3) 1.11/2; dune_nest_east (2) 0.85/1; deep_woods_west (2) 0.94/1; deep_woods_south (2) 0.97/1; slagfall_terrace (2) 0.51/1; saltback_shore (3) 1.98/2; thornwatch (2) 1.00/1
 
 C. A combat-70 hero gathers at each yew and magic tree (8 directions x 50 seeds, 5 minutes a run). The engine walks a
    gatherer to within 3.1 of the node (loop.ts stopDist), so it stands about 3.0 from the tree; 1.5 is shown as well.

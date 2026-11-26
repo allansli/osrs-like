@@ -1,4 +1,4 @@
-// Stage 6 bosses, and Stage 4's Ashmantle, through Stage 4's positional fight (fight.ts, copied; see its header).
+// Stage 6 bosses, and Stage 4's Ashmantle, through Stage 4's positional fight (fight.ts, on the game's own rules; see its header).
 // 2,000 seeded fights per row, each row TWICE: with today's attack formula and with the style rebalance of design 7.12
 // (STYLE_AFTER), the latter with bronze arrows and, for a ranged fighter, with the arrow or bolt grade of its level
 // (AMMO_TIERS). Every bound must hold in every column, so the fight tests do not depend on where the rebalance slice lands
@@ -7,7 +7,8 @@
 import { MONSTER_TYPES } from '../../../../src/data/world';
 import { combatLevel } from '../../../../src/state/adventure';
 import { fight, profile, FIGHTERS, LABELS, STYLE, type Fighter } from './fight';
-import { BOSS, BOSS_ROW } from './boss';
+import { ASHMANTLE, BOSS_KEY } from './boss';
+import { FIGHTERS as SHIPPED, runRow } from '../../../../tests/support/bossModel';
 import { AMMO, AMMO_TIERS, BOSSES, NEW_MONSTERS, STYLE_AFTER, STYLE_TODAY } from './content';
 
 for (const [k, m] of Object.entries(NEW_MONSTERS)) {
@@ -72,11 +73,25 @@ function ammoOf(f: Fighter): number {
   return AMMO[bolt ? tier.bolt : tier.arrow].power;
 }
 
+const ASH_ROW = MONSTER_TYPES[BOSS_KEY];
 const N = 2000;
 let bad = 0;
+
+// R0: this model against Stage 4's shipped one (tests/support/bossModel.ts, its runRow), today's formula, the same 500 seeds
+// and fighters as tests/boss-fight.test.ts. Every row must be identical: it is the proof that fight.ts runs Stage 4's rules.
+console.log("=== Ashmantle: fight.ts against Stage 4's shipped model (tests/support/bossModel.ts), today's formula, seeds 1 to 500");
+console.log('fighter                                    shipped win%  mean s | fight.ts win%  mean s');
+for (const key of Object.keys(SHIPPED)) {
+  const a = runRow(key, 500);
+  let w = 0, secs = 0;
+  for (let i = 1; i <= 500; i++) { const o = fight(FIGHTERS[key], ASHMANTLE, i); if (o.win) { w++; secs += o.t; } }
+  const same = w / 500 === a.win && Math.abs((w ? secs / w : 0) - a.meanWinSecs) < 1e-9;
+  if (!same) bad++;
+  console.log(`${SHIPPED[key].label.padEnd(42)} ${(a.win * 100).toFixed(1).padStart(12)} ${a.meanWinSecs.toFixed(0).padStart(7)} | ${((w / 500) * 100).toFixed(1).padStart(13)} ${(w ? secs / w : 0).toFixed(0).padStart(7)}${same ? '' : '  DIFFERS'}`);
+}
 const sets: [string, { typeKey: string; hp: number }, Row[], string][] = [
-  ...Object.entries(ROWS).map(([key, rows]) => [`${NEW_MONSTERS[key].name} (level ${NEW_MONSTERS[key].level}, ${NEW_MONSTERS[key].hp} hitpoints, basic max hit ${NEW_MONSTERS[key].maxHit} ${NEW_MONSTERS[key].style}; ${BOSSES[key].phases.length} phases)`, BOSSES[key], rows, BOSSES[key].question] as [string, typeof BOSS, Row[], string]),
-  [`${BOSS_ROW.name}, Stage 4's boss, row unchanged (level ${BOSS_ROW.level}, ${BOSS_ROW.hp} hitpoints, basic max hit ${BOSS_ROW.maxHit} ${BOSS_ROW.style})`, BOSS, S4_ROWS, "Stage 4's proof rows and thresholds (its design 6.4)."]
+  ...Object.entries(ROWS).map(([key, rows]) => [`${NEW_MONSTERS[key].name} (level ${NEW_MONSTERS[key].level}, ${NEW_MONSTERS[key].hp} hitpoints, basic max hit ${NEW_MONSTERS[key].maxHit} ${NEW_MONSTERS[key].style}; ${BOSSES[key].phases.length} phases)`, BOSSES[key], rows, BOSSES[key].question] as [string, typeof ASHMANTLE, Row[], string]),
+  [`${ASH_ROW.name}, Stage 4's boss, row unchanged (level ${ASH_ROW.level}, ${ASH_ROW.hp} hitpoints, basic max hit ${ASH_ROW.maxHit} ${ASH_ROW.style})`, ASHMANTLE, S4_ROWS, "Stage 4's proof rows and thresholds (its design 6.4)."]
 ];
 for (const [title, boss, rows, question] of sets) {
   console.log(`\n=== ${title}`);
