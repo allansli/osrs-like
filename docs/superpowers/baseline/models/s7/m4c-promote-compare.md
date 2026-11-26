@@ -1,0 +1,145 @@
+# Model Compare Report: monsters
+
+## Contract
+All contract checks passed.
+
+## Budget
+All budget checks passed.
+
+## Drift
+- Node 'hill_giant_HeadGroup' translation changed: [0, 2.0199999809265137, 0] -> [0, 0.8799999952316284, -0.05000000074505806]
+- Node 'hill_giant_LeftHand' added
+- Node 'hill_giant_LeftElbowPivot' added
+- Node 'hill_giant_LeftArmPivot' translation changed: [-0.5799999237060547, 1.5800000429153442, 0] -> [-0.5799999833106995, 0.440000057220459, -0.019999999552965164]
+- Node 'hill_giant_WeaponPivot' added
+- Node 'hill_giant_RightHand' added
+- Node 'hill_giant_RightElbowPivot' added
+- Node 'hill_giant_RightArmPivot' translation changed: [0.5799999237060547, 1.5800000429153442, 0] -> [0.5799999833106995, 0.440000057220459, -0.019999999552965164]
+- Node 'hill_giant_Torso' added
+- Node 'hill_giant_LeftFoot' added
+- Node 'hill_giant_LeftKneePivot' added
+- Node 'hill_giant_LeftLegPivot' translation changed: [-0.2200000286102295, 0.7799999713897705, 0] -> [-0.2199999988079071, -0.08000004291534424, 0]
+- Node 'hill_giant_RightFoot' added
+- Node 'hill_giant_RightKneePivot' added
+- Node 'hill_giant_RightLegPivot' translation changed: [0.2200000286102295, 0.7799999713897705, 0] -> [0.2199999988079071, -0.08000004291534424, 0]
+- Node 'hill_giant_Hips' added
+- Node 'hill_giant_Root' added
+- Node 'hill_giant_body' added
+- Node 'hill_giant_bone' added
+- Node 'hill_giant_club' added
+- Node 'hill_giant_fur' added
+- Node 'Monster_hill_giant' translation changed: [-3.4000000953674316, 0, 2.200000047683716] -> [0, 0, 0]
+- Node 'moss_guardian_HeadGroup' translation changed: [0.019999980926513672, 1.6200000047683716, -0.18000006675720215] -> [0, 0.5600000619888306, -0.18000000715255737]
+- Node 'moss_guardian_LeftHand' added
+- Node 'moss_guardian_LeftElbowPivot' added
+- Node 'moss_guardian_LeftArmPivot' translation changed: [-0.6200000047683716, 1.399999976158142, 0] -> [-0.6000000238418579, 0.33000004291534424, 0]
+- Node 'moss_guardian_RightHand' added
+- Node 'moss_guardian_RightElbowPivot' added
+- Node 'moss_guardian_RightArmPivot' translation changed: [0.5799999833106995, 1.3799999952316284, 0] -> [0.6000000238418579, 0.33000004291534424, 0]
+- Node 'moss_guardian_Torso' added
+- Node 'moss_guardian_LeftFoot' added
+- Node 'moss_guardian_LeftKneePivot' added
+- Node 'moss_guardian_LeftLegPivot' translation changed: [-0.24000000953674316, 0.7799999713897705, 0] -> [-0.25, -0.06000000238418579, -0.019999999552965164]
+- Node 'moss_guardian_RightFoot' added
+- Node 'moss_guardian_RightKneePivot' added
+- Node 'moss_guardian_RightLegPivot' translation changed: [0.25999999046325684, 0.7799999713897705, 0] -> [0.25, -0.06000000238418579, -0.019999999552965164]
+- Node 'moss_guardian_Hips' added
+- Node 'moss_guardian_Root' added
+- Node 'moss_guardian_bark' added
+- Node 'moss_guardian_core' added
+- Node 'moss_guardian_moss' added
+- Node 'moss_guardian_stone' added
+- Node 'Monster_moss_guardian' translation changed: [-0.6000000238418579, 0, 2.200000047683716] -> [0, 0, 0]
+- Node 'hill_giant_buckle_horn_L' removed
+- Node 'hill_giant_buckle_socket_L' removed
+- Node 'hill_giant_fur_strap' removed
+- Node 'hill_giant_beard_bead_0' removed
+- Node 'hill_giant_beard_braid_0' removed
+- Node 'hill_giant_brow' removed
+- Node 'hill_giant_eye_L' removed
+- Node 'hill_giant_armband_L' removed
+- Node 'hill_giant_farm_L' removed
+- Node 'hill_giant_LeftLegPivot_bare_foot' removed
+- Node 'hill_giant_LeftLegPivot_shin_wrap' removed
+- Node 'hill_giant_armband_R' removed
+- Node 'hill_giant_club_spike_0' removed
+- Node 'hill_giant_club_strap_0' removed
+- Node 'hill_giant_club_wood' removed
+- Node 'hill_giant_farm_R' removed
+- Node 'hill_giant_RightLegPivot_bare_foot' removed
+- Node 'hill_giant_RightLegPivot_shin_wrap' removed
+- Node 'hill_giant_skull_buckle' removed
+- Node 'hill_giant_torso' removed
+- Node 'moss_guardian_bark_torso' removed
+- Node 'moss_guardian_antler_L' removed
+- Node 'moss_guardian_bark_mask' removed
+- Node 'moss_guardian_crown_moss' removed
+- Node 'moss_guardian_eye_L' removed
+- Node 'moss_guardian_heart_core' removed
+- Node 'moss_guardian_claw_L_0' removed
+- Node 'moss_guardian_farm_L' removed
+- Node 'moss_guardian_LeftLegPivot_knee_stone' removed
+- Node 'moss_guardian_LeftLegPivot_root_claw_0' removed
+- Node 'moss_guardian_LeftLegPivot_trunk' removed
+- Node 'moss_guardian_pauldron_moss_L' removed
+- Node 'moss_guardian_pauldron_stone_L' removed
+- Node 'moss_guardian_boulder_gauntlet' removed
+- Node 'moss_guardian_gauntlet_moss' removed
+- Node 'moss_guardian_uarm_R' removed
+- Node 'moss_guardian_RightLegPivot_knee_stone' removed
+- Node 'moss_guardian_RightLegPivot_root_claw_0' removed
+- Node 'moss_guardian_RightLegPivot_trunk' removed
+- Node 'moss_guardian_shroom_stem_0' removed
+- Mesh 'hill_giant_body' added
+- Mesh 'hill_giant_bone' added
+- Mesh 'hill_giant_club' added
+- Mesh 'hill_giant_fur' added
+- Mesh 'moss_guardian_bark' added
+- Mesh 'moss_guardian_core' added
+- Mesh 'moss_guardian_moss' added
+- Mesh 'moss_guardian_stone' added
+- Mesh 'hill_giant_buckle_horn_L' removed
+- Mesh 'hill_giant_buckle_socket_L' removed
+- Mesh 'hill_giant_fur_strap' removed
+- Mesh 'hill_giant_beard_bead_0' removed
+- Mesh 'hill_giant_beard_braid_0' removed
+- Mesh 'hill_giant_brow' removed
+- Mesh 'hill_giant_eye_L' removed
+- Mesh 'hill_giant_armband_L' removed
+- Mesh 'hill_giant_farm_L' removed
+- Mesh 'hill_giant_LeftLegPivot_bare_foot' removed
+- Mesh 'hill_giant_LeftLegPivot_shin_wrap' removed
+- Mesh 'hill_giant_armband_R' removed
+- Mesh 'hill_giant_club_spike_0' removed
+- Mesh 'hill_giant_club_strap_0' removed
+- Mesh 'hill_giant_club_wood' removed
+- Mesh 'hill_giant_farm_R' removed
+- Mesh 'hill_giant_RightLegPivot_bare_foot' removed
+- Mesh 'hill_giant_RightLegPivot_shin_wrap' removed
+- Mesh 'hill_giant_skull_buckle' removed
+- Mesh 'hill_giant_torso' removed
+- Mesh 'moss_guardian_bark_torso' removed
+- Mesh 'moss_guardian_antler_L' removed
+- Mesh 'moss_guardian_bark_mask' removed
+- Mesh 'moss_guardian_crown_moss' removed
+- Mesh 'moss_guardian_eye_L' removed
+- Mesh 'moss_guardian_heart_core' removed
+- Mesh 'moss_guardian_claw_L_0' removed
+- Mesh 'moss_guardian_farm_L' removed
+- Mesh 'moss_guardian_LeftLegPivot_knee_stone' removed
+- Mesh 'moss_guardian_LeftLegPivot_root_claw_0' removed
+- Mesh 'moss_guardian_LeftLegPivot_trunk' removed
+- Mesh 'moss_guardian_pauldron_moss_L' removed
+- Mesh 'moss_guardian_pauldron_stone_L' removed
+- Mesh 'moss_guardian_boulder_gauntlet' removed
+- Mesh 'moss_guardian_gauntlet_moss' removed
+- Mesh 'moss_guardian_uarm_R' removed
+- Mesh 'moss_guardian_RightLegPivot_knee_stone' removed
+- Mesh 'moss_guardian_RightLegPivot_root_claw_0' removed
+- Mesh 'moss_guardian_RightLegPivot_trunk' removed
+- Mesh 'moss_guardian_shroom_stem_0' removed
+- triangles changed: 65678 -> 59274
+- rawBytes changed: 2609100 -> 2248648
+- brotliBytes changed: 913665 -> 920877
+Promoted monsters: 1108117041dc8ca6105d059ec64e518fe1e216e5ddffec8bb27f8986871f5b60
+?v=11081170
