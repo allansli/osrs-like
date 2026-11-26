@@ -102,6 +102,23 @@ function weightedBones(meshes: THREE.SkinnedMesh[], key: string): { all: Set<str
   return { all, weighted };
 }
 
+describe('a clip row names every bone its clips rotate', () => {
+  // The biped library clips live in hero.glb; a row's `bones` may not be empty or short of a track's bone.
+  for (const key of MODEL_KEYS) {
+    const clips = MONSTER_MOTION[key]?.clips;
+    it.skipIf(clips === undefined || MONSTER_MOTION[key].skeleton !== 'biped')(`${key}`, () => {
+      const names = Object.values(clips as Record<string, string>);
+      const found = hero.animations.filter((a) => names.includes(a.name));
+      expect(found.length, `${key}: its clips ${names.join(', ')} are in the hero library`).toBeGreaterThan(0);
+      const tracked = new Set(found.flatMap((a) => a.tracks.map((t) => t.name.split('.')[0])));
+      expect(tracked.size, `${key}: the clips have tracks`).toBeGreaterThan(0);
+      for (const bone of tracked) {
+        expect(MONSTER_MOTION[key].bones, `${key}: bones names ${bone}`).toContain(bone);
+      }
+    });
+  }
+});
+
 describe('every bone a row names exists on that model\'s skeleton and has weight', () => {
   for (const key of MODEL_KEYS) {
     const meshes = skinnedMeshesOf(monsters, key);
