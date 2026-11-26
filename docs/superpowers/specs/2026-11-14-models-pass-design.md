@@ -998,3 +998,9 @@ The owner answered "1 A 2 A 3 A 4 A" to the four OM-P questions: (1) body route 
 ### X2 kit meshes (2026-11-26)
 
 X2 found both kits over the design's 2 rigid meshes (Saltback Stalker 4, Thornwatch Marksman 3), every other kit number within its ceiling. Merging them would need skinning, since each piece sits on its own bone. The owner chose to raise the kit mesh ceiling to 4 ("A", 2026-11-26); table 9.1's kit row reads 4 rigid. Cost: at most 2 draw calls per variant on screen.
+
+### F1 and F2 (2026-11-26, owner)
+
+X3's two open findings, answered by the owner (translated): "1. I would even like to make the world bigger. 2. Let's not limit ourselves on size."
+- **F1:** the `world.glb` ceilings get the same 2% rebuild headroom as every other file (raw 2,860,512, Brotli 499,639), so a Blender 5.0.1 rebuild of the unchanged world compares clean. The owner wants a bigger world later; that is content for a later stage, not this one.
+- **F2:** the +13.09 kB the models pass adds to the JS chunk is accepted, and the owner retires the hard JS-size limit of Stage 5's budget table: from now on the chunk size is reported in each stage's final check, not enforced as a ceiling. Draw-call, triangle and frame-time budgets stay.

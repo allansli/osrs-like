@@ -257,3 +257,7 @@ None of these is done.
 4. **OM-S2 and OM-S3** (hero; gear and guards): no recorded answer found in the plan's or the design's review log.
 5. **F1 and F2**: an owner decision for each.
 6. **OM-F**: accept the stage. This blocks the pull request.
+
+## F1 and F2 answered (2026-11-26)
+
+The owner answered both (design review log, "F1 and F2"): F1, the world ceilings gain 2% rebuild headroom; F2, the +13.09 kB is accepted and the hard JS-size limit is retired (reported, not enforced).
