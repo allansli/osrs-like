@@ -1141,10 +1141,10 @@
   "vertexColor": "none",
   "clips": {},
   "budget": {
-    "triangles": 73504,
-    "meshes": 506,
+    "triangles": 74975,
+    "meshes": 230,
     "materials": 8,
-    "rawBytes": 2354876,
-    "brotliBytes": 674803
+    "rawBytes": 1908327,
+    "brotliBytes": 522272
   }
 }
