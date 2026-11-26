@@ -136,7 +136,23 @@ export const MONSTER_MOTION: Record<string, MonsterMotionRow> = {
   },
   dark_wizard: {
     skeleton: 'biped',
-    bones: [],
+    // The rebuilt wizard's bones (plan M3e): the biped clips' thirteen. Its clips are staged below until K4
+    // promotes the skinned wizard (the shipped one is rigid and has no Hips).
+    bones: [
+      'Hips',
+      'Torso',
+      'HeadGroup',
+      'LeftArmPivot',
+      'LeftElbowPivot',
+      'RightArmPivot',
+      'RightElbowPivot',
+      'LeftLegPivot',
+      'LeftKneePivot',
+      'LeftFoot',
+      'RightLegPivot',
+      'RightKneePivot',
+      'RightFoot'
+    ],
     codeAttack: {
       rightArmX: -1.65,
       leftArmX: -1.45,
@@ -146,7 +162,22 @@ export const MONSTER_MOTION: Record<string, MonsterMotionRow> = {
   },
   dark_ranger: {
     skeleton: 'biped',
-    bones: [],
+    // The rebuilt ranger's bones (plan M3e): the biped clips' thirteen; its clips are staged below, as the wizard's.
+    bones: [
+      'Hips',
+      'Torso',
+      'HeadGroup',
+      'LeftArmPivot',
+      'LeftElbowPivot',
+      'RightArmPivot',
+      'RightElbowPivot',
+      'LeftLegPivot',
+      'LeftKneePivot',
+      'LeftFoot',
+      'RightLegPivot',
+      'RightKneePivot',
+      'RightFoot'
+    ],
     codeAttack: {
       rightArmX: -1.45,
       leftArmX: 0.58,
@@ -260,4 +291,19 @@ export const MONSTER_MOTION: Record<string, MonsterMotionRow> = {
 export const PENDING_SCORPION_CLIPS: Pick<MonsterMotionRow, 'clips' | 'anticipation'> = {
   clips: { idle: 'Idle', walk: 'Walk', attack: 'Strike', death: 'Death' },
   anticipation: 0.333333
+};
+
+/**
+ * The rebuilt wizard and ranger (plan M3e) play the hero file's biped library: the wizard casts with `Cast`, the
+ * ranger shoots with `Ranged`, each anticipation the hero manifest's. Staged as the scorpion's: K4's promote sets the
+ * live rows' `clips` and `anticipation` to these and removes the exports.
+ */
+export const PENDING_WIZARD_CLIPS: Pick<MonsterMotionRow, 'clips' | 'anticipation'> = {
+  clips: { idle: 'Idle', walk: 'Walk', attack: 'Cast', death: 'Death' },
+  anticipation: 0.25
+};
+
+export const PENDING_RANGER_CLIPS: Pick<MonsterMotionRow, 'clips' | 'anticipation'> = {
+  clips: { idle: 'Idle', walk: 'Walk', attack: 'Ranged', death: 'Death' },
+  anticipation: 0.583333
 };

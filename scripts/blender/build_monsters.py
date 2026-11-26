@@ -5,8 +5,8 @@ Sculpts authentic, high-detail OSRS / RuneScape Dragonwilds stylized monsters:
   2. Monster_goblin           - Goblin Raider with hunched muscular torso, leather harness, spiked pauldron, barbed bronze war-spear & buckler
   3. Monster_goblin_archer    - Goblin Archer with stitched hood/cowl (ears poking out), bandolier, quiver of arrows & recurve shortbow
   4. Monster_scorpion         - King Scorpion with 5 segmented carapace plates, 8 multi-jointed arachnid legs, serrated chela pincers & arched stinger tail
-  5. Monster_dark_wizard      - Dark Wizard in pleated indigo/purple cultist robes, gold/violet rune stole, crooked pointed hat & orb staff
-  6. Monster_dark_ranger      - Dark Ranger in green dragonhide brigandine, spiked pauldrons, shadow cloak, assassin cowl & dark-yew longbow
+  5. Monster_dark_wizard      - Dark Wizard, rebuilt and skinned on the biped rig: a stooped caster with a wide crooked hat, bell sleeves, a pleated robe skirt that swings & an orb staff held out at the side
+  6. Monster_dark_ranger      - Dark Ranger, rebuilt and skinned on the biped rig: a lean hunter with a peaked hood & mask, a cloak in a triangle outline, one pauldron, a hip quiver & a recurve bow held out
   7. Monster_hill_giant       - Hill Giant with barrel-chested muscular torso, fur pelt loincloth, skull buckle, braided beard & spiked tree-trunk club
   8. Monster_moss_guardian    - Moss Guardian forest golem of craggy stone & twisted bark, glowing heart-core, mossy boulder pauldrons & branching antlers
   9. Monster_lesser_demon     - Lesser Demon, rebuilt and skinned on the biped rig: a slate brute with a forward hunch, swept horns, wings raised from the back, a spade tail & an ember-edged cleaver
@@ -629,10 +629,6 @@ def build_materials() -> dict:
         "skin_elvarg_dragon": make_mat("mat_skin_elvarg_dragon", 0x334235, roughness=0.45, metallic=0.12),
         # Shared materials
         "cloth": make_mat("mat_cloth", 0x4A3F32, roughness=0.75, metallic=0.02),
-        "cloth_dark": make_mat("mat_cloth_dark", 0x1F2329, roughness=0.70, metallic=0.05),
-        "robe": make_mat("mat_robe", 0x181528, roughness=0.65, metallic=0.06),
-        "robe_trim": make_mat("mat_robe_trim", 0x4C2882, roughness=0.50, metallic=0.15),
-        "dragonhide": make_mat("mat_leather_dragonhide", 0x233A28, roughness=0.50, metallic=0.12),
         "leather": make_mat("mat_leather", 0x2C1F16, roughness=0.65, metallic=0.06),
         "fur": make_mat("mat_fur", 0x3D2C1C, roughness=0.82, metallic=0.02),
         "wood": make_mat("mat_wood", 0x3E2C1C, roughness=0.70, metallic=0.02),
@@ -642,7 +638,6 @@ def build_materials() -> dict:
         "iron": make_mat("mat_iron", 0x424A52, roughness=0.45, metallic=0.70),
         "obsidian": make_mat("mat_iron_obsidian", 0x16181C, roughness=0.35, metallic=0.50),
         "bronze": make_mat("mat_bronze", 0x7A5B32, roughness=0.45, metallic=0.65),
-        "gold": make_mat("mat_gold", 0x9E8046, roughness=0.38, metallic=0.65),
         "bone": make_mat("mat_bone", 0xD4CBB8, roughness=0.52, metallic=0.06),
         "horn": make_mat("mat_horn", 0x1E1A17, roughness=0.45, metallic=0.12),
         "wing_dragon": make_mat("mat_wing_dragon", 0x4A3E2A, roughness=0.55, metallic=0.08),
@@ -1885,354 +1880,497 @@ def _scorpion_clip_tables(pose_table):
 
 
 # =============================================================================
-# 5. Monster_dark_wizard (Dark Wizard)
+# 5 and 6. Monster_dark_wizard and Monster_dark_ranger: rebuilt on the biped rig (plan M3e)
 # =============================================================================
+# Two humans on the pilot's pattern (docs/superpowers/baseline/models/README.md), built as the demon is:
+# the rigid parts first, the body from what is left of the triangle budget, automatic weights from the
+# limb bones, every rigid part hard on one bone, and the one cloth of each figure weighted by rule: the
+# wizard's robe skirt between Hips and the thighs, the ranger's cloak between Torso and Hips.
+# Coordinates are three-space (+Y up, -Z forward); each figure stands at the file's origin (design
+# 6.1.1 rule 2b). Neither has a species tile (textures.ts), so a 'skin' material draws plain, and every
+# paint is the colour over the mean of the tile its family draws with.
+HUMAN_OCCLUSION = 0.5  # bake_paint's occlusion strength, as the goblin's
+HUMAN_VOXEL = 0.02  # the goblin's: these are figures of its size
+CLOTH_TILE = "public/textures/cloth.png"  # 'robe' and 'cloth' in a material name draw with this tile (blenderMonsters.ts)
+LEATHER_TILE = "public/textures/leather.png"
+WOOD_TILE = "public/textures/wood.png"
+SKIRT_LEG_SHARE = 0.55  # the most of a hem vertex the thighs hold: the skirt swings with the stride and does not cling to it
+
+
+def _human_body_graph(j: dict, r: dict) -> tuple[list, list, list, list]:
+    """
+    The stick graph and radii for figkit.organic_body and the keep balls of hands and feet for
+    _goblin_skin, in Blender space: the goblin's graph at a human's joints. A narrow waist under a chest
+    of two flat ellipses, the neck up to the head joint, and limbs that narrow between their joints, so
+    shoulder, elbow, hip and knee stand as forms. r holds the radii.
+    """
+    pts, radii, edges, keep = [], [], [], []
+
+    def chain(start, nodes):
+        prev = start
+        for p, rad in nodes:
+            pts.append(t2b(*p))
+            radii.append(rad)
+            if prev is not None:
+                edges.append((prev, len(pts) - 1))
+            prev = len(pts) - 1
+        return prev
+
+    def along(a, b, t):
+        return tuple(Vector(a).lerp(Vector(b), t))
+
+    hips, torso, head = j["Hips"], j["Torso"], j["HeadGroup"]
+    pelvis = chain(None, [(hips, r["pelvis"])])
+    chest = chain(pelvis, [(torso, r["waist"]), (along(torso, head, 0.35), r["chest"]), (along(torso, head, 0.62), r["chest2"])])
+    chain(chest, [(along(torso, head, 0.86), r["neck"]), (head, r["neck"] * 0.9)])
+    for side, tag in ((-1.0, "Left"), (1.0, "Right")):
+        shoulder, elbow, hand = j[f"{tag}ArmPivot"], j[f"{tag}ElbowPivot"], Vector(j[f"{tag}Hand"])
+        d = (hand - Vector(elbow)).normalized()
+        chain(chest, [
+            ((shoulder[0] * 0.55, shoulder[1] - 0.03, shoulder[2]), r["collar"]),  # the shoulder line slopes from the neck
+            (shoulder, r["shoulder"]),
+            (along(shoulder, elbow, 0.6), r["upper"]),
+            (elbow, r["elbow"]),
+            (along(elbow, hand, 0.35), r["fore"]),
+            (tuple(hand - d * 0.07), r["wrist"]),
+            (tuple(hand - d * 0.01), r["hand"]),  # the fist, around the hand joint
+            (tuple(hand + d * 0.08), r["hand"] * 0.92),
+        ])
+        keep.append((Vector(t2b(*(hand + d * 0.03))), 0.13))
+        hip, knee, ankle = j[f"{tag}LegPivot"], j[f"{tag}KneePivot"], j[f"{tag}Foot"]
+        chain(pelvis, [
+            (hip, r["hip"]),
+            (along(hip, knee, 0.6), r["thigh"]),
+            (knee, r["knee"]),
+            (along(knee, ankle, 0.3), r["calf"]),
+            (along(knee, ankle, 0.8), r["ankle"]),
+            # The foot: one flat slab from the heel under the ankle joint to the toe box, cut flat at the ground
+            ((ankle[0], 0.045, ankle[2]), (0.05, r["heel"])),
+            ((ankle[0] * 1.03, 0.045, ankle[2] - r["foot"]), (0.05, r["toe"])),
+        ])
+        keep.append((Vector(t2b(ankle[0], 0.04, ankle[2] - r["foot"] * 0.5)), 0.16))
+    return pts, edges, radii, keep
+
+
+def _human_body_tint(body, key: str, colour_of) -> None:
+    """
+    The body's Tint: colour_of(co, weights) gives each vertex its colour from its place and its bone
+    weights ({bone: weight}, the key's prefix stripped), times each plane's tone (_goblin_plane_tones).
+    """
+    names = {g.index: g.name[len(key) + 1 :] for g in body.vertex_groups}
+    base = [colour_of(v.co, {names[g.group]: g.weight for g in v.groups}) for v in body.data.vertices]
+    cols = []
+    for p, tone in zip(body.data.polygons, _goblin_plane_tones(body)):
+        for vi in p.vertices:
+            cols += [c * tone for c in base[vi]] + [1.0]
+    body.data.color_attributes.new("Tint", "FLOAT_COLOR", "CORNER").data.foreach_set("color", cols)
+
+
+def _drape_weights(obj, key: str, weights) -> None:
+    """A cloth weighted by rule: weights(co) gives each vertex {bone: weight}; they must sum to 1 on at most four bones."""
+    groups = {}
+    for v in obj.data.vertices:
+        w = {b: x for b, x in weights(v.co).items() if x > 1e-6}
+        if len(w) > 4 or abs(sum(w.values()) - 1.0) > 1e-6 or min(w.values()) < 0.0:
+            raise ValueError(f"{obj.name}: vertex {v.index} weights {w} must be at most four, at least 0 and sum to 1")
+        for b, x in w.items():
+            if b not in groups:
+                groups[b] = obj.vertex_groups.new(name=f"{key}_{b}")
+            groups[b].add([v.index], x, "REPLACE")
+
+
+def _open_front(obj, centre_z: float) -> None:
+    """Deletes the faces of a shell whose centre lies in front of three-space z centre_z."""
+    bm = bmesh.new()
+    bm.from_mesh(obj.data)
+    front = [f for f in bm.faces if f.calc_center_median().y > -centre_z]
+    bmesh.ops.delete(bm, geom=front, context="FACES")
+    bm.to_mesh(obj.data)
+    bm.free()
+
+
+def _build_human(key: str, j: dict, radii: dict, triangles: int, height: float, mats: dict, body_family: str, names: dict, kit, colour_of):
+    """
+    One human of the biped rig: kit(add, drape) builds every part but the body, through add(obj, bone,
+    colour, planes) for a rigid part and drape(obj, colour, weights) for a cloth weighted by rule; then
+    the body from what is left of the triangle budget, the rig named Monster_<key> with bones <key>_<Bone>,
+    the weights, the tint (colour_of, _human_body_tint), a merge by family into the meshes names gives
+    each family, and the paint. Refuses a figure over its budget or more than 5% from height.
+    """
+    import rigs  # the biped table
+
+    hard, draped = [], []  # (object, bone), (object, weights)
+
+    def add(obj, bone: str, colour, planes: bool = False):
+        _goblin_tint(obj, colour, planes)
+        hard.append((obj, f"{key}_{bone}"))
+
+    def drape(obj, colour, weights):
+        _goblin_tint(obj, colour, planes=True)
+        draped.append((obj, weights))
+
+    kit(add, drape)
+    parts = [obj for obj, _ in hard + draped]
+    body_tris = triangles - 40 - sum(len(p.vertices) - 2 for obj in parts for p in obj.data.polygons)
+    pts, edges, rads, keep = _human_body_graph(j, radii)
+    body = _goblin_skin(
+        figkit.organic_body((pts, edges), rads, HUMAN_VOXEL, 10**9), f"{key}_body_skin", mats[body_family], body_tris, soften=14,
+        keep=tuple(keep), crease=GOBLIN_CREASE, spread=GOBLIN_KIN_SPREAD,
+    )
+    rig = figkit.make_rig(f"Monster_{key}", rigs.BIPED_TABLE, {k: t2b(*p) for k, p in j.items()}, prefix=key)
+
+    # Weight rule 1: the body takes automatic weights from the sixteen limb bones only. The hand mounts
+    # hold rigid parts, and a Root standing from the ground to the hips would take the inner legs, so
+    # the weighting rig leaves the mounts out and starts Root inside the pelvis.
+    core = {k: t2b(*p) for k, p in j.items() if k not in ("WeaponPivot", "OffhandPivot")}
+    core["Root"] = t2b(j["Hips"][0], j["Hips"][1] - 0.04, j["Hips"][2])
+    weight_rig = figkit.make_rig(f"{key}_weight_rig", rigs.BIPED_TABLE, core, prefix=key)
+    figkit.auto_weights(body, weight_rig, limb_radius=0.12)
+    # Weight rule 2: Root deforms nothing; its share goes to Hips.
+    figkit.fold_weights(
+        body,
+        {b.name: ([b.name, f"{key}_Root"] if b.name == f"{key}_Hips" else [b.name]) for b in weight_rig.data.bones if b.name != f"{key}_Root"},
+    )
+    for m in list(body.modifiers):
+        body.modifiers.remove(m)
+    weight_data = weight_rig.data
+    bpy.data.objects.remove(weight_rig, do_unlink=True)
+    bpy.data.armatures.remove(weight_data)
+    _human_body_tint(body, key, colour_of)
+
+    # Weight rule 3: every other part is rigid on one bone, but the cloth, weighted by its own rule.
+    for obj, bone in hard:
+        figkit.hard_weights(obj, bone)
+    for obj, weights in draped:
+        _drape_weights(obj, key, weights)
+    for obj in [body] + parts:
+        obj.parent = rig
+
+    merged = figkit.merge_by_family(rig)
+    for ob in merged:
+        ob.name = ob.data.name = names[figkit.get_material_family(ob)]
+    _figure_paint(rig, merged, HUMAN_OCCLUSION)
+
+    tris = sum(len(p.vertices) - 2 for ob in merged for p in ob.data.polygons)
+    if tris > triangles:
+        raise ValueError(f"{key}: {tris} triangles, over the budget of {triangles}")
+    cos = [v.co for ob in merged for v in ob.data.vertices]
+    size = [max(c[a] for c in cos) - min(c[a] for c in cos) for a in (0, 2, 1)]  # width, height, depth
+    print(f"[Blender] {key}: {tris} triangles in {len(merged)} meshes; width {size[0]:.3f}, height {size[1]:.3f}, depth {size[2]:.3f}; lowest {min(c.z for c in cos):.4f}")
+    if abs(size[1] / height - 1.0) > 0.05:
+        raise ValueError(f"{key}: height {size[1]:.3f} is more than 5% from the shipped figure's {height}")
+    return rig
+
+
+def _human_mats(key: str, families: dict, glow) -> tuple[dict, dict]:
+    """White materials of the figure's own, one a family (every colour is paint), and each family's tile mean ({} for no tile)."""
+    mats = {fam: make_mat(name, 0xFFFFFF, roughness=rough, metallic=metal) for fam, (name, rough, metal) in families.items()}
+    mats["glow"] = glow
+    tiles = {"cloth": CLOTH_TILE, "leather": LEATHER_TILE, "wood": WOOD_TILE}
+    means = {fam: _goblin_hide_mean(tiles[fam]) for fam in families if fam in tiles}
+    return mats, means
+
+
+def _human_paint(colours: dict, family_of: dict, means: dict) -> dict:
+    """Each colour as the paint that shows it in the game: over the mean of its family's tile, or as it is with no tile."""
+    return {k: (_goblin_skin_paint(c, means[family_of[k]]) if family_of.get(k) in means else c) for k, c in colours.items()}
+
+
+# --- 5. Monster_dark_wizard ---------------------------------------------------------------------------------------
+# A tall, stooped caster: the hat and the bell sleeves exaggerated (design 5.2), a pleated robe skirt
+# that swings with the stride, a grey beard, the staff held out at the right side, away from the body,
+# with an orb in its crook. The darker of the two humans (plan M3e: the ranger is clearly lighter).
+WIZARD_TRIANGLES = 4400  # the builder's own budget, under the manifest's 5,000, as the goblin's
+WIZARD_HEIGHT = 2.556  # the shipped wizard's height, hat included; the rebuilt one stays within 5%
+WIZARD_COLOURS = {  # as the game shows them
+    "robe": 0x40346A,  # indigo, 42% value
+    "robe_dark": 0x2C2550,  # collar, sash and the hat's crown, 31%
+    "trim": 0xB08A3A,  # gold hem, cuffs and hat band, 69%
+    "skin": 0xB5A08A,  # pale face and hands, 71%
+    "beard": 0x9C978D,  # grey, 61%
+    "boot": 0x4A3A2E,  # 29%
+    "staff": 0x6E5034,  # 43%
+}
+WIZARD_FAMILY = {"robe": "cloth", "robe_dark": "cloth", "trim": "cloth", "skin": "cloth", "boot": "cloth", "beard": "skin", "staff": "wood"}
+WIZARD_RADII = {
+    "pelvis": (0.17, 0.14), "waist": 0.14, "chest": (0.22, 0.16), "chest2": (0.24, 0.16), "neck": 0.062,
+    "collar": (0.15, 0.11), "shoulder": 0.10, "upper": 0.09, "elbow": 0.085, "fore": 0.07, "wrist": 0.044, "hand": 0.06,
+    "hip": 0.10, "thigh": 0.08, "knee": 0.066, "calf": 0.066, "ankle": 0.05, "heel": 0.055, "toe": 0.066, "foot": 0.17,
+}
+
+
+def wizard_joints() -> dict:
+    """Joints of the biped rig, the stance: the neck stooped forward, the arms held out from the robe, each limb within 20 degrees of the biped reference."""
+    j = {
+        "Root": (0.0, 0.0, 0.0),
+        "Hips": (0.0, 1.00, 0.03),
+        "Torso": (0.0, 1.22, 0.01),
+        "HeadGroup": (0.0, 1.76, -0.10),
+    }
+    for side, tag in ((-1.0, "Left"), (1.0, "Right")):
+        j[f"{tag}ArmPivot"] = (side * 0.26, 1.62, -0.04)
+        j[f"{tag}ElbowPivot"] = (side * 0.42, 1.32, -0.08)
+        j[f"{tag}Hand"] = (side * 0.60, 1.05, -0.15)
+        j[f"{tag}LegPivot"] = (side * 0.12, 0.96, 0.03)
+        j[f"{tag}KneePivot"] = (side * 0.17, 0.52, -0.01)
+        j[f"{tag}Foot"] = (side * 0.18, 0.10, 0.03)
+    j["WeaponPivot"] = j["RightHand"]
+    return j
+
+
+def _wizard_kit(j: dict, col: dict, mats: dict):
+    robe, skin, wood, glow = mats["cloth"], mats["skin"], mats["wood"], mats["glow"]
+
+    def aim(d) -> dict:
+        d = Vector(d).normalized()
+        return {"rx": math.asin(d.z), "rz": -math.atan2(d.x, d.y)}
+
+    def kit(add, drape):
+        # Head: a gaunt skull, a heavy brow and a long nose fused into one form with hard edges round its planes
+        parts = [
+            add_sphere("wiz_skull", None, skin, 0.13, 0.16, 0.15, tx=0.0, ty=1.90, tz=-0.13, segs=12, rings=10),
+            add_curved_tube("wiz_brow", None, skin, [(-0.11, 1.955, -0.24, 0.03), (0.0, 1.945, -0.285, 0.036), (0.11, 1.955, -0.24, 0.03)], segs=6),
+            add_cone_spike("wiz_nose", None, skin, base_r=0.042, length=0.15, tx=0.0, ty=1.905, tz=-0.265, rx=-math.pi * 0.58, curve_bend=-0.03, segs=8, flatten_x=0.8),
+        ]
+        add(_goblin_fuse(parts, "wiz_head", skin, 0.012, 560, soften=3, crease=GOBLIN_CREASE), "HeadGroup", col["skin_face"], planes=True)
+        # The beard, a long faceted wedge from the chin onto the chest; two violet glints under the brow
+        # (no mesh name holds 'eye': the engine would draw the whole mesh unlit)
+        add(add_cone_spike("wiz_beard", None, skin, base_r=0.10, length=0.40, tx=0.0, ty=1.82, tz=-0.23, segs=6, flatten_x=1.25, smooth=False, **aim((0.0, -1.0, -0.22))), "HeadGroup", col["beard"], planes=True)
+        for side, tag in ((-1.0, "L"), (1.0, "R")):
+            add(add_sphere(f"wiz_glint_{tag}", None, glow, 0.03, 0.022, 0.02, tx=side * 0.055, ty=1.915, tz=-0.262, segs=6, rings=4), "HeadGroup", 0xFFFFFF)
+
+        # The hat, the one feature that names the wizard with the sleeves (design 5.2): a wide faceted brim
+        # and a tall crown that bends back and droops at its tip, a gold band at its foot
+        add(add_lathe("wiz_hat_brim", None, robe, [(2.00, 0.48, 0.46), (2.025, 0.45, 0.43), (2.05, 0.20, 0.19)], segs=10, tz=-0.12, smooth=False), "HeadGroup", col["robe"], planes=True)
+        crown = [(0.0, 2.03, -0.12, 0.19), (0.0, 2.20, -0.08, 0.15), (0.0, 2.34, -0.01, 0.10), (0.03, 2.44, 0.09, 0.06), (0.07, 2.49, 0.21, 0.035), (0.10, 2.47, 0.31, 0.022)]
+        add(add_curved_tube("wiz_hat_crown", None, robe, crown, segs=8, smooth=False), "HeadGroup", col["robe_dark"], planes=True)
+        add(add_lathe("wiz_hat_band", None, robe, [(2.04, 0.196, 0.196), (2.10, 0.18, 0.18)], segs=8, tz=-0.12, cap_ends=False, smooth=False), "HeadGroup", col["trim"], planes=True)
+
+        # A high collar standing up behind the head, open in front, on the chest
+        collar = add_lathe("wiz_collar", None, robe, [(1.58, 0.17, 0.15), (1.72, 0.20, 0.17), (1.86, 0.26, 0.21)], segs=10, tz=-0.03, cap_ends=False, smooth=False)
+        _open_front(collar, -0.08)
+        add(collar, "Torso", col["robe_dark"], planes=True)
+
+        # Bell sleeves on the forearms, flaring past the wrist with a gold cuff; the hand comes out of the mouth
+        for tag in ("Left", "Right"):
+            e, h = Vector(j[f"{tag}ElbowPivot"]), Vector(j[f"{tag}Hand"])
+            d = (h - e).normalized()
+            start, mouth = e - d * 0.03, h - d * 0.05
+            add(add_limb_tube(f"wiz_sleeve_{tag[0]}", None, robe, tuple(start), tuple(mouth), 0.092, 0.19, r_mid=0.13, segs=8, steps=3, smooth=False), f"{tag}ElbowPivot", col["robe"], planes=True)
+            add(add_limb_tube(f"wiz_cuff_{tag[0]}", None, robe, tuple(mouth - d * 0.045), tuple(mouth + d * 0.005), 0.198, 0.198, r_mid=0.198, segs=8, steps=2, smooth=False), f"{tag}ElbowPivot", col["trim"])
+
+        # The sash over the seam of body and skirt, on the hips
+        add(add_lathe("wiz_sash", None, robe, [(1.00, 0.215, 0.19, 0.0, 0.03), (1.13, 0.20, 0.175, 0.0, 0.02)], segs=12, cap_ends=False, smooth=False), "Hips", col["robe_dark"], planes=True)
+
+        # The robe skirt, pleated: every other column stands out, and its hem stops above the ankle so the
+        # boots show. Weighted by rule, between Hips and the thighs: at the waist all Hips, toward the hem up
+        # to SKIRT_LEG_SHARE on the thighs, split between them by the side the vertex is on
+        top, hem, segs = 1.06, 0.20, 14
+        sections = [(1.06, 0.20, 0.17, 0.0, 0.03), (0.86, 0.25, 0.21, 0.0, 0.03), (0.60, 0.31, 0.27, 0.0, 0.035), (0.36, 0.37, 0.32, 0.0, 0.04), (hem, 0.41, 0.36, 0.0, 0.05)]
+        skirt = add_lathe("wiz_skirt", None, robe, sections, segs=segs, cap_ends=False, smooth=False)
+        for v in skirt.data.vertices:
+            if v.index % 2 and v.index >= segs:  # every other column, below the waist ring
+                cz = -sections[v.index // segs][4]  # the ring's centre, Blender y
+                v.co.x *= 1.08
+                v.co.y = cz + (v.co.y - cz) * 1.08
+        trim = add_lathe("wiz_hem", None, robe, [(hem - 0.005, 0.445, 0.39, 0.0, 0.05), (hem + 0.07, 0.425, 0.37, 0.0, 0.048)], segs=segs, cap_ends=False, smooth=False)
+
+        def skirt_weights(co):
+            t = min(max((top - co.z) / (top - hem), 0.0), 1.0)
+            s = SKIRT_LEG_SHARE * t**1.5
+            right = min(max(0.5 + co.x / 0.40, 0.0), 1.0)
+            return {"Hips": 1.0 - s, "LeftLegPivot": s * (1.0 - right), "RightLegPivot": s * right}
+
+        drape(skirt, col["robe"], skirt_weights)
+        drape(trim, col["trim"], skirt_weights)
+
+        # The staff in the right hand, held out at the side and away from the robe: foot on the ground,
+        # gnarled, leaning out, a three-pronged crook at the top with the orb in it
+        hand = Vector(j["RightHand"])
+        d = Vector((-0.03, 1.0, -0.04)).normalized()
+        foot, head = hand - d * 1.04, hand + d * 1.02
+        wobble = [(0.0, 0.0), (0.015, -0.01), (-0.012, 0.012), (0.012, 0.0), (-0.01, -0.012), (0.0, 0.0)]
+        shaft = [(*(foot.lerp(head, k / 5) + Vector((dx, 0.0, dz))), 0.034 - 0.004 * k / 5) for k, (dx, dz) in enumerate(wobble)]
+        add(add_curved_tube("wiz_staff", None, wood, shaft, segs=6, smooth=False), "WeaponPivot", col["staff"], planes=True)
+        orb = head + d * 0.13
+        for k in range(3):
+            a = k * 2.0 * math.pi / 3.0 + 0.4
+            out = Vector((math.cos(a), 0.0, math.sin(a)))
+            add(add_cone_spike(f"wiz_prong_{k}", None, wood, base_r=0.03, length=0.24, tx=head.x, ty=head.y, tz=head.z, segs=5, smooth=False, **aim(d + out * 0.75)), "WeaponPivot", col["staff"], planes=True)
+        add(add_sphere("wiz_orb", None, glow, 0.10, tx=orb.x, ty=orb.y, tz=orb.z, segs=8, rings=6, smooth=False), "WeaponPivot", 0xFFFFFF)
+
+    return kit
+
+
+def _wizard_colour(col: dict):
+    def colour_of(co, w):
+        """Robe on the trunk and arms, pale hands, boots under the hem."""
+        if w.get("LeftHand", 0.0) + w.get("RightHand", 0.0) >= 0.5:
+            return col["skin"]
+        if co.z < 0.30:
+            return col["boot"]
+        return col["robe"]
+
+    return colour_of
+
+
 def build_dark_wizard(grid_pos: tuple[float, float, float], mats: dict):
-    root = create_pivot("Monster_dark_wizard", None, *grid_pos)
-
-    # Layered dark-indigo & purple cultist robe skirt with pleated folds + upper torso
-    robe_sections = [
-        (0.04, 0.44, 0.36, 0.0, 0.02, 0.18, 0.0, 0.04),
-        (0.32, 0.36, 0.30, 0.0, 0.01, 0.16, 0.0, 0.03),
-        (0.68, 0.27, 0.22, 0.0, 0.0, 0.18, 0.0, 0.02),
-        (0.98, 0.21, 0.17, 0.0, 0.0, 0.22, 0.01, 0.01),
-        (1.28, 0.26, 0.19, 0.0, -0.01, 0.24, 0.03, 0.02),
-        (1.56, 0.29, 0.20, 0.0, -0.01, 0.22, 0.02, 0.02),
-        (1.76, 0.18, 0.15, 0.0, 0.0, 0.15, 0.0, 0.01),
-    ]
-    add_lathe("dark_wizard_robe", root, mats["robe"], robe_sections, segs=24, axis="Y")
-
-    # Golden/violet arcane rune trim along the hem and central stole
-    add_lathe(
-        "dark_wizard_hem_trim",
-        root,
-        mats["gold"],
-        [
-            (0.03, 0.45, 0.37, 0.0, 0.02, 0.18),
-            (0.09, 0.43, 0.35, 0.0, 0.02, 0.18),
-        ],
-        segs=24,
+    # grid_pos is not used: a skinned figure stands at the file's origin (design 6.1.1 rule 2b)
+    own, means = _human_mats(
+        "dark_wizard",
+        {"cloth": ("mat_robe_dark_wizard_paint", 0.68, 0.04), "skin": ("mat_skin_dark_wizard_paint", 0.55, 0.04), "wood": ("mat_wood_dark_wizard_paint", 0.72, 0.02)},
+        mats["glow_purple"],
     )
-    add_box("dark_wizard_stole", root, mats["robe_trim"], 0.15, 1.38, 0.04, tx=0.0, ty=0.82, tz=-0.22, rx=0.08)
-    for r_i in range(4):
-        add_box(
-            f"dark_wizard_stole_rune_{r_i}",
-            root,
-            mats["gold"],
-            0.09,
-            0.035,
-            0.02,
-            tx=0.0,
-            ty=0.35 + r_i * 0.26,
-            tz=-0.26 - (3 - r_i) * 0.02,
-            no_outline=True,
-        )
-
-    # High upturned warlock collar & shoulder mantle + flowing back cape
-    add_lathe(
-        "dark_wizard_mantle",
-        root,
-        mats["robe_trim"],
-        [
-            (1.48, 0.36, 0.24, 0.0, 0.0, 0.22),
-            (1.68, 0.32, 0.22, 0.0, 0.02, 0.20),
-            (1.88, 0.24, 0.20, 0.0, 0.08, 0.15),
-        ],
-        segs=20,
-        cap_ends=False,
-    )
-    add_box("dark_wizard_cape", root, mats["cloth_dark"], 0.56, 1.48, 0.04, tx=0.0, ty=0.92, tz=0.24, rx=0.12)
-
-    # HeadGroup at (0, 1.92, 0): shadowed void hood/skull with glowing violet eyes + crooked pointed wizard hat
-    head_piv = create_pivot("dark_wizard_HeadGroup", root, 0.0, 1.92, 0.0)
-    add_sphere("dark_wizard_void_skull", head_piv, mats["obsidian"], 0.14, 0.16, 0.15, tx=0.0, ty=0.02, tz=-0.02)
-    for side, s_tag in ((-1.0, "L"), (1.0, "R")):
-        add_sphere(
-            f"dark_wizard_eye_{s_tag}",
-            head_piv,
-            mats["glow_purple"],
-            0.030,
-            0.020,
-            0.020,
-            tx=side * 0.055,
-            ty=0.03,
-            tz=-0.15,
-            no_outline=True,
-        )
-
-    # Wide-brimmed crooked pointed wizard hat with buckled band and bent tip
-    add_lathe(
-        "dark_wizard_hat_brim",
-        head_piv,
-        mats["robe"],
-        [
-            (0.10, 0.44, 0.42, 0.0, 0.0, 0.05),
-            (0.13, 0.38, 0.36, 0.0, 0.0, 0.05),
-            (0.15, 0.18, 0.18, 0.0, 0.0, 0.08),
-        ],
-        segs=22,
-    )
-    add_lathe(
-        "dark_wizard_hat_band",
-        head_piv,
-        mats["gold"],
-        [
-            (0.14, 0.185, 0.185),
-            (0.19, 0.175, 0.175),
-        ],
-        segs=20,
-    )
-    add_curved_tube(
-        "dark_wizard_hat_cone",
-        head_piv,
-        mats["robe"],
-        [
-            (0.0, 0.15, 0.0, 0.175, 0.175),
-            (0.02, 0.32, 0.02, 0.125, 0.125),
-            (0.06, 0.48, 0.06, 0.075, 0.075),
-            (0.14, 0.60, 0.14, 0.038, 0.038),
-            (0.22, 0.56, 0.22, 0.010, 0.010),
-        ],
-        segs=16,
-    )
-
-    # LeftArmPivot (-0.38, 1.50, 0) & RightArmPivot (0.38, 1.50, 0)
-    left_arm = create_pivot("dark_wizard_LeftArmPivot", root, -0.38, 1.50, 0.0)
-    right_arm = create_pivot("dark_wizard_RightArmPivot", root, 0.38, 1.50, 0.0)
-
-    for side, arm_piv, s_tag in ((-1.0, left_arm, "L"), (1.0, right_arm, "R")):
-        add_limb_tube(
-            f"dark_wizard_sleeve_{s_tag}",
-            arm_piv,
-            mats["robe"],
-            (0.0, 0.0, 0.0),
-            (side * 0.08, -0.44, -0.18),
-            0.095,
-            0.145,
-            segs=14,
-        )
-        add_sphere(
-            f"dark_wizard_hand_{s_tag}",
-            arm_piv,
-            mats["bone"],
-            0.052,
-            tx=side * 0.08,
-            ty=-0.46,
-            tz=-0.20,
-        )
-
-    # Under `dark_wizard_RightArmPivot`: gnarled twisted darkwood staff cradling a glowing purple arcane orb + rune rings
-    staff_pts = [
-        (0.08, -1.38, -0.16, 0.026, 0.026),
-        (0.08, -0.85, -0.18, 0.032, 0.032),
-        (0.09, -0.35, -0.22, 0.035, 0.035),
-        (0.06, 0.18, -0.24, 0.038, 0.038),
-        (0.14, 0.42, -0.24, 0.044, 0.044),
-        (0.08, 0.64, -0.24, 0.028, 0.028),
-    ]
-    add_curved_tube("dark_wizard_staff", right_arm, mats["bark"], staff_pts, segs=12)
-    add_sphere("dark_wizard_orb", right_arm, mats["glow_purple"], 0.105, tx=0.06, ty=0.56, tz=-0.24)
-    add_lathe(
-        "dark_wizard_orb_ring",
-        right_arm,
-        mats["gold"],
-        [
-            (-0.012, 0.15, 0.15),
-            (0.012, 0.15, 0.15),
-        ],
-        segs=18,
-        tx=0.06,
-        ty=0.56,
-        tz=-0.24,
-        rx=0.65,
-        rz=0.45,
-    )
-
-    # Leg pivots at (-0.16, 0.22, 0.04) and (0.16, 0.22, 0.04)
-    for side, piv_name in ((-1.0, "dark_wizard_LeftLegPivot"), (1.0, "dark_wizard_RightLegPivot")):
-        leg_piv = create_pivot(piv_name, root, side * 0.16, 0.22, 0.04)
-        add_box(
-            f"{piv_name}_boot",
-            leg_piv,
-            mats["leather"],
-            0.12,
-            0.22,
-            0.22,
-            tx=0.0,
-            ty=-0.11,
-            tz=-0.04,
-            bevel=0.03,
-        )
-
-    return root
+    col = _human_paint(WIZARD_COLOURS, WIZARD_FAMILY, means)
+    col["skin_face"] = WIZARD_COLOURS["skin"]  # the face is on the plain skin material, the hands on the robe's
+    names = {"cloth": "dark_wizard_robe", "skin": "dark_wizard_face", "wood": "dark_wizard_staff", "glow": "dark_wizard_glow"}
+    j = wizard_joints()
+    return _build_human("dark_wizard", j, WIZARD_RADII, WIZARD_TRIANGLES, WIZARD_HEIGHT, own, "cloth", names, _wizard_kit(j, col, own), _wizard_colour(col))
 
 
-# =============================================================================
-# 6. Monster_dark_ranger (Dark Ranger)
-# =============================================================================
+# --- 6. Monster_dark_ranger ---------------------------------------------------------------------------------------
+# A lean hunter: a cloak that falls from the shoulders to a wide hem behind, a triangle outline from
+# every side; a peaked hood with a mask under its shadow; the bow held out on the left hand, a quiver at
+# the right hip and one pauldron on the bow shoulder. Clearly lighter than the wizard (plan M3e).
+RANGER_TRIANGLES = 4400  # the builder's own budget, under the manifest's 5,000
+RANGER_HEIGHT = 2.220  # the shipped ranger's height, hood included; the rebuilt one stays within 5%
+RANGER_COLOURS = {  # as the game shows them
+    "tunic": 0x6F7B4D,  # dragonhide green, 48% value
+    "trousers": 0x555D3D,  # 36%
+    "dark": 0x5C4733,  # gloves, boots, belt, bracer, tassets, quiver and pauldron leather, 36%
+    "cloak": 0x5F6B47,  # grey green, 42% value; luminance 39% against the wizard robe's 23%
+    "face": 0x8A7460,  # the shadowed face round the eyes, 54%
+    "mask": 0x4A443C,  # 29%
+    "bow": 0x8A6440,  # 54%
+    "string": 0xB4A482,  # as light as the wood tile lets a paint go
+    "fletch": 0xB0A07E,
+}
+RANGER_FAMILY = {"tunic": "leather", "trousers": "leather", "dark": "leather", "face": "leather", "mask": "leather", "cloak": "cloth", "bow": "wood", "string": "wood", "fletch": "wood"}
+RANGER_RADII = {
+    "pelvis": (0.16, 0.13), "waist": 0.14, "chest": (0.23, 0.16), "chest2": (0.25, 0.17), "neck": 0.065,
+    "collar": (0.15, 0.11), "shoulder": 0.095, "upper": 0.076, "elbow": 0.07, "fore": 0.068, "wrist": 0.046, "hand": 0.062,
+    "hip": 0.105, "thigh": 0.095, "knee": 0.078, "calf": 0.08, "ankle": 0.055, "heel": 0.06, "toe": 0.072, "foot": 0.18,
+}
+
+
+def ranger_joints() -> dict:
+    """Joints of the biped rig, the stance: a slight forward lean, the arms out from the cloak, each limb within 20 degrees of the biped reference."""
+    j = {
+        "Root": (0.0, 0.0, 0.0),
+        "Hips": (0.0, 0.98, 0.03),
+        "Torso": (0.0, 1.18, 0.0),
+        "HeadGroup": (0.0, 1.72, -0.10),
+    }
+    for side, tag in ((-1.0, "Left"), (1.0, "Right")):
+        j[f"{tag}ArmPivot"] = (side * 0.25, 1.56, -0.04)
+        j[f"{tag}ElbowPivot"] = (side * 0.41, 1.28, -0.09)
+        j[f"{tag}Hand"] = (side * 0.57, 1.02, -0.16)
+        j[f"{tag}LegPivot"] = (side * 0.12, 0.95, 0.03)
+        j[f"{tag}KneePivot"] = (side * 0.17, 0.52, -0.03)
+        j[f"{tag}Foot"] = (side * 0.18, 0.10, 0.03)
+    j["OffhandPivot"] = j["LeftHand"]
+    return j
+
+
+def _ranger_kit(j: dict, col: dict, mats: dict):
+    leather, cloth, wood, glow = mats["leather"], mats["cloth"], mats["wood"], mats["glow"]
+
+    def aim(d) -> dict:
+        d = Vector(d).normalized()
+        return {"rx": math.asin(d.z), "rz": -math.atan2(d.x, d.y)}
+
+    def kit(add, drape):
+        # Head in the hood's shadow: a faceted skull, a mask over the lower face, two emerald glints
+        add(add_sphere("rng_skull", None, leather, 0.125, 0.15, 0.14, tx=0.0, ty=1.86, tz=-0.13, segs=8, rings=6, smooth=False), "HeadGroup", col["face"], planes=True)
+        add(add_box("rng_mask", None, leather, 0.23, 0.12, 0.11, tx=0.0, ty=1.78, tz=-0.22, rx=0.15, bevel=0.0), "HeadGroup", col["mask"], planes=True)
+        for side, tag in ((-1.0, "L"), (1.0, "R")):
+            add(add_sphere(f"rng_glint_{tag}", None, glow, 0.03, 0.022, 0.02, tx=side * 0.05, ty=1.885, tz=-0.262, segs=6, rings=4), "HeadGroup", 0xFFFFFF)
+        # The hood: a faceted shell open in front of the face, hanging to the shoulders, its peak swept up and back
+        c = Vector((0.0, 1.87, -0.11))
+        hood = add_sphere("rng_hood", None, cloth, 0.185, 0.215, 0.20, tx=c.x, ty=c.y, tz=c.z, segs=10, rings=8, smooth=False)
+        bm = bmesh.new()
+        bm.from_mesh(hood.data)
+        cb = Vector(t2b(*c))
+        opening = [f for f in bm.faces if f.calc_center_median().y > cb.y + 0.03 and f.calc_center_median().z < 1.98]
+        bmesh.ops.delete(bm, geom=opening, context="FACES")
+        bm.to_mesh(hood.data)
+        bm.free()
+        add(hood, "HeadGroup", col["cloak"], planes=True)
+        add(add_cone_spike("rng_hood_peak", None, cloth, base_r=0.11, length=0.30, tx=0.0, ty=2.00, tz=-0.02, segs=6, smooth=False, **aim((0.0, 0.62, 0.78))), "HeadGroup", col["cloak"], planes=True)
+
+        # Leather tassets, a flap front and back below the belt, on the hips (never on the legs)
+        for name, tz, rx in (("rng_tunic_front", -0.15, -0.12), ("rng_tunic_back", 0.17, 0.12)):
+            flap = add_box(name, None, leather, 0.26, 0.30, 0.05, tx=0.0, ty=0.78, tz=tz, rx=rx, bevel=0.0)
+            heights = [v.co.z for v in flap.data.vertices]
+            for v in flap.data.vertices:
+                v.co.x *= 0.75 + 0.25 * (v.co.z - min(heights)) / (max(heights) - min(heights))
+            add(flap, "Hips", col["dark"], planes=True)
+
+        # One pauldron, on the bow shoulder (design 5.3: asymmetry in one place), and a bracer on the bow arm
+        s = Vector(j["LeftArmPivot"])
+        add(add_sphere("rng_pauldron", None, leather, 0.15, 0.09, 0.14, tx=s.x - 0.03, ty=s.y + 0.03, tz=s.z, rz=0.35, segs=6, rings=5, smooth=False), "LeftArmPivot", col["dark"], planes=True)
+        e, h = Vector(j["LeftElbowPivot"]), Vector(j["LeftHand"])
+        add(add_limb_tube("rng_bracer", None, leather, tuple(e.lerp(h, 0.30)), tuple(e.lerp(h, 0.78)), 0.086, 0.074, r_mid=0.082, segs=8, steps=3, smooth=False), "LeftElbowPivot", col["dark"], planes=True)
+
+        # The quiver at the right hip, standing out and back, with four fletchings out of its mouth
+        lo, hi = Vector((0.27, 0.66, 0.06)), Vector((0.35, 1.16, 0.12))
+        q = (hi - lo).normalized()
+        add(add_limb_tube("rng_quiver", None, leather, tuple(lo), tuple(hi), 0.07, 0.082, r_mid=0.078, segs=8, steps=3, smooth=False), "Hips", col["dark"], planes=True)
+        for k, (dx, dz) in enumerate(((-0.03, -0.02), (0.03, -0.022), (-0.02, 0.028), (0.032, 0.022))):
+            at = hi + q * 0.01 + Vector((dx, 0.0, dz))
+            fd = (q + Vector((dx, 0.0, dz)) * 4.0).normalized()
+            add(add_cone_spike(f"rng_fletch_{k}", None, wood, base_r=0.034, length=0.15, tx=at.x, ty=at.y, tz=at.z, segs=4, flatten_x=0.7, smooth=False, **aim(fd)), "Hips", col["fletch"])
+
+        # The bow in the left hand, held out at the side and upright: a recurve whose grip in the fist is its
+        # most forward point, the string tip to tip behind it, nothing thinner than 0.044 (design 5.3)
+        h = Vector(j["LeftHand"]) + Vector((-0.035, 0.0, 0.0))
+        arc = [(0.015, 0.80, 0.14, 0.022), (0.0, 0.72, 0.19, 0.024), (-0.012, 0.52, 0.09, 0.03), (-0.012, 0.26, 0.016, 0.034), (0.0, 0.0, 0.0, 0.038),
+               (-0.012, -0.26, 0.016, 0.034), (-0.012, -0.47, 0.09, 0.03), (0.0, -0.60, 0.18, 0.024), (0.015, -0.66, 0.13, 0.022)]
+        add(add_curved_tube("rng_bow", None, wood, [(h.x + x, h.y + y, h.z + z, r) for x, y, z, r in arc], segs=6, smooth=False), "OffhandPivot", col["bow"], planes=True)
+        add(add_limb_tube("rng_string", None, wood, (h.x, h.y + 0.72, h.z + 0.19), (h.x, h.y - 0.60, h.z + 0.18), 0.022, 0.022, r_mid=0.022, segs=4, steps=2), "OffhandPivot", col["string"])
+
+        # The cloak: a faceted shell behind the figure from the back of the shoulders to a wide hem, open in
+        # front, so from the front, the side and behind it makes a triangle. Weighted by rule between Torso
+        # and Hips: all Torso at the shoulders, all Hips at the hem
+        shoulder, hem = 1.64, 0.32
+        sections = [(shoulder, 0.20, 0.12, 0.0, 0.07), (1.50, 0.29, 0.17, 0.0, 0.10), (1.10, 0.39, 0.26, 0.0, 0.14), (0.70, 0.47, 0.32, 0.0, 0.17), (hem, 0.53, 0.37, 0.0, 0.19)]
+        cloak = add_lathe("rng_cloak", None, cloth, sections, segs=16, cap_ends=False, smooth=False)
+        bm = bmesh.new()
+        bm.from_mesh(cloak.data)
+        # Blender y is three-space -z: a face whose centre is in front of its ring's centre goes
+        front = [f for f in bm.faces if f.calc_center_median().y > -0.10 - 0.07 * (shoulder - f.calc_center_median().z) / (shoulder - hem)]
+        bmesh.ops.delete(bm, geom=front, context="FACES")
+        bm.to_mesh(cloak.data)
+        bm.free()
+        drape(cloak, col["cloak"], lambda co: (lambda t: {"Torso": t, "Hips": 1.0 - t})(min(max((co.z - hem) / (shoulder - hem), 0.0), 1.0)))
+
+    return kit
+
+
+def _ranger_colour(col: dict):
+    def colour_of(co, w):
+        """Tunic on the trunk and arms, gloves, a belt, trousers on the legs and boots below the knee."""
+        if w.get("LeftHand", 0.0) + w.get("RightHand", 0.0) >= 0.5 or co.z < 0.40:
+            return col["dark"]
+        if 0.90 < co.z < 0.99:
+            return col["dark"]  # the belt
+        legs = sum(w.get(b, 0.0) for b in ("LeftLegPivot", "RightLegPivot", "LeftKneePivot", "RightKneePivot", "LeftFoot", "RightFoot"))
+        return col["trousers"] if legs >= 0.5 else col["tunic"]
+
+    return colour_of
+
+
 def build_dark_ranger(grid_pos: tuple[float, float, float], mats: dict):
-    root = create_pivot("Monster_dark_ranger", None, *grid_pos)
-
-    # Dark green dragonhide brigandine chestpiece with angled scale plates & belted tunic
-    torso_sections = [
-        (0.62, 0.25, 0.18, 0.0, 0.01, 0.24),
-        (0.78, 0.19, 0.14, 0.0, 0.0, 0.24),
-        (0.98, 0.21, 0.15, 0.0, 0.0, 0.26, 0.02, 0.01),
-        (1.24, 0.26, 0.18, 0.0, -0.01, 0.28, 0.04, 0.02),
-        (1.52, 0.30, 0.19, 0.0, -0.01, 0.26, 0.03, 0.02),
-        (1.74, 0.18, 0.14, 0.0, 0.0, 0.18),
-    ]
-    add_lathe("dark_ranger_brigandine", root, mats["dragonhide"], torso_sections, segs=22)
-
-    # Angled dragonhide scale plates across chest + belt
-    for s_idx, sy in enumerate((1.05, 1.22, 1.39)):
-        for side in (-1.0, 1.0):
-            add_box(
-                f"dark_ranger_scale_{s_idx}_{'L' if side < 0 else 'R'}",
-                root,
-                mats["leather"],
-                0.16,
-                0.08,
-                0.04,
-                tx=side * 0.11,
-                ty=sy,
-                tz=-0.18,
-                rz=side * 0.18,
-                ry=side * 0.22,
-                no_outline=True,
-            )
-    add_lathe(
-        "dark_ranger_belt",
-        root,
-        mats["leather"],
-        [(0.76, 0.21, 0.16, 0.0, 0.0, 0.25), (0.85, 0.21, 0.16, 0.0, 0.0, 0.25)],
-        segs=20,
+    # grid_pos is not used: a skinned figure stands at the file's origin (design 6.1.1 rule 2b)
+    own, means = _human_mats(
+        "dark_ranger",
+        {"leather": ("mat_leather_dark_ranger_paint", 0.62, 0.06), "cloth": ("mat_cloth_dark_ranger_paint", 0.72, 0.02), "wood": ("mat_wood_dark_ranger_paint", 0.70, 0.02)},
+        mats["glow_emerald"],
     )
-    add_box("dark_ranger_buckle", root, mats["iron"], 0.09, 0.08, 0.04, tx=0.0, ty=0.805, tz=-0.165)
-
-    # Layered spiked ranger pauldrons + windswept shadow cloak + quiver of emerald-fletched arrows
-    for side, s_tag in ((-1.0, "L"), (1.0, "R")):
-        add_sphere(
-            f"dark_ranger_pauldron_{s_tag}",
-            root,
-            mats["dragonhide"],
-            0.16,
-            0.11,
-            0.16,
-            tx=side * 0.36,
-            ty=1.58,
-            tz=0.0,
-            rz=-side * 0.32,
-        )
-        add_cone_spike(
-            f"dark_ranger_pauldron_spike_{s_tag}",
-            root,
-            mats["iron"],
-            base_r=0.028,
-            length=0.12,
-            tx=side * 0.42,
-            ty=1.64,
-            tz=0.0,
-            rz=-side * 0.65,
-            segs=8,
-        )
-    add_box("dark_ranger_cloak", root, mats["cloth_dark"], 0.62, 1.38, 0.04, tx=0.0, ty=1.02, tz=0.22, rx=0.14)
-    add_lathe(
-        "dark_ranger_quiver",
-        root,
-        mats["leather"],
-        [(1.05, 0.06, 0.05), (1.58, 0.08, 0.065)],
-        segs=14,
-        tx=0.15,
-        ty=0.0,
-        tz=0.18,
-        rz=-0.20,
-    )
-    for a_i in range(4):
-        ox = 0.11 + (a_i - 1.5) * 0.025
-        add_cone_spike(
-            f"dark_ranger_arrow_fletch_{a_i}",
-            root,
-            mats["glow_emerald"],
-            base_r=0.022,
-            length=0.09,
-            tx=ox - 0.05,
-            ty=1.64,
-            tz=0.20,
-            rz=0.20,
-            flatten_x=0.35,
-            segs=6,
-        )
-
-    # HeadGroup at (0, 1.86, 0): deep assassin cowl hood, stealth face-mask, glowing emerald eyes
-    head_piv = create_pivot("dark_ranger_HeadGroup", root, 0.0, 1.86, 0.0)
-    cowl_sections = [
-        (-0.08, 0.16, 0.16, 0.0, 0.01, 0.20),
-        (0.04, 0.18, 0.19, 0.0, 0.0, 0.22),
-        (0.18, 0.19, 0.21, 0.0, -0.01, 0.22),
-        (0.30, 0.14, 0.19, 0.0, -0.02, 0.18),
-        (0.36, 0.05, 0.10, 0.0, 0.04, 0.12),
-    ]
-    add_lathe("dark_ranger_cowl", head_piv, mats["cloth_dark"], cowl_sections, segs=20)
-    add_box("dark_ranger_mask", head_piv, mats["obsidian"], 0.20, 0.14, 0.14, tx=0.0, ty=0.04, tz=-0.11, bevel=0.03)
-    for side, s_tag in ((-1.0, "L"), (1.0, "R")):
-        add_sphere(
-            f"dark_ranger_eye_{s_tag}",
-            head_piv,
-            mats["glow_emerald"],
-            0.032,
-            0.018,
-            0.018,
-            tx=side * 0.055,
-            ty=0.125,
-            tz=-0.195,
-            rz=-side * 0.18,
-            no_outline=True,
-        )
-
-    # LeftArmPivot (-0.42, 1.50, 0) & RightArmPivot (0.42, 1.50, 0)
-    left_arm = create_pivot("dark_ranger_LeftArmPivot", root, -0.42, 1.50, 0.0)
-    right_arm = create_pivot("dark_ranger_RightArmPivot", root, 0.42, 1.50, 0.0)
-    for side, arm_piv, s_tag in ((-1.0, left_arm, "L"), (1.0, right_arm, "R")):
-        elbow = (side * 0.05, -0.26, -0.06)
-        hand = (side * 0.04, -0.46, -0.24)
-        add_limb_tube(f"dark_ranger_uarm_{s_tag}", arm_piv, mats["cloth_dark"], (-side * 0.08, 0.04, 0.0), elbow, 0.095, 0.068, segs=12)
-        add_limb_tube(f"dark_ranger_bracer_{s_tag}", arm_piv, mats["dragonhide"], elbow, hand, 0.072, 0.058, segs=12)
-        add_sphere(f"dark_ranger_glove_{s_tag}", arm_piv, mats["leather"], 0.055, tx=hand[0], ty=hand[1], tz=hand[2])
-
-    # Long sculpted recurve dark-yew longbow with bowstring under `dark_ranger_RightArmPivot`
-    longbow_pts = [
-        (0.06, 0.36, -0.14, 0.012, 0.014),
-        (0.06, 0.18, -0.32, 0.024, 0.028),
-        (0.06, -0.16, -0.42, 0.032, 0.038),
-        (0.06, -0.46, -0.34, 0.036, 0.042),
-        (0.06, -0.76, -0.42, 0.032, 0.038),
-        (0.06, -1.10, -0.32, 0.024, 0.028),
-        (0.06, -1.28, -0.14, 0.012, 0.014),
-    ]
-    add_curved_tube("dark_ranger_longbow", right_arm, mats["bark"], longbow_pts, segs=12)
-    add_limb_tube(
-        "dark_ranger_bowstring",
-        right_arm,
-        mats["bone"],
-        (0.06, 0.35, -0.14),
-        (0.06, -1.27, -0.14),
-        0.005,
-        0.005,
-        segs=6,
-        no_outline=True,
-    )
-
-    # LeftLegPivot (-0.15, 0.78, 0) & RightLegPivot (0.15, 0.78, 0)
-    for side, piv_name in ((-1.0, "dark_ranger_LeftLegPivot"), (1.0, "dark_ranger_RightLegPivot")):
-        leg_piv = create_pivot(piv_name, root, side * 0.15, 0.78, 0.0)
-        knee = (0.0, -0.36, -0.03)
-        ankle = (0.0, -0.70, 0.0)
-        add_limb_tube(f"{piv_name}_thigh", leg_piv, mats["dragonhide"], (0.0, 0.0, 0.0), knee, 0.105, 0.082, segs=12)
-        add_limb_tube(f"{piv_name}_greave", leg_piv, mats["leather"], knee, ankle, 0.085, 0.064, segs=12)
-        add_box(f"{piv_name}_boot", leg_piv, mats["obsidian"], 0.12, 0.10, 0.22, tx=0.0, ty=-0.73, tz=-0.04, bevel=0.02)
-
-    return root
+    col = _human_paint(RANGER_COLOURS, RANGER_FAMILY, means)
+    names = {"leather": "dark_ranger_body", "cloth": "dark_ranger_cloak", "wood": "dark_ranger_wood", "glow": "dark_ranger_glow"}
+    j = ranger_joints()
+    return _build_human("dark_ranger", j, RANGER_RADII, RANGER_TRIANGLES, RANGER_HEIGHT, own, "leather", names, _ranger_kit(j, col, own), _ranger_colour(col))
 
 
 # =============================================================================
