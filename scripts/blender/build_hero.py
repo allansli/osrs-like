@@ -3,7 +3,8 @@ Build the authentic Game Anime RPG Character (BlendSwap #4503 by uchiha007)
 directly from Kai blend and export hero glb and hero blend: one skin on the
 biped rig with the author's own weights, bound in the author's pose at the
 author's joints, and the 10 clips keyed on its bones (models pass H3a); the face carved into planes,
-the hands 15% larger, the hair as four locks and the paint layer (H3b).
+the hands 15% larger and the paint layer (H3b); the hair as a carved mass of large swept spikes in
+today's silhouette, blue irises with dark pupils, ears and a warmer skin (H3c).
 """
 
 import bpy
@@ -12,6 +13,7 @@ import os
 import sys
 import math
 from mathutils import Vector, Euler, Quaternion
+from mathutils.bvhtree import BVHTree
 
 sys.dont_write_bytecode = True
 sys.path.insert(0, os.path.dirname(__file__))
@@ -59,6 +61,7 @@ MESHES = {
 }
 COAT = ("coat.001", ("TorsoCoat", "chest", False), ("Sleeves", "deltoid", False))
 RIGID_ON_HEAD = ("Hair", "Eyes")  # design 6.1.4: hair and eyes do not bend
+SKIN = ("Head", "Hands")
 
 COLOURS = {
     'Head': (0.961, 0.847, 0.761, 1.0),        # skin (0xF5D8C2)
@@ -93,10 +96,27 @@ PLANE_MIN = 0.01  # a plane under this share of the part's area joins a neighbou
 PLANE_TONE = (-0.25, 0.15)  # a plane facing PLANE_LIGHT is 15% lighter, one facing away 25% darker
 PLANE_LIGHT = Vector((0.0, 1.0, 1.0)).normalized()  # up and forward
 OCCLUSION = 0.35  # bake_paint's occlusion strength
-HAIR_TRIANGLES = 560  # the source hair is 640 thin spikes; the locks take fewer, larger faces
-HAIR_VOXEL = 0.007
-HEAD_SHIFT_MAX = 0.005  # the face edits may move the Head's bounds centre this far (mount tolerance 0.01)
-HAIR_TOP_MAX = 1.85  # the figure's height (bounds 3%, H3a)
+HEAD_SPREAD = math.radians(26.0)  # the face's planes are tighter, so cheek, brow, nose and jaw each get one (H3c)
+HEAD_SHIFT_MAX = 0.005  # the face edits and the ears may move the Head's bounds centre this far (mount tolerance 0.01)
+HAIR_TOP_MAX = 1.8503  # the shipped hair's top; the figure's bounds hold (3%, H3a)
+HAIR_BOUNDS_SLACK = 0.004  # the new hair stays inside the shipped hair's bounds by this (today's silhouette, H3c)
+STRAND_MIN = 0.044  # design 5.3 rule 5: no spike thinner than this before its last third
+EAR_REACH = 0.015  # each ear's rim stands this far outside the Head's half-width
+EAR_SIZE = (0.044, 0.058)  # front to back, bottom to top: over 0.044, so it reads at 8.5
+# The engine draws part 'eye' with a white material, so the Eyes' paint is the colour itself (sRGB hex).
+EYE_WHITE, EYE_IRIS, EYE_PUPIL = 0xE9EDF2, 0x227CD4, 0x0E1620  # the iris is the shipped Mat_Eyes blue
+IRIS_SIZE = (0.036, 0.044)  # across, tall, in an eye 0.050 by 0.047 at its inner edge: the lids cut it
+PUPIL_SIZE = (0.014, 0.020)
+# The skin's paint (Head and Hands): a warm multiplier under the engine's skin colour, and a value v shaded
+# as (v^r, v^g, v^b), so a plane turned from the light goes to a warm brown and not to grey.
+SKIN_WARM = (1.0, 0.90, 0.80)
+SKIN_SHADE = (0.70, 1.0, 1.25)
+
+
+def srgb_linear(hex_colour: int) -> tuple:
+    """COLOR_0 is linear; the engine's colours are sRGB hex."""
+    chans = [((hex_colour >> s) & 255) / 255.0 for s in (16, 8, 0)]
+    return tuple(c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4 for c in chans)
 
 
 def _bump(d: float, r: float) -> float:
@@ -115,24 +135,112 @@ def carve_face(head) -> None:
     Planes that read at 260 px (design 5.1, 5.2): a brow shelf over the eyes, a longer nose wedge,
     a squarer chin and jaw corners. Vertices move; none is added, so the author's weights hold.
     """
-    before = bounds_centre(v.co for v in head.data.vertices)
-    cx = before.x
+    cx = bounds_centre(v.co for v in head.data.vertices).x
     for v in head.data.vertices:
         c, n = v.co, v.normal
         dx = c.x - cx
         if c.y < 0.04 or n.y < 0.2:
             continue  # the face only
-        brow = _bump(c.z - 1.731, 0.02) * _bump(dx, 0.09)
+        brow = _bump(c.z - 1.737, 0.018) * _bump(dx, 0.09)  # clear of the eyes' top at 1.717 (H3c)
         nose = _bump(dx, 0.024) * _bump(c.z - 1.668, 0.032) * (c.y > 0.11)
         chin = _bump(dx, 0.04) * _bump(c.z - 1.575, 0.028)
         c.y += 0.014 * brow + 0.008 * nose + 0.008 * chin
         c.z -= 0.003 * brow
         corner = _bump(c.z - 1.595, 0.04) * _bump(c.y - 0.05, 0.07) * (abs(dx) > 0.025)
         c.x = cx + dx * (1.0 + 0.10 * corner)
+        # H3c: a cheekbone under each eye and a hollow below it, so the cheek is a plane of its own
+        side = _bump(abs(dx) - 0.06, 0.03)
+        cheek = 0.006 * side * _bump(c.z - 1.662, 0.022) - 0.005 * side * _bump(c.z - 1.618, 0.024)
+        c.x += n.x * cheek
+        c.y += n.y * cheek
     head.data.update()
-    shift = (bounds_centre(v.co for v in head.data.vertices) - before).length
-    assert shift <= HEAD_SHIFT_MAX, f"Head: the face edits moved its centre {shift:.4f}, over {HEAD_SHIFT_MAX}"
-    print(f"[BlenderHero] face carved; Head centre moved {shift:.4f}")
+
+
+def build_ears(head) -> None:
+    """
+    H3c: an ear a side on the Head mesh, a flat-faced wedge that stands off the skull at the back with a
+    sunk bowl, EAR_SIZE across so it reads at 8.5 (design 5.3 rule 5). Both rims are at one distance from
+    the Head's bounds centre, so that centre (the helm's mount, pinned in the manifest) does not move in x.
+    The new vertices are the author's 'head' group whole, which folds onto HeadGroup.
+    """
+    cos = [v.co for v in head.data.vertices]
+    cx = bounds_centre(cos).x
+    half = (max(c.x for c in cos) - min(c.x for c in cos)) / 2
+    group = head.vertex_groups["head"].index
+    bm = bmesh.new()
+    bm.from_mesh(head.data)
+    dl = bm.verts.layers.deform.verify()
+    skull = BVHTree.FromBMesh(bm)
+    d, h = EAR_SIZE
+    y0, z0 = 0.030, 1.652  # the ear's lower front corner: behind the jaw's hinge, from nose tip to brow
+    outline = [(0.012, 0.0, 0.2), (d * 0.9, h * 0.30, 0.25), (d, h * 0.80, 0.55), (d * 0.55, h, 1.0), (0.0, h * 0.78, 1.0), (-0.004, h * 0.25, 0.7)]
+    for side in (-1, 1):
+        inner, outer = [], []
+        for back, up, off in outline:
+            y, z = y0 - back, z0 + up
+            hit = skull.ray_cast(Vector((cx + side * 0.4, y, z)), Vector((-side, 0.0, 0.0)))[0]
+            assert hit is not None, f"Head: no skull under the ear at y {y:.3f}, z {z:.3f}"
+            inner.append(bm.verts.new((hit.x - side * 0.012, y, z)))
+            x = hit.x + side * 0.006 + (cx + side * (half + EAR_REACH) - hit.x - side * 0.006) * off
+            outer.append(bm.verts.new((x, y - 0.012 * off, z)))
+        bowl = sum((v.co for v in outer), Vector()) / len(outer)
+        bowl = bm.verts.new((bowl.x - side * 0.010, bowl.y + 0.004, bowl.z))
+        faces = []
+        k = len(outline)
+        for i in range(k):
+            j = (i + 1) % k
+            faces.append(bm.faces.new((inner[i], inner[j], outer[j], outer[i])))
+            faces.append(bm.faces.new((outer[i], outer[j], bowl)))
+        for v in inner + outer + [bowl]:
+            v[dl][group] = 1.0
+        bmesh.ops.recalc_face_normals(bm, faces=faces)
+    bm.to_mesh(head.data)
+    bm.free()
+    head.data.update()
+
+
+def build_eyes(eyes) -> None:
+    """
+    H3c: an iris and a pupil on each eye of the rigid Eyes mesh: two flat fans that lie on the source's
+    eye surface, the iris 0.002 and the pupil 0.004 proud of it; a point past the eye's edge is moved
+    onto it, so the lids cut the iris. Each face is tagged in the face
+    attribute 'eye' (0 white, 1 iris, 2 pupil), which paint() turns into the colour and removes.
+    """
+    bm = bmesh.new()
+    bm.from_mesh(eyes.data)
+    bm.normal_update()
+    kind = bm.faces.layers.int.new("eye")
+    surface = BVHTree.FromBMesh(bm)
+    cx = bounds_centre(v.co for v in bm.verts).x
+    for side in (-1, 1):
+        faces = [f for f in bm.faces if (f.calc_center_median().x - cx) * side > 0]
+        centre = bounds_centre(v.co for f in faces for v in f.verts)
+        n = sum((f.normal * f.calc_area() for f in faces), Vector()).normalized()
+        if n.y < 0:
+            n = -n  # the eye looks forward whatever the source's winding
+        u = Vector((0.0, 0.0, 1.0)).cross(n).normalized()
+        v = n.cross(u)
+
+        def on_eye(a, b, proud):
+            p = centre + u * a + v * b
+            hit = surface.ray_cast(p + n * 0.05, -n)[0]
+            if hit is None:  # past the lid: the iris is cut by the eye's own outline
+                hit = surface.find_nearest(p)[0]
+            return bm.verts.new(hit + n * proud)
+
+        for size, sides, proud, tag in ((IRIS_SIZE, 8, 0.002, 1), (PUPIL_SIZE, 6, 0.004, 2)):
+            hub = on_eye(0.0, 0.0, proud + 0.0005)
+            rim = [on_eye(size[0] / 2 * math.cos(2 * math.pi * (i + 0.5) / sides), size[1] / 2 * math.sin(2 * math.pi * (i + 0.5) / sides), proud)
+                   for i in range(sides)]
+            for i in range(sides):
+                f = bm.faces.new((hub, rim[i], rim[(i + 1) % sides]))
+                f.smooth = True
+                f.normal_update()
+                if f.normal.dot(n) < 0:
+                    f.normal_flip()
+                f[kind] = tag
+    bm.to_mesh(eyes.data)
+    bm.free()
 
 
 def grow_hands(hands) -> None:
@@ -153,87 +261,107 @@ def grow_hands(hands) -> None:
     bm.free()
 
 
-def _lock(bm, p0, p1, p2, centre, width, thick, rings=7) -> None:
-    """One lock: a blade of diamond section along a quadratic curve, tapering to a point, closed."""
+def _spike(bm, p0, p1, p2, centre, width, thick, rings=4) -> None:
+    """One spike: a blade of diamond section along a quadratic curve, flat-faced, tapering to a point.
+    Its root stands inside the cap. STRAND_MIN wide or more until its last third."""
     p0, p1, p2 = Vector(p0), Vector(p1), Vector(p2)
+    taper = lambda t: 1.0 - 0.8 * t * t
+    assert width * taper(2 / 3) >= STRAND_MIN, f"Hair: a spike {width} wide is under {STRAND_MIN} before its last third"
     sections = []
     for i in range(rings):
         t = i / (rings - 1)
         at = (1 - t) ** 2 * p0 + 2 * (1 - t) * t * p1 + t * t * p2
+        if i == rings - 1:
+            sections.append([bm.verts.new(at)])
+            break
         tangent = (2 * (1 - t) * (p1 - p0) + 2 * t * (p2 - p1)).normalized()
         out = at - centre
         out = (out - tangent * out.dot(tangent)).normalized()
         side = tangent.cross(out)
-        k = 1.0 - 0.75 * t ** 1.5
-        w, th = width * k / 2, thick * k
-        if i == rings - 1:
-            sections.append([bm.verts.new(at)])
-            break
-        sections.append([bm.verts.new(at + side * w), bm.verts.new(at + out * th * 0.6),
-                         bm.verts.new(at - side * w), bm.verts.new(at - out * th * 0.4)])
-    bm.faces.new(list(reversed(sections[0])))
+        w, th = width * taper(t) / 2, thick * taper(t)
+        sections.append([bm.verts.new(at + side * w), bm.verts.new(at + out * th * 0.7),
+                         bm.verts.new(at - side * w), bm.verts.new(at - out * th * 0.3)])
+    bm.faces.new(sections[0])
     for a, b in zip(sections, sections[1:]):
         for j in range(4):
             if len(b) == 1:
-                bm.faces.new((a[j], a[(j + 1) % 4], b[0]))
+                bm.faces.new((a[j], b[0], a[(j + 1) % 4]))
             else:
-                bm.faces.new((a[j], a[(j + 1) % 4], b[(j + 1) % 4], b[j]))
+                bm.faces.new((a[j], b[j], b[(j + 1) % 4], a[(j + 1) % 4]))
 
 
-def build_hair(head):
+# The spikes (H3c), read off the shipped hair (before-hero-turnaround.jpg, the head-close sheet's top row):
+# (root, bend, tip) as (x from the head's centre line, y, z), then width and thickness. +x is the hero's
+# right, +y its front. A fringe of three swept to the hero's right with the long one between the eyes, two
+# wings a side that flare out over and behind the ear (the right pair wider, as today), two across the
+# crown, two down the back of the skull and three down the nape.
+SPIKES = (
+    ((0.020, 0.085, 1.800), (0.000, 0.168, 1.792), (0.014, 0.150, 1.700), 0.085, 0.034),   # fringe, centre
+    ((0.052, 0.075, 1.790), (0.092, 0.150, 1.782), (0.090, 0.128, 1.712), 0.080, 0.032),   # fringe, right
+    ((-0.040, 0.080, 1.795), (-0.074, 0.156, 1.790), (-0.060, 0.142, 1.728), 0.076, 0.032),  # fringe, left
+    ((0.065, 0.040, 1.780), (0.150, 0.045, 1.765), (0.172, 0.000, 1.690), 0.084, 0.036),   # right wing
+    ((0.072, -0.020, 1.740), (0.128, -0.036, 1.690), (0.132, -0.058, 1.612), 0.074, 0.030),  # right, behind the ear
+    ((-0.065, 0.040, 1.780), (-0.130, 0.045, 1.768), (-0.142, 0.004, 1.702), 0.080, 0.036),  # left wing
+    ((-0.072, -0.020, 1.740), (-0.120, -0.038, 1.700), (-0.112, -0.056, 1.628), 0.072, 0.030),  # left, behind the ear
+    ((0.045, -0.010, 1.795), (0.000, 0.020, 1.842), (-0.078, 0.050, 1.834), 0.074, 0.022),  # crown, ending in the cowlick
+    ((-0.035, 0.000, 1.795), (0.020, -0.030, 1.840), (0.088, -0.055, 1.790), 0.072, 0.022),  # crown, down the back right
+    ((0.030, -0.015, 1.800), (0.062, -0.080, 1.765), (0.052, -0.070, 1.668), 0.080, 0.022),  # back of the skull, right
+    ((-0.035, -0.015, 1.800), (-0.064, -0.080, 1.770), (-0.048, -0.068, 1.682), 0.080, 0.022),  # back of the skull, left
+    ((0.000, -0.035, 1.735), (0.000, -0.076, 1.655), (0.008, -0.060, 1.556), 0.090, 0.022),  # nape, centre
+    ((0.055, -0.025, 1.735), (0.088, -0.070, 1.668), (0.096, -0.052, 1.580), 0.080, 0.022),  # nape, right
+    ((-0.055, -0.025, 1.735), (-0.086, -0.070, 1.676), (-0.090, -0.050, 1.594), 0.080, 0.022),  # nape, left
+)
+
+
+def build_hair(head, bounds):
     """
-    The hair as one closed form (design 5.2, 5.3): a cap that follows the skull above the hairline
-    and four large locks (a fringe swept to the hero's left, a long lock at each temple, the right
-    one longer, and one down the back), fused by a voxel remesh and decimated. Every lock is at
-    least 0.044 across until its last third (5.3 rule 5). Returns a new mesh object.
+    H3c (design 5.2, 5.3): the hair as a carved mass that keeps the shipped hair's silhouette: a
+    flat-faced cap over the skull, sunk into the head below the hairline, and the SPIKES, each a
+    flat-faced blade. Nothing is fused or smoothed: every face is a chosen plane. The form stays inside
+    `bounds`, the shipped hair's (low, high) corners, and covers the scalp. Returns a new mesh object.
     """
     cx = bounds_centre(v.co for v in head.data.vertices).x
-    centre = Vector((cx, 0.04, 1.69))
+    centre = Vector((cx, 0.04, 1.705))
 
     def hairline(co):
-        s = min(max((co.y + 0.03) / 0.17, 0.0), 1.0)
-        return 1.585 + 0.16 * s * s * (3 - 2 * s)
+        """Over the brow at the front, above the ear's top at the side, down to the nape behind the ear."""
+        step = lambda t: min(max(t, 0.0), 1.0) ** 2 * (3 - 2 * min(max(t, 0.0), 1.0))
+        return 1.60 + 0.128 * step((co.y + 0.06) / 0.03) + 0.02 * step((co.y - 0.03) / 0.09)
 
     bm = bmesh.new()
-    bm.from_mesh(head.data)
-    bm.normal_update()
-    drop = [f for f in bm.faces if any(v.co.z < hairline(v.co) for v in f.verts)]
-    bmesh.ops.delete(bm, geom=drop, context="FACES")
+    bmesh.ops.create_icosphere(bm, subdivisions=2, radius=1.0)
     for v in bm.verts:
-        v.co += v.normal * 0.016
-    cap_me = bpy.data.meshes.new("HairCapTmp")
-    bm.to_mesh(cap_me)
+        v.co = centre + Vector((v.co.x * 0.110, v.co.y * 0.116, v.co.z * 0.128))
+        if v.co.z < hairline(v.co):
+            v.co = centre + (v.co - centre) * 0.62  # under the hairline the cap is inside the head
+    for p0, p1, p2, width, thick in SPIKES:
+        _spike(bm, *(Vector((cx + p[0], p[1], p[2])) for p in (p0, p1, p2)), centre, width, thick)
+    bm.normal_update()
+
+    low, high = bounds
+    for i in range(3):
+        lo, hi = min(v.co[i] for v in bm.verts), max(v.co[i] for v in bm.verts)
+        assert lo >= low[i] - HAIR_BOUNDS_SLACK and hi <= high[i] + HAIR_BOUNDS_SLACK, \
+            f"Hair: axis {i} runs {lo:.4f} to {hi:.4f}, outside the shipped hair's {low[i]:.4f} to {high[i]:.4f}"
+    assert max(v.co.z for v in bm.verts) <= HAIR_TOP_MAX, "Hair: over the shipped hair's top"
+    print("[BlenderHero] Hair bounds " + ", ".join(
+        f"{min(v.co[i] for v in bm.verts):.3f} to {max(v.co[i] for v in bm.verts):.3f} (shipped {low[i]:.3f} to {high[i]:.3f})" for i in range(3)))
+
+    # the scalp is covered: from every Head vertex well above the hairline, the way out meets hair
+    tree = BVHTree.FromBMesh(bm)
+    bare = [v.index for v in head.data.vertices
+            if v.co.z > hairline(v.co) + 0.03 and tree.ray_cast(v.co, (v.co - centre).normalized(), 0.12)[0] is None]
+    assert not bare, f"Hair: {len(bare)} scalp vertices show through"
+
+    me = bpy.data.meshes.new("HairNew")
+    bm.to_mesh(me)
     bm.free()
-    ob = bpy.data.objects.new("HairNew", cap_me)
+    ob = bpy.data.objects.new("HairNew", me)
     bpy.context.scene.collection.objects.link(ob)
-    bpy.context.view_layer.objects.active = ob
-    sol = ob.modifiers.new("Shell", "SOLIDIFY")
-    sol.thickness, sol.offset, sol.use_rim = 0.024, -1.0, True
-    bpy.ops.object.modifier_apply(modifier="Shell")
-
-    bm = bmesh.new()
-    bm.from_mesh(ob.data)
-    X = lambda dx, y, z: (cx + dx, y, z)
-    _lock(bm, X(0.035, 0.05, 1.805), X(0.0, 0.175, 1.80), X(-0.065, 0.165, 1.738), centre, 0.095, 0.05)
-    _lock(bm, X(0.055, 0.03, 1.775), X(0.112, 0.06, 1.715), X(0.098, 0.085, 1.625), centre, 0.065, 0.04)
-    _lock(bm, X(-0.055, 0.03, 1.775), X(-0.112, 0.055, 1.725), X(-0.1, 0.075, 1.665), centre, 0.06, 0.04)
-    _lock(bm, X(0.0, -0.02, 1.805), X(0.012, -0.125, 1.77), X(0.03, -0.112, 1.595), centre, 0.11, 0.05)
-    bm.to_mesh(ob.data)
-    bm.free()
-
-    ob.data.remesh_voxel_size = HAIR_VOXEL
-    bpy.ops.object.voxel_remesh()
-    tris = sum(len(p.vertices) - 2 for p in ob.data.polygons)
-    dec = ob.modifiers.new("Decimate", "DECIMATE")
-    dec.ratio = HAIR_TRIANGLES / tris
-    bpy.ops.object.modifier_apply(modifier="Decimate")
-    ob.data.validate()
-    top = max(v.co.z for v in ob.data.vertices)
-    assert top <= HAIR_TOP_MAX, f"Hair: top at {top:.4f}, over the figure's height {HAIR_TOP_MAX}"
     return ob
 
 
-def mark_planes(ob) -> None:
+def mark_planes(ob, spread=PLANE_SPREAD) -> None:
     """
     The pilot's planes (baseline README, pattern step 3): from the largest free face a plane grows
     across edges under CREASE to faces within PLANE_SPREAD of that face; a plane under PLANE_MIN of
@@ -262,7 +390,7 @@ def mark_planes(ob) -> None:
                 if angle(e) >= CREASE:
                     continue
                 for g in e.link_faces:
-                    if plane[g.index] < 0 and g.normal.angle(seed.normal, 0.0) < PLANE_SPREAD:
+                    if plane[g.index] < 0 and g.normal.angle(seed.normal, 0.0) < spread:
                         plane[g.index] = len(normals)
                         queue.append(g)
         normals.append(normal.normalized())
@@ -273,6 +401,8 @@ def mark_planes(ob) -> None:
             continue
         faces = [f for f in bm.faces if plane[f.index] == small]
         near = {plane[g.index] for f in faces for e in f.edges for g in e.link_faces} - {small}
+        if not near:
+            continue  # a loose face of its own (none is built)
         into = max(near, key=lambda i: normals[i].dot(normals[small]))
         for f in faces:
             plane[f.index] = into
@@ -321,8 +451,10 @@ def paint(rig, toned) -> None:
     """
     Design 5.4 and 6.3, the pilot's step 8: bake_paint's occlusion, height gradient and warm-to-cool
     shift (one value a vertex), times the plane tone of the parts in `toned` (one value a face),
-    written as one 'Col' layer on the face corners. Tone only, never colour: the engine sets every
-    hero colour and recolours the role materials; the layer multiplies them. Every mesh carries it
+    written as one 'Col' layer on the face corners. Tone only: the engine sets every hero colour and
+    recolours the role materials; the layer multiplies them. Two exceptions (H3c): the skin (Head, Hands)
+    is shaded warm (SKIN_WARM, SKIN_SHADE), and the Eyes carry their colours whole (white, iris, pupil by
+    the face attribute build_eyes left), since the engine's eye material is white. Every mesh carries it
     (COLOR_0 is all or none on the hero file). The paint can only darken the material, so a toned
     part's tones are divided by the lightest one: its neutral planes sit 13% under its lit planes,
     which are the baked value itself, and no corner is clipped at white.
@@ -341,6 +473,16 @@ def paint(rig, toned) -> None:
                 vi = loops[li].vertex_index
                 for c in range(3):
                     cols[4 * li + c] = baked[4 * vi + c] * tone
+                if ob.name in SKIN:
+                    for c in range(3):
+                        cols[4 * li + c] = SKIN_WARM[c] * cols[4 * li + c] ** SKIN_SHADE[c]
+        if ob.name == "Eyes":
+            eye = ob.data.attributes["eye"]
+            colours = [srgb_linear(h) for h in (EYE_WHITE, EYE_IRIS, EYE_PUPIL)]
+            for p in ob.data.polygons:
+                for li in p.loop_indices:
+                    cols[4 * li:4 * li + 3] = colours[eye.data[p.index].value]
+            ob.data.attributes.remove(eye)
         assert max(cols) <= 1.0, f"{ob.name}: a paint value over 1 would be clipped at white"
         attrs.remove(attrs["Col"])
         attrs.new("Col", "FLOAT_COLOR", "CORNER").data.foreach_set("color", cols)
@@ -766,17 +908,25 @@ def main():
         obj.name = spec[0]
         specs[obj] = spec
 
-    # 4b. H3b: the face's planes, the hands 15% larger, the hair as four locks (design 5.2 to 5.4).
+    # 4b. H3b: the face's planes, the hands 15% larger (design 5.2 to 5.4). H3c: ears, irises and pupils,
+    #     and the hair as large swept spikes inside the shipped hair's bounds.
     head, hair = bpy.data.objects["Head"], bpy.data.objects["Hair"]
+    head_centre = bounds_centre(v.co for v in head.data.vertices)
     carve_face(head)
+    build_ears(head)
+    shift = (bounds_centre(v.co for v in head.data.vertices) - head_centre).length
+    assert shift <= HEAD_SHIFT_MAX, f"Head: the face edits and the ears moved its centre {shift:.4f}, over {HEAD_SHIFT_MAX}"
+    print(f"[BlenderHero] face carved, ears added; Head centre moved {shift:.4f}")
     grow_hands(bpy.data.objects["Hands"])
-    new_hair = build_hair(head)
+    build_eyes(bpy.data.objects["Eyes"])
+    hair_cos = [v.co for v in hair.data.vertices]
+    new_hair = build_hair(head, tuple(Vector([f(c[i] for c in hair_cos) for i in range(3)]) for f in (min, max)))
     old_hair_data = hair.data
     hair.data = new_hair.data
     bpy.data.objects.remove(new_hair, do_unlink=True)
     bpy.data.meshes.remove(old_hair_data)
-    for ob in (head, hair):
-        mark_planes(ob)
+    mark_planes(head, HEAD_SPREAD)
+    mark_planes(hair)
 
     # 5. Rig at the author's joints, every bone pointing up with roll 0, root at the origin (design 6.1.1).
     rig = figkit.make_rig("HeroRoot", rigs.BIPED_TABLE, joints)
