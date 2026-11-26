@@ -154,11 +154,11 @@ Built with `BLEND(monsters)` on Blender 5.0.1 from `38cee50` (`flock /tmp/claude
 
    | Mesh | Pose | Sphere radius | Furthest vertex outside |
    |---|---|---|---|
-   | `dark_wizard_glow` (orb and glints) | mid-`Cast` | 0.65 | 0.345 |
-   | `dark_wizard_staff` | mid-`Cast` | 1.71 | 0.059 |
+   | `dark_wizard_glow` (orb and glints) | mid-`Cast` | 0.65 | 0.345 (0.338 in the retake) |
+   | `dark_wizard_staff` | mid-`Cast` | 1.71 | 0.059 (0.063) |
    | `dark_ranger_wood` (bow) | mid-`Ranged` | 1.40 | 0.105 |
 
-   Every other mesh stays inside its sphere. At the edge of the screen the orb can be culled while the staff swings. The fix is padding or a per-clip sphere in the loader (`blenderMonsters.ts`), which the archer's bow probably needs as well.
+   Every other mesh stays inside its sphere. At the edge of the screen the orb can be culled while the staff swings. The fix is padding or a per-clip sphere in the loader (`blenderMonsters.ts`). Other figures were not measured.
 2. **K4 must** do the same as for the scorpion:
    - set the live `dark_wizard` and `dark_ranger` rows' `clips` and `anticipation` to `PENDING_WIZARD_CLIPS` and `PENDING_RANGER_CLIPS`, and remove both exports;
    - do the promote follow-through:
@@ -169,12 +169,19 @@ Built with `BLEND(monsters)` on Blender 5.0.1 from `38cee50` (`flock /tmp/claude
        - `dark_wizard`: `{"meshes":4,"triangles":{"wood":252,"cloth":3284,"glow":192,"skin":632},"pivots":{"Monster_dark_wizard":["cloth","glow","skin","wood"]},"floor":4}`
        - `dark_ranger`: `{"meshes":4,"triangles":{"wood":316,"glow":96,"cloth":250,"leather":3698},"pivots":{"Monster_dark_ranger":["cloth","glow","leather","wood"]},"floor":4}`
 3. **The Thornwatch Marksman** (`model: 'dark_ranger'`) gets this body at K4, with Stage 4's tint `0x7fb069` and scale 1.1. The capture's last cell shows it: the tint turns the grey-green ranger a saturated green. K2's kit rides `HeadGroup`, `Torso`, `Hips` and `OffhandPivot`, which all exist.
-4. **Value choice against design 5.4.** The plan says the ranger is "clearly lighter" than the wizard. Design 5.4 says the caster is the lightest within a species. Two humans of different factions are not one species, so the plan's rule was followed. The ranger's first colours (cloak 54%, tunic 60%) read almost white in the game at noon and were darkened. Its luminance is still clearly above the wizard's: cloak about 39% against the robe's 23%. The owner's call is at OM-S6.
+4. **Value choice against design 5.4.** The plan says the ranger is "clearly lighter" than the wizard. Design 5.4 says the caster is the lightest within a species. Two humans of different factions are not one species, so the plan's rule was followed.
+   - By HSV value, the cloak equals the robe: both are 42%, and the tunic is 48%.
+   - "Clearly lighter" therefore rests on luminance and on the capture: the cloak is about 39% against the robe's 23%, and in the game the indigo robe reads far darker than the grey-green ranger.
+   - The ranger's first colours (cloak 54%, tunic 60%) read almost white in the game at noon and were darkened.
+
+   The owner's call is at OM-S6.
 5. **No stride in `review_render.py`.** Its `--worst` pose is a crouch, an arm overhead, a twist and a head turn, and `--clips` plays only `monsters.glb`'s own clips. The biped clips are in `hero.glb`. The stride and strike sheets therefore come from a scratch copy of the renderer that poses bones by hand (`scratch/m3e/pose_render.py`, not committed, `review_render.py` unchanged):
    - **stride**: thighs +0.5 and −0.45 rad, knees bent, arms swung, the hero `Walk`'s range;
    - **strike**: the wizard's arms raised 1.7 rad, `Cast`-like; the ranger's bow arm forward and the other arm drawn, close to `Ranged` but not exact.
 
    The real clips are seen in the in-game capture (below).
+6. **`build_materials` was edited, outside "those two" builders.** M3e removed the five entries only the old wizard and ranger used, as M3d did for the demon's, and the export stayed byte-identical. This is for the main session to ratify or revert.
+7. **For the owner, not blocking Accept: the bell sleeve's mouth** is a closed gold disc with the hand pushed through it, not an open bell. Worth opening if the figure is rebuilt for another reason, and then before the recapture.
 
 ## What was built
 
@@ -281,7 +288,7 @@ Brotli quality 3, with `figureStats` (`scratch/m3a/stats.mjs`). "Packed" is afte
 | Shipped | 3,054,848 | 812,801 |
 | As exported | 3,870,544 | 1,392,458 |
 
-Meshes go from 104 to 71. Triangles total 63,688.
+The file holds 71 meshes, against 120 shipped and 104 in M3b's build. Triangles total 63,688.
 
 **Untouched figures**: compared against a build of HEAD before this task (`scratch/models-build/m3e-base`, whose as-exported size equals M3b's), these all match:
 
@@ -348,17 +355,17 @@ Ceilings:
 
 On the roster sheet the wizard (brim, crown and staff), the ranger (peaked hood, triangle cloak, bow line) and the two goblins (spear and shield; hood and bow, a head shorter) have four different outlines. The silhouette and play-distance sheets are left out of the tree for the slice's bytes; they are in `scratch/m3e/sheets`.
 
-**Capture**: `m3e-ingame.jpg` (a grid, reduced to 960 px) and `m3e-ingame-rows.json`.
+**Capture**: `m3e-ingame.jpg` (a grid, reduced to 960 px; the wizard at 26 and a second walk frame are in `scratch/m3e/cap/`) and `m3e-ingame-rows.json`.
 
 - **Setup**: NVIDIA GPU (`scripts/capture-gpu.mjs`, ANGLE over D3D12, RTX 4070 Laptop), `vite build` and `vite preview` (port 4196, stopped after) of the throw-away worktree, with the `__DEBUG.G` patch. Balanced tier, noon, clear, the hero beside the figure, at the wizards' field (45, −24), the rangers' (76, −52) and Thornwatch (−21, −48). No page or console error.
-- **The grid**, row by row:
-  1. wizard three-quarter (`Idle`), wizard side, wizard at `Cast` 0.233 s (the staff raised);
-  2. wizard at `Cast` 0.550 s, wizard from behind, wizard at 26 (`Walk`);
-  3. ranger three-quarter, ranger side, ranger at `Ranged` 0.467 s (drawing);
-  4. ranger at `Ranged` 0.817 s, ranger from behind, the Thornwatch Marksman three-quarter (`Walk`).
+- **The grid**, row by row. Each cell is labelled by what it shows; the figures face where they like.
+  1. Wizard front three-quarter (`Idle`); wizard from the front, its staff out at its side; wizard at the frame's left edge with another wizard behind.
+  2. Wizard at `Cast` 0.233 s, the staff swung up level in front; at `Cast` 0.583 s; wizard mid-`Walk` (weight 1.0), the skirt over the stride. The last three are a retake (`scratch/m3e/cap/job2.mjs`), each framed just before the shot.
+  3. Ranger from behind: the cloak's triangle; ranger from the front with the bow at its side; ranger at `Ranged` 0.467 s, drawing.
+  4. Ranger at `Ranged` 0.817 s; ranger mid-`Walk` (weight 1.0), the cloak over the real stride; the Thornwatch Marksman mid-`Walk`, tinted green.
 - **Every wizard and ranger in view**:
   - four skinned meshes, all with vertex colours and `FACET_CUT`, on one skeleton;
   - an animator with the hero library's eleven clips, playing `Idle` and `Walk` as it wanders, and `Cast` or `Ranged` when `attackAnim` is set;
   - `rig.headGroup` is a bone.
-- **Not seen in the engine**: `Death`, and a stride seen side-on (the figures were standing for the side frames). The stride sheet stands in for the second.
-- **Slice sheet budget**: `s6/` holds 1.36 MB of its 2 MB after M3e (567 kB of it M3e's), with K1, K2 and K4 still to add. `m3b-ingame-strike.jpg` (85 kB) can still go first.
+- **Not seen in the engine**: `Death`, and a stride seen square from the side.
+- **Slice sheet budget**: `s6/` holds 1.38 MB of its 2 MB after M3e (about 590 kB of it M3e's), with K1, K2 and K4 still to add. `m3b-ingame-strike.jpg` (85 kB) can still go first.

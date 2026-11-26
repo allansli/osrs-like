@@ -1,4 +1,5 @@
 {
+ "renderer": "ANGLE (Microsoft Corporation, D3D12 (NVIDIA GeForce RTX 4070 Laptop GPU), OpenGL 4.6)",
  "errs": [],
  "rows": [
   {
@@ -120,138 +121,6 @@
      },
      "wingZ": null,
      "legX": 0.019
-    }
-   ]
-  },
-  {
-   "name": "wizard-cast",
-   "row": {
-    "x": 45.94428183264072,
-    "z": -22.20041592562435,
-    "yaw": 2.6,
-    "pitch": 0.22,
-    "distance": 6.5
-   },
-   "monsters": [
-    {
-     "pos": [
-      43.2,
-      -21
-     ],
-     "state": "idle",
-     "windup": false,
-     "animator": true,
-     "clips": [
-      "Cast",
-      "Chop",
-      "Death",
-      "Fish",
-      "Idle",
-      "Lunge",
-      "Mine",
-      "Ranged",
-      "Slash",
-      "SpinSlash",
-      "Walk"
-     ],
-     "running": [
-      "Cast@0.233w1.00",
-      "Chop@0.000w1.00",
-      "Death@0.000w1.00",
-      "Fish@0.000w1.00",
-      "Idle@1.953w0.00",
-      "Lunge@0.000w1.00",
-      "Mine@0.000w1.00",
-      "Ranged@0.000w1.00",
-      "Slash@0.000w1.00",
-      "SpinSlash@0.000w1.00",
-      "Walk@0.038w0.00"
-     ],
-     "skinned": 4,
-     "painted": 4,
-     "cut": 4,
-     "skeletons": 1,
-     "scale": 1.02,
-     "pivots": {
-      "head": "Bone:HeadGroup",
-      "lArm": "Bone:LeftArmPivot",
-      "lLeg": "Bone:LeftLegPivot",
-      "lWing": null,
-      "rWing": null
-     },
-     "wingZ": null,
-     "legX": 0.058
-    },
-    {
-     "pos": [
-      42.7,
-      -20.7
-     ],
-     "state": "idle",
-     "windup": false,
-     "animator": true,
-     "clips": [
-      "Cast",
-      "Chop",
-      "Death",
-      "Fish",
-      "Idle",
-      "Lunge",
-      "Mine",
-      "Ranged",
-      "Slash",
-      "SpinSlash",
-      "Walk"
-     ],
-     "running": [
-      "Cast@0.550w1.00",
-      "Chop@0.000w1.00",
-      "Death@0.000w1.00",
-      "Fish@0.000w1.00",
-      "Idle@0.311w0.00",
-      "Lunge@0.000w1.00",
-      "Mine@0.000w1.00",
-      "Ranged@0.000w1.00",
-      "Slash@0.000w1.00",
-      "SpinSlash@0.000w1.00",
-      "Walk@0.339w0.00"
-     ],
-     "skinned": 4,
-     "painted": 4,
-     "cut": 4,
-     "skeletons": 1,
-     "scale": 1.02,
-     "pivots": {
-      "head": "Bone:HeadGroup",
-      "lArm": "Bone:LeftArmPivot",
-      "lLeg": "Bone:LeftLegPivot",
-      "lWing": null,
-      "rWing": null
-     },
-     "wingZ": null,
-     "legX": 0.1
-    }
-   ],
-   "spheres": [
-    {
-     "mesh": "dark_wizard_face",
-     "radius": 0.595,
-     "worstOutside": 0
-    },
-    {
-     "mesh": "dark_wizard_glow",
-     "radius": 0.65,
-     "worstOutside": 0.3453
-    },
-    {
-     "mesh": "dark_wizard_robe",
-     "radius": 2.314,
-     "worstOutside": 0
-    },
-    {
-     "mesh": "dark_wizard_staff",
-     "radius": 1.714,
-     "worstOutside": 0.0586
     }
    ]
   },
@@ -869,7 +738,259 @@
      "legX": 0.427
     }
    ]
+  },
+  {
+   "name": "wizard-cast",
+   "row": {
+    "x": 48.285991863839875,
+    "z": -24.15206101665553,
+    "yaw": 2.6,
+    "pitch": 0.25,
+    "distance": 8.5
+   },
+   "monsters": [
+    {
+     "pos": [
+      46.3,
+      -23.4
+     ],
+     "state": "idle",
+     "windup": false,
+     "animator": true,
+     "clips": [
+      "Cast",
+      "Chop",
+      "Death",
+      "Fish",
+      "Idle",
+      "Lunge",
+      "Mine",
+      "Ranged",
+      "Slash",
+      "SpinSlash",
+      "Walk"
+     ],
+     "running": [
+      "Cast@0.233w1.00",
+      "Chop@0.000w1.00",
+      "Death@0.000w1.00",
+      "Fish@0.000w1.00",
+      "Idle@1.645w0.00",
+      "Lunge@0.000w1.00",
+      "Mine@0.000w1.00",
+      "Ranged@0.000w1.00",
+      "Slash@0.000w1.00",
+      "SpinSlash@0.000w1.00",
+      "Walk@0.781w0.00"
+     ],
+     "skinned": 4,
+     "painted": 4,
+     "cut": 4,
+     "skeletons": 1,
+     "scale": 1.02,
+     "pivots": {
+      "head": "Bone:HeadGroup",
+      "lArm": "Bone:LeftArmPivot",
+      "lLeg": "Bone:LeftLegPivot",
+      "lWing": null,
+      "rWing": null
+     },
+     "wingZ": null,
+     "legX": 0.058
+    },
+    {
+     "pos": [
+      46.3,
+      -23.4
+     ],
+     "state": "idle",
+     "windup": false,
+     "animator": true,
+     "clips": [
+      "Cast",
+      "Chop",
+      "Death",
+      "Fish",
+      "Idle",
+      "Lunge",
+      "Mine",
+      "Ranged",
+      "Slash",
+      "SpinSlash",
+      "Walk"
+     ],
+     "running": [
+      "Cast@0.583w1.00",
+      "Chop@0.000w1.00",
+      "Death@0.000w1.00",
+      "Fish@0.000w1.00",
+      "Idle@0.037w0.00",
+      "Lunge@0.000w1.00",
+      "Mine@0.000w1.00",
+      "Ranged@0.000w1.00",
+      "Slash@0.000w1.00",
+      "SpinSlash@0.000w1.00",
+      "Walk@1.097w0.00"
+     ],
+     "skinned": 4,
+     "painted": 4,
+     "cut": 4,
+     "skeletons": 1,
+     "scale": 1.02,
+     "pivots": {
+      "head": "Bone:HeadGroup",
+      "lArm": "Bone:LeftArmPivot",
+      "lLeg": "Bone:LeftLegPivot",
+      "lWing": null,
+      "rWing": null
+     },
+     "wingZ": null,
+     "legX": 0.1
+    }
+   ],
+   "spheres": [
+    {
+     "mesh": "dark_wizard_face",
+     "radius": 0.595,
+     "worstOutside": 0
+    },
+    {
+     "mesh": "dark_wizard_glow",
+     "radius": 0.65,
+     "worstOutside": 0.338
+    },
+    {
+     "mesh": "dark_wizard_robe",
+     "radius": 2.314,
+     "worstOutside": 0
+    },
+    {
+     "mesh": "dark_wizard_staff",
+     "radius": 1.714,
+     "worstOutside": 0.0625
+    }
+   ]
+  },
+  {
+   "name": "wizard-walk",
+   "row": {
+    "x": 41.45380037131281,
+    "z": -32.14898611336355,
+    "yaw": 2.9,
+    "pitch": 0.22,
+    "distance": 7
+   },
+   "monsters": [
+    {
+     "pos": [
+      39.6,
+      -31.6
+     ],
+     "state": "idle",
+     "windup": false,
+     "animator": true,
+     "clips": [
+      "Cast",
+      "Chop",
+      "Death",
+      "Fish",
+      "Idle",
+      "Lunge",
+      "Mine",
+      "Ranged",
+      "Slash",
+      "SpinSlash",
+      "Walk"
+     ],
+     "running": [
+      "Cast@0.000w1.00",
+      "Chop@0.000w1.00",
+      "Death@0.000w1.00",
+      "Fish@0.000w1.00",
+      "Idle@1.278w0.00",
+      "Lunge@0.000w1.00",
+      "Mine@0.000w1.00",
+      "Ranged@0.000w1.00",
+      "Slash@0.000w1.00",
+      "SpinSlash@0.000w1.00",
+      "Walk@0.164w1.00"
+     ],
+     "skinned": 4,
+     "painted": 4,
+     "cut": 4,
+     "skeletons": 1,
+     "scale": 1.02,
+     "pivots": {
+      "head": "Bone:HeadGroup",
+      "lArm": "Bone:LeftArmPivot",
+      "lLeg": "Bone:LeftLegPivot",
+      "lWing": null,
+      "rWing": null
+     },
+     "wingZ": null,
+     "legX": 0.296
+    }
+   ]
+  },
+  {
+   "name": "wizard-walk2",
+   "row": {
+    "x": 46.00519442670016,
+    "z": -29.15853869105406,
+    "yaw": -1.571,
+    "pitch": 0.2,
+    "distance": 7
+   },
+   "monsters": [
+    {
+     "pos": [
+      46,
+      -27.3
+     ],
+     "state": "idle",
+     "windup": false,
+     "animator": true,
+     "clips": [
+      "Cast",
+      "Chop",
+      "Death",
+      "Fish",
+      "Idle",
+      "Lunge",
+      "Mine",
+      "Ranged",
+      "Slash",
+      "SpinSlash",
+      "Walk"
+     ],
+     "running": [
+      "Chop@0.000w1.00",
+      "Death@0.000w1.00",
+      "Fish@0.000w1.00",
+      "Idle@0.555w0.19",
+      "Lunge@0.000w1.00",
+      "Mine@0.000w1.00",
+      "Ranged@0.000w1.00",
+      "Slash@0.000w1.00",
+      "SpinSlash@0.000w1.00",
+      "Walk@0.572w0.81"
+     ],
+     "skinned": 4,
+     "painted": 4,
+     "cut": 4,
+     "skeletons": 1,
+     "scale": 1.02,
+     "pivots": {
+      "head": "Bone:HeadGroup",
+      "lArm": "Bone:LeftArmPivot",
+      "lLeg": "Bone:LeftLegPivot",
+      "lWing": null,
+      "rWing": null
+     },
+     "wingZ": null,
+     "legX": 0.12
+    }
+   ]
   }
- ],
- "renderer": "ANGLE (Microsoft Corporation, D3D12 (NVIDIA GeForce RTX 4070 Laptop GPU), OpenGL 4.6)"
+ ]
 }
