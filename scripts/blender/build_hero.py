@@ -1,7 +1,8 @@
 """
 Build the authentic Game Anime RPG Character (BlendSwap #4503 by uchiha007)
-directly from Kai blend and export hero glb
-and hero blend with full textures, PBR materials, and 10 NLA animations.
+directly from Kai blend and export hero glb and hero blend: one skin on the
+biped rig with the author's own weights, bound in the author's pose at the
+author's joints, and the 10 clips keyed on its bones (models pass H3a).
 """
 
 import bpy
@@ -9,121 +10,150 @@ import bmesh
 import os
 import sys
 import math
-from mathutils import Vector, Euler, Matrix
+from mathutils import Vector, Euler, Quaternion
 
 sys.dont_write_bytecode = True
 sys.path.insert(0, os.path.dirname(__file__))
 import paths
+import figkit
+import rigs
 
-def t2b_pos(tx: float, ty: float, tz: float):
-    return (tx, -tz, ty)
+# The source's 59 vertex groups folded onto the 16 biped bones (design 3.5 S13).
+FINGERS = ("thumb1", "thumb2", "thumb3") + tuple(
+    f"{f}Finger{i}" for f in ("index", "middle", "ring", "pinky") for i in (1, 2, 3, 4)
+)
+FOLD = {
+    "Hips": ["waist"],
+    "Torso": ["spine1", "spine2"],
+    "HeadGroup": ["neck", "head"],
+}
+for _s, _side in (("L", "Left"), ("R", "Right")):
+    FOLD[f"{_side}ArmPivot"] = [f"upperArm_{_s}"]
+    FOLD[f"{_side}ElbowPivot"] = [f"lowerArm_{_s}"]
+    FOLD[f"{_side}Hand"] = [f"palm_{_s}"] + [f"{g}_{_s}" for g in FINGERS]
+    FOLD[f"{_side}LegPivot"] = [f"upperLeg_{_s}"]
+    FOLD[f"{_side}KneePivot"] = [f"lowerLeg_{_s}"]
+    FOLD[f"{_side}Foot"] = [f"ankle_{_s}", f"foot1_{_s}", f"foot2_{_s}"]
 
-def t2b_euler(rx: float, ry: float, rz: float):
-    return (rx, -rz, ry)
+# Each biped joint sits at the head of this source bone (design 3.5 S14, decision N-5); Root at the origin.
+JOINT_OF = {"Hips": "waist", "Torso": "spine1", "HeadGroup": "neck"}
+for _s, _side in (("L", "Left"), ("R", "Right")):
+    JOINT_OF.update({
+        f"{_side}ArmPivot": f"upperArm_{_s}", f"{_side}ElbowPivot": f"lowerArm_{_s}", f"{_side}Hand": f"palm_{_s}",
+        f"{_side}LegPivot": f"upperLeg_{_s}", f"{_side}KneePivot": f"lowerLeg_{_s}", f"{_side}Foot": f"ankle_{_s}",
+    })
 
-def create_empty_pivot(name: str, parent: bpy.types.Object, tx: float, ty: float, tz: float):
-    bx, by, bz = t2b_pos(tx, ty, tz)
-    obj = bpy.data.objects.new(name, None)
-    obj.empty_display_type = "PLAIN_AXES"
-    obj.empty_display_size = 0.08
-    bpy.context.scene.collection.objects.link(obj)
-    if parent:
-        obj.parent = parent
-    obj.location = Vector((bx, by, bz))
-    bpy.context.view_layer.update()
-    return obj
+# Source mesh -> (mesh name, extras.part, noOutline). One mesh per engine role (design 6.1.4); the coat is split
+# into TorsoCoat and Sleeves below because body armour hides the one and not the other.
+MESHES = {
+    "head.001": ("Head", "head", True),
+    "hair.002": ("Hair", "hair", True),
+    "eyes.001": ("Eyes", "eye", True),
+    "UnderShirt.001": ("InnerCollar", "inner-tunic", False),
+    "belt.001": ("Belt", "belt", False),
+    "armbraces.001": ("Bracers", "bracer", True),
+    "hands.001": ("Hands", "hand", True),
+    "pants.001": ("Legs", "thigh", False),
+    "Boots.001": ("Boots", "boot", False),
+}
+COAT = ("coat.001", ("TorsoCoat", "chest", False), ("Sleeves", "deltoid", False))
+RIGID_ON_HEAD = ("Hair", "Eyes")  # design 6.1.4: hair and eyes do not bend
 
-def split_mesh_bm(src_obj, filter_fn, name_a, name_b=None):
-    col = src_obj.users_collection[0] if src_obj.users_collection else bpy.context.scene.collection
-    obj_a = src_obj.copy()
-    obj_a.data = src_obj.data.copy()
-    obj_a.name = name_a
-    col.objects.link(obj_a)
-    
-    bm_a = bmesh.new()
-    bm_a.from_mesh(obj_a.data)
-    bm_a.verts.ensure_lookup_table()
-    dvert_lay_a = bm_a.verts.layers.deform.active
-    del_a = [v for v in bm_a.verts if not filter_fn(v, dvert_lay_a)]
-    bmesh.ops.delete(bm_a, geom=del_a, context='VERTS')
-    bm_a.to_mesh(obj_a.data)
-    bm_a.free()
-    
-    obj_b = None
-    if name_b:
-        obj_b = src_obj.copy()
-        obj_b.data = src_obj.data.copy()
-        obj_b.name = name_b
-        col.objects.link(obj_b)
-        
-        bm_b = bmesh.new()
-        bm_b.from_mesh(obj_b.data)
-        bm_b.verts.ensure_lookup_table()
-        dvert_lay_b = bm_b.verts.layers.deform.active
-        del_b = [v for v in bm_b.verts if filter_fn(v, dvert_lay_b)]
-        bmesh.ops.delete(bm_b, geom=del_b, context='VERTS')
-        bm_b.to_mesh(obj_b.data)
-        bm_b.free()
-        
+COLOURS = {
+    'Head': (0.961, 0.847, 0.761, 1.0),        # skin (0xF5D8C2)
+    'Hair': (0.243, 0.169, 0.118, 1.0),        # chestnut brown (0x3E2B1E)
+    'Eyes': (0.133, 0.486, 0.831, 1.0),        # blue (0x227CD4)
+    'InnerCollar': (0.157, 0.169, 0.180, 1.0), # slate charcoal undershirt (0x282B2E)
+    'TorsoCoat': (0.345, 0.392, 0.212, 1.0),   # olive-moss coat (0x586436)
+    'Sleeves': (0.345, 0.392, 0.212, 1.0),     # olive-moss sleeves
+    'Belt': (0.118, 0.125, 0.133, 1.0),        # dark waist sash (0x1E2022)
+    'Bracers': (0.306, 0.208, 0.141, 1.0),     # leather vambraces (0x4E3524)
+    'Hands': (0.961, 0.847, 0.761, 1.0),       # skin
+    'Legs': (0.314, 0.361, 0.188, 1.0),        # trousers (0x505C30)
+    'Boots': (0.204, 0.141, 0.094, 1.0),       # riding boots (0x342418)
+}
+
+# Source to figure: 1.85 tall, soles at 0, turned 180 degrees about Z (as before this task). No x centring:
+# the mesh stays where the shipped hero's is, so the hand, foot and head centres hold (gear-mount, 0.01), and
+# the spine bones sit at the author's x (-0.0114) instead.
+S = 1.85 / 11.0498
+Z0 = 4.2954
+
+
+def to_figure(co):
+    return Vector((-co.x * S, -co.y * S, (co.z + Z0) * S))
+
+
+def split_faces(src_obj, face_in_a, name_a, name_b):
+    """Splits a mesh by faces (each face goes to one side whole), so the two halves share the seam's vertices
+    and, carrying the same weights, stay closed when the skin bends."""
+    halves = []
+    for name, keep_a in ((name_a, True), (name_b, False)):
+        obj = src_obj.copy()
+        obj.data = src_obj.data.copy()
+        obj.name = name
+        src_obj.users_collection[0].objects.link(obj)
+        bm = bmesh.new()
+        bm.from_mesh(obj.data)
+        dl = bm.verts.layers.deform.active
+        drop = [f for f in bm.faces if face_in_a(f, dl) != keep_a]
+        bmesh.ops.delete(bm, geom=drop, context='FACES')
+        bm.to_mesh(obj.data)
+        bm.free()
+        halves.append(obj)
     bpy.data.objects.remove(src_obj, do_unlink=True)
-    return obj_a, obj_b
+    return halves
 
-def parent_to_pivot(child: bpy.types.Object, pivot: bpy.types.Object, part_tag: str, no_outline: bool = False):
-    bpy.context.view_layer.update()
-    mw = child.matrix_world.copy()
-    child.parent = pivot
-    child.matrix_world = mw
-    bpy.context.view_layer.update()
-    child["part"] = part_tag
-    if no_outline:
-        child["noOutline"] = True
 
-def build_action(pivots: dict, action_name: str, total_frames: int, sample_fn):
-    rest_locs = {p_name: obj.location.copy() for p_name, obj in pivots.items()}
+ARM_BONES = ("LeftArmPivot", "RightArmPivot")
 
-    for name, obj in pivots.items():
-        if not obj.animation_data:
-            obj.animation_data_create()
-        act = bpy.data.actions.new(name=f"{action_name}_{name}")
-        obj.animation_data.action = act
+
+def build_action(rig, action_name: str, total_frames: int, sample_fn):
+    """Keys one clip on the rig's bones, converted from today's flat pivots for the chain (design 6.1.5).
+
+    The sample functions give each pivot's rotation in the figure's space as three-space Euler numbers in
+    three's YZX order (Blender XZY, design 3.5 S16); a bone's local axes are the figure's (6.1.1 rule 2).
+    HeadGroup and the arms are children of Torso, so their local rotation is the torso's inverse times
+    today's, except the arms in SpinSlash, which keep today's numbers as local rotations. Elbows, knees and
+    legs are already relative to their parents. Only the legs' position keys become the Hips track; the
+    torso's own and the follow-the-torso position keys are dropped. Frames 0 to total_frames - 1 at
+    u = f / total_frames, as before, so every clip keeps its length.
+    """
+    rig.animation_data_create()
+    action = bpy.data.actions.new(name=action_name)
+    rig.animation_data.action = action
+    hips = rig.pose.bones["Hips"]
 
     for f in range(total_frames):
-        u = f / float(total_frames)
-        pose = sample_fn(u)
-
+        pose = sample_fn(f / float(total_frames))
+        torso_inv = Euler(pose["Torso"]["rot"], "XZY").to_quaternion().inverted()
         for p_name, trans in pose.items():
-            if p_name not in pivots:
-                continue
-            obj = pivots[p_name]
+            q = Euler(trans["rot"], "XZY").to_quaternion()
+            if p_name == "HeadGroup" or (p_name in ARM_BONES and action_name != "SpinSlash"):
+                q = torso_inv @ q
+            pb = rig.pose.bones[p_name]
+            pb.rotation_mode = "QUATERNION"
+            pb.rotation_quaternion = q
+            pb.keyframe_insert(data_path="rotation_quaternion", frame=f)
+        left, right = pose["LeftLegPivot"].get("pos"), pose["RightLegPivot"].get("pos")
+        if left != right:
+            raise ValueError(f"{action_name} frame {f}: the legs' position keys differ ({left} and {right}); one Hips track cannot carry both")
+        if left is not None:
+            hips.location = Vector(left)
+            hips.keyframe_insert(data_path="location", frame=f)
 
-            if "rot" in trans:
-                rx, ry, rz = trans["rot"]
-                bx, by, bz = t2b_euler(rx, ry, rz)
-                obj.rotation_euler = Euler((bx, by, bz), "XYZ")
-                obj.keyframe_insert(data_path="rotation_euler", frame=f)
+    track = rig.animation_data.nla_tracks.new()
+    track.name = action_name
+    strip = track.strips.new(action_name, 0, action)
+    strip.name = action_name
+    rig.animation_data.action = None
+    for pb in rig.pose.bones:
+        pb.rotation_mode = "QUATERNION"
+        pb.rotation_quaternion = Quaternion()
+        pb.location = Vector()
 
-            if "pos" in trans:
-                tx, ty, tz = trans["pos"]
-                bx, by, bz = t2b_pos(tx, ty, tz)
-                base = rest_locs[p_name]
-                obj.location = Vector((base.x + bx, base.y + by, base.z + bz))
-                obj.keyframe_insert(data_path="location", frame=f)
 
-    for name, obj in pivots.items():
-        if not obj.animation_data or not obj.animation_data.action:
-            continue
-        act = obj.animation_data.action
-        track = obj.animation_data.nla_tracks.new()
-        track.name = action_name
-        strip = track.strips.new(action_name, 0, act)
-        strip.name = action_name
-        obj.animation_data.action = None
-
-    for p_name, obj in pivots.items():
-        obj.location = rest_locs[p_name]
-        obj.rotation_euler = Euler((0.0, 0.0, 0.0), "XYZ")
-
-def build_all_animations(pivots: dict):
+def build_all_animations(rig):
     # 1. Idle (Heroic warrior stance, elbows bent forward, arms tucked inward along flank)
     def sample_idle(u: float):
         ang = u * 2.0 * math.pi
@@ -168,7 +198,7 @@ def build_all_animations(pivots: dict):
             "RightKneePivot": {"rot": (0.0, 0.0, 0.0)},
         }
 
-    build_action(pivots, "Idle", 48, sample_idle)
+    build_action(rig, "Idle", 48, sample_idle)
 
     # 2. Walk Cycle (Fluid warrior stride, elbows bent forward, arms swinging along flanks)
     def sample_walk(u: float):
@@ -223,7 +253,7 @@ def build_all_animations(pivots: dict):
             "RightKneePivot": {"rot": (r_knee, 0.0, 0.0)},
         }
 
-    build_action(pivots, "Walk", 32, sample_walk)
+    build_action(rig, "Walk", 32, sample_walk)
 
     # 3. Slash
     def sample_slash(u: float):
@@ -265,7 +295,7 @@ def build_all_animations(pivots: dict):
             "RightKneePivot": {"rot": (-0.12, 0.0, 0.0)},
         }
 
-    build_action(pivots, "Slash", 24, sample_slash)
+    build_action(rig, "Slash", 24, sample_slash)
 
     # 4. Lunge
     def sample_lunge(u: float):
@@ -283,7 +313,7 @@ def build_all_animations(pivots: dict):
             "RightKneePivot": {"rot": (-0.08 * thrust, 0.0, 0.0)},
         }
 
-    build_action(pivots, "Lunge", 24, sample_lunge)
+    build_action(rig, "Lunge", 24, sample_lunge)
 
     # 5. Ranged
     def sample_ranged(u: float):
@@ -301,7 +331,7 @@ def build_all_animations(pivots: dict):
             "RightKneePivot": {"rot": (-0.08 * draw, 0.0, 0.0)},
         }
 
-    build_action(pivots, "Ranged", 30, sample_ranged)
+    build_action(rig, "Ranged", 30, sample_ranged)
 
     # 6. Cast
     def sample_cast(u: float):
@@ -320,7 +350,7 @@ def build_all_animations(pivots: dict):
             "RightKneePivot": {"rot": (0.0, 0.0, 0.0)},
         }
 
-    build_action(pivots, "Cast", 28, sample_cast)
+    build_action(rig, "Cast", 28, sample_cast)
 
     # 7. Chop
     def sample_chop(u: float):
@@ -350,7 +380,7 @@ def build_all_animations(pivots: dict):
             "RightKneePivot": {"rot": (-0.10, 0.0, 0.0)},
         }
 
-    build_action(pivots, "Chop", 26, sample_chop)
+    build_action(rig, "Chop", 26, sample_chop)
 
     # 8. Mine
     def sample_mine(u: float):
@@ -380,7 +410,7 @@ def build_all_animations(pivots: dict):
             "RightKneePivot": {"rot": (-0.12, 0.0, 0.0)},
         }
 
-    build_action(pivots, "Mine", 24, sample_mine)
+    build_action(rig, "Mine", 24, sample_mine)
 
     # 9. Fish
     def sample_fish(u: float):
@@ -399,7 +429,7 @@ def build_all_animations(pivots: dict):
             "RightKneePivot": {"rot": (0.0, 0.0, 0.0)},
         }
 
-    build_action(pivots, "Fish", 36, sample_fish)
+    build_action(rig, "Fish", 36, sample_fish)
 
     # 10. SpinSlash
     def sample_spin(u: float):
@@ -418,7 +448,7 @@ def build_all_animations(pivots: dict):
             "RightKneePivot": {"rot": (-0.15, 0.0, 0.0)},
         }
 
-    build_action(pivots, "SpinSlash", 24, sample_spin)
+    build_action(rig, "SpinSlash", 24, sample_spin)
 
 
 def main():
@@ -433,208 +463,89 @@ def main():
     # 1. Open kaiV2.blend natively
     bpy.ops.wm.open_mainfile(filepath=kai_blend)
 
-    # Remove Camera, Lamp, and old Armature
+    # 2. The author's joints: bone heads at rest, through the same transform as the mesh (design 3.5 S14).
+    #    The source armature is read, not exported: the rig below is built at its joints.
+    src_rig = bpy.data.objects["Armature"]
+    heads = {b.name: to_figure(src_rig.matrix_world @ b.head_local) for b in src_rig.data.bones}
+    joints = {bone: heads[src] for bone, src in JOINT_OF.items()}
+    joints["Root"] = Vector((0.0, 0.0, 0.0))
     for name in ['Camera', 'Lamp', 'Armature']:
-        obj = bpy.data.objects.get(name)
-        if obj:
-            bpy.data.objects.remove(obj, do_unlink=True)
+        bpy.data.objects.remove(bpy.data.objects[name], do_unlink=True)
+    for action in list(bpy.data.actions):  # the source's own actions target the author's bones; exported per action below
+        bpy.data.actions.remove(action)
 
-    # 2. Apply matrix_world to vertices so everything is in unified world coordinates
-    for obj in list(bpy.context.scene.objects):
-        if obj.type == 'MESH':
-            obj.modifiers.clear()
-            mesh = obj.data
-            for v in mesh.vertices:
-                v.co = obj.matrix_world @ v.co
-            obj.matrix_world.identity()
+    # 3. Meshes into the figure's space, bind pose = the source's own pose (no re-pose, decision N-5).
+    #    The armature and solidify modifiers are dropped, as before.
+    for obj in [o for o in bpy.context.scene.objects if o.type == 'MESH']:
+        obj.modifiers.clear()
+        mw = obj.matrix_world.copy()
+        for v in obj.data.vertices:
+            v.co = to_figure(mw @ v.co)
+        obj.parent = None
+        obj.matrix_world.identity()
+        obj.data.update()
 
-    # 3. Scale, orient, and align: target height 1.85m, soles at z = 0.0, facing +Y forward
-    S = 1.85 / 11.0498
-    Z0 = 4.2954
+    # 4. One mesh per engine role. The coat's sleeves are the faces most of whose vertices the upper or lower
+    #    arm holds by more than 0.3, away from the centre line (the vertex rule the pivot build used).
+    coat_src, coat_spec, sleeve_spec = COAT
+    coat = bpy.data.objects[coat_src]
+    arm_groups = {vg.index for vg in coat.vertex_groups if vg.name.split("_")[0] in ("upperArm", "lowerArm")}
 
-    for obj in list(bpy.context.scene.objects):
-        if obj.type == 'MESH':
-            mesh = obj.data
-            for v in mesh.vertices:
-                # Rotate 180 degrees around Z so character faces +Y forward and left is at -X
-                vx = -v.co.x * S
-                vy = -v.co.y * S
-                vz = (v.co.z + Z0) * S
-                v.co.x = vx
-                v.co.y = vy
-                v.co.z = vz
-            mesh.update()
+    def in_sleeve(face, dl):
+        hits = sum(1 for v in face.verts if abs(v.co.x) > 0.05 and any(g in arm_groups and w > 0.3 for g, w in v[dl].items()))
+        return 2 * hits > len(face.verts)
 
-    # 4. Split paired meshes
-    boots_obj = bpy.data.objects['Boots.001']
-    boot_l, boot_r = split_mesh_bm(boots_obj, lambda v, d: v.co.x < 0, 'Boot_L', 'Boot_R')
+    sleeves, torso_coat = split_faces(coat, in_sleeve, sleeve_spec[0], coat_spec[0])
+    specs = {sleeves: sleeve_spec, torso_coat: coat_spec}
+    for src, spec in MESHES.items():
+        obj = bpy.data.objects[src]
+        obj.name = spec[0]
+        specs[obj] = spec
 
-    bracers_obj = bpy.data.objects['armbraces.001']
-    bracer_l, bracer_r = split_mesh_bm(bracers_obj, lambda v, d: v.co.x < 0, 'Bracer_L', 'Bracer_R')
+    # 5. Rig at the author's joints, every bone pointing up with roll 0, root at the origin (design 6.1.1).
+    rig = figkit.make_rig("HeroRoot", rigs.BIPED_TABLE, joints)
 
-    hands_obj = bpy.data.objects['hands.001']
-    hand_l, hand_r = split_mesh_bm(hands_obj, lambda v, d: v.co.x < 0, 'Hand_L', 'Hand_R')
-
-    # Coat split
-    coat_obj = bpy.data.objects['coat.001']
-    vgs = {vg.index: vg.name for vg in coat_obj.vertex_groups}
-
-    def is_arm_l(v, d):
-        if not d: return False
-        dvert = v[d]
-        weights = {vgs[k]: w for k, w in dvert.items() if k in vgs}
-        return (weights.get('upperArm_L', 0) > 0.3 or weights.get('lowerArm_L', 0) > 0.3) and v.co.x < -0.05
-
-    def is_arm_r(v, d):
-        if not d: return False
-        dvert = v[d]
-        weights = {vgs[k]: w for k, w in dvert.items() if k in vgs}
-        return (weights.get('upperArm_R', 0) > 0.3 or weights.get('lowerArm_R', 0) > 0.3) and v.co.x > 0.05
-
-    sleeve_l, coat_rest = split_mesh_bm(coat_obj, is_arm_l, 'Sleeve_L', 'Coat_Rest')
-    sleeve_r, torso_coat = split_mesh_bm(coat_rest, is_arm_r, 'Sleeve_R', 'TorsoCoat')
-
-    # Pants split
-    pants_obj = bpy.data.objects['pants.001']
-    thigh_l, pants_rest1 = split_mesh_bm(pants_obj, lambda v, d: v.co.x < 0 and v.co.z > 0.58, 'Thigh_L', 'Pants_Rest1')
-    thigh_r, pants_rest2 = split_mesh_bm(pants_rest1, lambda v, d: v.co.x >= 0 and v.co.z > 0.58, 'Thigh_R', 'Pants_Rest2')
-    shin_l, shin_r = split_mesh_bm(pants_rest2, lambda v, d: v.co.x < 0, 'Shin_L', 'Shin_R')
-
-    # Rename single meshes
-    head_obj = bpy.data.objects['head.001']
-    head_obj.name = 'Head'
-    hair_obj = bpy.data.objects['hair.002']
-    hair_obj.name = 'Hair'
-    eyes_obj = bpy.data.objects['eyes.001']
-    eyes_obj.name = 'Eyes'
-    undershirt_obj = bpy.data.objects['UnderShirt.001']
-    undershirt_obj.name = 'InnerChest'
-    belt_obj = bpy.data.objects['belt.001']
-    belt_obj.name = 'Belt'
-
-    # 5. PBR Materials with authentic palette colors
-    # (Texture images are loaded in runtime.ts via TextureLoader so Node.js Vitest tests pass)
-    color_map = {
-        'Head': (0.961, 0.847, 0.761, 1.0),       # Smooth anime skin (0xF5D8C2)
-        'Hair': (0.243, 0.169, 0.118, 1.0),       # Chestnut brown hair (0x3E2B1E)
-        'Eyes': (0.133, 0.486, 0.831, 1.0),       # Vivid anime blue eyes (0x227CD4)
-        'InnerChest': (0.157, 0.169, 0.180, 1.0), # Slate charcoal undershirt (0x282B2E)
-        'TorsoCoat': (0.345, 0.392, 0.212, 1.0),  # Olive-moss coat wings & tails (0x586436)
-        'Belt': (0.118, 0.125, 0.133, 1.0),       # Wide dark waist sash / obi (0x1E2022)
-        'Sleeve_L': (0.345, 0.392, 0.212, 1.0),   # Olive-moss upper sleeves
-        'Sleeve_R': (0.345, 0.392, 0.212, 1.0),   # Olive-moss upper sleeves
-        'Bracer_L': (0.306, 0.208, 0.141, 1.0),   # Leather archer vambraces (0x4E3524)
-        'Bracer_R': (0.306, 0.208, 0.141, 1.0),   # Leather archer vambraces (0x4E3524)
-        'Hand_L': (0.961, 0.847, 0.761, 1.0),     # Anime skin hands (0xF5D8C2)
-        'Hand_R': (0.961, 0.847, 0.761, 1.0),     # Anime skin hands (0xF5D8C2)
-        'Thigh_L': (0.314, 0.361, 0.188, 1.0),    # Baggy adventurer trousers (0x505C30)
-        'Thigh_R': (0.314, 0.361, 0.188, 1.0),    # Baggy adventurer trousers (0x505C30)
-        'Shin_L': (0.314, 0.361, 0.188, 1.0),     # Baggy adventurer trousers (0x505C30)
-        'Shin_R': (0.314, 0.361, 0.188, 1.0),     # Baggy adventurer trousers (0x505C30)
-        'Boot_L': (0.204, 0.141, 0.094, 1.0),     # Tall riding boots (0x342418)
-        'Boot_R': (0.204, 0.141, 0.094, 1.0),     # Tall riding boots (0x342418)
-    }
-
-    for name, col in color_map.items():
-        obj = bpy.data.objects.get(name)
-        if not obj:
-            continue
+    # 6. Weights: the author's, folded onto the biped bones; hair and eyes rigid on the head bone.
+    for obj, (name, part, no_outline) in specs.items():
+        obj.data.name = name
+        if name in RIGID_ON_HEAD:
+            figkit.hard_weights(obj, "HeadGroup")
+        else:
+            # the source leaves 4 coat vertices unweighted (design 3.5 S14); they go on Torso
+            figkit.fold_weights(obj, FOLD, unweighted_to="Torso" if obj in (sleeves, torso_coat) else None)
+        while obj.data.color_attributes:  # paint is H3b's; this build carries no COLOR_0
+            obj.data.color_attributes.remove(obj.data.color_attributes[0])
         obj.data.materials.clear()
         mat = bpy.data.materials.new(name=f"Mat_{name}")
-        obj.data.materials.append(mat)
-        
         tree = mat.node_tree
         tree.nodes.clear()
         bsdf = tree.nodes.new('ShaderNodeBsdfPrincipled')
-        bsdf.inputs['Base Color'].default_value = col
+        bsdf.inputs['Base Color'].default_value = COLOURS[name]
         bsdf.inputs['Roughness'].default_value = 0.55
         bsdf.inputs['Specular IOR Level'].default_value = 0.20
-        
-        out = tree.nodes.new('ShaderNodeOutputMaterial')
-        tree.links.new(bsdf.outputs['BSDF'], out.inputs['Surface'])
+        tree.links.new(bsdf.outputs['BSDF'], tree.nodes.new('ShaderNodeOutputMaterial').inputs['Surface'])
+        obj.data.materials.append(mat)
+        obj["part"] = part
+        if no_outline:
+            obj["noOutline"] = True
+        obj.parent = rig
+        obj.modifiers.new("Armature", "ARMATURE").object = rig
+        tris = sum(len(p.vertices) - 2 for p in obj.data.polygons)
+        held = sorted({obj.vertex_groups[g.group].name for v in obj.data.vertices for g in v.groups if g.weight > 0.01})
+        print(f"[BlenderHero] {name}: {len(obj.data.vertices)} vertices, {tris} triangles, bones {held}")
 
-    # 6. Create the LEAN_RIG Empties hierarchy
-    hero_root = create_empty_pivot("HeroRoot", None, 0.0, 0.0, 0.0)
-    torso = create_empty_pivot("Torso", hero_root, 0.0, 1.24, 0.0)
-    head_grp = create_empty_pivot("HeadGroup", hero_root, 0.0, 1.86, 0.0)
+    # 7. The ten clips on the bones
+    build_all_animations(rig)
 
-    left_arm = create_empty_pivot("LeftArmPivot", hero_root, -0.28, 1.50, 0.0)
-    right_arm = create_empty_pivot("RightArmPivot", hero_root, 0.28, 1.50, 0.0)
-
-    left_elbow = create_empty_pivot("LeftElbowPivot", left_arm, 0.0, -0.26, 0.0)
-    right_elbow = create_empty_pivot("RightElbowPivot", right_arm, 0.0, -0.26, 0.0)
-
-    left_leg = create_empty_pivot("LeftLegPivot", hero_root, -0.11, 0.90, 0.0)
-    right_leg = create_empty_pivot("RightLegPivot", hero_root, 0.11, 0.90, 0.0)
-
-    left_knee = create_empty_pivot("LeftKneePivot", left_leg, 0.0, -0.38, 0.0)
-    right_knee = create_empty_pivot("RightKneePivot", right_leg, 0.0, -0.38, 0.0)
-
-    # 7. Parent all meshes to their exact pivots
-    parent_to_pivot(head_obj, head_grp, "head", no_outline=True)
-    parent_to_pivot(hair_obj, head_grp, "hair", no_outline=True)
-    parent_to_pivot(eyes_obj, head_grp, "eye", no_outline=True)
-
-    parent_to_pivot(undershirt_obj, torso, "inner-tunic")
-    parent_to_pivot(torso_coat, torso, "chest")
-    parent_to_pivot(belt_obj, torso, "belt")
-
-    parent_to_pivot(sleeve_l, left_arm, "deltoid")
-    parent_to_pivot(sleeve_r, right_arm, "deltoid")
-
-    parent_to_pivot(bracer_l, left_elbow, "bracer", no_outline=True)
-    parent_to_pivot(bracer_r, right_elbow, "bracer", no_outline=True)
-
-    parent_to_pivot(hand_l, left_elbow, "hand", no_outline=True)
-    parent_to_pivot(hand_r, right_elbow, "hand", no_outline=True)
-
-    parent_to_pivot(thigh_l, left_leg, "thigh")
-    parent_to_pivot(thigh_r, right_leg, "thigh")
-
-    parent_to_pivot(shin_l, left_knee, "shin")
-    parent_to_pivot(shin_r, right_knee, "shin")
-
-    parent_to_pivot(boot_l, left_knee, "boot")
-    parent_to_pivot(boot_r, right_knee, "boot")
-
-    pivots = {
-        "Torso": torso,
-        "HeadGroup": head_grp,
-        "LeftArmPivot": left_arm,
-        "RightArmPivot": right_arm,
-        "LeftElbowPivot": left_elbow,
-        "RightElbowPivot": right_elbow,
-        "LeftLegPivot": left_leg,
-        "RightLegPivot": right_leg,
-        "LeftKneePivot": left_knee,
-        "RightKneePivot": right_knee,
-    }
-
-    # 8. Build all 10 animations
-    build_all_animations(pivots)
-
-    # 9. Pack textures into blend file
-    try:
-        bpy.ops.file.pack_all()
-    except Exception as e:
-        print('pack_all warning:', e)
-
-    # 10. Save blend and export GLB
+    # 8. Save blend and export GLB (rotation-only clips plus Hips, skins, no UVs: design 6.1, 6.3)
     blend_path = paths.blend_path("hero")
     glb_path = paths.glb_path("hero")
-
-    bpy.ops.wm.save_as_mainfile(filepath=paths.blend_path("hero"))
-
-    bpy.ops.export_scene.gltf(
-        filepath=paths.glb_path("hero"),
-        export_format="GLB",
-        export_yup=True,
-        export_apply=True,
-        export_animations=True,
-        export_animation_mode="NLA_TRACKS",
-        export_extras=True,
-    )
-    print(f"[BlenderHero] Exported authentic Kai RPG character to {blend_path} and {glb_path}")
+    bpy.ops.wm.save_as_mainfile(filepath=blend_path)
+    # One animation per action: in NLA_TRACKS mode the exporter bakes, cannot tell a keyed channel from an
+    # unkeyed one, and drops every channel that holds one value through a clip (Slash's left elbow, legs and
+    # knees), so those bones would fall back to their rest pose in the game.
+    figkit.export_glb(glb_path, export_animation_mode="ACTIONS")
+    print(f"[BlenderHero] Exported the skinned Kai RPG character to {blend_path} and {glb_path}")
 
 
 if __name__ == '__main__':
