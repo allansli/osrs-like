@@ -498,7 +498,7 @@ Built with `BLEND(monsters)` on Blender 5.0.1 from `dda126c` plus this task's bu
 
 ## Open for the main session
 
-1. **Two quivers.** The bare name `Hips` is K1's (item 2 of K1's list), and a kit cannot hide the ranger's own hip quiver. So the bramble quiver rides `Torso` and sits on the back, from the left hip to over the right shoulder, and the marksman shows both quivers. From the front the hip quiver is mostly behind the cloak's edge (`k2-marksman-against.jpg`, top row). This is for the owner at OM-S6, as K1's three-point sting was.
+1. **Two quivers.** The bare name `Hips` is K1's (item 2 of K1's list), and a kit cannot hide the ranger's own hip quiver. So the bramble quiver rides `Torso` and sits on the back, from the left hip to over the right shoulder, and the marksman shows both quivers. Both show in `k2-marksman-against.jpg`. This is for the owner at OM-S6, as K1's three-point sting was.
 2. **K1's kit code is shared, not copied.** The join, name, joint-offset, paint and budget loop of `build_saltback_stalker_kit` is now `_kit_root(key, parts, j, budget)`, called by both kits. `Kit_saltback_stalker`'s primitive hashes are identical to K1's build (below).
 3. **Not checked in a clip.** K2's Accept has no CAPTURE, and none was taken. Two things are worth a look in the K4 capture, while the `Ranged` clip plays:
    - the right hand drawing back near the quiver's mouth over the right shoulder;
@@ -521,7 +521,7 @@ Built with `BLEND(monsters)` on Blender 5.0.1 from `dda126c` plus this task's bu
 | Child (bone) | Mesh | What it is |
 |---|---|---|
 | `HeadGroup` | `thornwatch_marksman_HeadGroup` | the wreath: a bramble ring round the hood, 0.05 higher at the brow than behind, and eleven thorns standing up and out of it, 0.20 and 0.13 long in turn. The head's outline becomes a crown of spikes, 0.65 across against the hood's 0.37 |
-| `Torso` | `thornwatch_marksman_Torso` | the quiver: a seven-sided tube 1.17 long, from the left hip to over the right shoulder, standing clear of the cloak. A bramble vine is wound twice round it, five thorns stand on the vine, and five fletchings come out of the mouth, which ends 0.2 above the hood's crown |
+| `Torso` | `thornwatch_marksman_Torso` | the quiver: a seven-sided tube 1.17 long, from the left hip to over the right shoulder, standing clear of the cloak. A bramble vine is wound twice round it, five thorns stand on the vine, and five fletchings come out of the mouth and reach y 2.29, above the hood's peak (about 2.19) |
 | `OffhandPivot` | `thornwatch_marksman_OffhandPivot` | the longbow. It follows the ranger's recurve (`rng_bow`'s points) 0.014 fatter, so the recurve is inside it, and its limbs carry on past each recurve tip, 0.40 higher and 0.26 lower, to a nock on the recurve string's own line. The string runs along that line at radius 0.025 against the recurve string's 0.022, so the old string is inside the new one. 2.09 tall against 1.46 |
 
 - **Additive only.** Every piece goes over the ranger.
@@ -617,6 +617,6 @@ These come from `scratch/k2/kit_render.py` (not committed). It is K1's `kit_rend
 **Reading the cut-outs:**
 - In every view the head is a crown of spikes where the ranger's is a single peaked hood.
 - A tall quiver with fletchings stands over the right shoulder, above the head.
-- The bow runs from the knee to above the head where the ranger's spans the thigh to the shoulder.
+- The bow runs from near the ground (0.10) to above the head (2.20), where the ranger's spans 0.36 to 1.82.
 
 `s6/` holds 1.67 MB of its 2 MB after K2 (108 kB of it K2's).
