@@ -99,6 +99,10 @@ describe('a hostile progress block', () => {
     for (const n of [...Object.values<number>(p.story ?? {}), ...Object.values<number>(p.stats ?? {})]) expect(n).toBeLessThanOrEqual(MAX);
   });
 
+  it('drops every story stage of the hostile block (99, -1 and 1.5 are each out of range or not an integer)', () => {
+    expect(p.story ?? {}).toEqual({});
+  });
+
   it('floors, clamps and drops stats by the table', () => {
     expect(p.stats.bury).toBe(3);
     expect(p.stats.vows).toBe(MAX);
