@@ -63,7 +63,12 @@ describe('kits', () => {
     const bones = bonesOf(key);
     const children = Object.entries(manifest.nodes).filter(([, n]) => n.parent === `Kit_${def.kit}`).map(([name]) => name);
     expect(children.length, `children of Kit_${def.kit}`).toBeGreaterThan(0);
-    for (const child of children) expect(bones.has(child), `${child} names a bone of ${key}`).toBe(true);
+    for (const child of children) {
+      // Plan O-6.1b.6 amendment (declared): every kit child is named <kit>_<Bone>, and <Bone> is a bone of the model
+      expect(child.startsWith(`${def.kit}_`), `${child} carries the ${def.kit}_ prefix`).toBe(true);
+      const bone = child.slice(`${def.kit}_`.length);
+      expect(bones.has(bone), `${child}: ${bone} names a bone of ${key}`).toBe(true);
+    }
   });
 
   it('the two variant rows name their kits', () => {
