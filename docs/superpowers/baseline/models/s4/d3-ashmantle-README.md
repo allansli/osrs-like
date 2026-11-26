@@ -47,7 +47,17 @@ History: the first build painted the feet and struts at 13% on the skin; the fir
 
 Design 5.6 item 2 (value, at least 15 points from the dragon's) holds for every part and for the whole figure in all three views; the smallest gap is the feet in view c, 21.6. The feet samples are small (about 45 dragon pixels and 100 Ashmantle pixels a view, since grass covers most of the feet).
 
-**The earlier readings.** The first repair stood the dragon 13 units along x, which puts it beyond a crest, partly hidden by the ground and grass (its script was not kept). Rerun here in that placement with a key pass that leaves the world out, the dragon's hidden pixels take the ground's values (its feet read 97). That is the likely source of the dragon's "backlit" membrane at 20.8 in view a and of the whole figure's 9.4. With each figure on the same spot and the world drawn black in the key, the dragon's membrane reads 56 to 62 in every view. The README's earlier 10-point figure (first build) was not like for like either.
+**Side by side.** The first repair stood the dragon 13 units along x and read the dragon's membrane at 20.8 and the whole figure at 9.4 points in view a. Its script was not kept. That placement was measured again here with this method (world black in the key), both figures shown, the camera centred once on the midpoint and once on Ashmantle:
+
+| Part | Centre on the midpoint, a / b / c (gap) | Centre on Ashmantle, a / b / c (gap) |
+|---|---|---|
+| Body | 38.1 / 34.9 / 35.7 | 36.9 / 37.6 / 35.3 |
+| Wing wrists and struts | 27.9 / 29.8 / 28.6 | 25.5 / 28.6 / 26.7 |
+| Membrane (off / on the struts' bones) | 35.3, 38.8 / 34.9, 38.8 / 35.7, 39.2 | 34.9, 39.2 / 35.3, 38.8 / 35.7, 39.2 |
+| Crust against horn | 30.2 / 30.9 / 29.0 | 29.8 / 30.1 / 28.3 |
+| Whole figure without glow | 34.9 / 35.3 / 35.2 | 35.3 / 35.3 / 35.6 |
+
+In that placement the dragon's feet are behind the crest and the grass (0 to 10 pixels), so the feet are read only on the same spot (above). The dragon's membrane reads 56 to 62 in every view of both setups; the earlier 20.8 and 9.4 were not reproduced, and their cause is not known. A rerun of that placement with a key pass that leaves the world out gave the dragon's hidden pixels the ground's values (its feet read 97), so the earlier method's key pass cannot be trusted where the dragon is partly hidden. The README's earlier 10-point figure (first build) was not like for like either.
 
 `d3-ashmantle-values.jpg` is view b of this measurement: Ashmantle (left) and the dragon (right), each on Ashmantle's spot.
 
