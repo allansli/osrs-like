@@ -197,7 +197,7 @@ flock /tmp/claude-blender.lock timeout 600 /usr/bin/blender --background --facto
 
 # MK2: the Slag Brute kit on the hill giant
 
-Built from `8a2a21f` plus this task's builder (commit `feat(models-s6c): MK2`), with `BLEND(monsters)` on Blender 5.0.1:
+Built from `8a2a21f` plus this task's builder (commits `feat(models-s6c): MK2` and `feat(models-s6c): MK2 fix`), with `BLEND(monsters)` on Blender 5.0.1:
 
 ```
 flock /tmp/claude-blender.lock timeout 600 env BLENDER_PATH=/usr/bin/blender node scripts/run-blender.mjs monsters --out scratch/models-build/mk2
@@ -211,16 +211,17 @@ Nothing is promoted: `git status --short public/models blender` prints nothing. 
 
 1. **The cracks are paint, not glow, and the row's tint will darken them.** The engine multiplies every non-glow material by the row's `tint`, kit pieces included (`blenderMonsters.ts` 189-190). The content file's `tintNote` is "dark basalt skin, orange cracks", but the row has no hex value yet. Under a dark basalt tint, the ember paint `0xBC5C28` turns brown.
    - A crack that keeps its orange needs a piece on `mat_glow_orange`. That piece needs a bone of its own, because `_kit_root` allows one material per piece. It would be a fifth mesh, over the kit ceiling of 4 (final.md item 6).
-   - The two exits are for the owner:
-     - D4 picks a light tint, or one that touches only the skin;
-     - the maul's ember goes on a glow piece in place of one pauldron's mesh (both pauldrons would then share one bone, which the Overhead Slam rules out), or the ceiling is raised.
+   - The owner picks one of two options:
+     - a fifth mesh: the kit ceiling is raised for this kit, and the cracks (or the maul's seams alone) go on a glow piece on a bone of their own;
+     - painted cracks under whatever tint D4 picks: the lighter the tint, the more orange is left.
+   - The loader multiplies every non-glow mesh of the figure by one colour, so no tint can touch the giant's skin and leave the kit alone. That would take a declared loader change.
    - The sheets are untinted, as MK1's are.
 2. **No emissive on the figure.** The giant has none, and the kit adds none, so design 5.4's "at most one" holds with nothing to spare. MK1's OM-S6c question does not arise here.
 3. **The pauldrons ride the arms, not the trunk.** Each one is centred on its arm's joint, so the Overhead Slam turns it round the shoulder ball and does not drive the raised arm through a plate fixed to the trunk. In the worst pose (`mk2-brute-worst-pose.jpg`), the raised right pauldron tips toward the neck and stays on the shoulder.
 4. **Room left for MK3.** Nothing of the brute stands above the skull: the kit's top is the back knob at y 2.07, and the giant's head reaches 2.36. The 85 px read is low and wide: the pauldrons, the back's hump and the maul block. MK3's crown and banner pole above the head therefore have the vertical silhouette to themselves.
 5. **Not seen in the engine.** MK2's accept has no capture, and none was taken. MP6's capture should look at two things:
    - the outline pass on the lames' inner shells;
-   - the maul against the ground in `Walk` (the kit's lowest point is y 0.017 at rest).
+   - the maul against the ground in `Walk` (the kit's lowest point is y 0.011 at rest).
 
 ## What was built
 
@@ -229,13 +230,17 @@ Nothing is promoted: `git status --short public/models blender` prints nothing. 
 | Child (bone) | What it is |
 |---|---|
 | `slag_brute_LeftArmPivot`, `slag_brute_RightArmPivot` | a pauldron of three lames of a dome round the shoulder ball, which has radius 0.20 at the arm's joint. The lames have radii 0.27, 0.29 and 0.31 and cover polar bands 0 to 0.62, 0.52 to 1.02 and 0.93 to 1.42 rad. Each overlaps the one above it. The dome's axis is tilted 0.55 rad out from the vertical. Each lame is eight-sided with its vertices knocked up to 0.012, a shell 0.035 thick with rims. Ember goes on the rims and inner faces, which show in the step between two lames |
-| `slag_brute_Torso` | six chamfered slabs, shingled over the upper back. A top row 0.66 wide behind the neck (y 1.88), two pairs below it (y 1.68 and 1.46) turned round the back, and one 0.48 wide at y 1.26. Each slab's face is turned to the back's slope and stands off it (z 0.12 to 0.58). Three blunt five-sided knobs lean back on the upper rows. Ember goes on the slabs' undersides and their chamfers, which show between a slab and the one below |
-| `slag_brute_WeaponPivot` | three chamfered slabs stacked along the club's axis at 0.33, 0.46 and 0.595 of it. They are 0.52 to 0.60 across and 0.64 to 0.76 fore and aft, with the lowest the shortest. Each is turned 0.05 to 0.12 rad about the axis so the edges stagger, and its corners are knocked up to 0.03. The club's head, its two straps and its six spikes (out to 0.28 from the axis between 0.45 and 0.60 of it) sit inside. Ember goes on the seams between the slabs; the top slab's upper face, where the handle goes in, stays crust |
+| `slag_brute_Torso` | six chamfered slabs, shingled over the upper back. A top row 0.66 wide behind the neck (y 1.88), two pairs below it (y 1.68 and 1.46) turned round the back, and one 0.48 wide at y 1.26. Each slab's face is turned to the back's slope and lies on it (the back's skin is at z 0.22 to 0.27 between y 1.4 and 1.7; the kit's back reaches z 0.51). Three blunt five-sided knobs lean back on the upper rows. Ember goes on the slabs' undersides and their chamfers, which show between a slab and the one below |
+| `slag_brute_WeaponPivot` | three chamfered slabs stacked along the club's axis at 0.33, 0.46 and 0.595 of it. They are 0.52 to 0.64 across, with the lowest the widest, over the spikes' tips, and 0.64 to 0.76 fore and aft, with the lowest the shortest. Each is turned 0.05 to 0.12 rad about the axis so the edges stagger, and its corners are knocked up to 0.03. The club's head, its two straps and its six spikes (out to 0.28 from the axis between 0.45 and 0.60 of it) sit inside, as measured below. Ember goes only on the seams between the slabs. The top slab's upper face, where the handle goes in, stays crust, and so does the lowest slab's end face, which faces the camera in the Overhead Slam |
 
 - **One material.** Every piece is on `mat_bone_hill_giant_paint`, the giant's own plain material, so the colours are painted as they are with no tile mean. The file stays at 34 materials. Every kit primitive carries `COLOR_0`, and the manifest lists `Kit_slag_brute` as its own `all` unit. UV layers are dropped.
 - **Faceted.** Every piece is flat-shaded, with `_goblin_tint`'s plane tones on the basalt and the crust.
-- **A builder fix found on the first sheets.** The slabs at first rendered with their ember on top. `_slag_chunk` moved the cube's vertices and left stale face normals, and `finalize_obj`'s `recalc_face_normals` then turned the boxes inside out. `bm.normal_update()` before `finalize_obj` fixes this. Measured on the built file, 119 of the maul's 132 triangles now face away from its centre, against 13 before. The ember-coloured corners have a mean normal y of −0.71 on the back slabs, so they are undersides.
+- **A builder fix found on the first sheets.** The slabs at first rendered with their ember on top. `_slag_chunk` moved the cube's vertices and left stale face normals, and `finalize_obj`'s `recalc_face_normals` then turned the boxes inside out. `bm.normal_update()` before `finalize_obj` fixes this. Measured on the built file, 118 of the maul's 132 triangles now face away from its centre, against 13 before. The ember-coloured corners have a mean normal y of −0.71 on the back slabs, so they are undersides.
 - **Budget**: 934 of the 1,200 triangles allowed, 4 meshes, 1 material. The builder stops over 1,200.
+- **The fix round (`MK2 fix`).** It made three changes:
+  - **Spikes inside the maul.** `scratch/mk2/inside.mjs` tests every vertex of the giant's club and of its bone mesh past 0.25 of the club's axis against the three slabs, from the builder's numbers with the chamfer and without the jitter. It found 25 of 967 outside in the first build: the tip of the spike that points along the slab's width at 0.60 of the axis, 0.28 out, against the lowest slab's 0.27. That slab is now 0.64 across, and 0 of 967 are outside.
+  - **No ember square in the Slam.** The lowest slab's end face was ember, and the Slam turns it to the camera. Ember now goes only on the seams.
+  - **Plates on the back.** The back's middle and lower rows and their two knobs stood about 0.1 off the back, with ember showing in the gap from the side. They are 0.07 further in.
 
 ## Values
 
@@ -265,9 +270,9 @@ The checks are design 5.4 and 5.6, measured as MK1's are: Rec. 601 luma and HSV 
 | | As exported | Packed |
 |---|---|---|
 | Kit triangles / meshes / materials | 934 / 4 / 1 | same |
-| Kit raw bytes | 61,540 | 40,564 |
-| Kit Brotli bytes | 18,598 | 14,618 |
-| File raw / Brotli | 3,816,680 / 1,543,707 | 2,334,248 / 949,294 |
+| Kit raw bytes | 61,572 | 40,584 |
+| Kit Brotli bytes | 18,600 | 14,635 |
+| File raw / Brotli | 3,816,712 / 1,544,224 | 2,334,268 / 949,695 |
 | File meshes / materials / triangles | 54 / 34 / 61,044 | same |
 
 The packed kit is 14.6 kB against the 20 kB kit ceiling.
@@ -278,8 +283,8 @@ World bounds of the pieces at rest (figure space, from the placement test below)
 |---|---|---|---|
 | Left pauldron | −0.89 to −0.35 | 1.46 to 1.87 | −0.33 to 0.29 |
 | Right pauldron | 0.34 to 0.90 | 1.45 to 1.88 | −0.34 to 0.28 |
-| Back | −0.44 to 0.43 | 1.14 to 2.07 | 0.12 to 0.58 |
-| Maul head | 0.70 to 1.38 | 0.017 to 0.54 | −0.64 to 0.18 |
+| Back | −0.44 to 0.43 | 1.14 to 2.07 | 0.12 to 0.51 |
+| Maul head | 0.68 to 1.42 | 0.011 to 0.54 | −0.64 to 0.18 |
 
 **Untouched figures**: compared with MK1's build (`scratch/models-build/mk1b`, the same builder without this task), the primitive hashes of all 14 roots are identical: every `Monster_` figure, `hill_giant` among them, and the three other kits. Only `slag_brute` is new.
 
@@ -289,11 +294,11 @@ World bounds of the pieces at rest (figure space, from the placement test below)
 - `nodes`: `Kit_slag_brute` (no parent) and `slag_brute_Torso`, `_LeftArmPivot`, `_RightArmPivot` and `_WeaponPivot` (parent `Kit_slag_brute`). Each child's bare name is asserted to be a `hill_giant_` bone. All are at translation 0 and scale 1.
 - `meshClasses`: `^slag_brute_(Torso|LeftArmPivot|RightArmPivot|WeaponPivot)$`.
 - `vertexColor.figures.Kit_slag_brute`: `all`.
-- `figures.Kit_slag_brute`: 1,200 triangles, 4 meshes, 3 materials, raw 40,564 (packed), Brotli 20,000. These are the kit row of final.md item 6, as for MK1.
+- `figures.Kit_slag_brute`: 1,200 triangles, 4 meshes, 3 materials, raw 40,584 (packed), Brotli 20,000. These are the kit row of final.md item 6, as for MK1.
 - File `budget`: only the ceilings the packed build exceeds rise, to `buildManifest`'s numbers for it:
   - triangles from 60,110 to 61,044;
   - meshes from 50 to 54;
-  - raw bytes from 2,312,929 to 2,357,591.
+  - raw bytes from 2,312,929 to 2,357,611.
 
   Brotli stays 1,270,000 and materials stay 34.
 
@@ -301,12 +306,12 @@ No figure's ceiling moved. The materials and the clips are asserted unchanged.
 
 | COMPARE | Exit | Result |
 |---|---|---|
-| This build, packed (`node scripts/models-compare.mjs scratch/models-build/mk2-packed/monsters.glb public/models/monsters.glb`), against the pending manifest | **0** | Contract and Budget pass. Drift lists MK1's renamed and new kit nodes, and also lists the following:<ul><li>the five new `slag_brute` nodes and four meshes;</li><li>`goblin_body` and `goblin_archer_body` changing bytes, as in MK1's base build;</li><li>file triangles 59,274 to 61,044 and Brotli 920,877 to 949,294.</li></ul> |
+| This build, packed (`node scripts/models-compare.mjs scratch/models-build/mk2-packed/monsters.glb public/models/monsters.glb`), against the pending manifest | **0** | Contract and Budget pass. Drift lists MK1's renamed and new kit nodes, and also lists the following:<ul><li>the five new `slag_brute` nodes and four meshes;</li><li>`goblin_body` and `goblin_archer_body` changing bytes, as in MK1's base build;</li><li>file triangles 59,274 to 61,044 and Brotli 920,877 to 949,695.</li></ul> |
 | This build, as exported | 2 | Budget only (26 lines), on the packed ceilings, as for MK1, K1 and K2. Contract passes |
 
 ## Checks
 
-**On the branch at the builder commit:**
+**On the branch at the fix commit:**
 
 | Check | Command | Result |
 |---|---|---|
@@ -316,19 +321,22 @@ No figure's ceiling moved. The materials and the clips are asserted unchanged.
 | `BUILD` | `flock /tmp/claude-capped.lock scripts/capped.sh npm run build` | exit 0. JS chunk 1,097.21 kB (gzip 311.09 kB), CSS 37.73 kB, reported and not a ceiling |
 | `UNTOUCHED` | `git status --short public/models blender` | prints nothing |
 
-**Built-file check (`monster-motion`).** Unlike MK1, the packed build was not copied over `public/models/monsters.glb`. Two scratch tests read it from `scratch/models-build/mk2-packed/monsters.glb` and the shipped `hero.glb`; they were placed under `tests/` for the run and deleted afterwards:
+**Built-file check (`monster-motion`).** Unlike MK1, the packed build was not copied over `public/models/monsters.glb`: that copy was refused, since this lane never writes `public/models` before MP6. Three scratch tests read the build from `scratch/models-build/mk2-packed/monsters.glb`, with the shipped `hero.glb`. They were placed under `tests/` for the run and deleted afterwards:
 - `scratch/mk2/motion-built.test.ts`: `tests/monster-motion.test.ts` with only its `monsters` load pointed at the built file;
+- `scratch/mk2/libraries-built.test.ts`: `tests/monster-libraries.test.ts`, the same way;
 - `scratch/mk2/kit-engine.test.ts`: MK1's placement test for the giant.
+
+`tests/monster-kits.test.ts` reads no model file. It runs as it is.
 
 The command:
 
 ```
-flock /tmp/claude-capped.lock scripts/capped.sh npx vitest run tests/mk2-motion-built.test.ts tests/mk2-kit-engine.test.ts tests/monster-libraries.test.ts tests/monster-kits.test.ts
+flock /tmp/claude-capped.lock scripts/capped.sh npx vitest run tests/mk2-motion-built.test.ts tests/mk2-kit-engine.test.ts tests/mk2-libraries-built.test.ts tests/monster-kits.test.ts
 ```
 
 The result: exit 0, 4 files, 46 passed, 3 skipped.
 - `monster-motion` on the built file: 38 passed and 3 skipped. The giant's row plays the biped library from the built file.
-- `monster-libraries`: 2 passed.
+- `monster-libraries` on the built file: 2 passed.
 - `monster-kits`: 6 passed.
 - The placement test: 3 passed. It loads the built file through `GLTFLoader` and `upgradeMonsterRigWithGltf` on the `hill_giant` row with `kit: 'slag_brute'`, moves each `slag_brute_<Bone>` piece under `<Bone>` (MP6's rule, by hand), and checks these points:
   - all four pieces find their bone, through `getObjectByName` and `PropertyBinding.findNode`;
@@ -351,9 +359,9 @@ flock /tmp/claude-blender.lock timeout 600 /usr/bin/blender --background --facto
 
 | Sheet | What it shows |
 |---|---|
-| `mk2-brute-turnaround.jpg` | the brute in `review_render`'s turnaround: front three-quarter, side and back three-quarter, 512 px, 432 px tall |
+| `mk2-brute-turnaround.jpg` | the brute in `review_render`'s turnaround: front three-quarter, side and back three-quarter, 512 px, 426 px tall |
 | `mk2-brute-worst-pose.jpg` | the brute in `review_render`'s worst pose: crouch, right arm overhead, trunk twisted, head turned. The maul is raised like a sledge, the right pauldron turns with the arm round the shoulder, and the back plates stay on the twisted trunk |
-| `mk2-brute-silhouette.jpg` | **the 85 px silhouette sheet**: black cut-outs at distance 26 in a 1080 frame, in pairs of giant then brute, from the front, three-quarter, side and back. The giant is at its catalog `scale` 1.55, and the brute at 1.736 (× `modelScale` 1.12). Heights in px: front 162 and 183, three-quarter 172 and 197, side 177 and 206, back 161 and 180 |
+| `mk2-brute-silhouette.jpg` | **the 85 px silhouette sheet**: black cut-outs at distance 26 in a 1080 frame, in pairs of giant then brute, from the front, three-quarter, side and back. The giant is at its catalog `scale` 1.55, and the brute at 1.736 (× `modelScale` 1.12). Heights in px: front 162 and 183, three-quarter 172 and 196, side 177 and 206, back 161 and 180 |
 | `mk2-brute-against.jpg` | lit and untinted, the giant then the brute, at three-quarter, side and back three-quarter |
 
 **Reading the cut-outs:**
@@ -364,6 +372,7 @@ flock /tmp/claude-blender.lock timeout 600 /usr/bin/blender --background --facto
 
 **Reading the lit sheets (side and back judged too):**
 - From the front, two dark plated pauldrons with ember lines between the lames. The face, beard and skull buckle are the giant's.
-- From the side, the hump of dark slabs stands behind the back, and the maul is a block of three dark slabs with glowing seams.
+- From the side, the hump of dark slabs lies on the back, and the maul is a block of three dark slabs with ember seams.
 - From the back, the shingled slabs cover the upper back between the shoulder blades. The top of the hump is basalt, and the ember shows only under each slab's edge.
 - Nothing intersects visibly in the rest views. The hump stands clear of the back of the skull (z 0.14 at most against the plates' 0.30 at y 1.88).
+- In the worst pose, the raised maul's top end is crust, with ember only on its two seams.
