@@ -846,3 +846,8 @@ Three lanes ran in their own worktrees. **Gear** (G2, G2b) and **engine** (Q1, B
 - **Change**: the hair a carved mass of a few large swept spikes that keep today's silhouette (read against `before-hero-turnaround.jpg` and the head-close sheet's top row), each spike a chosen plane, no strand thinner than design 5.3's 0.044; irises in today's blue with a dark pupil, on the rigid `Eyes` mesh; the face's skin warmer, with plane tones like the goblin's (S2c) on cheek, brow, nose and jaw; ears that read at 8.5. Triangle and byte ceilings as H3b's.
 - **Accept**: BG; the H3b sheets re-rendered with today's hero beside the new one; the README's pattern updated.
 
+
+### H7 amendments (2026-11-26, main session, from H7's verification)
+
+- **H7 also edits** `tests/model-cache-key.test.ts` (the hero's `?v=` key), `tests/model-contract.test.ts` (pivots checked as `skin.bones`, centres Boots/Hands/Head, eleven clips, the hero's `vertexColors` true with the hitbox excluded, the hero dropped from LEGACY), `tests/model-vertex-colour.test.ts` (the hero's materials have `vertexColors` true) and `tests/fixtures/model-contract/totals.json` (by its rule). Same kind of promote follow-through as the S2 amendments' S4 list; declared, no assertion weakened.
+- **Sheets at most 2 MB** is met by cutting `s2/` to 1,992,398 bytes of JPEG: the H3a to H3c sheets and the two H5b play-distance sheets leave the tree and stay in history (`s2/README.md`, "Sheets cut").
