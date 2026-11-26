@@ -47,7 +47,7 @@ export function buildColouredMonster(key: string): Doc {
     return json.accessors.push({ bufferView: json.bufferViews.length - 1, componentType, count, type }) - 1;
   };
   const torso = json.nodes.findIndex((n) => n.name === 'Torso');
-  const t = json.nodes[torso].translation ?? [0, 0, 0];
+  const t = json.nodes[torso].translation!;
   const joints = accessor(new Uint8Array(12), 5121, 'VEC4', 3);
   const weights = accessor(new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0]), 5126, 'VEC4', 3);
   const ibm = accessor(new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, -t[0], -t[1], -t[2], 1]), 5126, 'MAT4', 1);
