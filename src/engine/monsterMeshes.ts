@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { REACTION_WINDOW } from '../data/attacks';
 import { MONSTER_MOTION } from '../data/monsterPoses';
 import type { MonsterDef } from '../data/world';
 import { getTerrainHeight } from '../state/terrain';
@@ -800,34 +801,37 @@ const windupPosed = new WeakSet<object>();
 // toppled on the frame the rules timer ends (timeLeft <= dt), whatever stop it went through.
 const dyingProgress = new WeakMap<object, number>();
 const dyingStarted = new WeakSet<object>();
+const clipAction = (animator: BlenderHeroAnimator, name: string): THREE.AnimationAction => {
+  const action = animator.actions.get(name as HeroClipName);
+  if (!action) throw new Error(`monster animator has no clip ${name}`);
+  return action;
+};
+// Walk time scale: the monster's measured speed over the hero's run speed (design 6.5); the leg ratio is in the animator.
+const lastPos = new WeakMap<object, { x: number; z: number }>();
+const _flinchAxis = new THREE.Vector3(1, 0, 0);
+const _flinchQ = new THREE.Quaternion();
 
 export function poseMonsterDying(m: MonsterEntity, timeLeft: number, dt: number): void {
-  const model = m.def?.model ?? m.typeKey;
-  const motionRow = MONSTER_MOTION[model];
-  const animator = (m as any).animator as BlenderHeroAnimator | undefined;
+  const motionRow = MONSTER_MOTION[m.modelKey ?? m.typeKey];
+  const animator = m.animator;
 
-  if (motionRow?.clips?.death && animator) {
-    const deathAction = animator.actions.get(motionRow.clips.death as HeroClipName);
-    if (deathAction) {
-      m.rig.group.rotation.x = 0;
-      m.rig.group.position.y = getTerrainHeight(m.pos.x, m.pos.z);
-      if (!dyingStarted.has(m)) {
-        dyingStarted.add(m);
-        deathAction.reset();
-        deathAction.setLoop(THREE.LoopOnce, 1);
-        deathAction.clampWhenFinished = true;
-        deathAction.setEffectiveWeight(1.0);
-        deathAction.setEffectiveTimeScale(deathAction.getClip().duration / DYING_SECS);
-        deathAction.play();
-        const idle = animator.actions.get('Idle');
-        if (idle) idle.setEffectiveWeight(0);
-        const walk = animator.actions.get('Walk');
-        if (walk) walk.setEffectiveWeight(0);
-      }
-      const animDt = isHitStopped(m) ? 0 : dt;
-      animator.mixer.update(animDt);
-      return;
+  if (motionRow?.clips && animator) {
+    const deathAction = clipAction(animator, motionRow.clips.death);
+    m.rig.group.rotation.x = 0;
+    m.rig.group.position.y = getTerrainHeight(m.pos.x, m.pos.z);
+    if (!dyingStarted.has(m)) {
+      dyingStarted.add(m);
+      deathAction.reset();
+      deathAction.setLoop(THREE.LoopOnce, 1);
+      deathAction.clampWhenFinished = true;
+      deathAction.setEffectiveWeight(1.0);
+      deathAction.setEffectiveTimeScale(deathAction.getClip().duration / DYING_SECS);
+      deathAction.play();
+      clipAction(animator, motionRow.clips.idle).setEffectiveWeight(0);
+      clipAction(animator, motionRow.clips.walk).setEffectiveWeight(0);
     }
+    animator.mixer.update(isHitStopped(m) ? 0 : dt);
+    return;
   }
 
   const prev = dyingProgress.get(m) ?? 0;
@@ -845,41 +849,29 @@ export function poseMonsterLimbs(m: MonsterEntity, moving: boolean, now: number,
   const groundY = getTerrainHeight(m.pos.x, m.pos.z);
   // Hit stop freezes the pose time of the flinch and the attack swing (design 6.5).
   const animDt = isHitStopped(m) ? 0 : dt;
-  const model = m.def?.model ?? m.typeKey;
+  const model = m.modelKey ?? m.typeKey;
   const motionRow = MONSTER_MOTION[model];
-  const animator = (m as any).animator as BlenderHeroAnimator | undefined;
+  const animator = m.animator;
 
   if (motionRow?.clips && animator) {
+    const clips = motionRow.clips;
+    const prev = lastPos.get(m);
+    if (prev && animDt > 0) {
+      animator.setWalkSpeed(Math.hypot(m.pos.x - prev.x, m.pos.z - prev.z) / animDt / REACTION_WINDOW.heroRunSpeed);
+    }
+    lastPos.set(m, { x: m.pos.x, z: m.pos.z });
     animator.setMoving(moving);
 
-    const attackClipName = motionRow.clips.attack as HeroClipName;
-    const attackAction = animator.actions.get(attackClipName);
-    const anticipation = motionRow.anticipation ?? 0.25;
-
+    const attackClip = clips.attack as HeroClipName;
     if (m.logic.windup) {
       const progress = Math.min(1, Math.max(0, 1 - m.logic.windup.left / m.logic.windup.total));
-      if (attackAction) {
-        if (!attackAction.isRunning()) {
-          attackAction.reset();
-          attackAction.setLoop(THREE.LoopOnce, 1);
-          attackAction.clampWhenFinished = false;
-          attackAction.setEffectiveTimeScale(1.0);
-          attackAction.play();
-        }
-        attackAction.paused = true;
-        attackAction.setEffectiveWeight(1.0);
-        attackAction.time = progress * anticipation;
-        (animator as any).activeOneShot = attackAction;
-      }
+      if (motionRow.anticipation === undefined) throw new Error(`motion row ${model} has clips but no anticipation`);
+      animator.holdOneShot(attackClip, progress * motionRow.anticipation);
       windupPosed.add(m);
-    } else {
-      if (windupPosed.delete(m)) {
-        if (attackAction) {
-          attackAction.paused = false;
-        }
-      } else if (m.attackAnim > 0 && attackAction && !attackAction.isRunning()) {
-        animator.playAction(attackClipName, 1.0);
-      }
+    } else if (windupPosed.delete(m)) {
+      animator.releaseHeld();
+    } else if (m.attackAnim > 0 && !clipAction(animator, attackClip).isRunning()) {
+      animator.playAction(attackClip, 1.0);
     }
 
     if (m.attackAnim > 0) {
@@ -894,15 +886,9 @@ export function poseMonsterLimbs(m: MonsterEntity, moving: boolean, now: number,
       rig.group.position.y = groundY + curve * 0.16;
       rig.group.rotation.x = curve * 0.24;
       if (curve > 0) {
-        const qHead = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -curve * 0.36);
-        const qRight = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), curve * 0.45);
-        const qLeft = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), curve * 0.35);
-        const headBone = rig.headGroup ?? rig.group.getObjectByName('HeadGroup');
-        const rightArm = rig.rightArmPivot ?? rig.group.getObjectByName('RightArmPivot');
-        const leftArm = rig.leftArmPivot ?? rig.group.getObjectByName('LeftArmPivot');
-        if (headBone) headBone.quaternion.multiply(qHead);
-        if (rightArm) rightArm.quaternion.multiply(qRight);
-        if (leftArm) leftArm.quaternion.multiply(qLeft);
+        rig.headGroup!.quaternion.multiply(_flinchQ.setFromAxisAngle(_flinchAxis, -curve * 0.36));
+        rig.rightArmPivot!.quaternion.multiply(_flinchQ.setFromAxisAngle(_flinchAxis, curve * 0.45));
+        rig.leftArmPivot!.quaternion.multiply(_flinchQ.setFromAxisAngle(_flinchAxis, curve * 0.35));
       }
     } else {
       rig.group.rotation.x = 0;

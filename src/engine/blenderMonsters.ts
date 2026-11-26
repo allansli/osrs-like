@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { MONSTER_MOTION } from '../data/monsterPoses';
-import { BlenderHeroAnimator, loadBlenderHeroTemplate } from './blenderHero';
+import { BlenderHeroAnimator } from './blenderHero';
 import { loadGltfOnce } from './gltf';
 import { addCartoonOutline, facetMaterial } from './materials';
 import { cloneFigure, fixCullSpheres, hasSkin, stripBonePrefix, stripClipPrefix } from './skinned';
@@ -221,23 +221,9 @@ export function upgradeMonsterRigWithGltf(
 
   const motionRow = MONSTER_MOTION[modelKey];
   if (motionRow?.clips) {
-    if (heroGltf) {
-      cachedHeroGltf = heroGltf;
-    }
-    const heroSource = heroGltf ?? cachedHeroGltf;
     if (motionRow.skeleton === 'biped') {
-      if (heroSource) {
-        attachBipedAnimator(mObj, modelKey, heroSource);
-      } else if (typeof window !== 'undefined') {
-        loadBlenderHeroTemplate().then((hGltf) => {
-          if (hGltf) {
-            cachedHeroGltf = hGltf;
-            if (!mObj.animator) {
-              attachBipedAnimator(mObj, modelKey, hGltf);
-            }
-          }
-        });
-      }
+      // A missing hero file leaves the row posed in code (its codeAttack numbers).
+      if (heroGltf) attachBipedAnimator(mObj, modelKey, heroGltf);
     } else {
       attachMonsterGltfAnimator(mObj, modelKey, nodeKey, gltf);
     }
@@ -248,25 +234,21 @@ export function upgradeMonsterRigWithGltf(
 
 interface CachedClips {
   clips: THREE.AnimationClip[];
-  walkSpeedRatio: number;
+  walkLegRatio: number;
 }
 const modelClipsCache = new Map<string, CachedClips>();
-let cachedHeroGltf: GLTF | null = null;
-if (typeof window !== 'undefined') {
-  loadBlenderHeroTemplate().then((g) => {
-    cachedHeroGltf = g;
-  });
-}
 
 function attachBipedAnimator(mObj: MonsterEntityLike, modelKey: string, heroSource: GLTF): void {
   let cached = modelClipsCache.get(modelKey);
   if (!cached) {
     const heroHips = heroSource.scene.getObjectByName('Hips');
-    const heroHipsY = heroHips ? heroHips.position.y : 0.963;
+    if (!heroHips) throw new Error('attachBipedAnimator: the hero file has no Hips bone');
     const monHips = mObj.rig.group.getObjectByName('Hips');
-    const monHipsY = monHips ? monHips.position.y : 0.6936;
+    if (!monHips) throw new Error(`attachBipedAnimator: ${modelKey} has no Hips bone`);
+    const heroHipsY = heroHips.position.y;
+    const monHipsY = monHips.position.y;
     const ratio = monHipsY / heroHipsY;
-    const walkSpeedRatio = heroHipsY / monHipsY;
+    const walkLegRatio = heroHipsY / monHipsY;
 
     const clonedClips: THREE.AnimationClip[] = [];
     for (const clip of heroSource.animations) {
@@ -283,7 +265,7 @@ function attachBipedAnimator(mObj: MonsterEntityLike, modelKey: string, heroSour
       }
       clonedClips.push(cloned);
     }
-    cached = { clips: clonedClips, walkSpeedRatio };
+    cached = { clips: clonedClips, walkLegRatio };
     modelClipsCache.set(modelKey, cached);
   }
 
@@ -298,7 +280,7 @@ function attachBipedAnimator(mObj: MonsterEntityLike, modelKey: string, heroSour
   if (rig.rWing) pivots.rWing = rig.rWing;
 
   const animator = new BlenderHeroAnimator(rig.group, cached.clips, pivots);
-  animator.setWalkSpeed(cached.walkSpeedRatio);
+  animator.setWalkLegRatio(cached.walkLegRatio);
   mObj.animator = animator;
 }
 
@@ -312,7 +294,7 @@ function attachMonsterGltfAnimator(
   if (!cached) {
     const stripped = stripClipPrefix(monstersGltf.animations, nodeKey);
     const clonedClips = stripped.map((c) => c.clone());
-    cached = { clips: clonedClips, walkSpeedRatio: 1.0 };
+    cached = { clips: clonedClips, walkLegRatio: 1.0 };
     modelClipsCache.set(modelKey, cached);
   }
   const rig = mObj.rig;

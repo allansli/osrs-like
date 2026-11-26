@@ -59,7 +59,13 @@ export const MONSTER_MOTION: Record<string, MonsterMotionRow> = {
       attack: 'Slash',
       death: 'Death'
     },
-    anticipation: 0.25
+    anticipation: 0.25,
+    // Today's swing, kept for the frames before the hero file arrives.
+    codeAttack: {
+      rightArmX: -1.55,
+      leftArmX: 0.4,
+      y: 0.25
+    }
   },
   chicken: {
     skeleton: 'biped',

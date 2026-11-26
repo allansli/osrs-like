@@ -15,6 +15,7 @@ import {
 } from './textures';
 import { addCartoonOutline, facetMaterial } from './materials';
 import { createMonsterMesh } from './monsterMeshes';
+import { loadBlenderHeroTemplate } from './blenderHero';
 import { loadBlenderMonstersTemplate, upgradeMonsterRigWithGltf } from './blenderMonsters';
 import { loadBlenderWorldTemplate, upgradeResourceNodeWithGltf } from './blenderWorld';
 import { collectFlashMaterials } from './reactions';
@@ -85,9 +86,9 @@ export function spawnMonster(
   G.scene.add(rig.group);
   G.monstersList.push(mObj);
   collectFlashMaterials(mObj);
-  loadBlenderMonstersTemplate().then((gltf: GLTF | null) => {
+  Promise.all([loadBlenderMonstersTemplate(), loadBlenderHeroTemplate()]).then(([gltf, heroGltf]) => {
     if (!gltf) return;
-    upgradeMonsterRigWithGltf(mObj, gltf);
+    upgradeMonsterRigWithGltf(mObj, gltf, heroGltf ?? undefined);
     collectFlashMaterials(mObj);
   });
 }
