@@ -1,0 +1,11 @@
+{
+ "stats": {
+  "kill:goblin": 12,
+  "gather:iron_ore": 3,
+  "craft:burn_logs": 5,
+  "bury": 2,
+  "vows": 1,
+  "deaths": 4
+ },
+ "bossDownUntil": { "ashmantle": 1800000060000 }
+}
