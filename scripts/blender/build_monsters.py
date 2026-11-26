@@ -11,6 +11,7 @@ Sculpts authentic, high-detail OSRS / RuneScape Dragonwilds stylized monsters:
   8. Monster_moss_guardian    - Moss Guardian forest golem of craggy stone & twisted bark, glowing heart-core, mossy boulder pauldrons & branching antlers
   9. Monster_lesser_demon     - Lesser Demon with V-tapered crimson musculature, ram horns, ribbed bat wings, cloven hooves, spade tail & hellfire cleaver
  10. Monster_elvarg_dragon    - Elvarg the Crag Dragon world boss, a new skinned model on the dragon rig: low heavy-shouldered body, wedge head with a jaw, swept horns, crag plates down the spine, raised wings & spade tail
+ 11. Monster_ashmantle        - Ashmantle the Slag Wyrm, its own skinned body on the dragon rig: heavier chest, slag crown, back plates with glowing seams, clubbed tail
 """
 
 import math
@@ -3629,6 +3630,228 @@ def build_dragon_library(rig, meshes):
 
 
 # =============================================================================
+# 11. Monster_ashmantle (Ashmantle the Slag Wyrm): its own body on the dragon skeleton (plan D3)
+# =============================================================================
+# Design 5.6: a second body on the dragon's bones (ashmantle_<Bone>), at the dragon's joints so the
+# dragon's clips, whose Hips track is absolute, play on it unchanged; it has no clips of its own.
+# What tells it from the dragon: a heavier chest, a slag crown fused to the skull in place of the
+# swept horns, back plates split by glowing seams, a clubbed tail; ash and ember values at least
+# 15 points from the dragon's. The engine multiplies Stage 4's tint into every material but the
+# glow (blenderMonsters.ts), so each paint is the colour wanted in the game over its tile's mean and
+# over the tint.
+ASHMANTLE_TRIANGLES = 9600  # the builder's own budget, under the manifest's 12,000: what the wire ceiling allows
+ASHMANTLE_TINT = 0x8A8580  # Stage 4's tint on the ashmantle row (src/data/world.ts)
+ASHMANTLE_COLOURS = {  # as the game shows them, value against the dragon's (DRAGON_COLOURS)
+    "hide": 0x34302C,  # charcoal ash, 20% (dragon 38%)
+    "hide_dark": 0x221F1C,  # feet and wing struts, 13% (dragon 29%)
+    "membrane": 0x3A2A24,  # 23% (dragon 50%)
+    "belly": 0x5A534B,  # ash grey, 35% (dragon 62%)
+    "crust": 0x7A756E,  # crown, plates, club and claws, pale cooled slag, 48% (dragon's horn 72%)
+}
+ASHMANTLE_HEAVY = {  # three-space node of the dragon's stick graph -> radius factor: the heavier chest and neck base
+    (0.0, 1.27, -0.40): 1.28,  # chest
+    (0.0, 1.48, -0.92): 1.26,  # withers
+    (0.0, 1.16, 0.30): 1.06,  # waist
+    (0.0, 1.92, -1.20): 1.12,  # neck base
+}
+
+
+def _ashmantle_paint(hex_colour: int, tile: list) -> list:
+    """The paint that shows hex_colour in the game on a mesh the tile and Stage 4's tint multiply."""
+    tint = hex_to_rgba(ASHMANTLE_TINT)
+    paint = [c / (m * t) for c, m, t in zip(hex_to_rgba(hex_colour), tile, tint)]
+    if max(paint) > 1.0 / (1.0 + GOBLIN_PLANE_TONE[1]):
+        raise ValueError(f"ashmantle: colour {hex_colour:#08x} over its tile and the tint is too light to paint: {paint}")
+    return paint
+
+
+def _ashmantle_body_graph(j: dict) -> tuple[list, list, list, list, list]:
+    """The dragon's stick graph with the chest, withers and neck base thickened and a deep brisket under the chest."""
+    pts, edges, radii, keep, _ = _dragon_body_graph(j)
+    heavy = {Vector(t2b(*p)).freeze(): f for p, f in ASHMANTLE_HEAVY.items()}
+    for i, p in enumerate(pts):
+        f = heavy.get(Vector(p).freeze())
+        if f is not None:
+            radii[i] = radii[i] * f if isinstance(radii[i], float) else tuple(r * f for r in radii[i])
+    assert sum(Vector(p).freeze() in heavy for p in pts) == len(heavy), "ashmantle: a heavy node is not in the dragon's graph"
+    chest = next(i for i, p in enumerate(pts) if Vector(p).freeze() == Vector(t2b(0.0, 1.27, -0.40)).freeze())
+    pts.append(t2b(0.0, 1.02, -0.70))  # the brisket: the chest hangs low between the fore legs
+    radii.append((0.56, 0.60))
+    edges.append((chest, len(pts) - 1))
+    spine = [(Vector(p), r if isinstance(r, float) else r[0]) for p, r in zip(pts[:-1], radii) if p[0] == 0.0]
+    return pts, edges, radii, keep, sorted(spine, key=lambda s: s[0].y)
+
+
+def build_ashmantle(mats: dict):
+    import rigs  # the dragon table
+    from mathutils.bvhtree import BVHTree
+
+    prefix = "ashmantle_"
+    skin = make_mat("mat_skin_ashmantle_paint", 0xFFFFFF, roughness=0.55, metallic=0.10)
+    wing = make_mat("mat_wing_ashmantle_paint", 0xFFFFFF, roughness=0.60, metallic=0.06)
+    crust = make_mat("mat_horn_ashmantle_paint", 0xFFFFFF, roughness=0.70, metallic=0.05)
+    glow = mats["glow_orange"]  # the seams, the maw and the eyes: the engine draws it lit and never tints it
+    scale_tile, leather_tile = _goblin_hide_mean(DRAGON_SCALE_TILE), _goblin_hide_mean(DRAGON_LEATHER_TILE)
+    tiles = {"hide": scale_tile, "hide_dark": scale_tile, "belly": scale_tile, "membrane": leather_tile, "crust": [1.0, 1.0, 1.0]}
+    col = {k: _ashmantle_paint(v, tiles[k]) for k, v in ASHMANTLE_COLOURS.items()}
+    j = dragon_joints()
+    hard = []  # (object, bone): rigid parts, weight 1 on one bone
+
+    def add(obj, bone: str, colour, planes: bool = False):
+        _goblin_tint(obj, colour, planes)
+        hard.append((obj, prefix + bone))
+
+    def aim(d) -> dict:
+        """The rx and rz that turn a primitive's own +Y axis to the direction d."""
+        d = Vector(d).normalized()
+        return {"rx": math.asin(d.z), "rz": -math.atan2(d.x, d.y)}
+
+    # Head and jaw as the dragon's; the eyes are ember slits on the glow, the maw glows between the teeth
+    add(_dragon_head(skin), "HeadGroup", col["hide"], planes=True)
+    add(
+        add_curved_tube(
+            "ash_jaw", None, skin,
+            [(0.0, 2.68, -2.50, 0.25, 0.10), (0.0, 2.58, -2.95, 0.21, 0.09), (0.0, 2.46, -3.30, 0.14, 0.07), (0.0, 2.42, -3.46, 0.08, 0.05)],
+            segs=6, smooth=False,
+        ),
+        "Jaw", col["belly"], planes=True,
+    )
+    add(add_sphere("ash_maw", None, glow, 0.15, 0.04, 0.36, tx=0.0, ty=2.57, tz=-3.05, rx=-0.18, segs=8, rings=5), "HeadGroup", 0xFFFFFF)
+    for side, tag in ((-1.0, "L"), (1.0, "R")):
+        add(add_sphere(f"ash_ember_{tag}", None, glow, 0.03, 0.026, 0.085, tx=side * 0.29, ty=2.95, tz=-2.76, rz=side * 0.3, segs=6, rings=4), "HeadGroup", 0xFFFFFF)
+        for k, (tz, tx, ty) in enumerate(((-3.44, 0.085, 2.61), (-3.26, 0.14, 2.64), (-3.06, 0.185, 2.67))):
+            add(add_cone_spike(f"ash_fang_{tag}_{k}", None, crust, base_r=0.036, length=0.13, tx=side * tx, ty=ty, tz=tz, rx=math.pi, segs=5), "HeadGroup", col["crust"])
+        for k, (tz, tx, ty) in enumerate(((-3.36, 0.10, 2.49), (-3.14, 0.16, 2.56))):
+            add(add_cone_spike(f"ash_tusk_{tag}_{k}", None, crust, base_r=0.036, length=0.12, tx=side * tx, ty=ty, tz=tz, segs=5), "Jaw", col["crust"])
+    # The slag crown: blunt crags rooted inside the skull, tallest at the back, in an arc over the brow
+    crown = [  # (x, z, length, base radius, direction)
+        (0.0, -2.30, 0.62, 0.17, (0.0, 0.80, 0.60)),
+        (0.20, -2.38, 0.52, 0.15, (0.35, 0.80, 0.50)),
+        (0.31, -2.58, 0.42, 0.13, (0.65, 0.70, 0.30)),
+        (0.27, -2.80, 0.30, 0.11, (0.70, 0.70, 0.0)),
+    ]
+    for k, (x, z, length, base, d) in enumerate(crown):
+        for side in ((1.0,) if x == 0.0 else (-1.0, 1.0)):
+            add(
+                add_cone_spike(f"ash_crown_{k}", None, crust, base_r=base, length=length + 0.12, tx=side * x, ty=2.96, tz=z, segs=5, smooth=False, **aim((side * d[0], d[1], d[2]))),
+                "HeadGroup", col["crust"], planes=True,
+            )
+
+    # Wings: the dragon's struts and membranes, on Ashmantle's bones and in its colours
+    membranes = []
+    for side, tag in ((-1.0, "L"), (1.0, "R")):
+        root, wrist = Vector(j[f"{tag}Wing"]), Vector(j[f"{tag}Wing2"])
+        tips = [Vector((side * 5.20, 2.55, -0.10)), Vector((side * 4.45, 1.75, 1.15)), Vector((side * 3.05, 1.45, 1.85))]
+        flank = Vector((side * 0.35, 1.40, 0.75))
+        sunk = root - (wrist - root).normalized() * 0.12
+        add(add_limb_tube(f"ash_wing_arm_{tag}", None, skin, tuple(sunk), tuple(wrist), 0.19, 0.12, segs=6, steps=3, smooth=False), f"{tag}Wing", col["hide"], planes=True)
+        add(add_sphere(f"ash_wing_wrist_{tag}", None, skin, 0.14, tx=wrist.x, ty=wrist.y, tz=wrist.z, segs=6, rings=4, smooth=False), f"{tag}Wing2", col["hide_dark"], planes=True)
+        for k, tip in enumerate(tips):
+            add(
+                add_limb_tube(f"ash_wing_finger_{tag}_{k}", None, skin, tuple(wrist), tuple(tip), 0.085, 0.035, r_mid=0.06, segs=5, steps=3, smooth=False),
+                f"{tag}Wing2", col["hide_dark"], planes=True,
+            )
+        add(
+            add_cone_spike(f"ash_wing_claw_{tag}", None, crust, base_r=0.08, length=0.58, tx=wrist.x, ty=wrist.y + 0.08, tz=wrist.z, segs=5, smooth=False, **aim((side * 0.10, 0.93, -0.35))),
+            f"{tag}Wing2", col["crust"], planes=True,
+        )
+        m = _dragon_membrane(f"ash_membrane_{tag}", wing, root, wrist, tips, flank, (f"{prefix}{tag}Wing", f"{prefix}{tag}Wing2", f"{prefix}Hips"))
+        _goblin_tint(m, col["membrane"], planes=True)
+        membranes.append(m)
+
+    for side, tag in ((-1.0, "Left"), (1.0, "Right")):
+        for bone, x, z in ((f"{tag}ElbowPivot", 1.08, -1.22), (f"{tag}KneePivot", 0.82, 1.02)):
+            for k, dx in enumerate((-0.15, 0.0, 0.15)):
+                add(
+                    add_cone_spike(f"ash_claw_{bone}_{k}", None, crust, base_r=0.08, length=0.26, tx=side * x + dx, ty=0.10, tz=z, segs=5, smooth=False, **aim((dx * 0.8, -0.12, -1.0))),
+                    bone, col["crust"], planes=True,
+                )
+    # The club: a faceted knot of slag round the tail's tip, with blunt knobs
+    club = Vector((0.0, 0.56, 3.26))
+    add(add_sphere("ash_club", None, crust, 0.40, 0.34, 0.44, tx=club.x, ty=club.y, tz=club.z, segs=6, rings=5, smooth=False), "TailPivot3", col["crust"], planes=True)
+    for k, d in enumerate(((0.0, 1.0, 0.2), (1.0, 0.25, 0.1), (-1.0, 0.25, 0.1), (0.0, 0.2, 1.0), (0.7, 0.6, 0.6), (-0.7, 0.6, 0.6))):
+        dn = Vector(d).normalized()
+        at = club + Vector((dn.x * 0.30, dn.y * 0.24, dn.z * 0.34))
+        add(add_cone_spike(f"ash_club_knob_{k}", None, crust, base_r=0.13, length=0.26, tx=at.x, ty=at.y, tz=at.z, segs=4, smooth=False, **aim(d)), "TailPivot3", col["crust"], planes=True)
+
+    # Body: what is left of the triangle budget after the rigid parts and the back plates (three boxes each)
+    plates = [  # (z along the spine, length, height)
+        (-1.72, 0.34, 0.48), (-1.30, 0.42, 0.66), (-0.84, 0.48, 0.80), (-0.32, 0.52, 0.86), (0.20, 0.50, 0.78),
+        (0.70, 0.46, 0.66), (1.18, 0.40, 0.54), (1.64, 0.34, 0.42), (2.08, 0.28, 0.34), (2.50, 0.22, 0.26),
+    ]
+    hard_tris = sum(len(p.vertices) - 2 for obj in [obj for obj, _ in hard] + membranes for p in obj.data.polygons)
+    body_tris = ASHMANTLE_TRIANGLES - 40 - hard_tris - len(plates) * 3 * 12
+    pts, edges, radii, keep, spine_line = _ashmantle_body_graph(j)
+    body = _goblin_skin(
+        figkit.organic_body((pts, edges), radii, DRAGON_VOXEL, 10**9), "ash_body", skin, body_tris, soften=14, keep=tuple(keep), crease=GOBLIN_CREASE
+    )
+
+    # Back plates on the finished back: each is two flat slabs of crust leaning apart over a glowing
+    # core that stands a little taller, so the seam glows along the plate's crest and between its halves
+    tree = BVHTree.FromPolygons([v.co for v in body.data.vertices], [tuple(p.vertices) for p in body.data.polygons])
+    spine = [("Neck2", j["Neck2"][2]), ("Neck1", j["Neck1"][2]), ("Torso", j["Torso"][2]), ("Hips", j["TailPivot"][2]),
+             ("TailPivot", j["TailPivot2"][2]), ("TailPivot2", j["TailPivot3"][2]), ("TailPivot3", 99.0)]
+    for k, (z, half, height) in enumerate(plates):
+        hit = tree.ray_cast(Vector(t2b(0.0, 10.0, z)), Vector((0.0, 0.0, -1.0)))[0]
+        if hit is None:
+            raise ValueError(f"ashmantle: no back under the back plate at z {z}")
+        bone = next(b for b, end in spine if z < end)
+        # A box is centred on its point: each stands with its foot 0.10 inside the back
+        base = hit.z - 0.10
+        add(add_box(f"ash_seam_{k}", None, glow, 0.05, height + 0.08, half * 0.80, tx=0.0, ty=base + (height + 0.08) / 2.0, tz=z, rx=0.25, bevel=0.0), bone, 0xFFFFFF)
+        for side in (-1.0, 1.0):
+            add(
+                add_box(f"ash_plate_{k}", None, crust, 0.07, height, half, tx=side * 0.06, ty=base + height / 2.0, tz=z, rx=0.25, rz=-side * 0.10, bevel=0.0),
+                bone, col["crust"], planes=True,
+            )
+
+    rig = figkit.make_rig("Monster_ashmantle", rigs.DRAGON_TABLE, {k: t2b(*p) for k, p in j.items()}, prefix="ashmantle")
+
+    # Weight rules as the dragon's: automatic weights from a second rig whose Root, jaw and wing
+    # bones lie inside the body, their shares folded onto hips, head and torso; every part rigid.
+    core = dict(j, Root=(0.0, 0.90, 0.95))
+    for side, tag in ((-1.0, "L"), (1.0, "R")):
+        core[f"{tag}Wing"], core[f"{tag}Wing2"] = (side * 0.10, 1.50, -0.55), (side * 0.40, 1.68, -0.55)
+    weight_rig = figkit.make_rig("ashmantle_weight_rig", rigs.DRAGON_TABLE, {k: t2b(*p) for k, p in core.items()}, prefix="ashmantle")
+    figkit.auto_weights(body, weight_rig, limb_radius=0.35)
+    fold = {"Root": "Hips", "Jaw": "HeadGroup", "LWing": "Torso", "LWing2": "Torso", "RWing": "Torso", "RWing2": "Torso"}
+    mapping = {}
+    for b in weight_rig.data.bones:
+        bone = b.name[len(prefix):]
+        mapping.setdefault(prefix + fold.get(bone, bone), []).append(b.name)
+    figkit.fold_weights(body, mapping)
+    for m in list(body.modifiers):
+        body.modifiers.remove(m)
+    weight_data = weight_rig.data
+    bpy.data.objects.remove(weight_rig, do_unlink=True)
+    bpy.data.armatures.remove(weight_data)
+    _dragon_body_tint(body, spine_line, col["hide"], col["hide_dark"], col["belly"])
+
+    for obj, bone in hard:
+        figkit.hard_weights(obj, bone)
+    for obj in [body] + membranes + [obj for obj, _ in hard]:
+        obj.parent = rig
+
+    merged = figkit.merge_by_family(rig)
+    names = {"skin": "ashmantle_body", "leather": "ashmantle_membrane", "plain": "ashmantle_crust", "glow": "ashmantle_embers"}
+    for ob in merged:
+        ob.name = ob.data.name = names[figkit.get_material_family(ob)]
+    _figure_paint(rig, merged, DRAGON_OCCLUSION)
+
+    tris = sum(len(p.vertices) - 2 for ob in merged for p in ob.data.polygons)
+    if tris > ASHMANTLE_TRIANGLES:
+        raise ValueError(f"ashmantle: {tris} triangles, over the budget of {ASHMANTLE_TRIANGLES}")
+    cos = [v.co for ob in merged for v in ob.data.vertices]
+    size = [max(c[a] for c in cos) - min(c[a] for c in cos) for a in (0, 2, 1)]  # width, height, length
+    print(f"[Blender] ashmantle: {tris} triangles in {len(merged)} meshes; width {size[0]:.3f}, height {size[1]:.3f}, length {size[2]:.3f}; lowest {min(c.z for c in cos):.4f}")
+    # Stage 4 draws it at modelScale 1.2 of the dragon it wore: it stays the dragon's size
+    for got, shipped, what in zip(size, DRAGON_BOUNDS, ("width", "height", "length")):
+        if abs(got / shipped - 1.0) > 0.05:
+            raise ValueError(f"ashmantle: {what} {got:.3f} is more than 5% from the dragon's {shipped}")
+    return rig
+
+
+# =============================================================================
 # Studio Showcase Grid, Lighting, Freestyle & Export
 # =============================================================================
 def setup_studio_and_render(render_path: str | None):
@@ -3712,6 +3935,7 @@ def main():
     build_moss_guardian((-0.6, 0.0, 2.2), mats)
     build_lesser_demon((2.2, 0.0, 2.2), mats)
     build_elvarg_dragon((6.2, 0.0, 2.6), mats)
+    build_ashmantle(mats)
 
     # Merge-only pass (plan M0): one merge_parts call per Monster_* root, no shape, name or colour change.
     # The chicken's wings are meshes the engine flaps by name (findPivot 'LWing'/'RWing'), so they stay alone.

@@ -520,6 +520,61 @@ function dragonEntity(): Animated {
   } as unknown as Animated;
 }
 
+// --- Ashmantle, its own body on the dragon skeleton (plan D3) --------------------------------------------------------
+// It runs before the dragon's own built-file case, so the dragon library is cached here first, from Ashmantle's body,
+// as in a game where Ashmantle spawns before the dragon. It loads its own copy of the file: the cache strips the
+// clips' prefix in place, and the case above reads the shared copy's prefixed track names.
+
+const ashmantleBuilt = monsters.scene.getObjectByName('Monster_ashmantle') !== undefined;
+
+describe('Ashmantle plays the dragon\'s clips on its own body', () => {
+  it.skipIf(!ashmantleBuilt)('every bone the dragon row names is a bone of Ashmantle and carries weight', () => {
+    const { all, weighted } = weightedBones(skinnedMeshesOf(monsters, 'ashmantle'), 'ashmantle');
+    for (const b of MONSTER_MOTION.elvarg_dragon.bones) {
+      expect(all.has(b), `ashmantle: ${b} is a bone of its skeleton`).toBe(true);
+      expect(weighted.has(b), `ashmantle: ${b} has weight on a vertex`).toBe(true);
+    }
+  });
+
+  it.skipIf(!ashmantleBuilt)('with body ashmantle it walks on the dragon\'s Walk and bites with its Bite', async () => {
+    // The staged row and the body field, as D5 ships them, for this case only.
+    const live = MONSTER_MOTION.elvarg_dragon;
+    MONSTER_MOTION.elvarg_dragon = { ...live, ...PENDING_DRAGON_CLIPS };
+    try {
+      const group = new THREE.Group();
+      const hitbox = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1));
+      group.add(hitbox);
+      const m = {
+        typeKey: 'ashmantle',
+        modelKey: 'elvarg_dragon',
+        def: { ...MONSTER_TYPES.ashmantle, body: 'ashmantle' },
+        rig: { group, hitbox },
+        logic: { state: 'idle', windup: null },
+        pos: group.position,
+        flinch: 0,
+        attackAnim: 0
+      } as unknown as Animated;
+      expect(upgradeMonsterRigWithGltf(m, await readGlb('monsters.glb'), hero)).toBe(true);
+      expect(m.rig.group.getObjectByName('ashmantle_body'), 'the body is Ashmantle\'s').toBeDefined();
+      expect(m.rig.group.getObjectByName('elvarg_dragon_body')).toBeUndefined();
+      expect(m.animator).toBeDefined();
+      const walk = m.animator!.actions.get('Walk' as HeroClipName)!;
+      const bite = m.animator!.actions.get('Bite' as HeroClipName)!;
+      for (let i = 0; i < 10; i++) frame(m, true);
+      expect(walk.isRunning(), 'Walk plays').toBe(true);
+      expect(bone(m, 'LeftArmPivot').quaternion.angleTo(new THREE.Quaternion()), 'a fore leg swings in Walk').toBeGreaterThan(0.01);
+      expect(bone(m, 'LeftLegPivot').quaternion.angleTo(new THREE.Quaternion()), 'a hind leg swings in Walk').toBeGreaterThan(0.01);
+      for (let i = 0; i < 30; i++) frame(m, false);
+      m.attackAnim = 1;
+      for (let i = 0; i < 9; i++) frame(m, false, 1 / 60);
+      expect(bite.isRunning(), 'a plain attack plays Bite').toBe(true);
+      expect(bone(m, 'Jaw').quaternion.angleTo(new THREE.Quaternion()), 'the jaw moves in Bite').toBeGreaterThan(0.01);
+    } finally {
+      MONSTER_MOTION.elvarg_dragon = live;
+    }
+  });
+});
+
 describe('the dragon plays its own library', () => {
   it('its staged clips are Idle, Walk, Bite, WingBuffet (the wind-up) and Death, keyed only by the roles the engine reads, and its anticipation is the library\'s', () => {
     const staged = PENDING_DRAGON_CLIPS;

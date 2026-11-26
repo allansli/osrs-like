@@ -623,6 +623,19 @@
         1,
         1
       ]
+    },
+    "Monster_ashmantle": {
+      "parent": null,
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
     }
   },
   "materials": [
@@ -642,6 +655,7 @@
     "mat_gold",
     "mat_gold_beak",
     "mat_horn",
+    "mat_horn_ashmantle_paint",
     "mat_horn_elvarg_dragon_paint",
     "mat_iron",
     "mat_iron_obsidian",
@@ -650,6 +664,7 @@
     "mat_moss",
     "mat_robe",
     "mat_robe_trim",
+    "mat_skin_ashmantle_paint",
     "mat_skin_chicken",
     "mat_skin_chicken_tail",
     "mat_skin_chicken_wing",
@@ -663,12 +678,17 @@
     "mat_skin_scorpion_plate",
     "mat_stone",
     "mat_wing",
+    "mat_wing_ashmantle_paint",
     "mat_wing_elvarg_dragon_paint",
     "mat_wood",
     "mat_wood_goblin_paint"
   ],
   "toggled": [],
   "meshClasses": [
+    "^ashmantle_body$",
+    "^ashmantle_crust$",
+    "^ashmantle_embers$",
+    "^ashmantle_membrane$",
     "^chicken_LWing$",
     "^chicken_LWing_feather_-?\\d+$",
     "^chicken_LeftLegPivot_drumstick$",
@@ -900,7 +920,8 @@
   "vertexColor": {
     "figures": {
       "Monster_goblin": "all",
-      "Monster_elvarg_dragon": "all"
+      "Monster_elvarg_dragon": "all",
+      "Monster_ashmantle": "all"
     }
   },
   "clips": {
@@ -1360,11 +1381,188 @@
           0,
           0.95
         ]
+      },
+      "ashmantle_Jaw": {
+        "parent": "ashmantle_HeadGroup",
+        "translation": [
+          0,
+          -0.06,
+          -0.24
+        ]
+      },
+      "ashmantle_HeadGroup": {
+        "parent": "ashmantle_Neck2",
+        "translation": [
+          0,
+          0.36,
+          -0.88
+        ]
+      },
+      "ashmantle_Neck2": {
+        "parent": "ashmantle_Neck1",
+        "translation": [
+          0,
+          0.71,
+          -0.55
+        ]
+      },
+      "ashmantle_Neck1": {
+        "parent": "ashmantle_Torso",
+        "translation": [
+          0,
+          0.39,
+          -0.95
+        ]
+      },
+      "ashmantle_LeftElbowPivot": {
+        "parent": "ashmantle_LeftArmPivot",
+        "translation": [
+          -0.23,
+          -0.68,
+          0.06
+        ]
+      },
+      "ashmantle_LeftArmPivot": {
+        "parent": "ashmantle_Torso",
+        "translation": [
+          -0.8,
+          -0.06,
+          -0.72
+        ]
+      },
+      "ashmantle_RightElbowPivot": {
+        "parent": "ashmantle_RightArmPivot",
+        "translation": [
+          0.23,
+          -0.68,
+          0.06
+        ]
+      },
+      "ashmantle_RightArmPivot": {
+        "parent": "ashmantle_Torso",
+        "translation": [
+          0.8,
+          -0.06,
+          -0.72
+        ]
+      },
+      "ashmantle_LWing2": {
+        "parent": "ashmantle_LWing",
+        "translation": [
+          -1.8,
+          1.1,
+          0.1
+        ]
+      },
+      "ashmantle_LWing": {
+        "parent": "ashmantle_Torso",
+        "translation": [
+          -0.42,
+          0.52,
+          -0.55
+        ]
+      },
+      "ashmantle_RWing2": {
+        "parent": "ashmantle_RWing",
+        "translation": [
+          1.8,
+          1.1,
+          0.1
+        ]
+      },
+      "ashmantle_RWing": {
+        "parent": "ashmantle_Torso",
+        "translation": [
+          0.42,
+          0.52,
+          -0.55
+        ]
+      },
+      "ashmantle_Torso": {
+        "parent": "ashmantle_Hips",
+        "translation": [
+          0,
+          0.36,
+          -0.95
+        ]
+      },
+      "ashmantle_LeftKneePivot": {
+        "parent": "ashmantle_LeftLegPivot",
+        "translation": [
+          -0.11,
+          -0.42,
+          -0.07
+        ]
+      },
+      "ashmantle_LeftLegPivot": {
+        "parent": "ashmantle_Hips",
+        "translation": [
+          -0.62,
+          0,
+          0.07
+        ]
+      },
+      "ashmantle_RightKneePivot": {
+        "parent": "ashmantle_RightLegPivot",
+        "translation": [
+          0.11,
+          -0.42,
+          -0.07
+        ]
+      },
+      "ashmantle_RightLegPivot": {
+        "parent": "ashmantle_Hips",
+        "translation": [
+          0.62,
+          0,
+          0.07
+        ]
+      },
+      "ashmantle_TailPivot3": {
+        "parent": "ashmantle_TailPivot2",
+        "translation": [
+          0,
+          -0.2,
+          0.65
+        ]
+      },
+      "ashmantle_TailPivot2": {
+        "parent": "ashmantle_TailPivot",
+        "translation": [
+          0,
+          -0.22,
+          0.75
+        ]
+      },
+      "ashmantle_TailPivot": {
+        "parent": "ashmantle_Hips",
+        "translation": [
+          0,
+          -0.02,
+          0.65
+        ]
+      },
+      "ashmantle_Hips": {
+        "parent": "ashmantle_Root",
+        "translation": [
+          0,
+          1,
+          0
+        ]
+      },
+      "ashmantle_Root": {
+        "parent": null,
+        "translation": [
+          0,
+          0,
+          0.95
+        ]
       }
     },
     "skinnedRoots": [
       "Monster_goblin",
-      "Monster_elvarg_dragon"
+      "Monster_elvarg_dragon",
+      "Monster_ashmantle"
     ],
     "limbs": [
       {
@@ -1591,6 +1789,132 @@
           -0.31,
           0.95
         ]
+      },
+      {
+        "bone": "ashmantle_Root",
+        "child": "ashmantle_Hips",
+        "direction": [
+          0,
+          1,
+          0
+        ]
+      },
+      {
+        "bone": "ashmantle_Hips",
+        "child": "ashmantle_Torso",
+        "direction": [
+          0,
+          0.6,
+          -0.8
+        ]
+      },
+      {
+        "bone": "ashmantle_Torso",
+        "child": "ashmantle_Neck1",
+        "direction": [
+          0,
+          0.6,
+          -0.8
+        ]
+      },
+      {
+        "bone": "ashmantle_Neck1",
+        "child": "ashmantle_Neck2",
+        "direction": [
+          0,
+          0.6,
+          -0.8
+        ]
+      },
+      {
+        "bone": "ashmantle_Neck2",
+        "child": "ashmantle_HeadGroup",
+        "direction": [
+          0,
+          0.6,
+          -0.8
+        ]
+      },
+      {
+        "bone": "ashmantle_HeadGroup",
+        "child": "ashmantle_Jaw",
+        "direction": [
+          0,
+          0,
+          -1
+        ]
+      },
+      {
+        "bone": "ashmantle_LeftArmPivot",
+        "child": "ashmantle_LeftElbowPivot",
+        "direction": [
+          0,
+          -1,
+          0
+        ]
+      },
+      {
+        "bone": "ashmantle_RightArmPivot",
+        "child": "ashmantle_RightElbowPivot",
+        "direction": [
+          0,
+          -1,
+          0
+        ]
+      },
+      {
+        "bone": "ashmantle_LeftLegPivot",
+        "child": "ashmantle_LeftKneePivot",
+        "direction": [
+          0,
+          -1,
+          0
+        ]
+      },
+      {
+        "bone": "ashmantle_RightLegPivot",
+        "child": "ashmantle_RightKneePivot",
+        "direction": [
+          0,
+          -1,
+          0
+        ]
+      },
+      {
+        "bone": "ashmantle_LWing",
+        "child": "ashmantle_LWing2",
+        "direction": [
+          -0.85,
+          0.52,
+          0
+        ]
+      },
+      {
+        "bone": "ashmantle_RWing",
+        "child": "ashmantle_RWing2",
+        "direction": [
+          0.85,
+          0.52,
+          0
+        ]
+      },
+      {
+        "bone": "ashmantle_TailPivot",
+        "child": "ashmantle_TailPivot2",
+        "direction": [
+          0,
+          -0.31,
+          0.95
+        ]
+      },
+      {
+        "bone": "ashmantle_TailPivot2",
+        "child": "ashmantle_TailPivot3",
+        "direction": [
+          0,
+          -0.31,
+          0.95
+        ]
       }
     ],
     "maxLimbDegrees": 20,
@@ -1600,11 +1924,11 @@
     }
   },
   "budget": {
-    "triangles": 77894,
-    "meshes": 183,
-    "materials": 40,
-    "rawBytes": 4387857,
-    "brotliBytes": 1042250
+    "triangles": 89894,
+    "meshes": 187,
+    "materials": 43,
+    "rawBytes": 5007888,
+    "brotliBytes": 1286669
   },
   "figures": {
     "Monster_chicken": {
@@ -1676,6 +2000,13 @@
       "materials": 6,
       "rawBytes": 669168,
       "brotliBytes": 120432
+    },
+    "Monster_ashmantle": {
+      "triangles": 12000,
+      "meshes": 4,
+      "materials": 5,
+      "rawBytes": 613705,
+      "brotliBytes": 267112
     }
   }
 }
