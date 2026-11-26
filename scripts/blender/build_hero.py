@@ -318,21 +318,25 @@ def paint(rig, toned) -> None:
     shift (one value a vertex), times the plane tone of the parts in `toned` (one value a face),
     written as one 'Col' layer on the face corners. Tone only, never colour: the engine sets every
     hero colour and recolours the role materials; the layer multiplies them. Every mesh carries it
-    (COLOR_0 is all or none on the hero file).
+    (COLOR_0 is all or none on the hero file). The paint can only darken the material, so a toned
+    part's tones are divided by the lightest one: its neutral planes sit 13% under its lit planes,
+    which are the baked value itself, and no corner is clipped at white.
     """
     figkit.bake_paint(rig, ao=OCCLUSION)
     for ob in figkit.get_descendant_meshes(rig):
         attrs = ob.data.color_attributes
         baked = [0.0] * (4 * len(ob.data.vertices))
         attrs["Col"].data.foreach_get("color", baked)
-        tones = plane_tones(ob) if ob in toned else [1.0] * len(ob.data.polygons)
+        lift = 1.0 + PLANE_TONE[1]
+        tones = [t / lift for t in plane_tones(ob)] if ob in toned else [1.0] * len(ob.data.polygons)
         loops = ob.data.loops
         cols = [1.0] * (4 * len(loops))
         for p, tone in zip(ob.data.polygons, tones):
             for li in p.loop_indices:
                 vi = loops[li].vertex_index
                 for c in range(3):
-                    cols[4 * li + c] = min(1.0, baked[4 * vi + c] * tone)
+                    cols[4 * li + c] = baked[4 * vi + c] * tone
+        assert max(cols) <= 1.0, f"{ob.name}: a paint value over 1 would be clipped at white"
         attrs.remove(attrs["Col"])
         attrs.new("Col", "FLOAT_COLOR", "CORNER").data.foreach_set("color", cols)
         attrs.active_color = attrs["Col"]
