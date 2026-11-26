@@ -2569,413 +2569,348 @@ def build_thornwatch_marksman_kit():
 
 
 # =============================================================================
-# 7. Monster_hill_giant (Hill Giant)
+# 7. Monster_hill_giant (Hill Giant): kept and re-rigged on the biped rig (plan M3c)
 # =============================================================================
-def build_hill_giant(grid_pos: tuple[float, float, float], mats: dict):
-    root = create_pivot("Monster_hill_giant", None, *grid_pos)
-
-    # Massive barrel-chested muscular giant torso with pectoral/abdominal definition
-    torso_sections = [
-        (0.72, 0.30, 0.24, 0.0, 0.0, 0.25, 0.03, 0.02),
-        (0.96, 0.33, 0.27, 0.0, -0.02, 0.26, 0.06, 0.03),
-        (1.24, 0.39, 0.30, 0.0, -0.03, 0.28, 0.08, 0.04),
-        (1.56, 0.46, 0.32, 0.0, -0.02, 0.30, 0.09, 0.05),
-        (1.80, 0.42, 0.28, 0.0, 0.0, 0.24, 0.04, 0.04),
-        (1.98, 0.24, 0.20, 0.0, 0.01, 0.18, 0.0, 0.02),
-    ]
-    add_lathe("hill_giant_torso", root, mats["skin_hill_giant"], torso_sections, segs=24)
-
-    # Shaggy fur pelt loincloth & shoulder strap + oversized horned beast-skull belt buckle
-    add_lathe(
-        "hill_giant_pelt_skirt",
-        root,
-        mats["fur"],
-        [
-            (0.54, 0.36, 0.28, 0.0, 0.0, 0.24),
-            (0.76, 0.34, 0.27, 0.0, 0.0, 0.26),
-            (0.92, 0.35, 0.28, 0.0, 0.0, 0.26),
-        ],
-        segs=22,
-    )
-    add_curved_tube(
-        "hill_giant_fur_strap",
-        root,
-        mats["fur"],
-        [
-            (-0.36, 1.86, 0.0, 0.065, 0.035),
-            (-0.08, 1.40, -0.31, 0.072, 0.035),
-            (0.24, 0.92, -0.26, 0.065, 0.035),
-            (0.24, 0.92, 0.26, 0.065, 0.035),
-            (-0.08, 1.44, 0.28, 0.072, 0.035),
-            (-0.36, 1.86, 0.0, 0.065, 0.035),
-        ],
-        segs=10,
-    )
-    # Horned beast-skull belt buckle with dark eye sockets
-    add_sphere("hill_giant_skull_buckle", root, mats["bone"], 0.12, 0.13, 0.10, tx=0.0, ty=0.88, tz=-0.28)
-    for side, s_tag in ((-1.0, "L"), (1.0, "R")):
-        add_sphere(
-            f"hill_giant_buckle_socket_{s_tag}",
-            root,
-            mats["obsidian"],
-            0.032,
-            tx=side * 0.045,
-            ty=0.90,
-            tz=-0.36,
-            no_outline=True,
-        )
-        add_cone_spike(
-            f"hill_giant_buckle_horn_{s_tag}",
-            root,
-            mats["horn"],
-            base_r=0.032,
-            length=0.16,
-            tx=side * 0.09,
-            ty=0.94,
-            tz=-0.29,
-            rz=-side * 1.15,
-            curve_bend=-0.05,
-            segs=8,
-        )
-
-    # HeadGroup at (0, 2.02, 0): brutish craggy head, Neanderthal brow, broad nose, fierce dark eyes & multi-braided beard
-    head_piv = create_pivot("hill_giant_HeadGroup", root, 0.0, 2.02, 0.0)
-    add_lathe(
-        "hill_giant_head",
-        head_piv,
-        mats["skin_hill_giant"],
-        [
-            (-0.04, 0.18, 0.18, 0.0, 0.0, 0.22),
-            (0.08, 0.22, 0.23, 0.0, -0.02, 0.25),
-            (0.22, 0.21, 0.22, 0.0, -0.02, 0.24),
-            (0.34, 0.16, 0.17, 0.0, 0.0, 0.18),
-        ],
-        segs=20,
-    )
-    add_box("hill_giant_brow", head_piv, mats["skin_hill_giant"], 0.30, 0.07, 0.12, tx=0.0, ty=0.22, tz=-0.19, bevel=0.02)
-    add_sphere("hill_giant_nose", head_piv, mats["skin_hill_giant"], 0.055, 0.065, 0.075, tx=0.0, ty=0.15, tz=-0.23)
-    for side, s_tag in ((-1.0, "L"), (1.0, "R")):
-        add_sphere(
-            f"hill_giant_eye_{s_tag}",
-            head_piv,
-            mats["obsidian"],
-            0.026,
-            tx=side * 0.075,
-            ty=0.18,
-            tz=-0.215,
-            no_outline=True,
-        )
-
-    # Thick multi-braided brown beard with bone beads
-    add_sphere("hill_giant_beard_main", head_piv, mats["fur"], 0.21, 0.20, 0.18, tx=0.0, ty=-0.02, tz=-0.14)
-    for b_idx, bx in enumerate((-0.10, 0.0, 0.10)):
-        add_limb_tube(
-            f"hill_giant_beard_braid_{b_idx}",
-            head_piv,
-            mats["fur"],
-            (bx, -0.06, -0.18),
-            (bx * 1.15, -0.34 + abs(bx) * 0.4, -0.22),
-            0.062,
-            0.032,
-            segs=10,
-        )
-        add_sphere(
-            f"hill_giant_beard_bead_{b_idx}",
-            head_piv,
-            mats["bone"],
-            0.042,
-            0.030,
-            0.042,
-            tx=bx * 1.08,
-            ty=-0.22 + abs(bx) * 0.2,
-            tz=-0.21,
-        )
-
-    # LeftArmPivot (-0.58, 1.58, 0) & RightArmPivot (0.58, 1.58, 0)
-    left_arm = create_pivot("hill_giant_LeftArmPivot", root, -0.58, 1.58, 0.0)
-    right_arm = create_pivot("hill_giant_RightArmPivot", root, 0.58, 1.58, 0.0)
-    for side, arm_piv, s_tag in ((-1.0, left_arm, "L"), (1.0, right_arm, "R")):
-        elbow = (side * 0.08, -0.36, -0.06)
-        hand = (side * 0.06, -0.72, -0.26)
-        add_limb_tube(f"hill_giant_uarm_{s_tag}", arm_piv, mats["skin_hill_giant"], (-side * 0.14, 0.08, 0.0), elbow, 0.175, 0.118, segs=14)
-        add_limb_tube(f"hill_giant_farm_{s_tag}", arm_piv, mats["skin_hill_giant"], elbow, hand, 0.122, 0.095, segs=14)
-        add_sphere(f"hill_giant_fist_{s_tag}", arm_piv, mats["skin_hill_giant"], 0.105, tx=hand[0], ty=hand[1], tz=hand[2])
-        # Bone/leather armband on bicep
-        add_lathe(
-            f"hill_giant_armband_{s_tag}",
-            arm_piv,
-            mats["bone"] if side > 0 else mats["leather"],
-            [(-0.22, 0.138, 0.138), (-0.15, 0.142, 0.142)],
-            segs=14,
-            tx=side * 0.04,
-            ty=0.0,
-            tz=-0.03,
-        )
-
-    # Massive gnarled tree-trunk war-club bound with iron straps and studded with 8 jagged stone spikes
-    club_pts = [
-        (0.08, -0.82, -0.10, 0.042, 0.042),
-        (0.08, -0.66, -0.32, 0.055, 0.055),
-        (0.08, -0.44, -0.62, 0.095, 0.095),
-        (0.08, -0.24, -0.92, 0.155, 0.145),
-        (0.08, -0.08, -1.16, 0.185, 0.175),
-        (0.08, 0.02, -1.32, 0.135, 0.130),
-    ]
-    add_curved_tube("hill_giant_club_wood", right_arm, mats["wood"], club_pts, segs=16)
-    # Iron binding straps around club head
-    for strap_i, (sy, sz, sr) in enumerate(((-0.34, -0.77, 0.13), (-0.12, -1.08, 0.185))):
-        add_lathe(
-            f"hill_giant_club_strap_{strap_i}",
-            right_arm,
-            mats["iron"],
-            [(-0.025, sr, sr), (0.025, sr, sr)],
-            segs=16,
-            tx=0.08,
-            ty=sy,
-            tz=sz,
-            rx=-0.92,
-        )
-    # 8 jagged stone spikes around club head
-    for sp_i in range(8):
-        ang = (sp_i / 8.0) * math.pi * 2.0
-        ring_z = -0.85 if sp_i < 4 else -1.12
-        ring_y = -0.28 if sp_i < 4 else -0.10
-        add_cone_spike(
-            f"hill_giant_club_spike_{sp_i}",
-            right_arm,
-            mats["stone"],
-            base_r=0.045,
-            length=0.18,
-            tx=0.08 + math.cos(ang) * 0.14,
-            ty=ring_y + math.sin(ang) * 0.12,
-            tz=ring_z,
-            rx=math.sin(ang) * 1.2,
-            rz=-math.cos(ang) * 1.2,
-            segs=6,
-        )
-
-    # LeftLegPivot (-0.22, 0.78, 0) & RightLegPivot (0.22, 0.78, 0)
-    for side, piv_name in ((-1.0, "hill_giant_LeftLegPivot"), (1.0, "hill_giant_RightLegPivot")):
-        leg_piv = create_pivot(piv_name, root, side * 0.22, 0.78, 0.0)
-        knee = (side * 0.03, -0.36, -0.04)
-        ankle = (side * 0.03, -0.68, 0.0)
-        add_limb_tube(f"{piv_name}_thigh", leg_piv, mats["skin_hill_giant"], (0.0, 0.0, 0.0), knee, 0.165, 0.132, segs=14)
-        add_limb_tube(f"{piv_name}_shin_wrap", leg_piv, mats["fur"], knee, ankle, 0.138, 0.112, segs=14)
-        add_box(
-            f"{piv_name}_bare_foot",
-            leg_piv,
-            mats["skin_hill_giant"],
-            0.20,
-            0.11,
-            0.30,
-            tx=side * 0.03,
-            ty=-0.725,
-            tz=-0.06,
-            bevel=0.03,
-        )
-
-    return root
+# Today's giant (design 4.6: good mass, kept) on the pilot's pattern, built as the wizard is
+# (_build_human): today's torso, arms, fists, legs and feet fused into one skin, so the stacked-ball
+# joints go; the shoulders and the fists exaggerated (design 5.2); the arms held out from the belly
+# in the bind pose, so the shared clips that turn them in keep them clear; the club hard on
+# WeaponPivot and carried hanging at the right side, outside the body, not in front of the belly.
+# Today's head, brow, nose and braided beard, pelt skirt, fur strap, horned skull buckle, armbands,
+# shin wraps, iron straps and stone spikes are kept. Coordinates are three-space (+Y up, -Z forward).
+GIANT_TRIANGLES = 5600  # the builder's own budget, under the manifest's 7,000 (design 9.1's large class)
+GIANT_HEIGHT = 2.36  # the shipped giant's height; the re-rigged one stays within 5%
+GIANT_FUR_TILE = "public/textures/creatures/giant-fur.png"  # the engine's tile for hill_giant on 'skin' (textures.ts)
+GIANT_COLOURS = {  # as the game shows them
+    "skin": 0xA8805E,  # weathered tan, 66% value
+    "skin_dark": 0x86644A,  # fists and feet, 53%
+    "wrap": 0x6A4A30,  # the shin wraps, painted on the skin, 42%
+    "pelt": 0x6E4E32,  # pelt skirt and strap, 43%
+    "beard": 0x5A3E28,  # 35%
+    "bone": 0xBCAC8C,  # buckle, horns, beads, armband, 74%
+    "void": 0x2A2420,  # eyes and the skull's sockets: deliberate voids (design 5.4)
+    "iron": 0x6C6E72,  # the club's straps, 45%
+    "spike": 0x8C877C,  # the club's stone spikes, 55%
+    "wood": 0x6E5034,  # the club, 43%
+}
+GIANT_FAMILY = {"skin": "skin", "skin_dark": "skin", "wrap": "skin", "pelt": "leather", "beard": "leather",
+                "bone": "plain", "void": "plain", "iron": "plain", "spike": "plain", "wood": "wood"}
+GIANT_RADII = {
+    "pelvis": (0.32, 0.26), "waist": (0.37, 0.31), "chest": (0.46, 0.33), "chest2": (0.50, 0.32), "neck": 0.17,
+    "collar": (0.24, 0.17), "shoulder": 0.20, "upper": 0.14, "elbow": 0.13, "fore": 0.145, "wrist": 0.088, "hand": 0.175,
+    "hip": 0.17, "thigh": 0.16, "knee": 0.13, "calf": 0.14, "ankle": 0.10, "heel": 0.085, "toe": 0.105, "foot": 0.27,
+}
 
 
-# =============================================================================
-# 8. Monster_moss_guardian (Moss Guardian)
-# =============================================================================
-def build_moss_guardian(grid_pos: tuple[float, float, float], mats: dict):
-    root = create_pivot("Monster_moss_guardian", None, *grid_pos)
+def giant_joints() -> dict:
+    """
+    Joints of the biped rig at today's pivots (HeadGroup, arms and legs within 0.05 of them). The
+    stance: the arms held wide of the belly, upper arm 32 degrees out and forearm 20, a little forward;
+    the knees bent and out; each limb within 20 degrees of the biped reference.
+    """
+    j = {
+        "Root": (0.0, 0.0, 0.0),
+        "Hips": (0.0, 0.86, 0.02),
+        "Torso": (0.0, 1.14, 0.0),
+        "HeadGroup": (0.0, 2.02, -0.05),
+    }
+    for side, tag in ((-1.0, "Left"), (1.0, "Right")):
+        j[f"{tag}ArmPivot"] = (side * 0.58, 1.58, -0.02)
+        j[f"{tag}ElbowPivot"] = (side * 0.845, 1.156, -0.08)
+        j[f"{tag}Hand"] = (side * 0.995, 0.743, -0.16)
+        j[f"{tag}LegPivot"] = (side * 0.22, 0.78, 0.02)
+        j[f"{tag}KneePivot"] = (side * 0.27, 0.42, -0.04)
+        j[f"{tag}Foot"] = (side * 0.28, 0.10, 0.02)
+    j["WeaponPivot"] = j["RightHand"]
+    return j
 
-    # Ancient forest golem of interlocking craggy stone slabs and twisted ancient tree bark
-    core_sections = [
-        (0.72, 0.26, 0.20, 0.0, 0.02, 0.35),
-        (0.98, 0.32, 0.24, 0.0, 0.0, 0.35, 0.04, 0.05),
-        (1.28, 0.44, 0.32, 0.0, -0.04, 0.38, 0.08, 0.08),
-        (1.56, 0.48, 0.34, 0.0, -0.06, 0.38, 0.06, 0.09),
-        (1.74, 0.28, 0.24, 0.0, -0.04, 0.30, 0.0, 0.05),
-    ]
-    add_lathe("moss_guardian_bark_torso", root, mats["bark"], core_sections, segs=18)
 
-    # Interlocking craggy stone chest slabs + glowing green heart-core runes in the chest
-    add_sphere("moss_guardian_heart_core", root, mats["glow_emerald"], 0.16, 0.22, 0.16, tx=0.0, ty=1.32, tz=-0.32)
-    slab_specs = [
-        (-0.24, 1.44, -0.26, 0.22, 0.22, 0.14, 0.15, 0.25),
-        (0.24, 1.42, -0.26, 0.22, 0.22, 0.14, -0.12, -0.25),
-        (-0.20, 1.14, -0.24, 0.20, 0.18, 0.14, -0.10, 0.20),
-        (0.20, 1.14, -0.24, 0.20, 0.18, 0.14, 0.10, -0.20),
-        (0.0, 1.38, 0.26, 0.44, 0.42, 0.20, 0.18, 0.0),
-    ]
-    for idx, (sx, sy, sz, wx, hy, dz, rx_v, ry_v) in enumerate(slab_specs):
-        add_box(
-            f"moss_guardian_stone_slab_{idx}",
-            root,
-            mats["stone"],
-            wx,
-            hy,
-            dz,
-            tx=sx,
-            ty=sy,
-            tz=sz,
-            rx=rx_v,
-            ry=ry_v,
-            bevel=0.05,
-        )
+def _giant_kit(j: dict, col: dict, mats: dict):
+    skin, fur, bone, wood = mats["skin"], mats["leather"], mats["plain"], mats["wood"]
 
-    # Asymmetric boulder/bark pauldrons covered in lush moss cushions and small mushrooms
-    for side, s_tag, px, py in ((-1.0, "L", -0.52, 1.56), (1.0, "R", 0.50, 1.54)):
-        add_box(
-            f"moss_guardian_pauldron_stone_{s_tag}",
-            root,
-            mats["stone"],
-            0.36,
-            0.28,
-            0.34,
-            tx=px,
-            ty=py,
-            tz=-0.02,
-            rz=-side * 0.24,
-            bevel=0.06,
-        )
-        add_sphere(
-            f"moss_guardian_pauldron_moss_{s_tag}",
-            root,
-            mats["moss"],
-            0.21,
-            0.11,
-            0.20,
-            tx=px,
-            ty=py + 0.13,
-            tz=-0.02,
-        )
-        # Small glowing forest mushrooms sprouting from left mossy pauldron
-        if side < 0:
-            for m_i, (mx, mz) in enumerate(((-0.56, -0.06), (-0.46, 0.06))):
-                add_limb_tube(
-                    f"moss_guardian_shroom_stem_{m_i}",
-                    root,
-                    mats["bone"],
-                    (mx, py + 0.18, mz),
-                    (mx - 0.02, py + 0.28, mz),
-                    0.016,
-                    0.012,
-                    segs=8,
-                )
-                add_sphere(
-                    f"moss_guardian_shroom_cap_{m_i}",
-                    root,
-                    mats["glow_emerald"],
-                    0.048,
-                    0.028,
-                    0.048,
-                    tx=mx - 0.02,
-                    ty=py + 0.29,
-                    tz=mz,
-                )
+    def aim(d) -> dict:
+        d = Vector(d).normalized()
+        return {"rx": math.asin(d.z), "rz": -math.atan2(d.x, d.y)}
 
-    # HeadGroup at (0.02, 1.62, -0.18): craggy bark-mask head with glowing emerald eyes + branching wooden antlers
-    head_piv = create_pivot("moss_guardian_HeadGroup", root, 0.02, 1.62, -0.18)
-    add_box("moss_guardian_bark_mask", head_piv, mats["bark"], 0.34, 0.38, 0.28, tx=0.0, ty=0.14, tz=-0.04, bevel=0.05)
-    add_sphere("moss_guardian_crown_moss", head_piv, mats["moss"], 0.20, 0.09, 0.16, tx=0.0, ty=0.33, tz=-0.02)
-    for side, s_tag in ((-1.0, "L"), (1.0, "R")):
-        add_sphere(
-            f"moss_guardian_eye_{s_tag}",
-            head_piv,
-            mats["glow_emerald"],
-            0.038,
-            0.024,
-            0.024,
-            tx=side * 0.085,
-            ty=0.16,
-            tz=-0.185,
-            rz=-side * 0.15,
-            no_outline=True,
-        )
-        # Tall branching wooden antlers sprouting leaf clusters
-        antler_main = [
-            (side * 0.12, 0.28, -0.02, 0.042, 0.042),
-            (side * 0.24, 0.46, 0.02, 0.034, 0.034),
-            (side * 0.36, 0.68, 0.06, 0.024, 0.024),
-            (side * 0.28, 0.88, 0.02, 0.012, 0.012),
+    def kit(add, drape):
+        # Head: today's craggy skull, Neanderthal brow, broad nose and heavy chin, with small ears,
+        # fused into one form with hard edges round its planes
+        parts = [
+            add_sphere("gnt_skull", None, skin, 0.20, 0.19, 0.21, tx=0.0, ty=2.17, tz=-0.07, segs=12, rings=10),
+            add_box("gnt_brow", None, skin, 0.32, 0.075, 0.12, tx=0.0, ty=2.235, tz=-0.215, bevel=0.02),
+            add_sphere("gnt_nose", None, skin, 0.06, 0.07, 0.075, tx=0.0, ty=2.15, tz=-0.27, segs=8, rings=6),
+            add_sphere("gnt_chin", None, skin, 0.17, 0.085, 0.13, tx=0.0, ty=2.04, tz=-0.15, segs=10, rings=6),
         ]
-        add_curved_tube(f"moss_guardian_antler_{s_tag}", head_piv, mats["wood"], antler_main, segs=10)
-        add_limb_tube(
-            f"moss_guardian_antler_tine_{s_tag}",
-            head_piv,
-            mats["wood"],
-            (side * 0.24, 0.48, 0.02),
-            (side * 0.44, 0.62, -0.08),
-            0.024,
-            0.008,
-            segs=8,
-        )
-        add_sphere(
-            f"moss_guardian_leaf_cluster_{s_tag}",
-            head_piv,
-            mats["moss"],
-            0.085,
-            0.065,
-            0.075,
-            tx=side * 0.35,
-            ty=0.72,
-            tz=0.04,
-        )
+        for side in (-1.0, 1.0):
+            parts.append(add_sphere("gnt_ear", None, skin, 0.035, 0.07, 0.05, tx=side * 0.195, ty=2.16, tz=-0.04, segs=6, rings=4))
+        add(_goblin_fuse(parts, "gnt_head", skin, 0.014, 700, soften=3, crease=GOBLIN_CREASE), "HeadGroup", col["skin_face"], planes=True)
+        # Small dark eyes deep under the brow: deliberate voids (no mesh name holds 'eye': the engine
+        # would draw that whole mesh unlit)
+        for side in (-1.0, 1.0):
+            add(add_sphere("gnt_pupil", None, bone, 0.032, 0.026, 0.02, tx=side * 0.078, ty=2.185, tz=-0.248, segs=6, rings=4), "HeadGroup", col["void"])
 
-    # LeftArmPivot (-0.62, 1.40, 0) & RightArmPivot (0.58, 1.38, 0)
-    left_arm = create_pivot("moss_guardian_LeftArmPivot", root, -0.62, 1.40, 0.0)
-    right_arm = create_pivot("moss_guardian_RightArmPivot", root, 0.58, 1.38, 0.0)
+        # Today's braided beard: a faceted mass under the chin and three braids with bone beads
+        add(add_sphere("gnt_beard", None, fur, 0.20, 0.17, 0.15, tx=0.0, ty=1.99, tz=-0.20, segs=8, rings=6, smooth=False), "HeadGroup", col["beard"], planes=True)
+        for k, bx in enumerate((-0.10, 0.0, 0.10)):
+            top, end = (bx, 1.93, -0.33), (bx * 1.15, 1.64 + abs(bx) * 0.4, -0.40)
+            add(add_limb_tube(f"gnt_braid_{k}", None, fur, top, end, 0.062, 0.034, segs=6, steps=3, smooth=False), "HeadGroup", col["beard"], planes=True)
+            add(add_sphere(f"gnt_bead_{k}", None, bone, 0.045, 0.032, 0.045, tx=end[0], ty=end[1] + 0.05, tz=end[2], segs=6, rings=4, smooth=False), "HeadGroup", col["bone"], planes=True)
 
-    # Left arm: gnarled root-tendril limb & wooden claws
-    add_limb_tube("moss_guardian_uarm_L", left_arm, mats["bark"], (0.0, 0.0, 0.0), (-0.10, -0.38, -0.08), 0.13, 0.10, segs=12)
-    add_limb_tube("moss_guardian_farm_L", left_arm, mats["wood"], (-0.10, -0.38, -0.08), (-0.08, -0.78, -0.24), 0.11, 0.09, segs=12)
-    for c_i, c_off in enumerate((-0.05, 0.0, 0.05)):
-        add_cone_spike(
-            f"moss_guardian_claw_L_{c_i}",
-            left_arm,
-            mats["bark"],
-            base_r=0.028,
-            length=0.16,
-            tx=-0.08 + c_off,
-            ty=-0.78,
-            tz=-0.26,
-            rx=math.pi * 0.78,
-            segs=8,
-        )
+        # The pelt skirt, its hem jagged: every other vertex of the hem ring hangs lower. Weighted by
+        # rule, as the wizard's skirt: all Hips at the belt, toward the hem up to SKIRT_LEG_SHARE on the
+        # thighs, split by side, so it swings with the stride
+        top, hem, segs = 0.98, 0.52, 12
+        sections = [(top, 0.37, 0.31, 0.0, 0.01), (0.80, 0.43, 0.36, 0.0, 0.01), (hem, 0.48, 0.41, 0.0, 0.01)]
+        skirt = add_lathe("gnt_pelt", None, fur, sections, segs=segs, cap_ends=False, smooth=False)
+        for v in skirt.data.vertices:
+            if v.index >= 2 * segs and v.index % 2:
+                v.co.z -= 0.07
 
-    # Right arm: massive stone-boulder crushing gauntlet overgrown with vines and moss
-    add_limb_tube("moss_guardian_uarm_R", right_arm, mats["bark"], (0.0, 0.0, 0.0), (0.12, -0.36, -0.08), 0.14, 0.12, segs=12)
-    add_box(
-        "moss_guardian_boulder_gauntlet",
-        right_arm,
-        mats["stone"],
-        0.38,
-        0.48,
-        0.38,
-        tx=0.14,
-        ty=-0.66,
-        tz=-0.22,
-        rx=-0.24,
-        bevel=0.06,
-    )
-    add_sphere("moss_guardian_gauntlet_moss", right_arm, mats["moss"], 0.20, 0.14, 0.20, tx=0.14, ty=-0.46, tz=-0.22)
+        def skirt_weights(co):
+            t = min(max((top - co.z) / (top - hem), 0.0), 1.0)
+            s = SKIRT_LEG_SHARE * t**1.5
+            right = min(max(0.5 + co.x / 0.44, 0.0), 1.0)
+            return {"Hips": 1.0 - s, "LeftLegPivot": s * (1.0 - right), "RightLegPivot": s * right}
 
-    # LeftLegPivot (-0.24, 0.78, 0) & RightLegPivot (0.26, 0.78, 0)
-    for side, piv_name, lx in ((-1.0, "moss_guardian_LeftLegPivot", -0.24), (1.0, "moss_guardian_RightLegPivot", 0.26)):
-        leg_piv = create_pivot(piv_name, root, lx, 0.78, 0.0)
-        add_limb_tube(f"{piv_name}_trunk", leg_piv, mats["bark"], (0.0, 0.0, 0.0), (0.0, -0.72, 0.0), 0.17, 0.19, segs=14)
-        add_sphere(f"{piv_name}_knee_stone", leg_piv, mats["stone"], 0.14, 0.12, 0.14, tx=0.0, ty=-0.34, tz=-0.08)
-        for r_i, r_ang in enumerate((-0.45, 0.0, 0.45)):
-            add_cone_spike(
-                f"{piv_name}_root_claw_{r_i}",
-                leg_piv,
-                mats["wood"],
-                base_r=0.045,
-                length=0.22,
-                tx=math.sin(r_ang) * 0.10,
-                ty=-0.72,
-                tz=-0.10,
-                rx=-math.pi * 0.46,
-                ry=-r_ang,
-                segs=8,
-            )
+        drape(skirt, col["pelt"], skirt_weights)
+        # The horned beast-skull buckle on the belt, its sockets dark
+        add(add_sphere("gnt_buckle", None, bone, 0.12, 0.13, 0.10, tx=0.0, ty=0.90, tz=-0.40, segs=8, rings=6, smooth=False), "Hips", col["bone"], planes=True)
+        for side in (-1.0, 1.0):
+            add(add_sphere("gnt_socket", None, bone, 0.034, tx=side * 0.045, ty=0.92, tz=-0.485, segs=6, rings=4), "Hips", col["void"])
+            add(add_cone_spike("gnt_buckle_horn", None, bone, base_r=0.034, length=0.17, tx=side * 0.09, ty=0.95, tz=-0.41, rz=-side * 1.15, curve_bend=-0.05, segs=6, smooth=False), "Hips", col["bone"], planes=True)
 
-    return root
+        # The fur strap from the left shoulder across the chest and back to the right hip, weighted by
+        # rule from all Torso over the chest to all Hips at the belt, so it follows a twist of the trunk
+        strap = [(-0.40, 1.86, 0.0, 0.07, 0.04), (-0.10, 1.44, -0.385, 0.075, 0.04), (0.26, 1.02, -0.36, 0.07, 0.04),
+                 (0.26, 1.02, 0.31, 0.07, 0.04), (-0.10, 1.46, 0.33, 0.075, 0.04), (-0.40, 1.86, 0.0, 0.07, 0.04)]
+
+        def strap_weights(co):
+            t = min(max((1.40 - co.z) / 0.38, 0.0), 1.0)
+            return {"Torso": 1.0 - t, "Hips": t}
+
+        drape(add_curved_tube("gnt_strap", None, fur, strap, segs=6, smooth=False), col["pelt"], strap_weights)
+
+        # A bone armband on the right upper arm, leather on the left (asymmetry in one place)
+        for tag in ("Left", "Right"):
+            a, e = Vector(j[f"{tag}ArmPivot"]), Vector(j[f"{tag}ElbowPivot"])
+            p0, p1 = a.lerp(e, 0.42), a.lerp(e, 0.60)
+            add(add_limb_tube(f"gnt_armband_{tag[0]}", None, bone if tag == "Right" else fur, tuple(p0), tuple(p1), 0.215, 0.205, r_mid=0.215, segs=8, steps=2, smooth=False),
+                f"{tag}ArmPivot", col["bone"] if tag == "Right" else col["pelt"], planes=True)
+
+        # The club in the right fist, carried hanging at the side and a little forward, outside the
+        # body: the grip through the fist, the head near the ground, two iron straps and six stone spikes
+        hand = Vector(j["RightHand"])
+        d = Vector((0.10, -1.0, -0.14)).normalized()
+        knots = [(-0.16, 0.046), (0.06, 0.052), (0.24, 0.08), (0.42, 0.14), (0.56, 0.172), (0.66, 0.13)]
+        club = [(*(hand + d * t), r) for t, r in knots]
+        add(add_curved_tube("gnt_club", None, wood, club, segs=8, smooth=False), "WeaponPivot", col["wood"], planes=True)
+        for k, (t, r) in enumerate(((0.36, 0.13), (0.54, 0.18))):
+            add(add_limb_tube(f"gnt_club_strap_{k}", None, bone, tuple(hand + d * (t - 0.025)), tuple(hand + d * (t + 0.025)), r, r, r_mid=r, segs=8, steps=2, smooth=False),
+                "WeaponPivot", col["iron"], planes=True)
+        side_a = d.cross(Vector((0.0, 0.0, 1.0))).normalized()
+        side_b = d.cross(side_a).normalized()
+        for k in range(6):
+            a = k * math.pi / 3.0 + (0.3 if k % 2 else 0.0)
+            out = side_a * math.cos(a) + side_b * math.sin(a)
+            at = hand + d * (0.45 if k % 2 else 0.60) + out * 0.12
+            add(add_cone_spike(f"gnt_club_spike_{k}", None, bone, base_r=0.045, length=0.16, tx=at.x, ty=at.y, tz=at.z, segs=5, smooth=False, **aim(out)), "WeaponPivot", col["spike"], planes=True)
+
+    return kit
+
+
+def _giant_colour(col: dict):
+    def colour_of(co, w):
+        """Tan skin, darker on the fists and feet, the shin wraps of fur between ankle and knee."""
+        if w.get("LeftHand", 0.0) + w.get("RightHand", 0.0) + w.get("LeftFoot", 0.0) + w.get("RightFoot", 0.0) >= 0.5:
+            return col["skin_dark"]
+        if 0.17 < co.z < 0.40:
+            return col["wrap"]
+        return col["skin"]
+
+    return colour_of
+
+
+def build_hill_giant(grid_pos: tuple[float, float, float], mats: dict):
+    # grid_pos is not used: a skinned figure stands at the file's origin (design 6.1.1 rule 2b).
+    # White materials of the giant's own: 'skin' draws with the giant-fur tile, 'fur' with the leather
+    # tile, 'wood' with the wood tile, and the bone material plain (buckle, horns, beads, armband, iron
+    # straps, stone spikes and the voids, each painted). 'skin_hill_giant' stays in the skin's name.
+    own = {
+        "skin": make_mat("mat_skin_hill_giant_paint", 0xFFFFFF, roughness=0.60, metallic=0.04),
+        "leather": make_mat("mat_fur_hill_giant_paint", 0xFFFFFF, roughness=0.75, metallic=0.02),
+        "wood": make_mat("mat_wood_hill_giant_paint", 0xFFFFFF, roughness=0.72, metallic=0.02),
+        "plain": make_mat("mat_bone_hill_giant_paint", 0xFFFFFF, roughness=0.50, metallic=0.06),
+    }
+    means = {"skin": _goblin_hide_mean(GIANT_FUR_TILE), "leather": _goblin_hide_mean(LEATHER_TILE), "wood": _goblin_hide_mean(WOOD_TILE)}
+    col = _human_paint(GIANT_COLOURS, GIANT_FAMILY, means)
+    col["skin_face"] = col["skin"]
+    names = {"skin": "hill_giant_body", "leather": "hill_giant_fur", "wood": "hill_giant_club", "plain": "hill_giant_bone"}
+    j = giant_joints()
+    return _build_human("hill_giant", j, GIANT_RADII, GIANT_TRIANGLES, GIANT_HEIGHT, own, "skin", names, _giant_kit(j, col, own), _giant_colour(col))
+
+
+# =============================================================================
+# 8. Monster_moss_guardian (Moss Guardian): kept and re-rigged on the biped rig (plan M3c)
+# =============================================================================
+# Today's golem (design 4.6: it needs value separation, not a new shape) on the biped rig. Stone and
+# bark do not bend, so every block is hard on one bone, as the scorpion's parts are: the bark trunk
+# cut at the waist, each limb cut at its joints with a stone cap over the joint. Stone stands 20
+# points of value over the bark, moss between them in hue, and the heart core is the one glow: the
+# eyes are dark sockets and the mushroom caps pale, no longer emissive. The boulder gauntlet on the
+# right fist is the one asymmetry. Coordinates are three-space (+Y up, -Z forward).
+GUARDIAN_TRIANGLES = 5600  # under the manifest's 7,000 (design 9.1's large class)
+GUARDIAN_HEIGHT = 2.489  # the shipped guardian's height, antlers included; the re-rigged one stays within 5%
+BARK_TILE = "public/textures/bark.png"  # 'bark' in a material name draws with this tile (blenderMonsters.ts)
+STONE_TILE = "public/textures/stone.png"
+GRASS_TILE = "public/textures/grass.png"  # 'moss' draws with the grass tile
+GUARDIAN_COLOURS = {  # as the game shows them
+    "bark": 0x5E4A36,  # 37% value
+    "bark_dark": 0x4E3E2E,  # the trunk's lower blocks, 31%
+    "antler": 0x75603F,  # 46%
+    "stone": 0x9A978E,  # 60%: 23 points over the bark
+    "stone_dark": 0x86837A,  # 53%
+    "moss": 0x5F7F38,  # 50%
+    "cap": 0xB4A688,  # mushroom caps on the stone, 71%: a small accent
+    "void": 0x221E1A,  # the eye sockets: deliberate voids (design 5.4)
+}
+GUARDIAN_FAMILY = {"bark": "bark", "bark_dark": "bark", "antler": "bark", "stone": "stone", "stone_dark": "stone",
+                   "cap": "stone", "void": "stone", "moss": "moss"}
+
+
+def guardian_joints() -> dict:
+    """
+    Joints of the biped rig at today's pivots, made symmetric (each within 0.02 of today's): the trunk
+    leaning forward 18 degrees into the head, heavy arms hanging out and forward, the legs wide.
+    """
+    j = {
+        "Root": (0.0, 0.0, 0.0),
+        "Hips": (0.0, 0.84, 0.02),
+        "Torso": (0.0, 1.06, 0.0),
+        "HeadGroup": (0.0, 1.62, -0.18),
+    }
+    for side, tag in ((-1.0, "Left"), (1.0, "Right")):
+        j[f"{tag}ArmPivot"] = (side * 0.60, 1.39, 0.0)
+        j[f"{tag}ElbowPivot"] = (side * 0.763, 1.025, -0.05)
+        j[f"{tag}Hand"] = (side * 0.913, 0.654, -0.14)
+        j[f"{tag}LegPivot"] = (side * 0.25, 0.78, 0.0)
+        j[f"{tag}KneePivot"] = (side * 0.30, 0.42, -0.03)
+        j[f"{tag}Foot"] = (side * 0.30, 0.09, 0.02)
+    return j
+
+
+def build_moss_guardian(grid_pos: tuple[float, float, float], mats: dict):
+    """
+    The moss guardian, kept and re-rigged (plan M3c): today's blocks, four skinned meshes on the biped
+    rig, every block hard on one bone. grid_pos is not used: a skinned figure stands at the file's
+    origin (design 6.1.1 rule 2b).
+    """
+    import rigs
+
+    # White materials of the guardian's own, the paint over each tile's mean. The figure key is kept
+    # out of the names: 'moss' in 'mat_stone_moss_guardian' would draw the stone with the grass tile.
+    bark = make_mat("mat_bark_guardian_paint", 0xFFFFFF, roughness=0.80, metallic=0.02)
+    stone = make_mat("mat_stone_guardian_paint", 0xFFFFFF, roughness=0.85, metallic=0.02)
+    moss = make_mat("mat_moss_guardian_paint", 0xFFFFFF, roughness=0.90, metallic=0.0)
+    glow = mats["glow_emerald"]
+    means = {"bark": _goblin_hide_mean(BARK_TILE), "stone": _goblin_hide_mean(STONE_TILE), "moss": _goblin_hide_mean(GRASS_TILE)}
+    col = _human_paint(GUARDIAN_COLOURS, GUARDIAN_FAMILY, means)
+    j = guardian_joints()
+    hard = []  # (object, bone)
+
+    def add(obj, bone: str, colour, planes: bool = True):
+        _goblin_tint(obj, colour, planes)
+        hard.append((obj, f"moss_guardian_{bone}"))
+
+    # Hips: the lower trunk, a bark block from under the leg joints to the waist
+    add(add_lathe("mgd_pelvis", None, bark, [(0.66, 0.24, 0.19), (0.84, 0.32, 0.25, 0.0, 0.02), (1.02, 0.31, 0.24, 0.0, 0.0)], segs=8, smooth=False), "Hips", col["bark_dark"])
+    # Torso: today's bark chest, its stone slabs, the glowing heart core between them and the back slab
+    add(add_lathe("mgd_chest", None, bark, [(0.98, 0.30, 0.23), (1.28, 0.44, 0.32, 0.0, -0.04), (1.56, 0.48, 0.34, 0.0, -0.06), (1.74, 0.28, 0.24, 0.0, -0.04)], segs=10, smooth=False), "Torso", col["bark"])
+    add(add_sphere("mgd_core", None, glow, 0.15, 0.21, 0.15, tx=0.0, ty=1.32, tz=-0.32, segs=8, rings=6, smooth=False), "Torso", 0xFFFFFF, planes=False)
+    slab_specs = [
+        (-0.25, 1.46, -0.30, 0.22, 0.22, 0.14, 0.15, 0.25, "stone"),
+        (0.25, 1.44, -0.30, 0.22, 0.22, 0.14, -0.12, -0.25, "stone_dark"),
+        (-0.21, 1.14, -0.27, 0.20, 0.18, 0.14, -0.10, 0.20, "stone_dark"),
+        (0.21, 1.14, -0.27, 0.20, 0.18, 0.14, 0.10, -0.20, "stone"),
+        (0.0, 1.38, 0.28, 0.44, 0.42, 0.20, 0.18, 0.0, "stone"),
+    ]
+    for k, (sx, sy, sz, wx, hy, dz, rx_v, ry_v, tone) in enumerate(slab_specs):
+        add(add_box(f"mgd_slab_{k}", None, stone, wx, hy, dz, tx=sx, ty=sy, tz=sz, rx=rx_v, ry=ry_v, bevel=0.0), "Torso", col[tone])
+
+    # Head: today's bark mask, crowned with moss; dark sockets for eyes; branching antlers in a lighter
+    # bark with leaf clusters. Thickened: nothing under 0.044 across (design 5.3)
+    hx, hy, hz = j["HeadGroup"]
+    add(add_box("mgd_mask", None, bark, 0.34, 0.38, 0.28, tx=hx, ty=hy + 0.14, tz=hz - 0.04, bevel=0.0), "HeadGroup", col["bark"])
+    add(add_sphere("mgd_crown", None, moss, 0.20, 0.09, 0.16, tx=hx, ty=hy + 0.33, tz=hz - 0.02, segs=8, rings=5, smooth=False), "HeadGroup", col["moss"])
+    for side, tag in ((-1.0, "L"), (1.0, "R")):
+        add(add_box(f"mgd_socket_{tag}", None, stone, 0.08, 0.05, 0.03, tx=hx + side * 0.085, ty=hy + 0.16, tz=hz - 0.185, rz=-side * 0.15, bevel=0.0), "HeadGroup", col["void"], planes=False)
+        antler = [(hx + side * 0.12, hy + 0.28, hz - 0.02, 0.045), (hx + side * 0.24, hy + 0.46, hz + 0.02, 0.038),
+                  (hx + side * 0.36, hy + 0.68, hz + 0.06, 0.03), (hx + side * 0.28, hy + 0.87, hz + 0.02, 0.024)]
+        add(add_curved_tube(f"mgd_antler_{tag}", None, bark, antler, segs=6, smooth=False), "HeadGroup", col["antler"])
+        add(add_limb_tube(f"mgd_tine_{tag}", None, bark, (hx + side * 0.24, hy + 0.48, hz + 0.02), (hx + side * 0.44, hy + 0.62, hz - 0.08), 0.03, 0.023, segs=5, steps=2, smooth=False), "HeadGroup", col["antler"])
+        add(add_sphere(f"mgd_leaves_{tag}", None, moss, 0.085, 0.065, 0.075, tx=hx + side * 0.35, ty=hy + 0.72, tz=hz + 0.04, segs=6, rings=4, smooth=False), "HeadGroup", col["moss"])
+
+    # Shoulders: today's boulder pauldrons under moss cushions, on the arm bones; two pale mushrooms
+    # on the left one
+    for side, tag in ((-1.0, "Left"), (1.0, "Right")):
+        px, py, pz = j[f"{tag}ArmPivot"]
+        add(add_box(f"mgd_pauldron_{tag}", None, stone, 0.36, 0.28, 0.34, tx=px, ty=py + 0.16, tz=pz - 0.02, rz=-side * 0.24, bevel=0.0), f"{tag}ArmPivot", col["stone"])
+        add(add_sphere(f"mgd_cushion_{tag}", None, moss, 0.21, 0.11, 0.20, tx=px, ty=py + 0.29, tz=pz - 0.02, segs=8, rings=5, smooth=False), f"{tag}ArmPivot", col["moss"])
+        if side < 0:
+            for k, (mx, mz) in enumerate(((px + 0.04, -0.06), (px + 0.14, 0.06))):
+                add(add_limb_tube(f"mgd_stem_{k}", None, stone, (mx, py + 0.34, mz), (mx - 0.02, py + 0.44, mz), 0.024, 0.022, segs=5, steps=2, smooth=False), f"{tag}ArmPivot", col["cap"])
+                add(add_sphere(f"mgd_cap_{k}", None, stone, 0.055, 0.032, 0.055, tx=mx - 0.02, ty=py + 0.45, tz=mz, segs=6, rings=4, smooth=False), f"{tag}ArmPivot", col["cap"])
+
+    # Arms: a bark upper arm, a stone cap over the elbow, a bark forearm; the left hand ends in three
+    # bark claws, the right in today's boulder gauntlet with its moss
+    for side, tag in ((-1.0, "Left"), (1.0, "Right")):
+        a, e, h = (Vector(j[f"{tag}{n}"]) for n in ("ArmPivot", "ElbowPivot", "Hand"))
+        add(add_limb_tube(f"mgd_upper_{tag}", None, bark, tuple(a), tuple(e), 0.14, 0.11, segs=7, steps=3, smooth=False), f"{tag}ArmPivot", col["bark"])
+        add(add_sphere(f"mgd_elbow_{tag}", None, stone, 0.16, 0.14, 0.16, tx=e.x, ty=e.y, tz=e.z, segs=7, rings=5, smooth=False), f"{tag}ElbowPivot", col["stone_dark"])
+        add(add_limb_tube(f"mgd_fore_{tag}", None, bark, tuple(e), tuple(h), 0.115, 0.095, segs=7, steps=3, smooth=False), f"{tag}ElbowPivot", col["bark"])
+        d = (h - e).normalized()
+        if side < 0:
+            add(add_sphere("mgd_fist_L", None, bark, 0.10, 0.09, 0.10, tx=h.x, ty=h.y, tz=h.z, segs=7, rings=5, smooth=False), f"{tag}Hand", col["bark_dark"])
+            for k, dz in enumerate((-0.05, 0.0, 0.05)):
+                at = h + d * 0.06 + Vector((0.0, 0.0, dz - 0.03))
+                add(add_cone_spike(f"mgd_claw_{k}", None, bark, base_r=0.032, length=0.17, tx=at.x, ty=at.y, tz=at.z, segs=5, smooth=False,
+                                   rx=math.asin(d.z), rz=-math.atan2(d.x, d.y)), f"{tag}Hand", col["antler"])
+        else:
+            c = h + d * 0.12
+            add(add_box("mgd_gauntlet", None, stone, 0.38, 0.48, 0.38, tx=c.x, ty=c.y, tz=c.z, rx=-0.24, rz=math.atan2(d.x, -d.y), bevel=0.0), f"{tag}Hand", col["stone"])
+            add(add_sphere("mgd_gauntlet_moss", None, moss, 0.20, 0.12, 0.20, tx=c.x, ty=c.y + 0.22, tz=c.z, segs=8, rings=5, smooth=False), f"{tag}Hand", col["moss"])
+
+    # Legs: a bark thigh, a stone knee cap, a bark shin; the foot a stone block with three root claws
+    for side, tag in ((-1.0, "Left"), (1.0, "Right")):
+        hip, knee, foot = (Vector(j[f"{tag}{n}"]) for n in ("LegPivot", "KneePivot", "Foot"))
+        add(add_limb_tube(f"mgd_thigh_{tag}", None, bark, tuple(hip + Vector((0.0, 0.06, 0.0))), tuple(knee), 0.17, 0.15, segs=7, steps=3, smooth=False), f"{tag}LegPivot", col["bark_dark"])
+        add(add_sphere(f"mgd_knee_{tag}", None, stone, 0.18, 0.15, 0.17, tx=knee.x, ty=knee.y, tz=knee.z - 0.06, segs=7, rings=5, smooth=False), f"{tag}KneePivot", col["stone_dark"])
+        add(add_limb_tube(f"mgd_shin_{tag}", None, bark, tuple(knee), tuple(foot), 0.15, 0.18, segs=7, steps=3, smooth=False), f"{tag}KneePivot", col["bark"])
+        add(add_box(f"mgd_foot_{tag}", None, stone, 0.30, 0.12, 0.34, tx=foot.x, ty=0.06, tz=foot.z - 0.05, bevel=0.0), f"{tag}Foot", col["stone_dark"])
+        for k, ang in enumerate((-0.45, 0.0, 0.45)):
+            add(add_cone_spike(f"mgd_root_{tag}_{k}", None, bark, base_r=0.045, length=0.20, tx=foot.x + math.sin(ang) * 0.10, ty=0.05, tz=foot.z - 0.18,
+                               rx=-math.pi * 0.46, ry=-ang, segs=5, smooth=False), f"{tag}Foot", col["antler"])
+
+    rig = figkit.make_rig("Monster_moss_guardian", rigs.BIPED_TABLE, {k: t2b(*p) for k, p in j.items()}, prefix="moss_guardian")
+    for obj, bone in hard:
+        figkit.hard_weights(obj, bone)
+        obj.parent = rig
+
+    merged = figkit.merge_by_family(rig)
+    names = {"bark": "moss_guardian_bark", "stone": "moss_guardian_stone", "moss": "moss_guardian_moss", "glow": "moss_guardian_core"}
+    for ob in merged:
+        ob.name = ob.data.name = names[figkit.get_material_family(ob)]
+    _figure_paint(rig, merged, HUMAN_OCCLUSION)
+
+    tris = sum(len(p.vertices) - 2 for ob in merged for p in ob.data.polygons)
+    if tris > GUARDIAN_TRIANGLES:
+        raise ValueError(f"moss_guardian: {tris} triangles, over the budget of {GUARDIAN_TRIANGLES}")
+    cos = [v.co for ob in merged for v in ob.data.vertices]
+    size = [max(c[a] for c in cos) - min(c[a] for c in cos) for a in (0, 2, 1)]  # width, height, depth
+    print(f"[Blender] moss_guardian: {tris} triangles in {len(merged)} meshes; width {size[0]:.3f}, height {size[1]:.3f}, "
+          f"depth {size[2]:.3f}; lowest {min(c.z for c in cos):.4f}")
+    if abs(size[1] / GUARDIAN_HEIGHT - 1.0) > 0.05:
+        raise ValueError(f"moss_guardian: height {size[1]:.3f} is more than 5% from the shipped guardian's {GUARDIAN_HEIGHT}")
+    return rig
 
 
 # =============================================================================

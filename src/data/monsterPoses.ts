@@ -190,7 +190,23 @@ export const MONSTER_MOTION: Record<string, MonsterMotionRow> = {
   },
   hill_giant: {
     skeleton: 'biped',
-    bones: [],
+    // The re-rigged giant's bones (plan M3c): the biped clips' thirteen. Its clips are staged below until M4c
+    // promotes the skinned giant (the shipped one is rigid and has no Hips).
+    bones: [
+      'Hips',
+      'Torso',
+      'HeadGroup',
+      'LeftArmPivot',
+      'LeftElbowPivot',
+      'RightArmPivot',
+      'RightElbowPivot',
+      'LeftLegPivot',
+      'LeftKneePivot',
+      'LeftFoot',
+      'RightLegPivot',
+      'RightKneePivot',
+      'RightFoot'
+    ],
     codeAttack: {
       rightArmX: -1.8,
       leftArmX: -1.8,
@@ -199,7 +215,22 @@ export const MONSTER_MOTION: Record<string, MonsterMotionRow> = {
   },
   moss_guardian: {
     skeleton: 'biped',
-    bones: [],
+    // The re-rigged guardian's bones (plan M3c): the biped clips' thirteen; its clips are staged below, as the giant's.
+    bones: [
+      'Hips',
+      'Torso',
+      'HeadGroup',
+      'LeftArmPivot',
+      'LeftElbowPivot',
+      'RightArmPivot',
+      'RightElbowPivot',
+      'LeftLegPivot',
+      'LeftKneePivot',
+      'LeftFoot',
+      'RightLegPivot',
+      'RightKneePivot',
+      'RightFoot'
+    ],
     codeAttack: {
       rightArmX: -1.8,
       leftArmX: -1.8,
@@ -285,4 +316,20 @@ export const MONSTER_MOTION: Record<string, MonsterMotionRow> = {
       y: 0.32
     }
   }
+};
+
+/**
+ * The re-rigged hill giant and moss guardian (plan M3c) play the hero file's biped library: the giant swings its
+ * club with `Slash`, the guardian brings its boulder fist down with `Chop`, each anticipation the hero manifest's.
+ * Staged as the wizard's were: M4c's promote sets the live rows' `clips` and `anticipation` to these and removes the
+ * exports.
+ */
+export const PENDING_GIANT_CLIPS: Pick<MonsterMotionRow, 'clips' | 'anticipation'> = {
+  clips: { idle: 'Idle', walk: 'Walk', attack: 'Slash', death: 'Death' },
+  anticipation: 0.25
+};
+
+export const PENDING_GUARDIAN_CLIPS: Pick<MonsterMotionRow, 'clips' | 'anticipation'> = {
+  clips: { idle: 'Idle', walk: 'Walk', attack: 'Chop', death: 'Death' },
+  anticipation: 0.5
 };
