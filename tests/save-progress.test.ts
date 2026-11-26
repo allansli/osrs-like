@@ -20,7 +20,7 @@ type Loaded = {
   stats: Record<string, number>;
   dungeons: Record<string, { clears: number; best: number }>;
   bossDownUntil: Record<string, number>;
-  diary?: unknown[];
+  diary?: string[];
 };
 const load = (progress: unknown) => migrateLegacySave({ progress }, SAVE_KEY, NOW).state.progress as unknown as Loaded;
 const own = (o: unknown, k: string): boolean => Object.hasOwn(o as object, k);
