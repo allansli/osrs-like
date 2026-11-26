@@ -102,7 +102,7 @@
       -0.045434
     ]
   },
-  "vertexColor": "none",
+  "vertexColor": "all",
   "clips": {
     "Cast": {
       "moves": [
@@ -501,16 +501,16 @@
     "triangles": 6000,
     "meshes": 11,
     "materials": 11,
-    "rawBytes": 242877,
-    "brotliBytes": 127416
+    "rawBytes": 298989,
+    "brotliBytes": 155667
   },
   "figures": {
     "HeroRoot": {
       "triangles": 6000,
       "meshes": 11,
       "materials": 11,
-      "rawBytes": 169325,
-      "brotliBytes": 101640
+      "rawBytes": 223578,
+      "brotliBytes": 129248
     }
   }
 }
