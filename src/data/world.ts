@@ -191,6 +191,75 @@ export const MONSTER_TYPES: Record<string, MonsterDef> = {
     body: 'ashmantle',
     tint: 0x8a8580,
     modelScale: 1.2
+  },
+  cinder_adept: {
+    name: 'Cinder Adept',
+    level: 52,
+    hp: 80,
+    maxHit: 17,
+    atk: 49,
+    def: 36,
+    scale: 1.02,
+    style: 'magic',
+    bodyColor: 0x1e1b4b,
+    accentColor: 0x9333ea,
+    kind: 'wizard',
+    weaponColor: 0xa855f7,
+    drops: [
+      { id: 'big_bones', chance: 1 },
+      { gp: [230, 550], chance: 1 },
+      { id: 'ashes', chance: 0.5, qty: 2 }
+    ],
+    pattern: 'dark_wizard',
+    model: 'dark_wizard',
+    kit: 'cinder_adept',
+    modelScale: 1.08
+  },
+  slag_brute: {
+    name: 'Slag Brute',
+    level: 58,
+    hp: 112,
+    maxHit: 19,
+    atk: 54,
+    def: 48,
+    scale: 1.55,
+    style: 'melee',
+    bodyColor: 0xd6a87c,
+    accentColor: 0x57534e,
+    kind: 'giant',
+    weaponColor: 0x78350f,
+    drops: [
+      { id: 'big_bones', chance: 1 },
+      { gp: [340, 770], chance: 1 },
+      { id: 'shark', chance: 0.4 }
+    ],
+    pattern: 'hill_giant',
+    model: 'hill_giant',
+    kit: 'slag_brute',
+    modelScale: 1.12
+  },
+  marrowjaw: {
+    name: 'Marrowjaw the Tollmaster',
+    level: 40,
+    hp: 560,
+    maxHit: 21,
+    atk: 52,
+    def: 30,
+    scale: 1.55,
+    style: 'melee',
+    bodyColor: 0xd6a87c,
+    accentColor: 0x57534e,
+    kind: 'giant',
+    weaponColor: 0x78350f,
+    drops: [
+      { id: 'big_bones', chance: 1 },
+      { gp: [600, 1200], chance: 1 },
+      { id: 'lobster', chance: 1, qty: 2 },
+      { id: 'runite_bar', chance: 0.125 }
+    ],
+    model: 'hill_giant',
+    kit: 'marrowjaw',
+    modelScale: 1.3
   }
 };
 

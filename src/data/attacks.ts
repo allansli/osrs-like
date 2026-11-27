@@ -135,6 +135,26 @@ export const ATTACKS: Record<string, AttackDef> = {
     style: 'melee',
     power: 52,
     reach: 8
+  },
+  toll_slam: {
+    id: 'toll_slam',
+    name: 'Toll Slam',
+    shape: { type: 'circle', anchor: 'target', radius: 3 },
+    windupMs: 1800,
+    slots: 2,
+    style: 'melee',
+    power: 26,
+    reach: 13.5
+  },
+  camp_sweep: {
+    id: 'camp_sweep',
+    name: 'Camp Sweep',
+    shape: { type: 'circle', anchor: 'self', radius: 5 },
+    windupMs: 1900,
+    slots: 2,
+    style: 'melee',
+    power: 30,
+    reach: 5
   }
 };
 
@@ -182,6 +202,28 @@ export const BOSSES: Record<string, BossDef> = {
         untilHpFrac: 0,
         pattern: ['ashen_nova', 'slagburst', 'basic', 'ember_cone', 'basic', 'slag_rain', 'slag_rain'],
         cadenceMult: 0.8,
+        shiftMs: 2000
+      }
+    ]
+  },
+  marrowjaw: {
+    respawnSecs: 180,
+    arenaRadius: 12,
+    openingShiftMs: 0,
+    mark: { step: 0.25, max: 4, secs: 12 },
+    phases: [
+      {
+        name: 'The Toll',
+        untilHpFrac: 0.5,
+        pattern: ['basic', 'basic', 'toll_slam', 'basic'],
+        cadenceMult: 1,
+        shiftMs: 2000
+      },
+      {
+        name: 'The Reckoning',
+        untilHpFrac: 0,
+        pattern: ['camp_sweep', 'toll_slam', 'basic', 'basic'],
+        cadenceMult: 1,
         shiftMs: 2000
       }
     ]

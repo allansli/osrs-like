@@ -249,7 +249,19 @@ export const CAMPS: CampDef[] = [
   // Design 6.4: the boss's arena, far from every other camp's reach.
   makeCamp('ashmantle', [
     { type: 'ashmantle', x: -102, z: 54 }
-  ], RANGED_AGGRO, 12, true)
+  ], RANGED_AGGRO, 12, true),
+  makeCamp('cinder_circle', [
+    { type: 'cinder_adept', x: -2, z: 67 },
+    { type: 'cinder_adept', x: 4, z: 74 },
+    { type: 'cinder_adept', x: -4, z: 77 }
+  ], RANGED_AGGRO),
+  makeCamp('brute_shelf', [
+    { type: 'slag_brute', x: -6, z: 100 },
+    { type: 'slag_brute', x: 2, z: 104 }
+  ], MELEE_AGGRO),
+  makeCamp('tollmaster', [
+    { type: 'marrowjaw', x: 7, z: -73 }
+  ], MELEE_AGGRO, 12, true)
 ];
 
 export const SAFE_ZONES: SafeZoneDef[] = WORLD_REGIONS.map((reg) => ({
