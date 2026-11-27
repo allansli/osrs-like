@@ -22,7 +22,7 @@ export interface StoryQuest {
   reward: StoryQuestReward;
 }
 
-// Stage 6, slice 2 (Q6, design 7.3): chapters 1 and 2 and four side quests. Ids, names, givers and regions are the
+// Stage 6, slices 2 and 3 (Q6, Z5, design 7.3): chapters 1 to 3 and four side quests. Ids, names, givers and regions are the
 // content file's; stages and rewards are the design's table. A stage whose next conversation takes an item also asks
 // that the item is carried, so the hand-in can always be made when the stage is reached.
 export const STORY_QUESTS: StoryQuest[] = [
@@ -62,6 +62,37 @@ export const STORY_QUESTS: StoryQuest[] = [
       { kind: 'talk', at: 'odalys_venn', journal: 'Tell Odalys Venn in town that the east lamp has its bracket.' }
     ],
     reward: { gp: 1200, xp: { smithing: 600 }, items: [{ id: 'ember_faint', qty: 1 }] }
+  },
+  {
+    id: 'ml_salt',
+    name: 'Salt on the Wind',
+    line: 'main',
+    giver: 'qadir_salthand',
+    region: 'desert',
+    needs: { all: [{ quest: ['ml_east', 'done'] }, { combat: 50 }] },
+    // Stage 6, slice 3 (Z5). The Warren's door (DUNGEONS.saltfang_warren.needs) opens from stage 3, where Qadir has
+    // shown it, and stays open once the chapter is done.
+    stages: [
+      { kind: 'talk', at: 'qadir_salthand', journal: 'Hear what Qadir Salt-Hand has lost. He trades by the store in the dunes, past the end of Saltwind Track.' },
+      { kind: 'do', done: { stat: ['kill:saltback_stalker', 4] }, journal: 'Kill 4 Saltback Stalkers. They hunt the shore in the far south-east of the dunes.' },
+      { kind: 'talk', at: 'qadir_salthand', journal: 'Tell Qadir Salt-Hand in the dunes that four stalkers are dead.' },
+      {
+        kind: 'do',
+        done: { stat: ['kill:saltfang', 1] },
+        journal: 'Go into Saltfang Warren by the door east of the gold veins in the dunes, and kill Matron Saltfang.'
+      },
+      { kind: 'talk', at: 'odalys_venn', journal: 'Tell Odalys Venn in town that the Matron is dead and the salt road is open.' }
+    ],
+    // Design 7.3 also pays 2,000 Crafting XP. The skill does not exist until slice 4 (K2), so that entry waits for it.
+    reward: {
+      gp: 4000,
+      xp: {},
+      items: [
+        { id: 'adamant_bar', qty: 8 },
+        { id: 'ember_steady', qty: 1 }
+      ],
+      title: 'Warrenbreaker'
+    }
   },
   {
     id: 'sq_steel',
