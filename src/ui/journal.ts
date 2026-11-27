@@ -4,9 +4,10 @@ import { STORY_QUESTS } from '../data/story';
 import { STARTER_QUESTS } from '../state/adventure';
 import { SKILLS_META } from '../data/skills';
 import { ITEMS } from '../data/items';
+import { WORLD_REGIONS } from '../data/world';
 import type { Cond } from '../state/dialogue';
 import { openModal, closeModals, announceUnlocksSince } from './playerActions';
-import { updateAllUI, el, addChatMessage } from './hud';
+import { updateAllUI, el } from './hud';
 import { dispatchCommand } from '../engine/actions';
 
 const words = (id: string): string => id.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/[_:]/g, ' ');
@@ -28,7 +29,7 @@ function formatNeeds(cond: Cond): string {
     const [qId, n] = cond.stage;
     return `${questName(qId)} stage ${n + 1}`;
   }
-  if ('claimed' in cond) return `Claimed ${questName(cond.claimed)}`;
+  if ('claimed' in cond) return `${questName(cond.claimed)} finished`;
   if ('starter' in cond) {
     const [id, st] = cond.starter;
     return `${questName(id)} ${st === 'ready' ? 'ready to hand in' : 'open'}`;
@@ -45,7 +46,13 @@ function formatNeeds(cond: Cond): string {
   if ('shrine' in cond) return `${capital(cond.shrine)} shrine found`;
   if ('all' in cond) return cond.all.map(formatNeeds).join(', ');
   if ('any' in cond) return cond.any.map(formatNeeds).join(' or ');
-  if ('not' in cond) return `Not (${formatNeeds(cond.not)})`;
+  if ('not' in cond) {
+    const inner = cond.not;
+    if ('claimed' in inner) {
+      return inner.claimed === STARTER_QUESTS[0].id ? 'a hero from before the starter chain' : `${questName(inner.claimed)} not finished`;
+    }
+    return `Not (${formatNeeds(inner)})`;
+  }
   return capital(words(cond.flag));
 }
 
@@ -118,7 +125,7 @@ export function renderJournal(): void {
 
       const descEl = document.createElement('div');
       descEl.className = 'shop-card-desc';
-      descEl.textContent = `Giver: ${q.giverName} · Place: ${q.region}`;
+      descEl.textContent = `Giver: ${q.giverName} · Place: ${WORLD_REGIONS.find((r) => r.id === q.region)!.name}`;
       card.appendChild(descEl);
 
       const reqEl = document.createElement('div');
@@ -202,7 +209,6 @@ export function openEmberModal(itemId: string): void {
   const grid = el('ember-skills-grid');
   grid.replaceChildren();
   for (const [key, meta] of Object.entries(SKILLS_META)) {
-    if (!Object.hasOwn(STATE.skills, key)) continue;
     const sk = STATE.skills[key];
     const btn = document.createElement('button');
     btn.type = 'button';
@@ -211,10 +217,7 @@ export function openEmberModal(itemId: string): void {
     btn.addEventListener('click', () => {
       const before = Object.fromEntries(Object.entries(STATE.skills).map(([k, s]) => [k, s.lvl]));
       const res = dispatchCommand({ kind: 'useEmber', itemId, skillKey: key });
-      if (!res.ok) {
-        addChatMessage(res.reason, 'combat');
-        return;
-      }
+      if (!res.ok) return;
       closeModals();
       announceUnlocksSince(before);
       updateAllUI();

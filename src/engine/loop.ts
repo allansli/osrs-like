@@ -282,7 +282,7 @@ export function updatePlayerIntent(f: FrameState): void {
           else if (act === 'bank') openBankModal();
           else if (act === 'forge') openSmithingModal();
           else if (act === 'worldmap') openWorldMapModal();
-          else if (act === 'slayer') openQuestsModal();
+          else if (act === 'slayer') openQuestsModal('tasks');
           else if (act === 'dialogue') {
             const dlg = ref.dialogue || 'Greetings, traveler.';
             const name = ref.name || 'Guard';

@@ -160,7 +160,7 @@ function handleCommandResult(cmd: PlayerCommand, res: CommandResult): void {
           if (ev.target === 'shop') openShopModal('all');
           else if (ev.target === 'bank') openBankModal();
           else if (ev.target === 'forge') openSmithingModal();
-          else if (ev.target === 'tasks') openQuestsModal();
+          else if (ev.target === 'tasks') openQuestsModal('tasks');
         } else if (ev.type === 'enter') {
           closeDialogue();
           // dungeon command (a no-op until Z7)

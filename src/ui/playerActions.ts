@@ -24,7 +24,7 @@ import { SPELLS } from '../data/magic';
 import { dispatchCommand } from '../engine/actions';
 import { getSkillSvg } from './icons';
 import { closeDialogue } from './dialogue';
-import { renderJournal, setupLogTabs, openEmberModal } from './journal';
+import { renderJournal, setupLogTabs, switchLogTab, openEmberModal } from './journal';
 import {
   renderShopModal as renderShopModalUi,
   renderForge,
@@ -479,11 +479,12 @@ export function openBankModal(): void {
   renderBankModal();
 }
 
-export function openQuestsModal(): void {
+export function openQuestsModal(tab?: 'journal' | 'tasks' | 'diary'): void {
   openModal('quest-modal');
   setupLogTabs();
   renderJournal();
   renderQuests();
+  if (tab) switchLogTab(tab);
 }
 
 export function openSettingsModal(): void {
