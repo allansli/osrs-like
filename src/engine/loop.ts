@@ -5,7 +5,7 @@ import { nextTier, TIER_LABELS } from './post';
 import { playerChoseTier } from './photo';
 import { currentDayFrame, updateLighting } from './lighting';
 import { updateAir } from './atmosphere';
-import { applyZoneAir, caveArmLength, isZoneMonster } from './zones';
+import { applyZoneAir, zoneArmLength, isZoneMonster } from './zones';
 import { updateSky } from './sky';
 import { updateCarpet } from './flora';
 import { updateParticles } from './particles';
@@ -621,7 +621,7 @@ export function updateCamera(f: FrameState): void {
   const desiredCamYaw = player.yaw + camState.manualOffset;
   camState.yaw = lerpAngle(camState.yaw, desiredCamYaw, Math.min(1, f.dt * 8.5));
 
-  const horizDist = caveArmLength(Math.cos(camState.pitch) * camState.distance);
+  const horizDist = zoneArmLength(Math.cos(camState.pitch) * camState.distance);
   const vertDist  = Math.sin(camState.pitch) * camState.distance;
   const camTargetX = player.pos.x - Math.sin(camState.yaw) * horizDist;
   const camTargetZ = player.pos.z - Math.cos(camState.yaw) * horizDist;

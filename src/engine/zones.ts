@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { CAMERA_LIMITS } from '../data/look';
 import { G, camState, player, type MonsterEntity, type ResourceNodeEntity } from './context';
 import { disposeObject3D } from './dispose';
 import { albedoMaterial, assignGroundUvs, biomeAlbedoId, GROUND_REPEAT, loadAlbedo, sealAlbedoUvs } from './textures';
@@ -607,12 +606,28 @@ export function leaveZone(): void {
   G.zone = null;
 }
 
-/** In a cave, shrinks the camera arm in 0.25 steps (not below distanceMin) until the camera spot is walkable. */
-export function caveArmLength(horizDist: number): number {
-  if (!G.zone || !CAVES.some((c) => c.id === G.zone!.def.id)) return horizDist;
-  const minHoriz = CAMERA_LIMITS.distanceMin * Math.cos(camState.pitch);
-  while (horizDist > minHoriz && !G.walkGrid.walkable(player.pos.x - Math.sin(camState.yaw) * horizDist, player.pos.z - Math.cos(camState.yaw) * horizDist)) {
-    horizDist = Math.max(minHoriz, horizDist - 0.25);
+const ARM_STEP = 0.1;
+// The camera's near plane (0.5 at fov 50) reaches about 0.48 to the side of the eye; the eye keeps this far from a wall.
+const EYE_MARGIN = 0.6;
+
+function eyeClear(x: number, z: number): boolean {
+  const w = G.walkGrid.walkable;
+  return w(x, z) && w(x + EYE_MARGIN, z) && w(x - EYE_MARGIN, z) && w(x, z + EYE_MARGIN) && w(x, z - EYE_MARGIN);
+}
+
+/**
+ * In a zone, the camera arm ends at the last point of the ray from the hero that is EYE_MARGIN clear of anything not
+ * walkable (a wall, a pillar or a shut gate) on every side, so the eye never stands behind a wall. It may go below
+ * distanceMin, down to 0 when the hero stands against a wall.
+ */
+export function zoneArmLength(horizDist: number): number {
+  if (!G.zone) return horizDist;
+  const dx = -Math.sin(camState.yaw);
+  const dz = -Math.cos(camState.yaw);
+  for (let d = 0; d < horizDist; ) {
+    const next = Math.min(horizDist, d + ARM_STEP);
+    if (!eyeClear(player.pos.x + dx * next, player.pos.z + dz * next)) return d;
+    d = next;
   }
   return horizDist;
 }
