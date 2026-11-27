@@ -325,8 +325,7 @@ export function leaveZone(): void {
 
   for (const m of zoneMonsters) {
     G.monstersList.splice(G.monstersList.indexOf(m), 1);
-    const hIdx = G.worldInteractiveObjects.indexOf(m.rig.hitbox);
-    if (hIdx >= 0) G.worldInteractiveObjects.splice(hIdx, 1);
+    G.worldInteractiveObjects.splice(G.worldInteractiveObjects.indexOf(m.rig.hitbox), 1);
     m.labelEl.remove();
     G.scene.remove(m.rig.group);
     disposeObject3D(m.rig.group);
@@ -340,16 +339,13 @@ export function leaveZone(): void {
       const hIdx = G.worldInteractiveObjects.indexOf(c);
       if (hIdx >= 0) G.worldInteractiveObjects.splice(hIdx, 1);
     }
-    const rIdx = G.worldInteractiveObjects.indexOf(r.group);
-    if (rIdx >= 0) G.worldInteractiveObjects.splice(rIdx, 1);
     G.scene.remove(r.group);
     disposeObject3D(r.group);
   }
   zoneNodes.clear();
 
   for (const obj of zoneInteractiveObjects) {
-    const idx = G.worldInteractiveObjects.indexOf(obj);
-    if (idx >= 0) G.worldInteractiveObjects.splice(idx, 1);
+    G.worldInteractiveObjects.splice(G.worldInteractiveObjects.indexOf(obj), 1);
   }
   zoneInteractiveObjects = [];
 
