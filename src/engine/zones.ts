@@ -20,6 +20,8 @@ import { triggerRegionBanner } from './actions';
 import { el } from '../ui/hud';
 import { STATE } from '../state/gameState';
 import { WORLD_REGIONS } from '../data/world';
+import { loadBlenderMonstersTemplate } from './blenderMonsters';
+import { loadBlenderHeroTemplate } from './blenderHero';
 
 const ZONE_FOG_COLOR = 0x0f0c0a;
 const ZONE_FOG_DENSITY = 0.025;
@@ -28,6 +30,33 @@ const ZONE_FOG_DENSITY = 0.025;
 const FISSURE_FOOTPRINT: [number, number][] = [[-1.85, -1.12], [1.92, -1.12], [1.92, 1.28], [-1.85, 1.28]];
 const FISSURE_SCALE = 0.6;
 const FISSURE_INSET = 1.4;
+// The Ember Hurler shares the Lesser Demon's model, whose red is in its vertex colours, so its row's tint (multiplied
+// in) keeps it red under CAVE_LIGHT. In the cave its body, horns and membranes draw charcoal with an ash glow instead
+// (SF3; README scene D measures it at saturation 0.25 to 0.40 against the demons' 0.8 to 0.95).
+const HURLER_ASH = { color: 0x3a3530, emissive: 0xb8b2a7, emissiveIntensity: 0.2 };
+
+/** Runs after spawnMonster's own model upgrade, which was queued first on the same two loads. */
+function ashHurler(m: MonsterEntity): void {
+  Promise.all([loadBlenderMonstersTemplate(), loadBlenderHeroTemplate()]).then(([gltf]) => {
+    if (!gltf) return;
+    let painted = 0;
+    m.rig.group.traverse((o) => {
+      const mesh = o as THREE.Mesh;
+      if (!mesh.isMesh || !/_(body|horn|membrane)$/.test(mesh.name)) return;
+      const mat = mesh.material as THREE.MeshLambertMaterial;
+      mat.color.setHex(HURLER_ASH.color);
+      mat.emissive.setHex(HURLER_ASH.emissive);
+      mat.emissiveIntensity = HURLER_ASH.emissiveIntensity;
+      mat.vertexColors = false;
+      mat.needsUpdate = true;
+      painted++;
+    });
+    // The template holds the model but the rig does not: the upgrade has not run yet, so nothing was painted.
+    if (painted === 0 && gltf.scene.getObjectByName(`${m.modelKey}_body`)) {
+      throw new Error(`ashHurler: ${m.id} has no body, horn or membrane mesh after its model upgrade`);
+    }
+  });
+}
 
 // Set by enterZone and read only while G.zone is set.
 let overworldGrid = null as unknown as WalkGrid;
@@ -345,6 +374,7 @@ export function enterZone(def: Zone): void {
         });
         if (G.monstersList.length === idxBefore) throw new Error(`enterZone: unknown monster type "${m.type}" in ${def.id}`);
         const spawned = G.monstersList[G.monstersList.length - 1];
+        if (spawned.typeKey === 'ember_hurler') ashHurler(spawned);
         zoneMonsters.add(spawned);
         caveMonsters.push(spawned);
       }

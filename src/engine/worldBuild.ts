@@ -319,8 +319,6 @@ export function buildDungeonDoors(): void {
 
     G.scene.add(grp);
 
-    // A door that stands on a named place (the cave mouth on Slagfall Terrace) leaves the name to that place's label.
-    if (POIS.some((p) => p.x === x && p.z === z)) continue;
     G.npcList.push({
       pos: grp.position,
       name: d.name,
