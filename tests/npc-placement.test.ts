@@ -8,6 +8,8 @@ import { buildWalkGrid, isOpenCell } from '../src/state/pathfind';
 import { shrineWorldPos } from '../src/state/shrines';
 
 const LEASH_MARGIN = 4; // a camp's leash circle is its radius plus 4 (tests/world-data-combat.test.ts)
+// Design 7.2: the leash rule holds for aggressive camps. The town's people stand among its passive camps (Bran Tolley
+// at (4, 12) is inside three_kettle's circle). The arena rule holds for every camp.
 const ARENA_MARGIN = 6;
 const STATION_GAP = 2.5;
 const PERSON_GAP = 2.5;
@@ -33,12 +35,12 @@ describe('where people stand', () => {
     expect(NPCS.filter((n) => !isOpenCell(grid, n.x, n.z)).map((n) => `${n.id} (${n.x}, ${n.z})`)).toEqual([]);
   });
 
-  it('stands outside every camp leash circle and every boss arena plus 6', () => {
+  it('stands outside every aggressive camp leash circle and every boss arena plus 6', () => {
     const bad: string[] = [];
     for (const n of NPCS) {
       for (const c of CAMPS) {
         const d = Math.hypot(n.x - c.x, n.z - c.z);
-        if (d <= c.radius + LEASH_MARGIN) bad.push(`${n.id} is ${d.toFixed(1)} from ${c.id}, leash ${c.radius + LEASH_MARGIN}`);
+        if (c.aggressive && d <= c.radius + LEASH_MARGIN) bad.push(`${n.id} is ${d.toFixed(1)} from ${c.id}, leash ${c.radius + LEASH_MARGIN}`);
         if (c.arenaRadius !== undefined && d <= c.arenaRadius + ARENA_MARGIN) bad.push(`${n.id} is ${d.toFixed(1)} from the arena of ${c.id}`);
       }
     }
