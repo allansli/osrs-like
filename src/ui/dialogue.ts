@@ -22,9 +22,6 @@ export function showDialogue(view: DialogueView): void {
 
   const npc = NPCS.find((n) => n.id === view.npcId);
   if (!npc) throw new Error(`unknown dialogue person ${view.npcId}`);
-  if (player.downed || STATE.hp <= 0) return;
-  if (Math.hypot(player.pos.x - npc.x, player.pos.z - npc.z) > 5.0) return;
-
   if (!isOpen) {
     lastFocused = document.activeElement as HTMLElement | null;
   }
@@ -68,10 +65,7 @@ export function showDialogue(view: DialogueView): void {
     animFrameId = requestAnimationFrame(monitorLoop);
   }
 
-  const firstBtn = optionsEl.querySelector<HTMLElement>('button');
-  if (firstBtn) {
-    firstBtn.focus();
-  }
+  optionsEl.querySelector<HTMLElement>('button')!.focus();
 }
 
 export function closeDialogue(): void {
@@ -95,11 +89,11 @@ export function closeDialogue(): void {
 }
 
 function chooseOptionIndex(index: number): void {
-  if (!currentView) return;
+  const view = currentView!;
   const cmd: PlayerCommand = {
     kind: 'choose',
-    npcId: currentView.npcId,
-    nodeId: currentView.nodeId,
+    npcId: view.npcId,
+    nodeId: view.nodeId,
     index
   };
   dispatchCommand(cmd);
@@ -120,9 +114,9 @@ function handleKeyDown(e: KeyboardEvent): void {
   if (['1', '2', '3', '4'].includes(e.key)) {
     const num = parseInt(e.key, 10);
     const idx = num - 1;
-    if (currentView && idx >= 0 && idx < currentView.options.length) {
+    if (idx < currentView!.options.length) {
       e.preventDefault();
-      chooseOptionIndex(currentView.options[idx].index);
+      chooseOptionIndex(currentView!.options[idx].index);
     }
   }
 }
@@ -139,12 +133,10 @@ function checkDialogueAutoClose(): boolean {
   }
   lastHp = STATE.hp;
 
-  if (currentNpc) {
-    const dist = Math.hypot(player.pos.x - currentNpc.x, player.pos.z - currentNpc.z);
-    if (dist > 5.0) {
-      closeDialogue();
-      return true;
-    }
+  const npc = currentNpc!;
+  if (Math.hypot(player.pos.x - npc.x, player.pos.z - npc.z) > 5.0) {
+    closeDialogue();
+    return true;
   }
   return false;
 }
@@ -155,25 +147,23 @@ function monitorLoop(): void {
   animFrameId = requestAnimationFrame(monitorLoop);
 }
 
+const ROOM_REFUSALS = ['Your backpack is full.', 'Missing required item.'];
+
 function handleCommandResult(cmd: PlayerCommand, res: CommandResult): void {
   if (cmd.kind === 'talk') {
-    if (res.ok && res.view) {
-      showDialogue(res.view);
-    }
+    showDialogue(res.view!);
   } else if (cmd.kind === 'choose') {
     if (res.ok) {
-      if (res.events && res.events.length > 0) {
-        for (const ev of res.events) {
-          if (ev.type === 'open') {
-            closeDialogue();
-            if (ev.target === 'shop') openShopModal('all');
-            else if (ev.target === 'bank') openBankModal();
-            else if (ev.target === 'forge') openSmithingModal();
-            else if (ev.target === 'tasks') openQuestsModal();
-          } else if (ev.type === 'enter') {
-            closeDialogue();
-            // dungeon command (a no-op until Z7)
-          }
+      for (const ev of res.events!) {
+        if (ev.type === 'open') {
+          closeDialogue();
+          if (ev.target === 'shop') openShopModal('all');
+          else if (ev.target === 'bank') openBankModal();
+          else if (ev.target === 'forge') openSmithingModal();
+          else if (ev.target === 'tasks') openQuestsModal();
+        } else if (ev.type === 'enter') {
+          closeDialogue();
+          // dungeon command (a no-op until Z7)
         }
       }
       if (res.view) {
@@ -182,7 +172,7 @@ function handleCommandResult(cmd: PlayerCommand, res: CommandResult): void {
         closeDialogue();
       }
     } else {
-      el('dialogue-say').textContent = 'Make room first.';
+      el('dialogue-say').textContent = ROOM_REFUSALS.includes(res.reason) ? 'Make room first.' : res.reason;
     }
   }
 }
