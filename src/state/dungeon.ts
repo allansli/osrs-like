@@ -1,5 +1,5 @@
 import { BOSSES } from '../data/attacks';
-import { DUNGEONS, type DungeonCamp, type DungeonGate, type DungeonLoot } from '../data/dungeons';
+import { DUNGEONS, type Dungeon, type DungeonCamp, type DungeonGate, type DungeonLoot, type Zone } from '../data/dungeons';
 import type { CampDef } from '../data/worldMap';
 import { evalCond, type Cond } from './dialogue';
 import { creditGp } from './economy';
@@ -7,27 +7,7 @@ import { addItem, canAddItem } from './inventory';
 import { bump } from './progress';
 import type { GameState, SavedPose } from './types';
 
-export type Zone = {
-  id: string;
-  name: string;
-  origin: [number, number];
-  size: number;
-  door: { x: number; z: number };
-  entry: [number, number];
-  rooms: Record<string, [number, number, number, number]>;
-  camps: DungeonCamp[];
-  needs: Cond;
-  solid?: [number, number, number, number][];
-  respawnSecs?: number;
-  props?: { node: string; x: number; z: number; scale?: number; rotY?: number }[];
-};
-
-export type Dungeon = Zone & {
-  gates: DungeonGate[];
-  nodes: { type: string; x: number; z: number }[];
-  chest: [number, number];
-  loot: DungeonLoot;
-};
+export type { Zone, Dungeon } from '../data/dungeons';
 
 export type { DungeonCamp, DungeonGate, DungeonLoot };
 
@@ -41,14 +21,12 @@ export type DungeonRun = {
 };
 
 export function zoneWalk(
-  def: Zone,
+  def: Zone & { gates?: DungeonGate[] },
   openGates: string[]
 ): (x: number, z: number) => boolean {
   const [ox, oz] = def.origin;
   const roomRects = Object.values(def.rooms);
-  const gates = ('gates' in def && Array.isArray((def as { gates?: unknown }).gates))
-    ? (def as unknown as { gates: DungeonGate[] }).gates
-    : [];
+  const gates = def.gates ?? [];
   const shutGates = gates.filter((g) => !openGates.includes(g.id));
   const solids = def.solid ?? [];
 

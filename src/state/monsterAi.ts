@@ -300,7 +300,7 @@ export function stepMonster(m: MonsterLogic, world: StepWorld): MonsterEvent[] {
       m.state = 'dead';
       const boss = BOSSES[m.typeKey];
       m.timer = m.respawnSecs !== undefined
-        ? Math.max(0, m.respawnSecs - DYING_SECS)
+        ? m.respawnSecs - DYING_SECS
         : boss ? boss.respawnSecs : DEAD_SECS;
     }
     return [];
