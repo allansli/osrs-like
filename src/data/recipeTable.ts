@@ -106,7 +106,12 @@ function logRecipes(): RecipeDef[] {
     { id: 'smith_black_plate', name: 'Forge Black Platebody', skill: 'smithing', req: 19, xp: 175, input: { black_bar: 3 }, output: 'black_plate', kind: 'smith' },
     { id: 'brew_prayer', name: 'Brew Prayer Restore Vial', skill: 'cooking', req: 30, xp: 110, input: { sting_gland: 1, ashes: 2 }, output: 'prayer_potion', kind: 'cook' },
     { id: 'brew_restore', name: 'Brew Super Restore Elixir', skill: 'cooking', req: 55, xp: 220, input: { mire_root: 1, ashes: 2 }, output: 'super_restore', kind: 'cook' },
-    { id: 'brew_stew', name: 'Simmer Hearty Stew', skill: 'cooking', req: 60, xp: 260, input: { shark: 1, mire_root: 1 }, output: 'hearty_elixir', kind: 'cook' }
+    { id: 'brew_stew', name: 'Simmer Hearty Stew', skill: 'cooking', req: 60, xp: 260, input: { shark: 1, mire_root: 1 }, output: 'hearty_elixir', kind: 'cook' },
+    // Stage 6, slice 3 (Z4, design 7.4): adamant smelting and forging
+    { id: 'smelt_adamant', name: 'Smelt Adamant Bar', skill: 'smithing', req: 30, xp: 75, input: { adamantite_ore: 1, coal: 2 }, output: 'adamant_bar', kind: 'smelt' },
+    { id: 'smith_addy_scim', name: 'Forge Adamant Scimitar', skill: 'smithing', req: 30, xp: 250, input: { adamant_bar: 3 }, output: 'addy_scimitar', kind: 'smith' },
+    { id: 'smith_addy_legs', name: 'Forge Adamant Platelegs', skill: 'smithing', req: 32, xp: 290, input: { adamant_bar: 3 }, output: 'addy_legs', kind: 'smith' },
+    { id: 'smith_addy_plate', name: 'Forge Adamant Platebody', skill: 'smithing', req: 34, xp: 350, input: { adamant_bar: 4 }, output: 'addy_plate', kind: 'smith' }
   );
   return recipes;
 }

@@ -155,6 +155,26 @@ export const ATTACKS: Record<string, AttackDef> = {
     style: 'melee',
     power: 30,
     reach: 5
+  },
+  sting_arc: {
+    id: 'sting_arc',
+    name: 'Sting Arc',
+    shape: { type: 'cone', length: 14, halfAngleDeg: 50 },
+    windupMs: 1600,
+    slots: 2,
+    style: 'melee',
+    power: 40,
+    reach: 2.9
+  },
+  brine_spit: {
+    id: 'brine_spit',
+    name: 'Brine Spit',
+    shape: { type: 'circle', anchor: 'target', radius: 2.5 },
+    windupMs: 1400,
+    slots: 1,
+    style: 'pure',
+    power: 26,
+    reach: 13.5
   }
 };
 
@@ -224,6 +244,35 @@ export const BOSSES: Record<string, BossDef> = {
         untilHpFrac: 0,
         pattern: ['camp_sweep', 'toll_slam', 'basic', 'basic'],
         cadenceMult: 1,
+        shiftMs: 2000
+      }
+    ]
+  },
+  saltfang: {
+    respawnSecs: 0,
+    arenaRadius: 10,
+    openingShiftMs: 0,
+    mark: { step: 0.25, max: 4, secs: 12 },
+    phases: [
+      {
+        name: 'I Stirring',
+        untilHpFrac: 0.6,
+        pattern: ['basic', 'basic', 'sting_arc', 'basic'],
+        cadenceMult: 1,
+        shiftMs: 2000
+      },
+      {
+        name: 'II Roused',
+        untilHpFrac: 0.3,
+        pattern: ['brine_spit', 'brine_spit', 'sting_arc', 'basic', 'basic'],
+        cadenceMult: 0.9,
+        shiftMs: 2000
+      },
+      {
+        name: 'III Frenzy',
+        untilHpFrac: 0,
+        pattern: ['sting_arc', 'brine_spit', 'brine_spit', 'basic', 'sting_arc', 'basic'],
+        cadenceMult: 0.75,
         shiftMs: 2000
       }
     ]

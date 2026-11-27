@@ -35,5 +35,8 @@ export const EXTRA_ITEMS = {
   // Stage 6, slice 2 (Q6, design 7.8): an ember is used from the backpack and gives its experience to a skill the player picks.
   ember_faint: { id: 'ember_faint', name: 'Faint Ember', type: 'resource', iconKind: 'ore', price: 1, lampXp: 1000, color: 0x9a3412, trim: 0xfdba74 },
   ember_steady: { id: 'ember_steady', name: 'Steady Ember', type: 'resource', iconKind: 'ore', price: 1, lampXp: 7500, color: 0xea580c, trim: 0xfde047 },
-  ember_bright: { id: 'ember_bright', name: 'Bright Ember', type: 'resource', iconKind: 'ore', price: 1, lampXp: 40000, color: 0xfbbf24, trim: 0xfef9c3 }
+  ember_bright: { id: 'ember_bright', name: 'Bright Ember', type: 'resource', iconKind: 'ore', price: 1, lampXp: 40000, color: 0xfbbf24, trim: 0xfef9c3 },
+
+  adamantite_ore: { id: 'adamantite_ore', name: 'Adamantite Ore', type: 'resource', iconKind: 'ore', price: 240, color: 0x385446, trim: 0x5a7868 },
+  adamant_bar: { id: 'adamant_bar', name: 'Adamant Bar', type: 'bar', iconKind: 'bar', price: 450, color: 0x385446, trim: 0x5a7868 }
 };
