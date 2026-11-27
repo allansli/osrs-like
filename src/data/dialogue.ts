@@ -315,7 +315,7 @@ const ODALYS: Dialogue = {
       ]
     },
     wards_cairn: {
-      say: 'One lamp fed. Now walk Cinder Stair to its end, south and west, as far as Wardstone Cairn. Corin Ashby keeps it. Tell him the town lamp holds, and look at what he looks at all day. Stay on the road.',
+      say: 'One lamp fed. Now walk Cinder Stair south, as far as Wardstone Cairn and no farther. It stands before the pass. Corin Ashby keeps it. Tell him the town lamp holds, and look at what he looks at all day. Stay on the road.',
       options: [{ text: 'I will find Corin Ashby.', goto: 'end' }, WHAT_ARE_WARDS, OTHER_WORK]
     },
     wards_what: {

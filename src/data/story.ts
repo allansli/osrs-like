@@ -39,7 +39,7 @@ export const STORY_QUESTS: StoryQuest[] = [
       { kind: 'talk', at: 'odalys_venn', journal: 'Hear what Odalys Venn wants. She stands by the altar in town, north of the store.' },
       { kind: 'do', done: { has: ['ashes', 3] }, journal: 'Burn logs at a forge until you carry 3 Ashes.' },
       { kind: 'talk', at: 'odalys_venn', journal: 'Bring the 3 Ashes to Odalys Venn in town.' },
-      { kind: 'talk', at: 'corin_ashby', journal: 'Follow Cinder Stair south-west to its end and speak with Corin Ashby at Wardstone Cairn.' }
+      { kind: 'talk', at: 'corin_ashby', journal: 'Follow Cinder Stair south as far as Wardstone Cairn, before the pass, and speak with Corin Ashby there.' }
     ],
     reward: { gp: 300, xp: { prayer: 300 }, items: [{ id: 'ember_faint', qty: 1 }] }
   },
