@@ -1,0 +1,2088 @@
+{
+ "renderer": "ANGLE (Microsoft Corporation, D3D12 (NVIDIA GeForce RTX 4070 Laptop GPU), OpenGL 4.6)",
+ "scenes": {
+  "a_entry": {
+   "pageErrors": [],
+   "shots": [
+    {
+     "file": "a1-door-overworld.jpg",
+     "camera": [
+      3.14,
+      0.5,
+      10
+     ],
+     "hp": 70,
+     "maxHp": 70,
+     "pos": [
+      -84,
+      101.5
+     ],
+     "target": null,
+     "deathOverlay": false,
+     "perfHud": [
+      "50 FPS (20ms)",
+      "510 calls • 442k tris"
+     ],
+     "chatTail": [
+      "Welcome to Gielinor Hero.",
+      "Use WASD / Arrows or Click anywhere to move, fight monsters, chop trees, mine ores, or fish.",
+      "You arrive with nothing. The tracker under your health shows your first task: speak with the task master in the courtyard.",
+      "The courtyard holds the Bank booth, the General Store, and the Anvil. Walk up to use them. Press F1–F6 to switch panels and Esc to close a window."
+     ]
+    },
+    {
+     "file": "a2-entry-room.jpg",
+     "note": "camera as the game left it after the door",
+     "camera": {
+      "local": [
+       18.79,
+       39.56
+      ],
+      "height": 6.64,
+      "room": "entry",
+      "camState": {
+       "yaw": 4.026,
+       "pitch": 0.5,
+       "distance": 10
+      }
+     },
+     "hp": 70,
+     "maxHp": 70,
+     "pos": [
+      1012,
+      634
+     ],
+     "target": null,
+     "deathOverlay": false,
+     "perfHud": [
+      "48 FPS (20.8ms)",
+      "978 calls • 587k tris"
+     ],
+     "chatTail": [
+      "Use WASD / Arrows or Click anywhere to move, fight monsters, chop trees, mine ores, or fish.",
+      "You arrive with nothing. The tracker under your health shows your first task: speak with the task master in the courtyard.",
+      "The courtyard holds the Bank booth, the General Store, and the Anvil. Walk up to use them. Press F1–F6 to switch panels and Esc to close a window.",
+      "Slagfall Terrace: nothing is needed."
+     ]
+    },
+    {
+     "file": "a3-entry-room-high.jpg",
+     "heroAt": [
+      1012,
+      634
+     ],
+     "asked": [
+      1.2,
+      1.15,
+      26
+     ],
+     "camera": {
+      "local": [
+       4.2,
+       30.97
+      ],
+      "height": 25.58,
+      "room": "entry",
+      "camState": {
+       "yaw": 1.2,
+       "pitch": 1.15,
+       "distance": 26
+      }
+     },
+     "hp": 70,
+     "maxHp": 70,
+     "pos": [
+      1012,
+      634
+     ],
+     "target": null,
+     "deathOverlay": false,
+     "perfHud": [
+      "46 FPS (21.5ms)",
+      "1025 calls • 599k tris"
+     ],
+     "chatTail": [
+      "Use WASD / Arrows or Click anywhere to move, fight monsters, chop trees, mine ores, or fish.",
+      "You arrive with nothing. The tracker under your health shows your first task: speak with the task master in the courtyard.",
+      "The courtyard holds the Bank booth, the General Store, and the Anvil. Walk up to use them. Press F1–F6 to switch panels and Esc to close a window.",
+      "Slagfall Terrace: nothing is needed."
+     ]
+    },
+    {
+     "file": "a4-minimap-entry.jpg"
+    }
+   ],
+   "benchMsOverworld": 64.56,
+   "door": {
+    "at": [
+     604,
+     116
+    ],
+    "label": "Interact with Slagfall Terrace"
+   },
+   "mobsOnEntry": [
+    {
+     "type": "lesser_demon",
+     "camp": "slagfall_cave:front",
+     "state": "idle",
+     "hp": 125,
+     "at": [
+      1036.18,
+      631.46
+     ],
+     "home": [
+      1036,
+      630
+     ],
+     "timer": 0,
+     "windup": null,
+     "visible": true
+    },
+    {
+     "type": "lesser_demon",
+     "camp": "slagfall_cave:front",
+     "state": "idle",
+     "hp": 125,
+     "at": [
+      1036,
+      638
+     ],
+     "home": [
+      1036,
+      638
+     ],
+     "timer": 0,
+     "windup": null,
+     "visible": true
+    },
+    {
+     "type": "ember_hurler",
+     "camp": "slagfall_cave:front",
+     "state": "idle",
+     "hp": 105,
+     "at": [
+      1044.22,
+      634.29
+     ],
+     "home": [
+      1044,
+      634
+     ],
+     "timer": 0,
+     "windup": null,
+     "visible": true
+    },
+    {
+     "type": "lesser_demon",
+     "camp": "slagfall_cave:back",
+     "state": "idle",
+     "hp": 125,
+     "at": [
+      1065.26,
+      634.24
+     ],
+     "home": [
+      1066,
+      634
+     ],
+     "timer": 0,
+     "windup": null,
+     "visible": true
+    },
+    {
+     "type": "ember_hurler",
+     "camp": "slagfall_cave:back",
+     "state": "idle",
+     "hp": 105,
+     "at": [
+      1074.58,
+      628.16
+     ],
+     "home": [
+      1074,
+      628
+     ],
+     "timer": 0,
+     "windup": null,
+     "visible": true
+    },
+    {
+     "type": "ember_hurler",
+     "camp": "slagfall_cave:back",
+     "state": "idle",
+     "hp": 105,
+     "at": [
+      1074.18,
+      641.16
+     ],
+     "home": [
+      1074,
+      640
+     ],
+     "timer": 0,
+     "windup": null,
+     "visible": true
+    }
+   ],
+   "props": {
+    "World_obsidian_spire": 5,
+    "World_lava_fissure": 22
+   },
+   "benchMsCave": 132.87
+  },
+  "b_camera": {
+   "pageErrors": [],
+   "shots": [
+    {
+     "file": "b1-corner-yaw0.jpg",
+     "heroAt": [
+      1006,
+      628
+     ],
+     "asked": [
+      0,
+      0.3,
+      14
+     ],
+     "camera": {
+      "local": [
+       6,
+       24.56
+      ],
+      "height": 5.99,
+      "room": null,
+      "camState": {
+       "yaw": 0,
+       "pitch": 0.3,
+       "distance": 14
+      }
+     }
+    },
+    {
+     "file": "b2-corner-yaw90.jpg",
+     "heroAt": [
+      1006,
+      628
+     ],
+     "asked": [
+      1.57,
+      0.3,
+      14
+     ],
+     "camera": {
+      "local": [
+       2.56,
+       28
+      ],
+      "height": 5.99,
+      "room": null,
+      "camState": {
+       "yaw": 1.57,
+       "pitch": 0.3,
+       "distance": 14
+      }
+     }
+    },
+    {
+     "file": "b3-corner-yaw180.jpg",
+     "heroAt": [
+      1006,
+      628
+     ],
+     "asked": [
+      3.14,
+      0.3,
+      14
+     ],
+     "camera": {
+      "local": [
+       5.98,
+       41.37
+      ],
+      "height": 5.99,
+      "room": "entry",
+      "camState": {
+       "yaw": 3.14,
+       "pitch": 0.3,
+       "distance": 14
+      }
+     }
+    },
+    {
+     "file": "b4-corner-yaw270.jpg",
+     "heroAt": [
+      1006,
+      628
+     ],
+     "asked": [
+      4.71,
+      0.3,
+      14
+     ],
+     "camera": {
+      "local": [
+       19.37,
+       28.03
+      ],
+      "height": 5.99,
+      "room": "entry",
+      "camState": {
+       "yaw": 4.71,
+       "pitch": 0.3,
+       "distance": 14
+      }
+     }
+    },
+    {
+     "file": "b5-corner-high.jpg",
+     "heroAt": [
+      1006,
+      628
+     ],
+     "asked": [
+      3.93,
+      1.15,
+      26
+     ],
+     "camera": {
+      "local": [
+       13.53,
+       35.49
+      ],
+      "height": 25.58,
+      "room": "entry",
+      "camState": {
+       "yaw": 3.93,
+       "pitch": 1.15,
+       "distance": 26
+      }
+     }
+    }
+   ],
+   "door": {
+    "at": [
+     604,
+     116
+    ],
+    "label": "Interact with Slagfall Terrace"
+   }
+  },
+  "c_front": {
+   "pageErrors": [],
+   "shots": [
+    {
+     "file": "c1-front-hall-from-corridor.jpg",
+     "heroAt": [
+      1025,
+      634
+     ],
+     "afterMs": 3000,
+     "camera": {
+      "local": [
+       13.45,
+       33.99
+      ],
+      "height": 9.75,
+      "room": "entry",
+      "camState": {
+       "yaw": 1.57,
+       "pitch": 0.6,
+       "distance": 14
+      }
+     },
+     "hp": 99,
+     "maxHp": 99,
+     "pos": [
+      1025,
+      634
+     ],
+     "target": null,
+     "deathOverlay": false,
+     "perfHud": [
+      "48 FPS (20.7ms)",
+      "1177 calls • 631k tris"
+     ],
+     "chatTail": [
+      "Use WASD / Arrows or Click anywhere to move, fight monsters, chop trees, mine ores, or fish.",
+      "You arrive with nothing. The tracker under your health shows your first task: speak with the task master in the courtyard.",
+      "The courtyard holds the Bank booth, the General Store, and the Anvil. Walk up to use them. Press F1–F6 to switch panels and Esc to close a window.",
+      "Slagfall Terrace: nothing is needed."
+     ],
+     "mobs": [
+      {
+       "type": "lesser_demon",
+       "camp": "slagfall_cave:front",
+       "state": "idle",
+       "hp": 125,
+       "at": [
+        1034.47,
+        630.6
+       ],
+       "home": [
+        1036,
+        630
+       ],
+       "timer": 0,
+       "windup": null,
+       "visible": true
+      },
+      {
+       "type": "lesser_demon",
+       "camp": "slagfall_cave:front",
+       "state": "idle",
+       "hp": 125,
+       "at": [
+        1038.71,
+        637.24
+       ],
+       "home": [
+        1036,
+        638
+       ],
+       "timer": 0,
+       "windup": null,
+       "visible": true
+      },
+      {
+       "type": "ember_hurler",
+       "camp": "slagfall_cave:front",
+       "state": "idle",
+       "hp": 105,
+       "at": [
+        1045.63,
+        634.26
+       ],
+       "home": [
+        1044,
+        634
+       ],
+       "timer": 0,
+       "windup": null,
+       "visible": true
+      },
+      {
+       "type": "lesser_demon",
+       "camp": "slagfall_cave:back",
+       "state": "idle",
+       "hp": 125,
+       "at": [
+        1064.49,
+        632.96
+       ],
+       "home": [
+        1066,
+        634
+       ],
+       "timer": 0,
+       "windup": null,
+       "visible": true
+      },
+      {
+       "type": "ember_hurler",
+       "camp": "slagfall_cave:back",
+       "state": "idle",
+       "hp": 105,
+       "at": [
+        1071.74,
+        629.02
+       ],
+       "home": [
+        1074,
+        628
+       ],
+       "timer": 0,
+       "windup": null,
+       "visible": true
+      },
+      {
+       "type": "ember_hurler",
+       "camp": "slagfall_cave:back",
+       "state": "idle",
+       "hp": 105,
+       "at": [
+        1073.4,
+        641.85
+       ],
+       "home": [
+        1074,
+        640
+       ],
+       "timer": 0,
+       "windup": null,
+       "visible": true
+      }
+     ]
+    },
+    {
+     "file": "c2-front-hall-fight.jpg",
+     "heroAt": [
+      1029,
+      634
+     ],
+     "afterMs": 3500,
+     "camera": {
+      "local": [
+       19.62,
+       33.99
+      ],
+      "height": 7.6,
+      "room": "entry",
+      "camState": {
+       "yaw": 1.57,
+       "pitch": 0.55,
+       "distance": 11
+      }
+     },
+     "hp": 99,
+     "maxHp": 99,
+     "pos": [
+      1029,
+      634
+     ],
+     "target": null,
+     "deathOverlay": false,
+     "perfHud": [
+      "46 FPS (21.5ms)",
+      "1213 calls • 633k tris"
+     ],
+     "chatTail": [
+      "You arrive with nothing. The tracker under your health shows your first task: speak with the task master in the courtyard.",
+      "The courtyard holds the Bank booth, the General Store, and the Anvil. Walk up to use them. Press F1–F6 to switch panels and Esc to close a window.",
+      "Slagfall Terrace: nothing is needed.",
+      "Lesser Demon attacks!"
+     ],
+     "mobs": [
+      {
+       "type": "lesser_demon",
+       "camp": "slagfall_cave:front",
+       "state": "attack",
+       "hp": 125,
+       "at": [
+        1031.45,
+        632.48
+       ],
+       "home": [
+        1036,
+        630
+       ],
+       "timer": 0,
+       "windup": null,
+       "visible": true
+      },
+      {
+       "type": "lesser_demon",
+       "camp": "slagfall_cave:front",
+       "state": "idle",
+       "hp": 125,
+       "at": [
+        1038.81,
+        636.43
+       ],
+       "home": [
+        1036,
+        638
+       ],
+       "timer": 0,
+       "windup": null,
+       "visible": true
+      },
+      {
+       "type": "ember_hurler",
+       "camp": "slagfall_cave:front",
+       "state": "idle",
+       "hp": 105,
+       "at": [
+        1042.34,
+        637.11
+       ],
+       "home": [
+        1044,
+        634
+       ],
+       "timer": 0,
+       "windup": null,
+       "visible": true
+      },
+      {
+       "type": "lesser_demon",
+       "camp": "slagfall_cave:back",
+       "state": "idle",
+       "hp": 125,
+       "at": [
+        1064.36,
+        633.61
+       ],
+       "home": [
+        1066,
+        634
+       ],
+       "timer": 0,
+       "windup": null,
+       "visible": true
+      },
+      {
+       "type": "ember_hurler",
+       "camp": "slagfall_cave:back",
+       "state": "idle",
+       "hp": 105,
+       "at": [
+        1074.57,
+        630.55
+       ],
+       "home": [
+        1074,
+        628
+       ],
+       "timer": 0,
+       "windup": null,
+       "visible": true
+      },
+      {
+       "type": "ember_hurler",
+       "camp": "slagfall_cave:back",
+       "state": "idle",
+       "hp": 105,
+       "at": [
+        1073.4,
+        641.85
+       ],
+       "home": [
+        1074,
+        640
+       ],
+       "timer": 0,
+       "windup": null,
+       "visible": true
+      }
+     ]
+    }
+   ],
+   "door": {
+    "at": [
+     604,
+     116
+    ],
+    "label": "Interact with Slagfall Terrace"
+   },
+   "after1500": {
+    "hp": 99,
+    "maxHp": 99,
+    "pos": [
+     1029,
+     634
+    ],
+    "target": null,
+    "deathOverlay": false,
+    "perfHud": [
+     "46 FPS (21.7ms)",
+     "1213 calls • 633k tris"
+    ],
+    "chatTail": [
+     "You arrive with nothing. The tracker under your health shows your first task: speak with the task master in the courtyard.",
+     "The courtyard holds the Bank booth, the General Store, and the Anvil. Walk up to use them. Press F1–F6 to switch panels and Esc to close a window.",
+     "Slagfall Terrace: nothing is needed.",
+     "Lesser Demon attacks!"
+    ],
+    "mobs": [
+     {
+      "type": "lesser_demon",
+      "camp": "slagfall_cave:front",
+      "state": "attack",
+      "hp": 125,
+      "at": [
+       1031.45,
+       632.48
+      ],
+      "home": [
+       1036,
+       630
+      ],
+      "timer": 0,
+      "windup": null,
+      "visible": true
+     },
+     {
+      "type": "lesser_demon",
+      "camp": "slagfall_cave:front",
+      "state": "idle",
+      "hp": 125,
+      "at": [
+       1038.71,
+       637.24
+      ],
+      "home": [
+       1036,
+       638
+      ],
+      "timer": 0,
+      "windup": null,
+      "visible": true
+     },
+     {
+      "type": "ember_hurler",
+      "camp": "slagfall_cave:front",
+      "state": "idle",
+      "hp": 105,
+      "at": [
+       1045.2,
+       634.64
+      ],
+      "home": [
+       1044,
+       634
+      ],
+      "timer": 0,
+      "windup": null,
+      "visible": true
+     },
+     {
+      "type": "lesser_demon",
+      "camp": "slagfall_cave:back",
+      "state": "idle",
+      "hp": 125,
+      "at": [
+       1064.49,
+       632.96
+      ],
+      "home": [
+       1066,
+       634
+      ],
+      "timer": 0,
+      "windup": null,
+      "visible": true
+     },
+     {
+      "type": "ember_hurler",
+      "camp": "slagfall_cave:back",
+      "state": "idle",
+      "hp": 105,
+      "at": [
+       1073.59,
+       630.02
+      ],
+      "home": [
+       1074,
+       628
+      ],
+      "timer": 0,
+      "windup": null,
+      "visible": true
+     },
+     {
+      "type": "ember_hurler",
+      "camp": "slagfall_cave:back",
+      "state": "idle",
+      "hp": 105,
+      "at": [
+       1073.4,
+       641.85
+      ],
+      "home": [
+       1074,
+       640
+      ],
+      "timer": 0,
+      "windup": null,
+      "visible": true
+     }
+    ]
+   },
+   "benchMsFight": 223.17
+  },
+  "d_windup_leave": {
+   "pageErrors": [],
+   "shots": [
+    {
+     "file": "d1-hurler-windup.jpg",
+     "heroAt": [
+      1068,
+      634
+     ],
+     "camera": {
+      "local": [
+       63.28,
+       33.51
+      ],
+      "height": 8.63,
+      "room": "back",
+      "camState": {
+       "yaw": 1.092,
+       "pitch": 0.6,
+       "distance": 12
+      }
+     },
+     "hp": 25.29,
+     "maxHp": 99,
+     "pos": [
+      1072.07,
+      638.07
+     ],
+     "target": {
+      "type": "monster",
+      "name": "Ember Hurler",
+      "state": "attack"
+     },
+     "deathOverlay": false,
+     "perfHud": [
+      "33 FPS (30.4ms)",
+      "1040 calls • 606k tris"
+     ],
+     "chatTail": [
+      "Slagfall Terrace: nothing is needed.",
+      "Lesser Demon attacks!",
+      "Ember Hurler attacks!",
+      "Ember Hurler attacks!"
+     ],
+     "mobs": [
+      {
+       "type": "lesser_demon",
+       "camp": "slagfall_cave:front",
+       "state": "idle",
+       "hp": 125,
+       "at": [
+        1034.88,
+        630.44
+       ],
+       "home": [
+        1036,
+        630
+       ],
+       "timer": 0,
+       "windup": null,
+       "visible": true
+      },
+      {
+       "type": "lesser_demon",
+       "camp": "slagfall_cave:front",
+       "state": "idle",
+       "hp": 125,
+       "at": [
+        1037.58,
+        637.16
+       ],
+       "home": [
+        1036,
+        638
+       ],
+       "timer": 0,
+       "windup": null,
+       "visible": true
+      },
+      {
+       "type": "ember_hurler",
+       "camp": "slagfall_cave:front",
+       "state": "idle",
+       "hp": 105,
+       "at": [
+        1041.8,
+        634.05
+       ],
+       "home": [
+        1044,
+        634
+       ],
+       "timer": 0,
+       "windup": null,
+       "visible": true
+      },
+      {
+       "type": "lesser_demon",
+       "camp": "slagfall_cave:back",
+       "state": "attack",
+       "hp": 125,
+       "at": [
+        1069.76,
+        636.33
+       ],
+       "home": [
+        1066,
+        634
+       ],
+       "timer": 0,
+       "windup": null,
+       "visible": true
+      },
+      {
+       "type": "ember_hurler",
+       "camp": "slagfall_cave:back",
+       "state": "attack",
+       "hp": 105,
+       "at": [
+        1071.74,
+        629.03
+       ],
+       "home": [
+        1074,
+        628
+       ],
+       "timer": 0,
+       "windup": "pinning_volley",
+       "visible": true
+      },
+      {
+       "type": "ember_hurler",
+       "camp": "slagfall_cave:back",
+       "state": "attack",
+       "hp": 73,
+       "at": [
+        1074,
+        640
+       ],
+       "home": [
+        1074,
+        640
+       ],
+       "timer": 0,
+       "windup": null,
+       "visible": true
+      }
+     ]
+    },
+    {
+     "file": "d2-left-during-windup.jpg",
+     "note": "camera as the game left it after leaving",
+     "hp": 25.67,
+     "maxHp": 99,
+     "pos": [
+      -84,
+      98
+     ],
+     "target": null,
+     "deathOverlay": false,
+     "perfHud": [
+      "60 FPS (16.7ms)",
+      "206 calls • 300k tris"
+     ],
+     "chatTail": [
+      "Slagfall Terrace: nothing is needed.",
+      "Lesser Demon attacks!",
+      "Ember Hurler attacks!",
+      "Ember Hurler attacks!"
+     ],
+     "mobs": [
+      {
+       "type": "lesser_demon",
+       "camp": "slagfall_cave:front",
+       "state": "idle",
+       "hp": 125,
+       "at": [
+        1036,
+        630
+       ],
+       "home": [
+        1036,
+        630
+       ],
+       "timer": 0,
+       "windup": null,
+       "visible": false
+      },
+      {
+       "type": "lesser_demon",
+       "camp": "slagfall_cave:front",
+       "state": "idle",
+       "hp": 125,
+       "at": [
+        1036,
+        638
+       ],
+       "home": [
+        1036,
+        638
+       ],
+       "timer": 0,
+       "windup": null,
+       "visible": false
+      },
+      {
+       "type": "ember_hurler",
+       "camp": "slagfall_cave:front",
+       "state": "idle",
+       "hp": 105,
+       "at": [
+        1044,
+        634
+       ],
+       "home": [
+        1044,
+        634
+       ],
+       "timer": 0,
+       "windup": null,
+       "visible": false
+      },
+      {
+       "type": "lesser_demon",
+       "camp": "slagfall_cave:back",
+       "state": "idle",
+       "hp": 125,
+       "at": [
+        1066,
+        634
+       ],
+       "home": [
+        1066,
+        634
+       ],
+       "timer": 0,
+       "windup": null,
+       "visible": false
+      },
+      {
+       "type": "ember_hurler",
+       "camp": "slagfall_cave:back",
+       "state": "idle",
+       "hp": 105,
+       "at": [
+        1074,
+        628
+       ],
+       "home": [
+        1074,
+        628
+       ],
+       "timer": 0,
+       "windup": null,
+       "visible": false
+      },
+      {
+       "type": "ember_hurler",
+       "camp": "slagfall_cave:back",
+       "state": "idle",
+       "hp": 105,
+       "at": [
+        1074,
+        640
+       ],
+       "home": [
+        1074,
+        640
+       ],
+       "timer": 0,
+       "windup": null,
+       "visible": false
+      }
+     ]
+    },
+    {
+     "file": "d3-overworld-hit-fights-back.jpg",
+     "heroAt": [
+      44.5,
+      42.5
+     ],
+     "afterHitMs": 2500,
+     "hp": 24.23,
+     "maxHp": 99,
+     "pos": [
+      44.5,
+      42.5
+     ],
+     "target": null,
+     "deathOverlay": false,
+     "perfHud": [
+      "56 FPS (17.8ms)",
+      "441 calls • 463k tris"
+     ],
+     "chatTail": [
+      "King Scorpion attacks!",
+      "Defeated King Scorpion (Lv-12).",
+      "Looted Bones.",
+      "Looted 90 GP from King Scorpion."
+     ]
+    }
+   ],
+   "door": {
+    "at": [
+     604,
+     116
+    ],
+    "label": "Interact with Slagfall Terrace"
+   },
+   "windupWaitMs": 6544,
+   "scorpionHitWaitMs": 11653
+  },
+  "e_dead_stay_dead": {
+   "pageErrors": [],
+   "shots": [
+    {
+     "file": "e1-reentry-still-dead.jpg",
+     "heroAt": [
+      1016,
+      634
+     ],
+     "hp": 99,
+     "maxHp": 99,
+     "pos": [
+      1016,
+      634
+     ],
+     "target": null,
+     "deathOverlay": false,
+     "perfHud": [
+      "50 FPS (20ms)",
+      "1105 calls • 621k tris"
+     ],
+     "chatTail": [
+      "Looted Dragon Bones.",
+      "Looted 557 GP from Lesser Demon.",
+      "Looted Cooked Manta Shark.",
+      "Slagfall Terrace: nothing is needed."
+     ],
+     "mobs": [
+      {
+       "type": "lesser_demon",
+       "camp": "slagfall_cave:front",
+       "state": "dead",
+       "hp": 0,
+       "at": [
+        1035.4,
+        631.85
+       ],
+       "home": [
+        1036,
+        630
+       ],
+       "timer": 12.43,
+       "windup": null,
+       "visible": false
+      },
+      {
+       "type": "lesser_demon",
+       "camp": "slagfall_cave:front",
+       "state": "idle",
+       "hp": 125,
+       "at": [
+        1035.35,
+        636.29
+       ],
+       "home": [
+        1036,
+        638
+       ],
+       "timer": 0,
+       "windup": null,
+       "visible": true
+      },
+      {
+       "type": "ember_hurler",
+       "camp": "slagfall_cave:front",
+       "state": "idle",
+       "hp": 105,
+       "at": [
+        1044.36,
+        633.32
+       ],
+       "home": [
+        1044,
+        634
+       ],
+       "timer": 0,
+       "windup": null,
+       "visible": true
+      },
+      {
+       "type": "lesser_demon",
+       "camp": "slagfall_cave:back",
+       "state": "idle",
+       "hp": 125,
+       "at": [
+        1067.76,
+        633.51
+       ],
+       "home": [
+        1066,
+        634
+       ],
+       "timer": 0,
+       "windup": null,
+       "visible": true
+      },
+      {
+       "type": "ember_hurler",
+       "camp": "slagfall_cave:back",
+       "state": "idle",
+       "hp": 105,
+       "at": [
+        1074.26,
+        627.98
+       ],
+       "home": [
+        1074,
+        628
+       ],
+       "timer": 0,
+       "windup": null,
+       "visible": true
+      },
+      {
+       "type": "ember_hurler",
+       "camp": "slagfall_cave:back",
+       "state": "idle",
+       "hp": 105,
+       "at": [
+        1074.52,
+        641.75
+       ],
+       "home": [
+        1074,
+        640
+       ],
+       "timer": 0,
+       "windup": null,
+       "visible": true
+      }
+     ]
+    },
+    {
+     "file": "e2-back-after-their-time.jpg",
+     "heroAt": [
+      1016,
+      634
+     ],
+     "hp": 99,
+     "maxHp": 99,
+     "pos": [
+      1016,
+      634
+     ],
+     "target": null,
+     "deathOverlay": false,
+     "perfHud": [
+      "45 FPS (22.5ms)",
+      "1213 calls • 634k tris"
+     ],
+     "chatTail": [
+      "Looted Dragon Bones.",
+      "Looted 557 GP from Lesser Demon.",
+      "Looted Cooked Manta Shark.",
+      "Slagfall Terrace: nothing is needed."
+     ],
+     "mobs": [
+      {
+       "type": "lesser_demon",
+       "camp": "slagfall_cave:front",
+       "state": "idle",
+       "hp": 125,
+       "at": [
+        1035.4,
+        631.85
+       ],
+       "home": [
+        1036,
+        630
+       ],
+       "timer": -0.02,
+       "windup": null,
+       "visible": true
+      },
+      {
+       "type": "lesser_demon",
+       "camp": "slagfall_cave:front",
+       "state": "idle",
+       "hp": 125,
+       "at": [
+        1032.62,
+        638.11
+       ],
+       "home": [
+        1036,
+        638
+       ],
+       "timer": 0,
+       "windup": null,
+       "visible": true
+      },
+      {
+       "type": "ember_hurler",
+       "camp": "slagfall_cave:front",
+       "state": "idle",
+       "hp": 105,
+       "at": [
+        1042.4,
+        633.7
+       ],
+       "home": [
+        1044,
+        634
+       ],
+       "timer": 0,
+       "windup": null,
+       "visible": true
+      },
+      {
+       "type": "lesser_demon",
+       "camp": "slagfall_cave:back",
+       "state": "idle",
+       "hp": 125,
+       "at": [
+        1066.9,
+        634.09
+       ],
+       "home": [
+        1066,
+        634
+       ],
+       "timer": 0,
+       "windup": null,
+       "visible": true
+      },
+      {
+       "type": "ember_hurler",
+       "camp": "slagfall_cave:back",
+       "state": "idle",
+       "hp": 105,
+       "at": [
+        1075.72,
+        630.65
+       ],
+       "home": [
+        1074,
+        628
+       ],
+       "timer": 0,
+       "windup": null,
+       "visible": true
+      },
+      {
+       "type": "ember_hurler",
+       "camp": "slagfall_cave:back",
+       "state": "idle",
+       "hp": 105,
+       "at": [
+        1072.41,
+        642.62
+       ],
+       "home": [
+        1074,
+        640
+       ],
+       "timer": 0,
+       "windup": null,
+       "visible": true
+      }
+     ]
+    }
+   ],
+   "door": {
+    "at": [
+     604,
+     116
+    ],
+    "label": "Interact with Slagfall Terrace"
+   },
+   "prayersOn": [
+    "prot_melee"
+   ],
+   "attackClick": {
+    "at": [
+     664,
+     80
+    ],
+    "label": "Attack Lesser Demon (Lv-68) [1/125 HP]"
+   },
+   "killWaitMs": 218,
+   "leftAt": {
+    "hp": 99,
+    "maxHp": 99,
+    "pos": [
+     -84,
+     98
+    ],
+    "target": null,
+    "deathOverlay": false,
+    "perfHud": [
+     "43 FPS (23.2ms)",
+     "991 calls • 604k tris"
+    ],
+    "chatTail": [
+     "Defeated Lesser Demon (Lv-68).",
+     "Looted Dragon Bones.",
+     "Looted 557 GP from Lesser Demon.",
+     "Looted Cooked Manta Shark."
+    ],
+    "mobs": [
+     {
+      "type": "lesser_demon",
+      "camp": "slagfall_cave:front",
+      "state": "dying",
+      "hp": 0,
+      "at": [
+       1035.4,
+       631.85
+      ],
+      "home": [
+       1036,
+       630
+      ],
+      "timer": 0.78,
+      "windup": null,
+      "visible": false
+     },
+     {
+      "type": "lesser_demon",
+      "camp": "slagfall_cave:front",
+      "state": "idle",
+      "hp": 125,
+      "at": [
+       1036,
+       638
+      ],
+      "home": [
+       1036,
+       638
+      ],
+      "timer": 0,
+      "windup": null,
+      "visible": false
+     },
+     {
+      "type": "ember_hurler",
+      "camp": "slagfall_cave:front",
+      "state": "idle",
+      "hp": 105,
+      "at": [
+       1044,
+       634
+      ],
+      "home": [
+       1044,
+       634
+      ],
+      "timer": 0,
+      "windup": null,
+      "visible": false
+     },
+     {
+      "type": "lesser_demon",
+      "camp": "slagfall_cave:back",
+      "state": "idle",
+      "hp": 125,
+      "at": [
+       1066,
+       634
+      ],
+      "home": [
+       1066,
+       634
+      ],
+      "timer": 0,
+      "windup": null,
+      "visible": false
+     },
+     {
+      "type": "ember_hurler",
+      "camp": "slagfall_cave:back",
+      "state": "idle",
+      "hp": 105,
+      "at": [
+       1074,
+       628
+      ],
+      "home": [
+       1074,
+       628
+      ],
+      "timer": 0,
+      "windup": null,
+      "visible": false
+     },
+     {
+      "type": "ember_hurler",
+      "camp": "slagfall_cave:back",
+      "state": "idle",
+      "hp": 105,
+      "at": [
+       1074,
+       640
+      ],
+      "home": [
+       1074,
+       640
+      ],
+      "timer": 0,
+      "windup": null,
+      "visible": false
+     }
+    ]
+   },
+   "after20sOutside": {
+    "mobs": [
+     {
+      "type": "lesser_demon",
+      "camp": "slagfall_cave:front",
+      "state": "dying",
+      "hp": 0,
+      "at": [
+       1035.4,
+       631.85
+      ],
+      "home": [
+       1036,
+       630
+      ],
+      "timer": 0.78,
+      "windup": null,
+      "visible": false
+     },
+     {
+      "type": "lesser_demon",
+      "camp": "slagfall_cave:front",
+      "state": "idle",
+      "hp": 125,
+      "at": [
+       1036,
+       638
+      ],
+      "home": [
+       1036,
+       638
+      ],
+      "timer": 0,
+      "windup": null,
+      "visible": false
+     },
+     {
+      "type": "ember_hurler",
+      "camp": "slagfall_cave:front",
+      "state": "idle",
+      "hp": 105,
+      "at": [
+       1044,
+       634
+      ],
+      "home": [
+       1044,
+       634
+      ],
+      "timer": 0,
+      "windup": null,
+      "visible": false
+     },
+     {
+      "type": "lesser_demon",
+      "camp": "slagfall_cave:back",
+      "state": "idle",
+      "hp": 125,
+      "at": [
+       1066,
+       634
+      ],
+      "home": [
+       1066,
+       634
+      ],
+      "timer": 0,
+      "windup": null,
+      "visible": false
+     },
+     {
+      "type": "ember_hurler",
+      "camp": "slagfall_cave:back",
+      "state": "idle",
+      "hp": 105,
+      "at": [
+       1074,
+       628
+      ],
+      "home": [
+       1074,
+       628
+      ],
+      "timer": 0,
+      "windup": null,
+      "visible": false
+     },
+     {
+      "type": "ember_hurler",
+      "camp": "slagfall_cave:back",
+      "state": "idle",
+      "hp": 105,
+      "at": [
+       1074,
+       640
+      ],
+      "home": [
+       1074,
+       640
+      ],
+      "timer": 0,
+      "windup": null,
+      "visible": false
+     }
+    ]
+   },
+   "reentry": {
+    "at": [
+     604,
+     116
+    ],
+    "label": "Interact with Slagfall Terrace"
+   },
+   "onReentry": {
+    "mobs": [
+     {
+      "type": "lesser_demon",
+      "camp": "slagfall_cave:front",
+      "state": "dying",
+      "hp": 0,
+      "at": [
+       1035.4,
+       631.85
+      ],
+      "home": [
+       1036,
+       630
+      ],
+      "timer": 0.34,
+      "windup": null,
+      "visible": true
+     },
+     {
+      "type": "lesser_demon",
+      "camp": "slagfall_cave:front",
+      "state": "idle",
+      "hp": 125,
+      "at": [
+       1035.71,
+       637.25
+      ],
+      "home": [
+       1036,
+       638
+      ],
+      "timer": 0,
+      "windup": null,
+      "visible": true
+     },
+     {
+      "type": "ember_hurler",
+      "camp": "slagfall_cave:front",
+      "state": "idle",
+      "hp": 105,
+      "at": [
+       1044.36,
+       633.32
+      ],
+      "home": [
+       1044,
+       634
+      ],
+      "timer": 0,
+      "windup": null,
+      "visible": true
+     },
+     {
+      "type": "lesser_demon",
+      "camp": "slagfall_cave:back",
+      "state": "idle",
+      "hp": 125,
+      "at": [
+       1066.77,
+       633.78
+      ],
+      "home": [
+       1066,
+       634
+      ],
+      "timer": 0,
+      "windup": null,
+      "visible": true
+     },
+     {
+      "type": "ember_hurler",
+      "camp": "slagfall_cave:back",
+      "state": "idle",
+      "hp": 105,
+      "at": [
+       1074.26,
+       627.98
+      ],
+      "home": [
+       1074,
+       628
+      ],
+      "timer": 0,
+      "windup": null,
+      "visible": true
+     },
+     {
+      "type": "ember_hurler",
+      "camp": "slagfall_cave:back",
+      "state": "idle",
+      "hp": 105,
+      "at": [
+       1074.23,
+       640.77
+      ],
+      "home": [
+       1074,
+       640
+      ],
+      "timer": 0,
+      "windup": null,
+      "visible": true
+     }
+    ]
+   },
+   "backWaitMs": 12434
+  },
+  "f_death": {
+   "pageErrors": [],
+   "shots": [
+    {
+     "file": "f1-died-inside.jpg",
+     "hp": 0,
+     "maxHp": 70,
+     "pos": [
+      1038,
+      634
+     ],
+     "target": null,
+     "deathOverlay": true,
+     "perfHud": [
+      "46 FPS (21.7ms)",
+      "1058 calls • 608k tris"
+     ],
+     "chatTail": [
+      "Slagfall Terrace: nothing is needed.",
+      "Lesser Demon attacks!",
+      "Lesser Demon attacks!",
+      "Ember Hurler attacks!"
+     ]
+    },
+    {
+     "file": "f2-after-respawn.jpg",
+     "note": "camera as the game left it after the respawn",
+     "hp": 70,
+     "maxHp": 70,
+     "pos": [
+      0,
+      4
+     ],
+     "target": null,
+     "deathOverlay": false,
+     "perfHud": [
+      "46 FPS (21.7ms)",
+      "724 calls • 526k tris"
+     ],
+     "chatTail": [
+      "Lesser Demon attacks!",
+      "Lesser Demon attacks!",
+      "Ember Hurler attacks!",
+      "Oh dear, you are dead. You keep your gear and coins. Your loss was small enough to be waived: no experience was lost. You will wake in Lumbridge Haven."
+     ],
+     "mobs": [
+      {
+       "type": "lesser_demon",
+       "camp": "slagfall_cave:front",
+       "state": "idle",
+       "hp": 125,
+       "at": [
+        1036,
+        630
+       ],
+       "home": [
+        1036,
+        630
+       ],
+       "timer": 0,
+       "windup": null,
+       "visible": false
+      },
+      {
+       "type": "lesser_demon",
+       "camp": "slagfall_cave:front",
+       "state": "idle",
+       "hp": 125,
+       "at": [
+        1036,
+        638
+       ],
+       "home": [
+        1036,
+        638
+       ],
+       "timer": 0,
+       "windup": null,
+       "visible": false
+      },
+      {
+       "type": "ember_hurler",
+       "camp": "slagfall_cave:front",
+       "state": "idle",
+       "hp": 105,
+       "at": [
+        1044,
+        634
+       ],
+       "home": [
+        1044,
+        634
+       ],
+       "timer": 0,
+       "windup": null,
+       "visible": false
+      },
+      {
+       "type": "lesser_demon",
+       "camp": "slagfall_cave:back",
+       "state": "idle",
+       "hp": 125,
+       "at": [
+        1066,
+        634
+       ],
+       "home": [
+        1066,
+        634
+       ],
+       "timer": 0,
+       "windup": null,
+       "visible": false
+      },
+      {
+       "type": "ember_hurler",
+       "camp": "slagfall_cave:back",
+       "state": "idle",
+       "hp": 105,
+       "at": [
+        1074,
+        628
+       ],
+       "home": [
+        1074,
+        628
+       ],
+       "timer": 0,
+       "windup": null,
+       "visible": false
+      },
+      {
+       "type": "ember_hurler",
+       "camp": "slagfall_cave:back",
+       "state": "idle",
+       "hp": 105,
+       "at": [
+        1074,
+        640
+       ],
+       "home": [
+        1074,
+        640
+       ],
+       "timer": 0,
+       "windup": null,
+       "visible": false
+      }
+     ]
+    }
+   ],
+   "door": {
+    "at": [
+     604,
+     116
+    ],
+    "label": "Interact with Slagfall Terrace"
+   },
+   "deathWaitMs": 8063,
+   "respawnWaitMs": 2613
+  },
+  "g_reload": {
+   "pageErrors": [],
+   "shots": [
+    {
+     "file": "g1-after-reload.jpg",
+     "note": "camera as the save left it",
+     "hp": 70,
+     "maxHp": 70,
+     "pos": [
+      -84,
+      98
+     ],
+     "target": null,
+     "deathOverlay": false,
+     "perfHud": [
+      "54 FPS (18.5ms)",
+      "326 calls • 344k tris"
+     ],
+     "chatTail": [
+      "Welcome to Gielinor Hero.",
+      "Restored your saved progress & world state from localStorage.",
+      "The courtyard holds the Bank booth, the General Store, and the Anvil. Walk up to use them. Press F1–F6 to switch panels and Esc to close a window."
+     ],
+     "saveButton": "Saved (11:22:40)",
+     "mobs": []
+    }
+   ],
+   "door": {
+    "at": [
+     604,
+     116
+    ],
+    "label": "Interact with Slagfall Terrace"
+   },
+   "beforeReload": {
+    "hp": 70,
+    "maxHp": 70,
+    "pos": [
+     1012,
+     634
+    ],
+    "target": null,
+    "deathOverlay": false,
+    "perfHud": [
+     "46 FPS (21.7ms)",
+     "974 calls • 587k tris"
+    ],
+    "chatTail": [
+     "Use WASD / Arrows or Click anywhere to move, fight monsters, chop trees, mine ores, or fish.",
+     "You arrive with nothing. The tracker under your health shows your first task: speak with the task master in the courtyard.",
+     "The courtyard holds the Bank booth, the General Store, and the Anvil. Walk up to use them. Press F1–F6 to switch panels and Esc to close a window.",
+     "Slagfall Terrace: nothing is needed."
+    ],
+    "saveButton": "Saved (11:22:31)"
+   }
+  },
+  "h_teleport": {
+   "pageErrors": [],
+   "shots": [
+    {
+     "file": "h1-teleported-out.jpg",
+     "note": "camera as the game left it after the teleport",
+     "hp": 70,
+     "maxHp": 70,
+     "pos": [
+      0,
+      4
+     ],
+     "target": null,
+     "deathOverlay": false,
+     "perfHud": [
+      "48 FPS (20.7ms)",
+      "762 calls • 547k tris"
+     ],
+     "chatTail": [
+      "You arrive with nothing. The tracker under your health shows your first task: speak with the task master in the courtyard.",
+      "The courtyard holds the Bank booth, the General Store, and the Anvil. Walk up to use them. Press F1–F6 to switch panels and Esc to close a window.",
+      "Slagfall Terrace: nothing is needed.",
+      "Teleported to Lumbridge Haven."
+     ],
+     "mobs": [
+      {
+       "type": "lesser_demon",
+       "camp": "slagfall_cave:front",
+       "state": "idle",
+       "hp": 125,
+       "at": [
+        1036,
+        630
+       ],
+       "home": [
+        1036,
+        630
+       ],
+       "timer": 0,
+       "windup": null,
+       "visible": false
+      },
+      {
+       "type": "lesser_demon",
+       "camp": "slagfall_cave:front",
+       "state": "idle",
+       "hp": 125,
+       "at": [
+        1036,
+        638
+       ],
+       "home": [
+        1036,
+        638
+       ],
+       "timer": 0,
+       "windup": null,
+       "visible": false
+      },
+      {
+       "type": "ember_hurler",
+       "camp": "slagfall_cave:front",
+       "state": "idle",
+       "hp": 105,
+       "at": [
+        1044,
+        634
+       ],
+       "home": [
+        1044,
+        634
+       ],
+       "timer": 0,
+       "windup": null,
+       "visible": false
+      },
+      {
+       "type": "lesser_demon",
+       "camp": "slagfall_cave:back",
+       "state": "idle",
+       "hp": 125,
+       "at": [
+        1066,
+        634
+       ],
+       "home": [
+        1066,
+        634
+       ],
+       "timer": 0,
+       "windup": null,
+       "visible": false
+      },
+      {
+       "type": "ember_hurler",
+       "camp": "slagfall_cave:back",
+       "state": "idle",
+       "hp": 105,
+       "at": [
+        1074,
+        628
+       ],
+       "home": [
+        1074,
+        628
+       ],
+       "timer": 0,
+       "windup": null,
+       "visible": false
+      },
+      {
+       "type": "ember_hurler",
+       "camp": "slagfall_cave:back",
+       "state": "idle",
+       "hp": 105,
+       "at": [
+        1074,
+        640
+       ],
+       "home": [
+        1074,
+        640
+       ],
+       "timer": 0,
+       "windup": null,
+       "visible": false
+      }
+     ]
+    }
+   ],
+   "door": {
+    "at": [
+     604,
+     116
+    ],
+    "label": "Interact with Slagfall Terrace"
+   },
+   "benchMsAfter": 68.84
+  }
+ },
+ "n": 8
+}

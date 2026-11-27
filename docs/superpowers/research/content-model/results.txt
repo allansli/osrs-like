@@ -9,7 +9,7 @@ today: 18 open
   super_restore    source: SHOP ONLY      use: consume
   feather          source: SHOP ONLY      use: craft
   bronze_bolts     source: SHOP ONLY      use: shoot
-  ashes            source: craft          use: NONE (sell only)
+  ashes            source: craft,drop     use: NONE (sell only)
   air_rune         source: SHOP ONLY      use: cast
   mind_rune        source: SHOP ONLY      use: cast
   water_rune       source: SHOP ONLY      use: cast
@@ -280,8 +280,8 @@ level target            coins | ranged TODAY bronze | AFTER bronze bought | AFTE
   shipped so far, each with the content file's numbers: coal, adamantite_ore, steel_bar, black_bar, adamant_bar, ember_faint, ember_steady, ember_bright, sting_gland, mire_root, coal_rock, adamantite_rock, cinder_adept, slag_brute, scree_skitter, marrowjaw, saltfang, smelt_steel, smelt_black, smelt_adamant, smith_steel_sword, smith_steel_legs, smith_steel_plate, smith_black_scim, smith_black_legs, smith_black_plate, smith_addy_scim, smith_addy_legs, smith_addy_plate, brew_prayer, brew_restore, brew_stew, cinder_circle, brute_shelf, tollmaster
 
 === 10. Save: size of the new optional block at its bounds
-  stat keys 134; diary tiers 15; diary tasks 75
-  default save today 2139 bytes; the new block at every bound 5005 bytes; two new skills add about 76 bytes
+  stat keys 135; diary tiers 15; diary tasks 75
+  default save today 2139 bytes; the new block at every bound 5036 bytes; two new skills add about 76 bytes
 
 === 11. Where a player stands at hours 3, 10 and 30 (estimates from Stage 3 section 5.5; never asserted)
   Stage 3 route A3 at 1x, model-optimal: adamant (level 30) at 56 min, rune (40) at 1.8 h, dragon (60) at 5.4 h; a real player about double.

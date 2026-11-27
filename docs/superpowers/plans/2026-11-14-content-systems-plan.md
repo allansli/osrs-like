@@ -1047,3 +1047,20 @@ The repair changed no data and no text: one docs commit (this amendment) and one
 
 - **C3's files gain `src/engine/context.ts` and `src/engine/overlay.ts`.** `G.zone.def` is typed `Zone` (not `Dungeon`) and `renderMinimap` draws gates only when the zone has a run, so the minimap no longer throws in the cave (the cave row has no `gates`). The two `as unknown as Dungeon` casts in `zones.ts` are gone.
 - Also in the repair: the cave branch of `leaveZone` calls `clearTelegraph` before `sendHome`; the cave's prop loader throws like Z6's on a missing glb or node; the four `!== -1` guards, the bare block and `setCaveWeather`'s `fallMesh` guard are removed (`updateParticles` already hides the fall mesh while the cave weather is on); `applyZoneAir` leaves the colour `updateAir` wrote from `CAVE_LIGHT.air` in a cave.
+
+### G-6.3a amendment (2026-11-27, written by the G-6.3a lane, awaiting ratification by the main session)
+
+- **G-6.3a's files gain `docs/superpowers/research/content-model/results.txt` and `pacing-results.txt`** (docs). The gate's MODEL and PACE runs regenerated them, and no script changed. `check-results.txt` and `aggro-results.txt` came out byte-identical.
+  - `results.txt` changed in three lines, all from the Ember Hurler's row: `ashes` gains `drop` as a source, and the save section's stat keys go from 134 to 135 (the new block at every bound goes from 5,005 to 5,036 bytes).
+  - `pacing-results.txt` was last regenerated at G-6.0, so its diff also carries slices 1 and 2. A run on `8a67c06` shows slice 3a moves only block 2, the convention-only variant (`docs/superpowers/baseline/s6/g63a/README.md`).
+- **G-6.3a's files also gain `docs/superpowers/baseline/s6/g63a/`**: the README, the capture job, `facts.json` and the pictures for H-3a, as G-6.1 to G-6.3 had.
+- **One allowlist point for the main session.** C2's `src/state/monsterAi.ts` diff has, beside `sendHome` and the `respawnSecs` option of table 0.5 row (a), the dying-to-dead line of `stepMonster`, which reads `m.respawnSecs` when set. Row (a) names the option but not this line, and without the line the option has no effect. Proposed: ratify the line as part of row (a).
+- **Findings for repairs, with the evidence in that README** (findings 1 to 8). This gate fixes none of them.
+  - The grass carpet draws inside the cave (G-6.3's finding 1, still open).
+  - The camera shows the outside of a wall near a corner, because the arm stops at `distanceMin x cos(pitch)`.
+  - The lava fissures lie as flat slabs across the wall lines.
+  - The cave draws about 1,000 calls a frame, against design 10's 150 for a zone.
+  - The Hurler's tint does not read in the cave light.
+  - The target panel outlives the cave.
+  - The cave mouth has two labels.
+  - The region banner names the volcano inside the cave.
