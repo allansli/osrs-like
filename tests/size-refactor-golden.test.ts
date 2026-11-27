@@ -110,10 +110,11 @@ describe('review 17: refactors for bundle size keep every output', () => {
   });
 
   it('every telegraph mesh and fill step of the original attacks is unchanged; newer attacks only add keys', () => {
-    expect(Object.keys(golden.telegraphs).sort()).toEqual([...OLD_ATTACKS].sort());
+    // The golden keeps the eleven original entries and may gain keys (regeneration after a slice adds attacks, item 22);
+    // every key it holds, old or new, must match the current digest.
+    expect(Object.keys(golden.telegraphs)).toEqual(expect.arrayContaining(OLD_ATTACKS));
     const now = current.telegraphs;
-    for (const id of OLD_ATTACKS) expect(now[id], id).toBe(golden.telegraphs[id]);
-    expect(Object.keys(now).length).toBeGreaterThanOrEqual(OLD_ATTACKS.length);
+    for (const [id, d] of Object.entries(golden.telegraphs)) expect(now[id], id).toBe(d);
   });
 
   it('every monster step on a walk grid is unchanged', () => {

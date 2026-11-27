@@ -73,7 +73,7 @@ describe('design 7.5: the three rows', () => {
 
   it('none of the three drops equipment, and each drops its bones', () => {
     for (const k of Object.keys(want)) {
-      for (const d of row(k).drops) if (d.id) expect(ITEMS[d.id]?.type, `${k} ${d.id}`).not.toBe('equip');
+      for (const d of row(k).drops) if (d.id) expect(ITEMS[d.id].type, `${k} ${d.id}`).not.toBe('equip');
       expect(row(k).drops.some((d) => d.id === 'big_bones' && d.chance === 1), k).toBe(true);
     }
   });
