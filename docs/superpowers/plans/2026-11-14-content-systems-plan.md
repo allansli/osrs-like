@@ -1084,7 +1084,7 @@ Ratified with the amendments above: C2's dying-to-dead line in `stepMonster` rea
 - **SF6 Chase with a line** [CLAUDE, opus] (`src/state/monsterAi.ts`, L2's edit 3): a ranged monster that has no line to the hero repaths to the nearest reachable cell inside its leash that has a line to the hero, not to melee range; test (new `tests/los-chase.test.ts`) on the c2 corner of the cave: the Hurler reaches a cell with a line and fires.
 - **SG3 Gate rerun** [CLAUDE, opus]: G-6.3, G-6.3a and G-6.3b's checks and captures again after SF1 to SF6, under `docs/superpowers/baseline/s6/g63-follow/`.
 
-### SF3 amendment (2026-11-27, written by the SF3 lane, for the main session to ratify)
+### SF3 amendment (2026-11-27, written by the SF3 lane, ratified by the main session 2026-11-27)
 
 - **SF3's files gain `src/engine/worldBuild.ts`**, one guard in `buildDungeonDoors`. A door that stands on a `POIS` place (the cave mouth on Slagfall Terrace) does not push its own place label, so the place's label is the only one. The door's hover name and click are unchanged. No `POIS` row changes, since `tests/cave.test.ts` keeps `slagfall_terrace`.
 - **SF3's files also gain `docs/superpowers/baseline/s6/sf3/`**: the README, the capture job, `facts.json` and the pictures, as the gates had.
@@ -1118,3 +1118,7 @@ Ratified with the amendments above: C2's dying-to-dead line in `stepMonster` rea
   - The third repair point says no `zones.ts` function runs after `buildDungeonDoors`. That is wrong: `zoneArmLength` runs every frame from `updateCamera` (`loop.ts`), in the overworld too, so a `zones.ts`-only fix (dropping the door's entry from `G.npcList` there) is possible. It is not taken: it hides label logic in a camera helper to get around the file list.
 - **Not SF3's, and it was there before SF3:** after a death, `finishRespawn` (`actions.ts`) sets the saved region to `lumbridge` but does not write the footer, so the footer names the last region (README finding 2, G-6.3a `g1`).
 
+
+### SF3 ratification (2026-11-27, main session)
+
+Ratified: SF3's files gain `src/engine/worldBuild.ts` (the `buildDungeonDoors` guard, so one label at the cave mouth), `docs/superpowers/baseline/s6/sf3/`, and, for the Hurler's tint, `src/data/world.ts` (an optional `tintAsColour: true` on the `ember_hurler` row only) and `src/engine/blenderMonsters.ts` (with it, the body, horn and membrane materials take the tint as their colour with vertex colours off), with a test that a row with the field gets those materials and every other row is unchanged. The `CAVE_LIGHT` retune is not taken. SF3 finishes with the guard back in, the field, and the a1, a2, e1 and Hurler pictures recaptured.
