@@ -1,5 +1,6 @@
 {
  "renderer": "ANGLE (Microsoft Corporation, D3D12 (NVIDIA GeForce RTX 4070 Laptop GPU), OpenGL 4.6)",
+ "srcCommit": "679d9f9",
  "a1": {
   "hero": [
    -84,
@@ -11,6 +12,13 @@
     "at": [
      "639.656px",
      "194.301px"
+    ]
+   },
+   {
+    "shown": true,
+    "at": [
+     "639.635px",
+     "98.0866px"
     ]
    }
   ],
@@ -31,6 +39,13 @@
     "at": [
      "639.439px",
      "129.114px"
+    ]
+   },
+   {
+    "shown": true,
+    "at": [
+     "639.422px",
+     "73.0449px"
     ]
    }
   ],
@@ -63,18 +78,24 @@
    {
     "mesh": "lesser_demon_body",
     "colour": "ffffff",
+    "emissive": "000000",
+    "emissiveIntensity": 1,
     "vertexColors": true,
     "colourAttribute": true
    },
    {
     "mesh": "lesser_demon_horn",
     "colour": "ffffff",
+    "emissive": "000000",
+    "emissiveIntensity": 1,
     "vertexColors": true,
     "colourAttribute": true
    },
    {
     "mesh": "lesser_demon_membrane",
     "colour": "ffffff",
+    "emissive": "000000",
+    "emissiveIntensity": 1,
     "vertexColors": true,
     "colourAttribute": true
    }
@@ -82,20 +103,26 @@
   "ember_hurler": [
    {
     "mesh": "lesser_demon_body",
-    "colour": "b8b2a7",
-    "vertexColors": true,
+    "colour": "3a3530",
+    "emissive": "b8b2a7",
+    "emissiveIntensity": 0.2,
+    "vertexColors": false,
     "colourAttribute": true
    },
    {
     "mesh": "lesser_demon_horn",
-    "colour": "b8b2a7",
-    "vertexColors": true,
+    "colour": "3a3530",
+    "emissive": "b8b2a7",
+    "emissiveIntensity": 0.2,
+    "vertexColors": false,
     "colourAttribute": true
    },
    {
     "mesh": "lesser_demon_membrane",
-    "colour": "b8b2a7",
-    "vertexColors": true,
+    "colour": "3a3530",
+    "emissive": "b8b2a7",
+    "emissiveIntensity": 0.2,
+    "vertexColors": false,
     "colourAttribute": true
    }
   ]
@@ -106,405 +133,278 @@
     "type": "lesser_demon",
     "state": "idle",
     "at": [
-     1036.1,
+     1035.4,
      630.3
     ],
-    "cameraDistance": 18.1,
-    "pixels": 20351,
+    "cameraDistance": 17.4,
+    "pixels": 23749,
     "figureRgb": [
-     56,
-     6,
-     3
-    ],
-    "figureHue": 3,
-    "figureSat": 0.95,
-    "figureLum": 0.0098,
-    "behindRgb": [
-     37,
-     15,
-     12
-    ],
-    "behindLum": 0.0076,
-    "contrastToBehind": 1.038
-   },
-   {
-    "type": "lesser_demon",
-    "state": "idle",
-    "at": [
-     1037.3,
-     637.7
-    ],
-    "cameraDistance": 19.3,
-    "pixels": 12748,
-    "figureRgb": [
-     55,
-     10,
+     65,
+     11,
      6
     ],
     "figureHue": 5,
-    "figureSat": 0.89,
-    "figureLum": 0.0104,
+    "figureSat": 0.91,
+    "figureLum": 0.0138,
     "behindRgb": [
-     37,
+     36,
      14,
-     12
+     11
     ],
-    "behindLum": 0.0073,
-    "contrastToBehind": 1.054
-   },
-   {
-    "type": "ember_hurler",
-    "state": "idle",
-    "at": [
-     1044.5,
-     633.6
-    ],
-    "cameraDistance": 26.1,
-    "pixels": 6293,
-    "figureRgb": [
-     30,
-     2,
-     1
-    ],
-    "figureHue": 2,
-    "figureSat": 0.97,
-    "figureLum": 0.0032,
-    "behindRgb": [
-     63,
-     27,
-     22
-    ],
-    "behindLum": 0.019,
-    "contrastToBehind": 1.296
+    "behindLum": 0.0071,
+    "contrastToBehind": 1.116
    },
    {
     "type": "lesser_demon",
     "state": "idle",
     "at": [
-     1066.1,
-     633.9
+     1037.1,
+     637.4
     ],
-    "cameraDistance": 47.7,
-    "pixels": 2581,
+    "cameraDistance": 19.1,
+    "pixels": 15271,
     "figureRgb": [
-     57,
-     4,
-     3
+     47,
+     7,
+     5
     ],
-    "figureHue": 1,
-    "figureSat": 0.95,
-    "figureLum": 0.0096,
+    "figureHue": 3,
+    "figureSat": 0.89,
+    "figureLum": 0.0077,
     "behindRgb": [
-     23,
-     4,
-     2
+     29,
+     10,
+     9
     ],
-    "behindLum": 0.0027,
-    "contrastToBehind": 1.131
+    "behindLum": 0.005,
+    "contrastToBehind": 1.049
    },
    {
     "type": "ember_hurler",
     "state": "idle",
     "at": [
-     1074.7,
+     1045.1,
+     633.6
+    ],
+    "cameraDistance": 26.7,
+    "pixels": 5169,
+    "figureRgb": [
+     101,
+     83,
+     75
+    ],
+    "figureHue": 18,
+    "figureSat": 0.26,
+    "figureLum": 0.0946,
+    "behindRgb": [
+     66,
+     25,
+     20
+    ],
+    "behindLum": 0.019,
+    "contrastToBehind": 2.095
+   },
+   {
+    "type": "lesser_demon",
+    "state": "idle",
+    "at": [
+     1066.4,
+     634.6
+    ],
+    "cameraDistance": 48,
+    "pixels": 2316,
+    "figureRgb": [
+     60,
+     11,
+     9
+    ],
+    "figureHue": 2,
+    "figureSat": 0.85,
+    "figureLum": 0.0122,
+    "behindRgb": [
+     33,
+     14,
+     12
+    ],
+    "behindLum": 0.0066,
+    "contrastToBehind": 1.098
+   },
+   {
+    "type": "ember_hurler",
+    "state": "idle",
+    "at": [
+     1073.7,
      628.7
     ],
-    "cameraDistance": 56.5,
-    "pixels": 123,
+    "cameraDistance": 55.6,
+    "pixels": 19,
     "figureRgb": [
-     42,
-     1,
-     1
+     96,
+     79,
+     71
     ],
-    "figureHue": 0,
-    "figureSat": 0.98,
-    "figureLum": 0.0052,
+    "figureHue": 19,
+    "figureSat": 0.26,
+    "figureLum": 0.0853,
     "behindRgb": [
      18,
      2,
      1
     ],
     "behindLum": 0.0017,
-    "contrastToBehind": 1.066
+    "contrastToBehind": 2.616
    },
    {
     "type": "ember_hurler",
     "state": "idle",
     "at": [
-     1075.3,
-     640.4
+     1071.2,
+     637.3
     ],
-    "cameraDistance": 57.2,
-    "pixels": 19,
+    "cameraDistance": 52.9,
+    "pixels": 690,
     "figureRgb": [
-     24,
-     4,
-     1
+     99,
+     82,
+     72
     ],
-    "figureHue": 8,
-    "figureSat": 0.96,
-    "figureLum": 0.0028,
+    "figureHue": 22,
+    "figureSat": 0.27,
+    "figureLum": 0.0916,
     "behindRgb": [
      19,
      2,
      1
     ],
     "behindLum": 0.0018,
-    "contrastToBehind": 1.019
+    "contrastToBehind": 2.731
    }
   ],
-  "charcoal": [
+  "old": [
    {
     "type": "lesser_demon",
     "state": "idle",
     "at": [
-     1035.3,
-     630.9
+     1032.6,
+     632.4
     ],
-    "cameraDistance": 17.2,
-    "pixels": 22000,
+    "cameraDistance": 14.2,
+    "pixels": 29904,
     "figureRgb": [
-     51,
-     8,
+     64,
+     11,
      6
-    ],
-    "figureHue": 3,
-    "figureSat": 0.88,
-    "figureLum": 0.0089,
-    "behindRgb": [
-     40,
-     15,
-     12
-    ],
-    "behindLum": 0.0082,
-    "contrastToBehind": 1.012
-   },
-   {
-    "type": "lesser_demon",
-    "state": "idle",
-    "at": [
-     1035.6,
-     640
-    ],
-    "cameraDistance": 18.2,
-    "pixels": 14852,
-    "figureRgb": [
-     59,
-     18,
-     10
-    ],
-    "figureHue": 10,
-    "figureSat": 0.83,
-    "figureLum": 0.0138,
-    "behindRgb": [
-     47,
-     19,
-     15
-    ],
-    "behindLum": 0.011,
-    "contrastToBehind": 1.046
-   },
-   {
-    "type": "ember_hurler",
-    "state": "idle",
-    "at": [
-     1046,
-     634
-    ],
-    "cameraDistance": 27.6,
-    "pixels": 3589,
-    "figureRgb": [
-     18,
-     6,
-     5
     ],
     "figureHue": 5,
-    "figureSat": 0.72,
-    "figureLum": 0.0027,
+    "figureSat": 0.91,
+    "figureLum": 0.0134,
     "behindRgb": [
-     64,
-     26,
-     21
+     56,
+     23,
+     18
     ],
-    "behindLum": 0.0188,
-    "contrastToBehind": 1.306
+    "behindLum": 0.015,
+    "contrastToBehind": 1.024
    },
    {
     "type": "lesser_demon",
     "state": "idle",
     "at": [
-     1066.4,
-     636.2
+     1038,
+     636.8
     ],
-    "cameraDistance": 48,
-    "pixels": 1634,
+    "cameraDistance": 19.8,
+    "pixels": 16037,
     "figureRgb": [
-     43,
-     10,
-     6
+     60,
+     13,
+     8
     ],
     "figureHue": 6,
+    "figureSat": 0.87,
+    "figureLum": 0.0127,
+    "behindRgb": [
+     37,
+     15,
+     13
+    ],
+    "behindLum": 0.0076,
+    "contrastToBehind": 1.087
+   },
+   {
+    "type": "ember_hurler",
+    "state": "idle",
+    "at": [
+     1044.5,
+     634.2
+    ],
+    "cameraDistance": 26.1,
+    "pixels": 5987,
+    "figureRgb": [
+     42,
+     9,
+     6
+    ],
+    "figureHue": 5,
     "figureSat": 0.86,
-    "figureLum": 0.0074,
+    "figureLum": 0.007,
     "behindRgb": [
-     26,
-     8,
-     6
-    ],
-    "behindLum": 0.0041,
-    "contrastToBehind": 1.062
-   },
-   {
-    "type": "ember_hurler",
-    "state": "idle",
-    "at": [
-     1071.4,
-     638.2
-    ],
-    "cameraDistance": 53.2,
-    "pixels": 172,
-    "figureRgb": [
-     38,
-     10,
-     5
-    ],
-    "figureHue": 9,
-    "figureSat": 0.87,
-    "figureLum": 0.0064,
-    "behindRgb": [
-     48,
-     8,
-     6
-    ],
-    "behindLum": 0.0082,
-    "contrastToBehind": 1.031
-   }
-  ],
-  "tintAsColour": [
-   {
-    "type": "lesser_demon",
-    "state": "idle",
-    "at": [
-     1037.8,
-     628.6
-    ],
-    "cameraDistance": 20.1,
-    "pixels": 15126,
-    "figureRgb": [
-     56,
-     6,
-     3
-    ],
-    "figureHue": 3,
-    "figureSat": 0.95,
-    "figureLum": 0.0098,
-    "behindRgb": [
+     64,
      28,
-     10,
-     8
+     23
     ],
-    "behindLum": 0.0048,
-    "contrastToBehind": 1.091
+    "behindLum": 0.0198,
+    "contrastToBehind": 1.225
    },
    {
     "type": "lesser_demon",
     "state": "idle",
     "at": [
-     1036.3,
-     638
+     1063.3,
+     632.2
     ],
-    "cameraDistance": 18.3,
-    "pixels": 17823,
+    "cameraDistance": 45,
+    "pixels": 2577,
     "figureRgb": [
-     55,
-     6,
-     3
-    ],
-    "figureHue": 3,
-    "figureSat": 0.95,
-    "figureLum": 0.0095,
-    "behindRgb": [
-     34,
-     13,
-     11
-    ],
-    "behindLum": 0.0065,
-    "contrastToBehind": 1.053
-   },
-   {
-    "type": "ember_hurler",
-    "state": "idle",
-    "at": [
-     1043.2,
-     630.7
-    ],
-    "cameraDistance": 25,
-    "pixels": 5821,
-    "figureRgb": [
-     127,
-     33,
-     16
-    ],
-    "figureHue": 9,
-    "figureSat": 0.87,
-    "figureLum": 0.0564,
-    "behindRgb": [
-     29,
-     9,
-     8
-    ],
-    "behindLum": 0.0047,
-    "contrastToBehind": 1.943
-   },
-   {
-    "type": "lesser_demon",
-    "state": "idle",
-    "at": [
-     1066.4,
-     633.9
-    ],
-    "cameraDistance": 48,
-    "pixels": 2099,
-    "figureRgb": [
-     50,
+     67,
      10,
-     5
-    ],
-    "figureHue": 7,
-    "figureSat": 0.9,
-    "figureLum": 0.0091,
-    "behindRgb": [
-     33,
-     9,
      6
     ],
-    "behindLum": 0.0053,
-    "contrastToBehind": 1.068
-   },
-   {
-    "type": "ember_hurler",
-    "state": "idle",
-    "at": [
-     1074.5,
-     627.6
-    ],
-    "cameraDistance": 56.4,
-    "pixels": 15,
-    "figureRgb": [
-     70,
-     27,
-     8
-    ],
-    "figureHue": 18,
-    "figureSat": 0.89,
-    "figureLum": 0.021,
+    "figureHue": 4,
+    "figureSat": 0.91,
+    "figureLum": 0.0142,
     "behindRgb": [
-     18,
-     2,
+     21,
+     3,
      1
     ],
-    "behindLum": 0.0017,
-    "contrastToBehind": 1.373
+    "behindLum": 0.0023,
+    "contrastToBehind": 1.229
+   },
+   {
+    "type": "ember_hurler",
+    "state": "idle",
+    "at": [
+     1076.4,
+     638.3
+    ],
+    "cameraDistance": 58.1,
+    "pixels": 945,
+    "figureRgb": [
+     32,
+     3,
+     1
+    ],
+    "figureHue": 4,
+    "figureSat": 0.97,
+    "figureLum": 0.0037,
+    "behindRgb": [
+     21,
+     3,
+     2
+    ],
+    "behindLum": 0.0023,
+    "contrastToBehind": 1.028
    }
   ]
  },
@@ -515,304 +415,152 @@
     "state": "attack",
     "at": [
      1032.4,
-     632.5
+     632.4
     ],
-    "cameraDistance": 9.1,
-    "pixels": 49207,
+    "cameraDistance": 11.2,
+    "pixels": 30863,
     "figureRgb": [
-     59,
-     13,
-     8
-    ],
-    "figureHue": 6,
-    "figureSat": 0.86,
-    "figureLum": 0.0124,
-    "behindRgb": [
-     69,
-     29,
-     25
-    ],
-    "behindLum": 0.0221,
-    "contrastToBehind": 1.157
-   },
-   {
-    "type": "lesser_demon",
-    "state": "attack",
-    "at": [
-     1032.4,
-     635.4
-    ],
-    "cameraDistance": 9.9,
-    "pixels": 52720,
-    "figureRgb": [
-     69,
-     13,
+     65,
+     15,
      9
     ],
-    "figureHue": 4,
-    "figureSat": 0.87,
-    "figureLum": 0.0157,
-    "behindRgb": [
-     69,
-     32,
-     28
-    ],
-    "behindLum": 0.0238,
-    "contrastToBehind": 1.123
-   },
-   {
-    "type": "ember_hurler",
-    "state": "idle",
-    "at": [
-     1044.4,
-     633.6
-    ],
-    "cameraDistance": 21.1,
-    "pixels": 10577,
-    "figureRgb": [
-     36,
-     4,
-     1
-    ],
-    "figureHue": 5,
-    "figureSat": 0.97,
-    "figureLum": 0.0046,
-    "behindRgb": [
-     66,
-     30,
-     25
-    ],
-    "behindLum": 0.0216,
-    "contrastToBehind": 1.31
-   },
-   {
-    "type": "lesser_demon",
-    "state": "idle",
-    "at": [
-     1066.9,
-     631.5
-    ],
-    "cameraDistance": 43.6,
-    "pixels": 28,
-    "figureRgb": [
-     32,
-     8,
-     4
-    ],
-    "figureHue": 9,
-    "figureSat": 0.88,
-    "figureLum": 0.0049,
-    "behindRgb": [
-     70,
-     30,
-     24
-    ],
-    "behindLum": 0.023,
-    "contrastToBehind": 1.329
-   }
-  ],
-  "charcoal": [
-   {
-    "type": "lesser_demon",
-    "state": "attack",
-    "at": [
-     1032.4,
-     632.5
-    ],
-    "cameraDistance": 9.1,
-    "pixels": 49275,
-    "figureRgb": [
-     58,
-     13,
-     8
-    ],
     "figureHue": 6,
     "figureSat": 0.86,
-    "figureLum": 0.012,
+    "figureLum": 0.0149,
     "behindRgb": [
-     68,
-     29,
-     25
+     51,
+     22,
+     18
     ],
-    "behindLum": 0.0218,
-    "contrastToBehind": 1.157
+    "behindLum": 0.0132,
+    "contrastToBehind": 1.026
    },
    {
     "type": "lesser_demon",
     "state": "attack",
     "at": [
-     1032.4,
-     635.4
+     1032.6,
+     634.9
     ],
-    "cameraDistance": 9.9,
-    "pixels": 51950,
+    "cameraDistance": 9.2,
+    "pixels": 46837,
     "figureRgb": [
-     63,
-     17,
-     12
+     58,
+     12,
+     7
     ],
     "figureHue": 6,
-    "figureSat": 0.81,
-    "figureLum": 0.0148,
+    "figureSat": 0.88,
+    "figureLum": 0.0118,
     "behindRgb": [
-     67,
-     31,
-     26
+     65,
+     21,
+     17
     ],
-    "behindLum": 0.0225,
-    "contrastToBehind": 1.118
+    "behindLum": 0.017,
+    "contrastToBehind": 1.085
    },
    {
     "type": "ember_hurler",
     "state": "idle",
     "at": [
      1044.3,
-     632.5
+     632
     ],
-    "cameraDistance": 21,
-    "pixels": 7333,
+    "cameraDistance": 20,
+    "pixels": 9,
     "figureRgb": [
-     28,
-     11,
-     9
+     101,
+     90,
+     82
     ],
-    "figureHue": 6,
-    "figureSat": 0.68,
-    "figureLum": 0.0051,
+    "figureHue": 25,
+    "figureSat": 0.19,
+    "figureLum": 0.1069,
     "behindRgb": [
-     60,
-     25,
-     20
+     69,
+     29,
+     25
     ],
-    "behindLum": 0.0171,
-    "contrastToBehind": 1.218
-   },
-   {
-    "type": "lesser_demon",
-    "state": "idle",
-    "at": [
-     1066.6,
-     633.6
-    ],
-    "cameraDistance": 43.3,
-    "pixels": 26,
-    "figureRgb": [
-     68,
-     31,
-     26
-    ],
-    "figureHue": 7,
-    "figureSat": 0.62,
-    "figureLum": 0.0228,
-    "behindRgb": [
-     68,
-     31,
-     26
-    ],
-    "behindLum": 0.0228,
-    "contrastToBehind": 1
+    "behindLum": 0.0221,
+    "contrastToBehind": 2.175
    }
   ],
-  "tintAsColour": [
+  "old": [
    {
     "type": "lesser_demon",
     "state": "attack",
     "at": [
      1032.4,
-     632.5
+     632.4
     ],
-    "cameraDistance": 9.1,
-    "pixels": 49325,
+    "cameraDistance": 11.2,
+    "pixels": 31526,
     "figureRgb": [
-     58,
-     14,
+     64,
+     15,
      8
     ],
-    "figureHue": 7,
-    "figureSat": 0.86,
-    "figureLum": 0.0123,
+    "figureHue": 8,
+    "figureSat": 0.88,
+    "figureLum": 0.0145,
     "behindRgb": [
-     71,
-     30,
-     25
+     51,
+     22,
+     18
     ],
-    "behindLum": 0.0234,
-    "contrastToBehind": 1.178
+    "behindLum": 0.0132,
+    "contrastToBehind": 1.02
    },
    {
     "type": "lesser_demon",
     "state": "attack",
     "at": [
-     1032.4,
-     635.4
+     1032.6,
+     634.9
     ],
-    "cameraDistance": 9.9,
-    "pixels": 49511,
+    "cameraDistance": 9.2,
+    "pixels": 46452,
     "figureRgb": [
-     62,
-     12,
-     8
+     55,
+     10,
+     6
     ],
-    "figureHue": 4,
-    "figureSat": 0.87,
-    "figureLum": 0.013,
+    "figureHue": 5,
+    "figureSat": 0.89,
+    "figureLum": 0.0104,
     "behindRgb": [
-     67,
-     30,
-     25
+     66,
+     24,
+     20
     ],
-    "behindLum": 0.0219,
-    "contrastToBehind": 1.141
+    "behindLum": 0.0186,
+    "contrastToBehind": 1.136
    },
    {
     "type": "ember_hurler",
     "state": "idle",
     "at": [
-     1044.8,
-     633.3
+     1042.8,
+     633.4
     ],
-    "cameraDistance": 21.6,
-    "pixels": 9268,
+    "cameraDistance": 18,
+    "pixels": 734,
     "figureRgb": [
-     105,
-     30,
-     18
+     75,
+     35,
+     12
     ],
-    "figureHue": 8,
-    "figureSat": 0.83,
-    "figureLum": 0.0398,
+    "figureHue": 22,
+    "figureSat": 0.84,
+    "figureLum": 0.0272,
     "behindRgb": [
-     64,
-     28,
-     23
-    ],
-    "behindLum": 0.0198,
-    "contrastToBehind": 1.285
-   },
-   {
-    "type": "lesser_demon",
-    "state": "idle",
-    "at": [
-     1065.8,
-     633.9
-    ],
-    "cameraDistance": 42.6,
-    "pixels": 55,
-    "figureRgb": [
-     46,
-     19,
-     16
-    ],
-    "figureHue": 6,
-    "figureSat": 0.65,
-    "figureLum": 0.0108,
-    "behindRgb": [
-     65,
+     66,
      31,
      27
     ],
-    "behindLum": 0.0218,
-    "contrastToBehind": 1.181
+    "behindLum": 0.0222,
+    "contrastToBehind": 1.07
    }
   ]
  },
@@ -1146,8 +894,15 @@
    {
     "shown": true,
     "at": [
-     "639.884px",
-     "345.526px"
+     "639.993px",
+     "345.557px"
+    ]
+   },
+   {
+    "shown": true,
+    "at": [
+     "639.993px",
+     "324.634px"
     ]
    }
   ]

@@ -7,8 +7,9 @@
 //  - A: the "Slagfall Terrace" place labels shown over the cave mouth.
 //  - B: the banner and the footer inside the cave.
 //  - C: every lava fissure's footprint, against the cave row's rooms and pillars, and a picture from above.
-//  - D: the Ember Hurler against the Lesser Demons and what is behind each (silhouette from a flat-magenta frame), at the
-//    front hall's mouth and at fight range, as the game draws it and in two ways set in the page only (hurlerAs).
+//  - D: the Ember Hurler against the Lesser Demons and what is behind each, mostly the cave floor (silhouette from a
+//    flat-magenta frame), at the front hall's mouth and at fight range, as the game draws it ('current', zones.ts's
+//    ashHurler) and with the look before ashHurler set back in the page only ('old', hurlerAs).
 //  - E: the banner and the footer after leaving.
 // The job throws on a page or console error, or when the renderer is not the NVIDIA GPU.
 import { writeFileSync } from 'node:fs';
@@ -27,7 +28,7 @@ const W = (x, z) => [ORIGIN[0] + x, ORIGIN[1] + z];
 const DOOR = [-84, 98];
 const ROOMS = { entry: [4, 26, 20, 42], c1: [20, 31, 26, 37], front: [26, 20, 50, 48], c2: [50, 31, 56, 37], back: [56, 18, 84, 50] };
 const SOLID = [[31, 27, 33, 29], [31, 39, 33, 41], [61, 24, 63, 26], [61, 42, 63, 44], [69, 30, 71, 32]];
-const facts = { renderer: null };
+const facts = { renderer: null, srcCommit: process.env.CAP_SRC ?? null };
 
 const shot = (page, name) => page.screenshot({ path: `${OUT}/${name}`, type: 'jpeg', quality: 82 });
 async function parkMouse(page) {
@@ -145,27 +146,32 @@ async function figures(page) {
   for (let i = 0; i < n; i++) { const f = await figure(page, i); if (f.pixels > 0) out.push(f); }
   return out;
 }
-// How the models draw: material colour, vertex colours on, colour attribute present (body, horn, membrane).
+// How the models draw: material colour, emissive and its intensity, vertex colours on, colour attribute present (body,
+// horn, membrane).
 const materials = (page) => page.evaluate((MOBS) => {
   const out = {};
   for (const [e, o] of eval(MOBS)) {
     if (out[e.typeKey]) continue;
     out[e.typeKey] = [];
-    o.traverse((m) => { if (m.isMesh && /body|horn|membrane/.test(m.name)) out[e.typeKey].push({ mesh: m.name, colour: m.material.color.getHexString(), vertexColors: m.material.vertexColors, colourAttribute: Boolean(m.geometry.getAttribute('color')) }); });
+    o.traverse((m) => { if (m.isMesh && /body|horn|membrane/.test(m.name)) out[e.typeKey].push({ mesh: m.name, colour: m.material.color.getHexString(), emissive: m.material.emissive.getHexString(), emissiveIntensity: m.material.emissiveIntensity, vertexColors: m.material.vertexColors, colourAttribute: Boolean(m.geometry.getAttribute('color')) }); });
   }
   return out;
 }, MOBS);
-// Only in the page: the Hurler's body, horns and wing membranes drawn another way. 'charcoal' multiplies 0x3a3530 into
-// the vertex colours as the tint does today; 'tintAsColour' is the amendment's proposal (0xb8b2a7 as the colour, vertex
-// colours off). Nothing in src/ does either.
+// Only in the page: 'old' gives the Hurler's body, horns and wing membranes the look they had before zones.ts's
+// ashHurler: the Lesser Demon's material on the same mesh (the two share the model), with the row's tint 0xb8b2a7
+// multiplied into its colour, as blenderMonsters.ts makes them. 'current' puts back what ashHurler set. Nothing in src/
+// is changed.
 const hurlerAs = (page, mode) => page.evaluate(([MOBS, mode]) => {
-  for (const [e, o] of eval(MOBS)) if (e.typeKey === 'ember_hurler') o.traverse((m) => {
+  const mobs = eval(MOBS), demon = {};
+  for (const [e, o] of mobs) if (e.typeKey === 'lesser_demon') o.traverse((m) => { if (m.isMesh) demon[m.name] ??= m.material; });
+  for (const [e, o] of mobs) if (e.typeKey === 'ember_hurler') o.traverse((m) => {
     if (!m.isMesh || !/body|horn|membrane/.test(m.name)) return;
-    m.userData.__orig ??= { c: m.material.color.getHex(), vc: m.material.vertexColors };
+    const D = demon[m.name];
+    if (!D) throw new Error(`no Lesser Demon mesh ${m.name}`);
+    m.userData.__orig ??= { c: m.material.color.getHex(), e: m.material.emissive.getHex(), ei: m.material.emissiveIntensity, vc: m.material.vertexColors };
     const O = m.userData.__orig;
-    if (mode === 'current') { m.material.color.setHex(O.c); m.material.vertexColors = O.vc; }
-    if (mode === 'charcoal') { m.material.color.setHex(0x3a3530); m.material.vertexColors = O.vc; }
-    if (mode === 'tintAsColour') { m.material.color.setHex(0xb8b2a7); m.material.vertexColors = false; }
+    if (mode === 'current') { m.material.color.setHex(O.c); m.material.emissive.setHex(O.e); m.material.emissiveIntensity = O.ei; m.material.vertexColors = O.vc; }
+    if (mode === 'old') { m.material.color.copy(D.color).multiply(new D.color.constructor(0xb8b2a7)); m.material.emissive.copy(D.emissive); m.material.emissiveIntensity = D.emissiveIntensity; m.material.vertexColors = D.vertexColors; }
     m.material.needsUpdate = true;
   });
 }, [MOBS, mode]);
@@ -209,13 +215,13 @@ export default async function job(_page, browser) {
     facts.b1 = await names(page);
 
     // D: the Hurler against the demons. D1 at the front hall's mouth, every member idle at home; D2 at fight range, the
-    // hero 4 into the hall and the members on him. Each in three ways of drawing the Hurler (hurlerAs).
+    // hero 4 into the hall and the members on him. Each as the game draws the Hurler and as it drew before (hurlerAs).
     await page.waitForTimeout(2500);
     await pose(page, ...W(26.5, 34), 1.57, 0.45, 9);
     await page.waitForTimeout(2500);
     facts.materials = await materials(page);
     facts.d1 = {};
-    for (const mode of ['current', 'charcoal', 'tintAsColour']) {
+    for (const mode of ['current', 'old']) {
       await hurlerAs(page, mode);
       await page.waitForTimeout(300);
       await shot(page, `d1-mouth-${mode}.jpg`);
@@ -225,7 +231,7 @@ export default async function job(_page, browser) {
     await pose(page, ...W(30, 34), 1.57, 0.5, 10);
     await page.waitForTimeout(5000);
     facts.d2 = {};
-    for (const mode of ['current', 'charcoal', 'tintAsColour']) {
+    for (const mode of ['current', 'old']) {
       await hurlerAs(page, mode);
       await page.waitForTimeout(300);
       await shot(page, `d2-fight-${mode}.jpg`);
