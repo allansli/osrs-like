@@ -1001,3 +1001,7 @@ Q6's data and text are unchanged. Its Accept was red on two tests that Q6 may no
 ### Q9 repair amendment (2026-11-27, written by the Q9 repair lane, awaiting ratification by the main session)
 
 - **Q9's files gain `src/ui/dialogue.ts` and `src/engine/loop.ts`**: the task-master interaction (`act === 'slayer'`) and the dialogue event `open: 'tasks'` now call `openQuestsModal('tasks')`, so they land on the Tasks tab even when the log last showed Journal. Nothing else in those files changes.
+
+### G-6.2 amendment (2026-11-27, written by the G-6.2 lane, awaiting ratification by the main session)
+
+- **G-6.2's files gain `docs/superpowers/research/content-model/results.txt`** (docs): the gate's MODEL run regenerated it, and the only change is in its "shipped so far" line, which gains `ember_faint`, `ember_steady` and `ember_bright` (shipped by Q6 with the content file's numbers). `check-results.txt` and `aggro-results.txt` came out byte-identical. No script changed. This is the same kind of file as in G-6.1's amendment.

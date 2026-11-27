@@ -1,0 +1,103 @@
+{
+ "renderer": "ANGLE (Microsoft Corporation, D3D12 (NVIDIA GeForce RTX 4070 Laptop GPU), OpenGL 4.6)",
+ "scenes": {
+  "a_bran": {
+   "file": "d1-bran-new-game.jpg",
+   "heroAt": [
+    4,
+    15
+   ],
+   "clickedAt": [
+    608,
+    204
+   ],
+   "panel": {
+    "open": true,
+    "speaker": "Bran Tolley",
+    "say": "Name, and what you carry. Nothing? Then you will fit in. Put your name in the task master's ledger and I will find you a blade.",
+    "options": [
+     "1Where is the task master?",
+     "2Who are you?",
+     "3I will sign the ledger."
+    ]
+   },
+   "tracker": {
+    "title": "A Name in the Ledger",
+    "step": "Speak with the task master and accept a task"
+   },
+   "pageErrors": []
+  },
+  "b_odalys": {
+   "heroAt": [
+    -8,
+    -3.5
+   ],
+   "chainClaimed": [
+    "arrival",
+    "sq_ledger",
+    "sq_quarrel",
+    "sq_gather",
+    "sq_forge",
+    "sq_keeping",
+    "sq_coin"
+   ],
+   "pageErrors": [],
+   "clickedAt": [
+    608,
+    216
+   ],
+   "offer": {
+    "open": true,
+    "speaker": "Odalys Venn",
+    "say": "Tolley sent you. Good. He counts people and I look at them, and you will do. Three wardlights on three roads are guttering, and I am one woman with one pair of knees. I need hands.",
+    "options": [
+     "1What do you need?",
+     "2What are the wards?",
+     "3Who are you?",
+     "4Not now."
+    ]
+   },
+   "trackerBefore": {
+    "title": "Lumbridge Foundations",
+    "step": "Open the Lumbridge Bank"
+   },
+   "brief": {
+    "open": true,
+    "speaker": "Odalys Venn",
+    "say": "A wardlight burns ash to keep ash away, the way you bleed a fever. The town lamp is nearly out of it. Burn three logs at any forge and bring me what is left. Three measures of ashes. Do not sift them.",
+    "options": [
+     "1Three measures of ashes. I will bring them.",
+     "2What are the wards?",
+     "3Give me a moment."
+    ]
+   },
+   "afterChoices": {
+    "open": false,
+    "speaker": "Odalys Venn",
+    "say": "A wardlight burns ash to keep ash away, the way you bleed a fever. The town lamp is nearly out of it. Burn three logs at any forge and bring me what is left. Three measures of ashes. Do not sift them.",
+    "options": [
+     "1Three measures of ashes. I will bring them.",
+     "2What are the wards?",
+     "3Give me a moment."
+    ]
+   },
+   "story": {
+    "ml_wards": 1
+   },
+   "trackerAfter": {
+    "title": "The Guttering Wards",
+    "step": "Burn logs at a forge until you carry 3 Ashes."
+   },
+   "journal": [
+    "ACTIVE QUESTS",
+    "★ The Guttering Wards",
+    "Burn logs at a forge until you carry 3 Ashes.",
+    "QUESTS ON OFFER",
+    "○ A Vow Kept",
+    "Giver: Odalys Venn · Place: Lumbridge Haven",
+    "Needs: Combat level 15",
+    "COMPLETED QUESTS (0)"
+   ]
+  }
+ }
+}
