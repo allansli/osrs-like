@@ -10,7 +10,7 @@ export type DungeonCampMember = {
 export type DungeonCamp = {
   id: string;
   room: string;
-  aggro: number;
+  aggro?: number;
   arenaRadius?: number;
   members: DungeonCampMember[];
 };
@@ -38,7 +38,7 @@ export type DungeonLoot = {
   rare: DungeonLootRare[];
 };
 
-export type Dungeon = {
+export type Zone = {
   id: string;
   name: string;
   origin: [number, number];
@@ -46,15 +46,66 @@ export type Dungeon = {
   door: { x: number; z: number };
   entry: [number, number];
   rooms: Record<string, [number, number, number, number]>;
-  gates: DungeonGate[];
   camps: DungeonCamp[];
+  needs: Cond;
+  solid?: [number, number, number, number][];
+  respawnSecs?: number;
+  props?: { node: string; x: number; z: number; scale?: number; rotY?: number }[];
+};
+
+export type Dungeon = Zone & {
+  gates: DungeonGate[];
   nodes: { type: string; x: number; z: number }[];
   chest: [number, number];
   loot: DungeonLoot;
-  needs: Cond;
-  solid?: [number, number, number, number][];
-  props?: { node: string; x: number; z: number; scale?: number; rotY?: number }[];
 };
+
+export const CAVES: Zone[] = [
+  {
+    id: 'slagfall_cave',
+    name: 'Slagfall Terrace',
+    origin: [1000, 600],
+    size: 96,
+    door: { x: -84, z: 98 },
+    entry: [12, 34],
+    rooms: {
+      entry: [4, 26, 20, 42],
+      c1: [20, 31, 26, 37],
+      front: [26, 20, 50, 48],
+      c2: [50, 31, 56, 37],
+      back: [56, 18, 84, 50]
+    },
+    solid: [
+      [31, 27, 33, 29],
+      [31, 39, 33, 41],
+      [61, 24, 63, 26],
+      [61, 42, 63, 44],
+      [69, 30, 71, 32]
+    ],
+    camps: [
+      {
+        id: 'front',
+        room: 'front',
+        members: [
+          { type: 'lesser_demon', x: 36, z: 30 },
+          { type: 'lesser_demon', x: 36, z: 38 },
+          { type: 'ember_hurler', x: 44, z: 34 }
+        ]
+      },
+      {
+        id: 'back',
+        room: 'back',
+        members: [
+          { type: 'lesser_demon', x: 66, z: 34 },
+          { type: 'ember_hurler', x: 74, z: 28 },
+          { type: 'ember_hurler', x: 74, z: 40 }
+        ]
+      }
+    ],
+    needs: { all: [] },
+    respawnSecs: 13.5
+  }
+];
 
 export const DUNGEONS: Dungeon[] = [
   {

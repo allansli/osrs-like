@@ -229,10 +229,6 @@ export const CAMPS: CampDef[] = [
     { type: 'lesser_demon', x: -27, z: 55, wander: 1 },
     { type: 'lesser_demon', x: -22, z: 55, wander: 1 }
   ], MELEE_AGGRO, undefined, true),
-  makeCamp('slagfall_terrace', [
-    { type: 'lesser_demon', x: -86, z: 96 },
-    { type: 'lesser_demon', x: -78, z: 104 }
-  ], MELEE_AGGRO),
   makeCamp('dragon', [
     { type: 'elvarg_dragon', x: -102, z: 100 }
   ], RANGED_AGGRO),

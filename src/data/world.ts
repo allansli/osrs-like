@@ -169,6 +169,30 @@ export const MONSTER_TYPES: Record<string, MonsterDef> = {
     tint: 0x7fb069,
     modelScale: 1.1
   },
+  ember_hurler: {
+    name: 'Ember Hurler',
+    level: 66,
+    hp: 105,
+    maxHit: 19,
+    atk: 64,
+    def: 44,
+    scale: 1.8,
+    style: 'ranged',
+    bodyColor: 0xdc2626,
+    accentColor: 0x111827,
+    kind: 'demon',
+    weaponColor: 0xf97316,
+    drops: [
+      { id: 'dragon_bones', chance: 1 },
+      { gp: [340, 760], chance: 1 },
+      { id: 'shark', chance: 0.5 },
+      { id: 'ashes', chance: 0.5, qty: 2 }
+    ],
+    pattern: 'dark_ranger',
+    model: 'lesser_demon',
+    tint: 0xb8b2a7,
+    modelScale: 0.85
+  },
   // Design 6.4: the new boss, built from the existing dragon's model. Its phases arrive with BOSSES (B2).
   ashmantle: {
     name: 'Ashmantle the Slag Wyrm',
