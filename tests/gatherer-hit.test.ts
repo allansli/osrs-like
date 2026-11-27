@@ -93,6 +93,29 @@ describe('CALL-6.29 (b): a hit stops the gather', () => {
     expect(targetType(), "Stage 4's auto-retaliation answers the hit").toBe('monster');
   });
 
+  // Found by the G-6.0 capture: a hero still walking to the tree (waypoints left, moving) must stop and fight back too.
+  it('a hero walking to a tree, hit once, stops walking and fights back', () => {
+    const m = monster('goblin');
+    G.monstersList.push(m);
+    player.targetEntity = { type: 'resource', ref: tree };
+    player.waypoints = [[0, 1], [0, 2]];
+    player.isMoving = true;
+    performMonsterRetaliation(m);
+    expect(player.waypoints.length, 'the walk to the tree has ended').toBe(0);
+    expect(targetType(), "Stage 4's auto-retaliation answers the hit").toBe('monster');
+  });
+
+  it('a hero walking with no resource target, hit once, keeps walking (Stage 4 unchanged)', () => {
+    const m = monster('goblin');
+    G.monstersList.push(m);
+    player.targetEntity = null;
+    player.waypoints = [[0, 1]];
+    player.isMoving = true;
+    performMonsterRetaliation(m);
+    expect(player.waypoints.length).toBe(1);
+    expect(targetType()).toBeUndefined();
+  });
+
   // The moss guardians at the yews and magic trees also land their heavy (Rootquake) through performMonsterHeavy.
   it('a gathering hero hit once by a heavy is no longer gathering, and fights back', () => {
     const m = monster('moss_guardian');
