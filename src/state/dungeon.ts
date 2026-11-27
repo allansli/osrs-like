@@ -19,18 +19,12 @@ export type DungeonRun = {
 };
 
 export function zoneWalk(
-  def: {
-    origin: [number, number];
-    size: number;
-    rooms: Record<string, [number, number, number, number]>;
-    gates?: { id: string; rect: [number, number, number, number] }[];
-    solid?: [number, number, number, number][];
-  },
-  openGates: string[] = []
+  def: Pick<Dungeon, 'origin' | 'size' | 'rooms' | 'gates' | 'solid'>,
+  openGates: string[]
 ): (x: number, z: number) => boolean {
   const [ox, oz] = def.origin;
   const roomRects = Object.values(def.rooms);
-  const shutGates = (def.gates ?? []).filter((g) => !openGates.includes(g.id));
+  const shutGates = def.gates.filter((g) => !openGates.includes(g.id));
   const solids = def.solid ?? [];
 
   return (wx: number, wz: number): boolean => {
