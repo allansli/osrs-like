@@ -1,0 +1,457 @@
+{
+ "renderer": "ANGLE (Microsoft Corporation, D3D12 (NVIDIA GeForce RTX 4070 Laptop GPU), OpenGL 4.6)",
+ "scenes": {
+  "a_cinder_circle": {
+   "kit": "cinder_adept",
+   "levels": {
+    "attack": 99,
+    "strength": 99,
+    "defence": 99,
+    "hitpoints": 99,
+    "ranged": 99,
+    "magic": 99,
+    "prayer": 99
+   },
+   "kitChildren": [
+    {
+     "child": "cinder_adept_HeadGroup",
+     "parent": "HeadGroup",
+     "parentIsBone": true,
+     "figureAt": [
+      -3,
+      63
+     ]
+    },
+    {
+     "child": "cinder_adept_LeftHand",
+     "parent": "LeftHand",
+     "parentIsBone": true,
+     "figureAt": [
+      -3,
+      63
+     ]
+    },
+    {
+     "child": "cinder_adept_WeaponPivot",
+     "parent": "WeaponPivot",
+     "parentIsBone": true,
+     "figureAt": [
+      -3,
+      63
+     ]
+    },
+    {
+     "child": "cinder_adept_RightHand",
+     "parent": "RightHand",
+     "parentIsBone": true,
+     "figureAt": [
+      -3,
+      63
+     ]
+    },
+    {
+     "child": "cinder_adept_HeadGroup",
+     "parent": "HeadGroup",
+     "parentIsBone": true,
+     "figureAt": [
+      3.6,
+      72.8
+     ]
+    },
+    {
+     "child": "cinder_adept_LeftHand",
+     "parent": "LeftHand",
+     "parentIsBone": true,
+     "figureAt": [
+      3.6,
+      72.8
+     ]
+    },
+    {
+     "child": "cinder_adept_WeaponPivot",
+     "parent": "WeaponPivot",
+     "parentIsBone": true,
+     "figureAt": [
+      3.6,
+      72.8
+     ]
+    },
+    {
+     "child": "cinder_adept_RightHand",
+     "parent": "RightHand",
+     "parentIsBone": true,
+     "figureAt": [
+      3.6,
+      72.8
+     ]
+    },
+    {
+     "child": "cinder_adept_HeadGroup",
+     "parent": "HeadGroup",
+     "parentIsBone": true,
+     "figureAt": [
+      -2.9,
+      74.5
+     ]
+    },
+    {
+     "child": "cinder_adept_LeftHand",
+     "parent": "LeftHand",
+     "parentIsBone": true,
+     "figureAt": [
+      -2.9,
+      74.5
+     ]
+    },
+    {
+     "child": "cinder_adept_WeaponPivot",
+     "parent": "WeaponPivot",
+     "parentIsBone": true,
+     "figureAt": [
+      -2.9,
+      74.5
+     ]
+    },
+    {
+     "child": "cinder_adept_RightHand",
+     "parent": "RightHand",
+     "parentIsBone": true,
+     "figureAt": [
+      -2.9,
+      74.5
+     ]
+    }
+   ],
+   "kitWaitMs": 7,
+   "shots": [
+    {
+     "file": "a1-cinder-circle-wide.jpg",
+     "heroAt": [
+      -0.7,
+      72.7
+     ],
+     "camera": [
+      0.6,
+      0.8,
+      18
+     ],
+     "afterMs": 1500,
+     "hp": 99,
+     "maxHp": 99,
+     "pos": [
+      -0.7,
+      72.7
+     ],
+     "target": null,
+     "chatTail": [
+      "Use WASD / Arrows or Click anywhere to move, fight monsters, chop trees, mine ores, or fish.",
+      "You arrive with nothing. The tracker under your health shows your first task: speak with the task master in the courtyard.",
+      "The courtyard holds the Bank booth, the General Store, and the Anvil. Walk up to use them. Press F1–F6 to switch panels and Esc to close a window.",
+      "Cinder Adept attacks!"
+     ]
+    },
+    {
+     "file": "a2-cinder-adept-close.jpg",
+     "heroAt": [
+      0,
+      70
+     ],
+     "camera": [
+      0.9,
+      0.45,
+      7
+     ],
+     "afterMs": 1500,
+     "hp": 99,
+     "maxHp": 99,
+     "pos": [
+      0,
+      70
+     ],
+     "target": null,
+     "chatTail": [
+      "Use WASD / Arrows or Click anywhere to move, fight monsters, chop trees, mine ores, or fish.",
+      "You arrive with nothing. The tracker under your health shows your first task: speak with the task master in the courtyard.",
+      "The courtyard holds the Bank booth, the General Store, and the Anvil. Walk up to use them. Press F1–F6 to switch panels and Esc to close a window.",
+      "Cinder Adept attacks!"
+     ]
+    }
+   ],
+   "pageErrors": []
+  },
+  "b_brute_shelf": {
+   "kit": "slag_brute",
+   "levels": {
+    "attack": 99,
+    "strength": 99,
+    "defence": 99,
+    "hitpoints": 99,
+    "ranged": 99,
+    "magic": 99,
+    "prayer": 99
+   },
+   "kitChildren": [
+    {
+     "child": "slag_brute_LeftArmPivot",
+     "parent": "LeftArmPivot",
+     "parentIsBone": true,
+     "figureAt": [
+      -6,
+      100
+     ]
+    },
+    {
+     "child": "slag_brute_WeaponPivot",
+     "parent": "WeaponPivot",
+     "parentIsBone": true,
+     "figureAt": [
+      -6,
+      100
+     ]
+    },
+    {
+     "child": "slag_brute_RightArmPivot",
+     "parent": "RightArmPivot",
+     "parentIsBone": true,
+     "figureAt": [
+      -6,
+      100
+     ]
+    },
+    {
+     "child": "slag_brute_Torso",
+     "parent": "Torso",
+     "parentIsBone": true,
+     "figureAt": [
+      -6,
+      100
+     ]
+    },
+    {
+     "child": "slag_brute_LeftArmPivot",
+     "parent": "LeftArmPivot",
+     "parentIsBone": true,
+     "figureAt": [
+      3,
+      101
+     ]
+    },
+    {
+     "child": "slag_brute_WeaponPivot",
+     "parent": "WeaponPivot",
+     "parentIsBone": true,
+     "figureAt": [
+      3,
+      101
+     ]
+    },
+    {
+     "child": "slag_brute_RightArmPivot",
+     "parent": "RightArmPivot",
+     "parentIsBone": true,
+     "figureAt": [
+      3,
+      101
+     ]
+    },
+    {
+     "child": "slag_brute_Torso",
+     "parent": "Torso",
+     "parentIsBone": true,
+     "figureAt": [
+      3,
+      101
+     ]
+    }
+   ],
+   "kitWaitMs": 6,
+   "shots": [
+    {
+     "file": "b1-brute-shelf-wide.jpg",
+     "heroAt": [
+      -2,
+      102
+     ],
+     "camera": [
+      0.6,
+      0.8,
+      18
+     ],
+     "afterMs": 1500,
+     "hp": 99,
+     "maxHp": 99,
+     "pos": [
+      -2,
+      102
+     ],
+     "target": null,
+     "chatTail": [
+      "Welcome to Gielinor Hero.",
+      "Use WASD / Arrows or Click anywhere to move, fight monsters, chop trees, mine ores, or fish.",
+      "You arrive with nothing. The tracker under your health shows your first task: speak with the task master in the courtyard.",
+      "The courtyard holds the Bank booth, the General Store, and the Anvil. Walk up to use them. Press F1–F6 to switch panels and Esc to close a window."
+     ]
+    },
+    {
+     "file": "b2-slag-brute-close.jpg",
+     "heroAt": [
+      -2.5,
+      100.5
+     ],
+     "camera": [
+      3.5,
+      0.45,
+      7
+     ],
+     "afterMs": 1500,
+     "hp": 99,
+     "maxHp": 99,
+     "pos": [
+      -2.5,
+      100.5
+     ],
+     "target": null,
+     "chatTail": [
+      "Welcome to Gielinor Hero.",
+      "Use WASD / Arrows or Click anywhere to move, fight monsters, chop trees, mine ores, or fish.",
+      "You arrive with nothing. The tracker under your health shows your first task: speak with the task master in the courtyard.",
+      "The courtyard holds the Bank booth, the General Store, and the Anvil. Walk up to use them. Press F1–F6 to switch panels and Esc to close a window."
+     ]
+    }
+   ],
+   "pageErrors": []
+  },
+  "c_marrowjaw": {
+   "kit": "marrowjaw",
+   "levels": {
+    "attack": 99,
+    "strength": 99,
+    "defence": 99,
+    "hitpoints": 99,
+    "ranged": 99,
+    "magic": 99,
+    "prayer": 99
+   },
+   "kitChildren": [
+    {
+     "child": "marrowjaw_HeadGroup",
+     "parent": "HeadGroup",
+     "parentIsBone": true,
+     "figureAt": [
+      9,
+      -74.8
+     ]
+    },
+    {
+     "child": "marrowjaw_LeftArmPivot",
+     "parent": "LeftArmPivot",
+     "parentIsBone": true,
+     "figureAt": [
+      9,
+      -74.8
+     ]
+    },
+    {
+     "child": "marrowjaw_RightArmPivot",
+     "parent": "RightArmPivot",
+     "parentIsBone": true,
+     "figureAt": [
+      9,
+      -74.8
+     ]
+    },
+    {
+     "child": "marrowjaw_Torso",
+     "parent": "Torso",
+     "parentIsBone": true,
+     "figureAt": [
+      9,
+      -74.8
+     ]
+    }
+   ],
+   "kitWaitMs": 4,
+   "shots": [
+    {
+     "file": "c1-marrowjaw-idle.jpg",
+     "heroAt": [
+      7,
+      -59
+     ],
+     "camera": [
+      3.14,
+      0.55,
+      14
+     ],
+     "afterMs": 1500,
+     "hp": 99,
+     "maxHp": 99,
+     "pos": [
+      7,
+      -59
+     ],
+     "target": null,
+     "chatTail": [
+      "Welcome to Gielinor Hero.",
+      "Use WASD / Arrows or Click anywhere to move, fight monsters, chop trees, mine ores, or fish.",
+      "You arrive with nothing. The tracker under your health shows your first task: speak with the task master in the courtyard.",
+      "The courtyard holds the Bank booth, the General Store, and the Anvil. Walk up to use them. Press F1–F6 to switch panels and Esc to close a window."
+     ]
+    },
+    {
+     "file": "c2-marrowjaw-fight-3s.jpg",
+     "heroAt": [
+      7,
+      -68
+     ],
+     "camera": [
+      3.14,
+      0.55,
+      11
+     ],
+     "afterMs": 3000,
+     "hp": 99,
+     "maxHp": 99,
+     "pos": [
+      7,
+      -68
+     ],
+     "target": null,
+     "chatTail": [
+      "You arrive with nothing. The tracker under your health shows your first task: speak with the task master in the courtyard.",
+      "The courtyard holds the Bank booth, the General Store, and the Anvil. Walk up to use them. Press F1–F6 to switch panels and Esc to close a window.",
+      "Marrowjaw the Tollmaster attacks!",
+      "Its bolts are magic."
+     ]
+    },
+    {
+     "file": "c3-marrowjaw-fight-6s.jpg",
+     "heroAt": [
+      7,
+      -68
+     ],
+     "camera": [
+      3.14,
+      0.55,
+      11
+     ],
+     "afterMs": 3000,
+     "hp": 99,
+     "maxHp": 99,
+     "pos": [
+      7,
+      -68
+     ],
+     "target": null,
+     "chatTail": [
+      "You arrive with nothing. The tracker under your health shows your first task: speak with the task master in the courtyard.",
+      "The courtyard holds the Bank booth, the General Store, and the Anvil. Walk up to use them. Press F1–F6 to switch panels and Esc to close a window.",
+      "Marrowjaw the Tollmaster attacks!",
+      "Its bolts are magic."
+     ]
+    }
+   ],
+   "pageErrors": []
+  }
+ }
+}
