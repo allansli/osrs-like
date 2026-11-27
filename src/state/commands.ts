@@ -13,7 +13,8 @@ export type PlayerCommand =
   | { kind: 'drink'; slot: number }
   | { kind: 'prayer'; id: string }
   | { kind: 'style'; style: string }
-  | { kind: 'special' };
+  | { kind: 'special' }
+  | { kind: 'talk'; npcId: string };
 
 export interface CommandClocks {
   food: CooldownClock;
@@ -89,6 +90,7 @@ export function applyCommand(
     }
     case 'attack':
     case 'move':
+    case 'talk':
       return { ok: false, reason: 'Movement and attacks are handled by the engine.' };
   }
 }
