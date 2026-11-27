@@ -434,11 +434,14 @@ export function handleMonsterDeath(monster: MonsterEntity): void {
 }
 
 function maybeRetaliate(monster: MonsterEntity): void {
+  let walking = player.isMoving || player.waypoints.length > 0;
   if (player.targetEntity?.type === 'resource') {
+    // CALL-6.29 (b): a hit ends the gather, and the walk to the node with it, so the auto-retaliation answers.
     player.targetEntity = null;
+    player.waypoints.length = 0;
+    walking = false;
   }
   const hasTarget = player.targetEntity !== null;
-  const walking = player.isMoving || player.waypoints.length > 0;
   const keyHeld = ['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowLeft', 'ArrowDown', 'ArrowRight'].some(
     (k) => !!G.keysPressed[k]
   );
