@@ -133,14 +133,9 @@ export function showBanner(kicker: string, message: string): void {
 }
 
 export function switchTab(tabName: string): void {
-  const panel = document.getElementById('right-panel');
-  if (panel) {
-    panel.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    panel.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-  } else {
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-  }
+  const panel = el('right-panel');
+  panel.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  panel.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
   const btn = el('tab-btn-' + tabName);
   const content = el('tab-' + tabName);
   btn.classList.add('active');

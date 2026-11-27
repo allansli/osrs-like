@@ -1,63 +1,58 @@
 import { STATE } from '../state/gameState';
 import { journalView } from '../state/story';
+import { STORY_QUESTS } from '../data/story';
+import { STARTER_QUESTS } from '../state/adventure';
 import { SKILLS_META } from '../data/skills';
 import { ITEMS } from '../data/items';
 import type { Cond } from '../state/dialogue';
 import { openModal, closeModals, announceUnlocksSince } from './playerActions';
-import { updateAllUI } from './hud';
+import { updateAllUI, el, addChatMessage } from './hud';
 import { dispatchCommand } from '../engine/actions';
 
+const words = (id: string): string => id.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/[_:]/g, ' ');
+const capital = (t: string): string => t.charAt(0).toUpperCase() + t.slice(1);
+const questName = (id: string): string => [...STORY_QUESTS, ...STARTER_QUESTS].find((q) => q.id === id)!.name;
+
 function formatNeeds(cond: Cond): string {
-  if ('combat' in cond) {
-    return `Combat level ${cond.combat}`;
-  }
+  if ('combat' in cond) return `Combat level ${cond.combat}`;
   if ('skill' in cond) {
     const [sk, lvl] = cond.skill;
-    const meta = SKILLS_META[sk as keyof typeof SKILLS_META];
-    const name = meta ? meta.name : sk;
-    return `${name} level ${lvl}`;
+    return `${SKILLS_META[sk as keyof typeof SKILLS_META].name} level ${lvl}`;
   }
   if ('quest' in cond) {
     const [qId, status] = cond.quest;
-    return `${qId} (${status})`;
+    const text = { none: 'not started', active: 'in progress', done: 'finished' }[status];
+    return `${questName(qId)} ${text}`;
   }
-  if ('claimed' in cond) {
-    return `Claimed ${cond.claimed}`;
+  if ('stage' in cond) {
+    const [qId, n] = cond.stage;
+    return `${questName(qId)} stage ${n + 1}`;
   }
+  if ('claimed' in cond) return `Claimed ${questName(cond.claimed)}`;
   if ('starter' in cond) {
     const [id, st] = cond.starter;
-    return `${id} (${st})`;
+    return `${questName(id)} ${st === 'ready' ? 'ready to hand in' : 'open'}`;
   }
-  if ('gp' in cond) {
-    return `${cond.gp.toLocaleString()} GP`;
-  }
+  if ('gp' in cond) return `${cond.gp.toLocaleString()} GP`;
   if ('has' in cond) {
     const [itemId, qty] = cond.has;
-    const item = ITEMS[itemId];
-    return `${qty}× ${item ? item.name : itemId}`;
+    return `${qty}× ${ITEMS[itemId].name}`;
   }
   if ('stat' in cond) {
     const [key, n] = cond.stat;
-    return `${key} (${n})`;
+    return `${capital(words(key))} ×${n}`;
   }
-  if ('all' in cond) {
-    return cond.all.map(formatNeeds).filter(Boolean).join(', ');
-  }
-  if ('any' in cond) {
-    return cond.any.map(formatNeeds).filter(Boolean).join(' or ');
-  }
-  if ('not' in cond) {
-    return `Not (${formatNeeds(cond.not)})`;
-  }
-  if ('flag' in cond) {
-    return cond.flag;
-  }
-  return '';
+  if ('shrine' in cond) return `${capital(cond.shrine)} shrine found`;
+  if ('all' in cond) return cond.all.map(formatNeeds).join(', ');
+  if ('any' in cond) return cond.any.map(formatNeeds).join(' or ');
+  if ('not' in cond) return `Not (${formatNeeds(cond.not)})`;
+  return capital(words(cond.flag));
 }
 
+let finishedOpen = false;
+
 export function renderJournal(): void {
-  const host = document.getElementById('log-tab-journal');
-  if (!host) return;
+  const host = el('log-tab-journal');
   const prevScroll = host.scrollTop;
   host.replaceChildren();
 
@@ -139,6 +134,10 @@ export function renderJournal(): void {
   // Finished quests (collapsed)
   const details = document.createElement('details');
   details.className = 'journal-finished-details';
+  details.open = finishedOpen;
+  details.addEventListener('toggle', () => {
+    finishedOpen = details.open;
+  });
 
   const summary = document.createElement('summary');
   summary.className = 'panel-header-title';
@@ -171,28 +170,19 @@ const scrollPositions: Record<string, number> = {
   diary: 0
 };
 
-export function switchLogTab(tab: 'journal' | 'tasks' | 'diary'): void {
-  const currentContent = activeLogTab === 'tasks' ? document.getElementById('quest-list') : document.getElementById(`log-tab-${activeLogTab}`);
-  if (currentContent) {
-    scrollPositions[activeLogTab] = currentContent.scrollTop;
-  }
+const logContent = (t: 'journal' | 'tasks' | 'diary'): HTMLElement => el(t === 'tasks' ? 'quest-list' : `log-tab-${t}`);
 
+export function switchLogTab(tab: 'journal' | 'tasks' | 'diary'): void {
+  scrollPositions[activeLogTab] = logContent(activeLogTab).scrollTop;
   activeLogTab = tab;
-  const tabs = ['journal', 'tasks', 'diary'] as const;
-  for (const t of tabs) {
-    const btn = document.getElementById(`log-tab-btn-${t}`);
-    const content = t === 'tasks' ? document.getElementById('quest-list') : document.getElementById(`log-tab-${t}`);
+  for (const t of ['journal', 'tasks', 'diary'] as const) {
+    const btn = el(`log-tab-btn-${t}`);
+    const content = logContent(t);
     const isActive = t === tab;
-    if (btn) {
-      btn.classList.toggle('active', isActive);
-      btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
-    }
-    if (content) {
-      content.classList.toggle('active', isActive);
-      if (isActive) {
-        content.scrollTop = scrollPositions[t] ?? 0;
-      }
-    }
+    btn.classList.toggle('active', isActive);
+    btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+    content.classList.toggle('active', isActive);
+    if (isActive) content.scrollTop = scrollPositions[t];
   }
 }
 
@@ -200,43 +190,36 @@ let tabsBound = false;
 
 export function setupLogTabs(): void {
   if (tabsBound) return;
-  const journalBtn = document.getElementById('log-tab-btn-journal');
-  const tasksBtn = document.getElementById('log-tab-btn-tasks');
-  const diaryBtn = document.getElementById('log-tab-btn-diary');
-  if (journalBtn && tasksBtn && diaryBtn) {
-    journalBtn.addEventListener('click', () => switchLogTab('journal'));
-    tasksBtn.addEventListener('click', () => switchLogTab('tasks'));
-    diaryBtn.addEventListener('click', () => switchLogTab('diary'));
-    tabsBound = true;
-  }
+  el('log-tab-btn-journal').addEventListener('click', () => switchLogTab('journal'));
+  el('log-tab-btn-tasks').addEventListener('click', () => switchLogTab('tasks'));
+  el('log-tab-btn-diary').addEventListener('click', () => switchLogTab('diary'));
+  tabsBound = true;
 }
 
 export function openEmberModal(itemId: string): void {
   const item = ITEMS[itemId];
-  if (!item) return;
-  const title = document.getElementById('ember-modal-title');
-  if (title) title.textContent = `Empower Skill — ${item.name}`;
-  const grid = document.getElementById('ember-skills-grid');
-  if (grid) {
-    grid.replaceChildren();
-    for (const [key, meta] of Object.entries(SKILLS_META)) {
-      if (!Object.hasOwn(STATE.skills, key)) continue;
-      const sk = STATE.skills[key];
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'ui-btn';
-      btn.textContent = `${meta.name} (Lv ${sk.lvl})`;
-      btn.addEventListener('click', () => {
-        const before = Object.fromEntries(Object.entries(STATE.skills).map(([k, s]) => [k, s.lvl]));
-        const res = dispatchCommand({ kind: 'useEmber', itemId, skillKey: key });
-        if (res.ok) {
-          closeModals();
-          announceUnlocksSince(before);
-          updateAllUI();
-        }
-      });
-      grid.appendChild(btn);
-    }
+  el('ember-modal-title').textContent = `Empower Skill — ${item.name}`;
+  const grid = el('ember-skills-grid');
+  grid.replaceChildren();
+  for (const [key, meta] of Object.entries(SKILLS_META)) {
+    if (!Object.hasOwn(STATE.skills, key)) continue;
+    const sk = STATE.skills[key];
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'ui-btn';
+    btn.textContent = `${meta.name} (Lv ${sk.lvl})`;
+    btn.addEventListener('click', () => {
+      const before = Object.fromEntries(Object.entries(STATE.skills).map(([k, s]) => [k, s.lvl]));
+      const res = dispatchCommand({ kind: 'useEmber', itemId, skillKey: key });
+      if (!res.ok) {
+        addChatMessage(res.reason, 'combat');
+        return;
+      }
+      closeModals();
+      announceUnlocksSince(before);
+      updateAllUI();
+    });
+    grid.appendChild(btn);
   }
   openModal('ember-modal');
 }
