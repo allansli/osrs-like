@@ -1064,3 +1064,10 @@ The repair changed no data and no text: one docs commit (this amendment) and one
   - The target panel outlives the cave.
   - The cave mouth has two labels.
   - The region banner names the volcano inside the cave.
+
+### G-6.3b amendment (2026-11-27, written by the G-6.3b lane, awaiting ratification by the main session)
+
+- **G-6.3b's files gain `docs/superpowers/baseline/s6/g63b/`**: the README, the capture job, `los-check.ts` and its output, `facts.json`, the four traces and the pictures for H-3b, as G-6.1 to G-6.3a had. MODEL's three result files came out byte-identical, so no result file is regenerated.
+- **Two points for the main session and the owner, with the evidence in that README** (findings 1 and 2). This gate changes neither.
+  - **A safe spot round the c2 corner.** The front hall's Ember Hurler holds its fire on a hero just past corridor c2 in the back hall, then turns back at its leash (camp radius 10 + 4) before it reaches a cell with a clear line, and goes home. L2 behaves as design 7.13 says. Any change would be to the cave row (design 7.6) or the leash.
+  - **H-3b's castle item cannot happen in play.** The only dark wizard camp's leash disk ends 20.97 from the nearest castle blocker, against a reach of 11. The owner may name another wall for that check, or drop it.

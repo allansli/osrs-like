@@ -1,0 +1,348 @@
+{
+ "renderer": "ANGLE (Microsoft Corporation, D3D12 (NVIDIA GeForce RTX 4070 Laptop GPU), OpenGL 4.6)",
+ "scenes": {
+  "a_pillar": {
+   "pageErrors": [],
+   "shots": [
+    {
+     "file": "a1-pillar-blocked.jpg",
+     "afterMs": 1500,
+     "hp": 99,
+     "pos": [
+      1066.8,
+      633.4
+     ],
+     "target": null,
+     "perfHud": [
+      "45 FPS (22.2ms)",
+      "1063 calls • 607k tris"
+     ],
+     "chatTail": [
+      "Slagfall Terrace: nothing is needed.",
+      "Ember Hurler attacks!",
+      "Lesser Demon attacks!",
+      "Ember Hurler attacks!"
+     ]
+    },
+    {
+     "file": "a2-pillar-first-shot.jpg",
+     "note": "taken when the recorder saw the Hurler's first shot",
+     "hp": 99,
+     "pos": [
+      1066.8,
+      633.4
+     ],
+     "target": null,
+     "perfHud": [
+      "44 FPS (22.7ms)",
+      "1051 calls • 607k tris"
+     ],
+     "chatTail": [
+      "Slagfall Terrace: nothing is needed.",
+      "Ember Hurler attacks!",
+      "Lesser Demon attacks!",
+      "Ember Hurler attacks!"
+     ]
+    },
+    {
+     "file": "a3-pillar-after.jpg",
+     "hp": 83.47,
+     "pos": [
+      1069.28,
+      632.55
+     ],
+     "target": {
+      "type": "monster",
+      "name": "Ember Hurler",
+      "home": [
+       1074,
+       628
+      ]
+     },
+     "perfHud": [
+      "44 FPS (22.7ms)",
+      "1049 calls • 607k tris"
+     ],
+     "chatTail": [
+      "Slagfall Terrace: nothing is needed.",
+      "Ember Hurler attacks!",
+      "Lesser Demon attacks!",
+      "Ember Hurler attacks!"
+     ]
+    }
+   ],
+   "door": {
+    "at": [
+     604,
+     116
+    ],
+    "label": "Interact with Slagfall Terrace"
+   },
+   "prayersOn": [
+    "prot_melee"
+   ],
+   "watched": {
+    "types": [
+     "ember_hurler",
+     "lesser_demon",
+     "ember_hurler"
+    ],
+    "camps": [
+     "slagfall_cave:back",
+     "slagfall_cave:back",
+     "slagfall_cave:back"
+    ]
+   },
+   "firstShotSeen": true,
+   "rows": 597
+  },
+  "b_corner": {
+   "pageErrors": [],
+   "shots": [
+    {
+     "file": "b1-corner-blocked.jpg",
+     "afterMs": 1500,
+     "hp": 99,
+     "pos": [
+      1057,
+      630.5
+     ],
+     "target": null,
+     "perfHud": [
+      "48 FPS (20.8ms)",
+      "1109 calls • 616k tris"
+     ],
+     "chatTail": [
+      "You arrive with nothing. The tracker under your health shows your first task: speak with the task master in the courtyard.",
+      "The courtyard holds the Bank booth, the General Store, and the Anvil. Walk up to use them. Press F1–F6 to switch panels and Esc to close a window.",
+      "Slagfall Terrace: nothing is needed.",
+      "Ember Hurler attacks!"
+     ]
+    },
+    {
+     "file": "b2-corner-first-shot.jpg",
+     "note": "taken when the recorder saw the Hurler's first shot after the corner pose, or at the end of the watch",
+     "hp": 99,
+     "pos": [
+      1057,
+      630.5
+     ],
+     "target": null,
+     "perfHud": [
+      "42 FPS (23.8ms)",
+      "1108 calls • 616k tris"
+     ],
+     "chatTail": [
+      "You arrive with nothing. The tracker under your health shows your first task: speak with the task master in the courtyard.",
+      "The courtyard holds the Bank booth, the General Store, and the Anvil. Walk up to use them. Press F1–F6 to switch panels and Esc to close a window.",
+      "Slagfall Terrace: nothing is needed.",
+      "Ember Hurler attacks!"
+     ]
+    }
+   ],
+   "pullAt": [
+    1047,
+    634
+   ],
+   "cornerAt": [
+    1057,
+    630.5
+   ],
+   "door": {
+    "at": [
+     604,
+     116
+    ],
+    "label": "Interact with Slagfall Terrace"
+   },
+   "prayersOn": [
+    "prot_melee"
+   ],
+   "acquired": true,
+   "watched": {
+    "types": [
+     "ember_hurler",
+     "lesser_demon",
+     "lesser_demon"
+    ],
+    "camps": [
+     "slagfall_cave:front",
+     "slagfall_cave:front",
+     "slagfall_cave:front"
+    ]
+   },
+   "firstShotSeen": false,
+   "rows": 3717
+  },
+  "c_corridor": {
+   "pageErrors": [],
+   "shots": [
+    {
+     "file": "c1-corner-blocked.jpg",
+     "afterMs": 1500,
+     "hp": 99,
+     "pos": [
+      1051.5,
+      631.5
+     ],
+     "target": null,
+     "perfHud": [
+      "44 FPS (22.7ms)",
+      "1117 calls • 617k tris"
+     ],
+     "chatTail": [
+      "The courtyard holds the Bank booth, the General Store, and the Anvil. Walk up to use them. Press F1–F6 to switch panels and Esc to close a window.",
+      "Slagfall Terrace: nothing is needed.",
+      "Lesser Demon attacks!",
+      "Ember Hurler attacks!"
+     ]
+    },
+    {
+     "file": "c2-corner-first-shot.jpg",
+     "note": "taken when the recorder saw the Hurler's first shot after the corner pose, or at the end of the watch",
+     "hp": 99,
+     "pos": [
+      1051.5,
+      631.5
+     ],
+     "target": null,
+     "perfHud": [
+      "46 FPS (21.5ms)",
+      "1117 calls • 617k tris"
+     ],
+     "chatTail": [
+      "The courtyard holds the Bank booth, the General Store, and the Anvil. Walk up to use them. Press F1–F6 to switch panels and Esc to close a window.",
+      "Slagfall Terrace: nothing is needed.",
+      "Lesser Demon attacks!",
+      "Ember Hurler attacks!"
+     ]
+    }
+   ],
+   "pullAt": [
+    1064,
+    628
+   ],
+   "cornerAt": [
+    1051.5,
+    631.5
+   ],
+   "door": {
+    "at": [
+     604,
+     116
+    ],
+    "label": "Interact with Slagfall Terrace"
+   },
+   "prayersOn": [
+    "prot_melee"
+   ],
+   "acquired": true,
+   "watched": {
+    "types": [
+     "ember_hurler",
+     "lesser_demon",
+     "ember_hurler"
+    ],
+    "camps": [
+     "slagfall_cave:back",
+     "slagfall_cave:back",
+     "slagfall_cave:back"
+    ]
+   },
+   "firstShotSeen": true,
+   "rows": 264
+  },
+  "d_river": {
+   "pageErrors": [],
+   "shots": [
+    {
+     "file": "d1-river-pulled.jpg",
+     "afterMs": 2500,
+     "hp": 99,
+     "pos": [
+      39.6,
+      19
+     ],
+     "target": null,
+     "perfHud": [
+      "39 FPS (25.8ms)",
+      "1044 calls • 692k tris"
+     ],
+     "chatTail": [
+      "Welcome to Gielinor Hero.",
+      "Use WASD / Arrows or Click anywhere to move, fight monsters, chop trees, mine ores, or fish.",
+      "You arrive with nothing. The tracker under your health shows your first task: speak with the task master in the courtyard.",
+      "The courtyard holds the Bank booth, the General Store, and the Anvil. Walk up to use them. Press F1–F6 to switch panels and Esc to close a window."
+     ]
+    },
+    {
+     "file": "d2-river-end.jpg",
+     "note": "taken when the recorder saw the archer's first shot, or at the end of the watch",
+     "hp": 98.02,
+     "pos": [
+      39.6,
+      19
+     ],
+     "target": {
+      "type": "monster",
+      "name": "Goblin Archer",
+      "home": [
+       27,
+       19
+      ]
+     },
+     "perfHud": [
+      "39 FPS (25.8ms)",
+      "1051 calls • 692k tris"
+     ],
+     "chatTail": [
+      "Welcome to Gielinor Hero.",
+      "Use WASD / Arrows or Click anywhere to move, fight monsters, chop trees, mine ores, or fish.",
+      "You arrive with nothing. The tracker under your health shows your first task: speak with the task master in the courtyard.",
+      "The courtyard holds the Bank booth, the General Store, and the Anvil. Walk up to use them. Press F1–F6 to switch panels and Esc to close a window."
+     ]
+    }
+   ],
+   "watched": {
+    "types": [
+     "goblin_archer",
+     "goblin_archer"
+    ],
+    "camps": [
+     "three_kettle",
+     "three_kettle"
+    ]
+   },
+   "inReachMs": true,
+   "attackClick": {
+    "at": [
+     592,
+     128
+    ],
+    "label": "Attack Goblin Archer (Lv-5) [12/12 HP]"
+   },
+   "pulled": true,
+   "stoppedAt": {
+    "hp": 99,
+    "pos": [
+     39.6,
+     19
+    ],
+    "target": null,
+    "perfHud": [
+     "7 FPS (150.9ms)",
+     "869 calls • 619k tris"
+    ],
+    "chatTail": [
+     "Welcome to Gielinor Hero.",
+     "Use WASD / Arrows or Click anywhere to move, fight monsters, chop trees, mine ores, or fish.",
+     "You arrive with nothing. The tracker under your health shows your first task: speak with the task master in the courtyard.",
+     "The courtyard holds the Bank booth, the General Store, and the Anvil. Walk up to use them. Press F1–F6 to switch panels and Esc to close a window."
+    ]
+   },
+   "firstShotSeen": true,
+   "rows": 784
+  }
+ },
+ "n": 4
+}

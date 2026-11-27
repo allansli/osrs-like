@@ -1,0 +1,75 @@
+
+== a_pillar: 597 rows, 4418 ms
+ember_hurler (slagfall_cave:back, reach 11): states idle, chase, attack
+  shots 2, the first at 2238 ms; ranged shots with the line blocked on both rows: 0
+  rows in chase or attack within reach with the line blocked (held fire): 38
+  2238 ms attack at (1071.95, 631.63), 5.44 from the hero, line clear
+  3882 ms attack at (1071.95, 631.63), 2.82 from the hero, line clear
+  first row in reach with a clear line: 2218 ms at (1071.95, 631.63)
+  last row: 4418 ms, attack at (1071.95, 631.63); hero at (1069.28, 632.55), hp 83.47
+  cells inside the leash (camp radius 12 + 4) with a clear line within 11 of the hero's spot: 335, nearest the camp centre (1071.5,633.5)
+lesser_demon (slagfall_cave:back, reach 2.9, melee: no line needed): states idle, chase, attack
+  shots 2, the first at 1452 ms; ranged shots with the line blocked on both rows: n/a
+  rows in chase or attack within reach with the line blocked (held fire): 0
+  1452 ms attack at (1066.71, 636.22), 2.82 from the hero, line clear
+  3100 ms attack at (1067.51, 634.8), 2.87 from the hero, line clear
+  first row in reach with a clear line: 1403 ms at (1066.71, 636.22)
+  last row: 4418 ms, attack at (1067.51, 634.8); hero at (1069.28, 632.55), hp 83.47
+ember_hurler (slagfall_cave:back, reach 11): states idle, attack
+  shots 2, the first at 1364 ms; ranged shots with the line blocked on both rows: 0
+  rows in chase or attack within reach with the line blocked (held fire): 0
+  1364 ms attack at (1073.03, 637.45), 7.43 from the hero, line clear
+  3037 ms attack at (1073.03, 637.45), 6.17 from the hero, line clear
+  first row in reach with a clear line: 1364 ms at (1073.03, 637.45)
+  last row: 4418 ms, attack at (1073.03, 637.45); hero at (1069.28, 632.55), hp 83.47
+  cells inside the leash (camp radius 12 + 4) with a clear line within 11 of the hero's spot: 335, nearest the camp centre (1071.5,633.5)
+
+== b_corner: 3717 rows, 26748 ms
+ember_hurler (slagfall_cave:front, reach 11): states chase, return, idle
+  shots 0, the first at none ms; ranged shots with the line blocked on both rows: 0
+  rows in chase or attack within reach with the line blocked (held fire): 59
+  last row: 26748 ms, idle at (1044.04, 633.92); hero at (1057, 630.5), hp 99
+  cells inside the leash (camp radius 10 + 4) with a clear line within 11 of the hero's spot: 20, nearest the camp centre (1047.5,635.5)
+lesser_demon (slagfall_cave:front, reach 2.9, melee: no line needed): states idle
+  shots 0, the first at none ms; ranged shots with the line blocked on both rows: n/a
+  rows in chase or attack within reach with the line blocked (held fire): 0
+  last row: 26748 ms, idle at (1035.93, 632.99); hero at (1057, 630.5), hp 99
+lesser_demon (slagfall_cave:front, reach 2.9, melee: no line needed): states idle
+  shots 0, the first at none ms; ranged shots with the line blocked on both rows: n/a
+  rows in chase or attack within reach with the line blocked (held fire): 0
+  last row: 26748 ms, idle at (1038, 637.14); hero at (1057, 630.5), hp 99
+
+== c_corridor: 264 rows, 1941 ms
+ember_hurler (slagfall_cave:back, reach 11): states chase, attack
+  shots 1, the first at 1840 ms; ranged shots with the line blocked on both rows: 0
+  rows in chase or attack within reach with the line blocked (held fire): 0
+  1840 ms attack at (1062.38, 630.28), 10.95 from the hero, line clear
+  first row in reach with a clear line: 1814 ms at (1062.38, 630.28)
+  last row: 1941 ms, attack at (1062.38, 630.28); hero at (1051.5, 631.5), hp 99
+  cells inside the leash (camp radius 12 + 4) with a clear line within 11 of the hero's spot: 51, nearest the camp centre (1062.5,631.5)
+lesser_demon (slagfall_cave:back, reach 2.9, melee: no line needed): states chase, return
+  shots 0, the first at none ms; ranged shots with the line blocked on both rows: n/a
+  rows in chase or attack within reach with the line blocked (held fire): 0
+  last row: 1941 ms, return at (1055.55, 632.08); hero at (1051.5, 631.5), hp 99
+ember_hurler (slagfall_cave:back, reach 11): states idle
+  shots 0, the first at none ms; ranged shots with the line blocked on both rows: 0
+  rows in chase or attack within reach with the line blocked (held fire): 0
+  last row: 1941 ms, idle at (1073.76, 639.55); hero at (1051.5, 631.5), hp 99
+  cells inside the leash (camp radius 12 + 4) with a clear line within 11 of the hero's spot: 51, nearest the camp centre (1062.5,631.5)
+
+== d_river: 784 rows, 12796 ms
+goblin_archer (three_kettle, reach 11): states idle, chase, attack
+  shots 1, the first at 12621 ms; ranged shots with the line blocked on both rows: 0
+  rows in chase or attack within reach with the line blocked (held fire): 0
+  12621 ms attack at (36.27, 8.54), 10.98 from the hero, line clear
+  first row in reach with a clear line: 12526 ms at (36.27, 8.54)
+  last row: 12796 ms, attack at (36.27, 8.54); hero at (39.6, 19), hp 98.03
+  cells inside the leash (camp radius 16 + 4) with a clear line within 11 of the hero's spot: 7, nearest the camp centre (36.5,9.5)
+goblin_archer (three_kettle, reach 11): states idle
+  shots 0, the first at none ms; ranged shots with the line blocked on both rows: 0
+  rows in chase or attack within reach with the line blocked (held fire): 0
+  last row: 12796 ms, idle at (24.16, 11.74); hero at (39.6, 19), hp 98.03
+  cells inside the leash (camp radius 16 + 4) with a clear line within 11 of the hero's spot: 7, nearest the camp centre (36.5,9.5)
+
+== castle: the wizards' camp centre (45.67, -28.67), radius 11, leash 15; the nearest castle blocker is 20.97 beyond the leash disk, against the dark wizard's reach of 11
+dark wizard camps in CAMPS: wizards
