@@ -140,13 +140,14 @@ export function moveWithCollision(
   z: number,
   dx: number,
   dz: number,
-  walkable: (x: number, z: number) => boolean = isWalkable
+  walkable?: (x: number, z: number) => boolean
 ): { x: number; z: number } {
   const clamp = (v: number) => Math.max(-118, Math.min(118, v));
-  const nx = clamp(x + dx);
-  const nz = clamp(z + dz);
-  if (walkable(nx, nz)) return { x: nx, z: nz };
-  if (walkable(nx, z)) return { x: nx, z };
-  if (walkable(x, nz)) return { x, z: nz };
+  const nx = walkable ? x + dx : clamp(x + dx);
+  const nz = walkable ? z + dz : clamp(z + dz);
+  const test = walkable ?? isWalkable;
+  if (test(nx, nz)) return { x: nx, z: nz };
+  if (test(nx, z)) return { x: nx, z };
+  if (test(x, nz)) return { x, z: nz };
   return { x, z };
 }

@@ -55,6 +55,7 @@ export type MonsterLogic = {
   phase: number;
   shiftLeft: number;
   outsideFor: number;
+  respawn?: boolean;
 };
 
 export type MonsterEvent =
@@ -130,7 +131,7 @@ export function createMonsterLogic(
   typeKey: string,
   homeX: number,
   homeZ: number,
-  opts?: { campId?: string; wander?: number }
+  opts?: { campId?: string; wander?: number; respawn?: boolean }
 ): MonsterLogic {
   const def = MONSTER_TYPES[typeKey];
   if (!def) throw new Error(`createMonsterLogic: unknown monster type "${typeKey}"`);
@@ -169,7 +170,8 @@ export function createMonsterLogic(
     recoverLeft: 0,
     phase: 0,
     shiftLeft: 0,
-    outsideFor: 0
+    outsideFor: 0,
+    respawn: opts?.respawn
   };
 }
 
@@ -281,6 +283,7 @@ function enterReturn(m: MonsterLogic, world: StepWorld): void {
 
 export function stepMonster(m: MonsterLogic, world: StepWorld): MonsterEvent[] {
   const { dt, rand } = world;
+  const gridWalk = world.grid?.walkable;
 
   if (m.state === 'dying') {
     m.timer -= dt;
@@ -293,6 +296,7 @@ export function stepMonster(m: MonsterLogic, world: StepWorld): MonsterEvent[] {
   }
 
   if (m.state === 'dead') {
+    if (m.respawn === false) return [];
     m.timer -= dt;
     if (m.timer <= 0) {
       resetToIdle(m);
@@ -319,7 +323,7 @@ export function stepMonster(m: MonsterLogic, world: StepWorld): MonsterEvent[] {
         return [{ kind: 'reset' }];
       }
       const moveDist = Math.min(dist, CHASE_SPEED * dt);
-      const stepped = moveWithCollision(m.x, m.z, (dx / dist) * moveDist, (dz / dist) * moveDist);
+      const stepped = moveWithCollision(m.x, m.z, (dx / dist) * moveDist, (dz / dist) * moveDist, gridWalk);
       m.x = stepped.x;
       m.z = stepped.z;
       return [];
@@ -387,7 +391,7 @@ export function stepMonster(m: MonsterLogic, world: StepWorld): MonsterEvent[] {
       if (!world.grid) {
         const dx = world.playerX - m.x;
         const dz = world.playerZ - m.z;
-        const stepped = moveWithCollision(m.x, m.z, (dx / distToPlayer) * CHASE_SPEED * dt, (dz / distToPlayer) * CHASE_SPEED * dt);
+        const stepped = moveWithCollision(m.x, m.z, (dx / distToPlayer) * CHASE_SPEED * dt, (dz / distToPlayer) * CHASE_SPEED * dt, gridWalk);
         if (boss) clampToArena(m, stepped, boss);
         m.x = stepped.x;
         m.z = stepped.z;

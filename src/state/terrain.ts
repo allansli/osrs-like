@@ -21,6 +21,7 @@ const smooth = (t: number) => {
  * Region cores are exactly 0 within 16 and win over everything else.
  */
 export function getTerrainHeight(x: number, z: number): number {
+  if (x >= 400) return 0;
   let h = settledHeight(x, z);
   if (h === null) return 0;
   for (const poi of POIS) {

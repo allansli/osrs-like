@@ -3,16 +3,20 @@ import { isWalkable } from './collision';
 export interface WalkGrid {
   size: number;
   origin: number;
+  originZ: number;
   cells: Uint8Array;
   walkable: (x: number, z: number) => boolean;
 }
 
-export function buildWalkGrid(walkable: (x: number, z: number) => boolean = isWalkable): WalkGrid {
-  const size = 236;
-  const origin = -118;
+export function buildWalkGrid(
+  walkable: (x: number, z: number) => boolean = isWalkable,
+  origin = -118,
+  originZ = origin,
+  size = 236
+): WalkGrid {
   const cells = new Uint8Array(size * size);
   for (let gz = 0; gz < size; gz++) {
-    const cz = origin + gz + 0.5;
+    const cz = originZ + gz + 0.5;
     const rowOffset = gz * size;
     for (let gx = 0; gx < size; gx++) {
       const cx = origin + gx + 0.5;
@@ -21,7 +25,7 @@ export function buildWalkGrid(walkable: (x: number, z: number) => boolean = isWa
       }
     }
   }
-  return { size, origin, cells, walkable };
+  return { size, origin, originZ, cells, walkable };
 }
 
 export function segmentWalkable(grid: WalkGrid, a: [number, number], b: [number, number], step = 0.25): boolean {
@@ -135,7 +139,7 @@ function getScratch(size: number): PathScratch {
 /** Whether (x, z) lies in an open cell of the grid. */
 export function isOpenCell(grid: WalkGrid, x: number, z: number): boolean {
   const gx = Math.floor(x - grid.origin);
-  const gz = Math.floor(z - grid.origin);
+  const gz = Math.floor(z - grid.originZ);
   return gx >= 0 && gx < grid.size && gz >= 0 && gz < grid.size && grid.cells[gz * grid.size + gx] === 1;
 }
 
@@ -152,11 +156,12 @@ export function findPath(
 ): [number, number][] | null {
   const size = grid.size;
   const origin = grid.origin;
+  const originZ = grid.originZ;
 
   const startGx = Math.floor(from[0] - origin);
-  const startGz = Math.floor(from[1] - origin);
+  const startGz = Math.floor(from[1] - originZ);
   const targetGx = Math.floor(to[0] - origin);
-  const targetGz = Math.floor(to[1] - origin);
+  const targetGz = Math.floor(to[1] - originZ);
 
   if (startGx < 0 || startGx >= size || startGz < 0 || startGz >= size) return null;
   if (targetGx < 0 || targetGx >= size || targetGz < 0 || targetGz >= size) return null;
@@ -167,7 +172,7 @@ export function findPath(
   if (grid.cells[startId] === 0 || grid.cells[targetId] === 0) return null;
 
   if (startId === targetId) {
-    return [[origin + targetGx + 0.5, origin + targetGz + 0.5]];
+    return [[origin + targetGx + 0.5, originZ + targetGz + 0.5]];
   }
 
   const scratch = getScratch(size);
@@ -261,7 +266,7 @@ export function findPath(
   while (curr !== -1) {
     const gx = curr % size;
     const gz = (curr / size) | 0;
-    rawWaypoints.push([origin + gx + 0.5, origin + gz + 0.5]);
+    rawWaypoints.push([origin + gx + 0.5, originZ + gz + 0.5]);
     curr = parent[curr];
   }
   rawWaypoints.reverse();
@@ -288,13 +293,13 @@ export function nearestOpenCell(
   accept: (c: [number, number]) => boolean = () => true
 ): [number, number] | null {
   const cgx = Math.floor(x - grid.origin);
-  const cgz = Math.floor(z - grid.origin);
+  const cgz = Math.floor(z - grid.originZ);
   let best: [number, number] | null = null;
   let bestD = Infinity;
   for (let gz = Math.max(0, cgz - 4); gz <= Math.min(grid.size - 1, cgz + 4); gz++) {
     for (let gx = Math.max(0, cgx - 4); gx <= Math.min(grid.size - 1, cgx + 4); gx++) {
       if (grid.cells[gz * grid.size + gx] === 0) continue;
-      const c: [number, number] = [grid.origin + gx + 0.5, grid.origin + gz + 0.5];
+      const c: [number, number] = [grid.origin + gx + 0.5, grid.originZ + gz + 0.5];
       const d = Math.hypot(c[0] - x, c[1] - z);
       if (d < bestD && accept(c)) { bestD = d; best = c; }
     }
@@ -308,7 +313,7 @@ export function nearestOpenCell(
  */
 export function findWalkPath(grid: WalkGrid, from: [number, number], to: [number, number]): [number, number][] | null {
   const gx = Math.floor(to[0] - grid.origin);
-  const gz = Math.floor(to[1] - grid.origin);
+  const gz = Math.floor(to[1] - grid.originZ);
   const inGrid = gx >= 0 && gx < grid.size && gz >= 0 && gz < grid.size;
   if (!inGrid || grid.cells[gz * grid.size + gx] === 1 || !grid.walkable(to[0], to[1])) return findPath(grid, from, to);
   const near = nearestOpenCell(grid, to[0], to[1], (c) => segmentWalkable(grid, c, to));
@@ -324,18 +329,19 @@ export function entityGoal(
   stopDist: number
 ): [number, number] | null {
   const origin = grid.origin;
+  const originZ = grid.originZ;
   const size = grid.size;
   const minGx = Math.max(0, Math.floor(target[0] - stopDist - origin));
   const maxGx = Math.min(size - 1, Math.floor(target[0] + stopDist - origin));
-  const minGz = Math.max(0, Math.floor(target[1] - stopDist - origin));
-  const maxGz = Math.min(size - 1, Math.floor(target[1] + stopDist - origin));
+  const minGz = Math.max(0, Math.floor(target[1] - stopDist - originZ));
+  const maxGz = Math.min(size - 1, Math.floor(target[1] + stopDist - originZ));
 
   let bestCell: [number, number] | null = null;
   let bestDistFrom = Infinity;
   let bestDistTarget = Infinity;
 
   for (let gz = minGz; gz <= maxGz; gz++) {
-    const cz = origin + gz + 0.5;
+    const cz = originZ + gz + 0.5;
     const rowOffset = gz * size;
     for (let gx = minGx; gx <= maxGx; gx++) {
       if (grid.cells[rowOffset + gx] === 0) continue;

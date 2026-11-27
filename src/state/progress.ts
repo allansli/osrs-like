@@ -1,4 +1,5 @@
 import { BOSSES } from '../data/attacks';
+import { DUNGEONS } from '../data/dungeons';
 import { FORGE_RECIPES } from '../data/recipeTable';
 import { MONSTER_TYPES, RESOURCE_NODES_DEF } from '../data/world';
 import { CAMPS } from '../data/worldMap';
@@ -13,6 +14,7 @@ for (const k of Object.keys(MONSTER_TYPES)) statKeysSet.add(`kill:${k}`);
 for (const n of Object.values(RESOURCE_NODES_DEF)) statKeysSet.add(`gather:${(n as { item: string }).item}`);
 for (const r of FORGE_RECIPES) statKeysSet.add(`craft:${r.id}`);
 for (const npc of NPCS) statKeysSet.add(`talk:${npc.id}`);
+for (const d of DUNGEONS) statKeysSet.add(`clear:${d.id}`);
 statKeysSet.add('bury');
 statKeysSet.add('vows');
 statKeysSet.add('deaths');
@@ -24,7 +26,7 @@ const STAT_SET = new Set(STAT_KEYS);
 const STORY_QUEST_STAGES: Record<string, number> = {};
 for (const q of STORY_QUESTS) STORY_QUEST_STAGES[q.id] = q.stages.length;
 const KNOWN_DIARY_TIERS = new Set<string>();
-const KNOWN_DUNGEONS: readonly string[] = [];
+const KNOWN_DUNGEONS: readonly string[] = DUNGEONS.map((d) => d.id);
 
 export function bump(state: { progress?: Progress }, key: string, n = 1): void {
   if (!STAT_SET.has(key)) {
