@@ -9,6 +9,7 @@ import { AGGRO_GRACE_MS } from '../state/monsterAi';
 import { el, addChatMessage, showBanner, updateAllUI, showSaveRecoveryNotice, applyLoadedStateToHud } from '../ui/hud';
 import { rebuildPlayerEquipmentMeshes } from './playerMesh';
 import { closeModals } from '../ui/playerActions';
+import { savedPose } from '../state/dungeon';
 
 let resetting = false;
 export let saveHold = false;
@@ -32,7 +33,7 @@ export function saveGameState(): void {
       pitch: Number((camState.pitch || 0.24).toFixed(3)),
       distance: Number((camState.distance || 11).toFixed(2))
     } : null;
-    writeSave(localStorage, STATE, pose, cam);
+    writeSave(localStorage, STATE, savedPose(pose, G.zone?.def ?? null), cam);
     const saveBtn = el('save-status-btn');
     const t = new Date();
     const hh = String(t.getHours()).padStart(2, '0');

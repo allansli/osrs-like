@@ -1,23 +1,28 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { G, player } from './context';
+import { G, player, type MonsterEntity, type ResourceNodeEntity } from './context';
 import { disposeObject3D } from './dispose';
 import { albedoMaterial, sealAlbedoUvs } from './textures';
+import { addCartoonOutline, facetMaterial } from './materials';
 import { AIR } from './atmosphere';
 import { setSkyVisible } from './sky';
 import { applyWorldMaterials, loadBlenderWorldTemplate } from './blenderWorld';
 import { buildWalkGrid, type WalkGrid } from '../state/pathfind';
-import { zoneWalk } from '../state/dungeon';
+import { runStep, zoneWalk, type DungeonRun } from '../state/dungeon';
 import { DUNGEONS, type Dungeon } from '../data/dungeons';
 import { getTerrainHeight } from '../state/terrain';
-import { AGGRO_GRACE_MS } from '../state/monsterAi';
+import { AGGRO_GRACE_MS, isDown } from '../state/monsterAi';
+import { spawnMonster, spawnResourceNode } from './spawns';
 
 const ZONE_FOG_COLOR = 0x0f0c0a;
 const ZONE_FOG_DENSITY = 0.025;
 
-// Both are set by enterZone and read only while G.zone is set.
+// Set by enterZone and read only while G.zone is set.
 let overworldGrid = null as unknown as WalkGrid;
 let zoneFloor = null as unknown as THREE.Mesh;
+let zoneMonsters: MonsterEntity[] = [];
+let zoneNodes: ResourceNodeEntity[] = [];
+let zoneInteractiveObjects: THREE.Object3D[] = [];
 
 /** Every frame while in a zone, after updateAir: the shader fog (and, through updateSky, scene.fog) reads these uniforms. */
 export function applyZoneAir(): void {
@@ -220,24 +225,133 @@ export function enterZone(def: Dungeon): void {
   G.worldInteractiveObjects.push(floorMesh);
   zoneFloor = floorMesh;
 
-  // 7. Move hero to entry with aggression grace
+  // 7. Monsters, resource nodes, chest, exit door
+  zoneMonsters = [];
+  zoneNodes = [];
+  zoneInteractiveObjects = [];
+
+  for (const camp of def.camps) {
+    for (const m of camp.members) {
+      const idxBefore = G.monstersList.length;
+      spawnMonster(m.type, ox + m.x, oz + m.z, {
+        campId: `${def.id}:${camp.id}`,
+        wander: m.wander,
+        respawn: false
+      });
+      if (G.monstersList.length > idxBefore) {
+        zoneMonsters.push(G.monstersList[G.monstersList.length - 1]);
+      }
+    }
+  }
+
+  for (const n of def.nodes) {
+    const idxBefore = G.resourceNodesList.length;
+    spawnResourceNode(n.type, ox + n.x, oz + n.z, { respawn: false });
+    if (G.resourceNodesList.length > idxBefore) {
+      zoneNodes.push(G.resourceNodesList[G.resourceNodesList.length - 1]);
+    }
+  }
+
+  // Chest interactive object
+  const chestGrp = new THREE.Group();
+  chestGrp.position.set(ox + def.chest[0], 0, oz + def.chest[1]);
+  const chestMat = albedoMaterial(0x854d0e, 'wood', { shade: 'cut' });
+  const trimMat = facetMaterial({ color: 0xfacc15, emissive: 0xeab308, emissiveIntensity: 0.3, shade: 'cut' });
+  const chestBox = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.8, 0.8), chestMat);
+  chestBox.position.y = 0.4;
+  chestBox.castShadow = true;
+  chestBox.receiveShadow = true;
+  const chestTrim = new THREE.Mesh(new THREE.BoxGeometry(1.24, 0.2, 0.84), trimMat);
+  chestTrim.position.y = 0.4;
+  chestGrp.add(chestBox, chestTrim);
+  sealAlbedoUvs(chestGrp);
+  addCartoonOutline(chestGrp, 0.035);
+
+  const chestUData = {
+    type: 'interactive',
+    action: 'chest',
+    name: 'Treasure Chest',
+    interactRadius: 3.5
+  };
+  chestGrp.userData = chestUData;
+  chestBox.userData = chestUData;
+  group.add(chestGrp);
+  G.worldInteractiveObjects.push(chestBox);
+  zoneInteractiveObjects.push(chestBox);
+
+  // Exit doorway in entry room
+  const exitDoorMesh = new THREE.Mesh(new THREE.BoxGeometry(1.6, 2.8, 0.4), stoneMat);
+  exitDoorMesh.position.set(ox + def.entry[0], 1.4, oz + def.entry[1] - 4);
+  exitDoorMesh.castShadow = true;
+  const exitDoorUData = {
+    type: 'interactive',
+    action: 'door',
+    name: 'Doorway (Leave)',
+    interactRadius: 3.5
+  };
+  exitDoorMesh.userData = exitDoorUData;
+  group.add(exitDoorMesh);
+  G.worldInteractiveObjects.push(exitDoorMesh);
+  zoneInteractiveObjects.push(exitDoorMesh);
+
+  // 8. Move hero to entry with aggression grace
   player.pos.set(ox + def.entry[0], 0, oz + def.entry[1]);
   player.waypoints.length = 0;
   player.targetEntity = null;
   player.currentSpeed = 0;
   G.aggroGraceUntil = performance.now() + AGGRO_GRACE_MS;
 
-  // 8. Hide sky dome (the fog is applyZoneAir's, called from loop.ts) and horizon apron
+  // 9. Hide sky dome (the fog is applyZoneAir's, called from loop.ts) and horizon apron
   setSkyVisible(false);
 
-  // 9. Add to scene and set G.zone
+  // 10. Run state, add to scene and set G.zone
+  const run: DungeonRun = {
+    id: def.id,
+    startedAt: Date.now(),
+    deadCamps: [],
+    bossDead: false,
+    chestOpen: false
+  };
+
   G.scene.add(group);
-  G.zone = { def, run: null, grid: zoneGrid, group };
+  G.zone = { def, run, grid: zoneGrid, group };
 }
 
 export function leaveZone(): void {
   if (!G.zone) return;
   const { def, group } = G.zone;
+
+  for (const m of zoneMonsters) {
+    const idx = G.monstersList.indexOf(m);
+    if (idx >= 0) G.monstersList.splice(idx, 1);
+    const hIdx = G.worldInteractiveObjects.indexOf(m.rig.hitbox);
+    if (hIdx >= 0) G.worldInteractiveObjects.splice(hIdx, 1);
+    m.labelEl.remove();
+    G.scene.remove(m.rig.group);
+    disposeObject3D(m.rig.group);
+  }
+  zoneMonsters = [];
+
+  for (const r of zoneNodes) {
+    const idx = G.resourceNodesList.indexOf(r);
+    if (idx >= 0) G.resourceNodesList.splice(idx, 1);
+    const colliders = r.group.children.filter((c) => c.userData?.isCollider || c.userData?.type === 'resource');
+    for (const c of colliders) {
+      const hIdx = G.worldInteractiveObjects.indexOf(c);
+      if (hIdx >= 0) G.worldInteractiveObjects.splice(hIdx, 1);
+    }
+    const rIdx = G.worldInteractiveObjects.indexOf(r.group);
+    if (rIdx >= 0) G.worldInteractiveObjects.splice(rIdx, 1);
+    G.scene.remove(r.group);
+    disposeObject3D(r.group);
+  }
+  zoneNodes = [];
+
+  for (const obj of zoneInteractiveObjects) {
+    const idx = G.worldInteractiveObjects.indexOf(obj);
+    if (idx >= 0) G.worldInteractiveObjects.splice(idx, 1);
+  }
+  zoneInteractiveObjects = [];
 
   G.scene.remove(group);
   disposeObject3D(group);
@@ -254,6 +368,40 @@ export function leaveZone(): void {
   player.currentSpeed = 0;
 
   G.zone = null;
+}
+
+export function handleZoneMonsterDied(m: MonsterEntity): void {
+  if (!G.zone || !G.zone.run) return;
+  const def = G.zone.def;
+  const prefix = `${def.id}:`;
+  if (!m.logic.campId?.startsWith(prefix)) return;
+  const localCampId = m.logic.campId.slice(prefix.length);
+
+  const members = G.monstersList.filter((other) => other.logic.campId === m.logic.campId);
+  const allDead = members.every((other) => isDown(other.logic) || other === m);
+  if (!allDead) return;
+
+  const opened = runStep(G.zone.run, { campDead: localCampId });
+  if (opened.length > 0) {
+    const toRemove: THREE.Object3D[] = [];
+    G.zone.group.traverse((child) => {
+      if (child.userData?.gateId && opened.includes(child.userData.gateId)) {
+        toRemove.push(child);
+      }
+    });
+    for (const slab of toRemove) {
+      G.zone.group.remove(slab);
+      disposeObject3D(slab);
+    }
+
+    const openGates = def.gates
+      .filter((g) => g.opensWhen.every((cId) => G.zone!.run!.deadCamps.includes(cId)))
+      .map((g) => g.id);
+    const newWalk = zoneWalk(def, openGates);
+    const newGrid = buildWalkGrid(newWalk, def.origin[0], def.origin[1], def.size);
+    G.zone.grid = newGrid;
+    G.walkGrid = newGrid;
+  }
 }
 
 export function enterZoneById(id: string): void {

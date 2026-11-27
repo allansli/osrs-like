@@ -20,6 +20,7 @@ import { mountLoadout, moveToTodayPivot, type MountedRig } from './playerMesh';
 import { EMITTERS } from '../data/look';
 import { registerEmitter } from './lighting';
 import { NPCS } from '../data/npcs';
+import { DUNGEONS } from '../data/dungeons';
 
 export function buildBiomeLandmarks(): void {
   const sand = albedoMaterial(0xe7c07a, biomeAlbedoId('alkharid-sand'), { shade: 'cut' });
@@ -240,6 +241,90 @@ export function buildAllCitiesAndLandmarks(): void {
   createSlayerMaster(5.5, 8.5);
   buildBiomeLandmarks();
   buildPointsOfInterest();
+  buildDungeonDoors();
+}
+
+export function buildDungeonDoors(): void {
+  const sand = albedoMaterial(0xd4a373, 'sand', { shade: 'cut' });
+  const gold = facetMaterial({ color: 0xfacc15, emissive: 0xeab308, emissiveIntensity: 0.25, shade: 'cut' });
+  const charcoal = albedoMaterial(0x27272a, 'stone', { shade: 'cut' });
+
+  for (const d of DUNGEONS) {
+    const x = d.door.x;
+    const z = d.door.z;
+    const y = getTerrainHeight(x, z);
+    const grp = new THREE.Group();
+    grp.position.set(x, y, z);
+
+    if (d.id === 'saltfang_warren') {
+      const left = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.62, 4.2, 12), sand);
+      left.position.set(-1.6, 2.1, 0);
+      const right = left.clone();
+      right.position.x = 1.6;
+      const lintel = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.7, 1.1), sand);
+      lintel.position.y = 4.3;
+      const cap = new THREE.Mesh(new THREE.SphereGeometry(0.55, 14, 10), gold);
+      cap.position.y = 4.9;
+      [left, right, lintel, cap].forEach((mesh: THREE.Mesh) => {
+        mesh.castShadow = true;
+        grp.add(mesh);
+      });
+      loadBlenderWorldTemplate().then((gltf: GLTF | null) => {
+        if (!gltf) return;
+        upgradeWorldPropWithGltf(grp, 'World_sandstone_arch', gltf, {
+          interactiveObjectsList: G.worldInteractiveObjects,
+          outlineThickness: 0.035
+        });
+      });
+    } else {
+      const left = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.11, 2.0, 8), charcoal);
+      left.position.set(-1.0, 1.0, 0);
+      const right = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.11, 2.0, 8), charcoal);
+      right.position.set(1.0, 1.0, 0);
+      const lintel = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.2, 0.2), charcoal);
+      lintel.position.set(0, 2.0, 0);
+      [left, right, lintel].forEach((mesh: THREE.Mesh) => {
+        mesh.castShadow = true;
+        grp.add(mesh);
+      });
+    }
+
+    sealAlbedoUvs(grp);
+    addCartoonOutline(grp, 0.035);
+
+    const prompt = d.id === 'saltfang_warren'
+      ? 'Saltfang Warren (Combat 50). Requires Salt on the Wind (Chapter 3).'
+      : `${d.name}.`;
+
+    const uData = {
+      type: 'interactive',
+      action: 'door',
+      name: d.name,
+      dungeonId: d.id,
+      prompt,
+      interactRadius: 4.0
+    };
+    grp.userData = uData;
+
+    const hitbox = new THREE.Mesh(
+      new THREE.CylinderGeometry(1.5, 1.5, 4.0, 8),
+      new THREE.MeshBasicMaterial({ visible: false })
+    );
+    hitbox.position.y = 2.0;
+    hitbox.userData = uData;
+    grp.add(hitbox);
+    G.worldInteractiveObjects.push(hitbox);
+
+    G.scene.add(grp);
+
+    G.npcList.push({
+      pos: grp.position,
+      name: d.name,
+      color: '#fde047',
+      yOffset: 4.5,
+      showWithin: PLACE_LABEL_RANGE
+    });
+  }
 }
 
 export function createCastleStructure(cx: number, cz: number): void {

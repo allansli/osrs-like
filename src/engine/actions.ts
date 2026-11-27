@@ -49,7 +49,8 @@ import {
   RESPAWN_SECONDS,
   weaponSpecial
 } from '../state/adventure';
-import { leaveZone } from './zones';
+import { DUNGEONS } from '../data/dungeons';
+import { enterZone, leaveZone } from './zones';
 
 export function teleportToRegion(regionId?: string): void {
   const reg = WORLD_REGIONS.find((r: RegionDef) => r.id === regionId);
@@ -144,6 +145,42 @@ export function dispatchCommand(cmd: PlayerCommand): CommandResult {
   }
 
   const now = performance.now() / 1000;
+
+  if (cmd.kind === 'enterDungeon') {
+    const def = DUNGEONS.find((d) => d.id === cmd.dungeonId);
+    if (!def) {
+      return { ok: false, reason: 'Unknown dungeon.' };
+    }
+    const res = applyCommand(STATE, cmd, commandClocks, now);
+    if (!res.ok) {
+      addChatMessage(res.reason, 'combat');
+      return res;
+    }
+    enterZone(def);
+    return res;
+  }
+
+  if (cmd.kind === 'leaveDungeon') {
+    const res = applyCommand(STATE, cmd, commandClocks, now);
+    if (!res.ok) {
+      addChatMessage(res.reason, 'combat');
+      return res;
+    }
+    leaveZone();
+    return res;
+  }
+
+  if (cmd.kind === 'openChest') {
+    const run = G.zone?.run ?? null;
+    const res = applyCommand(STATE, cmd, commandClocks, Date.now(), run, cmd.rand ?? Math.random);
+    if (!res.ok) {
+      addChatMessage(res.reason, 'combat');
+      return res;
+    }
+    updateAllUI();
+    return res;
+  }
+
   const item =
     cmd.kind === 'eat' || cmd.kind === 'drink'
       ? ITEMS[STATE.inventory[cmd.slot].id]
@@ -643,7 +680,7 @@ export function performResourceGather(node: ResourceNodeEntity): void {
 
     if (def.kind !== 'fish' || fishDepletes(Math.random())) {
       node.depleted = true;
-      node.respawnTimer = def.respawn! / 1000;
+      node.respawnTimer = (node as { respawn?: boolean }).respawn === false ? Infinity : def.respawn! / 1000;
       node.visualMesh.visible = false;
       node.depletedMesh.visible = true;
       if (def.kind === 'fish') SFX.spotEmpty();

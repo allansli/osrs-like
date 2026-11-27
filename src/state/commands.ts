@@ -1,8 +1,10 @@
 import { ITEMS } from '../data/items';
 import { PRAYERS } from '../data/magic';
+import { DUNGEONS } from '../data/dungeons';
 import { weaponSpecial } from './adventure';
 import { canUseStyle } from './combat';
 import { openDialogue, chooseOption, type DialogueView, type DialogueEvent } from './dialogue';
+import { canEnter, openChest, type DungeonRun } from './dungeon';
 import { useEmber } from './story';
 import { notePrayerOffered } from './quests';
 import { type CooldownClock, drink, eat } from './sustain';
@@ -18,7 +20,10 @@ export type PlayerCommand =
   | { kind: 'special' }
   | { kind: 'talk'; npcId: string }
   | { kind: 'choose'; npcId: string; nodeId: string; index: number }
-  | { kind: 'useEmber'; itemId: string; skillKey: string };
+  | { kind: 'useEmber'; itemId: string; skillKey: string }
+  | { kind: 'enterDungeon'; dungeonId: string }
+  | { kind: 'leaveDungeon' }
+  | { kind: 'openChest'; rand?: () => number };
 
 export interface CommandClocks {
   food: CooldownClock;
@@ -44,9 +49,11 @@ export function applyCommand(
   state: GameState,
   cmd: PlayerCommand,
   clocks: CommandClocks,
-  now: number
+  now: number,
+  run?: DungeonRun | null,
+  rand?: () => number
 ): CommandResult {
-  const result = executeCommand(state, cmd, clocks, now);
+  const result = executeCommand(state, cmd, clocks, now, run, rand);
   for (const listener of commandListeners) {
     listener(cmd, result);
   }
@@ -57,7 +64,9 @@ function executeCommand(
   state: GameState,
   cmd: PlayerCommand,
   clocks: CommandClocks,
-  now: number
+  now: number,
+  run?: DungeonRun | null,
+  rand?: () => number
 ): CommandResult {
   switch (cmd.kind) {
     case 'eat':
@@ -137,6 +146,34 @@ function executeCommand(
         ok: res.ok,
         reason: res.ok ? '' : res.reason
       };
+    }
+    case 'enterDungeon': {
+      const allDungeons = [...DUNGEONS, ...((DUNGEONS as unknown as { CAVES?: typeof DUNGEONS }).CAVES ?? [])];
+      const def = allDungeons.find((d) => d.id === cmd.dungeonId);
+      if (!def) {
+        return { ok: false, reason: 'Unknown dungeon.' };
+      }
+      if (!canEnter(state, def)) {
+        return { ok: false, reason: 'Requirements not met.' };
+      }
+      return { ok: true, reason: '' };
+    }
+    case 'leaveDungeon':
+      return { ok: true, reason: '' };
+    case 'openChest': {
+      if (!run) {
+        return { ok: false, reason: 'No dungeon run active.' };
+      }
+      const def = DUNGEONS.find((d) => d.id === run.id);
+      if (!def) {
+        return { ok: false, reason: 'Unknown dungeon.' };
+      }
+      const rng = cmd.rand ?? rand;
+      if (!rng) {
+        return { ok: false, reason: 'Random source required.' };
+      }
+      const res = openChest(state, def, run, rng, now);
+      return { ok: res.ok, reason: res.reason ?? '' };
     }
     case 'attack':
     case 'move':

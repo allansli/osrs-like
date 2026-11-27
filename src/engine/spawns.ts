@@ -43,7 +43,7 @@ export function spawnMonster(
   typeKey: string,
   x: number,
   z: number,
-  opts?: { campId?: string; wander?: number }
+  opts?: { campId?: string; wander?: number; respawn?: boolean }
 ): void {
   const def: (MonsterDef & { model?: string; tint?: number; modelScale?: number }) | undefined =
     MONSTER_TYPES[typeKey];
@@ -103,7 +103,7 @@ export function spawnMonster(
 }
 
 // Smooth Organic Branching Trees & Sculpted Weathered Ore Boulders
-export function spawnResourceNode(nodeKey: string, x: number, z: number): void {
+export function spawnResourceNode(nodeKey: string, x: number, z: number, opts?: { respawn?: boolean }): void {
   const def = (RESOURCE_NODES_DEF as Record<string, ResourceNodeDef | undefined>)[nodeKey];
   if (!def) return;
   const grp = new THREE.Group();
@@ -227,6 +227,9 @@ export function spawnResourceNode(nodeKey: string, x: number, z: number): void {
     depleted: false,
     respawnTimer: 0
   };
+  if (opts?.respawn === false) {
+    (rObj as { respawn?: boolean }).respawn = false;
+  }
 
   const uData = { type: 'resource', entity: rObj, interactRadius: 3.4 };
   grp.userData = uData;
