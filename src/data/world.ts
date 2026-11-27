@@ -213,6 +213,7 @@ export const MONSTER_TYPES: Record<string, MonsterDef> = {
     pattern: 'dark_wizard',
     model: 'dark_wizard',
     kit: 'cinder_adept',
+    tint: 0xb8b2aa,
     modelScale: 1.08
   },
   slag_brute: {
@@ -236,6 +237,7 @@ export const MONSTER_TYPES: Record<string, MonsterDef> = {
     pattern: 'hill_giant',
     model: 'hill_giant',
     kit: 'slag_brute',
+    tint: 0x9a918a,
     modelScale: 1.12
   },
   marrowjaw: {
@@ -259,6 +261,7 @@ export const MONSTER_TYPES: Record<string, MonsterDef> = {
     ],
     model: 'hill_giant',
     kit: 'marrowjaw',
+    tint: 0xc9b8a8,
     modelScale: 1.3
   }
 };
