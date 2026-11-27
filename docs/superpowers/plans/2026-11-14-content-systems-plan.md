@@ -1015,9 +1015,9 @@ Z4's data as shipped (commits f1c5c46, 2405ba2, f18be76) holds three points wher
 - **Scree Skitter's Chitin Plate (rule 0.3.6).** `chitin_plate` is not in the live item table until K2, so `MONSTER_TYPES.scree_skitter` ships without the content file's `{ id: 'chitin_plate', chance: 0.06 }` (content file line 123). Proposed: K2's Change appends that drop to `scree_skitter`'s `drops` beside the drops D4 and C2 left out (`src/data/world.ts` is already in K2's Files). Every other Z4 row matches the content file; the only entries left out are this drop and the Tough Hide above.
 - The two repair commits were reworded from `fix(Z4)` to `data(Z4): repair: ...` (rule 0.3.5); their trees are unchanged.
 
-### Z5 repair amendment (2026-11-27, written by the Z5 repair lane, awaiting ratification by the main session)
+### Z5 repair amendment (2026-11-27, written by the Z5 repair lane, ratified by the main session 2026-11-27)
 
-Not ratified yet. Z5's verification stays open on this point until the main session ratifies one of the two options below.
+Ratified with the proposed option (K2 appends the entry and tops up the saves that finished the chapter without it; K1 tests both).
 
 Z5 shipped `ml_salt` (commit 695bbc3) with `xp: {}`. Design 7.3 pays 2,000 Crafting XP. Z5 cannot ship that entry: `SKILLS_META.crafting` arrives with K2, `tests/story-data.test.ts` fails a reward skill outside `SKILL_KEYS`, and `grantExactXp` ignores a skill the state does not have. No later task could add it either: K2's Files left out `src/data/story.ts`, and K4 must not change an earlier quest's reward. Proposed:
 - **K2 appends the entry.** K2's Files gain `src/data/story.ts`: `ml_salt`'s `reward.xp` becomes `{ crafting: 2000 }`, in K2's data commit, and the comment above the reward goes. No other key of that file changes. It is K2 and not K4 because it has to land in the commit series that adds the skill: a save that finishes the chapter after the skill exists and before the entry does could not be told from a paid one. This is a declared exception to rule 0.3.7 ("every existing quest's reward"), for this one key, once. K4's Must-not-change is as written and now covers the completed reward.
@@ -1029,12 +1029,12 @@ Alternative: K2 appends the entry and nothing tops up old saves. A player who fi
 
 The repair changed no data and no text: one docs commit (this amendment) and one data commit that rewords the comment above `ml_salt`'s reward to cite it.
 
-### Z6 repair amendment (2026-11-27, written by the Z6 repair lane, awaiting ratification by the main session)
+### Z6 repair amendment (2026-11-27, written by the Z6 repair lane, ratified by the main session 2026-11-27)
 
 - **Z6's files gain** `src/data/dungeons.ts` (a typed optional `props?: { node; x; z; scale?; rotY? }[]` on `Dungeon`), `src/engine/worldMesh.ts` (one line: `G.groundMesh = G.terrainMesh` where the terrain mesh is built) and `src/engine/runtime.ts` (`enterZone` and `leaveZone` added to the `window.__DEBUG` object literal, replacing the import-time `defineProperty` hook, which `runtime.ts`'s later assignment would have replaced anyway).
 - **The sky module's scope is `setSkyVisible(on)` only again**: `updateSky` is back to its merged text. The zone's fog is `applyZoneAir()` in `zones.ts`, called from `loop.ts` after `updateAir`: it writes `AIR.uAirColor`, `uAirSunColor`, `uFogHeightFalloff` and `uFogDensity`, so the shader fog and (through the untouched `updateSky`) `scene.fog` are dark and dense. `zones.ts` no longer writes `scene.fog`. The clouds are hidden by layer because `updateSky` rewrites their `visible` each frame. C3's `CAVE_FOG_SCALE` should replace the density line of `applyZoneAir` for a cave.
 
-### G-6.3 amendment (2026-11-27, written by the G-6.3 lane, awaiting ratification by the main session)
+### G-6.3 amendment (2026-11-27, written by the G-6.3 lane, ratified by the main session 2026-11-27)
 
 - **G-6.3's files gain `docs/superpowers/research/content-model/results.txt`** (docs). The gate's MODEL run regenerated it. The only change is its "shipped so far" line, which gains the nine ids of slice 3, each shipped with the content file's numbers. `check-results.txt` and `aggro-results.txt` came out byte-identical, and no script changed. This is the same kind of file as in the G-6.1 and G-6.2 amendments.
 - **G-6.3's files also gain `docs/superpowers/baseline/s6/g63/`**: the README, the capture job, `facts.json` and the pictures for H-3, as G-6.1 and G-6.2 had.
@@ -1043,12 +1043,12 @@ The repair changed no data and no text: one docs commit (this amendment) and one
   - **A camp's circle is `ceil(spread + 4.5)`, in `zoneCamps` and in the overworld's `makeCamp` alike.** For a one-member boss camp that is 5, so Matron Saltfang (like Marrowjaw and Ashmantle) engages only a hero within 5 of her, and her `aggro` 12 is moot. Once she is fighting, the boss branch of `stepMonster` does not leash on that circle. This is a design question for the main session and the owner, not a defect of slice 3. A change would be in both `makeCamp` and `zoneCamps`, and slice 3a's caves read `zoneCamps` too.
 - **Z4's files gain `src/data/recipeTable.ts`** (commit f1c5c46). Since the F2 amendment it holds `FORGE_RECIPES`, which is where `smelt_adamant` and the three adamant forging recipes go. No earlier amendment covers it for Z4.
 
-### C3 repair amendment (2026-11-27, written by the C3 repair lane, awaiting ratification by the main session)
+### C3 repair amendment (2026-11-27, written by the C3 repair lane, ratified by the main session 2026-11-27)
 
 - **C3's files gain `src/engine/context.ts` and `src/engine/overlay.ts`.** `G.zone.def` is typed `Zone` (not `Dungeon`) and `renderMinimap` draws gates only when the zone has a run, so the minimap no longer throws in the cave (the cave row has no `gates`). The two `as unknown as Dungeon` casts in `zones.ts` are gone.
 - Also in the repair: the cave branch of `leaveZone` calls `clearTelegraph` before `sendHome`; the cave's prop loader throws like Z6's on a missing glb or node; the four `!== -1` guards, the bare block and `setCaveWeather`'s `fallMesh` guard are removed (`updateParticles` already hides the fall mesh while the cave weather is on); `applyZoneAir` leaves the colour `updateAir` wrote from `CAVE_LIGHT.air` in a cave.
 
-### G-6.3a amendment (2026-11-27, written by the G-6.3a lane, awaiting ratification by the main session)
+### G-6.3a amendment (2026-11-27, written by the G-6.3a lane, ratified by the main session 2026-11-27)
 
 - **G-6.3a's files gain `docs/superpowers/research/content-model/results.txt` and `pacing-results.txt`** (docs). The gate's MODEL and PACE runs regenerated them, and no script changed. `check-results.txt` and `aggro-results.txt` came out byte-identical.
   - `results.txt` changed in three lines, all from the Ember Hurler's row: `ashes` gains `drop` as a source, and the save section's stat keys go from 134 to 135 (the new block at every bound goes from 5,005 to 5,036 bytes).
@@ -1065,9 +1065,21 @@ The repair changed no data and no text: one docs commit (this amendment) and one
   - The cave mouth has two labels.
   - The region banner names the volcano inside the cave.
 
-### G-6.3b amendment (2026-11-27, written by the G-6.3b lane, awaiting ratification by the main session)
+### G-6.3b amendment (2026-11-27, written by the G-6.3b lane, ratified by the main session 2026-11-27)
 
 - **G-6.3b's files gain `docs/superpowers/baseline/s6/g63b/`**: the README, the capture job, `los-check.ts` and its output, `facts.json`, the four traces and the pictures for H-3b, as G-6.1 to G-6.3a had. MODEL's three result files came out byte-identical, so no result file is regenerated.
 - **Two points for the main session and the owner, with the evidence in that README** (findings 1 and 2). This gate changes neither.
   - **A safe spot round the c2 corner.** The front hall's Ember Hurler holds its fire on a hero just past corridor c2 in the back hall. 20 cells inside its leash (camp radius 10 + 4) have a clear line to that spot, but its route hugs the blocking corner and no point of it has a line; it turns back at the leash and goes home. The probable cause, read from the code, is L2's edit 3: the repath goal is melee range of the hero, not the nearest cell with a line. The levers are the cave row (design 7.6), the leash, or the chase goal in `monsterAi.ts`. Whether it is a slice 3b defect is the main session's call.
   - **H-3b's castle item cannot happen in play.** The only dark wizard camp's leash disk ends 20.97 from the nearest castle blocker, against a reach of 11. The owner may name another wall for that check, or drop it.
+
+### Slices 3 to 3b follow-ups (2026-11-27, main session, from the G-6.3, G-6.3a and G-6.3b findings)
+
+Ratified with the amendments above: C2's dying-to-dead line in `stepMonster` reading `m.respawnSecs` is part of table 0.5 row (a). Each finding below is a task, verified by opus; files are named, and a task that needs another file writes a proposed amendment. Two points go to the owner at H-3 and H-3b and are not tasks: a one-member boss camp's circle (`ceil(spread + 4.5)`, so a boss's `aggro` is moot) and the castle item of H-3b.
+
+- **SF1 Zone air** [AGY, sonnet] (`src/engine/flora.ts`, `src/engine/particles.ts`, `src/engine/zones.ts`): the grass carpet and the weather particles are hidden while `G.zone` is set and shown again on leave. Test (new `tests/zone-hide.test.ts`): after `enterZone` the carpet and every weather emitter are not visible; after `leaveZone` they are as before.
+- **SF2 Zone camera** [CLAUDE, opus] (`src/engine/camera.ts` or the module that owns the arm, and `zones.ts`): inside a zone the camera arm is shortened so the eye stays inside the room walls (a ray from the hero against the zone's wall mesh), so the outside of a wall never shows. Test: the eye position is inside the zone's open cells for every yaw at the corner the G-6.3a README names.
+- **SF3 Cave look** [CLAUDE, opus] (`src/engine/zones.ts`, `src/data/caves.ts` or the cave row): the lava fissures follow the floor inside the rooms and never cross a wall line; the Ember Hurler's tint reads in the cave light (its tint or the cave's light adjusted, measured on a capture against the cave floor); one label at the cave mouth; the region banner names the cave inside it.
+- **SF4 Cave draw calls** [CLAUDE, opus] (`src/engine/zones.ts`): the cave's static geometry merged by material (as Z6 did for the Warren), so a frame in the cave draws at most design 10's 150 calls plus the figures; measured with the perf HUD in a capture.
+- **SF5 Target panel** [AGY, sonnet] (`src/engine/zones.ts`, `src/ui/hud.ts`): leaving a zone clears the target panel. Test in `tests/zone-hide.test.ts`.
+- **SF6 Chase with a line** [CLAUDE, opus] (`src/state/monsterAi.ts`, L2's edit 3): a ranged monster that has no line to the hero repaths to the nearest reachable cell inside its leash that has a line to the hero, not to melee range; test (new `tests/los-chase.test.ts`) on the c2 corner of the cave: the Hurler reaches a cell with a line and fires.
+- **SG3 Gate rerun** [CLAUDE, opus]: G-6.3, G-6.3a and G-6.3b's checks and captures again after SF1 to SF6, under `docs/superpowers/baseline/s6/g63-follow/`.
