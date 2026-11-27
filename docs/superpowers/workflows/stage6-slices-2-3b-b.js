@@ -10,7 +10,7 @@ const ROOT = '/home/rdrosa/gitprojects/allan/osrs-like-wp'
 const MODRULES = 'Models-pass rules apply to this lane: read docs/superpowers/plans/2026-11-14-models-pass-plan.md section 0 (BLEND, COMPARE, SHEETS lines and the promote), docs/superpowers/specs/2026-11-14-models-pass-design.md sections 5 and 9.1, docs/superpowers/baseline/models/README.md (the pilot pattern) and docs/superpowers/baseline/models/final.md (To Stage 6). Build into scratch/models-build only; never write public/models or blender/ before MP6. '
 const LANES = [
   { name: 'main', dir: 'S6', branch: 'feat/content-systems', tasks: [
-    { id: 'Q5', kind: 'work', model: 'opus', part: 'repair task Q5 (commits 17da516 to 7cd0c6f hold the tests): fix every defect listed in docs/superpowers/baseline/s6/q5-open-defects.md, in test(Q5) commits, then delete that file in a docs(Q5) commit; stay inside Q5 file list' },
+    { id: 'Q5', kind: 'work', model: 'opus', hb: '995a986', part: 'repair task Q5 (commits 17da516 to 7cd0c6f hold the tests): fix every defect listed in docs/superpowers/baseline/s6/q5-open-defects.md, in test(Q5) commits, then delete that file in a docs(Q5) commit; stay inside Q5 file list' },
     { id: 'Q6', kind: 'work', model: 'fable', part: 'task Q6 in full (the writing: the cast, chapters 1 and 2, four side quests, every passage in its voice, by the rules of Q6 and design 7.2 and 7.10)' },
     { id: 'Q7', kind: 'agy', note: 'task Q7 (lanes E and U run one after the other on this branch, not in separate worktrees)' },
     { id: 'Q7t', kind: 'work', model: 'sonnet', part: 'task Q7t (tests only), on this branch (lanes E and U run serially here)' },
@@ -84,7 +84,7 @@ async function runLane(lane) {
     } else {
       const r = await agent(work(lane, t.id, t.part), { label: `${L}:work`, phase: 'Lanes', model: t.model, schema: WORK_SCHEMA })
       if (!r) return { lane: lane.name, done, stopped: `${t.id}: worker returned nothing` }
-      hb = r.head_before
+      hb = t.hb || r.head_before
     }
     let v = null
     for (let round = 1; round <= 4; round++) {
