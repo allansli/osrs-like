@@ -172,9 +172,8 @@ describe('openDialogue', () => {
     expect(view.options.map((o) => o.index)).toEqual([0, 1, 2]);
     expect(view.options.map((o) => o.text)).toEqual(['Any work?', 'Show me your wares.', 'Lead me in.']);
     meetLedger(s);
-    s.progress = { story: { fx_job: 0 } };
-    // quest active: "Any work?" hidden; chain ready: "It is done." shown
-    expect(openDialogue(s, KEEPER)?.options.map((o) => o.index)).toEqual([1, 2, 3]);
+    // starter ready: "It is done." shown at index 3 (greet stays on 'hello', fx_job none)
+    expect(openDialogue(s, KEEPER)?.options.map((o) => o.index)).toEqual([0, 1, 2, 3]);
   });
 
   it('counts the conversation as talk:<npc>', () => {

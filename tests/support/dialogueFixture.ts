@@ -168,5 +168,5 @@ interface Result {
   events?: { type: string }[];
 }
 
-export const viewOf = (r: unknown) => (r as Result).view ?? null;
-export const eventTypes = (r: unknown) => ((r as Result).events ?? []).map((e) => e.type);
+export const viewOf = (r: unknown) => (r as Result).view!;
+export const eventTypes = (r: unknown) => (r as Result).events!.map((e) => e.type);
