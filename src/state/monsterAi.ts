@@ -190,6 +190,8 @@ export function attackRange(m: MonsterLogic): number {
   return (m.style === 'magic' || m.style === 'ranged') ? FAR_RANGE : MELEE_RANGE;
 }
 
+function lineClear(m: MonsterLogic, world: StepWorld): boolean { return attackRange(m) === MELEE_RANGE || !world.grid || segmentWalkable(world.grid, [m.x, m.z], [world.playerX, world.playerZ]); }
+
 /** Every 1.5 s: true when the monster moved less than 0.2 since the last check. */
 function stalled(m: MonsterLogic, dt: number): boolean {
   m.stallTimer -= dt;
@@ -387,7 +389,7 @@ export function stepMonster(m: MonsterLogic, world: StepWorld): MonsterEvent[] {
       return pending;
     }
 
-    if (distToPlayer > attackRange(m)) {
+    if (distToPlayer > attackRange(m) || !lineClear(m, world)) {
       if ((MONSTER_TYPES[m.typeKey].pattern || boss) && m.shiftLeft === 0 && m.attackCooldown > 0) {
         m.attackCooldown = Math.max(0, m.attackCooldown - dt);
       }
@@ -424,7 +426,7 @@ export function stepMonster(m: MonsterLogic, world: StepWorld): MonsterEvent[] {
             if (hasBudget) {
               if (world.pathBudget) world.pathBudget.left--;
               const start = openStart(world.grid, m.x, m.z);
-              const goal = start ? entityGoal(world.grid, start, [world.playerX, world.playerZ], attackRange(m)) : null;
+              const goal = start ? entityGoal(world.grid, start, [world.playerX, world.playerZ], attackRange(m) > MELEE_RANGE ? MELEE_RANGE : attackRange(m)) : null;
               const route = (start && goal) ? findPath(world.grid, start, goal, undefined, 6000) : null;
               if (!route || routeLength(start!, route) > 52) {
                 enterReturn(m, world);
@@ -501,7 +503,7 @@ export function stepMonster(m: MonsterLogic, world: StepWorld): MonsterEvent[] {
         events.push(...startBossOpening(m, boss));
         return events;
       }
-      if (distToPlayer <= attackRange(m)) {
+      if (distToPlayer <= attackRange(m) && lineClear(m, world)) {
         m.state = 'attack';
         m.path = [];
         m.attackCooldown -= dt;
