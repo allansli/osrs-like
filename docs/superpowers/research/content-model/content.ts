@@ -113,20 +113,20 @@ export const NEW_RECIPES: Recipe[] = [
 
 // ------------------------------------------------------------------ new monsters (data on existing meshes)
 type Drop = { id?: string; chance: number; gp?: [number, number]; qty?: number };
-export type Monster = { name: string; level: number; hp: number; maxHit: number; atk: number; def: number; style: string; model: string; modelScale: number; tint: number; tintNote: string; pattern: string; drops: Drop[]; modelNeed: string };
+export type Monster = { name: string; level: number; hp: number; maxHit: number; atk: number; def: number; style: string; model: string; modelScale: number; tintNote: string; pattern: string; drops: Drop[]; modelNeed: string };
 export const NEW_MONSTERS: Record<string, Monster> = {
-  cinder_adept: { name: 'Cinder Adept', level: 52, hp: 80, maxHit: 17, atk: 49, def: 36, style: 'magic', model: 'dark_wizard', modelScale: 1.08, tint: 0xb8b2aa, tintNote: 'ash grey robe, ember trim',
+  cinder_adept: { name: 'Cinder Adept', level: 52, hp: 80, maxHit: 17, atk: 49, def: 36, style: 'magic', model: 'dark_wizard', modelScale: 1.08, tintNote: 'ash grey robe, ember trim',
     pattern: 'basic x3, Hexfall', drops: [{ id: 'big_bones', chance: 1 }, { gp: [230, 550], chance: 1 }, { id: 'cinder_silk', chance: 0.1 }, { id: 'ashes', chance: 0.5, qty: 2 }], modelNeed: 'a hooded caster with a brazier staff' },
-  slag_brute: { name: 'Slag Brute', level: 58, hp: 112, maxHit: 19, atk: 54, def: 48, style: 'melee', model: 'hill_giant', modelScale: 1.12, tint: 0x9a918a, tintNote: 'dark basalt skin, orange cracks',
+  slag_brute: { name: 'Slag Brute', level: 58, hp: 112, maxHit: 19, atk: 54, def: 48, style: 'melee', model: 'hill_giant', modelScale: 1.12, tintNote: 'dark basalt skin, orange cracks',
     pattern: "hill_giant's (PATTERNS.hill_giant: basic x3, overhead_slam; O-6.1b.3)", drops: [{ id: 'big_bones', chance: 1 }, { gp: [340, 770], chance: 1 }, { id: 'slag_hide', chance: 0.1 }, { id: 'shark', chance: 0.4 }], modelNeed: 'a hunched, plated brute, not a recoloured hill dweller' },
-  scree_skitter: { name: 'Scree Skitter', level: 30, hp: 20, maxHit: 6, atk: 30, def: 14, style: 'melee', model: 'scorpion', modelScale: 0.6, tint: 0xd0d0d0, tintNote: 'pale grey shell',
+  scree_skitter: { name: 'Scree Skitter', level: 30, hp: 20, maxHit: 6, atk: 30, def: 14, style: 'melee', model: 'scorpion', modelScale: 0.6, tintNote: 'pale grey shell',
     pattern: 'basic only', drops: [{ id: 'bones', chance: 1 }, { gp: [20, 60], chance: 0.6 }, { id: 'chitin_plate', chance: 0.06 }], modelNeed: 'a small, fast, many-legged body that reads at a glance in a group of eight' },
   // bosses (each also has a row in BOSSES below)
-  marrowjaw: { name: 'Marrowjaw the Tollmaster', level: 40, hp: 560, maxHit: 21, atk: 52, def: 30, style: 'melee', model: 'hill_giant', modelScale: 1.3, tint: 0xc9b8a8, tintNote: 'war paint, iron collar',
+  marrowjaw: { name: 'Marrowjaw the Tollmaster', level: 40, hp: 560, maxHit: 21, atk: 52, def: 30, style: 'melee', model: 'hill_giant', modelScale: 1.3, tintNote: 'war paint, iron collar',
     pattern: 'BOSSES row', drops: [{ id: 'big_bones', chance: 1 }, { gp: [600, 1200], chance: 1 }, { id: 'tough_hide', chance: 1, qty: 3 }, { id: 'lobster', chance: 1, qty: 2 }, { id: 'runite_bar', chance: 0.125 }], modelNeed: 'a camp leader: banner pole, shoulder armour, a silhouette taller than its camp' },
-  saltfang: { name: 'Matron Saltfang', level: 48, hp: 960, maxHit: 36, atk: 66, def: 42, style: 'melee', model: 'scorpion', modelScale: 2.2, tint: 0xf0f0f0, tintNote: 'salt-white shell, violet sting',
+  saltfang: { name: 'Matron Saltfang', level: 48, hp: 960, maxHit: 36, atk: 66, def: 42, style: 'melee', model: 'scorpion', modelScale: 2.2, tintNote: 'salt-white shell, violet sting',
     pattern: 'BOSSES row', drops: [{ id: 'big_bones', chance: 1 }, { gp: [300, 600], chance: 1 }, { id: 'sting_gland', chance: 1, qty: 3 }, { id: 'adamant_bar', chance: 0.2, qty: 3 }], modelNeed: 'a brood mother: swollen abdomen, egg clusters, a wider stance than the stalkers' },
-  kiln_warden: { name: 'The Kiln Warden', level: 80, hp: 2000, maxHit: 64, atk: 110, def: 72, style: 'melee', model: 'moss_guardian', modelScale: 1.5, tint: 0xd8b8a0, tintNote: 'fired clay, glowing seams, no moss',
+  kiln_warden: { name: 'The Kiln Warden', level: 80, hp: 2000, maxHit: 64, atk: 110, def: 72, style: 'melee', model: 'moss_guardian', modelScale: 1.5, tintNote: 'fired clay, glowing seams, no moss',
     pattern: 'BOSSES row', drops: [{ id: 'dragon_bones', chance: 1 }, { gp: [800, 1600], chance: 1 }, { id: 'kiln_shard', chance: 0.5 }, { id: 'wyrmsteel_ingot', chance: 0.1 }], modelNeed: 'a furnace golem with an open, glowing chest: must not read as the woods creature' }
 };
 
