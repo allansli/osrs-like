@@ -1083,3 +1083,19 @@ Ratified with the amendments above: C2's dying-to-dead line in `stepMonster` rea
 - **SF5 Target panel** [AGY, sonnet] (`src/engine/zones.ts`, `src/ui/hud.ts`): leaving a zone clears the target panel. Test in `tests/zone-hide.test.ts`.
 - **SF6 Chase with a line** [CLAUDE, opus] (`src/state/monsterAi.ts`, L2's edit 3): a ranged monster that has no line to the hero repaths to the nearest reachable cell inside its leash that has a line to the hero, not to melee range; test (new `tests/los-chase.test.ts`) on the c2 corner of the cave: the Hurler reaches a cell with a line and fires.
 - **SG3 Gate rerun** [CLAUDE, opus]: G-6.3, G-6.3a and G-6.3b's checks and captures again after SF1 to SF6, under `docs/superpowers/baseline/s6/g63-follow/`.
+
+### SF3 amendment (2026-11-27, written by the SF3 lane, for the main session to ratify)
+
+- **SF3's files gain `src/engine/worldBuild.ts`**, one guard in `buildDungeonDoors`. A door that stands on a `POIS` place (the cave mouth on Slagfall Terrace) does not push its own place label, so the place's label is the only one. The door's hover name and click are unchanged. No `POIS` row changes, since `tests/cave.test.ts` keeps `slagfall_terrace`.
+- **SF3's files also gain `docs/superpowers/baseline/s6/sf3/`**: the README, the capture job, `facts.json` and the pictures, as the gates had.
+- **`zones.ts` imports `triggerRegionBanner` from `actions.ts`**, which already imports `zones.ts`. The cycle is only between functions called at run time. `tests/architecture.test.ts` passes.
+- **The Hurler's tint is not fixed. It needs files outside SF3's list.** The measurement is in the README (scene D).
+  - The Lesser Demon's red is in the model's vertex colours. `blenderMonsters.ts` multiplies `tint` into the material colour, so no tint value can make the Hurler anything but a darker red.
+  - Today the front Hurler measures luminance 0.0109 against the demons' 0.0120 to 0.0126, at the same hue.
+  - A change to `CAVE_LIGHT` lights both figures alike.
+  - **Proposed:** an optional field on the monster row, set only on `ember_hurler`, for example `tintAsColour: true` (`src/data/world.ts`). With it, `blenderMonsters.ts` gives the body, horn and membrane materials the tint as their colour, with vertex colours off.
+  - Shown in the page only, this proposal gives the Hurler 3.0 to 3.7 times the demons' luminance, and a contrast to the floor of 1.52 against 1.07 to 1.19. It stays red-hued under the ember light.
+  - If the owner wants it to read ash-pale and not red, add the `CAVE_LIGHT` retune that C1 declares for H-3a (`src/data/look.ts`, and its one `tests/cave.test.ts` assertion).
+  - No frozen assertion pins the new field: `tests/monster-models.test.ts`'s snapshot has no `tint`, and `tests/cave.test.ts` pins `tint` `0xb8b2a7`, which stays.
+- **Not SF3's, and it was there before SF3:** after a death, `finishRespawn` (`actions.ts`) sets the saved region to `lumbridge` but does not write the footer, so the footer names the last region (README finding 2, G-6.3a `g1`).
+

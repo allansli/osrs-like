@@ -1,0 +1,630 @@
+{
+ "renderer": "ANGLE (Microsoft Corporation, D3D12 (NVIDIA GeForce RTX 4070 Laptop GPU), OpenGL 4.6)",
+ "a1": {
+  "hero": [
+   -84,
+   101.5
+  ],
+  "labels": [
+   {
+    "shown": true,
+    "at": [
+     "639.656px",
+     "194.301px"
+    ]
+   }
+  ],
+  "bannerShown": true,
+  "bannerTitle": "Dragon's Peak Highlands",
+  "bannerSub": "VOLCANIC OBSIDIAN CRAG",
+  "footer": "Dragon's Peak Highlands",
+  "savedRegion": "wilderness"
+ },
+ "a2": {
+  "hero": [
+   -84,
+   108
+  ],
+  "labels": [
+   {
+    "shown": true,
+    "at": [
+     "639.439px",
+     "129.114px"
+    ]
+   }
+  ],
+  "bannerShown": true,
+  "bannerTitle": "Dragon's Peak Highlands",
+  "bannerSub": "VOLCANIC OBSIDIAN CRAG",
+  "footer": "Dragon's Peak Highlands",
+  "savedRegion": "wilderness"
+ },
+ "door": {
+  "at": [
+   604,
+   116
+  ],
+  "label": "Interact with Slagfall Terrace"
+ },
+ "b1": {
+  "bannerShown": true,
+  "bannerTitle": "Slagfall Terrace",
+  "bannerSub": "Dragon's Peak Highlands",
+  "footer": "Slagfall Terrace",
+  "savedRegion": "wilderness",
+  "hero": [
+   1012,
+   634
+  ]
+ },
+ "d1": [
+  {
+   "type": "lesser_demon",
+   "state": "idle",
+   "at": [
+    1036.4,
+    634.1
+   ],
+   "box": [
+    524,
+    43,
+    762,
+    294
+   ],
+   "pixels": 9876,
+   "figureRgb": [
+    57,
+    14,
+    7
+   ],
+   "figureHue": 8,
+   "figureSat": 0.88,
+   "behindRgb": [
+    60,
+    24,
+    20
+   ],
+   "behindHue": 6,
+   "contrastToFloor": 1.075,
+   "figureLum": 0.012
+  },
+  {
+   "type": "lesser_demon",
+   "state": "idle",
+   "at": [
+    1036.1,
+    638.9
+   ],
+   "box": [
+    742,
+    44,
+    1003,
+    306
+   ],
+   "pixels": 11458,
+   "figureRgb": [
+    60,
+    13,
+    6
+   ],
+   "figureHue": 8,
+   "figureSat": 0.9,
+   "behindRgb": [
+    49,
+    20,
+    16
+   ],
+   "behindHue": 7,
+   "contrastToFloor": 1.011,
+   "figureLum": 0.0126
+  },
+  {
+   "type": "ember_hurler",
+   "state": "idle",
+   "at": [
+    1043.9,
+    634
+   ],
+   "box": [
+    574,
+    51,
+    722,
+    199
+   ],
+   "pixels": 3404,
+   "figureRgb": [
+    52,
+    15,
+    8
+   ],
+   "figureHue": 10,
+   "figureSat": 0.85,
+   "behindRgb": [
+    73,
+    28,
+    17
+   ],
+   "behindHue": 12,
+   "contrastToFloor": 1.197,
+   "figureLum": 0.0109
+  },
+  {
+   "type": "lesser_demon",
+   "state": "idle",
+   "at": [
+    1066.5,
+    633.7
+   ],
+   "box": [
+    586,
+    9,
+    694,
+    103
+   ],
+   "pixels": 3928,
+   "figureRgb": [
+    69,
+    12,
+    7
+   ],
+   "figureHue": 5,
+   "figureSat": 0.9,
+   "behindRgb": [
+    42,
+    9,
+    5
+   ],
+   "behindHue": 6,
+   "contrastToFloor": 1.148,
+   "figureLum": 0.0154
+  },
+  {
+   "type": "ember_hurler",
+   "state": "idle",
+   "at": [
+    1073.4,
+    628.3
+   ],
+   "box": [
+    512,
+    18,
+    591,
+    86
+   ],
+   "pixels": 1037,
+   "figureRgb": [
+    59,
+    16,
+    7
+   ],
+   "figureHue": 10,
+   "figureSat": 0.88,
+   "behindRgb": [
+    78,
+    23,
+    10
+   ],
+   "behindHue": 11,
+   "contrastToFloor": 1.149,
+   "figureLum": 0.0132
+  },
+  {
+   "type": "ember_hurler",
+   "state": "idle",
+   "at": [
+    1075.3,
+    639.7
+   ],
+   "box": [
+    694,
+    17,
+    758,
+    83
+   ],
+   "pixels": 22,
+   "figureRgb": [
+    132,
+    57,
+    14
+   ],
+   "figureHue": 22,
+   "figureSat": 0.89,
+   "behindRgb": [
+    19,
+    2,
+    1
+   ],
+   "behindHue": 3,
+   "contrastToFloor": 2.481,
+   "figureLum": 0.0786
+  }
+ ],
+ "d2": [
+  {
+   "type": "lesser_demon",
+   "state": "idle",
+   "at": [
+    1037.6,
+    630.7
+   ],
+   "box": [
+    372,
+    39,
+    628,
+    281
+   ],
+   "pixels": 12945,
+   "figureRgb": [
+    61,
+    9,
+    5
+   ],
+   "figureHue": 4,
+   "figureSat": 0.92,
+   "behindRgb": [
+    78,
+    25,
+    16
+   ],
+   "behindHue": 9,
+   "contrastToFloor": 1.186,
+   "figureLum": 0.012
+  },
+  {
+   "type": "lesser_demon",
+   "state": "idle",
+   "at": [
+    1035.8,
+    638.1
+   ],
+   "box": [
+    700,
+    44,
+    1007,
+    304
+   ],
+   "pixels": 16525,
+   "figureRgb": [
+    68,
+    10,
+    6
+   ],
+   "figureHue": 4,
+   "figureSat": 0.91,
+   "behindRgb": [
+    45,
+    18,
+    14
+   ],
+   "behindHue": 8,
+   "contrastToFloor": 1.073,
+   "figureLum": 0.0146
+  },
+  {
+   "type": "ember_hurler",
+   "state": "idle",
+   "at": [
+    1041.2,
+    631.3
+   ],
+   "box": [
+    457,
+    57,
+    650,
+    222
+   ],
+   "pixels": 10568,
+   "figureRgb": [
+    113,
+    29,
+    14
+   ],
+   "figureHue": 9,
+   "figureSat": 0.88,
+   "behindRgb": [
+    52,
+    18,
+    12
+   ],
+   "behindHue": 9,
+   "contrastToFloor": 1.522,
+   "figureLum": 0.0442
+  },
+  {
+   "type": "lesser_demon",
+   "state": "idle",
+   "at": [
+    1066.2,
+    634
+   ],
+   "box": [
+    587,
+    10,
+    683,
+    102
+   ],
+   "pixels": 2384,
+   "figureRgb": [
+    75,
+    17,
+    8
+   ],
+   "figureHue": 8,
+   "figureSat": 0.89,
+   "behindRgb": [
+    45,
+    14,
+    9
+   ],
+   "behindHue": 8,
+   "contrastToFloor": 1.174,
+   "figureLum": 0.0191
+  },
+  {
+   "type": "ember_hurler",
+   "state": "idle",
+   "at": [
+    1074.9,
+    630.5
+   ],
+   "box": [
+    547,
+    17,
+    624,
+    85
+   ],
+   "pixels": 939,
+   "figureRgb": [
+    97,
+    18,
+    9
+   ],
+   "figureHue": 6,
+   "figureSat": 0.91,
+   "behindRgb": [
+    74,
+    13,
+    7
+   ],
+   "behindHue": 5,
+   "contrastToFloor": 1.183,
+   "figureLum": 0.0299
+  },
+  {
+   "type": "ember_hurler",
+   "state": "idle",
+   "at": [
+    1074.2,
+    640.4
+   ],
+   "box": [
+    689,
+    17,
+    770,
+    85
+   ],
+   "pixels": 93,
+   "figureRgb": [
+    116,
+    30,
+    12
+   ],
+   "figureHue": 10,
+   "figureSat": 0.9,
+   "behindRgb": [
+    21,
+    4,
+    2
+   ],
+   "behindHue": 6,
+   "contrastToFloor": 1.841,
+   "figureLum": 0.0467
+  }
+ ],
+ "c": {
+  "count": 22,
+  "everyPointInsideARoom": true,
+  "noPointOnAPillar": true,
+  "nearestToAWallLine": 0.632,
+  "fissures": [
+   {
+    "at": [
+     12,
+     27.4
+    ],
+    "rotY": 0,
+    "scale": 0.6
+   },
+   {
+    "at": [
+     12,
+     40.6
+    ],
+    "rotY": 0,
+    "scale": 0.6
+   },
+   {
+    "at": [
+     5.4,
+     34
+    ],
+    "rotY": -1.571,
+    "scale": 0.6
+   },
+   {
+    "at": [
+     34,
+     21.4
+    ],
+    "rotY": 0,
+    "scale": 0.6
+   },
+   {
+    "at": [
+     42,
+     21.4
+    ],
+    "rotY": 0,
+    "scale": 0.6
+   },
+   {
+    "at": [
+     34,
+     46.6
+    ],
+    "rotY": 0,
+    "scale": 0.6
+   },
+   {
+    "at": [
+     42,
+     46.6
+    ],
+    "rotY": 0,
+    "scale": 0.6
+   },
+   {
+    "at": [
+     27.4,
+     28
+    ],
+    "rotY": -1.571,
+    "scale": 0.6
+   },
+   {
+    "at": [
+     27.4,
+     45
+    ],
+    "rotY": -1.571,
+    "scale": 0.6
+   },
+   {
+    "at": [
+     48.6,
+     28
+    ],
+    "rotY": -1.571,
+    "scale": 0.6
+   },
+   {
+    "at": [
+     48.6,
+     45
+    ],
+    "rotY": -1.571,
+    "scale": 0.6
+   },
+   {
+    "at": [
+     64,
+     19.4
+    ],
+    "rotY": 0,
+    "scale": 0.6
+   },
+   {
+    "at": [
+     72,
+     19.4
+    ],
+    "rotY": 0,
+    "scale": 0.6
+   },
+   {
+    "at": [
+     80,
+     19.4
+    ],
+    "rotY": 0,
+    "scale": 0.6
+   },
+   {
+    "at": [
+     64,
+     48.6
+    ],
+    "rotY": 0,
+    "scale": 0.6
+   },
+   {
+    "at": [
+     72,
+     48.6
+    ],
+    "rotY": 0,
+    "scale": 0.6
+   },
+   {
+    "at": [
+     80,
+     48.6
+    ],
+    "rotY": 0,
+    "scale": 0.6
+   },
+   {
+    "at": [
+     57.4,
+     26
+    ],
+    "rotY": -1.571,
+    "scale": 0.6
+   },
+   {
+    "at": [
+     57.4,
+     45
+    ],
+    "rotY": -1.571,
+    "scale": 0.6
+   },
+   {
+    "at": [
+     82.6,
+     26
+    ],
+    "rotY": -1.571,
+    "scale": 0.6
+   },
+   {
+    "at": [
+     82.6,
+     34
+    ],
+    "rotY": -1.571,
+    "scale": 0.6
+   },
+   {
+    "at": [
+     82.6,
+     42
+    ],
+    "rotY": -1.571,
+    "scale": 0.6
+   }
+  ]
+ },
+ "e1": {
+  "bannerShown": true,
+  "bannerTitle": "Dragon's Peak Highlands",
+  "bannerSub": "VOLCANIC OBSIDIAN CRAG",
+  "footer": "Dragon's Peak Highlands",
+  "savedRegion": "wilderness",
+  "hero": [
+   -84,
+   98
+  ],
+  "labels": [
+   {
+    "shown": true,
+    "at": [
+     "639.958px",
+     "345.557px"
+    ]
+   }
+  ]
+ },
+ "pageErrors": []
+}
