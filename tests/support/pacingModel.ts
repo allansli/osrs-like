@@ -397,7 +397,19 @@ export function saleRatio(recipe: RecipeDef): number {
 export function tierRecipes(tier: Tier): RecipeDef[] {
   const t = TIERS.find((x) => x.tier === tier)!;
   const pieces = KIT_SLOTS.map((slot) => t[slot]);
-  return FORGE_RECIPES.filter((r) => r.kind === 'smith' && !!r.output && pieces.includes(r.output));
+  return FORGE_RECIPES.filter((r) => r.kind === 'smith' && !!r.output && pieces.includes(r.output) && overworldMakeable(r));
+}
+
+/**
+ * Z4 amendment (declared): a recipe whose inputs come only from a dungeon node (adamantite, from the Saltfang Warren)
+ * is not on the overworld forge route this model times, so the tier keeps its pre-Stage 6 route (the shop).
+ */
+function overworldMakeable(recipe: RecipeDef): boolean {
+  return Object.keys(recipe.input).every((input) => {
+    const smelt = smeltFor(input);
+    if (smelt) return overworldMakeable(recipeById(smelt)!);
+    return Object.values(NODES).some((n) => n.item === input);
+  });
 }
 
 /** Every skill level a recipe needs, its inputs' smelting and gathering included. */

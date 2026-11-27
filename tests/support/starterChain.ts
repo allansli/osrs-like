@@ -37,7 +37,10 @@ export interface NodeDef {
   kind: string;
 }
 
-export const NODES = RESOURCE_NODES_DEF as unknown as Record<string, NodeDef>;
+// Z4 amendment (declared): dungeon nodes stay out of Stage 3's overworld model; no node before Z4 has a `where`.
+export const NODES = Object.fromEntries(
+  Object.entries(RESOURCE_NODES_DEF).filter(([, n]) => (n as { where?: string }).where !== 'dungeon')
+) as unknown as Record<string, NodeDef>;
 
 export function emptyLedger(): Ledger {
   return {
