@@ -1108,5 +1108,9 @@ Ratified with the amendments above: C2's dying-to-dead line in `stepMonster` rea
   - The capture replaces the figures of the repair point above. The Hurler measures saturation 0.19 to 0.27, hue 18 to 25 degrees, luminance 0.085 to 0.107 and contrast to the cave floor 2.10 to 2.73. The demons measure 0.85 to 0.91, 2 to 6 degrees, 0.008 to 0.015 and 1.03 to 1.12. At the front hall's mouth the Hurler measures 0.26, 18 degrees and 2.10 over 5169 pixels. The `zones.ts` comment cites these figures.
   - **The Accept item "one label at the cave mouth" is not met on this branch.** The capture records 2 shown "Slagfall Terrace" label elements at `a1`, `a2` and `e1`. The fix is still the two-line guard of `70d6ed2` in `worldBuild.ts`, outside SF3's files.
   - **Two points still wait for the main session:** the first point of the SF3 amendment (`worldBuild.ts`, then the guard recommitted), and its second point (`docs/superpowers/baseline/s6/sf3/` in SF3's files).
+- **SF3 third repair (2026-11-27, written by the SF3 repair lane):**
+  - The sf3 README's first `## Results` table, left from the run on `70d6ed2`, is removed. The one table left matches `facts.json` and the pictures.
+  - **"One label at the cave mouth" is still not met, and it cannot be met inside SF3's files.** The cave row's name and door are pinned (`tests/cave.test.ts`), and no `zones.ts` function runs at world build, after `buildDungeonDoors`. Any fix needs another file.
+  - **The main session decides:** (1) ratify the amendment's first point, then the `70d6ed2` guard goes back in and `a1`, `a2` and `e1` are recaptured; (2) ratify its second point, or the 15 files under `docs/superpowers/baseline/s6/sf3/` are removed in one commit.
 - **Not SF3's, and it was there before SF3:** after a death, `finishRespawn` (`actions.ts`) sets the saved region to `lumbridge` but does not write the footer, so the footer names the last region (README finding 2, G-6.3a `g1`).
 

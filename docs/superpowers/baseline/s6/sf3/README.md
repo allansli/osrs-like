@@ -23,16 +23,6 @@ waits for the main session to ratify it.
 
 ## Results
 
-| Item | Before (G-6.3a, `24d37dd`) | After (`facts.json`) | Pictures |
-|---|---|---|---|
-| Fissures | 22 slabs centred on the wall lines, half outside the rooms (G-6.3a `a3`, `b5`) | 22 fissures. Every footprint corner, and 9 points on each footprint edge, lies inside a room and off every pillar (`c.everyPointInsideARoom`, `c.noPointOnAPillar`). The closest point to a wall line is 0.63 away | `c1`, `c2`, `c3` |
-| Cave-mouth label | 2 "Slagfall Terrace" labels, the place's and the door's (G-6.3a finding 7) | 1 label element, shown, at 3.5 and at 10 south of the door (`a1.labels`, `a2.labels`). The door's hover label and its click still work (`door`) | `a1`, `a2` |
-| Banner and footer inside | "Dragon's Peak Highlands" (G-6.3a finding 8) | Banner title "Slagfall Terrace" over "Dragon's Peak Highlands", footer "Slagfall Terrace". The saved region stays `wilderness`, the region outside (`b1`) | `b1` |
-| After leaving | n/a | Banner and footer "Dragon's Peak Highlands", hero at the door (-84, 98), saved region `wilderness` (`e1`) | `e1` |
-| Hurler's tint | Same dark red as the Lesser Demon (G-6.3a finding 5) | **Not changed by SF3.** See the measurement below and the plan's SF3 amendment | `d1-*`, `d2-*` |
-
-## Results
-
 | Item | Before (G-6.3a, `24d37dd`) | Now (`facts.json`) | Pictures |
 |---|---|---|---|
 | Fissures | 22 slabs centred on the wall lines, half outside the rooms (G-6.3a `a3`, `b5`) | 22 fissures. Every footprint corner, and 9 points on each footprint edge, lies inside a room and off every pillar (`c.everyPointInsideARoom`, `c.noPointOnAPillar`). The closest point to a wall line is 0.63 away | `c1`, `c2`, `c3` |
