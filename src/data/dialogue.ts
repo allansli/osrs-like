@@ -263,10 +263,11 @@ const ODALYS: Dialogue = {
     { when: { stage: ['ml_wards', 2] }, node: 'wards_short' },
     { when: { stage: ['ml_wards', 1] }, node: 'wards_wait' },
     { when: { stage: ['ml_wards', 3] }, node: 'wards_cairn' },
-    { when: { stage: ['sq_vow', 1] }, node: 'vow_wait' },
     { when: WARDS_NEEDS, node: 'wards_offer' },
     { when: { quest: ['ml_wards', 'none'] }, node: 'early' },
     { when: { quest: ['ml_east', 'none'] }, node: 'east_point' },
+    // Below the offer and the pointer of the main line, so a vow that waits never hides the next chapter.
+    { when: { stage: ['sq_vow', 1] }, node: 'vow_wait' },
     { when: { quest: ['ml_east', 'active'] }, node: 'east_wait' },
     { node: 'idle' }
   ],
@@ -309,6 +310,7 @@ const ODALYS: Dialogue = {
           then: [{ take: ['ashes', 3] }, { advance: 'ml_wards' }],
           goto: 'wards_cairn'
         },
+        WHAT_ARE_WARDS,
         { text: 'Give me a moment.', goto: 'end' }
       ]
     },
@@ -371,6 +373,7 @@ const ODALYS: Dialogue = {
       say: 'I saw it from here last night. The east light, steady, and the right colour. The first time since spring. Tell me it is on its bracket and I will believe my eyes.',
       options: [
         { text: 'It is on its bracket. Steel. It will hold.', when: { stage: ['ml_east', 4] }, then: [{ finish: 'ml_east' }], goto: 'east_after' },
+        WHAT_ARE_WARDS,
         { text: 'Give me a moment.', goto: 'end' }
       ]
     },
@@ -404,6 +407,7 @@ const ODALYS: Dialogue = {
       say: 'Any altar will do. There is one at my elbow. Swear the vow, then come and tell me how the flame took it. If it gutters when you swear, I need to know before someone relies on it in the pass.',
       options: [
         { text: 'I will swear it.', when: { stage: ['sq_vow', 0] }, then: [{ advance: 'sq_vow' }], goto: 'end' },
+        WHAT_ARE_WARDS,
         { text: 'Give me a moment.', goto: 'end' }
       ]
     },
@@ -415,6 +419,7 @@ const ODALYS: Dialogue = {
       say: 'So it is sworn. Then the altars still answer, and that is one thing I can stop lying awake over. How did the flame take it?',
       options: [
         { text: 'Clean and steady.', when: { stage: ['sq_vow', 2] }, then: [{ finish: 'sq_vow' }], goto: 'vow_after' },
+        WHAT_ARE_WARDS,
         { text: 'Give me a moment.', goto: 'end' }
       ]
     },
