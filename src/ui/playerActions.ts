@@ -294,8 +294,6 @@ export function closeModals(): void {
   }
 }
 
-export { closeDialogue };
-
 export function hideHoverTooltip(): void {
   const tooltip = el('hover-tooltip');
   tooltip.style.display = 'none';

@@ -4,6 +4,7 @@ import { player } from '../engine/context';
 import { dispatchCommand } from '../engine/actions';
 import { addCommandListener, type PlayerCommand, type CommandResult } from '../state/commands';
 import type { DialogueView } from '../state/dialogue';
+import { el } from './hud';
 import { openShopModal, openBankModal, openSmithingModal, openQuestsModal } from './playerActions';
 
 let isOpen = false;
@@ -13,29 +14,16 @@ let lastHp = 0;
 let lastFocused: HTMLElement | null = null;
 let animFrameId: number | null = null;
 
-export function isDialogueOpen(): boolean {
-  return isOpen;
-}
-
-export function getCurrentDialogueView(): DialogueView | null {
-  return currentView;
-}
-
 export function showDialogue(view: DialogueView): void {
-  if (typeof document === 'undefined') return;
-
-  const panel = document.getElementById('dialogue-panel');
-  const speakerEl = document.getElementById('dialogue-speaker');
-  const sayEl = document.getElementById('dialogue-say');
-  const optionsEl = document.getElementById('dialogue-options');
-  if (!panel || !speakerEl || !sayEl || !optionsEl) return;
+  const panel = el('dialogue-panel');
+  const speakerEl = el('dialogue-speaker');
+  const sayEl = el('dialogue-say');
+  const optionsEl = el('dialogue-options');
 
   const npc = NPCS.find((n) => n.id === view.npcId);
+  if (!npc) throw new Error(`unknown dialogue person ${view.npcId}`);
   if (player.downed || STATE.hp <= 0) return;
-  if (npc) {
-    const dist = Math.hypot(player.pos.x - npc.x, player.pos.z - npc.z);
-    if (dist > 5.0) return;
-  }
+  if (Math.hypot(player.pos.x - npc.x, player.pos.z - npc.z) > 5.0) return;
 
   if (!isOpen) {
     lastFocused = document.activeElement as HTMLElement | null;
@@ -77,9 +65,7 @@ export function showDialogue(view: DialogueView): void {
   if (!isOpen) {
     isOpen = true;
     window.addEventListener('keydown', handleKeyDown);
-    if (typeof requestAnimationFrame === 'function') {
-      animFrameId = requestAnimationFrame(monitorLoop);
-    }
+    animFrameId = requestAnimationFrame(monitorLoop);
   }
 
   const firstBtn = optionsEl.querySelector<HTMLElement>('button');
@@ -95,24 +81,14 @@ export function closeDialogue(): void {
   currentNpc = undefined;
 
   if (animFrameId !== null) {
-    if (typeof cancelAnimationFrame === 'function') {
-      cancelAnimationFrame(animFrameId);
-    }
+    cancelAnimationFrame(animFrameId);
     animFrameId = null;
   }
 
-  if (typeof window !== 'undefined') {
-    window.removeEventListener('keydown', handleKeyDown);
-  }
+  window.removeEventListener('keydown', handleKeyDown);
+  el('dialogue-panel').hidden = true;
 
-  if (typeof document !== 'undefined') {
-    const panel = document.getElementById('dialogue-panel');
-    if (panel) {
-      panel.hidden = true;
-    }
-  }
-
-  if (lastFocused && typeof lastFocused.focus === 'function') {
+  if (lastFocused) {
     lastFocused.focus();
     lastFocused = null;
   }
@@ -176,14 +152,10 @@ function checkDialogueAutoClose(): boolean {
 function monitorLoop(): void {
   if (!isOpen) return;
   if (checkDialogueAutoClose()) return;
-  if (typeof requestAnimationFrame === 'function') {
-    animFrameId = requestAnimationFrame(monitorLoop);
-  }
+  animFrameId = requestAnimationFrame(monitorLoop);
 }
 
 function handleCommandResult(cmd: PlayerCommand, res: CommandResult): void {
-  if (typeof document === 'undefined') return;
-
   if (cmd.kind === 'talk') {
     if (res.ok && res.view) {
       showDialogue(res.view);
@@ -210,10 +182,7 @@ function handleCommandResult(cmd: PlayerCommand, res: CommandResult): void {
         closeDialogue();
       }
     } else {
-      const sayEl = document.getElementById('dialogue-say');
-      if (sayEl) {
-        sayEl.textContent = 'Make room first.';
-      }
+      el('dialogue-say').textContent = 'Make room first.';
     }
   }
 }

@@ -34,12 +34,8 @@ export interface CommandResult {
 export type CommandListener = (cmd: PlayerCommand, res: CommandResult) => void;
 const commandListeners: CommandListener[] = [];
 
-export function addCommandListener(fn: CommandListener): () => void {
+export function addCommandListener(fn: CommandListener): void {
   commandListeners.push(fn);
-  return () => {
-    const idx = commandListeners.indexOf(fn);
-    if (idx >= 0) commandListeners.splice(idx, 1);
-  };
 }
 
 export function applyCommand(
@@ -125,6 +121,7 @@ function executeCommand(
     }
     case 'choose': {
       const res = chooseOption(state, cmd.npcId, cmd.nodeId, cmd.index);
+      if (!res.ok && res.reason === undefined) throw new Error('chooseOption refused without a reason');
       return {
         ok: res.ok,
         reason: res.reason ?? '',
@@ -136,6 +133,6 @@ function executeCommand(
     case 'move':
       return { ok: false, reason: 'Movement and attacks are handled by the engine.' };
     default:
-      return { ok: false, reason: `Unknown command kind: ${(cmd as { kind?: string })?.kind ?? ''}` };
+      return { ok: false, reason: `Unknown command kind: ${(cmd as { kind: string }).kind}` };
   }
 }
