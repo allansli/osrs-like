@@ -29,6 +29,8 @@ interface CloudInstance {
 interface CloudGroup {
   mesh: THREE.InstancedMesh;
   instances: CloudInstance[];
+  /** the layer mask before setSkyVisible(false) hid the clouds; plain mode may already have disabled layer 0 */
+  savedMask?: number;
 }
 
 // Plain mode swaps the apron's material, so the colour is written to whichever material the mesh holds.
@@ -156,14 +158,18 @@ export function buildSky(): void {
   lastCloudTime = AIR.uTime.value;
 }
 
-let skyVisible = true;
-
 export function setSkyVisible(on: boolean): void {
-  skyVisible = on;
-  if (G.skyDomeMesh) G.skyDomeMesh.visible = on;
-  if (apronMesh) apronMesh.visible = on;
+  G.skyDomeMesh.visible = on;
+  apronMesh.visible = on;
+  // updateSky rewrites the clouds' `visible` every frame, so hide them by layer (the camera renders layer 0 only)
   for (const group of cloudGroups) {
-    group.mesh.visible = on && GFX_TIERS[currentQuality].clouds;
+    if (on) {
+      if (group.savedMask !== undefined) group.mesh.layers.mask = group.savedMask;
+      group.savedMask = undefined;
+    } else {
+      group.savedMask ??= group.mesh.layers.mask;
+      group.mesh.layers.set(1);
+    }
   }
 }
 
@@ -172,17 +178,12 @@ export function updateSky(frame: DayFrame): void {
   setAirTier(currentQuality);
   uNight.value = frame.keyIsMoon ? 1.0 : 0.0;
   G.skyDomeMesh.position.copy(G.camera.position);
+  (G.scene.fog as THREE.FogExp2).color.copy(AIR.uAirColor.value);
+  (G.scene.fog as THREE.FogExp2).density = AIR.uFogDensity.value;
 
-  if (skyVisible) {
-    (G.scene.fog as THREE.FogExp2).color.copy(AIR.uAirColor.value);
-    (G.scene.fog as THREE.FogExp2).density = AIR.uFogDensity.value;
-    apronMesh.material.color.copy(AIR.uAirColor.value).multiplyScalar(APRON_ALBEDO);
-  } else {
-    G.skyDomeMesh.visible = false;
-    apronMesh.visible = false;
-  }
+  apronMesh.material.color.copy(AIR.uAirColor.value).multiplyScalar(APRON_ALBEDO);
 
-  const cloudsEnabled = skyVisible && GFX_TIERS[currentQuality].clouds;
+  const cloudsEnabled = GFX_TIERS[currentQuality].clouds;
   const curTime = AIR.uTime.value;
   const dt = lastCloudTime > 0 ? Math.min(Math.max(curTime - lastCloudTime, 0), 0.1) : 0;
   lastCloudTime = curTime;
