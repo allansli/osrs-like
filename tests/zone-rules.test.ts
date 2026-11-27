@@ -237,7 +237,7 @@ describe('createMonsterLogic with respawn: false (critique H3)', () => {
   };
 
   it('after dying it stays dead for 10 simulated minutes', () => {
-    const m = createMonsterLogic('goblin', 1030, -180, { campId: `${DEF.id}:hall`, respawn: false } as never);
+    const m = createMonsterLogic('goblin', 1030, -180, { campId: `${DEF.id}:hall`, respawn: false });
     kill(m);
     const r = run(m, 600);
     expect(m.state).toBe('dead');
@@ -247,7 +247,7 @@ describe('createMonsterLogic with respawn: false (critique H3)', () => {
 
   it('a monster of the same type without the option, or with respawn: true, respawns as today', () => {
     for (const opts of [{ campId: 'x' }, { campId: 'x', respawn: true }]) {
-      const m = createMonsterLogic('goblin', 5, 5, opts as never);
+      const m = createMonsterLogic('goblin', 5, 5, opts);
       kill(m);
       const r = run(m, DYING_SECS + DEAD_SECS + 2);
       expect(r.respawned, JSON.stringify(opts)).toBe(1);

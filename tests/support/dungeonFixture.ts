@@ -18,12 +18,13 @@
 //     is whole seconds from `run.startedAt`. A full backpack is `ok: false` and the run keeps its `roll`.
 import { BOSSES } from '../../src/data/attacks';
 import type { Cond } from '../../src/state/dialogue';
+import type { openChest, runStep } from '../../src/state/dungeon';
 import type { GameState } from '../../src/state/types';
 
 // The rows sit above the helpers and this file imports nothing from src/state at run time: the vi.mock factories load it
 // while src/state/dungeon is still importing the data module they mock, so a static import of the rules would be a cycle.
 // The test file hands the two rule functions over with `useRules` once it has imported them.
-type Rules = { openChest: (...a: any[]) => unknown; runStep: (...a: any[]) => unknown };
+type Rules = { openChest: typeof openChest; runStep: typeof runStep };
 let rules: Rules;
 export function useRules(r: Rules): void {
   rules = r;
@@ -147,12 +148,12 @@ export const bossCampId = FX_DUNGEON.camps.find((c) => c.members.some((m) => BOS
 
 /** A camp's last member dies: the ids of the gates that opened. */
 export function killCamp(run: Run, campId: string): string[] {
-  return rules.runStep(run, { campDead: campId }) as unknown as string[];
+  return rules.runStep(run, { campDead: campId });
 }
 
 /** The hero opens the chest with the injected random source and the run's clock. */
 export function open(state: GameState, run: Run, rand: () => number, now = 60_000): { ok: boolean; reason?: string } {
-  return rules.openChest(state, FX_DUNGEON, run, rand, now) as unknown as { ok: boolean; reason?: string };
+  return rules.openChest(state, FX_DUNGEON, run, rand, now);
 }
 
 /** A run that has its camps and its boss dead, ready for the chest. */
