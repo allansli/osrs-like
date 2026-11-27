@@ -4,7 +4,7 @@ import { STORY_QUESTS } from '../data/story';
 import { canHoldRewards, grantExactXp } from './adventure';
 import { evalCond, type Cond, type StoryQuestStatus } from './dialogue';
 import { creditGp } from './economy';
-import { addItem, canAddItem, countItem, removeItem } from './inventory';
+import { addItem, countItem, removeItem } from './inventory';
 import { stat } from './progress';
 import type { GameState } from './types';
 
@@ -108,7 +108,7 @@ export function finishQuest(state: GameState, questId: string): StoryResult {
   if (quest.reward.title) {
     state.quests.title = quest.reward.title;
   }
-  delete state.progress?.story?.[questId];
+  delete state.progress!.story![questId];
   state.quests.claimed = [...state.quests.claimed, questId];
   return { ok: true };
 }
