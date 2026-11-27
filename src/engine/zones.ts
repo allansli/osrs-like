@@ -16,9 +16,18 @@ import { getTerrainHeight } from '../state/terrain';
 import { AGGRO_GRACE_MS, isDown, sendHome } from '../state/monsterAi';
 import { clearTelegraph } from './telegraphs';
 import { spawnMonster, spawnResourceNode } from './spawns';
+import { triggerRegionBanner } from './actions';
+import { el } from '../ui/hud';
+import { STATE } from '../state/gameState';
+import { WORLD_REGIONS } from '../data/world';
 
 const ZONE_FOG_COLOR = 0x0f0c0a;
 const ZONE_FOG_DENSITY = 0.025;
+// world.glb's World_lava_fissure spans local x -1.85..1.92 (along the wall) and z -1.12..1.28 (across it). At this
+// scale and inset its edge stays 0.63 inside the wall line.
+const FISSURE_FOOTPRINT: [number, number][] = [[-1.85, -1.12], [1.92, -1.12], [1.92, 1.28], [-1.85, 1.28]];
+const FISSURE_SCALE = 0.6;
+const FISSURE_INSET = 1.4;
 
 // Set by enterZone and read only while G.zone is set.
 let overworldGrid = null as unknown as WalkGrid;
@@ -143,6 +152,14 @@ interface CaveSessionState {
 }
 const caveStates = new Map<string, CaveSessionState>();
 
+/** Inside a cave the banner and the footer name it, under the region outside; leaving names the region again. The saved region is never the cave. */
+function nameCave(def: Zone | null): void {
+  const reg = WORLD_REGIONS.find((r) => r.id === STATE.currentRegion)!;
+  const shown = def ? { ...reg, id: def.id, name: def.name, sub: reg.name } : reg;
+  el('current-zone-footer').textContent = shown.name;
+  triggerRegionBanner(shown);
+}
+
 export function enterZone(def: Zone): void {
   if (G.zone) {
     leaveZone();
@@ -183,6 +200,7 @@ export function enterZone(def: Zone): void {
       setWeatherParticlesVisible(false);
       setCaveWeather(true);
       G.zone = { def, run: null, grid: existing.grid, group: existing.group };
+      nameCave(def);
       return;
     }
 
@@ -251,12 +269,29 @@ export function enterZone(def: Zone): void {
       const fissureTemplate = gltf.scene.getObjectByName('World_lava_fissure');
       if (!fissureTemplate) throw new Error(`Cave "${def.id}" node "World_lava_fissure" is not in world.glb`);
       const emberMat = facetMaterial({ color: 0xff7a3a, emissive: 0xff5522, emissiveIntensity: 0.85, shade: 'cut' });
+      // A seam on the floor along each wall's inner face: its whole footprint inside a room and clear of every pillar.
+      const rooms = Object.values(def.rooms);
+      const inRoom = (x: number, z: number): boolean => rooms.some(([a, b, c, d]) => x > a && x < c && z > b && z < d);
+      const inSolid = (x: number, z: number): boolean => def.solid!.some(([a, b, c, d]) => x >= a && x <= c && z >= b && z <= d);
       for (const [x0, z0, x1, z1] of wallSegments) {
         const dx = x1 - x0;
         const dz = z1 - z0;
         const len = Math.hypot(dx, dz);
+        const ux = dx / len;
+        const uz = dz / len;
+        // Under this rotation the template's local z is the wall normal (-uz, ux); side flips it into the room.
+        const side = inRoom(x0 + dx / 2 - uz * 0.5, z0 + dz / 2 + ux * 0.5) ? 1 : -1;
+        const nx = -uz * side;
+        const nz = ux * side;
         for (let s = 8; s < len; s += 8) {
-          const t = s / len;
+          const cx = x0 + ux * s + nx * FISSURE_INSET;
+          const cz = z0 + uz * s + nz * FISSURE_INSET;
+          const fits = FISSURE_FOOTPRINT.every(([fx, fz]) => {
+            const px = cx + (ux * fx + nx * side * fz) * FISSURE_SCALE;
+            const pz = cz + (uz * fx + nz * side * fz) * FISSURE_SCALE;
+            return inRoom(px, pz) && !inSolid(px, pz);
+          });
+          if (!fits) continue;
           const clone = fissureTemplate.clone(true);
           clone.traverse((o) => {
             const m = o as THREE.Mesh;
@@ -265,8 +300,9 @@ export function enterZone(def: Zone): void {
               m.material = emberMat;
             }
           });
-          clone.position.set(ox + x0 + dx * t, 0, oz + z0 + dz * t);
+          clone.position.set(ox + cx, 0, oz + cz);
           clone.rotation.y = -Math.atan2(dz, dx);
+          clone.scale.setScalar(FISSURE_SCALE);
           sealAlbedoUvs(clone);
           group.add(clone);
         }
@@ -335,6 +371,7 @@ export function enterZone(def: Zone): void {
 
     G.scene.add(group);
     G.zone = { def, run: null, grid: zoneGrid, group };
+    nameCave(def);
     return;
   }
 
@@ -561,6 +598,7 @@ export function leaveZone(): void {
     player.targetEntity = null;
     player.currentSpeed = 0;
     G.zone = null;
+    nameCave(null);
     return;
   }
 
