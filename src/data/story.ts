@@ -83,7 +83,9 @@ export const STORY_QUESTS: StoryQuest[] = [
       },
       { kind: 'talk', at: 'odalys_venn', journal: 'Tell Odalys Venn in town that the Matron is dead and the salt road is open.' }
     ],
-    // Design 7.3 also pays 2,000 Crafting XP. The skill does not exist until slice 4 (K2), so that entry waits for it.
+    // Design 7.3 also pays 2,000 Crafting XP. The skill does not exist until slice 4, and the story data test refuses
+    // a reward skill outside SKILL_KEYS. K2 appends `crafting: 2000` here and tops up a save that finished the chapter
+    // without it (plan, Z5 repair amendment).
     reward: {
       gp: 4000,
       xp: {},
