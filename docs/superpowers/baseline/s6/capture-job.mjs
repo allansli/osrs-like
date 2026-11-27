@@ -1,6 +1,6 @@
 // G-6.0 H-0 captures: an aggressive camp, a passive camp, a gatherer hit. Run by scripts/capture-gpu.mjs.
 // Each scene gets a fresh browser context (clean storage), seeded Math.random, the game's own loop; nothing in src/ is patched.
-import { writeFileSync } from 'node:fs';
+import { rmSync, writeFileSync } from 'node:fs';
 // rendererOf is copied from scripts/capture-gpu.mjs: importing that module from its own job deadlocks (it awaits main() at top level).
 const rendererOf = (page) => page.evaluate(() => {
   const gl = document.createElement('canvas').getContext('webgl2');
@@ -94,14 +94,20 @@ export default async function job(_page, browser) {
 
   // C: a combat-70 hero chops the yews of deep_woods_west (moss guardians, level 45, homes (-99, -26) and (-99, -34);
   // yews at (-96, -24) and (-102, -27)). A yew gives one log and then rests 8.5 s, and a swing succeeds half the time
-  // at the requirement (woodcutting 35), so each gather is short. The page plays a player who keeps chopping: whenever
-  // the hero has no target and no hit has landed, it finds a standing yew by the game's own hover label and clicks it
-  // (synthetic canvas events, the game's own handlers). A frame watcher records the target and hit points of every
-  // frame, so the frame before the first hit says whether the hero was gathering. Each attempt is a fresh page.
+  // at the requirement (woodcutting 35), so each chop is short and the first hit usually lands while the hero walks to
+  // the next yew with the tree as its target. The page plays a player who keeps chopping: whenever the hero has no
+  // target and no hit has landed, it finds a standing yew by the game's own hover label and clicks it (synthetic canvas
+  // events, the game's own handlers). A frame watcher records the target, hit points and movement of every frame, so the
+  // frame before the first hit says whether the hero was walking to a tree or standing at it. An attempt is a fresh page;
+  // the run stops at the first attempt whose first hit lands on a hero walking to a yew. Its pictures: c1 while it walks
+  // to a yew before the hit, c2 just after the hit, c3 2.5 s after the hit (CALL-6.29 (b): stopped and fighting back).
   {
     const P = [-94.5, -22.5];
-    const scene = { placedAt: P, attempts: [] };
+    const C = ['c1-yew-walking.jpg', 'c2-yew-hit.jpg', 'c3-yew-fighting-back.jpg'];
+    const scene = { placedAt: P, pictures: null, attempts: [] };
+    const moving = (page) => page.evaluate(() => !!(window.__DEBUG.player.isMoving || window.__DEBUG.player.waypoints.length > 0));
     for (let attempt = 0; attempt < 10; attempt++) {
+      for (const f of C) rmSync(`${OUT}/${f}`, { force: true });
       const { ctx, page, errors } = await open(browser, attempt);
       await setSkills(page, { attack: 61, strength: 61, defence: 61, hitpoints: 61, woodcutting: 35 });
       await parkMouse(page);
@@ -135,24 +141,28 @@ export default async function job(_page, browser) {
       const start = Date.now();
       while (Date.now() - start < 42000) {
         const r = await read(page);
-        const still = await page.evaluate(() => !(window.__DEBUG.player.isMoving || window.__DEBUG.player.waypoints.length > 0));
-      if (!shotC1 && still && r.target?.type === 'resource' && r.hp === 61) { await shot(page, `c1-yew-chopping-try${attempt}.jpg`); shotC1 = true; }
         if (r.hp < 61) break;
+        if (!shotC1 && r.target?.type === 'resource' && (await moving(page))) { await shot(page, C[0]); shotC1 = true; }
         await page.waitForTimeout(50);
       }
       const W = await page.evaluate(() => window.__watch);
       const w = W.frames, i = w.findIndex((f) => f.hp < 61);
-      const a = { attempt, errors, clicks: W.clicks, hit: i >= 0, frameBefore: i > 0 ? w[i - 1] : null, frameOfHit: i >= 0 ? w[i] : null, framesAfter: i >= 0 ? w.slice(i + 1, i + 4) : null, gatheringFrames: w.filter((f) => f.target === 'resource').length, frames: w.length, chatTail: (await read(page)).chatTail.slice(-4) };
+      const a = { attempt, errors, clicks: W.clicks, hit: i >= 0, frameBefore: i > 0 ? w[i - 1] : null, frameOfHit: i >= 0 ? w[i] : null, framesAfter: i >= 0 ? w.slice(i + 1, i + 4) : null, chatTail: (await read(page)).chatTail.slice(-4) };
       a.gatheringWhenHit = !!a.frameBefore && a.frameBefore.target === 'resource' && !a.frameBefore.moving;
       a.walkingToTreeWhenHit = !!a.frameBefore && a.frameBefore.target === 'resource' && a.frameBefore.moving;
-      if (i >= 0) { await page.waitForTimeout(2500); a.after2_5s = await read(page); a.movingAfter = await page.evaluate(() => !!(window.__DEBUG.player.isMoving || window.__DEBUG.player.waypoints.length > 0)); }
-      if (a.gatheringWhenHit) {
-        await shot(page, 'c2-yew-hit-fighting-back.jpg');
-        a.c1 = shotC1 ? `c1-yew-chopping-try${attempt}.jpg` : null;
+      if (a.walkingToTreeWhenHit) await shot(page, C[1]);
+      if (i >= 0) {
+        await page.waitForTimeout(2500);
+        a.after2_5s = { ...(await read(page)), moving: await moving(page) };
+        a.after2_5s.chatTail = a.after2_5s.chatTail.slice(-4);
+      }
+      if (a.walkingToTreeWhenHit) {
+        await shot(page, C[2]);
+        scene.pictures = { attempt, c1: shotC1 ? C[0] : null, c2: C[1], c3: C[2] };
       }
       scene.attempts.push(a);
       await ctx.close();
-      if (a.gatheringWhenHit) break;
+      if (a.walkingToTreeWhenHit) break;
     }
     facts.scenes.c_yew_gatherer = scene;
   }
