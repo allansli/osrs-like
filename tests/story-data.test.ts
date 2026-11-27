@@ -9,7 +9,7 @@ import { SKILL_KEYS } from '../src/data/skills';
 import { STORY_QUESTS, type StoryQuest } from '../src/data/story';
 import { WORLD_REGIONS } from '../src/data/world';
 import { combatLevel, STARTER_QUESTS } from '../src/state/adventure';
-import { evalCond, type Dialogue } from '../src/state/dialogue';
+import { evalCond, type Cond, type Dialogue } from '../src/state/dialogue';
 import { MAX_GP } from '../src/state/economy';
 import { createNewGameState } from '../src/state/gameState';
 import { countItem } from '../src/state/inventory';
@@ -22,6 +22,15 @@ const has = (table: object, id: string) => Object.hasOwn(table, id);
 const npcIds = new Set(NPCS.map((n) => n.id));
 const regionIds = new Set((WORLD_REGIONS as { id: string }[]).map((r) => r.id));
 const questIds = STORY_QUESTS.map((q) => q.id);
+
+/** Whether `cond` names a story quest anywhere (a quest, stage or claimed leaf, also inside an all, any or not). */
+function namesStory(cond: Cond): boolean {
+  if ('all' in cond) return cond.all.some(namesStory);
+  if ('any' in cond) return cond.any.some(namesStory);
+  if ('not' in cond) return namesStory(cond.not);
+  if ('quest' in cond || 'stage' in cond) return true;
+  return 'claimed' in cond && questIds.includes(cond.claimed);
+}
 
 /** A new game with the starter chain claimed (what a player has before the main line). */
 function afterChain(): GameState {
@@ -150,9 +159,10 @@ describe('the walk: every quest, in table order, through the dialogue functions'
     const out: string[] = [];
     main.forEach((q: StoryQuest, i) => {
       if (i > 0) {
-        // Every non-quest leaf (the combat level included) made true, so only the missing earlier chapter can refuse.
+        // Every leaf that names no story quest (the combat level included) made true, so only the missing earlier
+        // chapter can refuse, however the chapter names it (quest, stage, claimed, or inside an any or not).
         const fresh = afterChain();
-        for (const leaf of mustLeaves(q.needs)) if (!('quest' in leaf)) satisfy(fresh, leaf);
+        for (const leaf of mustLeaves(q.needs)) if (!namesStory(leaf)) satisfy(fresh, leaf);
         if (startQuest(fresh, q.id).ok) out.push(`${q.id}: started with no earlier chapter done`);
       }
       const need = mustLeaves(q.needs).flatMap((l) => ('combat' in l ? [l.combat] : []));
