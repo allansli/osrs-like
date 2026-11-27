@@ -9,7 +9,7 @@ waits for the main session to ratify it.
 
 ## How the pictures were made
 
-- **Tree:** `feat/content-systems` at `679d9f9` (`src/` as SF3's repair left it; `facts.srcCommit`).
+- **Tree:** `feat/content-systems` at `679d9f9` (`src/` as SF3's repair left it; `facts.srcCommit`). The next commit, `c5b8840`, changes only a comment in `zones.ts`; both trees build the same chunk, `index-BGQh9qWd.js`.
 - **Build:** BUILD ran through the capped wrapper.
 - **Server:** `node_modules/.bin/vite preview --port 4397 --strictPort` served that build. The port was checked free first, and the server was stopped by its PID after the run.
 - **Command:** `CAP_SRC=679d9f9 CAP_URL=http://localhost:4397/ CAP_OUT=docs/superpowers/baseline/s6/sf3 node scripts/capture-gpu.mjs docs/superpowers/baseline/s6/sf3/capture-job.mjs http://localhost:4397/`, exit 0.
