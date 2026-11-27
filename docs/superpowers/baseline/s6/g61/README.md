@@ -5,7 +5,7 @@
 ## How the pictures were made
 
 - **Tree:** `feat/content-systems` at `3e86aa7`. This is slice 1 (D1 to B1) plus the MODEL repair below; nothing under `src/` changed after `2357ed7`.
-- **Build and server:** BUILD through the capped wrapper, then `node_modules/.bin/vite preview --port 4392 --strictPort` of that `dist/` on the host. The job checked that the port was free first. The server was stopped by its PID afterwards, and the job checked that nothing was left listening on 4392.
+- **Build and server:** BUILD through the capped wrapper, then `node_modules/.bin/vite preview --port 4392 --strictPort` of that `dist/` on the host. The shell line around the job checked that the port was free first, stopped the server by its PID afterwards, and checked that nothing was left listening on 4392. The committed job does not do this.
 - **Command:** `CAP_URL=http://localhost:4392/ CAP_OUT=<dir> node scripts/capture-gpu.mjs docs/superpowers/baseline/s6/g61/capture-job.mjs http://localhost:4392/`, exit 0. Every picture and `facts.json` in this folder comes from one run of the committed job, copied unchanged.
   - An earlier run of the same job pointed the Adept close-up's camera away from the camp. Only that camera yaw was changed before this run.
 - **Renderer:** headless Chromium on the NVIDIA GPU, `ANGLE (Microsoft Corporation, D3D12 (NVIDIA GeForce RTX 4070 Laptop GPU), OpenGL 4.6)` (`facts.renderer`). 1280x720, quality tier `balanced`.
@@ -29,17 +29,19 @@
 
 | File | Scene |
 |---|---|
-| `a1-cinder-circle-wide.jpg` | The hero at the centre of `cinder_circle` (-0.7, 72.7). Two Adepts are in view, each with the hood, the ember lining and the brazier staff with its flame. HP 99/99. The log shows "Cinder Adept attacks!", which means one Adept came within its 3-unit sight. No hit had landed when the picture was taken |
+| `a1-cinder-circle-wide.jpg` | The hero at the centre of `cinder_circle` (-0.7, 72.7). Two Adepts are in view, each with the hood, the ember lining and the brazier staff with its flame. HP 99/99. The log shows "Cinder Adept attacks!". When the job read the kits, one Adept stood 2.84 from the hero, which is inside its 3-unit sight; the others stood 4.30 and 9.97 away (`figureAt` in `facts.json`). No hit had landed when the picture was taken |
 | `a2-cinder-adept-close.jpg` | An Adept at close range from behind the hero at (0, 70). The kit reads as a fire caster (brazier head, flame in hand), not as the dark wizard. Cinder Stair's road and the dunes are behind it |
 | `b1-brute-shelf-wide.jpg` | Both Slag Brutes of `brute_shelf` (-6, 100) and (2, 104), with the hero between them. Slag plates on the shoulders and back, and the cooled-slag maul head. Nothing comes |
-| `b2-slag-brute-close.jpg` | A Brute at close range. The Adepts of `cinder_circle` stand on the slope behind, 30 units south |
-| `c1-marrowjaw-idle.jpg` | Marrowjaw at his camp, the hero 14 units away, outside his sight 9. Bone crown, toll banner pole and shoulder armour. He reads taller than the Brutes |
+| `b2-slag-brute-close.jpg` | A Brute at close range. Two Adepts of `cinder_circle` stand in the background, about 30 units away |
+| `c1-marrowjaw-idle.jpg` | Marrowjaw at his camp, the hero 14 units away, outside his sight 9. Bone crown, toll banner pole and shoulder armour. No picture shows him beside a Brute; his `modelScale` is 1.3 against the Brute's 1.12 |
 | `c2-marrowjaw-fight-3s.jpg` | The hero placed 5 units from him, 3 s later. He has come. The boss bar reads 560/560 with the phase marks. The phase banner reads "Marrowjaw the Tollmaster: The Toll". A 0 hit splat is on the hero (a miss) |
 | `c3-marrowjaw-fight-6s.jpg` | 3 s later, with no new pose. The Toll Slam wind-up ring is under the hero. HP 99/99 at the picture |
 
-## Gate status (run of 2026-11-26 on `3e86aa7`)
+## Gate status (runs of 2026-11-26)
 
-Each command ran from the worktree root behind `flock /tmp/claude-capped.lock scripts/capped.sh`:
+Each command ran from the worktree root behind `flock /tmp/claude-capped.lock scripts/capped.sh`. SUITE, TYPES, BUILD and ECON first ran on `2357ed7` (the slice). After the MODEL repair, SUITE and TYPES were run again on `a696a83`: SUITE exit 0, 140 files, 1574 passed, 3 skipped; TYPES exit 0, no output. `tsconfig.json` includes `src`, `tests` and `vite.config.ts`, not `docs/`. MODEL ran on `3e86aa7`. Nothing under `src/` or `tests/` changed after `2357ed7`, so BUILD and ECON were not run again.
+
+The runs on `2357ed7`:
 - **SUITE** (`npx vitest run`): exit 0. 140 files, 1574 passed, 3 skipped.
 - **TYPES** (`npx tsc --noEmit`): exit 0, no output.
 - **BUILD** (`npm run build`): exit 0. The JS chunk `dist/assets/index-CbmJbvbe.js` is 1,109.04 kB (gzip 314.62 kB). That is reported only, since the owner retired the hard limit. G-6.0's chunk was 1,104.61 kB.
@@ -82,7 +84,7 @@ The totals drifted as well: 18 open loops became 13, the moss guardian's rate we
   - `size-refactor-golden` (item 8; see the first item under "Found by this gate").
 - **D4:** `src/data/attacks.ts`, `world.ts` and `worldMap.ts`. Its `content.ts` edit (`a61f232`) and the revert of that edit (`be59034`) cancel out. The kits are wired: `kit: 'cinder_adept'`, `'slag_brute'` and `'marrowjaw'` (O-6.1b.6).
 - **B1:** `tests/boss-marrowjaw.test.ts` only, once its two commits are combined. The fight model was moved back inside the test file.
-- **Frozen tests:** no existing test file has an edit beyond the declared ones. `tests/fixtures/` is unchanged in the slice.
+- **Frozen tests:** every edit to an existing test file is one of the declared ones, except `tests/size-refactor-golden.test.ts`: its edit goes beyond the wording of O-6.1b.1 item 8 (the first item under "Found by this gate"). The main session has to rule on it. `tests/fixtures/` is unchanged in the slice.
 
 ## Found by this gate (for the main session and H-1)
 
