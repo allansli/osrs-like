@@ -88,6 +88,21 @@ export const DAY_KEYS: DayKey[] = [
   },
 ];
 
+export const CAVE_LIGHT: DayKey = {
+  phase: 0,
+  sunElevationDeg: 90,
+  key: '#ff7a3a',
+  keyIntensity: 0.3,
+  zenith: '#2a120c',
+  horizon: '#2a120c',
+  air: '#3b1a12',
+  fill: '#120a1a',
+  bounce: '#ff6a1f',
+  exposure: 1.2,
+};
+
+export const CAVE_FOG_SCALE = 3;
+
 // Gain on the grass weight of the ground shader: the painted meadow albedo is dark (about 0.05
 // linear), so it is lifted here instead of through a global exposure that also lifts every other region.
 export const GROUND_GRASS_GAIN = 3.0;
