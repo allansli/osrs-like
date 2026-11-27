@@ -4,13 +4,13 @@
 
 ## How the pictures were made
 
-- Tree: `feat/content-systems` at `222bd42` (G2 landed, plus the main session's walking-gatherer fix `5206907` and its test `0a665b7`). BUILD (`npm run build` through the capped wrapper), then `npx vite preview --port 4391 --strictPort` of that `dist/` on the host. The server was started and stopped by PID around the one run.
+- Tree: `feat/content-systems` at `222bd42` (G2 landed, plus the main session's walking-gatherer fix `5206907` and its test `0a665b7`). BUILD (`npm run build` through the capped wrapper), then `npx vite preview --port 4391 --strictPort` of that `dist/` on the host. The server was started in the background, then stopped by PID (and a `pkill -f` on its command line) after the run.
 - Command: `CAP_URL=http://localhost:4391/ CAP_OUT=<dir> node scripts/capture-gpu.mjs docs/superpowers/baseline/s6/capture-job.mjs http://localhost:4391/`, exit 0. **Every picture and `facts.json` in this folder come from that one run of the committed `capture-job.mjs`**, copied unchanged from `<dir>`. A rerun gives new pictures and numbers in the same shape; the seeded `Math.random` does not make the frame timing repeat.
 - Renderer: headless Chromium on the NVIDIA GPU: `ANGLE (Microsoft Corporation, D3D12 (NVIDIA GeForce RTX 4070 Laptop GPU), OpenGL 4.6)` (`facts.renderer`). Resolution 1280x720, quality tier `balanced`.
 - Every scene and every gatherer attempt got a fresh browser context, so storage started empty and the game began as a new game. `Math.random` was seeded the same way as Stage 5's `capture.md` (shifted per gatherer attempt). The onboarding panel was hidden, the run waited for `look.ready()`, and the mouse was parked on `#top-left-hud`.
 - The run waited 3.5 s after load so the 3 s aggression grace would end. The hero was then placed with `__DEBUG.look.pose`. Skills were set through `__DEBUG.STATE`, with xp taken from the OSRS curve.
 - Nothing under `src/` was patched. Monsters ran on the game's own loop and the G2 rule. Gathers were started with the game's own click handler (synthetic canvas events on a yew found by the hover label).
-- The FPS figure in the HUD of some pictures reads 0 (7366 ms): a headless frame stall around the capture, not the game's frame rate.
+- The HUD of `c1` and `c2` reads 0 FPS (7366.4 ms): one long frame before them, not the game's frame rate. The cause was not measured. The probable one is the job itself: `findYew` dispatches about 2,900 synchronous mousemove hit-tests in one animation frame, every 0.3 s while the hero has no target. The watcher's `t` values include that stall.
 
 ## The pictures
 
@@ -23,13 +23,15 @@
 | `c2-yew-hit.jpg` | **Gatherer, hit on the way to the tree.** Taken just after the first guardian hit | Attempt 1. Frame before the hit: target `resource`, `moving: true`. Frame of the hit: HP 61 to 52, target `monster` (Moss Guardian): the gather ended and auto-retaliation answered in the same frame (CALL-6.29 (b)). Target panel: Moss Guardian 78/78 |
 | `c3-yew-fighting-back.jpg` | **Gatherer, 2.5 s after the hit** | `after2_5s`: target Moss Guardian, `moving: false`, position unchanged since the hit frame (-96.77, -23.86): the walk to the tree ended. Target panel: Moss Guardian 65/78, so the hero's hits are landing. HP 49.7 |
 
-`scenes.c_yew_gatherer.attempts` holds both attempts of the run. In attempt 0 the log printed "Moss Guardian attacks!" but no hit landed within the 40 s watch (as in 3 of the 10 attempts of the first, pre-fix run). The run stops at the first attempt whose first hit lands on a hero walking to a yew; `pictures` names it.
+Timing (H-0 expects "a guardian attacks within seconds"): in attempt 1 the first hit landed at t = 17.06 s of the watch, after one log and a second click at 9.54 s; attempt 0 had no hit in 40 s. Both figures carry the stall caveat above. `scenes.c_yew_gatherer.attempts` holds both attempts of the run. In attempt 0 the log printed "Moss Guardian attacks!" but no hit landed within the 40 s watch (as in 3 of the 10 attempts of the first, pre-fix run). The run stops at the first attempt whose first hit lands on a hero walking to a yew; `pictures` names it.
 
 ## The walking-gatherer case (found by the first run, fixed by the main session)
 
-The first attempt of this gate (`45ae05a`) found that a hero hit while walking to a yew lost the gather but did not fight back: `maybeRetaliate` (`src/engine/actions.ts`) cleared the resource target, but `shouldRetaliate` refused while the walk to the tree was still in `player.waypoints`. In 4 of 6 such hits the hero then stood idle. The main session fixed it in `5206907` (a hit that clears a resource target also clears the walk) with the test `0a665b7` (`tests/gatherer-hit.test.ts`: a hero walking to a tree, hit once, stops and fights back; a hero walking with no resource target keeps walking). The run above is the game after that fix: c2 and c3 show the case answered.
+The first attempt of this gate (`45ae05a`) found that a hero hit while walking to a yew lost the gather but did not fight back: `maybeRetaliate` (`src/engine/actions.ts`) cleared the resource target, but `shouldRetaliate` refused while the walk to the tree was still in `player.waypoints`. In 4 of 6 such hits the hero then stood idle (that run's `facts.json`, `yewRun10Attempts`, is in `2358a6a`; the "3 of the 10" above is from the same file). The main session fixed it in `5206907` (a hit that clears a resource target also clears the walk) with the test `0a665b7` (`tests/gatherer-hit.test.ts`: a hero walking to a tree, hit once, stops and fights back; a hero walking with no resource target keeps walking). The run above is the game after that fix: c2 and c3 show the case answered.
 
-Still open for the owner, not a defect of CALL-6.29 (b): no hit landed on a hero standing at a yew in either run, because a chop at the requirement level lasts about a second.
+Still open for the owner:
+- No hit landed on a hero standing at a yew in either run, because a chop at the requirement level lasts about a second. That case is covered by `tests/gatherer-hit.test.ts`, not by a picture.
+- `maybeRetaliate` still does not call `updateTargetHud`. When retaliation answers (as here) the new target refreshes the panel. When it is refused (a movement key held, or a live wind-up) the gather ends but the target panel keeps naming the yew. That path was read in the code, not captured; it is left for H-0.
 
 ## Gate status (rerun of 2026-11-26 on `222bd42` plus this folder)
 
