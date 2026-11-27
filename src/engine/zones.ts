@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { G, player, type MonsterEntity, type ResourceNodeEntity } from './context';
+import { CAMERA_LIMITS } from '../data/look';
+import { G, camState, player, type MonsterEntity, type ResourceNodeEntity } from './context';
 import { disposeObject3D } from './dispose';
 import { albedoMaterial, assignGroundUvs, biomeAlbedoId, GROUND_REPEAT, loadAlbedo, sealAlbedoUvs } from './textures';
 import { addCartoonOutline, facetMaterial } from './materials';
@@ -232,7 +233,7 @@ export function enterZone(def: Zone): void {
       if (!gltf) return;
       const spireTemplate = gltf.scene.getObjectByName('World_obsidian_spire');
       if (spireTemplate) {
-        for (const [x0, z0, x1, z1] of def.solid ?? []) {
+        for (const [x0, z0, x1, z1] of def.solid!) {
           const clone = spireTemplate.clone(true);
           clone.traverse((o) => {
             const m = o as THREE.Mesh;
@@ -378,7 +379,7 @@ export function enterZone(def: Zone): void {
   }
 
   // 3. Gate slabs
-  for (const gate of (def as Dungeon).gates) {
+  for (const gate of dDef.gates) {
     const [gx0, gz0, gx1, gz1] = gate.rect;
     const slabGeo = new THREE.BoxGeometry(gx1 - gx0, 4, gz1 - gz0);
     const slab = new THREE.Mesh(slabGeo, stoneMat);
@@ -446,7 +447,7 @@ export function enterZone(def: Zone): void {
     }
   }
 
-  for (const n of (def as Dungeon).nodes) {
+  for (const n of dDef.nodes) {
     const idxBefore = G.resourceNodesList.length;
     spawnResourceNode(n.type, ox + n.x, oz + n.z);
     if (G.resourceNodesList.length === idxBefore) throw new Error(`enterZone: unknown node type "${n.type}" in ${def.id}`);
@@ -455,7 +456,7 @@ export function enterZone(def: Zone): void {
 
   // Chest interactive object
   const chestGrp = new THREE.Group();
-  chestGrp.position.set(ox + (def as Dungeon).chest[0], 0, oz + (def as Dungeon).chest[1]);
+  chestGrp.position.set(ox + dDef.chest[0], 0, oz + dDef.chest[1]);
   const chestMat = albedoMaterial(0x854d0e, 'wood', { shade: 'cut' });
   const trimMat = facetMaterial({ color: 0xfacc15, emissive: 0xeab308, emissiveIntensity: 0.3, shade: 'cut' });
   const chestBox = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.8, 0.8), chestMat);
@@ -524,8 +525,8 @@ export function leaveZone(): void {
 
   const isCave = CAVES.some((c) => c.id === def.id);
   if (isCave) {
-    const cave = caveStates.get(def.id);
-    if (cave) {
+    {
+      const cave = caveStates.get(def.id)!;
       for (const m of cave.monsters) {
         sendHome(m.logic);
         m.pos.x = m.logic.x;
@@ -600,9 +601,19 @@ export function leaveZone(): void {
   G.zone = null;
 }
 
+/** In a cave, shrinks the camera arm in 0.25 steps (not below distanceMin) until the camera spot is walkable. */
+export function caveArmLength(horizDist: number): number {
+  if (!G.zone || !CAVES.some((c) => c.id === G.zone!.def.id)) return horizDist;
+  const minHoriz = CAMERA_LIMITS.distanceMin * Math.cos(camState.pitch);
+  while (horizDist > minHoriz && !G.walkGrid.walkable(player.pos.x - Math.sin(camState.yaw) * horizDist, player.pos.z - Math.cos(camState.yaw) * horizDist)) {
+    horizDist = Math.max(minHoriz, horizDist - 0.25);
+  }
+  return horizDist;
+}
+
 export function handleZoneMonsterDied(m: MonsterEntity): void {
-  if (!G.zone || !G.zone.run) return;
-  const def = G.zone.def as Dungeon;
+  if (!G.zone!.run) return;
+  const def = G.zone!.def as Dungeon;
   const localCampId = m.logic.campId!.slice(`${def.id}:`.length);
 
   const members = G.monstersList.filter((other) => other.logic.campId === m.logic.campId);

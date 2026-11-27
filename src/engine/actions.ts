@@ -152,8 +152,7 @@ export function dispatchCommand(cmd: PlayerCommand): CommandResult {
       addChatMessage(res.reason, 'combat');
       return res;
     }
-    const def = DUNGEONS.find((d) => d.id === cmd.dungeonId) ?? CAVES.find((c) => c.id === cmd.dungeonId);
-    if (def) enterZone(def);
+    enterZone((DUNGEONS.find((d) => d.id === cmd.dungeonId) ?? CAVES.find((c) => c.id === cmd.dungeonId))!);
     return res;
   }
 

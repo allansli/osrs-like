@@ -56,7 +56,7 @@ function syncPointLightsPool(tier: QualityTier): void {
 }
 
 let caveLightFrame: DayFrame | null = null;
-function activeDayFrame(phase: number = currentPhase): DayFrame {
+function activeDayFrame(phase: number): DayFrame {
   if (G.zone && CAVES.some((c) => c.id === G.zone!.def.id)) {
     if (!caveLightFrame) caveLightFrame = frameOf(CAVE_LIGHT);
     return caveLightFrame;
