@@ -1,4 +1,5 @@
 import { player, camState, G } from './context';
+import { enterZoneById, leaveZone } from './zones';
 import { SFX } from './audio';
 import { rebuildPlayerEquipmentMeshes } from './playerMesh';
 import { cycleTimeOfDay } from './worldMesh';
@@ -209,7 +210,7 @@ export function boot(): void {
     });
     const startReg = WORLD_REGIONS.find(r => r.id === STATE.currentRegion) || WORLD_REGIONS[0];
     triggerRegionBanner(startReg);
-    (window as unknown as { __DEBUG?: unknown }).__DEBUG = { STATE, player, camState, rebuildPlayerEquipmentMeshes, ITEMS, look: createLookHooks() };
+    (window as unknown as { __DEBUG?: unknown }).__DEBUG = { STATE, player, camState, rebuildPlayerEquipmentMeshes, ITEMS, look: createLookHooks(), enterZone: enterZoneById, leaveZone };
     requestAnimationFrame(gameLoop);
   });
 }

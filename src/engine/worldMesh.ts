@@ -76,6 +76,7 @@ export function buildTerrainAndWater(): void {
   G.terrainMesh.userData = { type: 'ground' };
   G.scene.add(G.terrainMesh);
   G.worldInteractiveObjects.push(G.terrainMesh);
+  G.groundMesh = G.terrainMesh;
 
   buildWater();
 

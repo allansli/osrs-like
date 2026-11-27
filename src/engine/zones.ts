@@ -2,7 +2,8 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { G, player } from './context';
 import { disposeObject3D } from './dispose';
-import { albedoMaterial } from './textures';
+import { albedoMaterial, sealAlbedoUvs } from './textures';
+import { AIR } from './atmosphere';
 import { setSkyVisible } from './sky';
 import { applyWorldMaterials, loadBlenderWorldTemplate } from './blenderWorld';
 import { buildWalkGrid, type WalkGrid } from '../state/pathfind';
@@ -11,10 +12,20 @@ import { DUNGEONS, type Dungeon } from '../data/dungeons';
 import { getTerrainHeight } from '../state/terrain';
 import { AGGRO_GRACE_MS } from '../state/monsterAi';
 
-let savedOverworldGrid: WalkGrid | null = null;
-let savedFogColor = 0x9ab0c2;
-let savedFogDensity = 0.0028;
-let currentFloorMesh: THREE.Mesh | null = null;
+const ZONE_FOG_COLOR = 0x0f0c0a;
+const ZONE_FOG_DENSITY = 0.025;
+
+// Both are set by enterZone and read only while G.zone is set.
+let overworldGrid = null as unknown as WalkGrid;
+let zoneFloor = null as unknown as THREE.Mesh;
+
+/** Every frame while in a zone, after updateAir: the shader fog (and, through updateSky, scene.fog) reads these uniforms. */
+export function applyZoneAir(): void {
+  AIR.uAirColor.value.setHex(ZONE_FOG_COLOR);
+  AIR.uAirSunColor.value.copy(AIR.uAirColor.value);
+  AIR.uFogHeightFalloff.value = 0;
+  AIR.uFogDensity.value = ZONE_FOG_DENSITY;
+}
 
 function isInsideOtherRoom(
   allRooms: [number, number, number, number][],
@@ -159,44 +170,47 @@ export function enterZone(def: Dungeon): void {
   }
 
   // 3. Gate slabs
-  if (def.gates) {
-    for (const gate of def.gates) {
-      const [gx0, gz0, gx1, gz1] = gate.rect;
-      const w = gx1 - gx0;
-      const d = gz1 - gz0;
-      const slabGeo = new THREE.BoxGeometry(w, 4, d);
-      slabGeo.computeVertexNormals();
-      const slab = new THREE.Mesh(slabGeo, stoneMat);
-      slab.position.set(ox + (gx0 + gx1) / 2, 2, oz + (gz0 + gz1) / 2);
-      slab.castShadow = true;
-      slab.receiveShadow = true;
-      slab.userData = { gateId: gate.id };
-      group.add(slab);
-    }
+  for (const gate of def.gates) {
+    const [gx0, gz0, gx1, gz1] = gate.rect;
+    const slabGeo = new THREE.BoxGeometry(gx1 - gx0, 4, gz1 - gz0);
+    const slab = new THREE.Mesh(slabGeo, stoneMat);
+    slab.position.set(ox + (gx0 + gx1) / 2, 2, oz + (gz0 + gz1) / 2);
+    slab.castShadow = true;
+    slab.receiveShadow = true;
+    slab.userData = { gateId: gate.id };
+    group.add(slab);
   }
 
-  // 4. Props from optional props list
-  const maybeProps = (def as unknown as { props?: { node: string; x: number; z: number; scale?: number; rotY?: number }[] }).props;
-  if (maybeProps && Array.isArray(maybeProps)) {
+  // The stone tile is world-projected like the painted stone, not stretched 0..1 across a room.
+  sealAlbedoUvs(group);
+
+  // 4. Props from the optional props list (existing world.glb nodes); a bad node name or a missing glb throws
+  const props = def.props;
+  if (props) {
     loadBlenderWorldTemplate().then((gltf) => {
-      if (!gltf || G.zone?.group !== group) return;
-      for (const prop of maybeProps) {
+      if (G.zone?.group !== group) return; // left the zone while the glb loaded
+      if (!gltf) throw new Error(`Zone "${def.id}" lists props but world.glb did not load`);
+      for (const prop of props) {
         const template = gltf.scene.getObjectByName(prop.node);
-        if (!template) continue;
+        if (!template) throw new Error(`Zone "${def.id}" prop node "${prop.node}" is not in world.glb`);
         const clone = template.clone(true);
+        // clone() shares geometry with the template; leaveZone disposes this group, so give it its own
+        clone.traverse((o) => {
+          const m = o as THREE.Mesh;
+          if (m.isMesh) m.geometry = m.geometry.clone();
+        });
         clone.position.set(ox + prop.x, 0, oz + prop.z);
         if (prop.scale) clone.scale.setScalar(prop.scale);
         if (prop.rotY) clone.rotation.y = prop.rotY;
         applyWorldMaterials(clone);
+        sealAlbedoUvs(clone);
         group.add(clone);
       }
     });
   }
 
   // 5. Grid
-  if (!savedOverworldGrid) {
-    savedOverworldGrid = G.walkGrid;
-  }
+  overworldGrid = G.walkGrid;
   const walk = zoneWalk(def, []);
   const zoneGrid = buildWalkGrid(walk, ox, oz, def.size);
   G.walkGrid = zoneGrid;
@@ -204,7 +218,7 @@ export function enterZone(def: Dungeon): void {
   // 6. Ground picking registration
   G.groundMesh = floorMesh;
   G.worldInteractiveObjects.push(floorMesh);
-  currentFloorMesh = floorMesh;
+  zoneFloor = floorMesh;
 
   // 7. Move hero to entry with aggression grace
   player.pos.set(ox + def.entry[0], 0, oz + def.entry[1]);
@@ -213,22 +227,11 @@ export function enterZone(def: Dungeon): void {
   player.currentSpeed = 0;
   G.aggroGraceUntil = performance.now() + AGGRO_GRACE_MS;
 
-  // 8. Fog: dense and dark, remember old values
-  if (G.scene && G.scene.fog && (G.scene.fog as THREE.FogExp2).isFogExp2) {
-    const fog = G.scene.fog as THREE.FogExp2;
-    savedFogColor = fog.color.getHex();
-    savedFogDensity = fog.density;
-    fog.color.setHex(0x0f0c0a);
-    fog.density = 0.025;
-  }
-
-  // 9. Hide sky dome and horizon apron
+  // 8. Hide sky dome (the fog is applyZoneAir's, called from loop.ts) and horizon apron
   setSkyVisible(false);
 
-  // 10. Add to scene and set G.zone
-  if (G.scene) {
-    G.scene.add(group);
-  }
+  // 9. Add to scene and set G.zone
+  G.scene.add(group);
   G.zone = { def, run: null, grid: zoneGrid, group };
 }
 
@@ -236,32 +239,12 @@ export function leaveZone(): void {
   if (!G.zone) return;
   const { def, group } = G.zone;
 
-  if (G.scene) {
-    G.scene.remove(group);
-  }
+  G.scene.remove(group);
   disposeObject3D(group);
 
-  if (currentFloorMesh) {
-    const idx = G.worldInteractiveObjects.indexOf(currentFloorMesh);
-    if (idx !== -1) {
-      G.worldInteractiveObjects.splice(idx, 1);
-    }
-    currentFloorMesh = null;
-  }
+  G.worldInteractiveObjects.splice(G.worldInteractiveObjects.indexOf(zoneFloor), 1);
   G.groundMesh = G.terrainMesh;
-
-  if (savedOverworldGrid) {
-    G.walkGrid = savedOverworldGrid;
-    savedOverworldGrid = null;
-  } else {
-    G.walkGrid = buildWalkGrid();
-  }
-
-  if (G.scene && G.scene.fog && (G.scene.fog as THREE.FogExp2).isFogExp2) {
-    const fog = G.scene.fog as THREE.FogExp2;
-    fog.color.setHex(savedFogColor);
-    fog.density = savedFogDensity;
-  }
+  G.walkGrid = overworldGrid;
 
   setSkyVisible(true);
 
@@ -277,31 +260,4 @@ export function enterZoneById(id: string): void {
   const def = DUNGEONS.find((d) => d.id === id);
   if (!def) throw new Error(`Unknown zone id: "${id}"`);
   enterZone(def);
-}
-
-if (typeof window !== 'undefined') {
-  try {
-    const w = window as unknown as { __DEBUG?: Record<string, unknown> };
-    let dbg = w.__DEBUG ?? {};
-    dbg.enterZone = (id: string) => enterZoneById(id);
-    dbg.leaveZone = () => leaveZone();
-    Object.defineProperty(window, '__DEBUG', {
-      configurable: true,
-      enumerable: true,
-      get() {
-        return dbg;
-      },
-      set(v: Record<string, unknown>) {
-        dbg = Object.assign(v || {}, {
-          enterZone: (id: string) => enterZoneById(id),
-          leaveZone: () => leaveZone()
-        });
-      }
-    });
-  } catch {
-    const w = window as unknown as { __DEBUG?: Record<string, unknown> };
-    w.__DEBUG = w.__DEBUG || {};
-    w.__DEBUG.enterZone = (id: string) => enterZoneById(id);
-    w.__DEBUG.leaveZone = () => leaveZone();
-  }
 }

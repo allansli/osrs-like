@@ -5,6 +5,7 @@ import { nextTier, TIER_LABELS } from './post';
 import { playerChoseTier } from './photo';
 import { currentDayFrame, updateLighting } from './lighting';
 import { updateAir } from './atmosphere';
+import { applyZoneAir } from './zones';
 import { updateSky } from './sky';
 import { updateCarpet } from './flora';
 import { updateParticles } from './particles';
@@ -985,6 +986,7 @@ export function gameLoop(now: number): void {
   updateLighting(f.dt);
   const frame = currentDayFrame();
   updateAir(frame, f.dt);
+  if (G.zone) applyZoneAir();
   updateSky(frame);
   updateParticles(f.dt, G.camera);
   renderFrame(f);

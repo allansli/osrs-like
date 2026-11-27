@@ -94,17 +94,15 @@ export function renderMinimap(): void {
       ctx.strokeRect(px, pz, pw, ph);
     }
     // Gates
-    if (def.gates) {
-      for (const gate of def.gates) {
-        const [gx0, gz0, gx1, gz1] = gate.rect;
-        const px = (ox + gx0 - player.pos.x) * scale;
-        const pz = (oz + gz0 - player.pos.z) * scale;
-        const pw = (gx1 - gx0) * scale;
-        const ph = (gz1 - gz0) * scale;
-        const isOpen = run?.deadCamps ? gate.opensWhen.every((c) => run.deadCamps.includes(c)) : false;
-        ctx.fillStyle = isOpen ? '#15803d' : '#b45309';
-        ctx.fillRect(px, pz, pw, ph);
-      }
+    for (const gate of def.gates) {
+      const [gx0, gz0, gx1, gz1] = gate.rect;
+      const px = (ox + gx0 - player.pos.x) * scale;
+      const pz = (oz + gz0 - player.pos.z) * scale;
+      const pw = (gx1 - gx0) * scale;
+      const ph = (gz1 - gz0) * scale;
+      const isOpen = run !== null && gate.opensWhen.every((c) => run.deadCamps.includes(c));
+      ctx.fillStyle = isOpen ? '#15803d' : '#b45309';
+      ctx.fillRect(px, pz, pw, ph);
     }
   } else {
     WORLD_REGIONS.forEach((reg: RegionDef) => {

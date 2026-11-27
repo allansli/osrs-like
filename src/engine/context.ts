@@ -239,8 +239,6 @@ export interface EngineContext {
   } | null;
 }
 
-let _groundMesh: THREE.Mesh | null = null;
-
 export const G: EngineContext = {
   scene: null as unknown as THREE.Scene,
   camera: null as unknown as THREE.PerspectiveCamera,
@@ -277,11 +275,6 @@ export const G: EngineContext = {
   lastLabelZ: 999,
   aggroGraceUntil: 0,
   walkGrid: null as unknown as WalkGrid,
-  get groundMesh(): THREE.Mesh {
-    return _groundMesh ?? this.terrainMesh;
-  },
-  set groundMesh(mesh: THREE.Mesh) {
-    _groundMesh = mesh;
-  },
+  groundMesh: null as unknown as THREE.Mesh,
   zone: null
 };
