@@ -398,7 +398,7 @@ const ODALYS: Dialogue = {
       options: [{ text: 'I will go to the dunes.', goto: 'end' }, WHAT_ARE_WARDS, OTHER_WORK]
     },
     salt_wait: {
-      say: 'The salt lamp is burning its own wick. On a clear night I can see it from the wall, redder than it should be. Do what Qadir asks, and count what he promises. He will have promised less than you think.',
+      say: 'The salt lamp is burning its own wick. On a clear night I can see it from the wall, white at the edge. Do what Qadir asks, and count what he promises. He will have promised less than you think.',
       options: [{ text: 'I will be back with news.', goto: 'end' }, WHAT_ARE_WARDS, OTHER_WORK]
     },
     salt_done: {
