@@ -5,10 +5,12 @@ import { SKILLS_META } from '../src/data/skills';
 import { ITEMS, unitSellPrice } from '../src/data/items';
 import { SPELLS } from '../src/data/magic';
 import { FORGE_RECIPES } from '../src/data/recipes';
+import { STORY_QUESTS } from '../src/data/story';
 import { MONSTER_TYPES, RESOURCE_NODES_DEF } from '../src/data/world';
 
 // Stage 6 content rules (plan D1; design 7.4, 7.5). Every test reads the tables, so a later slice's rows are covered
 // without editing this file. Its one declared kind of edit: a later test task shortens LATER_SLICE_CLOSES.
+// Q6 amendment (2026-11-27): a story quest's reward items count as a source, and the Bright Ember waits for slice 7.
 
 type Golden = Record<string, Record<string, string>>;
 const golden = JSON.parse(readFileSync(new URL('./fixtures/s3/content-ids.golden.json', import.meta.url), 'utf8')) as Golden;
@@ -100,12 +102,14 @@ describe('the loop audit (design 7.4): every item has a way in and a way out', (
   // Permanent: no fishing spot or low recipe exists for them, none blocks anything (design 7.4, "what stays open").
   const OPEN = ['salmon', 'anglerfish', 'saradomin_brew', 'bronze_bolts'];
   // Closed by a later slice; each later test task removes what its slice closes. Runes: N2 (the binding recipes).
-  const LATER_SLICE_CLOSES = ['air_rune', 'mind_rune', 'water_rune', 'earth_rune', 'fire_rune', 'chaos_rune', 'law_rune', 'death_rune', 'blood_rune'];
+  // The Bright Ember: U3 (the reward of ml_ash, design 7.3).
+  const LATER_SLICE_CLOSES = ['air_rune', 'mind_rune', 'water_rune', 'earth_rune', 'fire_rune', 'chaos_rune', 'law_rune', 'death_rune', 'blood_rune', 'ember_bright'];
 
   const sources = new Set<string>();
   for (const [, n] of nodes) sources.add(n.item);
   for (const [, m] of monsters) for (const d of m.drops) if (d.id) sources.add(d.id);
   for (const r of FORGE_RECIPES) if (r.output) sources.add(r.output);
+  for (const q of STORY_QUESTS) for (const item of q.reward.items) sources.add(item.id);
   const uses = new Set<string>();
   for (const r of FORGE_RECIPES) for (const id of Object.keys(r.input)) uses.add(id);
   for (const s of SPELLS) for (const id of Object.keys(s.runes)) uses.add(id);
@@ -114,7 +118,7 @@ describe('the loop audit (design 7.4): every item has a way in and a way out', (
 
   const audited = Object.values(ITEMS).filter((it) => it.type !== 'equip' && !OPEN.includes(it.id) && !LATER_SLICE_CLOSES.includes(it.id));
 
-  it('every audited item has a source: a node, a recipe or a drop', () => {
+  it('every audited item has a source: a node, a recipe, a drop or a story quest reward', () => {
     expect(audited.filter((it) => !sources.has(it.id)).map((it) => it.id)).toEqual([]);
   });
 
