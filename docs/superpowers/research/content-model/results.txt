@@ -277,6 +277,7 @@ level target            coins | ranged TODAY bronze | AFTER bronze bought | AFTE
   82 new names, 82 distinct; deny-list hits: none
   recipe names that repeat an existing item's borrowed word (allowed, listed): Forge Dragon Scimitar; Forge Dragon Platelegs; Forge Dragon Platebody; Sew Wizard Robe Skirt; Sew Wizard Robe Top
   new ids: 26 items, 3 nodes, 49 recipes, 6 monster types, 13 story quests, 7 people, 2 dungeons, 2 skills
+  shipped so far, each with the content file's numbers: coal, steel_bar, black_bar, sting_gland, mire_root, coal_rock, cinder_adept, slag_brute, marrowjaw, smelt_steel, smelt_black, smith_steel_sword, smith_steel_legs, smith_steel_plate, smith_black_scim, smith_black_legs, smith_black_plate, brew_prayer, brew_restore, brew_stew, cinder_circle, brute_shelf, tollmaster
 
 === 10. Save: size of the new optional block at its bounds
   stat keys 134; diary tiers 15; diary tasks 75

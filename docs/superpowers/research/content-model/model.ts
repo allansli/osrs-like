@@ -1,14 +1,14 @@
 // Stage 6 content model. Reads the game's real tables and pure rules (Stages 1 to 5 and the models pass merged; R0 deleted
 // the S3 and S4_MONSTERS overlays), adds the Stage 6 proposal and prints every number the design quotes.
 // Deterministic: no clock, no random source. Run with run.sh; the output is committed as results.txt.
-import { GEAR_MARKUP, ITEMS, unitSellPrice } from '../../../../src/data/items';
+import { GEAR_MARKUP, ITEMS as ITEMS_LIVE, unitSellPrice } from '../../../../src/data/items';
 import { BOSS_ARENA_MARGIN, BOSSES } from '../../../../src/data/attacks';
-import { FORGE_RECIPES } from '../../../../src/data/recipes';
-import { MONSTER_TYPES, RESOURCE_NODES_DEF, WORLD_REGIONS } from '../../../../src/data/world';
+import { FORGE_RECIPES as FORGE_RECIPES_LIVE } from '../../../../src/data/recipes';
+import { MONSTER_TYPES as MONSTER_TYPES_LIVE, RESOURCE_NODES_DEF as RESOURCE_NODES_DEF_LIVE, WORLD_REGIONS } from '../../../../src/data/world';
 import { SPELLS } from '../../../../src/data/magic';
-import { CAMPS, PATHS, POIS, SAFE_ZONES } from '../../../../src/data/worldMap';
+import { CAMPS as CAMPS_LIVE, PATHS, POIS, SAFE_ZONES } from '../../../../src/data/worldMap';
 import { buildWalkGrid, findPath } from '../../../../src/state/pathfind';
-import { NODE_PLACEMENTS } from '../../../../src/data/placements';
+import { NODE_PLACEMENTS as NODE_PLACEMENTS_LIVE } from '../../../../src/data/placements';
 import { WOODS_TREES } from '../../../../src/data/woodsTrees';
 import { CAMERA_FAR, HORIZON_APRON } from '../../../../src/data/look';
 import { OSRS_XP_TABLE } from '../../../../src/data/skills';
@@ -24,6 +24,19 @@ const p = (s = '') => out.push(s);
 const h = (s: string) => { p(); p('=== ' + s); };
 let failures = 0;
 const check = (ok: boolean, what: string) => { if (!ok) { failures++; p('  FAIL ' + what); } return ok; };
+
+// ---------------------------------------------------------------- the world before Stage 6 (G-6.1)
+// Each slice lands content-file rows in the game's tables. The model adds the content file to the world before Stage 6,
+// so a shipped row is taken out of the live tables here (by id; a node placement by its type; an appended drop by its
+// id), or it would be counted twice and collide with itself. Section 9 checks each shipped row against the content file.
+const omit = <T>(table: Record<string, T>, ids: string[]) => Object.fromEntries(Object.entries(table).filter(([k]) => !ids.includes(k))) as Record<string, T>;
+const ITEMS = omit(ITEMS_LIVE as Record<string, unknown>, Object.keys(C.NEW_ITEMS)) as unknown as typeof ITEMS_LIVE;
+const RESOURCE_NODES_DEF = omit(RESOURCE_NODES_DEF_LIVE as Record<string, unknown>, Object.keys(C.NEW_NODES)) as unknown as typeof RESOURCE_NODES_DEF_LIVE;
+const FORGE_RECIPES = FORGE_RECIPES_LIVE.filter((r) => !C.NEW_RECIPES.some((n) => n.id === r.id));
+const MONSTER_TYPES = Object.fromEntries(Object.entries(omit(MONSTER_TYPES_LIVE as Record<string, { drops: { id?: string }[] }>, Object.keys(C.NEW_MONSTERS)))
+  .map(([k, m]) => [k, { ...m, drops: m.drops.filter((d) => !(C.ADDED_DROPS[k] || []).some((a) => a.id === d.id)) }])) as unknown as typeof MONSTER_TYPES_LIVE;
+const CAMPS = CAMPS_LIVE.filter((c) => !C.NEW_CAMPS.some((n) => n.id === c.id));
+const NODE_PLACEMENTS = NODE_PLACEMENTS_LIVE.filter((q) => !(q.type in C.NEW_NODES));
 
 // ---------------------------------------------------------------- tables after Stages 3, 4 and 6
 type AnyItem = { name: string; type: string; price: number; [k: string]: unknown };
@@ -554,8 +567,31 @@ check(hits.length === 0 && new Set(fresh).size === fresh.length, 'names');
 const borrowed = C.NEW_RECIPES.map((r) => [r.name, DENY.filter((t) => r.name.toLowerCase().includes(t))] as const).filter(([, t]) => t.length);
 p(`  recipe names that repeat an existing item's borrowed word (allowed, listed): ${borrowed.map(([n]) => n).join('; ') || 'none'}`);
 p(`  new ids: ${Object.keys(C.NEW_ITEMS).length} items, ${Object.keys(C.NEW_NODES).length} nodes, ${C.NEW_RECIPES.length} recipes, ${Object.keys(C.NEW_MONSTERS).length} monster types, ${C.STORY_QUESTS.length} story quests, ${C.NPCS.length} people, ${C.DUNGEONS.length} dungeons, 2 skills`);
-for (const id of [...Object.keys(C.NEW_ITEMS), ...Object.keys(C.NEW_NODES), ...Object.keys(C.NEW_MONSTERS)]) check(!(id in (ITEMS as object)) && !(id in (MONSTER_TYPES as object)) && !(id in (RESOURCE_NODES_DEF as object)), `id ${id} is free`);
-for (const r of C.NEW_RECIPES) check(!recipesToday.some((x) => x.id === r.id), `recipe id ${r.id} is free`);
+// G-6.1: a new id is free in the live tables, or shipped there with the content file's numbers (drops are not compared:
+// a later slice appends the drops whose items it adds).
+const same = (live: unknown, row: Record<string, unknown>, keys: string[]) =>
+  JSON.stringify(keys.map((k) => (live as Record<string, unknown>)[k])) === JSON.stringify(keys.map((k) => row[k]));
+const shipped: string[] = [];
+const freeOrSame = (kind: string, id: string, table: object, row: Record<string, unknown>, keys: string[]) => {
+  if (!(id in table)) return;
+  shipped.push(id);
+  check(same((table as Record<string, unknown>)[id], row, keys), `${kind} ${id} is shipped with the content file's ${keys.join(', ')}`);
+};
+for (const id of [...Object.keys(C.NEW_ITEMS), ...Object.keys(C.NEW_NODES), ...Object.keys(C.NEW_MONSTERS)]) {
+  const kinds = [ITEMS_LIVE, MONSTER_TYPES_LIVE, RESOURCE_NODES_DEF_LIVE].filter((t) => id in (t as object)).length;
+  check(kinds <= 1 && [C.NEW_ITEMS, C.NEW_NODES, C.NEW_MONSTERS].filter((t) => id in t).length === 1, `id ${id} names one row`);
+}
+for (const [id, it] of Object.entries(C.NEW_ITEMS)) freeOrSame('item', id, ITEMS_LIVE, it, ['name', 'type', 'price']);
+for (const [id, n] of Object.entries(C.NEW_NODES)) freeOrSame('node', id, RESOURCE_NODES_DEF_LIVE, n, ['name', 'skill', 'req', 'xp', 'item', 'respawn']);
+for (const [id, m] of Object.entries(C.NEW_MONSTERS)) freeOrSame('monster', id, MONSTER_TYPES_LIVE, m, ['name', 'level', 'hp', 'maxHit', 'atk', 'def', 'style', 'model', 'modelScale']);
+const liveRecipes = Object.fromEntries(FORGE_RECIPES_LIVE.map((r) => [r.id, r]));
+for (const r of C.NEW_RECIPES) freeOrSame('recipe', r.id, liveRecipes, r, ['name', 'skill', 'req', 'xp', 'input', 'output', 'outputQty']);
+const liveCamps = Object.fromEntries(CAMPS_LIVE.map((c) => [c.id, { ...c, members: c.members.map((m) => ({ type: m.type, x: m.x, z: m.z })) }]));
+for (const c of C.NEW_CAMPS) freeOrSame('camp', c.id, liveCamps, c, ['members']);
+const livePlaced = NODE_PLACEMENTS_LIVE.filter((q) => q.type in C.NEW_NODES).map((q) => `${q.type} ${q.x} ${q.z}`).sort();
+const plannedPlaced = C.NEW_NODE_PLACEMENTS.filter((q) => livePlaced.some((l) => l.startsWith(q.type + ' '))).map((q) => `${q.type} ${q.x} ${q.z}`).sort();
+check(JSON.stringify(livePlaced) === JSON.stringify(plannedPlaced), 'the shipped node placements are the content file\'s');
+p(`  shipped so far, each with the content file's numbers: ${shipped.join(', ') || 'none'}`);
 
 // ---------------------------------------------------------------- 10. the save
 h('10. Save: size of the new optional block at its bounds');
