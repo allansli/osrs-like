@@ -80,16 +80,16 @@ async function runLane(lane) {
       hb = t.hb || r.head_before
     }
     let v = null
-    for (let round = 1; round <= 4; round++) {
+    for (let round = 1; round <= 6; round++) {
       v = await agent(verify(lane, t, hb, round), { label: `${L}:verify-${round}`, phase: 'Lanes', model: 'opus', schema: VERDICT_SCHEMA })
-      if (!v || v.pass || round === 4) break
+      if (!v || v.pass || round === 6) break
       log(`${L}: round ${round}, ${v.defects.length} defect(s)`)
       const rm = t.id === 'H3b' ? 'opus' : (t.kind === 'work' && (t.model === 'opus' || t.model === 'fable') ? t.model : (round >= 3 ? 'opus' : 'sonnet'))
       await agent(repair(lane, t, hb, v.defects), { label: `${L}:repair-${round}`, phase: 'Lanes', model: rm, schema: WORK_SCHEMA })
     }
     if (!v) return { lane: lane.name, done, stopped: `${t.id}: verifier returned nothing` }
     done.push({ id: t.id, pass: v.pass, gate: v.gate, defects: v.pass ? [] : v.defects, notes: (v.notes || '').slice(0, 1500) })
-    if (!v.pass) return { lane: lane.name, done, stopped: `${t.id}: still failing after 4 rounds` }
+    if (!v.pass) return { lane: lane.name, done, stopped: `${t.id}: still failing after 6 rounds` }
     log(`${L}: verified`)
   }
   return { lane: lane.name, done, stopped: null }
