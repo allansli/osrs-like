@@ -23,6 +23,7 @@ import { isPointerFocused } from './pointerFocus';
 import { SPELLS } from '../data/magic';
 import { dispatchCommand } from '../engine/actions';
 import { getSkillSvg } from './icons';
+import { closeDialogue } from './dialogue';
 import {
   renderShopModal as renderShopModalUi,
   renderForge,
@@ -286,11 +287,14 @@ export function closeModals(): void {
   hideHoverTooltip();
   hideItemTooltip();
   hideContextMenu();
+  closeDialogue();
   if (lastActiveElement) {
     lastActiveElement.focus();
     lastActiveElement = null;
   }
 }
+
+export { closeDialogue };
 
 export function hideHoverTooltip(): void {
   const tooltip = el('hover-tooltip');

@@ -2,6 +2,7 @@ import { ITEMS } from '../data/items';
 import { PRAYERS } from '../data/magic';
 import { weaponSpecial } from './adventure';
 import { canUseStyle } from './combat';
+import { openDialogue, chooseOption, type DialogueView, type DialogueEvent } from './dialogue';
 import { notePrayerOffered } from './quests';
 import { type CooldownClock, drink, eat } from './sustain';
 import type { GameState } from './types';
@@ -14,7 +15,8 @@ export type PlayerCommand =
   | { kind: 'prayer'; id: string }
   | { kind: 'style'; style: string }
   | { kind: 'special' }
-  | { kind: 'talk'; npcId: string };
+  | { kind: 'talk'; npcId: string }
+  | { kind: 'choose'; npcId: string; nodeId: string; index: number };
 
 export interface CommandClocks {
   food: CooldownClock;
@@ -25,9 +27,35 @@ export interface CommandResult {
   ok: boolean;
   reason: string;
   restored?: number;
+  view?: DialogueView | null;
+  events?: DialogueEvent[];
+}
+
+export type CommandListener = (cmd: PlayerCommand, res: CommandResult) => void;
+const commandListeners: CommandListener[] = [];
+
+export function addCommandListener(fn: CommandListener): () => void {
+  commandListeners.push(fn);
+  return () => {
+    const idx = commandListeners.indexOf(fn);
+    if (idx >= 0) commandListeners.splice(idx, 1);
+  };
 }
 
 export function applyCommand(
+  state: GameState,
+  cmd: PlayerCommand,
+  clocks: CommandClocks,
+  now: number
+): CommandResult {
+  const result = executeCommand(state, cmd, clocks, now);
+  for (const listener of commandListeners) {
+    listener(cmd, result);
+  }
+  return result;
+}
+
+function executeCommand(
   state: GameState,
   cmd: PlayerCommand,
   clocks: CommandClocks,
@@ -88,9 +116,26 @@ export function applyCommand(
       state.specArmed = !state.specArmed;
       return { ok: true, reason: '' };
     }
+    case 'talk': {
+      const view = openDialogue(state, cmd.npcId);
+      if (!view) {
+        return { ok: false, reason: 'Unknown person.' };
+      }
+      return { ok: true, reason: '', view };
+    }
+    case 'choose': {
+      const res = chooseOption(state, cmd.npcId, cmd.nodeId, cmd.index);
+      return {
+        ok: res.ok,
+        reason: res.reason ?? '',
+        view: res.view,
+        events: res.events
+      };
+    }
     case 'attack':
     case 'move':
-    case 'talk':
       return { ok: false, reason: 'Movement and attacks are handled by the engine.' };
+    default:
+      return { ok: false, reason: `Unknown command kind: ${(cmd as { kind?: string })?.kind ?? ''}` };
   }
 }
