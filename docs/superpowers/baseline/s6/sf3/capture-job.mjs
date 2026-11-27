@@ -7,9 +7,8 @@
 //  - A: the "Slagfall Terrace" place labels shown over the cave mouth.
 //  - B: the banner and the footer inside the cave.
 //  - C: every lava fissure's footprint, against the cave row's rooms and pillars, and a picture from above.
-//  - D: the Ember Hurler against a Lesser Demon and the floor behind each. A figure's pixels are the difference
-//    between a frame with it and a frame without it, inside its projected box. D2 shows, in the page only, the
-//    proposal of the plan's SF3 amendment: the Hurler's tint as its colour, with its vertex colours off.
+//  - D: the Ember Hurler against the Lesser Demons and what is behind each (silhouette from a flat-magenta frame), at the
+//    front hall's mouth and at fight range, as the game draws it and in two ways set in the page only (hurlerAs).
 //  - E: the banner and the footer after leaving.
 // The job throws on a page or console error, or when the renderer is not the NVIDIA GPU.
 import { writeFileSync } from 'node:fs';
