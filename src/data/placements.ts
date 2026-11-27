@@ -65,5 +65,10 @@ export const NODE_PLACEMENTS: Placement[] = [
   // 5. DRAGON'S PEAK WILDERNESS
   { type: 'runite_rock', x: -92, z: 68 },
   { type: 'runite_rock', x: -88, z: 76 },
-  { type: 'runite_rock', x: -74, z: 92 }
+  { type: 'runite_rock', x: -74, z: 92 },
+
+  // Stage 6: Coal Seam placements
+  { type: 'coal_rock', x: 106, z: -6 },
+  { type: 'coal_rock', x: 108, z: -12 },
+  { type: 'coal_rock', x: 104, z: 0 }
 ];

@@ -24,5 +24,11 @@ export const EXTRA_ITEMS = {
   law_rune: { id: 'law_rune', name: 'Law Rune', type: 'rune', iconKind: 'rune', price: 120, color: 0x1d4ed8, trim: 0xfde047 },
 
   maple_bow: { id: 'maple_bow', name: 'Maple Shortbow', type: 'equip', slot: 'weapon', iconKind: 'bow', style: 'ranged', tier: 'steel', rng: 36, req: { ranged: 25 }, price: 900, color: 0x9a6b32, trim: 0xfde68a },
-  magic_bow: { id: 'magic_bow', name: 'Magic Longbow', type: 'equip', slot: 'weapon', iconKind: 'bow', style: 'ranged', tier: 'rune', rng: 72, req: { ranged: 50 }, price: 6400, color: 0x0284c7, trim: 0xfef08a }
+  magic_bow: { id: 'magic_bow', name: 'Magic Longbow', type: 'equip', slot: 'weapon', iconKind: 'bow', style: 'ranged', tier: 'rune', rng: 72, req: { ranged: 50 }, price: 6400, color: 0x0284c7, trim: 0xfef08a },
+
+  coal: { id: 'coal', name: 'Coal', type: 'resource', iconKind: 'ore', price: 30, color: 0x1f2937, trim: 0x374151 },
+  steel_bar: { id: 'steel_bar', name: 'Steel Bar', type: 'bar', iconKind: 'bar', price: 140, color: 0x64748b, trim: 0xcbd5e1 },
+  black_bar: { id: 'black_bar', name: 'Blacksteel Bar', type: 'bar', iconKind: 'bar', price: 180, color: 0x1e293b, trim: 0x475569 },
+  sting_gland: { id: 'sting_gland', name: 'Sting Gland', type: 'resource', iconKind: 'potion', price: 100, color: 0x9333ea, trim: 0xd8b4fe },
+  mire_root: { id: 'mire_root', name: 'Mire Root', type: 'resource', iconKind: 'logs', price: 260, color: 0x65a30d, trim: 0x84cc16 }
 };

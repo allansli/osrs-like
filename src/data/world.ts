@@ -30,7 +30,7 @@ export type MonsterDef = {
   accentColor: number;
   kind: string;
   weaponColor?: number;
-  drops: Array<{ id?: string; chance: number; gp?: [number, number] }>;
+  drops: Array<{ id?: string; chance: number; gp?: [number, number]; qty?: number }>;
   pattern?: string;
   // Design 6.8: a new type may reuse an existing model, tinted and scaled.
   model?: string;
@@ -42,9 +42,20 @@ export type MonsterDef = {
 
 export const MONSTER_TYPES: Record<string, MonsterDef> = {
   ...(BASE_MONSTERS as Record<string, MonsterDef>),
+  chicken: {
+    ...(BASE_MONSTERS.chicken as MonsterDef),
+    drops: [
+      ...((BASE_MONSTERS.chicken as MonsterDef).drops),
+      { id: 'feather', chance: 0.8, qty: 5 }
+    ]
+  },
   scorpion: {
     ...(BASE_MONSTERS.scorpion as MonsterDef),
-    pattern: 'scorpion'
+    pattern: 'scorpion',
+    drops: [
+      ...((BASE_MONSTERS.scorpion as MonsterDef).drops),
+      { id: 'sting_gland', chance: 0.1 }
+    ]
   },
   dark_wizard: {
     ...(BASE_MONSTERS.dark_wizard as MonsterDef),
@@ -98,7 +109,11 @@ export const MONSTER_TYPES: Record<string, MonsterDef> = {
   },
   moss_guardian: {
     ...(BASE_MONSTERS.moss_guardian as MonsterDef),
-    pattern: 'moss_guardian'
+    pattern: 'moss_guardian',
+    drops: [
+      ...((BASE_MONSTERS.moss_guardian as MonsterDef).drops),
+      { id: 'mire_root', chance: 0.15 }
+    ]
   },
   lesser_demon: {
     ...(BASE_MONSTERS.lesser_demon as MonsterDef),
@@ -120,7 +135,8 @@ export const MONSTER_TYPES: Record<string, MonsterDef> = {
     drops: [
       { id: 'big_bones', chance: 1 },
       { gp: [140, 340], chance: 0.95 },
-      { id: 'lobster', chance: 0.4 }
+      { id: 'lobster', chance: 0.4 },
+      { id: 'sting_gland', chance: 0.15 }
     ],
     pattern: 'scorpion',
     model: 'scorpion',
@@ -191,5 +207,15 @@ export const RESOURCE_NODES_DEF = {
     foliageColor: 0x8d9a4e,
     trunkColor: 0x5d4037,
     scale: 1.5
+  },
+  coal_rock: {
+    name: 'Coal Seam',
+    skill: 'mining',
+    req: 10,
+    xp: 50,
+    item: 'coal',
+    respawn: 5500,
+    kind: 'rock',
+    oreColor: 0x1f2937
   }
 };

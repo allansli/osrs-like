@@ -94,7 +94,19 @@ function logRecipes(): RecipeDef[] {
     { id: 'smelt_iron', name: 'Smelt Iron Bar', skill: 'smithing', req: 5, xp: 30, input: { iron_ore: 1 }, output: 'iron_bar', kind: 'smelt' },
     { id: 'smelt_mithril', name: 'Smelt Mithril Bar', skill: 'smithing', req: 20, xp: 55, input: { mithril_ore: 1 }, output: 'mithril_bar', kind: 'smelt' },
     { id: 'smelt_gold', name: 'Smelt Gold Bar', skill: 'smithing', req: 35, xp: 70, input: { gold_ore: 1 }, output: 'gold_bar', kind: 'smelt' },
-    { id: 'smelt_runite', name: 'Smelt Runite Bar', skill: 'smithing', req: 40, xp: 95, input: { runite_ore: 1 }, output: 'runite_bar', kind: 'smelt' }
+    { id: 'smelt_runite', name: 'Smelt Runite Bar', skill: 'smithing', req: 40, xp: 95, input: { runite_ore: 1 }, output: 'runite_bar', kind: 'smelt' },
+    // Stage 6, slice 1 (D2, design 7.4): steel, blacksteel, brewing
+    { id: 'smelt_steel', name: 'Smelt Steel Bar', skill: 'smithing', req: 10, xp: 40, input: { iron_ore: 1, coal: 1 }, output: 'steel_bar', kind: 'smelt' },
+    { id: 'smelt_black', name: 'Smelt Blacksteel Bar', skill: 'smithing', req: 15, xp: 48, input: { steel_bar: 1, coal: 1 }, output: 'black_bar', kind: 'smelt' },
+    { id: 'smith_steel_sword', name: 'Forge Steel Longsword', skill: 'smithing', req: 10, xp: 100, input: { steel_bar: 2 }, output: 'steel_longsword', kind: 'smith' },
+    { id: 'smith_steel_legs', name: 'Forge Steel Platelegs', skill: 'smithing', req: 12, xp: 115, input: { steel_bar: 2 }, output: 'steel_legs', kind: 'smith' },
+    { id: 'smith_steel_plate', name: 'Forge Steel Platebody', skill: 'smithing', req: 14, xp: 140, input: { steel_bar: 3 }, output: 'steel_plate', kind: 'smith' },
+    { id: 'smith_black_scim', name: 'Forge Black Scimitar', skill: 'smithing', req: 15, xp: 125, input: { black_bar: 2 }, output: 'black_scimitar', kind: 'smith' },
+    { id: 'smith_black_legs', name: 'Forge Black Platelegs', skill: 'smithing', req: 17, xp: 145, input: { black_bar: 2 }, output: 'black_legs', kind: 'smith' },
+    { id: 'smith_black_plate', name: 'Forge Black Platebody', skill: 'smithing', req: 19, xp: 175, input: { black_bar: 3 }, output: 'black_plate', kind: 'smith' },
+    { id: 'brew_prayer', name: 'Brew Prayer Restore Vial', skill: 'cooking', req: 30, xp: 110, input: { sting_gland: 1, ashes: 2 }, output: 'prayer_potion', kind: 'cook' },
+    { id: 'brew_restore', name: 'Brew Super Restore Elixir', skill: 'cooking', req: 55, xp: 220, input: { mire_root: 1, ashes: 2 }, output: 'super_restore', kind: 'cook' },
+    { id: 'brew_stew', name: 'Simmer Hearty Stew', skill: 'cooking', req: 60, xp: 260, input: { shark: 1, mire_root: 1 }, output: 'hearty_elixir', kind: 'cook' }
   );
   return recipes;
 }
