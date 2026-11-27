@@ -5,13 +5,9 @@ import { ITEMS } from '../src/data/items';
 import { DIALOGUES } from '../src/data/dialogue';
 import { NPCS } from '../src/data/npcs';
 import { STORY_QUESTS } from '../src/data/story';
-import { SKILL_KEYS } from '../src/data/skills';
-import { WORLD_REGIONS } from '../src/data/world';
-import { QUEST_DEFS, STARTER_QUESTS } from '../src/state/adventure';
+import { STARTER_QUESTS } from '../src/state/adventure';
 import type { Cond, Dialogue, Effect } from '../src/state/dialogue';
-import { STAT_KEYS } from '../src/state/progress';
-import { defaultQuests, STARTER_ARRIVAL } from '../src/state/quests';
-import { allLeaves, collectStrings, mustLeaves, optionalModule } from './support/satisfy';
+import { collectStrings, condProblems, mustLeaves, optionalModule } from './support/satisfy';
 
 const SAY_MAX = 280;
 const OPTION_MAX = 80;
@@ -19,31 +15,10 @@ const OPTIONS_MAX = 4;
 const has = (table: object, id: string) => Object.hasOwn(table, id);
 const storyIds = new Set(STORY_QUESTS.map((q) => q.id));
 const starterIds = new Set(STARTER_QUESTS.map((q) => q.id));
-const oldClaimable = new Set<string>([STARTER_ARRIVAL, ...starterIds, ...QUEST_DEFS.map((q) => q.id)]);
 const npcIds = new Set(NPCS.map((n) => n.id));
-const regionIds = new Set((WORLD_REGIONS as { id: string }[]).map((r) => r.id));
-const statKeys = new Set(STAT_KEYS);
-const flagKeys = new Set(Object.entries(defaultQuests()).filter(([, v]) => typeof v === 'boolean').map(([k]) => k));
-const dungeons = await optionalModule('dungeons');
-const diary = await optionalModule('diary');
-const dungeonIds = new Set(
-  ((dungeons.DUNGEONS ?? []) as { id: string }[]).map((d) => d.id)
-);
-
-function condProblems(c: Cond, where: string, out: string[]) {
-  for (const leaf of allLeaves(c)) {
-    const bad = (what: string) => out.push(`${where}: ${what}`);
-    if ('quest' in leaf && !storyIds.has(leaf.quest[0])) bad(`quest ${leaf.quest[0]}`);
-    if ('stage' in leaf && !storyIds.has(leaf.stage[0])) bad(`stage of ${leaf.stage[0]}`);
-    if ('claimed' in leaf && !storyIds.has(leaf.claimed) && !oldClaimable.has(leaf.claimed)) bad(`claimed ${leaf.claimed}`);
-    if ('starter' in leaf && !starterIds.has(leaf.starter[0])) bad(`starter ${leaf.starter[0]}`);
-    if ('skill' in leaf && !SKILL_KEYS.includes(leaf.skill[0])) bad(`skill ${leaf.skill[0]}`);
-    if ('has' in leaf && !has(ITEMS, leaf.has[0])) bad(`item ${leaf.has[0]}`);
-    if ('stat' in leaf && !statKeys.has(leaf.stat[0])) bad(`stat ${leaf.stat[0]}`);
-    if ('shrine' in leaf && !regionIds.has(leaf.shrine)) bad(`shrine ${leaf.shrine}`);
-    if ('flag' in leaf && !flagKeys.has(leaf.flag)) bad(`flag ${leaf.flag}`);
-  }
-}
+const dungeons = await optionalModule<{ id: string }[]>('dungeons', 'DUNGEONS', []);
+const diary = await optionalModule<unknown>('diary', 'DIARY', []);
+const dungeonIds = new Set(dungeons.map((d) => d.id));
 
 function effectProblems(e: Effect, where: string, out: string[]) {
   const bad = (what: string) => out.push(`${where}: ${what}`);
@@ -131,7 +106,7 @@ function treeProblems(d: Dialogue): string[] {
     const n = queue.pop()!;
     if (reached.has(n)) continue;
     reached.add(n);
-    queue.push(...(edges.get(n) ?? []));
+    queue.push(...edges.get(n)!);
   }
   for (const name of Object.keys(d.nodes)) if (!reached.has(name)) out.push(`${at(name)}: no path reaches it`);
   const ending = new Set(ends);

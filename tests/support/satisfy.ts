@@ -1,14 +1,17 @@
 // Plan Q5: makes a dialogue condition true the way play would, and walks a story quest through the real dialogue
 // functions. Used by the data tests (tests/story-data.test.ts); reads the live tables, so later slices are covered
 // without edits. Nothing here is a game rule: if a step cannot be made, it throws and the data test fails.
-import { OSRS_XP_TABLE } from '../../src/data/skills';
 import { existsSync } from 'node:fs';
+import { ITEMS } from '../../src/data/items';
+import { OSRS_XP_TABLE, SKILL_KEYS } from '../../src/data/skills';
 import { STORY_QUESTS } from '../../src/data/story';
-import { combatLevel, STARTER_QUESTS } from '../../src/state/adventure';
+import { WORLD_REGIONS } from '../../src/data/world';
+import { combatLevel, QUEST_DEFS, STARTER_QUESTS } from '../../src/state/adventure';
 import { chooseOption, evalCond, openDialogue, type Cond, type DialogueView } from '../../src/state/dialogue';
 import { applyState, cloneState } from '../../src/state/gameState';
 import { addItem, countItem } from '../../src/state/inventory';
-import { bump, stat } from '../../src/state/progress';
+import { bump, stat, STAT_KEYS } from '../../src/state/progress';
+import { defaultQuests, STARTER_ARRIVAL } from '../../src/state/quests';
 import { advanceStory, questStatus } from '../../src/state/story';
 import type { GameState } from '../../src/state/types';
 
@@ -16,6 +19,29 @@ import type { GameState } from '../../src/state/types';
 export const walkStats = { maxChoices: 0 };
 const MAX_CHOICES = 12;
 const COMBAT_SKILLS = ['attack', 'strength', 'defence', 'hitpoints', 'ranged', 'magic', 'prayer'];
+const storyIds = new Set(STORY_QUESTS.map((q) => q.id));
+const starterIds = new Set(STARTER_QUESTS.map((q) => q.id));
+/** The ids of the old quest tables a `claimed` leaf may name besides a story quest: the arrival, the chain, Stage 3's ten. */
+const oldClaimable = new Set<string>([STARTER_ARRIVAL, ...starterIds, ...QUEST_DEFS.map((q) => q.id)]);
+const regionIds = new Set((WORLD_REGIONS as { id: string }[]).map((r) => r.id));
+const statKeys = new Set(STAT_KEYS);
+const flagKeys = new Set(Object.entries(defaultQuests()).filter(([, v]) => typeof v === 'boolean').map(([k]) => k));
+
+/** Every leaf of `c` that names an id its table does not hold, as `<where>: <what>` lines pushed to `out`. */
+export function condProblems(c: Cond, where: string, out: string[]): void {
+  for (const leaf of allLeaves(c)) {
+    const bad = (what: string) => out.push(`${where}: ${what}`);
+    if ('quest' in leaf && !storyIds.has(leaf.quest[0])) bad(`quest ${leaf.quest[0]}`);
+    if ('stage' in leaf && !storyIds.has(leaf.stage[0])) bad(`stage of ${leaf.stage[0]}`);
+    if ('claimed' in leaf && !storyIds.has(leaf.claimed) && !oldClaimable.has(leaf.claimed)) bad(`claimed ${leaf.claimed}`);
+    if ('starter' in leaf && !starterIds.has(leaf.starter[0])) bad(`starter ${leaf.starter[0]}`);
+    if ('skill' in leaf && !SKILL_KEYS.includes(leaf.skill[0])) bad(`skill ${leaf.skill[0]}`);
+    if ('has' in leaf && !Object.hasOwn(ITEMS, leaf.has[0])) bad(`item ${leaf.has[0]}`);
+    if ('stat' in leaf && !statKeys.has(leaf.stat[0])) bad(`stat ${leaf.stat[0]}`);
+    if ('shrine' in leaf && !regionIds.has(leaf.shrine)) bad(`shrine ${leaf.shrine}`);
+    if ('flag' in leaf && !flagKeys.has(leaf.flag)) bad(`flag ${leaf.flag}`);
+  }
+}
 
 export function setSkill(state: GameState, key: string, lvl: number): void {
   const skill = state.skills[key];
@@ -49,13 +75,32 @@ export function mustLeaves(cond: Cond): Cond[] {
   return [cond];
 }
 
-/** Makes `cond` true. A `not` or an `any` is satisfied by its first workable branch; a `not` that is false is an error. */
+/**
+ * Makes `cond` true. An `any` tries each branch in order on a copy and keeps the first that can be made and then holds;
+ * a `not` already holds or is an error (nothing can be undone), so inside an `any` a true `not` moves on to the next branch.
+ */
 export function satisfy(state: GameState, cond: Cond): void {
   if ('all' in cond) {
     for (const c of cond.all) satisfy(state, c);
   } else if ('any' in cond) {
-    if (cond.any.length === 0) throw new Error('satisfy: an empty any can never hold');
-    satisfy(state, cond.any[0]);
+    const failures: string[] = [];
+    for (const branch of cond.any) {
+      const copy = cloneState(state);
+      try {
+        satisfy(copy, branch);
+      } catch (e) {
+        // A branch this walk cannot make: recorded, and the next branch is tried. Every other error is rethrown.
+        if (!(e instanceof Error) || !/^(satisfy|talkUntil): /.test(e.message)) throw e;
+        failures.push(e.message);
+        continue;
+      }
+      if (evalCond(copy, branch)) {
+        applyState(state, copy);
+        return;
+      }
+      failures.push(`satisfy: ${JSON.stringify(branch)} still false after satisfying it`);
+    }
+    throw new Error(`satisfy: no branch of ${JSON.stringify(cond)} can be made (${failures.join('; ')})`);
   } else if ('not' in cond) {
     if (evalCond(state, cond.not)) throw new Error(`satisfy: cannot undo ${JSON.stringify(cond.not)}`);
   } else if ('quest' in cond) {
@@ -106,7 +151,8 @@ export function satisfy(state: GameState, cond: Cond): void {
 
 /** An id of the old quest tables (the starter chain or Stage 3's ten): claimed without being played. */
 function claimOld(state: GameState, id: string): void {
-  if (STORY_QUESTS.some((q) => q.id === id)) return ensureDone(state, id);
+  if (storyIds.has(id)) return ensureDone(state, id);
+  if (!oldClaimable.has(id)) throw new Error(`satisfy: ${id} is not a quest id a save can claim`);
   const chain = STARTER_QUESTS.findIndex((q) => q.id === id);
   const ids = chain >= 0 ? STARTER_QUESTS.slice(0, chain + 1).map((q) => q.id) : [id];
   state.quests.claimed = [...new Set([...state.quests.claimed, ...ids])];
@@ -200,8 +246,14 @@ export function allLeaves(cond: Cond): Cond[] {
   return [cond];
 }
 
-/** The exports of a data module a later slice adds (`src/data/<name>.ts`); an empty record until it exists. */
-export async function optionalModule(name: string): Promise<Record<string, unknown>> {
+/**
+ * The export `key` of a data module a later slice adds (`src/data/<name>.ts`): `absent` only while the file does not
+ * exist; once it does, a missing export throws instead of reading as empty.
+ */
+export async function optionalModule<T>(name: string, key: string, absent: T): Promise<T> {
   const file = new URL(`../../src/data/${name}.ts`, import.meta.url);
-  return existsSync(file) ? ((await import(/* @vite-ignore */ file.href)) as Record<string, unknown>) : {};
+  if (!existsSync(file)) return absent;
+  const mod = (await import(/* @vite-ignore */ file.href)) as Record<string, unknown>;
+  if (!Object.hasOwn(mod, key)) throw new Error(`src/data/${name}.ts exists but has no export ${key}`);
+  return mod[key] as T;
 }
