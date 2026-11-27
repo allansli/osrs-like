@@ -5,7 +5,7 @@ import { nextTier, TIER_LABELS } from './post';
 import { playerChoseTier } from './photo';
 import { currentDayFrame, updateLighting } from './lighting';
 import { updateAir } from './atmosphere';
-import { applyZoneAir, handleZoneMonsterDied, isZoneMonster } from './zones';
+import { applyZoneAir, isZoneMonster } from './zones';
 import { updateSky } from './sky';
 import { updateCarpet } from './flora';
 import { updateParticles } from './particles';
@@ -712,7 +712,7 @@ export function updateMonsters(f: FrameState): void {
         const damage = ev.hit ? performMonsterHeavy(m, ev.attackId) : 0;
         SFX.play([...resolvePlan(cue), ...heavyImpactPlan(ev.hit, damage)], true);
       } else if (ev.kind === 'died') {
-        clearTelegraph(m); if (zoneDef) handleZoneMonsterDied(m);
+        clearTelegraph(m);
       } else if (ev.kind === 'phase') {
         handleBossPhase(m, ev.index);
       }

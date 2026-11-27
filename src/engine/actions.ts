@@ -50,7 +50,7 @@ import {
   weaponSpecial
 } from '../state/adventure';
 import { DUNGEONS } from '../data/dungeons';
-import { enterZone, isZoneNode, leaveZone } from './zones';
+import { enterZone, handleZoneMonsterDied, isZoneNode, leaveZone } from './zones';
 
 export function teleportToRegion(regionId?: string): void {
   const reg = WORLD_REGIONS.find((r: RegionDef) => r.id === regionId);
@@ -430,6 +430,7 @@ export function handleMonsterDeath(monster: MonsterEntity): void {
   if (player.targetEntity && player.targetEntity.ref === monster) {
     player.targetEntity = null;
   }
+  if (G.zone) handleZoneMonsterDied(monster);
   spawnBurst(monster.pos.clone().add(new THREE.Vector3(0, 0.8, 0)), 6, 0x64748b, 0.6, 1.4);
 
   if (BOSSES[monster.logic.typeKey]) {

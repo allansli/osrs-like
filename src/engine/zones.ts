@@ -324,8 +324,7 @@ export function leaveZone(): void {
   const { def, group } = G.zone;
 
   for (const m of zoneMonsters) {
-    const idx = G.monstersList.indexOf(m);
-    if (idx >= 0) G.monstersList.splice(idx, 1);
+    G.monstersList.splice(G.monstersList.indexOf(m), 1);
     const hIdx = G.worldInteractiveObjects.indexOf(m.rig.hitbox);
     if (hIdx >= 0) G.worldInteractiveObjects.splice(hIdx, 1);
     m.labelEl.remove();
@@ -335,9 +334,8 @@ export function leaveZone(): void {
   zoneMonsters.clear();
 
   for (const r of zoneNodes) {
-    const idx = G.resourceNodesList.indexOf(r);
-    if (idx >= 0) G.resourceNodesList.splice(idx, 1);
-    const colliders = r.group.children.filter((c) => c.userData?.isCollider || c.userData?.type === 'resource');
+    G.resourceNodesList.splice(G.resourceNodesList.indexOf(r), 1);
+    const colliders = r.group.children.filter((c) => c.userData.isCollider || c.userData.type === 'resource');
     for (const c of colliders) {
       const hIdx = G.worldInteractiveObjects.indexOf(c);
       if (hIdx >= 0) G.worldInteractiveObjects.splice(hIdx, 1);
@@ -384,7 +382,7 @@ export function handleZoneMonsterDied(m: MonsterEntity): void {
   if (opened.length > 0) {
     const toRemove: THREE.Object3D[] = [];
     G.zone!.group.traverse((child) => {
-      if (child.userData?.gateId && opened.includes(child.userData.gateId)) {
+      if (child.userData.gateId && opened.includes(child.userData.gateId)) {
         toRemove.push(child);
       }
     });
