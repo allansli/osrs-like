@@ -17,7 +17,14 @@ const SMITH_TABLE: Record<string, { input: Record<string, number>; req: number }
   smith_gilded_plate: { input: { rune_plate: 1, gold_bar: 3 }, req: 48 },
   smith_rune_scim: { input: { runite_bar: 4 }, req: 40 },
   smith_rune_legs: { input: { runite_bar: 4 }, req: 42 },
-  smith_rune_plate: { input: { runite_bar: 5 }, req: 45 }
+  smith_rune_plate: { input: { runite_bar: 5 }, req: 45 },
+  // Stage 6, slice 1 (D1, design 7.4): steel and blacksteel, two bars for the weapon and legs, three for the body.
+  smith_steel_sword: { input: { steel_bar: 2 }, req: 10 },
+  smith_steel_legs: { input: { steel_bar: 2 }, req: 12 },
+  smith_steel_plate: { input: { steel_bar: 3 }, req: 14 },
+  smith_black_scim: { input: { black_bar: 2 }, req: 15 },
+  smith_black_legs: { input: { black_bar: 2 }, req: 17 },
+  smith_black_plate: { input: { black_bar: 3 }, req: 19 }
 };
 
 function stateWith(smithing: number, items: Record<string, number>) {

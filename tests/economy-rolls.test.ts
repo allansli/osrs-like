@@ -56,17 +56,18 @@ describe('rollDrops', () => {
   });
 
   it('the number of draws is entries + kept coin entries', () => {
-    // chicken: bones 1.0, cooked_chicken 0.6, gp [6,18] 0.85. 3 entries.
-    const none = scripted([0.999, 0.999, 0.999]);
+    // chicken: bones 1.0, cooked_chicken 0.6, gp [6,18] 0.85, feather 0.8 x5 (Stage 6, D2: appended last). 4 entries.
+    const none = scripted([0.999, 0.999, 0.999, 0.999]);
     rollDrops('chicken', none.rand);
-    expect(none.draws()).toBe(3);
-    const withCoin = scripted([0.5, 0.5, 0.5, 0.5]);
+    expect(none.draws()).toBe(4);
+    const withCoin = scripted([0.5, 0.5, 0.5, 0.5, 0.5]);
     expect(rollDrops('chicken', withCoin.rand)).toEqual([
       { kind: 'item', id: 'bones', qty: 1 },
       { kind: 'item', id: 'cooked_chicken', qty: 1 },
-      { kind: 'gp', amount: 6 + Math.floor(0.5 * 13) }
+      { kind: 'gp', amount: 6 + Math.floor(0.5 * 13) },
+      { kind: 'item', id: 'feather', qty: 5 }
     ]);
-    expect(withCoin.draws()).toBe(4);
+    expect(withCoin.draws()).toBe(5);
   });
 });
 

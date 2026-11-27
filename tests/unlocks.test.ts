@@ -73,7 +73,9 @@ describe('forgeHint', () => {
   });
 
   it('is null for an item no smith or fletch recipe makes', () => {
-    expect(forgeHint('steel_longsword')).toBeNull();
+    // Stage 6 (D1, design 11.3 item 24): steel gear is forged now, so the case names a crossbow no recipe makes.
+    expect(FORGE_RECIPES.some((r) => r.output === 'rune_crossbow')).toBe(false);
+    expect(forgeHint('rune_crossbow')).toBeNull();
     expect(forgeHint('no_such_item')).toBeNull();
   });
 });
@@ -93,8 +95,8 @@ describe('unlockLine', () => {
   });
 
   it('shows the shop price alone for gear with no recipe', () => {
-    const line = unlockLine('Attack', 10, unlocksAt('attack', 10))!;
-    expect(line).toContain('<b>Steel Longsword</b> (shop 2,900 GP)');
+    const line = unlockLine('Ranged', 45, unlocksAt('ranged', 45))!;
+    expect(line).toContain('<b>Rune Crossbow</b> (shop 48,000 GP)');
     expect(line).not.toContain('forge');
   });
 

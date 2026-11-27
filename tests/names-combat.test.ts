@@ -23,7 +23,9 @@ const DENY = [
 const denied = (name: string) => DENY.filter((t) => name.toLowerCase().includes(t));
 
 // The eleven attacks, the boss, its title, the three phases, the blessing and the monsters of design 6.9.
-const ATTACK_NAMES = ['Tail Lash', 'Hexfall', 'Pinning Volley', 'Overhead Slam', 'Rootquake', 'Scorch Lane', 'Ember Cone', 'Tail Sweep', 'Slag Rain', 'Ashen Nova', 'Slagburst'];
+const ATTACK_NAMES = ['Tail Lash', 'Hexfall', 'Pinning Volley', 'Overhead Slam', 'Rootquake', 'Scorch Lane', 'Ember Cone', 'Tail Sweep', 'Slag Rain', 'Ashen Nova', 'Slagburst',
+  // Stage 6, design 7.10 (D1): the seven attacks of Marrowjaw, Matron Saltfang and the Kiln Warden.
+  'Toll Slam', 'Camp Sweep', 'Sting Arc', 'Brine Spit', 'Kiln Ring', 'Core Vent', 'Hammer Arc'];
 const OTHER_NAMES = [
   'Ashmantle the Slag Wyrm', 'Ashbreaker', 'Grounded', 'Rain of Slag', 'Fury', 'Lantern Vow',
   'Saltback Stalker', 'Thornwatch Marksman', 'Cinder Adept', 'Slag Brute'
