@@ -53,6 +53,7 @@ export type Dungeon = {
   loot: DungeonLoot;
   needs: Cond;
   solid?: [number, number, number, number][];
+  props?: { node: string; x: number; z: number; scale?: number; rotY?: number }[];
 };
 
 export const DUNGEONS: Dungeon[] = [
