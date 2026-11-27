@@ -9,7 +9,7 @@ import { SKILL_KEYS } from '../src/data/skills';
 import { STORY_QUESTS, type StoryQuest } from '../src/data/story';
 import { WORLD_REGIONS } from '../src/data/world';
 import { combatLevel, STARTER_QUESTS } from '../src/state/adventure';
-import type { Cond, Dialogue } from '../src/state/dialogue';
+import { evalCond, type Cond, type Dialogue } from '../src/state/dialogue';
 import { MAX_GP } from '../src/state/economy';
 import { createNewGameState } from '../src/state/gameState';
 import { countItem } from '../src/state/inventory';
@@ -128,6 +128,7 @@ describe('the walk: every quest, in table order, through the dialogue functions'
       while (s.progress!.story![q.id] < q.stages.length - 1) walkStage(s, q.id);
       const gpBefore = s.gp;
       const xpBefore = Object.fromEntries(Object.entries(s.skills).map(([k, v]) => [k, v.xp]));
+      const itemsBefore = q.reward.items.map((it) => countItem(s, it.id));
       walkStage(s, q.id);
       const paid = s.gp - gpBefore;
       if (paid !== Math.min(q.reward.gp, MAX_GP - gpBefore)) out.push(`${q.id}: gp moved by ${paid}, reward is ${q.reward.gp}`);
@@ -139,7 +140,10 @@ describe('the walk: every quest, in table order, through the dialogue functions'
       if (s.quests.claimed.filter((id) => id === q.id).length !== 1) out.push(`${q.id}: claimed ${s.quests.claimed.filter((id) => id === q.id).length} times`);
       if (s.progress?.story?.[q.id] !== undefined) out.push(`${q.id}: still in progress.story when done`);
       if (q.reward.title && s.quests.title !== q.reward.title) out.push(`${q.id}: title is ${s.quests.title}`);
-      for (const it of q.reward.items) if (countItem(s, it.id) < it.qty) out.push(`${q.id}: ${it.id} x${it.qty} not in the backpack`);
+      q.reward.items.forEach((it, i) => {
+        const got = countItem(s, it.id) - itemsBefore[i];
+        if (got !== it.qty) out.push(`${q.id}: ${it.id} moved by ${got} in the backpack, reward is ${it.qty}`);
+      });
       // Paid once: a second finish, a second start and a replay are all refused, and change nothing.
       const snap = JSON.stringify(s);
       expect(finishQuest(s, q.id).ok, `${q.id}: a second finish`).toBe(false);
@@ -167,6 +171,11 @@ describe('the walk: every quest, in table order, through the dialogue functions'
       const s = afterChain();
       for (const leaf of mustLeaves(q.needs)) if (!('combat' in leaf)) satisfy(s, leaf);
       resetCombat(s);
+      const undone = mustLeaves(q.needs).filter((l) => !('combat' in l) && !evalCond(s, l));
+      if (undone.length > 0) {
+        out.push(`${q.id}: taking the combat level down also undid ${JSON.stringify(undone)}`);
+        return;
+      }
       if (combatLevel(s) >= level) {
         out.push(`${q.id}: the base combat level ${combatLevel(s)} is not below its gate ${level}`);
       } else if (startQuest(s, q.id).ok) {

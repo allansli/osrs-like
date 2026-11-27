@@ -9,7 +9,7 @@ import { chooseOption, evalCond, openDialogue, type Cond, type DialogueView } fr
 import { applyState, cloneState } from '../../src/state/gameState';
 import { addItem, countItem } from '../../src/state/inventory';
 import { bump, stat } from '../../src/state/progress';
-import { advanceStory, questStatus, startQuest } from '../../src/state/story';
+import { advanceStory, questStatus } from '../../src/state/story';
 import type { GameState } from '../../src/state/types';
 
 /** The most choices one step of a walk (a start, a talk stage, the finish) needed, over every walk so far. */
@@ -173,7 +173,7 @@ export function walkStage(state: GameState, id: string): void {
     advanceStory(state);
     if (state.progress!.story![id] <= at) throw new Error(`satisfy: ${id} stage ${at} did not move`);
   } else {
-    talkUntil(state, stage.at, (s) => questStatus(s, id) === 'done' || (s.progress?.story?.[id] ?? -1) > at);
+    talkUntil(state, stage.at, (s) => questStatus(s, id) === 'done' || s.progress!.story![id] > at);
     advanceStory(state);
   }
 }
