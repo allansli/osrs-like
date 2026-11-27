@@ -5,6 +5,8 @@ import { weaponSpecial } from './adventure';
 import { canUseStyle } from './combat';
 import { openDialogue, chooseOption, type DialogueView, type DialogueEvent } from './dialogue';
 import { canEnter, openChest, type DungeonRun } from './dungeon';
+import { STORY_QUESTS } from '../data/story';
+import type { Cond } from './dialogue';
 import { useEmber } from './story';
 import { notePrayerOffered } from './quests';
 import { type CooldownClock, drink, eat } from './sustain';
@@ -23,7 +25,7 @@ export type PlayerCommand =
   | { kind: 'useEmber'; itemId: string; skillKey: string }
   | { kind: 'enterDungeon'; dungeonId: string }
   | { kind: 'leaveDungeon' }
-  | { kind: 'openChest'; rand?: () => number };
+  | { kind: 'openChest' };
 
 export interface CommandClocks {
   food: CooldownClock;
@@ -49,11 +51,9 @@ export function applyCommand(
   state: GameState,
   cmd: PlayerCommand,
   clocks: CommandClocks,
-  now: number,
-  run?: DungeonRun | null,
-  rand?: () => number
+  now: number
 ): CommandResult {
-  const result = executeCommand(state, cmd, clocks, now, run, rand);
+  const result = executeCommand(state, cmd, clocks, now);
   for (const listener of commandListeners) {
     listener(cmd, result);
   }
@@ -64,9 +64,7 @@ function executeCommand(
   state: GameState,
   cmd: PlayerCommand,
   clocks: CommandClocks,
-  now: number,
-  run?: DungeonRun | null,
-  rand?: () => number
+  now: number
 ): CommandResult {
   switch (cmd.kind) {
     case 'eat':
@@ -148,37 +146,47 @@ function executeCommand(
       };
     }
     case 'enterDungeon': {
-      const allDungeons = [...DUNGEONS, ...((DUNGEONS as unknown as { CAVES?: typeof DUNGEONS }).CAVES ?? [])];
-      const def = allDungeons.find((d) => d.id === cmd.dungeonId);
+      const def = DUNGEONS.find((d) => d.id === cmd.dungeonId);
       if (!def) {
         return { ok: false, reason: 'Unknown dungeon.' };
       }
       if (!canEnter(state, def)) {
-        return { ok: false, reason: 'Requirements not met.' };
+        return { ok: false, reason: `${def.name} needs ${describeNeeds(def.needs)}.` };
       }
       return { ok: true, reason: '' };
     }
     case 'leaveDungeon':
       return { ok: true, reason: '' };
-    case 'openChest': {
-      if (!run) {
-        return { ok: false, reason: 'No dungeon run active.' };
-      }
-      const def = DUNGEONS.find((d) => d.id === run.id);
-      if (!def) {
-        return { ok: false, reason: 'Unknown dungeon.' };
-      }
-      const rng = cmd.rand ?? rand;
-      if (!rng) {
-        return { ok: false, reason: 'Random source required.' };
-      }
-      const res = openChest(state, def, run, rng, now);
-      return { ok: res.ok, reason: res.reason ?? '' };
-    }
+    case 'openChest':
+      return { ok: false, reason: 'The chest opens through applyOpenChest.' };
     case 'attack':
     case 'move':
       return { ok: false, reason: 'Movement and attacks are handled by the engine.' };
     default:
       return { ok: false, reason: `Unknown command kind: ${(cmd as { kind: string }).kind}` };
   }
+}
+
+/** The openChest applier: the run and the random source are both required, the dispatcher supplies them. */
+export function applyOpenChest(
+  state: GameState,
+  run: DungeonRun,
+  rand: () => number,
+  now: number
+): CommandResult {
+  const def = DUNGEONS.find((d) => d.id === run.id)!;
+  const res = openChest(state, def, run, rand, now);
+  return { ok: res.ok, reason: res.reason ?? '' };
+}
+
+const questName = (id: string): string => STORY_QUESTS.find((q) => q.id === id)!.name;
+
+/** A dungeon's `needs` as a sentence fragment; a condition kind a door does not use throws. */
+export function describeNeeds(c: Cond): string {
+  if ('all' in c) return c.all.map(describeNeeds).join(', ');
+  if ('any' in c) return c.any.map(describeNeeds).join(' or ');
+  if ('combat' in c) return `Combat ${c.combat}`;
+  if ('stage' in c) return `${questName(c.stage[0])} (stage ${c.stage[1]})`;
+  if ('quest' in c) return `${questName(c.quest[0])} (${c.quest[1]})`;
+  throw new Error(`describeNeeds: unsupported condition ${JSON.stringify(c)}`);
 }

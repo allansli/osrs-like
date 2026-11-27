@@ -20,9 +20,13 @@ const ZONE_FOG_DENSITY = 0.025;
 // Set by enterZone and read only while G.zone is set.
 let overworldGrid = null as unknown as WalkGrid;
 let zoneFloor = null as unknown as THREE.Mesh;
-let zoneMonsters: MonsterEntity[] = [];
-let zoneNodes: ResourceNodeEntity[] = [];
+let zoneMonsters = new Set<MonsterEntity>();
+let zoneNodes = new Set<ResourceNodeEntity>();
 let zoneInteractiveObjects: THREE.Object3D[] = [];
+
+export const isZoneMonster = (m: MonsterEntity): boolean => zoneMonsters.has(m);
+/** A zone's nodes are gathered once a run (actions.ts never sets a respawn timer for them). */
+export const isZoneNode = (n: ResourceNodeEntity): boolean => zoneNodes.has(n);
 
 /** Every frame while in a zone, after updateAir: the shader fog (and, through updateSky, scene.fog) reads these uniforms. */
 export function applyZoneAir(): void {
@@ -226,8 +230,8 @@ export function enterZone(def: Dungeon): void {
   zoneFloor = floorMesh;
 
   // 7. Monsters, resource nodes, chest, exit door
-  zoneMonsters = [];
-  zoneNodes = [];
+  zoneMonsters = new Set();
+  zoneNodes = new Set();
   zoneInteractiveObjects = [];
 
   for (const camp of def.camps) {
@@ -238,18 +242,16 @@ export function enterZone(def: Dungeon): void {
         wander: m.wander,
         respawn: false
       });
-      if (G.monstersList.length > idxBefore) {
-        zoneMonsters.push(G.monstersList[G.monstersList.length - 1]);
-      }
+      if (G.monstersList.length === idxBefore) throw new Error(`enterZone: unknown monster type "${m.type}" in ${def.id}`);
+      zoneMonsters.add(G.monstersList[G.monstersList.length - 1]);
     }
   }
 
   for (const n of def.nodes) {
     const idxBefore = G.resourceNodesList.length;
-    spawnResourceNode(n.type, ox + n.x, oz + n.z, { respawn: false });
-    if (G.resourceNodesList.length > idxBefore) {
-      zoneNodes.push(G.resourceNodesList[G.resourceNodesList.length - 1]);
-    }
+    spawnResourceNode(n.type, ox + n.x, oz + n.z);
+    if (G.resourceNodesList.length === idxBefore) throw new Error(`enterZone: unknown node type "${n.type}" in ${def.id}`);
+    zoneNodes.add(G.resourceNodesList[G.resourceNodesList.length - 1]);
   }
 
   // Chest interactive object
@@ -330,7 +332,7 @@ export function leaveZone(): void {
     G.scene.remove(m.rig.group);
     disposeObject3D(m.rig.group);
   }
-  zoneMonsters = [];
+  zoneMonsters.clear();
 
   for (const r of zoneNodes) {
     const idx = G.resourceNodesList.indexOf(r);
@@ -345,7 +347,7 @@ export function leaveZone(): void {
     G.scene.remove(r.group);
     disposeObject3D(r.group);
   }
-  zoneNodes = [];
+  zoneNodes.clear();
 
   for (const obj of zoneInteractiveObjects) {
     const idx = G.worldInteractiveObjects.indexOf(obj);
@@ -371,26 +373,23 @@ export function leaveZone(): void {
 }
 
 export function handleZoneMonsterDied(m: MonsterEntity): void {
-  if (!G.zone || !G.zone.run) return;
-  const def = G.zone.def;
-  const prefix = `${def.id}:`;
-  if (!m.logic.campId?.startsWith(prefix)) return;
-  const localCampId = m.logic.campId.slice(prefix.length);
+  const def = G.zone!.def;
+  const localCampId = m.logic.campId!.slice(`${def.id}:`.length);
 
   const members = G.monstersList.filter((other) => other.logic.campId === m.logic.campId);
   const allDead = members.every((other) => isDown(other.logic) || other === m);
   if (!allDead) return;
 
-  const opened = runStep(G.zone.run, { campDead: localCampId });
+  const opened = runStep(G.zone!.run!, { campDead: localCampId });
   if (opened.length > 0) {
     const toRemove: THREE.Object3D[] = [];
-    G.zone.group.traverse((child) => {
+    G.zone!.group.traverse((child) => {
       if (child.userData?.gateId && opened.includes(child.userData.gateId)) {
         toRemove.push(child);
       }
     });
     for (const slab of toRemove) {
-      G.zone.group.remove(slab);
+      G.zone!.group.remove(slab);
       disposeObject3D(slab);
     }
 
@@ -399,7 +398,7 @@ export function handleZoneMonsterDied(m: MonsterEntity): void {
       .map((g) => g.id);
     const newWalk = zoneWalk(def, openGates);
     const newGrid = buildWalkGrid(newWalk, def.origin[0], def.origin[1], def.size);
-    G.zone.grid = newGrid;
+    G.zone!.grid = newGrid;
     G.walkGrid = newGrid;
   }
 }

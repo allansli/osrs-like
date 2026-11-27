@@ -5,7 +5,7 @@ import { nextTier, TIER_LABELS } from './post';
 import { playerChoseTier } from './photo';
 import { currentDayFrame, updateLighting } from './lighting';
 import { updateAir } from './atmosphere';
-import { applyZoneAir, handleZoneMonsterDied } from './zones';
+import { applyZoneAir, handleZoneMonsterDied, isZoneMonster } from './zones';
 import { updateSky } from './sky';
 import { updateCarpet } from './flora';
 import { updateParticles } from './particles';
@@ -285,10 +285,16 @@ export function updatePlayerIntent(f: FrameState): void {
           else if (act === 'forge') openSmithingModal();
           else if (act === 'worldmap') openWorldMapModal();
           else if (act === 'slayer') openQuestsModal('tasks');
-          else if (act === 'dialogue') addChatMessage(`${ref.name || 'Guard'}: "${ref.dialogue || 'Greetings, traveler.'}"`, 'combat');
-          else if (act === 'talk') dispatchCommand({ kind: 'talk', npcId: ref.npcId });
-          else if (act === 'door') G.zone ? dispatchCommand({ kind: 'leaveDungeon' }) : (ref.dungeonId && dispatchCommand({ kind: 'enterDungeon', dungeonId: ref.dungeonId }));
-          else if (act === 'chest') dispatchCommand({ kind: 'openChest', rand: Math.random });
+          else if (act === 'dialogue') {
+            const dlg = ref.dialogue || 'Greetings, traveler.';
+            const name = ref.name || 'Guard';
+            addChatMessage(`${name}: "${dlg}"`, 'combat');
+          }
+          else if (act === 'talk') {
+            dispatchCommand({ kind: 'talk', npcId: ref.npcId });
+          }
+          else if (act === 'door') { if (!G.zone) addChatMessage(ref.prompt, 'combat'); dispatchCommand(G.zone ? { kind: 'leaveDungeon' } : { kind: 'enterDungeon', dungeonId: ref.dungeonId }); }
+          else if (act === 'chest') dispatchCommand({ kind: 'openChest' });
           else if (act === 'altar') {
             if (target.intent === 'vow') {
               const res = buyVow(STATE);
@@ -647,12 +653,9 @@ export function updateMonsters(f: FrameState): void {
   tickMarks(player.marks, f.dt);
   tickWindupGates(sessionWindupGates, f.dt);
   const playerCombat = getCombatLevel();
-  const inZone = G.zone !== null;
   const zoneDef = G.zone?.def;
-  const playerSafe = inZone
-    ? (f.now < G.aggroGraceUntil || zoneSafe(zoneDef!, player.pos.x, player.pos.z))
-    : isPlayerSafe(player.pos.x, player.pos.z, f.now, G.aggroGraceUntil);
-  const camps = inZone ? zoneCamps(zoneDef!) : CAMPS;
+  const playerSafe = zoneDef ? f.now < G.aggroGraceUntil || zoneSafe(zoneDef, player.pos.x, player.pos.z) : isPlayerSafe(player.pos.x, player.pos.z, f.now, G.aggroGraceUntil);
+  const camps = zoneDef ? zoneCamps(zoneDef) : CAMPS;
   const pathBudget = { left: 2 };
   const grid = G.walkGrid;
   const n = G.monstersList.length;
@@ -662,16 +665,23 @@ export function updateMonsters(f: FrameState): void {
 
   for (let k = 0; k < n; k++) {
     const m = G.monstersList[(startIdx + k) % n];
-    const isZoneMonster = m.logic.campId ? m.logic.campId.includes(':') : m.pos.x >= 400;
-    if (inZone !== isZoneMonster) continue;
+    if (!!zoneDef !== isZoneMonster(m)) continue;
     const L = m.logic;
     const prevState = L.state;
     const prevTimer = L.timer;
     const fromX = m.pos.x;
     const fromZ = m.pos.z;
     const events = stepMonster(L, {
-      playerX: player.pos.x, playerZ: player.pos.z, playerDown: !!player.downed,
-      dt: f.dt, rand: Math.random, playerCombat, playerSafe, camps, grid, pathBudget,
+      playerX: player.pos.x,
+      playerZ: player.pos.z,
+      playerDown: !!player.downed,
+      dt: f.dt,
+      rand: Math.random,
+      playerCombat,
+      playerSafe,
+      camps,
+      grid,
+      pathBudget,
       windupGate: sessionWindupGates
     });
 
@@ -702,10 +712,7 @@ export function updateMonsters(f: FrameState): void {
         const damage = ev.hit ? performMonsterHeavy(m, ev.attackId) : 0;
         SFX.play([...resolvePlan(cue), ...heavyImpactPlan(ev.hit, damage)], true);
       } else if (ev.kind === 'died') {
-        clearTelegraph(m);
-        if (inZone) {
-          handleZoneMonsterDied(m);
-        }
+        clearTelegraph(m); if (zoneDef) handleZoneMonsterDied(m);
       } else if (ev.kind === 'phase') {
         handleBossPhase(m, ev.index);
       }
@@ -800,7 +807,6 @@ export function updateMonsters(f: FrameState): void {
 export function updateWorldTimers(f: FrameState): void {
   G.resourceNodesList.forEach((r: ResourceNodeEntity) => {
     if (r.depleted) {
-      if ((r as { respawn?: boolean }).respawn === false) return;
       r.respawnTimer -= f.dt;
       if (r.respawnTimer <= 0) {
         r.depleted = false;

@@ -21,6 +21,7 @@ import { EMITTERS } from '../data/look';
 import { registerEmitter } from './lighting';
 import { NPCS } from '../data/npcs';
 import { DUNGEONS } from '../data/dungeons';
+import { describeNeeds } from '../state/commands';
 
 export function buildBiomeLandmarks(): void {
   const sand = albedoMaterial(0xe7c07a, biomeAlbedoId('alkharid-sand'), { shade: 'cut' });
@@ -292,9 +293,7 @@ export function buildDungeonDoors(): void {
     sealAlbedoUvs(grp);
     addCartoonOutline(grp, 0.035);
 
-    const prompt = d.id === 'saltfang_warren'
-      ? 'Saltfang Warren (Combat 50). Requires Salt on the Wind (Chapter 3).'
-      : `${d.name}.`;
+    const prompt = `${d.name}: needs ${describeNeeds(d.needs)}.`;
 
     const uData = {
       type: 'interactive',

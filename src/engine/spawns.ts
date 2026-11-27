@@ -103,7 +103,7 @@ export function spawnMonster(
 }
 
 // Smooth Organic Branching Trees & Sculpted Weathered Ore Boulders
-export function spawnResourceNode(nodeKey: string, x: number, z: number, opts?: { respawn?: boolean }): void {
+export function spawnResourceNode(nodeKey: string, x: number, z: number): void {
   const def = (RESOURCE_NODES_DEF as Record<string, ResourceNodeDef | undefined>)[nodeKey];
   if (!def) return;
   const grp = new THREE.Group();
@@ -227,9 +227,6 @@ export function spawnResourceNode(nodeKey: string, x: number, z: number, opts?: 
     depleted: false,
     respawnTimer: 0
   };
-  if (opts?.respawn === false) {
-    (rObj as { respawn?: boolean }).respawn = false;
-  }
 
   const uData = { type: 'resource', entity: rObj, interactRadius: 3.4 };
   grp.userData = uData;

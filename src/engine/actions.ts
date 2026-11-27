@@ -3,7 +3,7 @@ import { WORLD_REGIONS, type RegionDef } from '../data/world';
 import { regionAt, getTerrainHeight } from '../state/terrain';
 import { player, camState, G, commandClocks, TICK_SEC, type MonsterEntity, type ResourceNodeEntity } from './context';
 import { planWalk, planEntityWalk, showClickMarker } from './input';
-import { applyCommand, type PlayerCommand, type CommandResult } from '../state/commands';
+import { applyCommand, applyOpenChest, type PlayerCommand, type CommandResult } from '../state/commands';
 import { applyDeathLoss, shouldRetaliate } from '../state/sustain';
 import { SFX } from './audio';
 import { bossDownPlan, impactPlan, phasePlan } from '../state/soundPlan';
@@ -50,7 +50,7 @@ import {
   weaponSpecial
 } from '../state/adventure';
 import { DUNGEONS } from '../data/dungeons';
-import { enterZone, leaveZone } from './zones';
+import { enterZone, isZoneNode, leaveZone } from './zones';
 
 export function teleportToRegion(regionId?: string): void {
   const reg = WORLD_REGIONS.find((r: RegionDef) => r.id === regionId);
@@ -147,16 +147,12 @@ export function dispatchCommand(cmd: PlayerCommand): CommandResult {
   const now = performance.now() / 1000;
 
   if (cmd.kind === 'enterDungeon') {
-    const def = DUNGEONS.find((d) => d.id === cmd.dungeonId);
-    if (!def) {
-      return { ok: false, reason: 'Unknown dungeon.' };
-    }
     const res = applyCommand(STATE, cmd, commandClocks, now);
     if (!res.ok) {
       addChatMessage(res.reason, 'combat');
       return res;
     }
-    enterZone(def);
+    enterZone(DUNGEONS.find((d) => d.id === cmd.dungeonId)!);
     return res;
   }
 
@@ -171,8 +167,7 @@ export function dispatchCommand(cmd: PlayerCommand): CommandResult {
   }
 
   if (cmd.kind === 'openChest') {
-    const run = G.zone?.run ?? null;
-    const res = applyCommand(STATE, cmd, commandClocks, Date.now(), run, cmd.rand ?? Math.random);
+    const res = applyOpenChest(STATE, G.zone!.run!, Math.random, Date.now());
     if (!res.ok) {
       addChatMessage(res.reason, 'combat');
       return res;
@@ -680,7 +675,7 @@ export function performResourceGather(node: ResourceNodeEntity): void {
 
     if (def.kind !== 'fish' || fishDepletes(Math.random())) {
       node.depleted = true;
-      node.respawnTimer = (node as { respawn?: boolean }).respawn === false ? Infinity : def.respawn! / 1000;
+      node.respawnTimer = isZoneNode(node) ? Infinity : def.respawn! / 1000;
       node.visualMesh.visible = false;
       node.depletedMesh.visible = true;
       if (def.kind === 'fish') SFX.spotEmpty();
