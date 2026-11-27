@@ -310,6 +310,7 @@ export function onGameContextMenu(e: MouseEvent): void {
     else if (ud.action === 'bank') label = 'Bank';
     else if (ud.action === 'shop') label = 'Trade';
     else if (ud.action === 'dialogue') label = `Talk-to ${ud.name}`;
+    else if (ud.action === 'talk') label = `Talk-to ${ud.name}`;
     const anchor = picked.entityHit!.object.getWorldPosition(new THREE.Vector3());
     options.push({
       label,

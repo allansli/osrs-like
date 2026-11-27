@@ -19,6 +19,7 @@ import { buildCapeVisual, buildWeaponVisual } from './playerGear';
 import { mountLoadout, moveToTodayPivot, type MountedRig } from './playerMesh';
 import { EMITTERS } from '../data/look';
 import { registerEmitter } from './lighting';
+import { NPCS } from '../data/npcs';
 
 export function buildBiomeLandmarks(): void {
   const sand = albedoMaterial(0xe7c07a, biomeAlbedoId('alkharid-sand'), { shade: 'cut' });
@@ -234,6 +235,7 @@ export function buildAllCitiesAndLandmarks(): void {
   createMerchantNPC(-7, 5, 'Shopkeeper Bob (Grand Emporium)', 0x1d4ed8);
   createMerchantNPC(78, -12, 'Varrock Trade Master', 0xd97706);
   createMerchantNPC(64, 62, 'Al-Kharid Bazaar Merchant', 0xb91c1c);
+  createPeople();
   createBankBooth(2.2, 4.2);
   createSlayerMaster(5.5, 8.5);
   buildBiomeLandmarks();
@@ -531,6 +533,32 @@ export function createMerchantNPC(x: number, z: number, name: string, tunicColor
     mountLoadout(mounted, { head: hatItem });
     addCartoonOutline(mounted.helmMesh!, 0.018);
   });
+}
+
+export function createPeople(): void {
+  for (const npc of NPCS) {
+    const y = getTerrainHeight(npc.x, npc.z);
+    const rig = buildHumanoidRig(npc.tunic, 0xfacc15, 0x334155, 1.02);
+    rig.group.position.set(npc.x, y, npc.z);
+    const uData = {
+      type: 'interactive',
+      action: 'talk',
+      npcId: npc.id,
+      name: npc.name,
+      interactRadius: 4
+    };
+    rig.group.userData = uData;
+    rig.hitbox.userData = uData;
+    G.worldInteractiveObjects.push(rig.hitbox);
+    G.scene.add(rig.group);
+    G.npcList.push({ pos: rig.group.position, name: npc.name, color: '#ffe642', yOffset: 2.85 });
+    Promise.all([loadBlenderHeroTemplate(), loadBlenderGearTemplate()]).then(([heroGltf]) => {
+      if (heroGltf) {
+        const anim = upgradeHumanoidRigWithGltf(rig, heroGltf, npc.tunic, 0xfacc15, 0x334155, { isPlayer: false });
+        if (anim) G.npcAnimatorsList.push(anim);
+      }
+    });
+  }
 }
 
 export function createCastleGuard(x: number, z: number, name: string, rotY = 0): void {

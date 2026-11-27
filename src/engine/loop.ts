@@ -46,7 +46,8 @@ import {
   performMonsterHeavy,
   finishRespawn,
   performResourceGather,
-  handleBossPhase
+  handleBossPhase,
+  dispatchCommand
 } from './actions';
 import { clearTelegraph, showTelegraph, updateTelegraphs } from './telegraphs';
 import { planEntityWalk } from './input';
@@ -82,8 +83,11 @@ import {
   updateTargetHud,
   updateVitalsBars,
   updateBossBar,
-  consumeUiRefreshRequest
+  consumeUiRefreshRequest,
+  showBanner
 } from '../ui/hud';
+import { advanceStory } from '../state/story';
+import { adventureTracker } from '../state/adventure';
 import {
   openShopModal,
   openBankModal,
@@ -283,6 +287,9 @@ export function updatePlayerIntent(f: FrameState): void {
             const dlg = ref.dialogue || 'Greetings, traveler.';
             const name = ref.name || 'Guard';
             addChatMessage(`${name}: "${dlg}"`, 'combat');
+          }
+          else if (act === 'talk') {
+            dispatchCommand({ kind: 'talk', npcId: ref.npcId } as any);
           }
           else if (act === 'altar') {
             if (target.intent === 'vow') {
@@ -851,6 +858,14 @@ export function updateOverlay(f: FrameState): void {
   if (vitalsTick >= 0.1) {
     vitalsTick = 0;
     updateVitalsBars();
+    const events = advanceStory(STATE);
+    if (events.length > 0) {
+      showBanner('Journal', 'Journal updated');
+      const tracker = adventureTracker(STATE);
+      el('quest-tracker-title').textContent = tracker.title;
+      el('quest-tracker-step').textContent = tracker.detail;
+      el('quest-tracker-fill').style.width = `${Math.round((tracker.done / Math.max(1, tracker.total)) * 100)}%`;
+    }
   }
   if (consumeUiRefreshRequest()) updateAllUI();
   G.labelTick += f.dt;
