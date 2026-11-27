@@ -185,8 +185,8 @@ const multOf = (m: Marks, boss: BossRow): number =>
   (markMultiplier as unknown as (mm: Marks, b: BossRow) => number)(m, boss);
 
 describe('the boss row (design 6.4)', () => {
-  it('BOSSES holds one row, ashmantle, with respawn 120, arena 12, title Ashbreaker, a 2 s opening and the mark of four for 12 s', () => {
-    expect(Object.keys(BOSSES as object)).toEqual([BOSS]);
+  it('BOSSES holds the ashmantle row, with respawn 120, arena 12, title Ashbreaker, a 2 s opening and the mark of four for 12 s', () => {
+    expect(Object.keys(BOSSES as object)).toContain(BOSS);
     const b = bossRow();
     expect(b.respawnSecs).toBe(120);
     expect(b.arenaRadius).toBe(12);

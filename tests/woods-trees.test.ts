@@ -131,8 +131,8 @@ function targets(): [string, number, number, number][] {
   ];
   expect(STATIONS).toHaveLength(9 + WORLD_REGIONS.length);
   expect(POIS).toHaveLength(7);
-  expect(members).toHaveLength(42);
-  expect(NODE_PLACEMENTS).toHaveLength(46);
+  expect(members).toHaveLength(48);
+  expect(NODE_PLACEMENTS).toHaveLength(49);
   return out;
 }
 
@@ -215,7 +215,7 @@ describe('woods trees: placement', () => {
   it('no tree is within 4.5 of a node, fishing spot, station or shrine', () => {
     expect(STATIONS).toHaveLength(9 + WORLD_REGIONS.length);
     expect(WORLD_REGIONS).toHaveLength(5);
-    expect(NODE_PLACEMENTS).toHaveLength(46);
+    expect(NODE_PLACEMENTS).toHaveLength(49);
     const points: [string, number, number][] = [
       ...STATIONS,
       ...NODE_PLACEMENTS.map((p): [string, number, number] => [p.type, p.x, p.z])
@@ -237,7 +237,7 @@ describe('woods trees: placement', () => {
   });
 
   it('no tree is inside any camp radius + 2', () => {
-    expect(CAMPS).toHaveLength(15);
+    expect(CAMPS).toHaveLength(18);
     for (const [x, z] of treeCentres()) {
       for (const c of CAMPS) {
         expect(Math.hypot(x - c.x, z - c.z), `${c.id} vs (${x}, ${z})`).toBeGreaterThan(c.radius + CAMP_EXTRA);

@@ -16,7 +16,11 @@ import { buildWalkGrid } from '../src/state/pathfind';
 const FILE = 'tests/fixtures/size-refactor-golden.json';
 const digest = (v: unknown): string => createHash('sha256').update(JSON.stringify(v)).digest('hex');
 
-function plans(): Record<string, unknown> {
+// Stage 6 (declared, design 11.3 item 22): the eleven attack rows that existed when the golden was taken. A later attack
+// adds keys; it must not change one of these.
+const OLD_ATTACKS = ['tail_lash', 'hexfall', 'pinning_volley', 'overhead_slam', 'rootquake', 'scorch_lane', 'ember_cone', 'tail_sweep', 'slag_rain', 'ashen_nova', 'slagburst'];
+
+function plans(ids: string[] = Object.keys(ATTACKS)): Record<string, unknown> {
   const out: Record<string, unknown> = {
     heavyTaken: sp.heavyTakenPlan(),
     dodged: sp.dodgedPlan(),
@@ -29,7 +33,7 @@ function plans(): Record<string, unknown> {
   for (const [inS, d] of [[true, 0], [true, 5], [false, 0], [false, 5]] as const) out[`heavyImpact ${inS} ${d}`] = sp.heavyImpactPlan(inS, d);
   for (const c of ['low', 'mid', 'high', 'fire'] as const) {
     out[`resolve ${c}`] = sp.resolvePlan(c);
-    for (const a of Object.values(ATTACKS)) out[`windup ${a.id} ${c}`] = sp.windupPlan(a, c);
+    for (const a of ids.map((id) => ATTACKS[id])) out[`windup ${a.id} ${c}`] = sp.windupPlan(a, c);
   }
   // Keys present with an undefined value would be lost by JSON: record the key lists too.
   for (const [k, p] of Object.entries(out)) out[`${k} keys`] = (p as object[]).map((v) => Object.keys(v).sort());
@@ -49,9 +53,9 @@ function meshData(mesh: THREE.Mesh): unknown {
   };
 }
 
-function telegraphs(): Record<string, string> {
+function telegraphs(ids: string[] = Object.keys(ATTACKS)): Record<string, string> {
   const out: Record<string, string> = {};
-  for (const id of Object.keys(ATTACKS)) {
+  for (const id of ids) {
     G.scene = new THREE.Scene();
     const monster = { telegraph: null } as unknown as MonsterEntity;
     const ms = ATTACKS[id].windupMs;
@@ -96,17 +100,20 @@ function monsterTrace(): string {
 }
 
 describe('review 17: refactors for bundle size keep every output', () => {
-  const current = { plans: digest(plans()), telegraphs: telegraphs(), monsters: monsterTrace() };
+  const current = { plans: digest(plans(OLD_ATTACKS)), telegraphs: telegraphs(), monsters: monsterTrace() };
   if (process.env.GOLDEN_WRITE === '1') writeFileSync(FILE, JSON.stringify(current, null, 2) + '\n');
   const golden = JSON.parse(readFileSync(FILE, 'utf8')) as typeof current;
 
-  it('every sound plan is unchanged', () => {
-    expect(current.plans).toBe(golden.plans);
+  it('every sound plan of the eleven original attacks is unchanged (the plans recomputed with the newer attacks removed)', () => {
+    expect(Object.keys(ATTACKS)).toEqual(expect.arrayContaining(OLD_ATTACKS));
+    expect(digest(plans(OLD_ATTACKS))).toBe(golden.plans);
   });
 
-  it('every telegraph mesh and fill step is unchanged', () => {
-    expect(Object.keys(golden.telegraphs).length).toBe(Object.keys(ATTACKS).length);
-    expect(current.telegraphs).toEqual(golden.telegraphs);
+  it('every telegraph mesh and fill step of the original attacks is unchanged; newer attacks only add keys', () => {
+    expect(Object.keys(golden.telegraphs).sort()).toEqual([...OLD_ATTACKS].sort());
+    const now = current.telegraphs;
+    for (const id of OLD_ATTACKS) expect(now[id], id).toBe(golden.telegraphs[id]);
+    expect(Object.keys(now).length).toBeGreaterThanOrEqual(OLD_ATTACKS.length);
   });
 
   it('every monster step on a walk grid is unchanged', () => {

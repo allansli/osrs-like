@@ -37,7 +37,7 @@ describe('world budget', () => {
     expect(TERRAIN_SEGMENTS).toBe(160);
   });
 
-  it('CAMPS hold 42 monsters', () => {
-    expect(CAMPS.reduce((s, c) => s + c.members.length, 0)).toBe(42);
+  it('CAMPS hold 48 monsters', () => {
+    expect(CAMPS.reduce((s, c) => s + c.members.length, 0)).toBe(48);
   });
 });

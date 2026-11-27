@@ -172,10 +172,10 @@ describe('scatter: clearances', () => {
 
   it('no instance is within 2.5 of a node, station, shrine or camp member home', () => {
     expect(STATIONS).toHaveLength(9 + WORLD_REGIONS.length);
-    expect(NODE_PLACEMENTS).toHaveLength(46);
-    expect(CAMPS).toHaveLength(15);
+    expect(NODE_PLACEMENTS).toHaveLength(49);
+    expect(CAMPS).toHaveLength(18);
     const members = CAMPS.flatMap((c) => c.members.map((m): [string, number, number] => [`${c.id} ${m.type}`, m.x, m.z]));
-    expect(members).toHaveLength(42);
+    expect(members).toHaveLength(48);
     const points: [string, number, number][] = [
       ...STATIONS,
       ...NODE_PLACEMENTS.map((n): [string, number, number] => [n.type, n.x, n.z]),

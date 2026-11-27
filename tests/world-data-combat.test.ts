@@ -68,7 +68,7 @@ describe('camps on the walk grid (design 6.1)', () => {
     const NODE_CLEAR = 2;
     const MAX_STEP = 0.8;
     const arenas = CAMPS.filter((c) => c.arenaRadius !== undefined);
-    expect(arenas.map((c) => c.id)).toEqual(['ashmantle']);
+    expect(arenas.map((c) => c.id).sort()).toEqual(['ashmantle', 'tollmaster']);
     for (const camp of arenas) {
       const R = camp.arenaRadius!;
       const big = R + BOSS_ARENA_MARGIN;

@@ -124,7 +124,10 @@ describe('model keys', () => {
       dark_ranger: 'dark_ranger',
       saltback_stalker: 'scorpion',
       thornwatch_marksman: 'dark_ranger',
-      ashmantle: 'elvarg_dragon'
+      ashmantle: 'elvarg_dragon',
+      cinder_adept: 'dark_wizard',
+      slag_brute: 'hill_giant',
+      marrowjaw: 'hill_giant'
     });
     expect(new Set(Object.values(keys).filter((_, i) => i < 10)).size).toBe(10);
   });
