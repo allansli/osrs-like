@@ -30,5 +30,10 @@ export const EXTRA_ITEMS = {
   steel_bar: { id: 'steel_bar', name: 'Steel Bar', type: 'bar', iconKind: 'bar', price: 140, color: 0x64748b, trim: 0xcbd5e1 },
   black_bar: { id: 'black_bar', name: 'Blacksteel Bar', type: 'bar', iconKind: 'bar', price: 180, color: 0x1e293b, trim: 0x475569 },
   sting_gland: { id: 'sting_gland', name: 'Sting Gland', type: 'resource', iconKind: 'potion', price: 100, color: 0x9333ea, trim: 0xd8b4fe },
-  mire_root: { id: 'mire_root', name: 'Mire Root', type: 'resource', iconKind: 'logs', price: 260, color: 0x65a30d, trim: 0x84cc16 }
+  mire_root: { id: 'mire_root', name: 'Mire Root', type: 'resource', iconKind: 'logs', price: 260, color: 0x65a30d, trim: 0x84cc16 },
+
+  // Stage 6, slice 2 (Q6, design 7.8): an ember is used from the backpack and gives its experience to a skill the player picks.
+  ember_faint: { id: 'ember_faint', name: 'Faint Ember', type: 'resource', iconKind: 'ore', price: 1, lampXp: 1000, color: 0x9a3412, trim: 0xfdba74 },
+  ember_steady: { id: 'ember_steady', name: 'Steady Ember', type: 'resource', iconKind: 'ore', price: 1, lampXp: 7500, color: 0xea580c, trim: 0xfde047 },
+  ember_bright: { id: 'ember_bright', name: 'Bright Ember', type: 'resource', iconKind: 'ore', price: 1, lampXp: 40000, color: 0xfbbf24, trim: 0xfef9c3 }
 };
