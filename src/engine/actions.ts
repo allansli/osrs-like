@@ -49,10 +49,12 @@ import {
   RESPAWN_SECONDS,
   weaponSpecial
 } from '../state/adventure';
+import { leaveZone } from './zones';
 
 export function teleportToRegion(regionId?: string): void {
   const reg = WORLD_REGIONS.find((r: RegionDef) => r.id === regionId);
   if (!reg) return;
+  if (G.zone) leaveZone();
   G.aggroGraceUntil = performance.now() + AGGRO_GRACE_MS;
   player.targetEntity = null;
   player.waypoints.length = 0;
@@ -578,6 +580,7 @@ export function handlePlayerDeath(): void {
 }
 
 export function finishRespawn(): void {
+  if (G.zone) leaveZone();
   G.aggroGraceUntil = performance.now() + AGGRO_GRACE_MS;
   applyRespawn(STATE);
   player.downed = false;

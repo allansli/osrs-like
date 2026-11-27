@@ -78,60 +78,90 @@ export function renderMinimap(): void {
   ctx.translate(cx, cy);
   ctx.rotate(camState.yaw - Math.PI);
 
-  WORLD_REGIONS.forEach((reg: RegionDef) => {
-    const rx = (reg.x - player.pos.x) * scale;
-    const rz = (reg.z - player.pos.z) * scale;
-    ctx.beginPath();
-    ctx.arc(rx, rz, reg.radius * scale * 0.75, 0, Math.PI * 2);
-    ctx.fillStyle = reg.color + '28';
-    ctx.fill();
-    ctx.strokeStyle = reg.color + '88';
+  if (G.zone) {
+    const { def, run } = G.zone;
+    const [ox, oz] = def.origin;
+    // Room rectangles
+    ctx.fillStyle = '#2c2520';
+    ctx.strokeStyle = '#4a3f35';
     ctx.lineWidth = 1.5;
-    ctx.stroke();
-  });
-
-  // River Strip
-  ctx.strokeStyle = '#223842';
-  ctx.lineWidth = 14;
-  ctx.beginPath();
-  for (let z = -110; z <= 110; z += 10) {
-    const wx = riverCenterX(z);
-    const px = (wx - player.pos.x) * scale;
-    const pz = (z - player.pos.z) * scale;
-    if (z === -110) ctx.moveTo(px, pz);
-    else ctx.lineTo(px, pz);
-  }
-  ctx.stroke();
-
-  // Paths
-  ctx.strokeStyle = '#473b30';
-  PATHS.forEach((path) => {
-    ctx.lineWidth = path.halfWidth * 2 * scale;
-    ctx.beginPath();
-    path.points.forEach(([wx, wz], i) => {
-      const px = (wx - player.pos.x) * scale;
-      const pz = (wz - player.pos.z) * scale;
-      if (i === 0) ctx.moveTo(px, pz);
-      else ctx.lineTo(px, pz);
-    });
-    ctx.stroke();
-  });
-
-  // Ridges
-  ctx.strokeStyle = '#1c1917';
-  ctx.lineWidth = 8;
-  RIDGES.forEach((ridge) => {
-    for (const span of ridgeSpans(ridge)) {
+    for (const [rx0, rz0, rx1, rz1] of Object.values(def.rooms)) {
+      const px = (ox + rx0 - player.pos.x) * scale;
+      const pz = (oz + rz0 - player.pos.z) * scale;
+      const pw = (rx1 - rx0) * scale;
+      const ph = (rz1 - rz0) * scale;
+      ctx.fillRect(px, pz, pw, ph);
+      ctx.strokeRect(px, pz, pw, ph);
+    }
+    // Gates
+    if (def.gates) {
+      for (const gate of def.gates) {
+        const [gx0, gz0, gx1, gz1] = gate.rect;
+        const px = (ox + gx0 - player.pos.x) * scale;
+        const pz = (oz + gz0 - player.pos.z) * scale;
+        const pw = (gx1 - gx0) * scale;
+        const ph = (gz1 - gz0) * scale;
+        const isOpen = run?.deadCamps ? gate.opensWhen.every((c) => run.deadCamps.includes(c)) : false;
+        ctx.fillStyle = isOpen ? '#15803d' : '#b45309';
+        ctx.fillRect(px, pz, pw, ph);
+      }
+    }
+  } else {
+    WORLD_REGIONS.forEach((reg: RegionDef) => {
+      const rx = (reg.x - player.pos.x) * scale;
+      const rz = (reg.z - player.pos.z) * scale;
       ctx.beginPath();
-      span.forEach(([wx, wz], i) => {
+      ctx.arc(rx, rz, reg.radius * scale * 0.75, 0, Math.PI * 2);
+      ctx.fillStyle = reg.color + '28';
+      ctx.fill();
+      ctx.strokeStyle = reg.color + '88';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    });
+
+    // River Strip
+    ctx.strokeStyle = '#223842';
+    ctx.lineWidth = 14;
+    ctx.beginPath();
+    for (let z = -110; z <= 110; z += 10) {
+      const wx = riverCenterX(z);
+      const px = (wx - player.pos.x) * scale;
+      const pz = (z - player.pos.z) * scale;
+      if (z === -110) ctx.moveTo(px, pz);
+      else ctx.lineTo(px, pz);
+    }
+    ctx.stroke();
+
+    // Paths
+    ctx.strokeStyle = '#473b30';
+    PATHS.forEach((path) => {
+      ctx.lineWidth = path.halfWidth * 2 * scale;
+      ctx.beginPath();
+      path.points.forEach(([wx, wz], i) => {
         const px = (wx - player.pos.x) * scale;
         const pz = (wz - player.pos.z) * scale;
         if (i === 0) ctx.moveTo(px, pz);
         else ctx.lineTo(px, pz);
       });
       ctx.stroke();
-    }
-  });
+    });
+
+    // Ridges
+    ctx.strokeStyle = '#1c1917';
+    ctx.lineWidth = 8;
+    RIDGES.forEach((ridge) => {
+      for (const span of ridgeSpans(ridge)) {
+        ctx.beginPath();
+        span.forEach(([wx, wz], i) => {
+          const px = (wx - player.pos.x) * scale;
+          const pz = (wz - player.pos.z) * scale;
+          if (i === 0) ctx.moveTo(px, pz);
+          else ctx.lineTo(px, pz);
+        });
+        ctx.stroke();
+      }
+    });
+  }
 
   // Resource Nodes (Muted Slate / Iron)
   G.resourceNodesList.forEach((r: ResourceNodeEntity) => {

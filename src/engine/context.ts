@@ -5,6 +5,7 @@ import type { BlenderHeroAnimator } from './blenderHero';
 import type { MonsterDef } from '../data/world';
 import type { MonsterLogic } from '../state/monsterAi';
 import type { WalkGrid } from '../state/pathfind';
+import type { Dungeon, DungeonRun } from '../state/dungeon';
 import type { TelegraphInstance } from './telegraphs';
 import { COMBAT_REST_SECS, type DeathOutcome } from '../state/sustain';
 import type { CommandClocks } from '../state/commands';
@@ -229,7 +230,16 @@ export interface EngineContext {
   lastLabelZ: number;
   aggroGraceUntil: number;
   walkGrid: WalkGrid;
+  groundMesh: THREE.Mesh;
+  zone: {
+    def: Dungeon;
+    run: DungeonRun | null;
+    grid: WalkGrid;
+    group: THREE.Group;
+  } | null;
 }
+
+let _groundMesh: THREE.Mesh | null = null;
 
 export const G: EngineContext = {
   scene: null as unknown as THREE.Scene,
@@ -266,5 +276,12 @@ export const G: EngineContext = {
   lastLabelX: 999,
   lastLabelZ: 999,
   aggroGraceUntil: 0,
-  walkGrid: null as unknown as WalkGrid
+  walkGrid: null as unknown as WalkGrid,
+  get groundMesh(): THREE.Mesh {
+    return _groundMesh ?? this.terrainMesh;
+  },
+  set groundMesh(mesh: THREE.Mesh) {
+    _groundMesh = mesh;
+  },
+  zone: null
 };

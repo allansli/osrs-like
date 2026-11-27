@@ -156,17 +156,33 @@ export function buildSky(): void {
   lastCloudTime = AIR.uTime.value;
 }
 
+let skyVisible = true;
+
+export function setSkyVisible(on: boolean): void {
+  skyVisible = on;
+  if (G.skyDomeMesh) G.skyDomeMesh.visible = on;
+  if (apronMesh) apronMesh.visible = on;
+  for (const group of cloudGroups) {
+    group.mesh.visible = on && GFX_TIERS[currentQuality].clouds;
+  }
+}
+
 export function updateSky(frame: DayFrame): void {
   // ponytail: polls the tier each frame because renderer.ts (applyQualityTier) is outside AR2's files; AR4b can call setAirTier there
   setAirTier(currentQuality);
   uNight.value = frame.keyIsMoon ? 1.0 : 0.0;
   G.skyDomeMesh.position.copy(G.camera.position);
-  (G.scene.fog as THREE.FogExp2).color.copy(AIR.uAirColor.value);
-  (G.scene.fog as THREE.FogExp2).density = AIR.uFogDensity.value;
 
-  apronMesh.material.color.copy(AIR.uAirColor.value).multiplyScalar(APRON_ALBEDO);
+  if (skyVisible) {
+    (G.scene.fog as THREE.FogExp2).color.copy(AIR.uAirColor.value);
+    (G.scene.fog as THREE.FogExp2).density = AIR.uFogDensity.value;
+    apronMesh.material.color.copy(AIR.uAirColor.value).multiplyScalar(APRON_ALBEDO);
+  } else {
+    G.skyDomeMesh.visible = false;
+    apronMesh.visible = false;
+  }
 
-  const cloudsEnabled = GFX_TIERS[currentQuality].clouds;
+  const cloudsEnabled = skyVisible && GFX_TIERS[currentQuality].clouds;
   const curTime = AIR.uTime.value;
   const dt = lastCloudTime > 0 ? Math.min(Math.max(curTime - lastCloudTime, 0), 0.1) : 0;
   lastCloudTime = curTime;

@@ -222,7 +222,7 @@ export function handleWorldHover(e: MouseEvent): void {
   G.mouseVec.y = -(e.clientY / window.innerHeight) * 2 + 1;
   G.raycaster.setFromCamera(G.mouseVec, G.camera);
   const hits = G.raycaster.intersectObjects(G.worldInteractiveObjects, false);
-  const groundHit = hits.find(h => h.object === G.terrainMesh);
+  const groundHit = hits.find(h => h.object === G.groundMesh);
   updateHoverTile(groundHit ? groundHit.point : null);
   if (hits.length > 0) {
     const ud = hits[0].object.userData;
@@ -265,7 +265,7 @@ export function pointerToWorld(clientX: number, clientY: number): PickResult {
   G.raycaster.setFromCamera(G.mouseVec, G.camera);
   const hits = G.raycaster.intersectObjects(G.worldInteractiveObjects, false);
   const entityHit = hits.find((hit) => hit.object.userData && hit.object.userData.type && hit.object.userData.type !== 'ground');
-  const ground = hits.find(h => h.object === G.terrainMesh) || null;
+  const ground = hits.find(h => h.object === G.groundMesh) || null;
   return { entityHit, ground };
 }
 
@@ -417,7 +417,7 @@ export function handleWorldClick(e: MouseEvent): void {
     const dist = Math.hypot(dx, dz);
     // The run-in rule (design 6.4): only a ranged or magic hero needs a re-click to mean "walk here"; melee re-attacks.
     if (atRange && player.targetEntity && player.targetEntity.type === 'monster' && player.targetEntity.ref === m && dist <= stopDist) {
-      const groundHit = hits.find((h) => h.object === G.terrainMesh);
+      const groundHit = hits.find((h) => h.object === G.groundMesh);
       if (groundHit) dispatchCommand({ kind: 'move', x: groundHit.point.x, z: groundHit.point.z });
       return;
     }

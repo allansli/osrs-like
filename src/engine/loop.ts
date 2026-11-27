@@ -391,7 +391,13 @@ export function updatePlayerMotion(f: FrameState): void {
   }
 
   if (player.currentSpeed > 0.02 && (f.moveDirX !== 0 || f.moveDirZ !== 0)) {
-    const stepped = moveWithCollision(player.pos.x, player.pos.z, f.moveDirX * player.currentSpeed * f.dt, f.moveDirZ * player.currentSpeed * f.dt);
+    const stepped = moveWithCollision(
+      player.pos.x,
+      player.pos.z,
+      f.moveDirX * player.currentSpeed * f.dt,
+      f.moveDirZ * player.currentSpeed * f.dt,
+      G.walkGrid.walkable
+    );
     player.pos.x = stepped.x;
     player.pos.z = stepped.z;
   }
