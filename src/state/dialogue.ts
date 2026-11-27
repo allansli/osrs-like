@@ -1,11 +1,14 @@
-import { NPCS, type NpcDef } from '../data/npcs';
+import { NPCS } from '../data/npcs';
 import { DIALOGUES } from '../data/dialogue';
+import { STORY_QUESTS } from '../data/story';
 import { STARTER_QUESTS, claimQuest, combatLevel, type QuestDef } from './adventure';
 import { applyState, cloneState } from './gameState';
 import { addItem, canAddItem, countItem, removeItem } from './inventory';
 import { bump, stat } from './progress';
 import { finishQuest, startQuest } from './story';
-import type { GameState } from './types';
+import type { GameState, QuestFlags } from './types';
+
+type BoolFlagKey = { [K in keyof QuestFlags]-?: QuestFlags[K] extends boolean ? K : never }[keyof QuestFlags];
 
 export type StoryQuestStatus = 'none' | 'active' | 'done';
 export type StarterQuestStatus = 'open' | 'ready';
@@ -25,7 +28,7 @@ export type Cond =
   | { has: [string, number] }
   | { stat: [string, number] }
   | { shrine: string }
-  | { flag: string };
+  | { flag: BoolFlagKey };
 
 export type Effect =
   | { start: string }
@@ -78,7 +81,7 @@ export type DialogueEvent =
   | { type: 'questStarted'; questId: string }
   | { type: 'questAdvanced'; questId: string }
   | { type: 'questFinished'; questId: string }
-  | { type: 'open'; target: DialogueOpenTarget; station?: DialogueOpenTarget }
+  | { type: 'open'; target: DialogueOpenTarget }
   | { type: 'enter'; dungeonId: string };
 
 export interface ChooseResult {
@@ -127,13 +130,13 @@ export function evalCond(state: GameState, cond: Cond): boolean {
       }
     }
     if (!openDef || openDef.id !== starterQuestId) return false;
-    if (mode === 'open') return true;
-    if (mode === 'ready') return openDef.steps.every((step) => step.met(state));
-    return false;
+    return mode === 'open' || openDef.steps.every((step) => step.met(state));
   }
   if ('skill' in cond) {
     const [skillKey, minLevel] = cond.skill;
-    return (state.skills[skillKey]?.lvl ?? 0) >= minLevel;
+    const skill = state.skills[skillKey];
+    if (!skill) throw new Error(`Unknown skill in condition: ${skillKey}`);
+    return skill.lvl >= minLevel;
   }
   if ('combat' in cond) {
     return combatLevel(state) >= cond.combat;
@@ -153,25 +156,23 @@ export function evalCond(state: GameState, cond: Cond): boolean {
     return Boolean(state.shrines[cond.shrine]);
   }
   if ('flag' in cond) {
-    return Boolean((state.quests as unknown as Record<string, unknown>)[cond.flag]);
+    return state.quests[cond.flag];
   }
   throw new Error(`Unknown condition: ${JSON.stringify(cond)}`);
 }
 
 export function openDialogue(state: GameState, npcId: string): DialogueView | null {
-  const npcsList: readonly NpcDef[] = Array.isArray(NPCS) ? NPCS : Object.values(NPCS);
-  const npc = npcsList.find((n) => n.id === npcId);
+  const npc = NPCS.find((n) => n.id === npcId);
   if (!npc) return null;
 
-  const dialoguesList: readonly Dialogue[] = Array.isArray(DIALOGUES) ? DIALOGUES : Object.values(DIALOGUES);
-  const dlg = dialoguesList.find((d) => d.npc === npcId);
+  const dlg = DIALOGUES.find((d) => d.npc === npcId);
   if (!dlg) return null;
 
   const greet = dlg.greet.find((g) => !g.when || evalCond(state, g.when));
   if (!greet) return null;
 
   const node = dlg.nodes[greet.node];
-  if (!node) return null;
+  if (!node) throw new Error(`Dialogue ${npcId}: greet names missing node ${greet.node}`);
 
   bump(state, `talk:${npcId}`);
 
@@ -193,12 +194,10 @@ export function chooseOption(
   nodeId: string,
   index: number
 ): ChooseResult {
-  const npcsList: readonly NpcDef[] = Array.isArray(NPCS) ? NPCS : Object.values(NPCS);
-  const npc = npcsList.find((n) => n.id === npcId);
+  const npc = NPCS.find((n) => n.id === npcId);
   if (!npc) return { ok: false, reason: 'Unknown person', events: [] };
 
-  const dialoguesList: readonly Dialogue[] = Array.isArray(DIALOGUES) ? DIALOGUES : Object.values(DIALOGUES);
-  const dlg = dialoguesList.find((d) => d.npc === npcId);
+  const dlg = DIALOGUES.find((d) => d.npc === npcId);
   if (!dlg) return { ok: false, reason: 'No dialogue for person', events: [] };
 
   const node = dlg.nodes[nodeId];
@@ -231,24 +230,29 @@ export function chooseOption(
         }
         removeItem(copy, itemId, qty);
       } else if ('advance' in effect) {
-        if (!copy.progress) copy.progress = {};
-        if (!copy.progress.story) copy.progress.story = {};
-        const current = copy.progress.story[effect.advance] ?? 0;
-        copy.progress.story[effect.advance] = current + 1;
+        const questId = effect.advance;
+        const quest = STORY_QUESTS.find((q) => q.id === questId);
+        if (!quest) throw new Error(`Dialogue ${npcId}: advance names unknown quest ${questId}`);
+        if (copy.quests.claimed.includes(questId)) return { ok: false, reason: 'That quest is already finished.', events: [] };
+        const current = copy.progress?.story?.[questId];
+        if (current === undefined) return { ok: false, reason: 'That quest is not active.', events: [] };
+        if (quest.stages[current].kind !== 'talk') return { ok: false, reason: 'That quest stage is not a conversation.', events: [] };
+        if (current + 1 >= quest.stages.length) return { ok: false, reason: 'That quest has no later stage.', events: [] };
+        copy.progress!.story![questId] = current + 1;
         events.push({ type: 'questAdvanced', questId: effect.advance });
       } else if ('start' in effect) {
         const res = startQuest(copy, effect.start);
-        if (!res.ok) return { ok: false, reason: res.reason ?? 'Cannot start quest.', events: [] };
+        if (!res.ok) return { ok: false, reason: res.reason, events: [] };
         events.push({ type: 'questStarted', questId: effect.start });
       } else if ('finish' in effect) {
         const res = finishQuest(copy, effect.finish);
-        if (!res.ok) return { ok: false, reason: res.reason ?? 'Cannot finish quest.', events: [] };
+        if (!res.ok) return { ok: false, reason: res.reason, events: [] };
         events.push({ type: 'questFinished', questId: effect.finish });
       } else if ('claimStarter' in effect) {
         const res = claimQuest(copy, effect.claimStarter);
         if (!res.ok) return { ok: false, reason: res.reason, events: [] };
       } else if ('open' in effect) {
-        events.push({ type: 'open', target: effect.open, station: effect.open });
+        events.push({ type: 'open', target: effect.open });
       } else if ('enter' in effect) {
         events.push({ type: 'enter', dungeonId: effect.enter });
       } else {
@@ -264,9 +268,7 @@ export function chooseOption(
   }
 
   const nextNode = dlg.nodes[option.goto];
-  if (!nextNode) {
-    return { ok: true, view: null, events };
-  }
+  if (!nextNode) throw new Error(`Dialogue ${npcId}: option goes to missing node ${option.goto}`);
 
   const nextView: DialogueView = {
     npcId,

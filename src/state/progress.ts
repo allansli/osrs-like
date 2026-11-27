@@ -12,9 +12,7 @@ const statKeysSet = new Set<string>();
 for (const k of Object.keys(MONSTER_TYPES)) statKeysSet.add(`kill:${k}`);
 for (const n of Object.values(RESOURCE_NODES_DEF)) statKeysSet.add(`gather:${(n as { item: string }).item}`);
 for (const r of FORGE_RECIPES) statKeysSet.add(`craft:${r.id}`);
-for (const npc of (Array.isArray(NPCS) ? NPCS : Object.values(NPCS))) {
-  statKeysSet.add(`talk:${(npc as { id: string }).id}`);
-}
+for (const npc of NPCS) statKeysSet.add(`talk:${npc.id}`);
 statKeysSet.add('bury');
 statKeysSet.add('vows');
 statKeysSet.add('deaths');
@@ -22,11 +20,9 @@ statKeysSet.add('deaths');
 export const STAT_KEYS: readonly string[] = Object.freeze(Array.from(statKeysSet));
 const STAT_SET = new Set(STAT_KEYS);
 
-// Q2 (STORY_QUESTS), Y2 (diary table) and Z2 (DUNGEONS) add these tables; until then the reader knows no ids in these families.
+// Y2 (diary table) and Z2 (DUNGEONS) add these tables; until then the reader knows no ids in these families.
 const STORY_QUEST_STAGES: Record<string, number> = {};
-for (const q of (Array.isArray(STORY_QUESTS) ? STORY_QUESTS : Object.values(STORY_QUESTS))) {
-  STORY_QUEST_STAGES[(q as { id: string }).id] = (q as { stages: unknown[] }).stages.length;
-}
+for (const q of STORY_QUESTS) STORY_QUEST_STAGES[q.id] = q.stages.length;
 const KNOWN_DIARY_TIERS = new Set<string>();
 const KNOWN_DUNGEONS: readonly string[] = [];
 
