@@ -3,6 +3,7 @@ import { PRAYERS } from '../data/magic';
 import { weaponSpecial } from './adventure';
 import { canUseStyle } from './combat';
 import { openDialogue, chooseOption, type DialogueView, type DialogueEvent } from './dialogue';
+import { useEmber } from './story';
 import { notePrayerOffered } from './quests';
 import { type CooldownClock, drink, eat } from './sustain';
 import type { GameState } from './types';
@@ -16,7 +17,8 @@ export type PlayerCommand =
   | { kind: 'style'; style: string }
   | { kind: 'special' }
   | { kind: 'talk'; npcId: string }
-  | { kind: 'choose'; npcId: string; nodeId: string; index: number };
+  | { kind: 'choose'; npcId: string; nodeId: string; index: number }
+  | { kind: 'useEmber'; itemId: string; skillKey: string };
 
 export interface CommandClocks {
   food: CooldownClock;
@@ -127,6 +129,13 @@ function executeCommand(
         reason: res.reason ?? '',
         view: res.view,
         events: res.events
+      };
+    }
+    case 'useEmber': {
+      const res = useEmber(state, cmd.itemId, cmd.skillKey);
+      return {
+        ok: res.ok,
+        reason: res.ok ? '' : res.reason
       };
     }
     case 'attack':

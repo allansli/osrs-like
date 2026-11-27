@@ -24,6 +24,7 @@ import { SPELLS } from '../data/magic';
 import { dispatchCommand } from '../engine/actions';
 import { getSkillSvg } from './icons';
 import { closeDialogue } from './dialogue';
+import { renderJournal, setupLogTabs, openEmberModal } from './journal';
 import {
   renderShopModal as renderShopModalUi,
   renderForge,
@@ -154,6 +155,10 @@ export function handleInventoryClick(index: number): void {
   const shopOpen = el('shop-modal').classList.contains('open');
   if (shopOpen) {
     sellInventoryItem(index);
+    return;
+  }
+  if (typeof item.lampXp === 'number') {
+    openEmberModal(item.id);
     return;
   }
   if (isLogId(item.id)) {
@@ -476,6 +481,8 @@ export function openBankModal(): void {
 
 export function openQuestsModal(): void {
   openModal('quest-modal');
+  setupLogTabs();
+  renderJournal();
   renderQuests();
 }
 

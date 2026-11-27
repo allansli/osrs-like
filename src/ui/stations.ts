@@ -545,6 +545,7 @@ export function renderWorldMap(highlightId?: string | null): void {
 export function renderQuests(): void {
   const host = document.getElementById('quest-list');
   if (!host) return;
+  const prevScroll = host.scrollTop;
   const task = STATE.quests.slayer;
   const taskLine = task && task.remaining > 0
     ? `<b>${task.name}</b> — ${task.remaining} / ${task.total} remaining`
@@ -586,6 +587,7 @@ export function renderQuests(): void {
   host.querySelectorAll<HTMLButtonElement>('[data-locate]').forEach((btn) => {
     btn.addEventListener('click', () => bridge.locateRegion(btn.dataset.locate || ''));
   });
+  host.scrollTop = prevScroll;
 }
 
 export function renderForge(): void {

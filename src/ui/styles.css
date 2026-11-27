@@ -2157,3 +2157,56 @@
     border-radius: 2px;
     flex-shrink: 0;
   }
+
+  /* Adventure Log Tabs & Journal (Q9) */
+  .log-tab-bar {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  #quest-list.tab-content {
+    display: none;
+  }
+  #quest-list.tab-content.active {
+    display: grid;
+  }
+
+  .diary-empty {
+    color: var(--ui-bone-dim);
+    font-style: italic;
+    padding: 24px;
+    text-align: center;
+  }
+
+  .journal-section {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+
+  .journal-finished-details {
+    margin-top: 12px;
+  }
+
+  .journal-done-item {
+    color: var(--ui-bone-dim);
+    font-size: 0.8125rem;
+    padding: 4px 0 4px 12px;
+  }
+
+  .journal-empty-line {
+    color: var(--ui-bone-dim);
+    font-size: 0.8125rem;
+    padding: 4px 0;
+  }
+
+  #ember-modal .modal-window {
+    max-width: 440px;
+  }
+
+  .ember-skills-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-top: 10px;
+  }

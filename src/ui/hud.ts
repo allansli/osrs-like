@@ -22,6 +22,7 @@ import {
   renderQuests,
   syncSettingsButtons
 } from './stations';
+import { renderJournal } from './journal';
 import { cycleTimeOfDay } from '../engine/worldMesh';
 import { isDown } from '../state/monsterAi';
 import { player, commandClocks, type MonsterEntity, type ResourceNodeEntity } from '../engine/context';
@@ -132,8 +133,14 @@ export function showBanner(kicker: string, message: string): void {
 }
 
 export function switchTab(tabName: string): void {
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  const panel = document.getElementById('right-panel');
+  if (panel) {
+    panel.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    panel.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  } else {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  }
   const btn = el('tab-btn-' + tabName);
   const content = el('tab-' + tabName);
   btn.classList.add('active');
@@ -418,7 +425,10 @@ export function updateAllUI(): void {
   if (bankOpen.classList.contains('open')) renderBankModal();
   if (forgeOpen.classList.contains('open')) renderSmithingModal();
   if (mapOpen.classList.contains('open')) renderWorldMap();
-  if (questOpen.classList.contains('open')) renderQuests();
+  if (questOpen.classList.contains('open')) {
+    renderQuests();
+    renderJournal();
+  }
 }
 
 export function updateTargetHud(): void {

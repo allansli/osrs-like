@@ -387,7 +387,30 @@
       <h2 id="quest-modal-title">Adventure Log</h2>
       <button type="button" class="modal-close" data-action="closeModals" aria-label="Close">X</button>
     </div>
-    <div class="modal-body" id="quest-list"></div>
+    <div class="tab-bar log-tab-bar" role="tablist">
+      <button type="button" class="tab-btn active" id="log-tab-btn-journal" role="tab" aria-selected="true" aria-controls="log-tab-journal">Journal</button>
+      <button type="button" class="tab-btn" id="log-tab-btn-tasks" role="tab" aria-selected="false" aria-controls="quest-list">Tasks</button>
+      <button type="button" class="tab-btn" id="log-tab-btn-diary" role="tab" aria-selected="false" aria-controls="log-tab-diary">Diary</button>
+    </div>
+    <div class="modal-body tab-content active" id="log-tab-journal" role="tabpanel" aria-labelledby="log-tab-btn-journal"></div>
+    <div class="modal-body tab-content" id="quest-list" role="tabpanel" aria-labelledby="log-tab-btn-tasks"></div>
+    <div class="modal-body tab-content" id="log-tab-diary" role="tabpanel" aria-labelledby="log-tab-btn-diary">
+      <div class="diary-empty">Nothing recorded yet.</div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: EMBER SKILL SELECTION -->
+<div class="modal-backdrop" id="ember-modal">
+  <div class="modal-window ui-panel" role="dialog" aria-modal="true" aria-labelledby="ember-modal-title">
+    <div class="modal-header">
+      <h2 id="ember-modal-title">Choose a Skill</h2>
+      <button type="button" class="modal-close" data-action="closeModals" aria-label="Close">X</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-subtext" id="ember-modal-desc">Select a skill to empower:</div>
+      <div class="ember-skills-grid" id="ember-skills-grid"></div>
+    </div>
   </div>
 </div>
 
