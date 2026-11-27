@@ -1,0 +1,195 @@
+{
+ "renderer": "ANGLE (Microsoft Corporation, D3D12 (NVIDIA GeForce RTX 4070 Laptop GPU), OpenGL 4.6)",
+ "scenes": {
+  "i_exit_door": {
+   "pageErrors": [],
+   "shots": [
+    {
+     "file": "i1-exit-door.jpg",
+     "heroAt": [
+      1012,
+      634
+     ],
+     "camera": {
+      "local": [
+       11.99,
+       40.97
+      ],
+      "height": 9.02,
+      "room": "entry",
+      "camState": {
+       "yaw": 3.14,
+       "pitch": 0.8,
+       "distance": 10
+      }
+     },
+     "hp": 70,
+     "maxHp": 70,
+     "pos": [
+      1012,
+      634
+     ],
+     "target": null,
+     "deathOverlay": false,
+     "perfHud": [
+      "48 FPS (20.7ms)",
+      "979 calls • 588k tris"
+     ],
+     "chatTail": [
+      "Use WASD / Arrows or Click anywhere to move, fight monsters, chop trees, mine ores, or fish.",
+      "You arrive with nothing. The tracker under your health shows your first task: speak with the task master in the courtyard.",
+      "The courtyard holds the Bank booth, the General Store, and the Anvil. Walk up to use them. Press F1–F6 to switch panels and Esc to close a window.",
+      "Slagfall Terrace: nothing is needed."
+     ]
+    },
+    {
+     "file": "i2-out-by-the-door.jpg",
+     "hp": 70,
+     "maxHp": 70,
+     "pos": [
+      -84,
+      98
+     ],
+     "target": null,
+     "deathOverlay": false,
+     "perfHud": [
+      "60 FPS (16.7ms)",
+      "189 calls • 290k tris"
+     ],
+     "chatTail": [
+      "Use WASD / Arrows or Click anywhere to move, fight monsters, chop trees, mine ores, or fish.",
+      "You arrive with nothing. The tracker under your health shows your first task: speak with the task master in the courtyard.",
+      "The courtyard holds the Bank booth, the General Store, and the Anvil. Walk up to use them. Press F1–F6 to switch panels and Esc to close a window.",
+      "Slagfall Terrace: nothing is needed."
+     ],
+     "mobs": [
+      {
+       "type": "lesser_demon",
+       "camp": "slagfall_cave:front",
+       "state": "idle",
+       "hp": 125,
+       "at": [
+        1036,
+        630
+       ],
+       "home": [
+        1036,
+        630
+       ],
+       "timer": 0,
+       "windup": null,
+       "visible": false
+      },
+      {
+       "type": "lesser_demon",
+       "camp": "slagfall_cave:front",
+       "state": "idle",
+       "hp": 125,
+       "at": [
+        1036,
+        638
+       ],
+       "home": [
+        1036,
+        638
+       ],
+       "timer": 0,
+       "windup": null,
+       "visible": false
+      },
+      {
+       "type": "ember_hurler",
+       "camp": "slagfall_cave:front",
+       "state": "idle",
+       "hp": 105,
+       "at": [
+        1044,
+        634
+       ],
+       "home": [
+        1044,
+        634
+       ],
+       "timer": 0,
+       "windup": null,
+       "visible": false
+      },
+      {
+       "type": "lesser_demon",
+       "camp": "slagfall_cave:back",
+       "state": "idle",
+       "hp": 125,
+       "at": [
+        1066,
+        634
+       ],
+       "home": [
+        1066,
+        634
+       ],
+       "timer": 0,
+       "windup": null,
+       "visible": false
+      },
+      {
+       "type": "ember_hurler",
+       "camp": "slagfall_cave:back",
+       "state": "idle",
+       "hp": 105,
+       "at": [
+        1074,
+        628
+       ],
+       "home": [
+        1074,
+        628
+       ],
+       "timer": 0,
+       "windup": null,
+       "visible": false
+      },
+      {
+       "type": "ember_hurler",
+       "camp": "slagfall_cave:back",
+       "state": "idle",
+       "hp": 105,
+       "at": [
+        1074,
+        640
+       ],
+       "home": [
+        1074,
+        640
+       ],
+       "timer": 0,
+       "windup": null,
+       "visible": false
+      }
+     ]
+    }
+   ],
+   "door": {
+    "at": [
+     604,
+     116
+    ],
+    "label": "Interact with Slagfall Terrace"
+   },
+   "props": {
+    "World_obsidian_spire": 5,
+    "World_lava_fissure": 22,
+    "meshes": 302,
+    "visibleMeshesInCaveArea": 346
+   },
+   "exitDoor": {
+    "at": [
+     592,
+     140
+    ],
+    "label": "Interact with Doorway (Leave)"
+   },
+   "exitWaitMs": 110
+  }
+ },
+ "n": 1
+}

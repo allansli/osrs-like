@@ -102,11 +102,15 @@ const caveMobs = (page) => page.evaluate(() => {
 
 // The cave's props (spires on the pillars, fissures along the walls) and the overworld door's figure count.
 const caveProps = (page) => page.evaluate(() => {
-  const n = { World_obsidian_spire: 0, World_lava_fissure: 0 };
+  const n = { World_obsidian_spire: 0, World_lava_fissure: 0, meshes: 0, visibleMeshesInCaveArea: 0 };
   for (const sc of window.__scenes) sc.traverse((o) => {
+    if (o.isMesh && o.visible) {
+      const p = o.getWorldPosition(o.position.clone());
+      if (p.x > 900 && p.z > 550) n.visibleMeshesInCaveArea++;
+    }
     if (!(o.name in n)) return;
     const p = o.getWorldPosition(o.position.clone());
-    if (p.x > 900 && p.z > 550) n[o.name]++;
+    if (p.x > 900 && p.z > 550) { n[o.name]++; o.traverse((c) => { if (c.isMesh) n.meshes++; }); }
   });
   return n;
 });
@@ -205,7 +209,7 @@ async function scenes(browser) {
     await done('a_entry', s, ctx, errors);
   }
 
-  // B: the camera at a wall corner of the entry room (local 6, 28: 2 from the west wall and the south wall), at four
+  // B: the camera at a wall corner of the entry room (local 6, 28: 2 from the west wall and the north wall, -z), at four
   // yaws with the pitch low and the arm long, then at the highest pitch and the longest arm.
   if (!ONLY || ONLY.includes('B')) {
     const { ctx, page, errors } = await enterScene(browser);
@@ -387,5 +391,27 @@ async function scenes(browser) {
     s.shots.push({ file: 'h1-teleported-out.jpg', note: 'camera as the game left it after the teleport', ...(await read(page)), mobs: await caveMobs(page) });
     s.benchMsAfter = +(await page.evaluate(() => window.__DEBUG.look.bench(120))).toFixed(2);
     await done('h_teleport', s, ctx, errors);
+  }
+
+  // I: the exit door, clicked as in play from a quiet entry room (no fight): the hero stands at the entry, 4 south of the
+  // door (local 12, 34; the door is at 12, 30), the camera behind it looking north, and the job clicks the door by its hover
+  // label. It also counts the cave's props, the meshes under them and every visible mesh in the cave's area.
+  if (!ONLY || ONLY.includes('I')) {
+    const { ctx, page, errors } = await enterScene(browser);
+    const s = { pageErrors: errors, shots: [] };
+    facts.scenes[`scene${facts.n = (facts.n ?? 0) + 1}`] = s; // kept if a later step throws
+    s.door = await useDoor(page);
+    await page.waitForTimeout(1500);
+    s.props = await caveProps(page);
+    await pose(page, ...W(12, 34), 3.14, 0.8, 10);
+    await page.waitForTimeout(1000);
+    await shot(page, 'i1-exit-door.jpg');
+    s.shots.push({ file: 'i1-exit-door.jpg', heroAt: W(12, 34), camera: await camera(page), ...(await read(page)) });
+    s.exitDoor = await clickLabel(page, 'Doorway (Leave)');
+    s.exitWaitMs = await until(page, () => window.__DEBUG.player.pos.x < 400, null, 15_000);
+    await page.waitForTimeout(1500);
+    await shot(page, 'i2-out-by-the-door.jpg');
+    s.shots.push({ file: 'i2-out-by-the-door.jpg', ...(await read(page)), mobs: await caveMobs(page) });
+    await done('i_exit_door', s, ctx, errors);
   }
 }

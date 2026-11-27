@@ -10,10 +10,12 @@
   - Then `node_modules/.bin/vite preview --port 4396 --strictPort` served that `dist/` on the host.
   - The shell line checked that the port was free first. Afterwards it stopped the server by its PID and checked that nothing was left listening on 4396. The committed job does not do this.
 - **Command:** `CAP_URL=http://localhost:4396/ CAP_OUT=<dir> node scripts/capture-gpu.mjs docs/superpowers/baseline/s6/g63a/capture-job.mjs http://localhost:4396/`, exit 0.
-  - Every picture and `facts.json` here comes from one run of the committed job, copied unchanged.
+  - Every picture from `a1` to `h1` and `facts.json` come from one run of the committed job (scenes A to H), copied unchanged.
+  - `i1`, `i2` and `facts-i.json` come from a second run of the same job with `ONLY=I` (scene I only, its `facts.json` renamed). Scene I was added after the first run because no earlier run had clicked the exit door in a quiet room.
+  - Between the two runs the job changed only by scene I, two added counters in `caveProps` (meshes under the props, visible meshes in the cave's area) and a comment. The steps of scenes A to H are the ones that made their pictures, so `facts.json`'s `a_entry.props` has no mesh counters.
   - Earlier runs shaped the job:
     - The first scene E killed all three front-hall members, and the hero died first.
-    - A walk to the cave's exit door after the kill let the fight go on, so the door's label was never under the mouse.
+    - Two tries at the exit door after a fight failed: once the hero had died and respawned, once the fight went on. Then a quiet try failed because the door sat above the scanned band of the screen at pitch 0.5; scene I uses pitch 0.8.
     - A draw-call reader that set `renderer.info.autoReset` broke the HUD's own count. It was replaced by reading the HUD.
 - **Renderer:** headless Chromium on the NVIDIA GPU, `ANGLE (Microsoft Corporation, D3D12 (NVIDIA GeForce RTX 4070 Laptop GPU), OpenGL 4.6)` (`facts.renderer`). The job throws if it is not the NVIDIA GPU. 1280x720, quality tier `balanced`.
 - **Browser state:** each scene got a fresh browser context, so storage started empty and the game began as a new game.
@@ -31,7 +33,7 @@
   - Scene H gives one air and one law rune and clicks the Lumbridge Teleport card in the magic panel.
   - The job wraps `renderer.render` in the page only to remember the last perspective camera, so it can say where the camera stood.
   - Monsters ran on the game's own loop. The job reads each cave monster from its rig group's `userData.entity` through three.js's devtools hook.
-- **No page or console error** in any scene (`pageErrors` is empty in all eight).
+- **No page or console error** in any scene (`pageErrors` is empty in all nine).
 
 ## The pictures
 
@@ -40,8 +42,8 @@
 | `a1-door-overworld.jpg` | The cave mouth on the terrace, from 3.5 south | The door (two charcoal posts) between the terrace's two obsidian spires. HUD 510 calls, 442k triangles |
 | `a2-entry-room.jpg` | The entry room, as the game leaves the camera after the door | The hero is at (1012, 634), the row's `entry` (12, 34). The log line is the door's prompt "Slagfall Terrace: nothing is needed." All six members are idle at their homes (`mobsOnEntry`). The props are 5 `World_obsidian_spire` and 22 `World_lava_fissure`. HUD 978 calls, 587k triangles |
 | `a3-entry-room-high.jpg` | The same room from the highest pitch and the longest arm (1.15, 26) | The camera stands in the entry room (local 4.2, 31.0). The grass carpet covers the floor and the black beyond the walls (finding 1). The fissures lie as flat orange slabs across the wall lines (finding 3) |
-| `a4-minimap-entry.jpg` | The minimap in the entry room | The rooms are drawn, with no gates, and the six members as dots |
-| `b1-corner-yaw0.jpg` to `b4-corner-yaw270.jpg` | The hero at a corner of the entry room (local 6, 28: 2 from the west and south walls), pitch 0.3, arm 14, at four yaws | At yaw 0 the camera is at local (6, 24.6), outside the south wall. At yaw 1.57 it is at (2.6, 28), outside the west wall. Both pictures show black and a few grass blades, and not the hero (finding 2). At yaw 3.14 and 4.71 the camera is inside the room |
+| `a4-minimap-entry.jpg` | The minimap in the entry room | The entry room, the corridor and the front hall are drawn, with no gates, and four members as dots; the back hall is past the frame's edge at this zoom |
+| `b1-corner-yaw0.jpg` to `b4-corner-yaw270.jpg` | The hero at a corner of the entry room (local 6, 28: 2 from the west wall and from the north wall, the one at local z 26; the job's north is -z), pitch 0.3, arm 14, at four yaws | At yaw 0 the camera is at local (6, 24.6), outside the north wall. At yaw 1.57 it is at (2.6, 28), outside the west wall. Both pictures show black and a few grass blades, and not the hero (finding 2). At yaw 3.14 and 4.71 the camera is inside the room |
 | `b5-corner-high.jpg` | The same corner, pitch 1.15, arm 26 | The camera is inside the room (13.5, 35.5). The carpet covers the black outside |
 | `c1-front-hall-from-corridor.jpg` | The hero in corridor c1 (local 25, 34), 3 s later | All six members are idle. The nearest demon is 11.7 away, outside its sight of 9 |
 | `c2-front-hall-fight.jpg` | The hero one step into the front hall (29, 34), 3.5 s later | One Lesser Demon is in `attack`. "Lesser Demon attacks!" The second demon had wandered to 10.2 from the hero, beyond its sight of 9 (`after1500`), and the Hurler is 15 away, beyond its 12, so both stay idle. HUD 1,213 calls |
@@ -53,12 +55,14 @@
 | `f1-died-inside.jpg` | A 70 hp unarmed hero among the front hall's members | Death after 8.1 s, with the overlay over the cave |
 | `f2-after-respawn.jpg` | After the respawn (2.6 s later) | The hero is at Lumbridge (0, 4). Every cave member is hidden, at home and `idle` |
 | `g1-after-reload.jpg` | The page reloaded after 3 s in the entry room | Before the reload the save button read "Saved (11:22:31)". After it, the hero stands at the door (-84, 98), and the log reads "Restored your saved progress". No cave monster exists until the next entry, so a reload starts it full |
-| `h1-teleported-out.jpg` | Lumbridge Teleport cast in the entry room | "Teleported to Lumbridge Haven." The hero is at (0, 4) under the overworld sky, and the cave members are hidden |
+| `h1-teleported-out.jpg` | Lumbridge Teleport cast in the entry room | "Teleported to Lumbridge Haven." The hero is at (0, 4) by the bank booth, in daylight with the overworld's weather, and the cave members are hidden |
+| `i1-exit-door.jpg` | Second run, scene I: the hero at the entry (local 12, 34), the camera looking north at the exit door 4 away | No fight. HUD 979 calls, 588k triangles |
+| `i2-out-by-the-door.jpg` | The exit door clicked by its hover label ("Interact with Doorway (Leave)") | The hero was out 110 ms after the click (it stood inside the door's reach), at the overworld door (-84, 98). Every cave member is hidden and `idle`. HUD 189 calls |
 
 Perf, read on the shared machine:
-- **HUD in the cave:** 974 to 1,213 calls and 587k to 634k triangles a frame, at 33 to 50 FPS. Outside the cave the HUD read 206 to 762 calls.
-- **`look.bench(120)`:** the scene drawn 120 times with no post pass, in ms a frame. 64.6 on the overworld at the door, 132.9 in the entry room, 223.2 in the front-hall fight, 68.8 back at Lumbridge.
-- **Caveat:** these are too noisy to judge frame time (OM-S4 stands; G-6.3's dungeon bench was 7.5 on a quieter run), but the cave read about twice the overworld in the same page.
+- **HUD in the cave:** 978 to 1,213 calls and 587k to 634k triangles a frame in the shots the job read, at 33 to 50 FPS (the HUD drawn in `b1` to `b5` shows 966 to 974). Outside the cave the job read 189 to 762 calls.
+- **`look.bench(120)`:** the scene drawn 120 times with no post pass, in ms a frame. 64.6 on the overworld at the door, 132.9 in the entry room, 223.2 in the front-hall fight, 68.8 back at Lumbridge. Three runs agreed within about 20%.
+- **These bench figures are unexplained.** They disagree with the HUD's 20 ms frames in the same page, and they cannot be compared with G-6.3's 7.5 ms. They are recorded, not used as evidence for any finding.
 
 ## Gate status (runs of 2026-11-27 on `24d37dd`)
 
@@ -125,25 +129,24 @@ Each command ran from the worktree root behind `flock /tmp/claude-capped.lock sc
 1. **The overworld's grass carpet draws inside the cave.** This is G-6.3's finding 1, which is still open: `src/engine/flora.ts` is unchanged.
    - In `a2`, `a3`, `b5`, `c1`, `c2`, `d1`, `e1`, `e2` and `f1`, the carpet's blades cover the cave floor and stand in the black beyond the walls.
    - Design 7.6 says "the overworld and its carpet are out of sight at x 1000". They are not, because the carpet follows the hero (`updateCarpet(heroX, heroZ, tier)`).
-   - The weather's fall mesh is hidden in the cave, as C3 wrote. The ash and ember motes are there.
+   - The weather's fall mesh is hidden in the cave by C3's line in `updateParticles` (read in the code; no falling streak shows in the cave pictures). The ash and ember motes are there.
    - The fix is the Z6 repair G-6.3 named (it needs `flora.ts`), and it applies to the cave too.
 2. **The camera shows the outside of a wall near a corner.** `caveArmLength` shortens the arm only down to `CAMERA_LIMITS.distanceMin x cos(pitch)` (3.44 at pitch 0.3), as C3 specifies.
-   - With the hero 2 from a wall, the shortest arm still ends outside the room. In `b1` and `b2` the camera stands at local (6, 24.6) and (2.6, 28), behind the south and west walls. The picture is black, and the hero is not in it.
+   - With the hero 2 from a wall, the shortest arm still ends outside the room. In `b1` and `b2` the camera stands at local (6, 24.6) and (2.6, 28), behind the north and west walls. The picture is black, and the hero is not in it.
    - Two causes add up: the walls are single planes with nothing drawn on their outer side, and the arm test reads only the arm's end point.
    - This fails H-3a's "the camera never shows the outside of a wall". A fix needs a design choice: let the arm go below `distanceMin` in a cave, or keep the hero away from walls. It would be in `zones.ts` (C3's file).
 3. **The lava seams are not seams.** The 22 `World_lava_fissure` clones lie flat on the floor, centred on the wall lines (every 8 units along each wall segment, rotated to the wall).
    - From above (`a3`, `b5`) they read as large orange slabs that cross the walls, half inside and half outside the rooms.
    - Design 7.6 asks for "seams along the walls' inner face". This is for the owner's eye at H-3a and a C3 repair (an offset into the room and a smaller scale), in `zones.ts`.
-4. **Draw calls: the cave draws about 1,000 calls a frame.** The HUD read 974 to 1,213 calls in the cave, against 510 on the overworld at the door.
+4. **Draw calls: the cave draws about 1,000 calls a frame.** The HUD read 978 to 1,213 calls in the cave, against 510 on the overworld at the door.
    - Design 10 says "at most 150, the overworld culled by distance". The design's figure is for a dungeon, and the cave is a zone built the same way. G-6.3 did not read a dungeon's count.
-   - The carpet (finding 1) and the overworld objects that are still drawn are the likely cause. This was not traced.
-   - `look.bench` also read about twice the overworld's time (perf, above).
+   - Scene I counted 302 meshes under the 27 prop clones, and 346 visible meshes in the cave's area in all (`facts-i.json`, `props`). So the spire and fissure clones bring about 11 meshes each, and they are most of what is drawn there. The carpet's share and the per-pass cost (shadow, outline) were not traced.
 5. **The Hurler's tint does not read in the cave light.** In `d1` the Ember Hurler (`tint 0xb8b2a7`, ash-pale, owner's words) reads as the same dark red as the Lesser Demon under `CAVE_LIGHT`'s ember key and bounce. Its smaller scale (0.85) is the visible difference. This is for the owner at H-3a, a [CLAUDE] data retune of `CAVE_LIGHT` or the tint.
 6. **The target panel outlives the cave.** After leaving during the fight (`d2`), the target panel still names the Ember Hurler with its hp, while `player.targetEntity` is null.
    - `leaveZone` clears the target but does not refresh the panel.
    - G-6.0 noted the same kind of stale panel for `maybeRetaliate`. It is cosmetic, and it is gone once a new target is taken (`d3`).
 7. **Two "Slagfall Terrace" labels over the cave mouth** (`d2`): the POI's name and the door's label stand one above the other. This is for the owner's eye.
-8. **The region banner and the footer read "Dragon's Peak Highlands" inside the cave** (`a2` onward). Region detection does not know about zones. This is cosmetic and for the owner.
+8. **The region names do not follow the cave.** The banner and the footer read "Dragon's Peak Highlands" inside the cave (`a2` onward), since region detection does not know about zones. After the reload (`g1`) the footer reads "Lumbridge Haven" while the hero stands at the volcanic door. This is cosmetic and for the owner.
 9. **The C3 repair amendment awaits ratification** (`context.ts`, `overlay.ts`). The C2 timer line in `stepMonster` is named under C2 above.
 
 What holds, for the record:
@@ -151,6 +154,7 @@ What holds, for the record:
 - **Held members are hidden, at home, `idle`, with no wind-up or circle** after leaving, after a death and after a teleport.
 - **The hero fights back on the overworld** after leaving during a wind-up.
 - **A reload inside puts the hero at the door.**
+- **The exit door works by a click** (`i1`, `i2`).
 - **Props:** 5 spires on the 5 pillars and 22 fissures, which is 27 props, under design 10's 30.
 - **No page or console error.**
 
@@ -158,7 +162,7 @@ What holds, for the record:
 
 - How the cave feels in play: the light judged by eye on the owner's screen, the camera while it moves, the fights with a mouse and with a trackpad.
 - The cover of the pillars. That is slice 3b's line of sight, and H-3b's to check.
-- The exit door used by a click after a fight. Scene E used the engine's leave function; the door's click path is the same `leaveDungeon` command, but it was not captured.
+- The exit door used by a click right after a fight. Scenes D and E left through the engine's leave function. The door's click was captured only in a quiet room (scene I).
 - Frame rate on the owner's machine. The HUD and `bench` figures come from a shared machine.
 
 **H-3a stays open for the owner.**
