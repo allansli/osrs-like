@@ -1,6 +1,6 @@
 // Day cycle, sky colours, light directions, and phase stepping (design 5.3).
 
-import { DAY_CLOCK, DAY_KEYS, PRESET_PHASE } from '../data/look';
+import { DAY_CLOCK, DAY_KEYS, PRESET_PHASE, type DayKey } from '../data/look';
 
 export type Vec3 = [number, number, number];
 export type Rgb = [number, number, number];
@@ -159,6 +159,21 @@ export function dayFrameAt(phase: number): DayFrame {
     exposure,
     sunDir,
     keyIsMoon,
+  };
+}
+
+export function frameOf(k: DayKey): DayFrame {
+  return {
+    key: hexToLinear(k.key),
+    keyIntensity: k.keyIntensity,
+    zenith: hexToLinear(k.zenith),
+    horizon: hexToLinear(k.horizon),
+    air: hexToLinear(k.air),
+    fill: hexToLinear(k.fill),
+    bounce: hexToLinear(k.bounce),
+    exposure: k.exposure,
+    sunDir: [0, 1, 0],
+    keyIsMoon: false,
   };
 }
 
