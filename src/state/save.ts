@@ -9,6 +9,7 @@ import { normalizeStyle } from './combat';
 import { normalizeQuests } from './quests';
 import { initialShrines } from './shrines';
 import { QUEST_DEFS, SLAYER_BANDS, STARTER_QUESTS } from './adventure';
+import { STORY_QUESTS } from '../data/story';
 import { isWalkable } from './collision';
 import { isEmptyProgress, normalizeProgress } from './progress';
 import type { GameState, SavedCam, SavedPose } from './types';
@@ -87,7 +88,11 @@ export function migrateLegacySave(raw: unknown, source: string | null = null, no
   state.shrines.lumbridge = true;
 
   state.quests = normalizeQuests(data.quests);
-  const validQuestIds = new Set([...QUEST_DEFS.map((q) => q.id), ...STARTER_QUESTS.map((q) => q.id)]);
+  const validQuestIds = new Set([
+    ...QUEST_DEFS.map((q) => q.id),
+    ...STARTER_QUESTS.map((q) => q.id),
+    ...STORY_QUESTS.map((q) => q.id)
+  ]);
   state.quests.claimed = Array.from(new Set(state.quests.claimed.filter((id) => validQuestIds.has(id))));
   state.progress = normalizeProgress(data.progress, now, state.quests.claimed);
   if (state.quests.slayer) {

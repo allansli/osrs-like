@@ -1,5 +1,6 @@
 import { BOSSES } from '../data/attacks';
 import { getLevelForXp } from '../data/skills';
+import { STORY_QUESTS, type StoryQuest } from '../data/story';
 import { creditGp } from './economy';
 import { addItem, canAddItem } from './inventory';
 import { noteGather as markGather, noteSmelt as markSmelt } from './quests';
@@ -762,6 +763,37 @@ export function adventureTracker(state: GameState): TrackerLine {
   const open = starterOpen(state);
   if (open) {
     return trackerLineFromQuest(buildQuestCard(open, state));
+  }
+  if (state.progress?.story) {
+    const storyEntries: { quest: StoryQuest; stageIdx: number }[] = [];
+    for (const [id, stageIdx] of Object.entries(state.progress.story)) {
+      if (typeof stageIdx === 'number' && !state.quests.claimed.includes(id)) {
+        const quest = STORY_QUESTS.find((q) => q.id === id);
+        if (quest && stageIdx >= 0 && stageIdx < quest.stages.length) {
+          storyEntries.push({ quest, stageIdx });
+        }
+      }
+    }
+    const mainEntry = storyEntries.find((e) => e.quest.line === 'main');
+    if (mainEntry) {
+      const stage = mainEntry.quest.stages[mainEntry.stageIdx];
+      return {
+        title: mainEntry.quest.name,
+        detail: stage.journal,
+        done: mainEntry.stageIdx,
+        total: mainEntry.quest.stages.length
+      };
+    }
+    const sideEntry = storyEntries.find((e) => e.quest.line === 'side') || storyEntries[0];
+    if (sideEntry) {
+      const stage = sideEntry.quest.stages[sideEntry.stageIdx];
+      return {
+        title: sideEntry.quest.name,
+        detail: stage.journal,
+        done: sideEntry.stageIdx,
+        total: sideEntry.quest.stages.length
+      };
+    }
   }
   const views = questView(state);
   const discovered = views.find((quest) => !quest.claimed && !!state.shrines[quest.region]);
