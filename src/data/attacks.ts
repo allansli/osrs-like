@@ -39,7 +39,7 @@ export const ATTACKS: Record<string, AttackDef> = {
     windupMs: 1600,
     slots: 2,
     style: 'own',
-    reach: 2.9
+    reach: 13.5
   },
   hexfall: {
     id: 'hexfall',
@@ -66,7 +66,7 @@ export const ATTACKS: Record<string, AttackDef> = {
     windupMs: 1600,
     slots: 2,
     style: 'own',
-    reach: 2.9
+    reach: 13.5
   },
   rootquake: {
     id: 'rootquake',
@@ -75,7 +75,7 @@ export const ATTACKS: Record<string, AttackDef> = {
     windupMs: 1700,
     slots: 2,
     style: 'own',
-    reach: 2.9
+    reach: 13.5
   },
   scorch_lane: {
     id: 'scorch_lane',
@@ -84,7 +84,7 @@ export const ATTACKS: Record<string, AttackDef> = {
     windupMs: 1600,
     slots: 2,
     style: 'own',
-    reach: 2.9
+    reach: 13.5
   },
   ember_cone: {
     id: 'ember_cone',
@@ -164,7 +164,7 @@ export const ATTACKS: Record<string, AttackDef> = {
     slots: 2,
     style: 'melee',
     power: 40,
-    reach: 2.9
+    reach: 13.5
   },
   brine_spit: {
     id: 'brine_spit',

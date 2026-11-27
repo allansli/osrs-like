@@ -123,7 +123,7 @@ export const DUNGEONS: Dungeon[] = [
     ],
     chest: [62, 75],
     loot: {
-      run: [{ id: 'adamantite_ore', qty: [3, 5] }],
+      run: [{ id: 'adamantite_ore', qty: [3, 5] }, { id: 'tough_hide', qty: [1, 2] }],
       runGp: [100, 300],
       rare: [{ id: 'rune_crossbow', qty: 1, chance: 0.05 }]
     },

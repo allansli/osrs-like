@@ -309,7 +309,7 @@ export const MONSTER_TYPES: Record<string, MonsterDef> = {
   }
 };
 
-const rawNodes = {
+export const RESOURCE_NODES_DEF = {
   ...(BASE_NODES as Record<string, Record<string, unknown>>),
   maple_tree: {
     name: 'Maple Tree',
@@ -345,26 +345,3 @@ const rawNodes = {
     oreColor: 0x385446
   }
 };
-
-export const RESOURCE_NODES_DEF = new Proxy(rawNodes, {
-  ownKeys(target) {
-    const stack = new Error().stack || '';
-    if (stack.includes('pacingModel') || stack.includes('pacing.test') || stack.includes('economy-invariants')) {
-      if (stack.includes('requirements') || stack.includes('nodeForItem')) {
-        return Object.keys(target);
-      }
-      return Object.keys(target).filter((k) => k !== 'adamantite_rock');
-    }
-    return Object.keys(target);
-  },
-  getOwnPropertyDescriptor(target, prop) {
-    const stack = new Error().stack || '';
-    if (prop === 'adamantite_rock' && (stack.includes('pacingModel') || stack.includes('pacing.test') || stack.includes('economy-invariants'))) {
-      if (stack.includes('requirements') || stack.includes('nodeForItem')) {
-        return Object.getOwnPropertyDescriptor(target, prop);
-      }
-      return undefined;
-    }
-    return Object.getOwnPropertyDescriptor(target, prop);
-  }
-});
