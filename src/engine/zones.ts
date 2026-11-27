@@ -32,8 +32,8 @@ const FISSURE_SCALE = 0.6;
 const FISSURE_INSET = 1.4;
 // The Ember Hurler shares the Lesser Demon's model, whose red is in its vertex colours, so its row's tint (multiplied
 // in) keeps it red under CAVE_LIGHT. In the cave its body, horns and membranes draw charcoal with an ash glow instead
-// (SF3; docs/superpowers/baseline/s6/sf3 scene D: saturation 0.19 to 0.27, hue 18 to 25 degrees, contrast to the cave
-// floor 2.10 to 2.73, against the demons' 0.85 to 0.91, 2 to 6 degrees and 1.03 to 1.12). Plain mode (post.ts)
+// (SF3; scene D of the sf3 capture, kept in commit b325209: saturation 0.19 to 0.27, hue 18 to 25 degrees, contrast
+// to the cave floor 2.10 to 2.73, against the demons' 0.85 to 0.91, 2 to 6 degrees and 1.03 to 1.12). Plain mode (post.ts)
 // rebuilds materials from their creation colours, so there the Hurler keeps its old look, as every row tint does.
 const HURLER_ASH = { color: 0x3a3530, emissive: 0xb8b2a7, emissiveIntensity: 0.2 };
 
