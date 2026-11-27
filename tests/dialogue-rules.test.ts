@@ -207,6 +207,12 @@ describe('chooseOption', () => {
     expect(r.reason!.length).toBeGreaterThan(0);
   };
 
+  it('refuses inherited-member node ids and non-integer indexes', () => {
+    const s = fresh();
+    for (const id of ['constructor', 'toString', '__proto__']) refused(choose(s, id, 0));
+    for (const i of [1.5, NaN, -0.5]) refused(choose(s, 'hello', i));
+  });
+
   it('refuses a node that is not that person\'s, and an unknown person', () => {
     const s = fresh();
     const before = snapshot(s);
