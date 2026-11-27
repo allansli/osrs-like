@@ -56,6 +56,7 @@ export type MonsterLogic = {
   shiftLeft: number;
   outsideFor: number;
   respawn?: boolean;
+  respawnSecs?: number;
 };
 
 export type MonsterEvent =
@@ -131,7 +132,7 @@ export function createMonsterLogic(
   typeKey: string,
   homeX: number,
   homeZ: number,
-  opts?: { campId?: string; wander?: number; respawn?: boolean }
+  opts?: { campId?: string; wander?: number; respawn?: boolean; respawnSecs?: number }
 ): MonsterLogic {
   const def = MONSTER_TYPES[typeKey];
   if (!def) throw new Error(`createMonsterLogic: unknown monster type "${typeKey}"`);
@@ -171,7 +172,8 @@ export function createMonsterLogic(
     phase: 0,
     shiftLeft: 0,
     outsideFor: 0,
-    respawn: opts?.respawn
+    respawn: opts?.respawn,
+    respawnSecs: opts?.respawnSecs
   };
 }
 
@@ -258,6 +260,13 @@ function resetToIdle(m: MonsterLogic): void {
   m.repathIn = 0;
 }
 
+export function sendHome(m: MonsterLogic): void {
+  if (m.state === 'dying' || m.state === 'dead') return;
+  m.x = m.homeX;
+  m.z = m.homeZ;
+  resetToIdle(m);
+}
+
 function enterReturn(m: MonsterLogic, world: StepWorld): void {
   m.state = 'return';
   m.stallTimer = 1.5;
@@ -290,7 +299,9 @@ export function stepMonster(m: MonsterLogic, world: StepWorld): MonsterEvent[] {
     if (m.timer <= 0) {
       m.state = 'dead';
       const boss = BOSSES[m.typeKey];
-      m.timer = boss ? boss.respawnSecs : DEAD_SECS;
+      m.timer = m.respawnSecs !== undefined
+        ? Math.max(0, m.respawnSecs - DYING_SECS)
+        : boss ? boss.respawnSecs : DEAD_SECS;
     }
     return [];
   }

@@ -1,5 +1,5 @@
 import { BOSSES } from '../data/attacks';
-import { DUNGEONS, type Dungeon } from '../data/dungeons';
+import { DUNGEONS, type DungeonCamp, type DungeonGate, type DungeonLoot } from '../data/dungeons';
 import type { CampDef } from '../data/worldMap';
 import { evalCond, type Cond } from './dialogue';
 import { creditGp } from './economy';
@@ -7,7 +7,29 @@ import { addItem, canAddItem } from './inventory';
 import { bump } from './progress';
 import type { GameState, SavedPose } from './types';
 
-export type { Dungeon };
+export type Zone = {
+  id: string;
+  name: string;
+  origin: [number, number];
+  size: number;
+  door: { x: number; z: number };
+  entry: [number, number];
+  rooms: Record<string, [number, number, number, number]>;
+  camps: DungeonCamp[];
+  needs: Cond;
+  solid?: [number, number, number, number][];
+  respawnSecs?: number;
+  props?: { node: string; x: number; z: number; scale?: number; rotY?: number }[];
+};
+
+export type Dungeon = Zone & {
+  gates: DungeonGate[];
+  nodes: { type: string; x: number; z: number }[];
+  chest: [number, number];
+  loot: DungeonLoot;
+};
+
+export type { DungeonCamp, DungeonGate, DungeonLoot };
 
 export type DungeonRun = {
   id: string;
@@ -19,12 +41,15 @@ export type DungeonRun = {
 };
 
 export function zoneWalk(
-  def: Pick<Dungeon, 'origin' | 'size' | 'rooms' | 'gates' | 'solid'>,
+  def: Zone,
   openGates: string[]
 ): (x: number, z: number) => boolean {
   const [ox, oz] = def.origin;
   const roomRects = Object.values(def.rooms);
-  const shutGates = def.gates.filter((g) => !openGates.includes(g.id));
+  const gates = ('gates' in def && Array.isArray((def as { gates?: unknown }).gates))
+    ? (def as unknown as { gates: DungeonGate[] }).gates
+    : [];
+  const shutGates = gates.filter((g) => !openGates.includes(g.id));
   const solids = def.solid ?? [];
 
   return (wx: number, wz: number): boolean => {
@@ -46,7 +71,7 @@ export function zoneWalk(
 }
 
 export function zoneSafe(
-  def: { origin: [number, number]; entry: [number, number] },
+  def: Zone,
   x: number,
   z: number
 ): boolean {
@@ -55,19 +80,19 @@ export function zoneSafe(
   return Math.hypot(x - ex, z - ez) <= 6;
 }
 
-export function canEnter(state: GameState, def: { needs: Cond }): boolean {
+export function canEnter(state: GameState, def: Zone): boolean {
   return evalCond(state, def.needs);
 }
 
 export function savedPose(
   pose: SavedPose | null,
-  zone: { door: { x: number; z: number } } | null
+  zone: Zone | null
 ): SavedPose | null {
   if (!zone || !pose) return pose;
   return { x: zone.door.x, y: pose.y, z: zone.door.z, yaw: pose.yaw };
 }
 
-export function zoneCamps(def: Dungeon): CampDef[] {
+export function zoneCamps(def: Zone): CampDef[] {
   const [ox, oz] = def.origin;
   return def.camps.map((c) => {
     const worldMembers = c.members.map((m) => ({
@@ -80,18 +105,25 @@ export function zoneCamps(def: Dungeon): CampDef[] {
     const cx = worldMembers.reduce((s, m) => s + m.x, 0) / count;
     const cz = worldMembers.reduce((s, m) => s + m.z, 0) / count;
     const maxDist = Math.max(...worldMembers.map((m) => Math.hypot(m.x - cx, m.z - cz)));
-    return {
+    const campDef: CampDef = {
       id: `${def.id}:${c.id}`,
       x: cx,
       z: cz,
       radius: Math.ceil(maxDist + 4.5),
       aggressive: true,
-      aggroRadius: c.aggro,
       arenaRadius: c.arenaRadius,
       keepsSight: true,
       members: worldMembers
     };
+    if (c.aggro !== undefined) {
+      campDef.aggroRadius = c.aggro;
+    }
+    return campDef;
   });
+}
+
+export function zoneRespawns(zone: Zone): boolean {
+  return !('chest' in zone);
 }
 
 export function runStep(run: DungeonRun, event: { campDead: string }): string[] {
