@@ -28,8 +28,6 @@ const W = (x, z) => [ORIGIN[0] + x, ORIGIN[1] + z];
 const DOOR = [-84, 98];
 const ROOMS = { entry: [4, 26, 20, 42], c1: [20, 31, 26, 37], front: [26, 20, 50, 48], c2: [50, 31, 56, 37], back: [56, 18, 84, 50] };
 const SOLID = [[31, 27, 33, 29], [31, 39, 33, 41], [61, 24, 63, 26], [61, 42, 63, 44], [69, 30, 71, 32]];
-// world.glb's World_lava_fissure bounds (all its meshes), local x and z
-const FOOT = [[-1.85, -1.12], [1.92, -1.12], [1.92, 1.28], [-1.85, 1.28]];
 const facts = { renderer: null };
 
 const shot = (page, name) => page.screenshot({ path: `${OUT}/${name}`, type: 'jpeg', quality: 82 });
@@ -64,73 +62,114 @@ async function clickLabel(page, text) {
   return at;
 }
 
-// Every fissure in the cave's area: its footprint corners and 9 points along each edge, in cave-local coordinates.
-const fissures = (page) => page.evaluate(([ox, oz, foot]) => {
+// Every fissure in the cave's area: its world box (Box3.setFromObject; the walls are axis-aligned and every fissure is
+// turned by a multiple of 90 degrees, so the box is its footprint), its corners and 9 points along each box edge, in
+// cave-local coordinates.
+const fissures = (page) => page.evaluate(([ox, oz]) => {
   const out = [];
   for (const sc of window.__scenes) sc.traverse((o) => {
     if (o.name !== 'World_lava_fissure') return;
     const p = o.getWorldPosition(o.position.clone());
     if (p.x < 900 || p.z < 550) return;
-    o.updateWorldMatrix(true, false);
-    const pts = [];
-    for (let i = 0; i < 4; i++) {
-      const [ax, az] = foot[i], [bx, bz] = foot[(i + 1) % 4];
-      for (let k = 0; k < 9; k++) {
-        const t = k / 9, v = o.position.clone().set(ax + (bx - ax) * t, 0, az + (bz - az) * t).applyMatrix4(o.matrixWorld);
-        pts.push([+(v.x - ox).toFixed(3), +(v.z - oz).toFixed(3)]);
-      }
-    }
-    out.push({ at: [+(p.x - ox).toFixed(2), +(p.z - oz).toFixed(2)], rotY: +o.rotation.y.toFixed(3), scale: +o.scale.x.toFixed(2), pts });
+    const mesh = o.getObjectByProperty('isMesh', true);
+    mesh.geometry.computeBoundingBox();
+    const b = new mesh.geometry.boundingBox.constructor().setFromObject(o); // three's Box3, reached through a mesh
+    const x0 = b.min.x - ox, x1 = b.max.x - ox, z0 = b.min.z - oz, z1 = b.max.z - oz;
+    const c = [[x0, z0], [x1, z0], [x1, z1], [x0, z1]], pts = [];
+    for (let i = 0; i < 4; i++) for (let k = 0; k < 9; k++) { const t = k / 9, [ax, az] = c[i], [bx, bz] = c[(i + 1) % 4]; pts.push([+(ax + (bx - ax) * t).toFixed(3), +(az + (bz - az) * t).toFixed(3)]); }
+    out.push({ at: [+(p.x - ox).toFixed(2), +(p.z - oz).toFixed(2)], rotY: +o.rotation.y.toFixed(3), scale: +o.scale.x.toFixed(2), box: [x0, z0, x1, z1].map((v) => +v.toFixed(3)), pts });
   });
   return out;
-}, [ORIGIN[0], ORIGIN[1], FOOT]);
+}, [ORIGIN[0], ORIGIN[1]]);
 
-// The cave's monsters by type, with each one's projected screen box.
+// The cave's monsters, each with its rig group.
 const MOBS = `(() => { const out = [], seen = new Set(); for (const sc of window.__scenes) sc.traverse((o) => { const e = o.userData?.type === 'monster' ? o.userData.entity : null; if (!e || o !== e.rig.group || seen.has(e) || !o.visible || !String(e.logic.campId).startsWith('slagfall_cave:')) return; seen.add(e); out.push([e, o]); }); return out; })()`;
+const png = async (page) => (await page.screenshot({ type: 'png' })).toString('base64');
+// One figure: its silhouette is the frame with every drawn mesh of it in flat magenta (no fog, no light); its colour
+// is the normal frame over that silhouette; "behind" is the frame without it over the same pixels.
 async function figure(page, idx) {
-  const box = await page.evaluate(([MOBS, idx]) => {
+  const info = await page.evaluate(([MOBS, idx]) => {
     const [e, o] = eval(MOBS)[idx];
-    const cam = window.__cam, pts = [];
-    o.updateWorldMatrix(true, true);
-    o.traverse((m) => { if (!m.isMesh || !m.geometry) return; m.geometry.computeBoundingBox(); const b = m.geometry.boundingBox; for (const x of [b.min.x, b.max.x]) for (const y of [b.min.y, b.max.y]) for (const z of [b.min.z, b.max.z]) pts.push(b.min.clone().set(x, y, z).applyMatrix4(m.matrixWorld).project(cam)); });
-    const xs = pts.map((p) => (p.x + 1) * 640), ys = pts.map((p) => (1 - p.y) * 360);
-    return { type: e.typeKey, state: e.logic.state, at: [+e.logic.x.toFixed(1), +e.logic.z.toFixed(1)], box: [Math.max(0, Math.floor(Math.min(...xs))), Math.max(0, Math.floor(Math.min(...ys))), Math.min(1279, Math.ceil(Math.max(...xs))), Math.min(719, Math.ceil(Math.max(...ys)))] };
+    const cam = window.__cam.position;
+    return { type: e.typeKey, state: e.logic.state, at: [+e.logic.x.toFixed(1), +e.logic.z.toFixed(1)], cameraDistance: +Math.hypot(e.logic.x - cam.x, e.logic.z - cam.z).toFixed(1) };
   }, [MOBS, idx]);
-  const a = (await page.screenshot({ type: 'png' })).toString('base64');
-  await page.evaluate(([MOBS, idx]) => { const [, o] = eval(MOBS)[idx]; o.traverse((m) => { if (m.isMesh && m.visible) { m.visible = false; m.userData.__hid = true; } }); }, [MOBS, idx]);
+  const normal = await png(page);
+  await page.evaluate(([MOBS, idx]) => {
+    const [, o] = eval(MOBS)[idx];
+    o.traverse((m) => {
+      if (!m.isMesh || !m.visible || m.material.visible === false) return;
+      m.userData.__mat = m.material;
+      const flat = m.material.clone();
+      for (const k of ['map', 'emissiveMap', 'normalMap', 'aoMap', 'lightMap']) if (k in flat) flat[k] = null;
+      flat.vertexColors = false; flat.fog = false;
+      if (flat.color) flat.color.setRGB(1, 0, 1);
+      if (flat.emissive) flat.emissive.setRGB(1, 0, 1);
+      flat.emissiveIntensity = 50; flat.toneMapped = false; flat.onBeforeCompile = () => {}; flat.customProgramCacheKey = () => 'sf3-flat';
+      flat.needsUpdate = true;
+      m.material = flat;
+    });
+  }, [MOBS, idx]);
   await page.waitForTimeout(120);
-  const b = (await page.screenshot({ type: 'png' })).toString('base64');
+  const flat = await png(page);
+  await page.evaluate(([MOBS, idx]) => {
+    const [, o] = eval(MOBS)[idx];
+    o.traverse((m) => { if (m.userData.__mat) { m.material.dispose(); m.material = m.userData.__mat; delete m.userData.__mat; } if (m.isMesh && m.visible) { m.visible = false; m.userData.__hid = true; } });
+  }, [MOBS, idx]);
+  await page.waitForTimeout(120);
+  const without = await png(page);
   await page.evaluate(([MOBS, idx]) => { const [, o] = eval(MOBS)[idx]; o.traverse((m) => { if (m.userData.__hid) { m.visible = true; delete m.userData.__hid; } }); }, [MOBS, idx]);
-  const stats = await page.evaluate(async ([a, b, box]) => {
+  const stats = await page.evaluate(async ([n0, f0, w0]) => {
     const load = async (s) => { const img = new Image(); img.src = 'data:image/png;base64,' + s; await img.decode(); const c = document.createElement('canvas'); c.width = 1280; c.height = 720; const g = c.getContext('2d'); g.drawImage(img, 0, 0); return g.getImageData(0, 0, 1280, 720).data; };
-    const A = await load(a), B = await load(b);
+    const N = await load(n0), F = await load(f0), B = await load(w0);
     const hud = (x, y) => (x > 990 && y > 270) || (x < 310 && y < 520) || (y > 540 && x < 460) || (x > 1030 && y < 250);
     let n = 0; const f = [0, 0, 0], k = [0, 0, 0];
-    for (let y = box[1]; y <= box[3]; y++) for (let x = box[0]; x <= box[2]; x++) {
+    for (let y = 0; y < 720; y++) for (let x = 0; x < 1280; x++) {
       if (hud(x, y)) continue;
       const i = (y * 1280 + x) * 4;
-      if (Math.abs(A[i] - B[i]) + Math.abs(A[i + 1] - B[i + 1]) + Math.abs(A[i + 2] - B[i + 2]) < 30) continue;
-      n++; for (let c = 0; c < 3; c++) { f[c] += A[i + c]; k[c] += B[i + c]; }
+      if (!(F[i] > 200 && F[i + 1] < 60 && F[i + 2] > 200)) continue; // magenta: the figure
+      n++; for (let c = 0; c < 3; c++) { f[c] += N[i + c]; k[c] += B[i + c]; }
     }
     if (!n) return { pixels: 0 };
     const lin = (v) => { v /= 255; return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; };
     const lum = (c) => 0.2126 * lin(c[0]) + 0.7152 * lin(c[1]) + 0.0722 * lin(c[2]);
-    const hue = ([r, g, b]) => { const mx = Math.max(r, g, b), mn = Math.min(r, g, b); if (mx === mn) return 0; let h = mx === r ? (g - b) / (mx - mn) : mx === g ? 2 + (b - r) / (mx - mn) : 4 + (r - g) / (mx - mn); return Math.round(((h * 60) + 360) % 360); };
+    const hue = ([r, g, b]) => { const mx = Math.max(r, g, b), mn = Math.min(r, g, b); if (mx === mn) return 0; const h = mx === r ? (g - b) / (mx - mn) : mx === g ? 2 + (b - r) / (mx - mn) : 4 + (r - g) / (mx - mn); return Math.round((h * 60 + 360) % 360); };
     const sat = ([r, g, b]) => { const mx = Math.max(r, g, b), mn = Math.min(r, g, b); return mx ? +((mx - mn) / mx).toFixed(2) : 0; };
     const fig = f.map((v) => Math.round(v / n)), behind = k.map((v) => Math.round(v / n));
     const L1 = lum(fig), L2 = lum(behind);
-    return { pixels: n, figureRgb: fig, figureHue: hue(fig), figureSat: sat(fig), behindRgb: behind, behindHue: hue(behind), contrastToFloor: +((Math.max(L1, L2) + 0.05) / (Math.min(L1, L2) + 0.05)).toFixed(3), figureLum: +L1.toFixed(4) };
-  }, [a, b, box.box]);
-  return { ...box, ...stats };
+    return { pixels: n, figureRgb: fig, figureHue: hue(fig), figureSat: sat(fig), figureLum: +L1.toFixed(4), behindRgb: behind, behindLum: +L2.toFixed(4), contrastToBehind: +((Math.max(L1, L2) + 0.05) / (Math.min(L1, L2) + 0.05)).toFixed(3) };
+  }, [normal, flat, without]);
+  return { ...info, ...stats };
 }
-// Only in the page, for the amendment's proposal: the Hurler's body, horns and wing membranes take its tint as their
-// colour, with their vertex colours off. Nothing in src/ does this.
-const tintAsColour = (page) => page.evaluate((MOBS) => {
+async function figures(page) {
+  const n = await page.evaluate((MOBS) => eval(MOBS).length, MOBS);
+  const out = [];
+  for (let i = 0; i < n; i++) { const f = await figure(page, i); if (f.pixels > 0) out.push(f); }
+  return out;
+}
+// How the models draw: material colour, vertex colours on, colour attribute present (body, horn, membrane).
+const materials = (page) => page.evaluate((MOBS) => {
+  const out = {};
+  for (const [e, o] of eval(MOBS)) {
+    if (out[e.typeKey]) continue;
+    out[e.typeKey] = [];
+    o.traverse((m) => { if (m.isMesh && /body|horn|membrane/.test(m.name)) out[e.typeKey].push({ mesh: m.name, colour: m.material.color.getHexString(), vertexColors: m.material.vertexColors, colourAttribute: Boolean(m.geometry.getAttribute('color')) }); });
+  }
+  return out;
+}, MOBS);
+// Only in the page: the Hurler's body, horns and wing membranes drawn another way. 'charcoal' multiplies 0x3a3530 into
+// the vertex colours as the tint does today; 'tintAsColour' is the amendment's proposal (0xb8b2a7 as the colour, vertex
+// colours off). Nothing in src/ does either.
+const hurlerAs = (page, mode) => page.evaluate(([MOBS, mode]) => {
   for (const [e, o] of eval(MOBS)) if (e.typeKey === 'ember_hurler') o.traverse((m) => {
     if (!m.isMesh || !/body|horn|membrane/.test(m.name)) return;
-    m.material.color.setHex(0xb8b2a7); m.material.vertexColors = false; m.material.needsUpdate = true;
+    m.userData.__orig ??= { c: m.material.color.getHex(), vc: m.material.vertexColors };
+    const O = m.userData.__orig;
+    if (mode === 'current') { m.material.color.setHex(O.c); m.material.vertexColors = O.vc; }
+    if (mode === 'charcoal') { m.material.color.setHex(0x3a3530); m.material.vertexColors = O.vc; }
+    if (mode === 'tintAsColour') { m.material.color.setHex(0xb8b2a7); m.material.vertexColors = false; }
+    m.material.needsUpdate = true;
   });
-}, MOBS);
+}, [MOBS, mode]);
 
 export default async function job(_page, browser) {
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 720 } });
@@ -170,19 +209,30 @@ export default async function job(_page, browser) {
     await shot(page, 'b1-inside-banner.jpg');
     facts.b1 = await names(page);
 
-    // D: the front hall from its mouth; every member is idle, out of its sight. Then D2, the proposal, in the page only.
+    // D: the Hurler against the demons. D1 at the front hall's mouth, every member idle at home; D2 at fight range, the
+    // hero 4 into the hall and the members on him. Each in three ways of drawing the Hurler (hurlerAs).
     await page.waitForTimeout(2500);
     await pose(page, ...W(26.5, 34), 1.57, 0.45, 9);
     await page.waitForTimeout(2500);
-    await shot(page, 'd1-hurler-and-demons.jpg');
-    let n = await page.evaluate((MOBS) => eval(MOBS).length, MOBS);
-    facts.d1 = [];
-    for (let i = 0; i < n; i++) facts.d1.push(await figure(page, i));
-    await tintAsColour(page);
-    await page.waitForTimeout(300);
-    await shot(page, 'd2-proposal-tint-as-colour.jpg');
-    facts.d2 = [];
-    for (let i = 0; i < n; i++) facts.d2.push(await figure(page, i));
+    facts.materials = await materials(page);
+    facts.d1 = {};
+    for (const mode of ['current', 'charcoal', 'tintAsColour']) {
+      await hurlerAs(page, mode);
+      await page.waitForTimeout(300);
+      await shot(page, `d1-mouth-${mode}.jpg`);
+      facts.d1[mode] = await figures(page);
+    }
+    await hurlerAs(page, 'current');
+    await pose(page, ...W(30, 34), 1.57, 0.5, 10);
+    await page.waitForTimeout(5000);
+    facts.d2 = {};
+    for (const mode of ['current', 'charcoal', 'tintAsColour']) {
+      await hurlerAs(page, mode);
+      await page.waitForTimeout(300);
+      await shot(page, `d2-fight-${mode}.jpg`);
+      facts.d2[mode] = await figures(page);
+    }
+    await hurlerAs(page, 'current');
 
     // C: the fissures, read and from above.
     const fs = await fissures(page);
@@ -193,7 +243,7 @@ export default async function job(_page, browser) {
       everyPointInsideARoom: fs.every((f) => f.pts.every(inRoom)),
       noPointOnAPillar: fs.every((f) => f.pts.every((p) => !inSolid(p))),
       nearestToAWallLine: +Math.min(...fs.flatMap((f) => f.pts.map(([x, z]) => Math.min(...Object.values(ROOMS).filter(([a, b, c, d]) => x > a && x < c && z > b && z < d).map(([a, b, c, d]) => Math.min(x - a, c - x, z - b, d - z)))))).toFixed(3),
-      fissures: fs.map(({ at, rotY, scale }) => ({ at, rotY, scale }))
+      fissures: fs.map(({ at, rotY, scale, box }) => ({ at, rotY, scale, box }))
     };
     await pose(page, ...W(12, 34), 1.2, 1.15, 26);
     await page.waitForTimeout(1500);

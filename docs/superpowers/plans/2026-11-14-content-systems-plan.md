@@ -1089,13 +1089,14 @@ Ratified with the amendments above: C2's dying-to-dead line in `stepMonster` rea
 - **SF3's files gain `src/engine/worldBuild.ts`**, one guard in `buildDungeonDoors`. A door that stands on a `POIS` place (the cave mouth on Slagfall Terrace) does not push its own place label, so the place's label is the only one. The door's hover name and click are unchanged. No `POIS` row changes, since `tests/cave.test.ts` keeps `slagfall_terrace`.
 - **SF3's files also gain `docs/superpowers/baseline/s6/sf3/`**: the README, the capture job, `facts.json` and the pictures, as the gates had.
 - **`zones.ts` imports `triggerRegionBanner` from `actions.ts`**, which already imports `zones.ts`. The cycle is only between functions called at run time. `tests/architecture.test.ts` passes.
-- **The Hurler's tint is not fixed. It needs files outside SF3's list.** The measurement is in the README (scene D).
-  - The Lesser Demon's red is in the model's vertex colours. `blenderMonsters.ts` multiplies `tint` into the material colour, so no tint value can make the Hurler anything but a darker red.
-  - Today the front Hurler measures luminance 0.0109 against the demons' 0.0120 to 0.0126, at the same hue.
-  - A change to `CAVE_LIGHT` lights both figures alike.
+- **The Hurler's tint is not fixed. It needs files outside SF3's list.** The measurement is in the README (scene D, three ways of drawing the Hurler, at the hall's mouth and at fight range).
+  - The Lesser Demon's model draws its red from vertex colours. `blenderMonsters.ts` multiplies `tint` into the material colour, so any tint keeps the Hurler the same red.
+  - Today the Hurler measures saturation 0.97 at about a third of the demons' luminance, and a charcoal tint measures much the same.
+  - A scratch `CAVE_LIGHT` and fog retune, not committed, turns the demons brown and leaves the Hurler dark red.
   - **Proposed:** an optional field on the monster row, set only on `ember_hurler`, for example `tintAsColour: true` (`src/data/world.ts`). With it, `blenderMonsters.ts` gives the body, horn and membrane materials the tint as their colour, with vertex colours off.
-  - Shown in the page only, this proposal gives the Hurler 3.0 to 3.7 times the demons' luminance, and a contrast to the floor of 1.52 against 1.07 to 1.19. It stays red-hued under the ember light.
-  - If the owner wants it to read ash-pale and not red, add the `CAVE_LIGHT` retune that C1 declares for H-3a (`src/data/look.ts`, and its one `tests/cave.test.ts` assertion).
+  - Measured in the page with today's light, this proposal makes the Hurler 3 to 6 times the demons' luminance, still red-hued.
+  - With the scratch light it reads tan-grey: saturation 0.65 and hue 17° to 20°, against brown demons.
+  - So, for "ash-pale or charcoal, not red", the field is needed. The `CAVE_LIGHT` retune that C1 declares for H-3a (`src/data/look.ts` and its one `tests/cave.test.ts` assertion) is the owner's choice on top of it.
   - No frozen assertion pins the new field: `tests/monster-models.test.ts`'s snapshot has no `tint`, and `tests/cave.test.ts` pins `tint` `0xb8b2a7`, which stays.
 - **Not SF3's, and it was there before SF3:** after a death, `finishRespawn` (`actions.ts`) sets the saved region to `lumbridge` but does not write the footer, so the footer names the last region (README finding 2, G-6.3a `g1`).
 
