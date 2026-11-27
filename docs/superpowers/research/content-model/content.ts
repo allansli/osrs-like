@@ -248,7 +248,7 @@ export const BOSSES: Record<string, BossConfig & { respawnSecs: number; arenaRad
     typeKey: 'saltfang', hp: NEW_MONSTERS.saltfang.hp, mark: { step: 0.25, max: 4, secs: 12 }, openingShiftMs: 0, respawnSecs: 0, arenaRadius: 10,
     question: 'Can you keep up? Its tempo rises in every phase: the fight is won by ending it, so food and damage are the plan.',
     attacks: {
-      sting_arc: A({ id: 'sting_arc', shape: { type: 'cone', length: 14, halfAngleDeg: 50 }, windupMs: 1600, slots: 2, style: 'melee', power: 40, reach: 13.5 }),
+      sting_arc: A({ id: 'sting_arc', shape: { type: 'cone', length: 14, halfAngleDeg: 50 }, windupMs: 1600, slots: 2, style: 'melee', power: 40, reach: 2.9 }),
       brine_spit: A({ id: 'brine_spit', shape: { type: 'circle', anchor: 'target', radius: 2.5 }, windupMs: 1400, slots: 1, style: 'pure', power: 26, reach: 13.5 })
     },
     phases: [

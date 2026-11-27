@@ -747,7 +747,7 @@ The last four rows are the owner's O-6.1b.4 and 5 (2026-11-26): the three new bo
 
 | Phase | Health | Pattern |
 |---|---|---|
-| I. Stirring | to 60% | basic, basic, **Sting Arc** (cone 14 long, 50° half-angle, 1.6 s, power 40, melee), basic |
+| I. Stirring | to 60% | basic, basic, **Sting Arc** (cone 14 long, 50° half-angle, 1.6 s, power 40, melee, reach 2.9: begun at melee range so the 1.6 s wind-up meets Stage 4's escape rule), basic |
 | II. Roused | to 30% | **Brine Spit** x2 (circle of 2.5 at the hero, 1.4 s, power 26, nothing cuts it), Sting Arc, basic, basic |
 | III. Frenzy | to 0 | Sting Arc, Brine Spit x2, basic, Sting Arc, basic |
 
