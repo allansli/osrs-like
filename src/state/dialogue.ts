@@ -166,10 +166,10 @@ export function openDialogue(state: GameState, npcId: string): DialogueView | nu
   if (!npc) return null;
 
   const dlg = DIALOGUES.find((d) => d.npc === npcId);
-  if (!dlg) return null;
+  if (!dlg) throw new Error(`Dialogue ${npcId}: person has no dialogue`);
 
   const greet = dlg.greet.find((g) => !g.when || evalCond(state, g.when));
-  if (!greet) return null;
+  if (!greet) throw new Error(`Dialogue ${npcId}: no greet entry holds`);
 
   const node = dlg.nodes[greet.node];
   if (!node) throw new Error(`Dialogue ${npcId}: greet names missing node ${greet.node}`);
@@ -200,10 +200,10 @@ export function chooseOption(
   const dlg = DIALOGUES.find((d) => d.npc === npcId);
   if (!dlg) return { ok: false, reason: 'No dialogue for person', events: [] };
 
+  if (!Object.hasOwn(dlg.nodes, nodeId)) return { ok: false, reason: 'Unknown dialogue node', events: [] };
   const node = dlg.nodes[nodeId];
-  if (!node) return { ok: false, reason: 'Unknown dialogue node', events: [] };
 
-  if (index < 0 || index >= node.options.length) {
+  if (!Number.isInteger(index) || index < 0 || index >= node.options.length) {
     return { ok: false, reason: 'Option index out of range', events: [] };
   }
 
