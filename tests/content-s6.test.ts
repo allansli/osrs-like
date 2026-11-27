@@ -49,7 +49,7 @@ describe('what Stage 6 may add', () => {
   it('no monster outside the thirteen existing types drops equipment', () => {
     for (const [key, m] of monsters) {
       if (PRE_MONSTERS.has(key)) continue;
-      for (const d of m.drops) if (d.id) expect(ITEMS[d.id]?.type, `${key} drops ${d.id}`).not.toBe('equip');
+      for (const d of m.drops) if (d.id) expect(ITEMS[d.id].type, `${key} drops ${d.id}`).not.toBe('equip');
     }
   });
 

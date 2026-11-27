@@ -1,14 +1,15 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { ATTACKS } from '../src/data/attacks';
+import { ATTACKS, BOSSES } from '../src/data/attacks';
 import { ITEMS } from '../src/data/items';
 import { FORGE_RECIPES } from '../src/data/recipes';
 import { MONSTER_TYPES, RESOURCE_NODES_DEF } from '../src/data/world';
+import { QUEST_DEFS, STARTER_QUESTS } from '../src/state/adventure';
 
 // Design 7.10 (D1). The deny-list of tests/names.test.ts, copied (the last case fails if the two differ), over the
 // name of every row Stage 6 adds. Matching is a case-insensitive substring. Generic words shared with other games
-// (Coal, Steel Bar) are in by the owner's rule: only the deny-list is checked. The lists of the people, quests,
-// dungeons and phases join as their tables land (each later content test task reads its own table here).
+// (Coal, Steel Bar) are in by the owner's rule: only the deny-list is checked. Quests and boss phases are read from their tables; the lists of the people and
+// dungeons join as their tables land (each later content test task reads its own table here).
 const DENY = [
   'lumbridge', 'misthalin', 'varrock', 'kharid', 'korok', 'whispering', 'wilderness', 'gielinor',
   'haven', 'plaza', 'dunes', 'oasis', 'sunscorched', 'sanctuary', 'highlands', 'obsidian', 'volcanic', 'crag', 'peak',
@@ -49,13 +50,17 @@ describe('names of Stage 6', () => {
     for (const n of SHARED_WITH_ITEM) expect(denied(n).length, n).toBeGreaterThan(0);
   });
 
-  it('no new item, node, monster, recipe or attack name holds a deny-listed token', () => {
+  it('no new item, node, monster, recipe, attack, quest or phase name holds a deny-listed token', () => {
     const rows: [string, string][] = [];
     for (const it of Object.values(ITEMS)) if (!PRE_ITEMS.has(it.id)) rows.push([`item ${it.id}`, it.name]);
     for (const [id, n] of Object.entries(RESOURCE_NODES_DEF)) if (!PRE_NODES.has(id)) rows.push([`node ${id}`, (n as { name: string }).name]);
     for (const [id, m] of Object.entries(MONSTER_TYPES)) if (!PRE_MONSTERS.has(id)) rows.push([`monster ${id}`, m.name]);
     for (const r of FORGE_RECIPES) if (!PRE_RECIPES.has(r.id)) rows.push([`recipe ${r.id}`, r.name]);
     for (const a of Object.values(ATTACKS)) if (!PRE_ATTACKS.has(a.id)) rows.push([`attack ${a.id}`, a.name]);
+    // Quests: the golden holds the ids (and borrowed names) of the nine Stage 3 quests; the starter chain is read whole.
+    for (const q of QUEST_DEFS) if (!(q.id in golden.QUEST_DEFS)) rows.push([`quest ${q.id}`, q.name]);
+    for (const q of STARTER_QUESTS) rows.push([`quest ${q.id}`, q.name]);
+    for (const [id, b] of Object.entries(BOSSES)) for (const ph of b.phases) rows.push([`phase ${id}/${ph.name}`, ph.name]);
     for (const [what, name] of rows) {
       if (what.startsWith('recipe') && SHARED_WITH_ITEM.includes(name)) continue;
       expect(denied(name), `${what}: ${name}`).toEqual([]);
