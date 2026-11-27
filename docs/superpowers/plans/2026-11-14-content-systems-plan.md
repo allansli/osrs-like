@@ -997,3 +997,7 @@ Q6's data and text are unchanged. Its Accept was red on two tests that Q6 may no
 ### Q7 amendment (2026-11-27, written by the Q7 lane, awaiting ratification by the main session)
 
 - **Q7's files gain `src/state/commands.ts`** (commit 6fe05ce, engine): only the `{ kind: 'talk'; npcId: string }` member of `PlayerCommand` and its place among the engine-handled cases of `applyCommand` (beside `attack` and `move`), so the `talk` dispatch of `updatePlayerIntent` type-checks in lane E alone, without a cast. Q8 edits the same file: it keeps the member and replaces the engine-handled case with the real applier. No other line of the file changes.
+
+### Q9 repair amendment (2026-11-27, written by the Q9 repair lane, awaiting ratification by the main session)
+
+- **Q9's files gain `src/ui/dialogue.ts` and `src/engine/loop.ts`**: the task-master interaction (`act === 'slayer'`) and the dialogue event `open: 'tasks'` now call `openQuestsModal('tasks')`, so they land on the Tasks tab even when the log last showed Journal. Nothing else in those files changes.
