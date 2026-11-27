@@ -102,7 +102,7 @@ export function zoneCamps(def: Dungeon): CampDef[] {
 
 export function runStep(run: DungeonRun, event: { campDead: string }): string[] {
   const def = DUNGEONS.find((d) => d.id === run.id);
-  if (!def) return [];
+  if (!def) throw new Error(`runStep: unknown dungeon id "${run.id}"`);
   const alreadyDead = run.deadCamps.includes(event.campDead);
   if (!alreadyDead) {
     run.deadCamps.push(event.campDead);
@@ -113,7 +113,7 @@ export function runStep(run: DungeonRun, event: { campDead: string }): string[] 
   }
   if (alreadyDead) return [];
   const opened: string[] = [];
-  for (const gate of def.gates ?? []) {
+  for (const gate of def.gates) {
     if (gate.opensWhen.includes(event.campDead)) {
       if (gate.opensWhen.every((cId) => run.deadCamps.includes(cId))) {
         opened.push(gate.id);
@@ -128,7 +128,7 @@ export function openChest(
   def: Dungeon,
   run: DungeonRun,
   rand: () => number,
-  now = 0
+  now: number
 ): { ok: boolean; reason?: string } {
   if (!run.bossDead) {
     return { ok: false, reason: 'The boss is still alive.' };
@@ -174,17 +174,13 @@ export function openChest(
   run.chestOpen = true;
   bump(state, `clear:${def.id}`);
 
-  if (!state.progress) {
-    state.progress = {};
-  }
-  if (!state.progress.dungeons) {
-    state.progress.dungeons = {};
-  }
-  const existing = state.progress.dungeons[def.id];
-  const elapsedSecs = Math.max(0, Math.floor((now - run.startedAt) / 1000));
+  const progress = state.progress!; // bump above created it
+  const dungeons = (progress.dungeons ??= {});
+  const existing = dungeons[def.id];
+  const elapsedSecs = Math.floor((now - run.startedAt) / 1000);
   const best = existing ? Math.min(existing.best, elapsedSecs) : elapsedSecs;
   const clears = (existing?.clears ?? 0) + 1;
-  state.progress.dungeons[def.id] = { clears, best };
+  dungeons[def.id] = { clears, best };
 
   return { ok: true };
 }
