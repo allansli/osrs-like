@@ -43,7 +43,7 @@ export function spawnMonster(
   typeKey: string,
   x: number,
   z: number,
-  opts?: { campId?: string; wander?: number; respawn?: boolean }
+  opts?: { campId?: string; wander?: number; respawn?: boolean; respawnSecs?: number }
 ): void {
   const def: (MonsterDef & { model?: string; tint?: number; modelScale?: number }) | undefined =
     MONSTER_TYPES[typeKey];

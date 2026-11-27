@@ -49,7 +49,7 @@ import {
   RESPAWN_SECONDS,
   weaponSpecial
 } from '../state/adventure';
-import { DUNGEONS } from '../data/dungeons';
+import { CAVES, DUNGEONS } from '../data/dungeons';
 import { enterZone, handleZoneMonsterDied, isZoneNode, leaveZone } from './zones';
 
 export function teleportToRegion(regionId?: string): void {
@@ -152,7 +152,8 @@ export function dispatchCommand(cmd: PlayerCommand): CommandResult {
       addChatMessage(res.reason, 'combat');
       return res;
     }
-    enterZone(DUNGEONS.find((d) => d.id === cmd.dungeonId)!);
+    const def = DUNGEONS.find((d) => d.id === cmd.dungeonId) ?? CAVES.find((c) => c.id === cmd.dungeonId);
+    if (def) enterZone(def);
     return res;
   }
 
@@ -536,7 +537,7 @@ export function performMonsterRetaliation(monster: MonsterEntity): void {
     spawnShadowBolt(monster.pos, player.pos, applyHit);
   } else if (monster.typeKey === 'goblin_archer' || monster.typeKey === 'dark_ranger') {
     spawnArrowProjectile(null, monster.pos, player.pos, applyHit);
-  } else if (monster.typeKey === 'lesser_demon') {
+  } else if (monster.typeKey === 'lesser_demon' || monster.typeKey === 'ember_hurler') {
     spawnHellfireOrb(monster.pos, player.pos, applyHit);
   } else if (monster.typeKey === 'moss_guardian') {
     applyHit();

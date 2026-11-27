@@ -1,8 +1,9 @@
 import * as THREE from 'three';
 import { G } from './context';
 import { STATE } from '../state/gameState';
-import { DAY_CLOCK, GFX_TIERS, type QualityTier, SHADOW_BIAS, SHADOW_NORMAL_BIAS, SHADOW_SUN_STEP_DEG } from '../data/look';
-import { dayFrameAt, phaseToPreset, presetToPhase, stepPhase, type DayFrame, type Vec3 } from '../state/dayCycle';
+import { CAVE_LIGHT, DAY_CLOCK, GFX_TIERS, type QualityTier, SHADOW_BIAS, SHADOW_NORMAL_BIAS, SHADOW_SUN_STEP_DEG } from '../data/look';
+import { dayFrameAt, frameOf, phaseToPreset, presetToPhase, stepPhase, type DayFrame, type Vec3 } from '../state/dayCycle';
+import { CAVES } from '../data/dungeons';
 import { fitShadow, stepShadowDir } from '../state/shadowFit';
 import { AIR } from './atmosphere';
 import { getWeatherState } from './particles';
@@ -54,6 +55,15 @@ function syncPointLightsPool(tier: QualityTier): void {
   assignPointLights();
 }
 
+let caveLightFrame: DayFrame | null = null;
+function activeDayFrame(phase: number = currentPhase): DayFrame {
+  if (G.zone && CAVES.some((c) => c.id === G.zone!.def.id)) {
+    if (!caveLightFrame) caveLightFrame = frameOf(CAVE_LIGHT);
+    return caveLightFrame;
+  }
+  return dayFrameAt(phase);
+}
+
 function assignPointLights(): void {
   const activeCount = GFX_TIERS[currentTier].pointLights;
   if (activeCount === 0 || registeredEmitters.length === 0) {
@@ -63,7 +73,7 @@ function assignPointLights(): void {
     return;
   }
 
-  const frame = dayFrameAt(currentPhase);
+  const frame = activeDayFrame(currentPhase);
   const intensity = Math.min(Math.max(0, 1 - frame.keyIntensity / 0.9), 1);
 
   const camPos = G.camera.position;
@@ -111,7 +121,7 @@ export function setPhase(p: number, frozen: boolean): void {
 }
 
 export function currentDayFrame(): DayFrame {
-  return dayFrameAt(currentPhase);
+  return activeDayFrame(currentPhase);
 }
 
 export function initLighting(): void {
@@ -201,7 +211,7 @@ function clampCastDir(sunDir: Vec3): Vec3 {
 }
 
 function updateLightingFrame(phase: number): void {
-  const frame = dayFrameAt(phase);
+  const frame = activeDayFrame(phase);
   const weather = getWeatherState(currentDayIndex, phase);
 
   G.sunLight.color.setRGB(frame.key[0], frame.key[1], frame.key[2]);

@@ -1,6 +1,6 @@
 import { ITEMS } from '../data/items';
 import { PRAYERS } from '../data/magic';
-import { DUNGEONS } from '../data/dungeons';
+import { CAVES, DUNGEONS } from '../data/dungeons';
 import { weaponSpecial } from './adventure';
 import { canUseStyle } from './combat';
 import { openDialogue, chooseOption, type DialogueView, type DialogueEvent } from './dialogue';
@@ -146,7 +146,7 @@ function executeCommand(
       };
     }
     case 'enterDungeon': {
-      const def = DUNGEONS.find((d) => d.id === cmd.dungeonId);
+      const def = DUNGEONS.find((d) => d.id === cmd.dungeonId) ?? CAVES.find((c) => c.id === cmd.dungeonId);
       if (!def) {
         return { ok: false, reason: 'Unknown dungeon.' };
       }

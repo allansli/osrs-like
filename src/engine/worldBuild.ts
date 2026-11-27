@@ -20,7 +20,7 @@ import { mountLoadout, moveToTodayPivot, type MountedRig } from './playerMesh';
 import { EMITTERS } from '../data/look';
 import { registerEmitter } from './lighting';
 import { NPCS } from '../data/npcs';
-import { DUNGEONS } from '../data/dungeons';
+import { CAVES, DUNGEONS } from '../data/dungeons';
 import { describeNeeds } from '../state/commands';
 
 export function buildBiomeLandmarks(): void {
@@ -250,7 +250,12 @@ export function buildDungeonDoors(): void {
   const gold = facetMaterial({ color: 0xfacc15, emissive: 0xeab308, emissiveIntensity: 0.25, shade: 'cut' });
   const charcoal = albedoMaterial(0x27272a, 'stone', { shade: 'cut' });
 
-  for (const d of DUNGEONS) {
+  const allDoors = [
+    ...DUNGEONS.map((d) => ({ id: d.id, name: d.name, door: d.door, prompt: `${d.name}: needs ${describeNeeds(d.needs)}.` })),
+    ...CAVES.map((c) => ({ id: c.id, name: c.name, door: c.door, prompt: `${c.name}: nothing is needed.` }))
+  ];
+
+  for (const d of allDoors) {
     const x = d.door.x;
     const z = d.door.z;
     const y = getTerrainHeight(x, z);
@@ -293,14 +298,12 @@ export function buildDungeonDoors(): void {
     sealAlbedoUvs(grp);
     addCartoonOutline(grp, 0.035);
 
-    const prompt = `${d.name}: needs ${describeNeeds(d.needs)}.`;
-
     const uData = {
       type: 'interactive',
       action: 'door',
       name: d.name,
       dungeonId: d.id,
-      prompt,
+      prompt: d.prompt,
       interactRadius: 4.0
     };
     grp.userData = uData;

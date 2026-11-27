@@ -10,24 +10,11 @@ import { updateSky } from './sky';
 import { updateCarpet } from './flora';
 import { updateParticles } from './particles';
 import {
-  TICK_SEC,
-  commandClocks,
-  player,
-  camState,
-  _camTargetVec,
-  _lookTargetVec,
-  _emberOffsetVec,
-  _projNextVec,
-  _upAxisVec,
-  telemetryInfo,
-  G,
-  MonsterEntity,
-  ResourceNodeEntity,
-  ProjectileEntry,
-  VfxEntry,
-  SwayingFoliageEntry
+  TICK_SEC, commandClocks, player, camState, _camTargetVec, _lookTargetVec,
+  _emberOffsetVec, _projNextVec, _upAxisVec, telemetryInfo, G, MonsterEntity,
+  ResourceNodeEntity, ProjectileEntry, VfxEntry, SwayingFoliageEntry
 } from './context';
-import { SFX } from './audio';
+import { SFX } from './audio'; import { CAVES } from '../data/dungeons'; import { CAMERA_LIMITS } from '../data/look';
 import {
   spawnBurst,
   spawnExpandingRing,
@@ -621,7 +608,13 @@ export function updateCamera(f: FrameState): void {
   const desiredCamYaw = player.yaw + camState.manualOffset;
   camState.yaw = lerpAngle(camState.yaw, desiredCamYaw, Math.min(1, f.dt * 8.5));
 
-  const horizDist = Math.cos(camState.pitch) * camState.distance;
+  let horizDist = Math.cos(camState.pitch) * camState.distance;
+  if (G.zone && CAVES.some((c) => c.id === G.zone!.def.id)) {
+    const minHoriz = CAMERA_LIMITS.distanceMin * Math.cos(camState.pitch);
+    while (horizDist > minHoriz && !G.walkGrid.walkable(player.pos.x - Math.sin(camState.yaw) * horizDist, player.pos.z - Math.cos(camState.yaw) * horizDist)) {
+      horizDist = Math.max(minHoriz, horizDist - 0.25);
+    }
+  }
   const vertDist  = Math.sin(camState.pitch) * camState.distance;
   const camTargetX = player.pos.x - Math.sin(camState.yaw) * horizDist;
   const camTargetZ = player.pos.z - Math.cos(camState.yaw) * horizDist;
@@ -968,14 +961,7 @@ export function gameLoop(now: number): void {
   const elapsedSec = now * 0.001;
 
   const f: FrameState = {
-    now,
-    dt,
-    elapsedSec,
-    equipmentBonuses: getEquipmentBonuses(STATE),
-    moveSpeed: 11.5,
-    hasMoveIntent: false,
-    moveDirX: 0,
-    moveDirZ: 0
+    now, dt, elapsedSec, equipmentBonuses: getEquipmentBonuses(STATE), moveSpeed: 11.5, hasMoveIntent: false, moveDirX: 0, moveDirZ: 0
   };
 
   updateVitalsAndRegen(f);

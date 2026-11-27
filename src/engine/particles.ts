@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { GFX_TIERS, WEATHER, type QualityTier, type WeatherDef, type WeatherMote } from '../data/look';
+import { CAVE_FOG_SCALE, GFX_TIERS, WEATHER, type QualityTier, type WeatherDef, type WeatherMote } from '../data/look';
 import { WORLD_REGIONS } from '../data/world';
 import { player } from './context';
 import { AIR, AIR_GLSL, COLOR_FOOTER } from './atmosphere';
@@ -302,7 +302,20 @@ function regionWeights(): Record<string, number> {
   return weights;
 }
 
+let caveWeatherActive = false;
+
+export function setCaveWeather(on: boolean): void {
+  caveWeatherActive = on;
+  if (fallMesh) {
+    fallMesh.visible = !on && !isPlainMode();
+  }
+}
+
 export function getWeatherState(dayIndex: number, phase: number): ResolvedWeather {
+  if (caveWeatherActive) {
+    const def = weatherDef('ash_fall');
+    return { id: 'ash_fall', blend: 1, curr: def, prev: def, keyScale: 1, fogScale: CAVE_FOG_SCALE };
+  }
   if (weatherOverride) {
     const def = weatherDef(weatherOverride);
     return { id: def.id, blend: 1.0, curr: def, prev: def, keyScale: def.keyScale, fogScale: def.fogScale };
@@ -586,5 +599,5 @@ export function updateParticles(dt: number, camera: THREE.Camera): void {
   const motesCount = GFX_TIERS[currentTier].motes;
   motesMesh.visible = motesCount > 0 && !isPlainMode();
 
-  fallMesh.visible = targetFallCount > 0 && fallOpacity > 0.01 && !isPlainMode();
+  fallMesh.visible = !caveWeatherActive && targetFallCount > 0 && fallOpacity > 0.01 && !isPlainMode();
 }

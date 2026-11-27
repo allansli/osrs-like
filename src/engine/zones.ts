@@ -2,16 +2,17 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { G, player, type MonsterEntity, type ResourceNodeEntity } from './context';
 import { disposeObject3D } from './dispose';
-import { albedoMaterial, sealAlbedoUvs } from './textures';
+import { albedoMaterial, assignGroundUvs, biomeAlbedoId, GROUND_REPEAT, loadAlbedo, sealAlbedoUvs } from './textures';
 import { addCartoonOutline, facetMaterial } from './materials';
 import { AIR } from './atmosphere';
 import { setSkyVisible } from './sky';
+import { setCaveWeather } from './particles';
 import { applyWorldMaterials, loadBlenderWorldTemplate } from './blenderWorld';
 import { buildWalkGrid, type WalkGrid } from '../state/pathfind';
-import { runStep, zoneWalk, type DungeonRun } from '../state/dungeon';
-import { DUNGEONS, type Dungeon } from '../data/dungeons';
+import { runStep, zoneRespawns, zoneWalk, type DungeonRun } from '../state/dungeon';
+import { CAVES, DUNGEONS, type Dungeon, type Zone } from '../data/dungeons';
 import { getTerrainHeight } from '../state/terrain';
-import { AGGRO_GRACE_MS, isDown } from '../state/monsterAi';
+import { AGGRO_GRACE_MS, isDown, sendHome } from '../state/monsterAi';
 import { spawnMonster, spawnResourceNode } from './spawns';
 
 const ZONE_FOG_COLOR = 0x0f0c0a;
@@ -33,7 +34,9 @@ export function applyZoneAir(): void {
   AIR.uAirColor.value.setHex(ZONE_FOG_COLOR);
   AIR.uAirSunColor.value.copy(AIR.uAirColor.value);
   AIR.uFogHeightFalloff.value = 0;
-  AIR.uFogDensity.value = ZONE_FOG_DENSITY;
+  if (!G.zone || !CAVES.some((c) => c.id === G.zone!.def.id)) {
+    AIR.uFogDensity.value = ZONE_FOG_DENSITY;
+  }
 }
 
 function isInsideOtherRoom(
@@ -129,12 +132,208 @@ function computeWallSegments(roomsRecord: Record<string, [number, number, number
   return segments;
 }
 
-export function enterZone(def: Dungeon): void {
+interface CaveSessionState {
+  group: THREE.Group;
+  grid: WalkGrid;
+  floorMesh: THREE.Mesh;
+  monsters: MonsterEntity[];
+  interactiveObjects: THREE.Object3D[];
+}
+const caveStates = new Map<string, CaveSessionState>();
+
+export function enterZone(def: Zone): void {
   if (G.zone) {
     leaveZone();
   }
 
   const [ox, oz] = def.origin;
+  const isCave = CAVES.some((c) => c.id === def.id);
+
+  if (isCave) {
+    const existing = caveStates.get(def.id);
+    if (existing) {
+      existing.group.visible = true;
+      for (const m of existing.monsters) {
+        G.monstersList.push(m);
+        zoneMonsters.add(m);
+        G.worldInteractiveObjects.push(m.rig.hitbox);
+        m.rig.group.visible = m.logic.state !== 'dead';
+        if (m.logic.state !== 'dead') {
+          m.labelEl.style.display = '';
+        }
+      }
+      for (const obj of existing.interactiveObjects) {
+        G.worldInteractiveObjects.push(obj);
+        zoneInteractiveObjects.push(obj);
+      }
+      overworldGrid = G.walkGrid;
+      G.walkGrid = existing.grid;
+      G.groundMesh = existing.floorMesh;
+      G.worldInteractiveObjects.push(existing.floorMesh);
+      zoneFloor = existing.floorMesh;
+      player.pos.set(ox + def.entry[0], 0, oz + def.entry[1]);
+      player.waypoints.length = 0;
+      player.targetEntity = null;
+      player.currentSpeed = 0;
+      G.aggroGraceUntil = performance.now() + AGGRO_GRACE_MS;
+      setSkyVisible(false);
+      setCaveWeather(true);
+      G.zone = { def: def as unknown as Dungeon, run: null, grid: existing.grid, group: existing.group };
+      return;
+    }
+
+    const group = new THREE.Group();
+    const floorMat = facetMaterial({
+      color: 0xffffff,
+      map: loadAlbedo(biomeAlbedoId('peak-volcanic'), GROUND_REPEAT),
+      shade: 'cut'
+    });
+    const floorGeos: THREE.BufferGeometry[] = [];
+    for (const [rx0, rz0, rx1, rz1] of Object.values(def.rooms)) {
+      const w = rx1 - rx0;
+      const d = rz1 - rz0;
+      const geo = new THREE.PlaneGeometry(w, d);
+      geo.rotateX(-Math.PI / 2);
+      geo.translate(ox + (rx0 + rx1) / 2, 0, oz + (rz0 + rz1) / 2);
+      floorGeos.push(geo);
+    }
+    const floorGeo = mergeGeometries(floorGeos, false);
+    assignGroundUvs(floorGeo);
+    floorGeo.computeVertexNormals();
+    const floorMesh = new THREE.Mesh(floorGeo, floorMat);
+    floorMesh.receiveShadow = true;
+    floorMesh.userData = { type: 'ground' };
+    group.add(floorMesh);
+
+    const wallMat = albedoMaterial(0x2b2622, 'stone', { shade: 'cut' });
+    const wallSegments = computeWallSegments(def.rooms);
+    const wallGeos: THREE.BufferGeometry[] = [];
+    for (const [x0, z0, x1, z1] of wallSegments) {
+      const dx = x1 - x0;
+      const dz = z1 - z0;
+      const len = Math.hypot(dx, dz);
+      if (len < 0.001) continue;
+      const geo = new THREE.PlaneGeometry(len, 6);
+      geo.translate(len / 2, 3, 0);
+      geo.rotateY(-Math.atan2(dz, dx));
+      geo.translate(ox + x0, 0, oz + z0);
+      wallGeos.push(geo);
+    }
+    if (wallGeos.length > 0) {
+      const wallGeo = mergeGeometries(wallGeos, false);
+      wallGeo.computeVertexNormals();
+      const wallMesh = new THREE.Mesh(wallGeo, wallMat);
+      wallMesh.castShadow = true;
+      wallMesh.receiveShadow = true;
+      group.add(wallMesh);
+    }
+
+    loadBlenderWorldTemplate().then((gltf) => {
+      if (!gltf) return;
+      const spireTemplate = gltf.scene.getObjectByName('World_obsidian_spire');
+      if (spireTemplate) {
+        for (const [x0, z0, x1, z1] of def.solid ?? []) {
+          const clone = spireTemplate.clone(true);
+          clone.traverse((o) => {
+            const m = o as THREE.Mesh;
+            if (m.isMesh) m.geometry = m.geometry.clone();
+          });
+          clone.position.set(ox + (x0 + x1) / 2, 0, oz + (z0 + z1) / 2);
+          applyWorldMaterials(clone);
+          sealAlbedoUvs(clone);
+          group.add(clone);
+        }
+      }
+      const fissureTemplate = gltf.scene.getObjectByName('World_lava_fissure');
+      if (fissureTemplate) {
+        const emberMat = facetMaterial({ color: 0xff7a3a, emissive: 0xff5522, emissiveIntensity: 0.85, shade: 'cut' });
+        for (const [x0, z0, x1, z1] of wallSegments) {
+          const dx = x1 - x0;
+          const dz = z1 - z0;
+          const len = Math.hypot(dx, dz);
+          for (let s = 8; s < len; s += 8) {
+            const t = s / len;
+            const clone = fissureTemplate.clone(true);
+            clone.traverse((o) => {
+              const m = o as THREE.Mesh;
+              if (m.isMesh) {
+                m.geometry = m.geometry.clone();
+                m.material = emberMat;
+              }
+            });
+            clone.position.set(ox + x0 + dx * t, 0, oz + z0 + dz * t);
+            clone.rotation.y = -Math.atan2(dz, dx);
+            sealAlbedoUvs(clone);
+            group.add(clone);
+          }
+        }
+      }
+    });
+
+    const exitDoorMesh = new THREE.Mesh(new THREE.BoxGeometry(1.6, 2.8, 0.4), wallMat);
+    exitDoorMesh.position.set(ox + def.entry[0], 1.4, oz + def.entry[1] - 4);
+    exitDoorMesh.castShadow = true;
+    const exitDoorUData = {
+      type: 'interactive',
+      action: 'door',
+      name: 'Doorway (Leave)',
+      interactRadius: 3.5
+    };
+    exitDoorMesh.userData = exitDoorUData;
+    group.add(exitDoorMesh);
+    G.worldInteractiveObjects.push(exitDoorMesh);
+    zoneInteractiveObjects.push(exitDoorMesh);
+
+    overworldGrid = G.walkGrid;
+    const walk = zoneWalk(def, []);
+    const zoneGrid = buildWalkGrid(walk, ox, oz, def.size);
+    G.walkGrid = zoneGrid;
+
+    G.groundMesh = floorMesh;
+    G.worldInteractiveObjects.push(floorMesh);
+    zoneFloor = floorMesh;
+
+    zoneMonsters = new Set();
+    const caveMonsters: MonsterEntity[] = [];
+    for (const camp of def.camps) {
+      for (const m of camp.members) {
+        const idxBefore = G.monstersList.length;
+        spawnMonster(m.type, ox + m.x, oz + m.z, {
+          campId: `${def.id}:${camp.id}`,
+          wander: m.wander,
+          respawn: zoneRespawns(def),
+          respawnSecs: def.respawnSecs
+        });
+        if (G.monstersList.length === idxBefore) throw new Error(`enterZone: unknown monster type "${m.type}" in ${def.id}`);
+        const spawned = G.monstersList[G.monstersList.length - 1];
+        zoneMonsters.add(spawned);
+        caveMonsters.push(spawned);
+      }
+    }
+
+    caveStates.set(def.id, {
+      group,
+      grid: zoneGrid,
+      floorMesh,
+      monsters: caveMonsters,
+      interactiveObjects: [exitDoorMesh]
+    });
+
+    player.pos.set(ox + def.entry[0], 0, oz + def.entry[1]);
+    player.waypoints.length = 0;
+    player.targetEntity = null;
+    player.currentSpeed = 0;
+    G.aggroGraceUntil = performance.now() + AGGRO_GRACE_MS;
+
+    setSkyVisible(false);
+    setCaveWeather(true);
+
+    G.scene.add(group);
+    G.zone = { def: def as unknown as Dungeon, run: null, grid: zoneGrid, group };
+    return;
+  }
+
+  const dDef = def as Dungeon;
   const group = new THREE.Group();
   const stoneMat = albedoMaterial(0x525c66, 'stone', { shade: 'cut' });
 
@@ -179,7 +378,7 @@ export function enterZone(def: Dungeon): void {
   }
 
   // 3. Gate slabs
-  for (const gate of def.gates) {
+  for (const gate of (def as Dungeon).gates) {
     const [gx0, gz0, gx1, gz1] = gate.rect;
     const slabGeo = new THREE.BoxGeometry(gx1 - gx0, 4, gz1 - gz0);
     const slab = new THREE.Mesh(slabGeo, stoneMat);
@@ -247,7 +446,7 @@ export function enterZone(def: Dungeon): void {
     }
   }
 
-  for (const n of def.nodes) {
+  for (const n of (def as Dungeon).nodes) {
     const idxBefore = G.resourceNodesList.length;
     spawnResourceNode(n.type, ox + n.x, oz + n.z);
     if (G.resourceNodesList.length === idxBefore) throw new Error(`enterZone: unknown node type "${n.type}" in ${def.id}`);
@@ -256,7 +455,7 @@ export function enterZone(def: Dungeon): void {
 
   // Chest interactive object
   const chestGrp = new THREE.Group();
-  chestGrp.position.set(ox + def.chest[0], 0, oz + def.chest[1]);
+  chestGrp.position.set(ox + (def as Dungeon).chest[0], 0, oz + (def as Dungeon).chest[1]);
   const chestMat = albedoMaterial(0x854d0e, 'wood', { shade: 'cut' });
   const trimMat = facetMaterial({ color: 0xfacc15, emissive: 0xeab308, emissiveIntensity: 0.3, shade: 'cut' });
   const chestBox = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.8, 0.8), chestMat);
@@ -316,12 +515,50 @@ export function enterZone(def: Dungeon): void {
   };
 
   G.scene.add(group);
-  G.zone = { def, run, grid: zoneGrid, group };
+  G.zone = { def: def as Dungeon, run, grid: zoneGrid, group };
 }
 
 export function leaveZone(): void {
   if (!G.zone) return;
   const { def, group } = G.zone;
+
+  const isCave = CAVES.some((c) => c.id === def.id);
+  if (isCave) {
+    const cave = caveStates.get(def.id);
+    if (cave) {
+      for (const m of cave.monsters) {
+        sendHome(m.logic);
+        m.pos.x = m.logic.x;
+        m.pos.z = m.logic.z;
+        m.rig.group.position.set(m.logic.x, getTerrainHeight(m.logic.x, m.logic.z), m.logic.z);
+        m.rig.group.visible = false;
+        m.labelEl.style.display = 'none';
+        const hIdx = G.worldInteractiveObjects.indexOf(m.rig.hitbox);
+        if (hIdx !== -1) G.worldInteractiveObjects.splice(hIdx, 1);
+        const mIdx = G.monstersList.indexOf(m);
+        if (mIdx !== -1) G.monstersList.splice(mIdx, 1);
+        zoneMonsters.delete(m);
+      }
+      for (const obj of zoneInteractiveObjects) {
+        const oIdx = G.worldInteractiveObjects.indexOf(obj);
+        if (oIdx !== -1) G.worldInteractiveObjects.splice(oIdx, 1);
+      }
+      zoneInteractiveObjects = [];
+      const fIdx = G.worldInteractiveObjects.indexOf(zoneFloor);
+      if (fIdx !== -1) G.worldInteractiveObjects.splice(fIdx, 1);
+      group.visible = false;
+      G.groundMesh = G.terrainMesh;
+      G.walkGrid = overworldGrid;
+      setSkyVisible(true);
+      setCaveWeather(false);
+      player.pos.set(def.door.x, getTerrainHeight(def.door.x, def.door.z), def.door.z);
+      player.waypoints.length = 0;
+      player.targetEntity = null;
+      player.currentSpeed = 0;
+      G.zone = null;
+      return;
+    }
+  }
 
   for (const m of zoneMonsters) {
     G.monstersList.splice(G.monstersList.indexOf(m), 1);
@@ -364,7 +601,8 @@ export function leaveZone(): void {
 }
 
 export function handleZoneMonsterDied(m: MonsterEntity): void {
-  const def = G.zone!.def;
+  if (!G.zone || !G.zone.run) return;
+  const def = G.zone.def as Dungeon;
   const localCampId = m.logic.campId!.slice(`${def.id}:`.length);
 
   const members = G.monstersList.filter((other) => other.logic.campId === m.logic.campId);
@@ -395,7 +633,7 @@ export function handleZoneMonsterDied(m: MonsterEntity): void {
 }
 
 export function enterZoneById(id: string): void {
-  const def = DUNGEONS.find((d) => d.id === id);
+  const def = DUNGEONS.find((d) => d.id === id) ?? CAVES.find((c) => c.id === id);
   if (!def) throw new Error(`Unknown zone id: "${id}"`);
   enterZone(def);
 }
