@@ -48,6 +48,12 @@ The slice gate is **not closed**: the walking-gatherer case above is open. The m
   - A missing anchor now stops the script (exit 2), and fewer HOLDS lines than blocks fail it (exit 1).
 - `second-pass.sh` still patches the pre-G2 anchors and fails the same way. It is not part of the gate and was not changed.
 
+The two reading checks of G-6.0 hold:
+- **No clock and no `Math.random` in the new `src/state` modules.** Stage 6 added two modules under `src/state`: `progress.ts` (F2) and `saveRecovery.ts` (F4). `grep -nE "Date\.now|performance\.now|new Date|Math\.random|setTimeout|setInterval|requestAnimationFrame" src/state/progress.ts src/state/saveRecovery.ts` prints nothing (exit 1). The other files that `main..HEAD` adds under `src/state` (`dayCycle.ts`, `scatter.ts`, `shadowFit.ts`, `waterGrid.ts`, `weather.ts`) are Stage 5's look modules, not Stage 6's.
+- **The default state serialises to Stage 3's golden.** `tests/fixtures/s3/default-state.golden.json` has not changed since Stage 3's P1 commit (`f08f991`): `git diff c84cd12 HEAD -- tests/fixtures/s3/` is empty. `ONE(tests/save-compat-s3.test.ts)`: 6 of 6 pass, among them "the default state serialises to its golden". That test compares the parsed output with `toEqual`, with `savedAt` removed, so it pins the content and not the bytes.
+
+The slice gate stays open on the walking-gatherer case alone. Closing it needs one of the two paths above, chosen by the main session: the G2 follow-up with its test, or the owner accepting the trait at H-0, recorded here.
+
 ## What these pictures cannot prove
 
 - How it feels in play, the timing on the owner's machine, and frame rate. The FPS figures in the HUD come from a shared machine.
