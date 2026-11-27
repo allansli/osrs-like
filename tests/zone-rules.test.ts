@@ -145,8 +145,7 @@ describe('moveWithCollision', () => {
     const from: [number, number] = [-4, -3];
     expect(isWalkable(...from)).toBe(true);
     const r = moveWithCollision(from[0], from[1], 1000, 1000);
-    expect(Math.abs(r.x)).toBeLessThanOrEqual(118);
-    expect(Math.abs(r.z)).toBeLessThanOrEqual(118);
+    expect(r).toMatchObject({ x: 118, z: 118 });
     const small = moveWithCollision(-4, -3, 0.5, 0.5);
     expect(isWalkable(small.x, small.z)).toBe(true);
   });
