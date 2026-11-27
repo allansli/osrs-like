@@ -17,8 +17,9 @@ const FILE = 'tests/fixtures/size-refactor-golden.json';
 const digest = (v: unknown): string => createHash('sha256').update(JSON.stringify(v)).digest('hex');
 
 // Stage 6 (declared, design 11.3 item 22): the eleven attack rows that existed when the golden was taken. A later attack
-// adds keys; it must not change one of these.
+// adds keys; it must not change one of these. PLANS_OLD is the golden's `plans` digest before Stage 6, over these eleven.
 const OLD_ATTACKS = ['tail_lash', 'hexfall', 'pinning_volley', 'overhead_slam', 'rootquake', 'scorch_lane', 'ember_cone', 'tail_sweep', 'slag_rain', 'ashen_nova', 'slagburst'];
+const PLANS_OLD = '0adbc13ee5da62a2afba3c2359d5bb4edcbbd922761760ef4974718054132924';
 
 function plans(ids: string[]): Record<string, unknown> {
   const out: Record<string, unknown> = {
@@ -100,21 +101,20 @@ function monsterTrace(): string {
 }
 
 describe('review 17: refactors for bundle size keep every output', () => {
-  const current = { plans: digest(plans(OLD_ATTACKS)), telegraphs: telegraphs(), monsters: monsterTrace() };
+  const current = { plans: digest(plans(Object.keys(ATTACKS))), telegraphs: telegraphs(), monsters: monsterTrace() };
   if (process.env.GOLDEN_WRITE === '1') writeFileSync(FILE, JSON.stringify(current, null, 2) + '\n');
   const golden = JSON.parse(readFileSync(FILE, 'utf8')) as typeof current;
 
-  it('every sound plan of the eleven original attacks is unchanged (the plans recomputed with the newer attacks removed)', () => {
+  it('every sound plan is unchanged, and with the newer attacks removed it is the plan before Stage 6', () => {
+    expect(current.plans).toBe(golden.plans);
     expect(Object.keys(ATTACKS)).toEqual(expect.arrayContaining(OLD_ATTACKS));
-    expect(digest(plans(OLD_ATTACKS))).toBe(golden.plans);
+    expect(digest(plans(OLD_ATTACKS))).toBe(PLANS_OLD);
   });
 
-  it('every telegraph mesh and fill step of the original attacks is unchanged; newer attacks only add keys', () => {
-    // The golden keeps the eleven original entries and may gain keys (regeneration after a slice adds attacks, item 22);
-    // every key it holds, old or new, must match the current digest.
+  it('every telegraph mesh and fill step is unchanged; the original attacks keep their entries', () => {
     expect(Object.keys(golden.telegraphs)).toEqual(expect.arrayContaining(OLD_ATTACKS));
-    const now = current.telegraphs;
-    for (const [id, d] of Object.entries(golden.telegraphs)) expect(now[id], id).toBe(d);
+    expect(Object.keys(golden.telegraphs).length).toBe(Object.keys(ATTACKS).length);
+    expect(current.telegraphs).toEqual(golden.telegraphs);
   });
 
   it('every monster step on a walk grid is unchanged', () => {
