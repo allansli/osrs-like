@@ -4,7 +4,7 @@
 
 ## How the pictures were made
 
-- **Tree:** `feat/content-systems` at `3e86aa7`. This is slice 1 (D1 to B1) plus the MODEL repair below; nothing under `src/` changed after `2357ed7`.
+- **Tree:** `feat/content-systems` at `3e86aa7`. This is slice 1 (D1 to B1) plus the MODEL repair below. The pictures and `facts.json` were taken before the G-6.1 repair (`03a79b2`, `2f84d42`), so `c2`, `c3` and `facts.json` still show the "Its bolts are magic." line that `2f84d42` removes for Marrowjaw.
 - **Build and server:** BUILD through the capped wrapper, then `node_modules/.bin/vite preview --port 4392 --strictPort` of that `dist/` on the host. The shell line around the job checked that the port was free first, stopped the server by its PID afterwards, and checked that nothing was left listening on 4392. The committed job does not do this.
 - **Command:** `CAP_URL=http://localhost:4392/ CAP_OUT=<dir> node scripts/capture-gpu.mjs docs/superpowers/baseline/s6/g61/capture-job.mjs http://localhost:4392/`, exit 0. Every picture and `facts.json` in this folder comes from one run of the committed job, copied unchanged.
   - An earlier run of the same job pointed the Adept close-up's camera away from the camp. Only that camera yaw was changed before this run.
@@ -13,7 +13,7 @@
 - **Hero:** placed with `__DEBUG.look.pose`, with every combat skill at 99 (combat 126) set through `__DEBUG.STATE`.
   - At that level an ordinary camp's sight is `SIGHT_MIN` 3, so the hero can stand among the Adepts and the Brutes.
   - Marrowjaw's camp has `keepsSight` and sees 9 at any level, so he comes.
-  - The badge in `b*` and `c*` reads "Combat Lv. 3" because it refreshes only on a UI update (same as G-6.0).
+  - The badge reads "Combat Lv. 3" in `b1`, `b2` and `c1` because it refreshes only on a UI update (same as G-6.0). In `c2` and `c3` it reads "Combat Lv. 126": the fight refreshed it.
 - **No patches:** nothing under `src/` was patched, and monsters ran on the game's own loop.
 - **The kits on their bones:** to show this, the job sets `window.__THREE_DEVTOOLS__` (an `EventTarget`) before the page loads. Three.js's own devtools hook then announces every `THREE.Scene` to it. The job walks the live scenes for objects named `<kit>_<Bone>`, and it throws if any such object is not on a bone, if no kit child is found, or if any page error or console error is logged.
 
@@ -39,7 +39,12 @@
 
 ## Gate status (runs of 2026-11-26)
 
-Each command ran from the worktree root behind `flock /tmp/claude-capped.lock scripts/capped.sh`. SUITE, TYPES, BUILD and ECON first ran on `2357ed7` (the slice). After the MODEL repair, SUITE and TYPES were run again on `a696a83`: SUITE exit 0, 140 files, 1574 passed, 3 skipped; TYPES exit 0, no output. `tsconfig.json` includes `src`, `tests` and `vite.config.ts`, not `docs/`. MODEL ran on `3e86aa7`. Nothing under `src/` or `tests/` changed after `2357ed7`, so BUILD and ECON were not run again.
+Each command ran from the worktree root behind `flock /tmp/claude-capped.lock scripts/capped.sh`. SUITE, TYPES, BUILD and ECON first ran on `2357ed7` (the slice). The G-6.1 repair changed `tests/` and `src/` (`03a79b2`, `2f84d42`), so the whole gate ran again on `2f84d42`:
+- **SUITE:** exit 0. 140 files, 1574 passed, 3 skipped.
+- **TYPES:** exit 0, no output.
+- **BUILD:** exit 0. The JS chunk `dist/assets/index-D6dlyweN.js` is 1,109.07 kB (gzip 314.63 kB), reported only.
+- **ECON:** `tests/pacing.test.ts` 11 of 11, `tests/economy-invariants.test.ts` 7 of 7.
+- **MODEL:** exit 0, the three files end with their pass lines, and the committed results files did not change.
 
 The runs on `2357ed7`:
 - **SUITE** (`npx vitest run`): exit 0. 140 files, 1574 passed, 3 skipped.
@@ -81,19 +86,18 @@ The totals drifted as well: 18 open loops became 13, the moss guardian's rate we
   - `monster-models` (item 3, which only adds drops and rows);
   - `boss-phases` (item 5, `toEqual([BOSS])` becomes `toContain(BOSS)`, and the rest still pins Ashmantle's row);
   - `world-data-combat` (item 6, which adds `tollmaster`; the list is now compared after `.sort()`);
-  - `size-refactor-golden` (item 8; see the first item under "Found by this gate").
+  - `size-refactor-golden` (item 8, brought to its wording by the G-6.1 repair `03a79b2`; see the first item under "Found by this gate").
 - **D4:** `src/data/attacks.ts`, `world.ts` and `worldMap.ts`. Its `content.ts` edit (`a61f232`) and the revert of that edit (`be59034`) cancel out. The kits are wired: `kit: 'cinder_adept'`, `'slag_brute'` and `'marrowjaw'` (O-6.1b.6).
 - **B1:** `tests/boss-marrowjaw.test.ts` only, once its two commits are combined. The fight model was moved back inside the test file.
-- **Frozen tests:** every edit to an existing test file is one of the declared ones, except `tests/size-refactor-golden.test.ts`: its edit goes beyond the wording of O-6.1b.1 item 8 (the first item under "Found by this gate"). The main session has to rule on it. `tests/fixtures/` is unchanged in the slice.
+- **Frozen tests:** after the repair `03a79b2`, every edit to an existing test file is one of the declared ones. `tests/fixtures/size-refactor-golden.json` changed only as item 8 allows: `plans` regenerated, two telegraph keys added (`toll_slam`, `camp_sweep`), the eleven old telegraph entries and `monsters` byte-identical.
 
 ## Found by this gate (for the main session and H-1)
 
-1. **`tests/size-refactor-golden.test.ts` differs from the wording of O-6.1b.1 item 8.**
-   - The fixture was not regenerated. The test now digests `plans` over the eleven original attacks only (`OLD_ATTACKS`) and compares that with the old golden. That is as strict as before for those eleven, but the plans of `toll_slam` and `camp_sweep` are pinned nowhere.
-   - The telegraph test dropped its count check. Every key the golden holds must still match, but the golden holds only the eleven old keys, so the two new attacks' telegraphs are not pinned either.
-   - Item 8 says `plans` "is regenerated once per slice" and is checked against a digest "recomputed with the new attacks removed". The test does the second part but not the first.
-   - This is recorded, not changed: the file is frozen beyond D3's declared edit.
-2. **"Its bolts are magic." is printed for Marrowjaw** (in `c2` and `c3`, and in `facts.json`). This is `handleBossPhase` in `src/engine/actions.ts`, which prints the line on phase 0 for every boss. It is Ashmantle's line, and Marrowjaw is a melee boss. No slice-1 task lists `actions.ts`, so a later task, or the main session, has to make the line per boss. The owner sees it at H-1.
+1. **`tests/size-refactor-golden.test.ts` (repaired, `03a79b2`).** As D3 left it, the fixture was not regenerated, `plans` was digested over the eleven original attacks only, and the telegraph count check was dropped, so `toll_slam` and `camp_sweep` were pinned nowhere. Now, as O-6.1b.1 item 8 says:
+   - the golden was regenerated once (`GOLDEN_WRITE=1`). `plans` is the digest over every `ATTACKS` row. The telegraphs gain the two new keys, and the eleven old entries and `monsters` are byte-identical;
+   - the plans test checks the regenerated digest, and also checks that the plans recomputed with the new attacks removed equal the pre-Stage-6 digest (`0adbc13e...`, a literal in the test);
+   - the telegraph test again checks the key count and that every telegraph equals the golden.
+2. **"Its bolts are magic." was printed for Marrowjaw** (in `c2` and `c3`, and in `facts.json`, all taken before the fix). `handleBossPhase` in `src/engine/actions.ts` printed the line on phase 0 for every boss. Since `2f84d42` it prints it only when the boss's `style` is `magic`, which is Ashmantle and not Marrowjaw. **Allowlist:** no slice-1 task and not G-6.1 lists `actions.ts`. Like the MODEL repair, this needs the main session to ratify it as an amendment.
 3. **`second-pass.sh`** still patches the pre-G2 anchors, as G-6.0 recorded. It is not part of the gate and was not run.
 
 ## What these pictures cannot prove
