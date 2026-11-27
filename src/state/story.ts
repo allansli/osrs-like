@@ -113,6 +113,7 @@ export function finishQuest(state: GameState, questId: string): StoryResult {
   return { ok: true };
 }
 
+// Every stat leaf of the condition, through nested `all`, joined with ', '; null when there is none.
 function extractStatCount(state: GameState, cond: Cond): string | null {
   if ('stat' in cond) {
     const [statKey, target] = cond.stat;
@@ -120,10 +121,8 @@ function extractStatCount(state: GameState, cond: Cond): string | null {
     return `${current} of ${target}`;
   }
   if ('all' in cond) {
-    for (const c of cond.all) {
-      const res = extractStatCount(state, c);
-      if (res) return res;
-    }
+    const parts = cond.all.map((c) => extractStatCount(state, c)).filter((p): p is string => p !== null);
+    return parts.length > 0 ? parts.join(', ') : null;
   }
   return null;
 }
