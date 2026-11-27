@@ -103,5 +103,8 @@ const SNAPSHOT = {
   // Stage 6 slice 1 (D3, declared 11.3 item 17). Cinder Silk, Slagscale Hide and Tough Hide arrive with K2, which edits these rows then.
   cinder_adept: {"name":"Cinder Adept","level":52,"hp":80,"maxHit":17,"atk":49,"def":36,"drops":[{"id":"big_bones","chance":1},{"gp":[230,550],"chance":1},{"id":"ashes","chance":0.5,"qty":2}],"model":"dark_wizard"},
   slag_brute: {"name":"Slag Brute","level":58,"hp":112,"maxHit":19,"atk":54,"def":48,"drops":[{"id":"big_bones","chance":1},{"gp":[340,770],"chance":1},{"id":"shark","chance":0.4}],"model":"hill_giant"},
-  marrowjaw: {"name":"Marrowjaw the Tollmaster","level":40,"hp":560,"maxHit":21,"atk":52,"def":30,"drops":[{"id":"big_bones","chance":1},{"gp":[600,1200],"chance":1},{"id":"lobster","chance":1,"qty":2},{"id":"runite_bar","chance":0.125}],"model":"hill_giant"}
+  marrowjaw: {"name":"Marrowjaw the Tollmaster","level":40,"hp":560,"maxHit":21,"atk":52,"def":30,"drops":[{"id":"big_bones","chance":1},{"gp":[600,1200],"chance":1},{"id":"lobster","chance":1,"qty":2},{"id":"runite_bar","chance":0.125}],"model":"hill_giant"},
+  // Stage 6 slice 3 (Z3, declared 11.3 item 17). Chitin Plate and the like arrive with K2, which edits these rows then.
+  scree_skitter: {"name":"Scree Skitter","level":30,"hp":20,"maxHit":6,"atk":30,"def":14,"drops":[{"id":"bones","chance":1},{"gp":[20,60],"chance":0.6}],"model":"scorpion"},
+  saltfang: {"name":"Matron Saltfang","level":48,"hp":960,"maxHit":36,"atk":66,"def":42,"drops":[{"id":"big_bones","chance":1},{"gp":[300,600],"chance":1},{"id":"sting_gland","chance":1,"qty":3},{"id":"adamant_bar","chance":0.2,"qty":3}],"model":"scorpion"}
 };

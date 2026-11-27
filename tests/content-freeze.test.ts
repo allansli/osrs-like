@@ -14,21 +14,27 @@ const DECLARED_NEW_ITEMS = [
   // Stage 6, slice 1 (plan D1; design 11.3 item 1): the content file's ids, each later slice's test task appends its own.
   'coal', 'steel_bar', 'black_bar', 'sting_gland', 'mire_root',
   // Stage 6, slice 2 (plan Q5, Q6; design 11.3 item 1): the three embers.
-  'ember_faint', 'ember_steady', 'ember_bright'
+  'ember_faint', 'ember_steady', 'ember_bright',
+  // Stage 6, slice 3 (plan Z3): the Warren's ore and bar.
+  'adamantite_ore', 'adamant_bar'
 ];
 // Owner's decisions of 2026-11-14 (Stage 4, CALL-4.4 and CALL-4.8): the two shipped monsters and the new boss.
 const DECLARED_NEW_MONSTERS = [
   'saltback_stalker', 'thornwatch_marksman', 'ashmantle',
   // Stage 6, slice 1 (plan D1).
-  'cinder_adept', 'slag_brute', 'marrowjaw'
+  'cinder_adept', 'slag_brute', 'marrowjaw',
+  // Stage 6, slice 3 (plan Z3).
+  'scree_skitter', 'saltfang'
 ];
 // Stage 6 (plan D1, design 11.3 item 1): the nodes and recipes the stage adds, subtracted exactly as the items are.
-const DECLARED_NEW_NODES = ['coal_rock'];
+const DECLARED_NEW_NODES = ['coal_rock', 'adamantite_rock'];
 const DECLARED_NEW_RECIPES = [
   'smelt_steel', 'smelt_black',
   'smith_steel_sword', 'smith_steel_legs', 'smith_steel_plate',
   'smith_black_scim', 'smith_black_legs', 'smith_black_plate',
-  'brew_prayer', 'brew_restore', 'brew_stew'
+  'brew_prayer', 'brew_restore', 'brew_stew',
+  // Stage 6, slice 3 (plan Z3): smelting adamant and the three adamant forging recipes.
+  'smelt_adamant', 'smith_addy_scim', 'smith_addy_legs', 'smith_addy_plate'
 ];
 
 type Names = Record<string, string>;

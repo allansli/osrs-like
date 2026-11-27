@@ -122,7 +122,7 @@ describe('Ashmantle the Slag Wyrm (design 6.4)', () => {
   });
 });
 
-const NEW = ['saltback_stalker', 'thornwatch_marksman', 'ashmantle', 'cinder_adept', 'slag_brute', 'marrowjaw'];
+const NEW = ['saltback_stalker', 'thornwatch_marksman', 'ashmantle', 'cinder_adept', 'slag_brute', 'marrowjaw', 'scree_skitter', 'saltfang'];
 
 describe('models and equipment', () => {
   // the 10 species of monsters.glb: the catalog's eight plus the goblin archer and the dark ranger of world.ts

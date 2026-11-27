@@ -127,7 +127,9 @@ describe('model keys', () => {
       ashmantle: 'elvarg_dragon',
       cinder_adept: 'dark_wizard',
       slag_brute: 'hill_giant',
-      marrowjaw: 'hill_giant'
+      marrowjaw: 'hill_giant',
+      scree_skitter: 'scorpion',
+      saltfang: 'scorpion'
     });
     expect(new Set(Object.values(keys).filter((_, i) => i < 10)).size).toBe(10);
   });

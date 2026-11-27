@@ -1,5 +1,5 @@
 {
-  "plans": "aba0471f355a16ab27f985959e7763210f7b92df84a854c4d9a6ffea9559641d",
+  "plans": "58f59ef18c1bb0476cc3b430d5b47818b75b251160fa0e8a0c9c94e2eddce132",
   "telegraphs": {
     "tail_lash": "0bf4db31af2a35adf1f9a6b10d67b2114dbd9cbb34bf5d2088b5972229fdf21b",
     "hexfall": "670ce04271511f012d5eecf2731d331f340ff08ff538baa9e778e2e58d925e04",
@@ -13,7 +13,9 @@
     "ashen_nova": "c98523f10f05cd01ca8eba3af153c16a14b1b12b1affb952f594b87cdd80bdb3",
     "slagburst": "4ed2672965c9e16da8682ccc6f03cfab3f83558801a7d96309ceeeaefbf0f990",
     "toll_slam": "fd61da621d7c5d7dc54a1afab44fa289ebdf9a8d41b2e7bbc06b9913c46fa91c",
-    "camp_sweep": "28b8ab97b7f9303438f39705cdaa2d448160f86ab2d54598be30e19013ce1aba"
+    "camp_sweep": "28b8ab97b7f9303438f39705cdaa2d448160f86ab2d54598be30e19013ce1aba",
+    "sting_arc": "c83dfbf59df89859ccc6bd9096e6ebb97d025cdbedde44f3be7235cd3d8f6d6e",
+    "brine_spit": "670ce04271511f012d5eecf2731d331f340ff08ff538baa9e778e2e58d925e04"
   },
   "monsters": "f3c2f70d9ac992a39e6d7d52fcf1e181935e1f249dabbd25a4f65d78dd69e957"
 }

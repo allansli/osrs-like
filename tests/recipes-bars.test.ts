@@ -24,7 +24,11 @@ const SMITH_TABLE: Record<string, { input: Record<string, number>; req: number }
   smith_steel_plate: { input: { steel_bar: 3 }, req: 14 },
   smith_black_scim: { input: { black_bar: 2 }, req: 15 },
   smith_black_legs: { input: { black_bar: 2 }, req: 17 },
-  smith_black_plate: { input: { black_bar: 3 }, req: 19 }
+  smith_black_plate: { input: { black_bar: 3 }, req: 19 },
+  // Stage 6, slice 3 (Z3, design 7.4): adamant, three bars for the weapon and legs, four for the body.
+  smith_addy_scim: { input: { adamant_bar: 3 }, req: 30 },
+  smith_addy_legs: { input: { adamant_bar: 3 }, req: 32 },
+  smith_addy_plate: { input: { adamant_bar: 4 }, req: 34 }
 };
 
 function stateWith(smithing: number, items: Record<string, number>) {
