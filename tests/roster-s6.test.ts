@@ -249,7 +249,7 @@ describe("Marrowjaw's table against open ground", () => {
   const meanRoll = (max: number) => (1 + (max * (max + 1)) / 2) / (max + 1);
   const isBones = (id: string) => id === 'bones' || id === 'big_bones' || id === 'dragon_bones';
   const goods = (r: Row) =>
-    r.drops.reduce((s, d) => (d.id && !isBones(d.id) && ITEMS[d.id]?.type !== 'food' ? s + d.chance * (d.qty ?? 1) * unitSellPrice(ITEMS[d.id]) : s), 0);
+    r.drops.reduce((s, d) => (d.id && !isBones(d.id) && ITEMS[d.id].type !== 'food' ? s + d.chance * (d.qty ?? 1) * unitSellPrice(ITEMS[d.id]) : s), 0);
 
   function hero() {
     const s = createDefaultState();

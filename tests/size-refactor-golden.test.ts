@@ -20,7 +20,7 @@ const digest = (v: unknown): string => createHash('sha256').update(JSON.stringif
 // adds keys; it must not change one of these.
 const OLD_ATTACKS = ['tail_lash', 'hexfall', 'pinning_volley', 'overhead_slam', 'rootquake', 'scorch_lane', 'ember_cone', 'tail_sweep', 'slag_rain', 'ashen_nova', 'slagburst'];
 
-function plans(ids: string[] = Object.keys(ATTACKS)): Record<string, unknown> {
+function plans(ids: string[]): Record<string, unknown> {
   const out: Record<string, unknown> = {
     heavyTaken: sp.heavyTakenPlan(),
     dodged: sp.dodgedPlan(),
