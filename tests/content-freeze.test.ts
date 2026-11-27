@@ -12,7 +12,9 @@ const FIXTURE = new URL('./fixtures/s3/content-ids.golden.json', import.meta.url
 const DECLARED_NEW_ITEMS = [
   'hazel_staff',
   // Stage 6, slice 1 (plan D1; design 11.3 item 1): the content file's ids, each later slice's test task appends its own.
-  'coal', 'steel_bar', 'black_bar', 'sting_gland', 'mire_root'
+  'coal', 'steel_bar', 'black_bar', 'sting_gland', 'mire_root',
+  // Stage 6, slice 2 (plan Q5, Q6; design 11.3 item 1): the three embers.
+  'ember_faint', 'ember_steady', 'ember_bright'
 ];
 // Owner's decisions of 2026-11-14 (Stage 4, CALL-4.4 and CALL-4.8): the two shipped monsters and the new boss.
 const DECLARED_NEW_MONSTERS = [
