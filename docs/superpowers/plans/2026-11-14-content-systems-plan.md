@@ -1028,3 +1028,8 @@ Z5 shipped `ml_salt` (commit 695bbc3) with `xp: {}`. Design 7.3 pays 2,000 Craft
 Alternative: K2 appends the entry and nothing tops up old saves. A player who finished chapter 3 between the merges of slice 3 and slice 4 never gets the 2,000 XP (about 6 Work Blue Body actions at Crafting 35, 340 XP each). It saves the loader lines and the four load tests. To take it, strike the second bullet and the load cases of the third.
 
 The repair changed no data and no text: one docs commit (this amendment) and one data commit that rewords the comment above `ml_salt`'s reward to cite it.
+
+### Z6 repair amendment (2026-11-27, written by the Z6 repair lane, awaiting ratification by the main session)
+
+- **Z6's files gain** `src/data/dungeons.ts` (a typed optional `props?: { node; x; z; scale?; rotY? }[]` on `Dungeon`), `src/engine/worldMesh.ts` (one line: `G.groundMesh = G.terrainMesh` where the terrain mesh is built) and `src/engine/runtime.ts` (`enterZone` and `leaveZone` added to the `window.__DEBUG` object literal, replacing the import-time `defineProperty` hook, which `runtime.ts`'s later assignment would have replaced anyway).
+- **The sky module's scope is `setSkyVisible(on)` only again**: `updateSky` is back to its merged text. The zone's fog is `applyZoneAir()` in `zones.ts`, called from `loop.ts` after `updateAir`: it writes `AIR.uAirColor`, `uAirSunColor`, `uFogHeightFalloff` and `uFogDensity`, so the shader fog and (through the untouched `updateSky`) `scene.fog` are dark and dense. `zones.ts` no longer writes `scene.fog`. The clouds are hidden by layer because `updateSky` rewrites their `visible` each frame. C3's `CAVE_FOG_SCALE` should replace the density line of `applyZoneAir` for a cave.
