@@ -7,7 +7,8 @@ import { albedoMaterial, assignGroundUvs, biomeAlbedoId, GROUND_REPEAT, loadAlbe
 import { addCartoonOutline, facetMaterial } from './materials';
 import { AIR } from './atmosphere';
 import { setSkyVisible } from './sky';
-import { setCaveWeather } from './particles';
+import { setCarpetVisible } from './flora';
+import { setCaveWeather, setWeatherParticlesVisible } from './particles';
 import { applyWorldMaterials, loadBlenderWorldTemplate } from './blenderWorld';
 import { buildWalkGrid, type WalkGrid } from '../state/pathfind';
 import { runStep, zoneRespawns, zoneWalk, type DungeonRun } from '../state/dungeon';
@@ -179,6 +180,8 @@ export function enterZone(def: Zone): void {
       player.currentSpeed = 0;
       G.aggroGraceUntil = performance.now() + AGGRO_GRACE_MS;
       setSkyVisible(false);
+      setCarpetVisible(false);
+      setWeatherParticlesVisible(false);
       setCaveWeather(true);
       G.zone = { def, run: null, grid: existing.grid, group: existing.group };
       return;
@@ -327,6 +330,8 @@ export function enterZone(def: Zone): void {
     G.aggroGraceUntil = performance.now() + AGGRO_GRACE_MS;
 
     setSkyVisible(false);
+    setCarpetVisible(false);
+    setWeatherParticlesVisible(false);
     setCaveWeather(true);
 
     G.scene.add(group);
@@ -505,6 +510,8 @@ export function enterZone(def: Zone): void {
 
   // 9. Hide sky dome (the fog is applyZoneAir's, called from loop.ts) and horizon apron
   setSkyVisible(false);
+  setCarpetVisible(false);
+  setWeatherParticlesVisible(false);
 
   // 10. Run state, add to scene and set G.zone
   const run: DungeonRun = {
@@ -547,6 +554,8 @@ export function leaveZone(): void {
     G.groundMesh = G.terrainMesh;
     G.walkGrid = overworldGrid;
     setSkyVisible(true);
+    setCarpetVisible(true);
+    setWeatherParticlesVisible(true);
     setCaveWeather(false);
     player.pos.set(def.door.x, getTerrainHeight(def.door.x, def.door.z), def.door.z);
     player.waypoints.length = 0;
@@ -587,6 +596,8 @@ export function leaveZone(): void {
   G.walkGrid = overworldGrid;
 
   setSkyVisible(true);
+  setCarpetVisible(true);
+  setWeatherParticlesVisible(true);
 
   player.pos.set(def.door.x, getTerrainHeight(def.door.x, def.door.z), def.door.z);
   player.waypoints.length = 0;

@@ -342,19 +342,44 @@ let fallMesh: THREE.InstancedMesh | null = null;
 let motesMaterial: THREE.ShaderMaterial | null = null;
 let fallMaterial: THREE.ShaderMaterial | null = null;
 
+let weatherParticlesVisible = true;
+let savedMotesVisible = true;
+let savedFallVisible = false;
+
+export function setWeatherParticlesVisible(on: boolean): void {
+  if (!on && weatherParticlesVisible) {
+    savedMotesVisible = motesMesh?.visible ?? true;
+    savedFallVisible = fallMesh?.visible ?? false;
+    weatherParticlesVisible = false;
+    if (motesMesh) motesMesh.visible = false;
+    if (fallMesh) fallMesh.visible = false;
+  } else if (on && !weatherParticlesVisible) {
+    weatherParticlesVisible = true;
+    if (motesMesh) motesMesh.visible = savedMotesVisible;
+    if (fallMesh) fallMesh.visible = savedFallVisible;
+  }
+}
+
+export function getWeatherEmitters(): THREE.InstancedMesh[] {
+  const emitters: THREE.InstancedMesh[] = [];
+  if (motesMesh) emitters.push(motesMesh);
+  if (fallMesh) emitters.push(fallMesh);
+  return emitters;
+}
+
 export function setParticlesTier(tier: QualityTier): void {
   currentTier = tier;
   if (!motesMesh || !fallMesh) return;
 
   const motesCount = GFX_TIERS[tier].motes;
   motesMesh.count = motesCount;
-  motesMesh.visible = motesCount > 0 && !isPlainMode();
+  motesMesh.visible = weatherParticlesVisible && motesCount > 0 && !isPlainMode();
 
   const redMotion = prefersReducedMotion();
   const baseFall = GFX_TIERS[tier].weatherParticles;
   const fallCount = redMotion ? Math.floor(baseFall / 2) : baseFall;
   fallMesh.count = fallCount;
-  fallMesh.visible = fallCount > 0 && !isPlainMode();
+  fallMesh.visible = weatherParticlesVisible && fallCount > 0 && !isPlainMode();
 }
 
 export function initParticles(scene: THREE.Scene, tier: QualityTier): void {
@@ -594,7 +619,7 @@ export function updateParticles(dt: number, camera: THREE.Camera): void {
   fallMaterial.uniforms.uFallShape.value = drawnId === 'rain' ? 2 : 3;
 
   const motesCount = GFX_TIERS[currentTier].motes;
-  motesMesh.visible = motesCount > 0 && !isPlainMode();
+  motesMesh.visible = weatherParticlesVisible && motesCount > 0 && !isPlainMode();
 
-  fallMesh.visible = !caveWeatherActive && targetFallCount > 0 && fallOpacity > 0.01 && !isPlainMode();
+  fallMesh.visible = weatherParticlesVisible && !caveWeatherActive && targetFallCount > 0 && fallOpacity > 0.01 && !isPlainMode();
 }

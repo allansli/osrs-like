@@ -343,6 +343,24 @@ export function getCarpetMeshes(): THREE.InstancedMesh[] {
   return carpetMeshes;
 }
 
+let carpetVisible = true;
+let savedCarpetVisible: boolean[] = [];
+
+export function setCarpetVisible(on: boolean): void {
+  if (!on && carpetVisible) {
+    savedCarpetVisible = carpetMeshes.map((m) => m.visible);
+    carpetVisible = false;
+    for (const mesh of carpetMeshes) {
+      mesh.visible = false;
+    }
+  } else if (on && !carpetVisible) {
+    carpetVisible = true;
+    for (let i = 0; i < carpetMeshes.length; i++) {
+      carpetMeshes[i].visible = savedCarpetVisible[i] ?? true;
+    }
+  }
+}
+
 function clearCarpet(): void {
   for (const mesh of carpetMeshes) {
     G.scene.remove(mesh);
@@ -370,6 +388,7 @@ export function buildCarpet(tier: QualityTier): THREE.InstancedMesh[] {
     mesh.castShadow = false;
     mesh.receiveShadow = true;
     mesh.userData = { carpetVariant: variant };
+    mesh.visible = carpetVisible;
     G.scene.add(mesh);
     carpetMeshes.push(mesh);
   });
