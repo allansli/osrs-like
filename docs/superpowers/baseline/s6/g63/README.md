@@ -66,7 +66,7 @@ Each command ran from the worktree root behind `flock /tmp/claude-capped.lock sc
   - The declared edits: `tests/content-freeze.test.ts` (ids only), `src/__tests__/blender-hero.test.ts` (16 to 18), and `tests/new-monsters.test.ts` (`NEW` gains the two types).
   - The edits declared by O-6.1b.1 for Z3: `tests/monster-kits.test.ts` (item 2), `tests/monster-models.test.ts` (item 3, two rows), `tests/fixtures/size-refactor-golden.json` (item 8), and `tests/recipes-bars.test.ts` (item 9, three rows).
   - `tests/content-s6.test.ts` was not edited.
-- **Z4:** `src/data/dungeons.ts`, `world.ts`, `extras.ts`, `attacks.ts`, and `src/data/recipeTable.ts`. `recipeTable.ts` is the file that holds `FORGE_RECIPES` since the F2 amendment, so it is the file R0's rule names in place of `recipes.ts`. Under the ratified Z4 amendment there are also `tests/support/starterChain.ts`, `tests/support/pacingModel.ts`, `content.ts` line 251 and design 7.7. `CAMPS` is unchanged.
+- **Z4:** `src/data/dungeons.ts`, `world.ts`, `extras.ts`, `attacks.ts`, and `src/data/recipeTable.ts`. `recipeTable.ts` has held `FORGE_RECIPES` since the F2 amendment. It is outside Z4's written list, and no amendment covers it for Z4: the section 5 rule on moved functions names engine tasks only. The G-6.3 amendment proposes it. Under the ratified Z4 amendment there are also `tests/support/starterChain.ts`, `tests/support/pacingModel.ts`, `content.ts` line 251 and design 7.7. `CAMPS` is unchanged.
 - **Z5:** `src/data/story.ts`, `src/data/dialogue.ts`.
 - **Z6:** `src/engine/zones.ts`, `context.ts`, `loop.ts`, `input.ts`, `overlay.ts`, `actions.ts`, `sky.ts`. Under the Z6 repair amendment there are also `src/data/dungeons.ts` (the `props` type), `src/engine/worldMesh.ts` (one line) and `src/engine/runtime.ts`.
 - **Z7:** `src/engine/zones.ts`, `spawns.ts`, `loop.ts`, `worldBuild.ts`, `session.ts`, `actions.ts`, `src/state/commands.ts`. Neither `stepMonster` nor the overworld spawns were edited.
@@ -78,7 +78,7 @@ Each command ran from the worktree root behind `flock /tmp/claude-capped.lock sc
 
 ## The read of every passage Z5 added or changed
 
-Z5 added or changed 11 Qadir nodes, 5 Odalys nodes, 1 Tamsin node and 2 Hesper nodes, plus the five journal lines of `ml_salt`. Each was read once for sense, for voice and against the rules of Q6. The tests already check length, option count, markup characters, the forbidden words, reachability and the once-only rule.
+Z5 added 10 Qadir nodes (and removed his `soon`), 5 Odalys nodes, 1 Tamsin node and 2 Hesper nodes, plus the five journal lines of `ml_salt`. Each was read once for sense, for voice and against the rules of Q6. The tests already check length, option count, markup characters, the forbidden words, reachability and the once-only rule.
 
 **Passages to rewrite: none.**
 - **Voices.**
@@ -91,7 +91,7 @@ Z5 added or changed 11 Qadir nodes, 5 Odalys nodes, 1 Tamsin node and 2 Hesper n
   - Qadir sends the hero to "four" stalkers. That matches stage 1, `kill:saltback_stalker` 4.
   - The stalkers are "on the shore in the far south-east". The `saltback_shore` camp is at (103 to 109, 104 to 109).
   - Qadir is "in the dunes, past the end of Saltwind Track". He stands at (60, 66), and the track ends at (68, 55).
-  - The door is "east of the gold veins in the dunes". The door is at (106, 74).
+  - The door is "east of the gold veins in the dunes". The door is at (106, 74), and the three `gold_rock` placements are at x 82 to 88, z 48 to 62 (`src/data/placements.ts`). That is east, and a little south.
   - The Warren has "three halls before hers", and the gate opens when "all three halls are quiet". The gate's `opensWhen` is `nest`, `gallery` and `brood`.
   - The halls hold "Skitters ... Stalkers, with marksmen standing behind". The nest holds 8 skitters. The gallery holds 3 stalkers with 2 Thornwatch Marksmen at its far side. The brood holds 6 skitters and 2 stalkers.
   - "What dies in there stays dead until you leave" matches `respawn: false`. "Only the first room is safe" matches `zoneSafe`, within 6 of the entry.
@@ -115,12 +115,12 @@ Z5 added or changed 11 Qadir nodes, 5 Odalys nodes, 1 Tamsin node and 2 Hesper n
    - In `a2`, `a3`, `b1`, `b2` and `c1` to `c4`, the grass carpet covers the dungeon floor and the black outside the rooms. The falling streaks and motes of the weather are also drawn.
    - The carpet follows the hero (`updateCarpet(heroX, heroZ, tier)`, `src/engine/flora.ts`). The particles follow the camera (`updateParticles`, `src/engine/particles.ts`). `enterZone` hides the sky and the clouds only.
    - The fix is an engine repair of Z6 that hides the carpet, the flora and the particles while `G.zone` is set and restores them in `leaveZone`. `flora.ts` and `particles.ts` are not in Z6's list, so it needs an amendment.
-2. **Matron Saltfang engages only a hero within 5 of her, not her `aggro` 12.**
-   - `zoneCamps` (`src/state/dungeon.ts`) gives each zone camp the radius `ceil(spread of its members + 4.5)`. For the lair, a camp of one, that is 5.
-   - `stepMonster` acquires a hero only when the hero is inside that circle, as well as within the sight radius. `c2` shows the hero 6 from her, untouched, after 3 s. `c3` shows the hero 4 from her, fought.
-   - The halls' camps have a wide spread, so the effect there is small. In the lair, `aggro: 12` and design 7.6's "everything attacks" are moot.
-   - No test pins a zone camp's radius. Z1's acquisition case uses the fixture's hall camp, whose members are spread out, with the hero placed toward the camp's middle.
-   - The smallest repair is in `zoneCamps`: the radius is at least `aggro`, or at least `arenaRadius` for a boss camp. That is a Z2 file, and it would need a Z1-style test case. B2's fight model does not read the camp, so no bound moves. Slice 3a's caves use the same function, and C1's cave acquisition cases (8.9 and 11.9 from a member) would also depend on this circle.
+2. **Matron Saltfang engages only a hero within 5 of her, not at her `aggro` 12. This is a design question, not a defect of slice 3.**
+   - `zoneCamps` (`src/state/dungeon.ts`) gives each zone camp the radius `ceil(spread of its members + 4.5)`. That is the same formula as the overworld's `makeCamp` (`src/data/worldMap.ts`). So Marrowjaw's and Ashmantle's one-member camps are also 5 wide. G-6.1's fight shot of Marrowjaw was taken at exactly 5, so it did not show this.
+   - `stepMonster` acquires a hero only when the hero is inside that circle as well as within the sight radius. For a one-member camp, a sight of 9 or 12 is therefore moot. `c2` shows the hero 6 from her, untouched after 3 s. `c3` shows the hero 4 from her, being fought.
+   - Once she is fighting, the circle no longer matters. The leash on `camp.radius + 4` is skipped for a boss, and a boss gives up only through `bossTargetGaveUp`, or when the hero is too far, down or safe. So the fight itself is not cut short at 5.
+   - No test pins a camp's radius. Z1's acquisition case uses the fixture's hall camp, whose members are spread out, with the hero placed toward the camp's middle.
+   - For the main session and the owner: should a boss camp's circle be at least its `aggro`, or its `arenaRadius`? If so, the change belongs in both `makeCamp` and `zoneCamps`, and it would also change the two overworld bosses. Slice 3a's caves read `zoneCamps` too. C1's cave cases (acquiring at 8.9 and at 11.9 from a member) hold only where the hero is also inside the camp's circle.
 3. **The door's prompt.** Clicking the door prints its needs line every time it is used from outside, even when the hero meets them, before the hero enters (`loop.ts`, the `door` branch).
    - The line reads "needs Combat 50, Salt on the Wind (stage 3) or Salt on the Wind (stage 4) or Salt on the Wind (done)". The stage numbers count from 0, and the player never sees them anywhere else.
    - This is for the owner to judge at H-3. It is not a defect against a test.
