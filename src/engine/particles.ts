@@ -343,21 +343,9 @@ let motesMaterial: THREE.ShaderMaterial | null = null;
 let fallMaterial: THREE.ShaderMaterial | null = null;
 
 let weatherParticlesVisible = true;
-let savedMotesVisible = true;
-let savedFallVisible = false;
-
 export function setWeatherParticlesVisible(on: boolean): void {
-  if (!on && weatherParticlesVisible) {
-    savedMotesVisible = motesMesh?.visible ?? true;
-    savedFallVisible = fallMesh?.visible ?? false;
-    weatherParticlesVisible = false;
-    if (motesMesh) motesMesh.visible = false;
-    if (fallMesh) fallMesh.visible = false;
-  } else if (on && !weatherParticlesVisible) {
-    weatherParticlesVisible = true;
-    if (motesMesh) motesMesh.visible = savedMotesVisible;
-    if (fallMesh) fallMesh.visible = savedFallVisible;
-  }
+  weatherParticlesVisible = on;
+  setParticlesTier(currentTier);
 }
 
 export function getWeatherEmitters(): THREE.InstancedMesh[] {

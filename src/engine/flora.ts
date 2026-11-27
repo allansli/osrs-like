@@ -344,19 +344,17 @@ export function getCarpetMeshes(): THREE.InstancedMesh[] {
 }
 
 let carpetVisible = true;
-let savedCarpetVisible: boolean[] = [];
 
 export function setCarpetVisible(on: boolean): void {
   if (!on && carpetVisible) {
-    savedCarpetVisible = carpetMeshes.map((m) => m.visible);
     carpetVisible = false;
     for (const mesh of carpetMeshes) {
       mesh.visible = false;
     }
   } else if (on && !carpetVisible) {
     carpetVisible = true;
-    for (let i = 0; i < carpetMeshes.length; i++) {
-      carpetMeshes[i].visible = savedCarpetVisible[i] ?? true;
+    for (const mesh of carpetMeshes) {
+      mesh.visible = true;
     }
   }
 }
