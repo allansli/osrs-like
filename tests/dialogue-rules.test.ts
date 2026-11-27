@@ -334,6 +334,7 @@ describe('claimStarter', () => {
     expect(s.quests.claimed).toEqual(copy.quests.claimed);
     expect(s.quests.title).toBe(copy.quests.title);
     expect(s.quests.dragonfireWard).toBe(copy.quests.dragonfireWard);
+    expect(snapshot(s)).toBe(snapshot(copy));
   });
 
   it('a second call by either route is refused', () => {

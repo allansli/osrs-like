@@ -47,7 +47,7 @@ export const FX_STORY_QUESTS = [
 ];
 
 // Options with give, take, finish or claimStarter pin a stage or a starter state, as the data test of 7.2 demands,
-// except the three marked LOOSE, which exist to test a rule's own guard.
+// except the four marked LOOSE, which exist to test a rule's own guard.
 export const FX_DIALOGUES = [
   {
     npc: 'fx_keeper',
@@ -111,7 +111,7 @@ export const FX_DIALOGUES = [
       edge: {
         say: 'Odd requests.',
         options: [
-          // give then take of one item succeeds only when the effects apply in order
+          // LOOSE: give then take of one item succeeds only when the effects apply in order
           { text: 'Swap.', then: [{ give: ['copper_ore', 1] }, { take: ['copper_ore', 1] }], goto: 'end' },
           // LOOSE: take then give of one item the hero lacks must be refused
           { text: 'Reverse swap.', then: [{ take: ['copper_ore', 1] }, { give: ['copper_ore', 1] }], goto: 'end' },
