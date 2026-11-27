@@ -82,7 +82,7 @@ export function satisfy(state: GameState, cond: Cond): void {
     }
   } else if ('skill' in cond) {
     const [key, lvl] = cond.skill;
-    if (state.skills[key]?.lvl < lvl) setSkill(state, key, lvl);
+    if (state.skills[key].lvl < lvl) setSkill(state, key, lvl);
   } else if ('combat' in cond) {
     if (combatLevel(state) < cond.combat) raiseCombat(state, cond.combat);
   } else if ('gp' in cond) {

@@ -155,7 +155,9 @@ describe('the walk: every quest, in table order, through the dialogue functions'
     const out: string[] = [];
     main.forEach((q: StoryQuest, i) => {
       if (i > 0) {
+        // Every non-quest leaf (the combat level included) made true, so only the missing earlier chapter can refuse.
         const fresh = afterChain();
+        for (const leaf of mustLeaves(q.needs)) if (!('quest' in leaf)) satisfy(fresh, leaf);
         if (startQuest(fresh, q.id).ok) out.push(`${q.id}: started with no earlier chapter done`);
       }
       const need = mustLeaves(q.needs).flatMap((l) => ('combat' in l ? [l.combat] : []));
