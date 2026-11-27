@@ -198,7 +198,7 @@ describe('every dungeon row (design 7.6)', () => {
     for (const k of Object.keys(BOSSES)) if (k !== 'ashmantle') zoneTypes.add(k);
     for (const t of zoneTypes) {
       expect(has(types, t), `${t} is a monster type`).toBe(true);
-      const equip = types[t].drops.filter((dr) => dr.id && items[dr.id]?.type === 'equip').map((dr) => dr.id);
+      const equip = types[t].drops.filter((dr) => dr.id && items[dr.id].type === 'equip').map((dr) => dr.id);
       expect(equip, `${t} drops`).toEqual([]);
     }
   });
