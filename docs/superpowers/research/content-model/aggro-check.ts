@@ -1,7 +1,7 @@
 // The aggression rule of design 7.13 (aggro.ts), checked three ways (aggro-results.txt):
 //   1. the radius function itself;
-//   2. Stage 2's stepMonster with the rule patched in (run.sh writes the patched copy: two replacements in a copy of
-//      src/state/monsterAi.ts, nothing in src/ is edited), against the cases of tests/monster-territory.test.ts;
+//   2. the game's stepMonster (G2 landed the rule in src/state/monsterAi.ts: AFTER) against Stage 2's rule (BEFORE: run.sh
+//      reverses G2's two edits in a copy of that file, nothing in src/ is edited), on the cases of tests/monster-territory.test.ts;
 //   3. Stage 2's gate simulation (tests/gate-simulation.test.ts, transcribed), before and after.
 import { CAMPS, isInSafeZone, type CampDef } from '../../../../src/data/worldMap';
 import { MONSTER_TYPES } from '../../../../src/data/world';
@@ -9,17 +9,18 @@ import { NODE_PLACEMENTS } from '../../../../src/data/placements';
 import { combatLevel } from '../../../../src/state/adventure';
 import { rollMonsterHit } from '../../../../src/state/combat';
 import { createDefaultState } from '../../../../src/state/gameState';
-import * as before from '../../../../src/state/monsterAi';
-// @ts-expect-error resolved by run.sh (esbuild alias) to the patched copy
-import * as after from '@patched/monsterAi';
+import * as after from '../../../../src/state/monsterAi';
+// @ts-expect-error resolved by run.sh (esbuild alias) to the copy with Stage 2's rule
+import * as stage2 from '@stage2/monsterAi';
 import { KEEPS_SIGHT, SIGHT_GAP, SIGHT_MIN, packAttackers, sightRadius } from './aggro';
 
 const out: string[] = [];
 const p = (s = '') => out.push(s);
 let failures = 0;
 const check = (ok: boolean, what: string) => { if (!ok) { failures++; p('  FAIL ' + what); } return ok; };
-type Ai = typeof before;
-const AFTER = after as Ai;
+type Ai = typeof after;
+const AFTER = after;
+const before = stage2 as Ai;
 function seeded(seed: number): () => number {
   let a = seed >>> 0;
   return () => { a = (a + 0x6d2b79f5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
@@ -47,10 +48,10 @@ p('  the pacing model\'s count of a pack of 4 (aggro.ts, packAttackers), by hero
 for (const pack of [1, 2, 3, 4, 7]) for (const style of ['melee', 'ranged', 'magic']) for (let g = -30; g <= 0; g++) check(packAttackers(pack, 50, style, 50 + g) === pack, 'at or below the monster\'s level the count is the whole pack, as in Stage 2');
 for (const pack of [1, 2, 3, 4, 7]) for (let g = SIGHT_GAP; g <= 60; g++) check(packAttackers(pack, 50, 'melee', 50 + g) === 1, `one attacker from ${SIGHT_GAP} levels above, as in Stage 2`);
 
-// ---------------------------------------------------------------- 2. stepMonster with the rule patched in
+// ---------------------------------------------------------------- 2. the game's stepMonster against Stage 2's
 p();
-p('=== 2. Stage 2\'s stepMonster with the rule patched in, on the cases of tests/monster-territory.test.ts');
-const camp = (id: string, x: number, z: number, radius: number, aggressive: boolean, aggroRadius?: number): CampDef => ({ id, x, z, radius, aggressive, aggroRadius, members: [] });
+p('=== 2. The game\'s stepMonster (G2) against Stage 2\'s rule, on the cases of tests/monster-territory.test.ts');
+const camp = (id: string, x: number, z: number, radius: number, aggressive: boolean, aggroRadius?: number): CampDef => ({ id, x, z, radius, aggressive, aggroRadius, members: [], keepsSight: KEEPS_SIGHT.includes(id) });
 const world = (px: number, pz: number, c: CampDef, playerCombat: number, playerSafe = false) => ({ playerX: px, playerZ: pz, playerDown: false, dt: 0.02, rand: seeded(1), playerCombat, playerSafe, camps: [c] });
 function acquires(ai: Ai, type: string, c: CampDef, dist: number, combat: number, steps = 50): boolean {
   const m = ai.createMonsterLogic(type, c.x, c.z, { campId: c.id, wander: 0 });
@@ -71,7 +72,7 @@ const goblin = MONSTER_TYPES.goblin.level;
   for (const g of [-1, 0, 1, 2, 5, 9, 10, 30]) {
     const b = reach(before, 'goblin', c, goblin + g), a = reach(AFTER, 'goblin', c, goblin + g), want = sightRadius(9, goblin, goblin + g, false);
     p(`    hero ${g >= 0 ? '+' : ''}${g}: ${b.toFixed(2)} -> ${a.toFixed(2)}   (${want.toFixed(2)})`);
-    check(Math.abs(a - want) <= 0.051, `patched reach equals sightRadius at gap ${g}`);
+    check(Math.abs(a - want) <= 0.051, `the game's reach equals sightRadius at gap ${g}`);
     if (g <= 0) check(Math.abs(a - b) < 1e-9, `unchanged at or below the monster's level (gap ${g})`);
   }
   for (const type of ['goblin_archer', 'dark_wizard']) { const lv = MONSTER_TYPES[type].level; check(Math.abs(reach(AFTER, type, c, lv) - 12) <= 0.051 && Math.abs(reach(AFTER, type, c, lv + 40) - SIGHT_MIN) <= 0.051, `${type}: 12 at its level, ${SIGHT_MIN} far above`); }
@@ -137,7 +138,8 @@ for (const [label, make, sameWanted] of rows) {
   check(f.surv.every((x) => x < 0.05), 'the test\'s first bound: a fresh character survives fewer than 5% of runs');
   check(q.surv.every((x) => x === 1), 'the test\'s second bound: 40 hitpoints and Protect from Melee survives every run');
   check(f.least >= 1 && q.least >= 1, 'the test\'s third bound: every run records at least one attack per sentry');
-  check(KEEPS_SIGHT.includes(sentryCamp.id) && sentryCamp.aggressive, 'the sentries keep their sight');
+  check(KEEPS_SIGHT.includes(sentryCamp.id) && !!sentryCamp.keepsSight && sentryCamp.aggressive, 'the sentries keep their sight');
+  for (const c of CAMPS) check(!!c.keepsSight === KEEPS_SIGHT.includes(c.id), `keepsSight of camp ${c.id} in the game equals aggro.ts KEEPS_SIGHT`);
 }
 p(`  the sentries are level ${MONSTER_TYPES.lesser_demon.level}: under Stage 2's rule a hero of combat ${MONSTER_TYPES.lesser_demon.level + 1} or more walked through untouched; now the pass tests every hero, and a prepared one passes.`);
 

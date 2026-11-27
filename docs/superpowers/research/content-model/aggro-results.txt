@@ -5,7 +5,7 @@
   keeps its sight (sentries, bosses, dungeons)   9.0  9.0  9.0  9.0  9.0  9.0  9.0  9.0  9.0  9.0  9.0
   the pacing model's count of a pack of 4 (aggro.ts, packAttackers), by hero combat minus monster level: 0:4 1:4 2:4 3:4 4:3 5:3 6:3 7:2 8:2 9:2 10:1 20:1
 
-=== 2. Stage 2's stepMonster with the rule patched in, on the cases of tests/monster-territory.test.ts
+=== 2. The game's stepMonster (G2) against Stage 2's rule, on the cases of tests/monster-territory.test.ts
   goblin (level 2), aggressive camp, how far it sees a hero (BEFORE -> AFTER; the function says):
     hero -1: 9.00 -> 9.00   (9.00)
     hero +0: 9.00 -> 9.00   (9.00)

@@ -9,7 +9,8 @@
 - Every scene got a fresh browser context, so storage started empty and the game began as a new game. `Math.random` was seeded the same way as Stage 5's `capture.md`. The onboarding panel was hidden, the run waited for `look.ready()`, and the mouse was parked on `#top-left-hud`.
 - The run waited 3.5 s after load so the 3 s aggression grace would end. The hero was then placed with `__DEBUG.look.pose`. Skills were set through `__DEBUG.STATE`, with xp taken from the OSRS curve.
 - Nothing under `src/` was patched. Monsters ran on the game's own loop and the G2 rule. The gather was started with the game's own click handler.
-- The job is `capture-job.mjs`, and the numbers read during the run are in `facts.json`. In the job file, the yew scene is the last version: the ten-attempt run. The pictures `c1` to `c3` come from the run before it, which used the same scene setup except that it did not record `moving`.
+- **`facts.json` was assembled by hand from earlier runs, and the committed `capture-job.mjs` does not reproduce it.** The job versions that made the pictures and `facts.json` were not kept. The committed job is a later edit of them: the same scene setup and the same reads, but different output. It writes `facts.scenes.{a1_scorpions_new_hero, a2_scorpions_strong_hero, b_three_kettle_passive, c_yew_gatherer}` with `before` and `chatTail` fields, and the pictures `c1-yew-chopping-try<N>.jpg` and `c2-yew-hit-fighting-back.jpg`. `facts.json` instead holds `camps` (the three camp scenes, with `hpBefore` and `chat`), `yewRunPictures` (the one attempt of the run that took `c1-yew-chopping.jpg`, `c2-yew-hit.jpg` and `c3-yew-after-hit.jpg`) and `yewRun10Attempts` (the ten-attempt run, which took no picture that is committed). Treat the committed job as a record of the method, not as the script that produced these files. A rerun of it gives new pictures and a new `facts.json` in its own shape.
+- The run behind `yewRunPictures` did not record `moving`. Its `gatheringWhenHit: true` therefore means only "the target was the yew in the frame before the hit". By the position, the hero was still walking to the second yew (see the table), so that field is not evidence of a hit on a hero standing and chopping.
 
 ## The pictures
 
@@ -30,9 +31,22 @@ The ten-attempt run is in `facts.json`, under `yewRun10Attempts`. A frame watche
 - 1 first hit (attempt 1) landed on an idle hero between two gathers. Auto-retaliation answered it.
 - **Auto-retaliation did not always answer those hits.** In 4 of the 6 (attempts 0, 6, 7, 9), 2.5 s after the hit the hero had no target and was standing idle. In the other 2 (attempts 3 and 5), the hero had a Moss Guardian as its target by then.
 - Likely cause, read from the code but not proven by a test: `maybeRetaliate` (`src/engine/actions.ts`) clears the resource target, but `shouldRetaliate` refuses while `walking` is true. `walking` is true because `player.waypoints` still holds the walk to the tree. The hero then finishes the walk with no target.
-- G2's tests cover a gatherer who is standing still. This walking-to-the-tree case is not tested. **It is reported, not fixed, here.** The main session decides whether it is a G2 follow-up or a known trait for the owner to judge at H-0.
+- G2's tests (`tests/gatherer-hit.test.ts`) cover a gatherer who is standing still. This walking-to-the-tree case is not tested.
+- **Open, and it blocks the slice gate.** Plan 0.5, row CALL-6.29 (b), says a hit "ends the gather, so Stage 4's auto-retaliation answers it". In this case the gather ends but nothing answers. The fix lies outside this gate's files (`src/engine/actions.ts`, plus a new test), so it is not made here. The main session must choose one of two paths. The first is a G2 follow-up with a test task before it: when `maybeRetaliate` clears a resource target, it also clears the walk to that target and calls `updateTargetHud`, and a test pins that a hero hit while walking to a tree fights back. The second is to record it as a trait the owner accepts at H-0.
 - The UI side: the target panel keeps naming the yew after the gather ends, because `maybeRetaliate` does not call `updateTargetHud`.
 - In 3 attempts (2, 4, 8), the log printed "Moss Guardian attacks!" but no hit landed within the 40 s watch.
+
+## Gate status (repair of 2026-11-26)
+
+The slice gate is **not closed**: the walking-gatherer case above is open. The model checks were rerun on this tree after the repair:
+- MODEL (`scripts/capped.sh bash docs/superpowers/research/content-model/run.sh`): exit 0. `run.sh` now takes the post-G2 `src/state/monsterAi.ts` as it is (AFTER). It rebuilds Stage 2's rule (BEFORE) in a copy by reversing G2's two edits and its import, and each anchor must match once. `results.txt` ends with `ALL CHECKS PASS`, `check-results.txt` with `EVERY BOUND HOLDS, WITH TODAY'S FORMULA AND WITH THE REBALANCE`, and `aggro-results.txt` with `ALL AGGRESSION CHECKS PASS`. Every number is the same as R0b's: only the heading of section 2 changed. `aggro-check.ts` now also checks that each camp's `keepsSight` in the game equals `aggro.ts`'s `KEEPS_SIGHT`.
+- PACE (`scripts/capped.sh bash docs/superpowers/research/content-model/pacing-rerun.sh`): exit 0, six blocks, each ending with `EVERY ASSERTION OF pacing.test.ts HOLDS`.
+  - Block 0 is the committed G1 model, unpatched.
+  - Block 1 is Stage 3's model, rebuilt by reversing G1's line and import. It is identical, line for line, to R0's block 1.
+  - Block 2 is the convention. It is identical to R0's block 2.
+  - The block at gap 10 is identical to block 0, which the script checks. The blocks at gaps 5 and 20 differ from gap 10 in 25 and 21 lines.
+  - A missing anchor now stops the script (exit 2), and fewer HOLDS lines than blocks fail it (exit 1).
+- `second-pass.sh` still patches the pre-G2 anchors and fails the same way. It is not part of the gate and was not changed.
 
 ## What these pictures cannot prove
 

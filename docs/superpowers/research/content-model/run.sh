@@ -5,8 +5,9 @@
 #                                  dungeon geometry, names, save size, hours
 #   check.ts -> check-results.txt  the three new bosses and Stage 4's Ashmantle through Stage 4's positional fight,
 #                                  each row with today's attack formula and with the style rebalance
-#   aggro-check.ts -> aggro-results.txt  the aggression rule (aggro.ts): the radius function, Stage 2's stepMonster with
-#                                  the rule patched into a COPY of src/state/monsterAi.ts, and Stage 2's gate simulation
+#   aggro-check.ts -> aggro-results.txt  the aggression rule (aggro.ts): the radius function, the game's stepMonster
+#                                  (G2 landed the rule in src/state/monsterAi.ts) against Stage 2's rule, rebuilt in a COPY
+#                                  of that file by reversing G2's two edits, and Stage 2's gate simulation
 # pacing-rerun.sh (its own script) runs Stage 3's pacing test under the rule, on the working tree.
 # second-pass.sh (its own script, also on the working tree) is the second-pass check: the style band at every level, chain-pulls,
 # the high trees and the Kilnglass variants.
@@ -18,22 +19,23 @@ here="$(cd "$(dirname "$0")" && pwd)"
 root="$(cd "$here/../../../.." && pwd)"
 out="$(mktemp -d)"
 trap 'rm -rf "$out"' EXIT
-# The aggression rule patched into a copy of Stage 2's monster rules: two replacements, each must match exactly once.
-node - "$root/src/state/monsterAi.ts" "$out/monsterAi.patched.ts" "$root" "$here" <<'JS'
+# Stage 2's rule rebuilt from the game's monster rules (G2 landed design 7.13 there): G2's two edits of stepMonster and
+# its import, reversed in a COPY. Each anchor must match exactly once, or the run stops (exit 2).
+node - "$root/src/state/monsterAi.ts" "$out/monsterAi.stage2.ts" "$root" <<'JS'
 const fs = require('fs');
-const [src, dst, root, here] = process.argv.slice(2);
+const [src, dst, root] = process.argv.slice(2);
 let s = fs.readFileSync(src, 'utf8');
 const swap = (from, to) => { if (s.split(from).length !== 2) { console.error('run.sh: anchor not found exactly once: ' + from); process.exit(2); } s = s.replace(from, to); };
-swap("    world.playerCombat != null &&\n    monsterThreatColor(m.level, world.playerCombat) !== 'green'\n", "    world.playerCombat != null\n");
-swap("const aggroRadius = camp.aggroRadius ?? (m.style === 'magic' || m.style === 'ranged' ? 12 : 9);",
-  "const aggroRadius = sightRadius(camp.aggroRadius ?? (m.style === 'magic' || m.style === 'ranged' ? 12 : 9), m.level, world.playerCombat, KEEPS_SIGHT.includes(camp.id));");
+swap("    world.playerCombat != null\n  ) {\n", "    world.playerCombat != null &&\n    monsterThreatColor(m.level, world.playerCombat) !== 'green'\n  ) {\n");
+swap("    const aggroRadius = sightRadius(\n      camp.aggroRadius ?? (m.style === 'magic' || m.style === 'ranged' ? 12 : 9),\n      m.level,\n      world.playerCombat,\n      !!camp.keepsSight\n    );\n",
+  "    const aggroRadius = camp.aggroRadius ?? (m.style === 'magic' || m.style === 'ranged' ? 12 : 9);\n");
+swap("import { moveWithCollision } from './collision';\n", "import { monsterThreatColor } from './adventure';\nimport { moveWithCollision } from './collision';\n");
 s = s.replace(/from '\.\.\/data\//g, "from '" + root + "/src/data/").replace(/from '\.\//g, "from '" + root + "/src/state/");
-s = "import { KEEPS_SIGHT, sightRadius } from '" + here + "/aggro';\n" + s;
 fs.writeFileSync(dst, s);
 JS
 for name in model check aggro-check; do
   "$root/node_modules/.bin/esbuild" "$here/$name.ts" --bundle --platform=node --format=esm --log-level=warning \
-    --alias:@patched/monsterAi="$out/monsterAi.patched.ts" --outfile="$out/$name.mjs"
+    --alias:@stage2/monsterAi="$out/monsterAi.stage2.ts" --outfile="$out/$name.mjs"
 done
 run() {
   env -i HOME="$HOME" PATH="$PATH" node --max-old-space-size=1024 "$out/$1.mjs"
