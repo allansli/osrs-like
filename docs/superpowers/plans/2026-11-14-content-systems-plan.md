@@ -981,9 +981,9 @@ GLB node names are unique, so two kits cannot both have a child named `HeadGroup
 
 - F6's file list also holds `src/engine/loop.ts` (allowlist amendment for an engine task, section 5): the engine's `respawned` branch (the one that already re-shows the monster) calls `clearBossDown(STATE, m.typeKey)`. `actions.ts` has no respawn handler and `spawns.ts` has no accessor on `logic.state`; `spawns.ts` only starts a boss `dead` when `bossBackIn` is above 0.
 
-### G-6.1 amendment, proposed (2026-11-26, G-6.1 repair lane; awaiting main-session ratification)
+### G-6.1 amendment (2026-11-26, written by the G-6.1 repair lane, ratified by the main session 2026-11-27)
 
-Proposed by the lane, not ratified. It stands only once the main session ratifies it, as it did the F2 and F6 amendments.
+Ratified as written below.
 - **G-6.1's files gain `src/engine/actions.ts`** (commit 2f84d42, engine): `handleBossPhase` printed "Its bolts are magic." on phase 0 for every boss, so Marrowjaw said it too. It now prints the line only when `monster.def.style === 'magic'`. Ashmantle's style is `'magic'` and Marrowjaw's is `'melee'`, so only Ashmantle says it (CALL-4.18). No test pins this line yet. If one is wanted, the main session names the task and its new test file.
 - **G-6.1's files gain `docs/superpowers/research/content-model/model.ts` and `results.txt`** (commit 3e86aa7, docs): once slice 1 had landed, MODEL counted each shipped Stage 6 row twice (the live table plus the content file), so 27 checks failed. The live imports are aliased, and the world before Stage 6 is derived by id. A shipped row now passes the "id is free" check only if it matches the content file's numbers (drops are exempt until K2). `results.txt` is unchanged except for one added line listing the 23 shipped rows.
 - **G-6.0's files gain** `docs/superpowers/baseline/s6/README.md`, `docs/superpowers/research/content-model/run.sh`, `aggro-check.ts`, `aggro-results.txt`, `pacing-rerun.sh` and `pacing-results.txt` (commit 6332d5d, docs): MODEL and PACE run on the tree after G1 and G2. The G-6.1 MODEL repair above cites it as its precedent.
