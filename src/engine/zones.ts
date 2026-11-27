@@ -334,11 +334,8 @@ export function leaveZone(): void {
 
   for (const r of zoneNodes) {
     G.resourceNodesList.splice(G.resourceNodesList.indexOf(r), 1);
-    const colliders = r.group.children.filter((c) => c.userData.isCollider || c.userData.type === 'resource');
-    for (const c of colliders) {
-      const hIdx = G.worldInteractiveObjects.indexOf(c);
-      if (hIdx >= 0) G.worldInteractiveObjects.splice(hIdx, 1);
-    }
+    const hitbox = r.group.children.find((c) => G.worldInteractiveObjects.includes(c))!;
+    G.worldInteractiveObjects.splice(G.worldInteractiveObjects.indexOf(hitbox), 1);
     G.scene.remove(r.group);
     disposeObject3D(r.group);
   }
