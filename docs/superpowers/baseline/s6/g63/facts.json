@@ -1,0 +1,330 @@
+{
+ "renderer": "ANGLE (Microsoft Corporation, D3D12 (NVIDIA GeForce RTX 4070 Laptop GPU), OpenGL 4.6)",
+ "scenes": {
+  "a_entry": {
+   "pageErrors": [],
+   "shots": [
+    {
+     "file": "a1-door-overworld.jpg",
+     "camera": [
+      3.14,
+      0.5,
+      10
+     ],
+     "hp": 70,
+     "maxHp": 70,
+     "pos": [
+      106,
+      77.5
+     ],
+     "target": null,
+     "bossBar": null,
+     "chatTail": [
+      "Welcome to Gielinor Hero.",
+      "Use WASD / Arrows or Click anywhere to move, fight monsters, chop trees, mine ores, or fish.",
+      "You arrive with nothing. The tracker under your health shows your first task: speak with the task master in the courtyard.",
+      "The courtyard holds the Bank booth, the General Store, and the Anvil. Walk up to use them. Press F1–F6 to switch panels and Esc to close a window."
+     ]
+    },
+    {
+     "file": "a2-entry-room.jpg",
+     "note": "camera as the game left it after the door",
+     "hp": 70,
+     "maxHp": 70,
+     "pos": [
+      1012,
+      -168
+     ],
+     "target": null,
+     "bossBar": null,
+     "chatTail": [
+      "Use WASD / Arrows or Click anywhere to move, fight monsters, chop trees, mine ores, or fish.",
+      "You arrive with nothing. The tracker under your health shows your first task: speak with the task master in the courtyard.",
+      "The courtyard holds the Bank booth, the General Store, and the Anvil. Walk up to use them. Press F1–F6 to switch panels and Esc to close a window.",
+      "Saltfang Warren: needs Combat 50, Salt on the Wind (stage 3) or Salt on the Wind (stage 4) or Salt on the Wind (done)."
+     ]
+    },
+    {
+     "file": "a3-entry-room-high.jpg",
+     "heroAt": [
+      1012,
+      -168
+     ],
+     "camera": [
+      1.2,
+      0.95,
+      22
+     ],
+     "hp": 70,
+     "maxHp": 70,
+     "pos": [
+      1012,
+      -168
+     ],
+     "target": null,
+     "bossBar": null,
+     "chatTail": [
+      "Use WASD / Arrows or Click anywhere to move, fight monsters, chop trees, mine ores, or fish.",
+      "You arrive with nothing. The tracker under your health shows your first task: speak with the task master in the courtyard.",
+      "The courtyard holds the Bank booth, the General Store, and the Anvil. Walk up to use them. Press F1–F6 to switch panels and Esc to close a window.",
+      "Saltfang Warren: needs Combat 50, Salt on the Wind (stage 3) or Salt on the Wind (stage 4) or Salt on the Wind (done)."
+     ]
+    },
+    {
+     "file": "a4-minimap-entry.jpg"
+    }
+   ],
+   "door": {
+    "at": [
+     496,
+     80
+    ],
+    "label": "Interact with Saltfang Warren"
+   }
+  },
+  "b_nest": {
+   "pageErrors": [],
+   "shots": [
+    {
+     "file": "b1-nest-from-corridor.jpg",
+     "heroAt": [
+      1023,
+      -168
+     ],
+     "camera": [
+      1.57,
+      0.75,
+      16
+     ],
+     "hp": 70,
+     "maxHp": 70,
+     "pos": [
+      1023,
+      -168
+     ],
+     "target": null,
+     "bossBar": null,
+     "chatTail": [
+      "Use WASD / Arrows or Click anywhere to move, fight monsters, chop trees, mine ores, or fish.",
+      "You arrive with nothing. The tracker under your health shows your first task: speak with the task master in the courtyard.",
+      "The courtyard holds the Bank booth, the General Store, and the Anvil. Walk up to use them. Press F1–F6 to switch panels and Esc to close a window.",
+      "Saltfang Warren: needs Combat 50, Salt on the Wind (stage 3) or Salt on the Wind (stage 4) or Salt on the Wind (done)."
+     ]
+    },
+    {
+     "file": "b2-nest-fight.jpg",
+     "heroAt": [
+      1030,
+      -168
+     ],
+     "camera": [
+      1.57,
+      0.55,
+      9
+     ],
+     "afterMs": 3000,
+     "hp": 63.55,
+     "maxHp": 70,
+     "pos": [
+      1030,
+      -168
+     ],
+     "target": null,
+     "bossBar": null,
+     "chatTail": [
+      "Scree Skitter attacks!",
+      "Defeated Scree Skitter (Lv-30).",
+      "Looted Bones.",
+      "Looted 53 GP from Scree Skitter."
+     ]
+    }
+   ],
+   "door": {
+    "at": [
+     496,
+     80
+    ],
+    "label": "Interact with Saltfang Warren"
+   }
+  },
+  "c_matron": {
+   "pageErrors": [],
+   "shots": [
+    {
+     "file": "c1-matron-idle.jpg",
+     "heroAt": [
+      1062,
+      -149
+     ],
+     "camera": [
+      0,
+      0.5,
+      12
+     ],
+     "hp": 70,
+     "maxHp": 70,
+     "pos": [
+      1062,
+      -149
+     ],
+     "target": null,
+     "bossBar": null,
+     "chatTail": [
+      "Use WASD / Arrows or Click anywhere to move, fight monsters, chop trees, mine ores, or fish.",
+      "You arrive with nothing. The tracker under your health shows your first task: speak with the task master in the courtyard.",
+      "The courtyard holds the Bank booth, the General Store, and the Anvil. Walk up to use them. Press F1–F6 to switch panels and Esc to close a window.",
+      "Saltfang Warren: needs Combat 50, Salt on the Wind (stage 3) or Salt on the Wind (stage 4) or Salt on the Wind (done)."
+     ]
+    },
+    {
+     "file": "c2-matron-6-away-3s.jpg",
+     "heroAt": [
+      1062,
+      -142
+     ],
+     "camera": [
+      0.5,
+      0.55,
+      11
+     ],
+     "afterMs": 3000,
+     "hp": 70,
+     "maxHp": 70,
+     "pos": [
+      1062,
+      -142
+     ],
+     "target": null,
+     "bossBar": null,
+     "chatTail": [
+      "Use WASD / Arrows or Click anywhere to move, fight monsters, chop trees, mine ores, or fish.",
+      "You arrive with nothing. The tracker under your health shows your first task: speak with the task master in the courtyard.",
+      "The courtyard holds the Bank booth, the General Store, and the Anvil. Walk up to use them. Press F1–F6 to switch panels and Esc to close a window.",
+      "Saltfang Warren: needs Combat 50, Salt on the Wind (stage 3) or Salt on the Wind (stage 4) or Salt on the Wind (done)."
+     ]
+    },
+    {
+     "file": "c3-matron-fight-3s.jpg",
+     "heroAt": [
+      1062,
+      -140
+     ],
+     "camera": [
+      0.5,
+      0.55,
+      11
+     ],
+     "afterMs": 3000,
+     "hp": 45.51,
+     "maxHp": 70,
+     "pos": [
+      1062,
+      -140
+     ],
+     "target": {
+      "type": "monster",
+      "name": "Matron Saltfang",
+      "state": "attack"
+     },
+     "bossBar": [
+      "Matron Saltfang",
+      "Marks: 0",
+      "950 / 960"
+     ],
+     "chatTail": [
+      "You arrive with nothing. The tracker under your health shows your first task: speak with the task master in the courtyard.",
+      "The courtyard holds the Bank booth, the General Store, and the Anvil. Walk up to use them. Press F1–F6 to switch panels and Esc to close a window.",
+      "Saltfang Warren: needs Combat 50, Salt on the Wind (stage 3) or Salt on the Wind (stage 4) or Salt on the Wind (done).",
+      "Matron Saltfang attacks!"
+     ]
+    },
+    {
+     "file": "c4-matron-fight-6s.jpg",
+     "note": "no new pose: the fight goes on",
+     "afterMs": 3000,
+     "hp": 15.28,
+     "maxHp": 70,
+     "pos": [
+      1062,
+      -140
+     ],
+     "target": {
+      "type": "monster",
+      "name": "Matron Saltfang",
+      "state": "attack"
+     },
+     "bossBar": [
+      "Matron Saltfang",
+      "Marks: 1",
+      "903 / 960"
+     ],
+     "chatTail": [
+      "You arrive with nothing. The tracker under your health shows your first task: speak with the task master in the courtyard.",
+      "The courtyard holds the Bank booth, the General Store, and the Anvil. Walk up to use them. Press F1–F6 to switch panels and Esc to close a window.",
+      "Saltfang Warren: needs Combat 50, Salt on the Wind (stage 3) or Salt on the Wind (stage 4) or Salt on the Wind (done).",
+      "Matron Saltfang attacks!"
+     ]
+    }
+   ],
+   "door": {
+    "at": [
+     496,
+     80
+    ],
+    "label": "Interact with Saltfang Warren"
+   },
+   "body": [
+    {
+     "mesh": "saltfang_body",
+     "bones": 20,
+     "firstBones": [
+      "Root",
+      "Hips",
+      "HeadGroup",
+      "LeftArmPivot"
+     ],
+     "triangles": 2992,
+     "figureAt": [
+      1063.6,
+      -135.7
+     ],
+     "figureScale": 2.82
+    },
+    {
+     "mesh": "saltfang_shell",
+     "bones": 20,
+     "firstBones": [
+      "Root",
+      "Hips",
+      "HeadGroup",
+      "LeftArmPivot"
+     ],
+     "triangles": 4370,
+     "figureAt": [
+      1063.6,
+      -135.7
+     ],
+     "figureScale": 2.82
+    },
+    {
+     "mesh": "saltfang_sting",
+     "bones": 20,
+     "firstBones": [
+      "Root",
+      "Hips",
+      "HeadGroup",
+      "LeftArmPivot"
+     ],
+     "triangles": 480,
+     "figureAt": [
+      1063.6,
+      -135.7
+     ],
+     "figureScale": 2.82
+    }
+   ],
+   "bodyWaitMs": 5,
+   "bench": 7.519999999801318
+  }
+ }
+}
