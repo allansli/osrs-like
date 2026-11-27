@@ -96,7 +96,8 @@ export function handleBossPhase(monster: MonsterEntity, phaseIndex: number): voi
   const boss = BOSSES[monster.logic.typeKey];
   const phase = boss.phases[phaseIndex];
   showBanner(monster.def.name, phase.name);
-  if (phaseIndex === 0) {
+  // Ashmantle's opening warning (CALL-4.18): only a boss whose attacks are magic says so.
+  if (phaseIndex === 0 && monster.def.style === 'magic') {
     addChatMessage('Its bolts are magic.', 'combat');
   }
   spawnExpandingRing(monster.pos, 0xfde047);
