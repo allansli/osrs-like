@@ -84,10 +84,10 @@ import {
   updateVitalsBars,
   updateBossBar,
   consumeUiRefreshRequest,
+  requestUiRefresh,
   showBanner
 } from '../ui/hud';
 import { advanceStory } from '../state/story';
-import { adventureTracker } from '../state/adventure';
 import {
   openShopModal,
   openBankModal,
@@ -289,7 +289,7 @@ export function updatePlayerIntent(f: FrameState): void {
             addChatMessage(`${name}: "${dlg}"`, 'combat');
           }
           else if (act === 'talk') {
-            dispatchCommand({ kind: 'talk', npcId: ref.npcId } as any);
+            dispatchCommand({ kind: 'talk', npcId: ref.npcId });
           }
           else if (act === 'altar') {
             if (target.intent === 'vow') {
@@ -861,10 +861,7 @@ export function updateOverlay(f: FrameState): void {
     const events = advanceStory(STATE);
     if (events.length > 0) {
       showBanner('Journal', 'Journal updated');
-      const tracker = adventureTracker(STATE);
-      el('quest-tracker-title').textContent = tracker.title;
-      el('quest-tracker-step').textContent = tracker.detail;
-      el('quest-tracker-fill').style.width = `${Math.round((tracker.done / Math.max(1, tracker.total)) * 100)}%`;
+      requestUiRefresh();
     }
   }
   if (consumeUiRefreshRequest()) updateAllUI();
