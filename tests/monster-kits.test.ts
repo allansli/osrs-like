@@ -129,7 +129,8 @@ describe('model keys', () => {
       slag_brute: 'hill_giant',
       marrowjaw: 'hill_giant',
       scree_skitter: 'scorpion',
-      saltfang: 'scorpion'
+      saltfang: 'scorpion',
+      ember_hurler: 'lesser_demon'
     });
     expect(new Set(Object.values(keys).filter((_, i) => i < 10)).size).toBe(10);
   });

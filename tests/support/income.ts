@@ -78,12 +78,13 @@ export function killSecs(type: string, level: number): number {
 
 /**
  * GP a second of a camp of `types` killed in turn: its coins and goods over the longer of the summed kill times plus
- * 1.5 s each, and the camp's respawn wait plus the slowest kill.
+ * 1.5 s each, and the camp's respawn wait plus the slowest kill. `wait` is the seconds from a death to the monster's
+ * return; open ground and dungeons use `RESPAWN_WAIT`, the demons' cave its row's `respawnSecs` (CALL-6.33 (a)).
  */
-export function campRate(types: string[], level: number): number {
+export function campRate(types: string[], level: number, wait: number = RESPAWN_WAIT): number {
   const kills = types.map((t) => killSecs(t, level));
   const pay = types.reduce((s, t) => s + killPay(t), 0);
-  const cycle = Math.max(kills.reduce((s, k) => s + k + STEP_SECS, 0), RESPAWN_WAIT + Math.max(...kills));
+  const cycle = Math.max(kills.reduce((s, k) => s + k + STEP_SECS, 0), wait + Math.max(...kills));
   return pay / cycle;
 }
 

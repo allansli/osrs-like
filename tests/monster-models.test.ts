@@ -106,5 +106,7 @@ const SNAPSHOT = {
   marrowjaw: {"name":"Marrowjaw the Tollmaster","level":40,"hp":560,"maxHit":21,"atk":52,"def":30,"drops":[{"id":"big_bones","chance":1},{"gp":[600,1200],"chance":1},{"id":"lobster","chance":1,"qty":2},{"id":"runite_bar","chance":0.125}],"model":"hill_giant"},
   // Stage 6 slice 3 (Z3, declared 11.3 item 17). Chitin Plate and the like arrive with K2, which edits these rows then.
   scree_skitter: {"name":"Scree Skitter","level":30,"hp":20,"maxHit":6,"atk":30,"def":14,"drops":[{"id":"bones","chance":1},{"gp":[20,60],"chance":0.6}],"model":"scorpion"},
-  saltfang: {"name":"Matron Saltfang","level":48,"hp":960,"maxHit":36,"atk":66,"def":42,"drops":[{"id":"big_bones","chance":1},{"gp":[300,600],"chance":1},{"id":"sting_gland","chance":1,"qty":3},{"id":"adamant_bar","chance":0.2,"qty":3}],"model":"scorpion"}
+  saltfang: {"name":"Matron Saltfang","level":48,"hp":960,"maxHit":36,"atk":66,"def":42,"drops":[{"id":"big_bones","chance":1},{"gp":[300,600],"chance":1},{"id":"sting_gland","chance":1,"qty":3},{"id":"adamant_bar","chance":0.2,"qty":3}],"model":"scorpion"},
+  // Stage 6 slice 3a (C1, declared 11.3 item 17). Slagscale Hide arrives with K2, which edits this row then.
+  ember_hurler: {"name":"Ember Hurler","level":66,"hp":105,"maxHit":19,"atk":64,"def":44,"drops":[{"id":"dragon_bones","chance":1},{"gp":[340,760],"chance":1},{"id":"shark","chance":0.5},{"id":"ashes","chance":0.5,"qty":2}],"model":"lesser_demon"}
 };

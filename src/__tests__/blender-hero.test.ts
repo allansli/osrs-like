@@ -152,7 +152,7 @@ describe('Blender 5.2 Complete Asset & Composition Pipeline (hero.glb, gear.glb,
     // Stage 4 (design 9.3, item 4): three types reuse a model, so the 10 species are the distinct model keys.
     const modelOf = (key: string) => (MONSTER_TYPES[key] as { model?: string }).model ?? key;
     const typeKeys = Object.keys(MONSTER_TYPES);
-    expect(typeKeys.length).toBe(18);
+    expect(typeKeys.length).toBe(19);
     const speciesKeys = [...new Set(typeKeys.map(modelOf))];
     expect(speciesKeys.length).toBe(10);
     for (const typeKey of typeKeys) {

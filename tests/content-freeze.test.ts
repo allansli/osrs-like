@@ -24,7 +24,9 @@ const DECLARED_NEW_MONSTERS = [
   // Stage 6, slice 1 (plan D1).
   'cinder_adept', 'slag_brute', 'marrowjaw',
   // Stage 6, slice 3 (plan Z3).
-  'scree_skitter', 'saltfang'
+  'scree_skitter', 'saltfang',
+  // Stage 6, slice 3a (plan C1).
+  'ember_hurler'
 ];
 // Stage 6 (plan D1, design 11.3 item 1): the nodes and recipes the stage adds, subtracted exactly as the items are.
 const DECLARED_NEW_NODES = ['coal_rock', 'adamantite_rock'];
