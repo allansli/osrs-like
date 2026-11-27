@@ -306,9 +306,6 @@ let caveWeatherActive = false;
 
 export function setCaveWeather(on: boolean): void {
   caveWeatherActive = on;
-  if (fallMesh) {
-    fallMesh.visible = !on && !isPlainMode();
-  }
 }
 
 export function getWeatherState(dayIndex: number, phase: number): ResolvedWeather {

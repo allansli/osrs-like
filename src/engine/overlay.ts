@@ -8,6 +8,7 @@ import {
   type ResourceNodeEntity,
   type NpcLabel
 } from './context';
+import type { Dungeon } from '../data/dungeons';
 import { WORLD_REGIONS, type RegionDef } from '../data/world';
 import { PATHS, RIDGES } from '../data/worldMap';
 import { PRAYERS } from '../data/magic';
@@ -93,8 +94,8 @@ export function renderMinimap(): void {
       ctx.fillRect(px, pz, pw, ph);
       ctx.strokeRect(px, pz, pw, ph);
     }
-    // Gates
-    for (const gate of def.gates) {
+    // Gates (a cave has none)
+    for (const gate of run ? (def as Dungeon).gates : []) {
       const [gx0, gz0, gx1, gz1] = gate.rect;
       const px = (ox + gx0 - player.pos.x) * scale;
       const pz = (oz + gz0 - player.pos.z) * scale;

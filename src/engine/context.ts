@@ -5,7 +5,8 @@ import type { BlenderHeroAnimator } from './blenderHero';
 import type { MonsterDef } from '../data/world';
 import type { MonsterLogic } from '../state/monsterAi';
 import type { WalkGrid } from '../state/pathfind';
-import type { Dungeon, DungeonRun } from '../state/dungeon';
+import type { DungeonRun } from '../state/dungeon';
+import type { Zone } from '../data/dungeons';
 import type { TelegraphInstance } from './telegraphs';
 import { COMBAT_REST_SECS, type DeathOutcome } from '../state/sustain';
 import type { CommandClocks } from '../state/commands';
@@ -232,7 +233,7 @@ export interface EngineContext {
   walkGrid: WalkGrid;
   groundMesh: THREE.Mesh;
   zone: {
-    def: Dungeon;
+    def: Zone;
     run: DungeonRun | null;
     grid: WalkGrid;
     group: THREE.Group;

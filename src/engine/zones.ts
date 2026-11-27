@@ -14,6 +14,7 @@ import { runStep, zoneRespawns, zoneWalk, type DungeonRun } from '../state/dunge
 import { CAVES, DUNGEONS, type Dungeon, type Zone } from '../data/dungeons';
 import { getTerrainHeight } from '../state/terrain';
 import { AGGRO_GRACE_MS, isDown, sendHome } from '../state/monsterAi';
+import { clearTelegraph } from './telegraphs';
 import { spawnMonster, spawnResourceNode } from './spawns';
 
 const ZONE_FOG_COLOR = 0x0f0c0a;
@@ -32,12 +33,12 @@ export const isZoneNode = (n: ResourceNodeEntity): boolean => zoneNodes.has(n);
 
 /** Every frame while in a zone, after updateAir: the shader fog (and, through updateSky, scene.fog) reads these uniforms. */
 export function applyZoneAir(): void {
+  AIR.uFogHeightFalloff.value = 0;
+  // A cave keeps the colour updateAir wrote from CAVE_LIGHT.air, and the density from CAVE_FOG_SCALE.
+  if (CAVES.some((c) => c.id === G.zone!.def.id)) return;
   AIR.uAirColor.value.setHex(ZONE_FOG_COLOR);
   AIR.uAirSunColor.value.copy(AIR.uAirColor.value);
-  AIR.uFogHeightFalloff.value = 0;
-  if (!G.zone || !CAVES.some((c) => c.id === G.zone!.def.id)) {
-    AIR.uFogDensity.value = ZONE_FOG_DENSITY;
-  }
+  AIR.uFogDensity.value = ZONE_FOG_DENSITY;
 }
 
 function isInsideOtherRoom(
@@ -179,7 +180,7 @@ export function enterZone(def: Zone): void {
       G.aggroGraceUntil = performance.now() + AGGRO_GRACE_MS;
       setSkyVisible(false);
       setCaveWeather(true);
-      G.zone = { def: def as unknown as Dungeon, run: null, grid: existing.grid, group: existing.group };
+      G.zone = { def, run: null, grid: existing.grid, group: existing.group };
       return;
     }
 
@@ -230,43 +231,42 @@ export function enterZone(def: Zone): void {
     }
 
     loadBlenderWorldTemplate().then((gltf) => {
-      if (!gltf) return;
+      if (G.zone?.group !== group) return; // left the zone while the glb loaded
+      if (!gltf) throw new Error(`Cave "${def.id}" needs world.glb but it did not load`);
       const spireTemplate = gltf.scene.getObjectByName('World_obsidian_spire');
-      if (spireTemplate) {
-        for (const [x0, z0, x1, z1] of def.solid!) {
-          const clone = spireTemplate.clone(true);
-          clone.traverse((o) => {
-            const m = o as THREE.Mesh;
-            if (m.isMesh) m.geometry = m.geometry.clone();
-          });
-          clone.position.set(ox + (x0 + x1) / 2, 0, oz + (z0 + z1) / 2);
-          applyWorldMaterials(clone);
-          sealAlbedoUvs(clone);
-          group.add(clone);
-        }
+      if (!spireTemplate) throw new Error(`Cave "${def.id}" node "World_obsidian_spire" is not in world.glb`);
+      for (const [x0, z0, x1, z1] of def.solid!) {
+        const clone = spireTemplate.clone(true);
+        clone.traverse((o) => {
+          const m = o as THREE.Mesh;
+          if (m.isMesh) m.geometry = m.geometry.clone();
+        });
+        clone.position.set(ox + (x0 + x1) / 2, 0, oz + (z0 + z1) / 2);
+        applyWorldMaterials(clone);
+        sealAlbedoUvs(clone);
+        group.add(clone);
       }
       const fissureTemplate = gltf.scene.getObjectByName('World_lava_fissure');
-      if (fissureTemplate) {
-        const emberMat = facetMaterial({ color: 0xff7a3a, emissive: 0xff5522, emissiveIntensity: 0.85, shade: 'cut' });
-        for (const [x0, z0, x1, z1] of wallSegments) {
-          const dx = x1 - x0;
-          const dz = z1 - z0;
-          const len = Math.hypot(dx, dz);
-          for (let s = 8; s < len; s += 8) {
-            const t = s / len;
-            const clone = fissureTemplate.clone(true);
-            clone.traverse((o) => {
-              const m = o as THREE.Mesh;
-              if (m.isMesh) {
-                m.geometry = m.geometry.clone();
-                m.material = emberMat;
-              }
-            });
-            clone.position.set(ox + x0 + dx * t, 0, oz + z0 + dz * t);
-            clone.rotation.y = -Math.atan2(dz, dx);
-            sealAlbedoUvs(clone);
-            group.add(clone);
-          }
+      if (!fissureTemplate) throw new Error(`Cave "${def.id}" node "World_lava_fissure" is not in world.glb`);
+      const emberMat = facetMaterial({ color: 0xff7a3a, emissive: 0xff5522, emissiveIntensity: 0.85, shade: 'cut' });
+      for (const [x0, z0, x1, z1] of wallSegments) {
+        const dx = x1 - x0;
+        const dz = z1 - z0;
+        const len = Math.hypot(dx, dz);
+        for (let s = 8; s < len; s += 8) {
+          const t = s / len;
+          const clone = fissureTemplate.clone(true);
+          clone.traverse((o) => {
+            const m = o as THREE.Mesh;
+            if (m.isMesh) {
+              m.geometry = m.geometry.clone();
+              m.material = emberMat;
+            }
+          });
+          clone.position.set(ox + x0 + dx * t, 0, oz + z0 + dz * t);
+          clone.rotation.y = -Math.atan2(dz, dx);
+          sealAlbedoUvs(clone);
+          group.add(clone);
         }
       }
     });
@@ -330,7 +330,7 @@ export function enterZone(def: Zone): void {
     setCaveWeather(true);
 
     G.scene.add(group);
-    G.zone = { def: def as unknown as Dungeon, run: null, grid: zoneGrid, group };
+    G.zone = { def, run: null, grid: zoneGrid, group };
     return;
   }
 
@@ -516,7 +516,7 @@ export function enterZone(def: Zone): void {
   };
 
   G.scene.add(group);
-  G.zone = { def: def as Dungeon, run, grid: zoneGrid, group };
+  G.zone = { def, run, grid: zoneGrid, group };
 }
 
 export function leaveZone(): void {
@@ -525,40 +525,35 @@ export function leaveZone(): void {
 
   const isCave = CAVES.some((c) => c.id === def.id);
   if (isCave) {
-    {
-      const cave = caveStates.get(def.id)!;
-      for (const m of cave.monsters) {
-        sendHome(m.logic);
-        m.pos.x = m.logic.x;
-        m.pos.z = m.logic.z;
-        m.rig.group.position.set(m.logic.x, getTerrainHeight(m.logic.x, m.logic.z), m.logic.z);
-        m.rig.group.visible = false;
-        m.labelEl.style.display = 'none';
-        const hIdx = G.worldInteractiveObjects.indexOf(m.rig.hitbox);
-        if (hIdx !== -1) G.worldInteractiveObjects.splice(hIdx, 1);
-        const mIdx = G.monstersList.indexOf(m);
-        if (mIdx !== -1) G.monstersList.splice(mIdx, 1);
-        zoneMonsters.delete(m);
-      }
-      for (const obj of zoneInteractiveObjects) {
-        const oIdx = G.worldInteractiveObjects.indexOf(obj);
-        if (oIdx !== -1) G.worldInteractiveObjects.splice(oIdx, 1);
-      }
-      zoneInteractiveObjects = [];
-      const fIdx = G.worldInteractiveObjects.indexOf(zoneFloor);
-      if (fIdx !== -1) G.worldInteractiveObjects.splice(fIdx, 1);
-      group.visible = false;
-      G.groundMesh = G.terrainMesh;
-      G.walkGrid = overworldGrid;
-      setSkyVisible(true);
-      setCaveWeather(false);
-      player.pos.set(def.door.x, getTerrainHeight(def.door.x, def.door.z), def.door.z);
-      player.waypoints.length = 0;
-      player.targetEntity = null;
-      player.currentSpeed = 0;
-      G.zone = null;
-      return;
+    const cave = caveStates.get(def.id)!;
+    for (const m of cave.monsters) {
+      clearTelegraph(m);
+      sendHome(m.logic);
+      m.pos.x = m.logic.x;
+      m.pos.z = m.logic.z;
+      m.rig.group.position.set(m.logic.x, getTerrainHeight(m.logic.x, m.logic.z), m.logic.z);
+      m.rig.group.visible = false;
+      m.labelEl.style.display = 'none';
+      G.worldInteractiveObjects.splice(G.worldInteractiveObjects.indexOf(m.rig.hitbox), 1);
+      G.monstersList.splice(G.monstersList.indexOf(m), 1);
+      zoneMonsters.delete(m);
     }
+    for (const obj of zoneInteractiveObjects) {
+      G.worldInteractiveObjects.splice(G.worldInteractiveObjects.indexOf(obj), 1);
+    }
+    zoneInteractiveObjects = [];
+    G.worldInteractiveObjects.splice(G.worldInteractiveObjects.indexOf(zoneFloor), 1);
+    group.visible = false;
+    G.groundMesh = G.terrainMesh;
+    G.walkGrid = overworldGrid;
+    setSkyVisible(true);
+    setCaveWeather(false);
+    player.pos.set(def.door.x, getTerrainHeight(def.door.x, def.door.z), def.door.z);
+    player.waypoints.length = 0;
+    player.targetEntity = null;
+    player.currentSpeed = 0;
+    G.zone = null;
+    return;
   }
 
   for (const m of zoneMonsters) {
