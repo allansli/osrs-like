@@ -8,6 +8,7 @@ import type { Cond, Dialogue, DialogueOption } from '../state/dialogue';
 const CHAIN_OVER: Cond = { any: [{ claimed: 'sq_coin' }, { not: { claimed: 'arrival' } }] };
 const WARDS_NEEDS: Cond = { all: [{ quest: ['ml_wards', 'none'] }, CHAIN_OVER] };
 const EAST_NEEDS: Cond = { all: [{ quest: ['ml_east', 'none'] }, { quest: ['ml_wards', 'done'] }, { combat: 15 }] };
+const SALT_NEEDS: Cond = { all: [{ quest: ['ml_salt', 'none'] }, { quest: ['ml_east', 'done'] }, { combat: 50 }] };
 const STEEL_NEEDS: Cond = { all: [{ quest: ['sq_steel', 'none'] }, { quest: ['ml_east', 'done'] }, { combat: 10 }] };
 const KETTLE_NEEDS: Cond = { all: [{ quest: ['sq_kettle', 'none'] }, { skill: ['cooking', 30] }, { combat: 20 }] };
 const VOW_NEEDS: Cond = { all: [{ quest: ['sq_vow', 'none'] }, { combat: 15 }] };
@@ -255,6 +256,7 @@ const BRAN: Dialogue = {
 const ODALYS: Dialogue = {
   npc: 'odalys_venn',
   greet: [
+    { when: { stage: ['ml_salt', 4] }, node: 'salt_done' },
     { when: { stage: ['ml_east', 4] }, node: 'east_done' },
     { when: { all: [{ stage: ['ml_wards', 2] }, { has: ['ashes', 3] }] }, node: 'wards_take' },
     { when: { stage: ['sq_vow', 2] }, node: 'vow_done' },
@@ -266,9 +268,12 @@ const ODALYS: Dialogue = {
     { when: WARDS_NEEDS, node: 'wards_offer' },
     { when: { quest: ['ml_wards', 'none'] }, node: 'early' },
     { when: { quest: ['ml_east', 'none'] }, node: 'east_point' },
+    { when: SALT_NEEDS, node: 'salt_point' },
     // Below the offer and the pointer of the main line, so a vow that waits never hides the next chapter.
     { when: { stage: ['sq_vow', 1] }, node: 'vow_wait' },
     { when: { quest: ['ml_east', 'active'] }, node: 'east_wait' },
+    { when: { quest: ['ml_salt', 'active'] }, node: 'salt_wait' },
+    { when: { quest: ['ml_salt', 'done'] }, node: 'salt_idle' },
     { node: 'idle' }
   ],
   nodes: {
@@ -388,6 +393,33 @@ const ODALYS: Dialogue = {
       say: 'Two lamps hold. Saltwind Track is next, and the caravans on it are late. When Qadir Salt-Hand sends word, I will want you. Until then, get stronger. I mean that kindly.',
       options: [WHAT_ARE_WARDS, OTHER_WORK, { text: 'Who are you?', goto: 'odalys_who' }, { text: 'I will be ready.', goto: 'end' }]
     },
+    salt_point: {
+      say: 'Qadir Salt-Hand has sent word, and by his standards it was nearly polite. His caravan trims my lamp on Saltwind Track each time it passes, and it has stopped passing. Go to him in the dunes, past the end of the track. Agree to nothing twice.',
+      options: [{ text: 'I will go to the dunes.', goto: 'end' }, WHAT_ARE_WARDS, OTHER_WORK]
+    },
+    salt_wait: {
+      say: 'The salt lamp is burning its own wick. On a clear night I can see it from the wall, redder than it should be. Do what Qadir asks, and count what he promises. He will have promised less than you think.',
+      options: [{ text: 'I will be back with news.', goto: 'end' }, WHAT_ARE_WARDS, OTHER_WORK]
+    },
+    salt_done: {
+      say: 'The salt lamp went yellow at dusk. Butter yellow. Somebody trimmed it, so a caravan passed, so the road is open. I can do that much arithmetic. What I cannot do is see under the sand. Tell me what was there.',
+      options: [
+        { text: 'A brood, and its Matron. She is dead.', when: { stage: ['ml_salt', 4] }, then: [{ finish: 'ml_salt' }], goto: 'salt_after' },
+        WHAT_ARE_WARDS,
+        { text: 'Give me a moment.', goto: 'end' }
+      ]
+    },
+    salt_after: {
+      say: 'Then three lamps hold. Here is the guild fee. Eight bars of adamant, which Qadir sent up and has regretted since. An ember, steadier than the last. And the gate will call you Warrenbreaker. Tolley has been told.',
+      options: [
+        { text: 'Which road is next?', goto: 'salt_idle' },
+        { text: 'Thank you, Lampwright.', goto: 'end' }
+      ]
+    },
+    salt_idle: {
+      say: 'Three lamps hold. The Lanternway is next, west into the trees. Hesper Moth keeps the stones there, and she is not ready. She is never ready, but there are degrees. Until she sends for you, get stronger. The woods are worse than the sand.',
+      options: [WHAT_ARE_WARDS, OTHER_WORK, { text: 'Who are you?', goto: 'odalys_who' }, { text: 'I will be ready.', goto: 'end' }]
+    },
     vow_offer: {
       say: 'A Lantern Vow. You swear it at an altar and pay what the lamp asks. If you fall, the vow is spent and you keep what you have learned. I have not heard one sworn in a year. I want to know the altars still answer.',
       options: [
@@ -446,6 +478,7 @@ const TAMSIN: Dialogue = {
     { when: EAST_NEEDS, node: 'east_offer' },
     { when: STEEL_NEEDS, node: 'steel_offer' },
     { when: { all: [{ quest: ['ml_wards', 'done'] }, { quest: ['ml_east', 'none'] }] }, node: 'east_early' },
+    { when: { all: [{ quest: ['sq_steel', 'done'] }, { quest: ['ml_salt', 'done'] }] }, node: 'after_salt' },
     { when: { quest: ['sq_steel', 'done'] }, node: 'after_all' },
     { node: 'hello' }
   ],
@@ -551,6 +584,10 @@ const TAMSIN: Dialogue = {
     after_all: {
       say: 'You again. Good. The forge is hot and you know which tongs not to touch. When the south-east road opens and better ore comes up it, come and ask me what is harder than blacksteel.',
       options: [USE_FORGE, { text: 'Who are you, when you are not working?', goto: 'tamsin_who' }, { text: 'I will.', goto: 'end' }]
+    },
+    after_salt: {
+      say: 'Adamant. I can smell the salt on it. So the burrow under the dunes is open, and there is ore in it. Green-grey, heavier than it looks, and it eats more coal than you will like. Smelt it. Then ask the anvil what it takes. Not me. I am busy.',
+      options: [USE_FORGE, { text: 'Who are you, when you are not working?', goto: 'tamsin_who' }, { text: 'I will ask the anvil.', goto: 'end' }]
     }
   }
 };
@@ -736,12 +773,18 @@ const CORIN: Dialogue = {
   }
 };
 
-// Qadir Salt-Hand, tanner and caravan master: wastes nothing, bargains over everything. His chapter and his craft
-// come with later slices; until then he trades and says when to come back.
+// Qadir Salt-Hand, tanner and caravan master: wastes nothing, bargains over everything. Chapter 3 is his (Z5): the
+// second conversation is where he opens the Warren's door. His craft comes with a later slice.
 const QADIR: Dialogue = {
   npc: 'qadir_salthand',
   greet: [
-    { when: { all: [{ quest: ['ml_east', 'done'] }, { combat: 50 }] }, node: 'soon' },
+    { when: { stage: ['ml_salt', 2] }, node: 'salt_thinned' },
+    { when: { stage: ['ml_salt', 0] }, node: 'salt_brief' },
+    { when: { stage: ['ml_salt', 1] }, node: 'salt_wait' },
+    { when: { stage: ['ml_salt', 3] }, node: 'salt_warren' },
+    { when: { stage: ['ml_salt', 4] }, node: 'salt_sent' },
+    { when: SALT_NEEDS, node: 'salt_offer' },
+    { when: { quest: ['ml_salt', 'done'] }, node: 'salt_after' },
     { when: { quest: ['ml_east', 'done'] }, node: 'level' },
     { node: 'hello' }
   ],
@@ -766,9 +809,71 @@ const QADIR: Dialogue = {
       say: 'The east lamp burns and the Lampwright speaks your name. Good. That is half the price. The other half is the stalkers on my caravan road, and they would open you like a waterskin. Come back at combat fifty.',
       options: [SEE_WARES, { text: 'Who are you?', goto: 'who' }, { text: 'Fifty. I will come back.', goto: 'end' }]
     },
-    soon: {
-      say: 'You, I could use. But my caravan is three days late with my needles on it, and I do not bargain with empty hands. Come back when it is in. Until then, buy something. It soothes me.',
-      options: [SEE_WARES, { text: 'Who are you?', goto: 'who' }, { text: 'I will come back.', goto: 'end' }]
+    salt_offer: {
+      say: "You, I could use. My caravan was three days late. Now it is nine. It trims the Lampwright's lamp on the salt road each time it passes. My father struck that bargain with her guild. No caravan, no trimming. She loses a light. I lose more.",
+      options: [
+        { text: 'What stopped it?', when: SALT_NEEDS, then: [{ start: 'ml_salt' }], goto: 'salt_brief' },
+        SEE_WARES,
+        { text: 'Who are you?', goto: 'who' },
+        { text: 'Not now.', goto: 'end' }
+      ]
+    },
+    salt_brief: {
+      say: "Stalkers. Saltbacks. Grey, low, long as a cart, on the shore in the far south-east where my road meets the water. They took two mules and a drover's nerve. Kill four. I do not pay by the tail, so bring me no tails. I will know.",
+      options: [
+        { text: 'Four stalkers. I will thin them.', when: { stage: ['ml_salt', 0] }, then: [{ advance: 'ml_salt' }], goto: 'end' },
+        { text: 'What do I get for it?', goto: 'salt_price' },
+        { text: 'Give me a moment.', goto: 'end' }
+      ]
+    },
+    salt_price: {
+      say: "Good. You ask first. The coin is the Lampwright's to pay. It is her road I am opening. My share is metal off the caravan when it comes in, and a door I have shown nobody. First the four. Then we talk about the door.",
+      options: [
+        { text: 'Tell me about the stalkers again.', goto: 'salt_brief' },
+        { text: 'I will think on it.', goto: 'end' }
+      ]
+    },
+    salt_wait: {
+      say: "Fewer than four. I count the way I weigh, to the grain. The far south-east shore, where the sand goes grey at the water. Take food. A stalker's tail is quicker than its legs, so watch the tail and not the claws.",
+      options: [{ text: 'I am going.', goto: 'end' }, SEE_WARES, { text: 'What do I get for it?', goto: 'salt_price' }]
+    },
+    salt_thinned: {
+      say: 'Four. A drover walked in at dawn and said the shore was quiet enough to hear the mules complain. So. Now the part I kept back, because you would have asked for more. They are not a pack. They are a brood.',
+      options: [
+        { text: 'A brood of what?', when: { stage: ['ml_salt', 2] }, then: [{ advance: 'ml_salt' }], goto: 'salt_warren' },
+        { text: 'Give me a moment.', goto: 'end' }
+      ]
+    },
+    salt_warren: {
+      say: 'Under the dunes there is a burrow crusted white. Saltfang Warren. The Matron lays in it, and what she lays walks my road. The door is east of the gold veins. My father sealed it. I have unsealed it, for you and nobody else. Kill her.',
+      options: [
+        { text: 'What is inside?', goto: 'warren_inside' },
+        { text: 'What is the Matron?', goto: 'warren_matron' },
+        SEE_WARES,
+        { text: 'I am going in.', goto: 'end' }
+      ]
+    },
+    warren_inside: {
+      say: 'Three halls before hers. Skitters, small and a great many. Do not let them ring you. Stalkers, with marksmen standing behind. Her gate stays shut until all three halls are quiet. What dies in there stays dead until you leave. Only the first room is safe.',
+      options: [
+        { text: 'What is the Matron?', goto: 'warren_matron' },
+        { text: 'I am going in.', goto: 'end' }
+      ]
+    },
+    warren_matron: {
+      say: 'Old. White with salt. Wider than my store. She sweeps the sting in an arc and she spits brine a long way, and she shows you each before it lands. Watch her, not the chest behind her. The chest is yours each time she dies. I ask no share. I will not say that twice.',
+      options: [
+        { text: 'What is inside?', goto: 'warren_inside' },
+        { text: 'I am going in.', goto: 'end' }
+      ]
+    },
+    salt_sent: {
+      say: 'Dead. I know. The sand by the door has stopped moving, and my caravan left the far wells this morning. Go and tell the Lampwright her road is open. Tell her the trimming resumes at the old price. Not a coin less.',
+      options: [{ text: 'I will tell Odalys Venn.', goto: 'end' }, SEE_WARES]
+    },
+    salt_after: {
+      say: 'Warrenbreaker. My drovers say it before I do, and I do not pay them to. The door stays open to you. She will breed back. Her kind does. Kill her again whenever you want what is in her chest. That costs me nothing, so it is yours.',
+      options: [SEE_WARES, { text: 'Who are you?', goto: 'who' }, { text: 'What is in the Warren?', goto: 'warren_inside' }, { text: 'Good trading, Qadir.', goto: 'end' }]
     }
   }
 };
@@ -778,6 +883,7 @@ const QADIR: Dialogue = {
 const HESPER: Dialogue = {
   npc: 'hesper_moth',
   greet: [
+    { when: { quest: ['ml_salt', 'done'] }, node: 'salt_lit' },
     { when: { all: [{ quest: ['ml_east', 'done'] }, { combat: 55 }] }, node: 'soon' },
     { node: 'hello' }
   ],
@@ -844,6 +950,21 @@ const HESPER: Dialogue = {
       options: [
         { text: 'Have not what?', goto: 'when' },
         { text: 'I should go.', goto: 'end' }
+      ]
+    },
+    salt_lit: {
+      say: 'You. The salt road is lit. I saw the colour come up over the sand side of the sky. So she will send you to me next. She always sent them here fourth. And the stones are very nearly',
+      options: [
+        { text: 'Nearly what?', goto: 'nearly' },
+        { text: 'I should go.', goto: 'end' }
+      ]
+    },
+    nearly: {
+      say: 'sorted. Nearly. Fire keeps getting into the other baskets. Come back when the Lampwright says the Lanternway, and I will have them holding still. Probably.',
+      options: [
+        { text: 'Who are you, out here alone?', goto: 'who' },
+        { text: 'You talk to the lantern?', goto: 'lantern' },
+        { text: 'I will come back.', goto: 'end' }
       ]
     }
   }
