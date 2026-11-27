@@ -1,7 +1,7 @@
 import { ITEMS } from '../data/items';
 import { NPCS } from '../data/npcs';
 import { STORY_QUESTS } from '../data/story';
-import { getLevelForXp } from '../data/skills';
+import { canHoldRewards, grantExactXp } from './adventure';
 import { evalCond, type Cond, type StoryQuestStatus } from './dialogue';
 import { creditGp } from './economy';
 import { addItem, canAddItem, countItem, removeItem } from './inventory';
@@ -73,10 +73,7 @@ export function advanceStory(state: GameState): StoryAdvanceEvent[] {
   if (!state.progress?.story) return [];
   const moved: StoryAdvanceEvent[] = [];
   for (const [questId, current] of Object.entries(state.progress.story)) {
-    if (typeof current !== 'number') continue;
-    if (state.quests.claimed.includes(questId)) continue;
-    const quest = STORY_QUESTS.find((q) => q.id === questId);
-    if (!quest) continue;
+    const quest = STORY_QUESTS.find((q) => q.id === questId)!;
     let stageIdx = current;
     while (stageIdx < quest.stages.length) {
       const stage = quest.stages[stageIdx];
@@ -90,31 +87,6 @@ export function advanceStory(state: GameState): StoryAdvanceEvent[] {
     }
   }
   return moved;
-}
-
-function canHoldRewards(state: GameState, items: { id: string; qty: number }[]): boolean {
-  if (!items || items.length === 0) return true;
-  const rehearsal = { ...state, inventory: state.inventory.map((slot) => ({ ...slot })) };
-  for (const item of items) {
-    if (!canAddItem(rehearsal, item.id, item.qty)) return false;
-    addItem(rehearsal, item.id, item.qty);
-  }
-  return true;
-}
-
-function grantExactXp(state: GameState, skillKey: string, amount: number): void {
-  const skill = state.skills[skillKey];
-  if (!skill || amount <= 0) return;
-  const oldLevel = skill.lvl;
-  skill.xp += amount;
-  skill.lvl = getLevelForXp(skill.xp);
-  if (skillKey === 'hitpoints') {
-    state.maxHp = skill.lvl;
-    state.hp = Math.min(state.maxHp, state.hp + Math.max(0, skill.lvl - oldLevel));
-  }
-  if (skillKey === 'prayer') {
-    state.maxPrayerPts = skill.lvl;
-  }
 }
 
 export function finishQuest(state: GameState, questId: string): StoryResult {
@@ -176,21 +148,21 @@ export function journalView(state: GameState): JournalView {
         id: quest.id,
         name: quest.name,
         main: quest.line === 'main',
-        stage: stage ? stage.journal : '',
-        counts: stage && stage.kind === 'do' ? extractStatCount(state, stage.done) : null,
+        stage: stage.journal,
+        counts: stage.kind === 'do' ? extractStatCount(state, stage.done) : null,
         line: quest.line,
         region: quest.region,
         giver: quest.giver
       });
     } else if (evalCond(state, quest.needs)) {
-      const npc = NPCS.find((n) => n.id === quest.giver);
+      const npc = NPCS.find((n) => n.id === quest.giver)!;
       offered.push({
         id: quest.id,
         name: quest.name,
         line: quest.line,
         region: quest.region,
         giver: quest.giver,
-        giverName: npc ? npc.name : quest.giver,
+        giverName: npc.name,
         needs: quest.needs
       });
     }
@@ -202,11 +174,11 @@ export function journalView(state: GameState): JournalView {
 }
 
 export function useEmber(state: GameState, itemId: string, skillKey: string): StoryResult {
-  if (!skillKey || !Object.hasOwn(state.skills, skillKey)) {
+  if (!Object.hasOwn(state.skills, skillKey)) {
     return { ok: false, reason: 'Unknown skill.' };
   }
   const item = ITEMS[itemId];
-  if (!item || typeof item.lampXp !== 'number' || item.lampXp <= 0) {
+  if (!item || typeof item.lampXp !== 'number') {
     return { ok: false, reason: 'That item is not an ember.' };
   }
   if (countItem(state, itemId) < 1) {

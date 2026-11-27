@@ -522,7 +522,7 @@ export function resolveDragonfire(raw: number, state: GameState): DragonfireResu
   };
 }
 
-function grantExactXp(state: GameState, skillKey: string, amount: number): void {
+export function grantExactXp(state: GameState, skillKey: string, amount: number): void {
   const skill = state.skills[skillKey];
   if (!skill || amount <= 0) return;
   const oldLevel = skill.lvl;
@@ -622,7 +622,7 @@ export interface ClaimResult {
   gp?: number;
 }
 
-function canHoldRewards(state: GameState, items: QuestRewardItem[]): boolean {
+export function canHoldRewards(state: GameState, items: QuestRewardItem[]): boolean {
   const rehearsal = { ...state, inventory: state.inventory.map((slot) => ({ ...slot })) };
   for (const item of items) {
     if (!canAddItem(rehearsal, item.id, item.qty)) return false;
@@ -767,12 +767,8 @@ export function adventureTracker(state: GameState): TrackerLine {
   if (state.progress?.story) {
     const storyEntries: { quest: StoryQuest; stageIdx: number }[] = [];
     for (const [id, stageIdx] of Object.entries(state.progress.story)) {
-      if (typeof stageIdx === 'number' && !state.quests.claimed.includes(id)) {
-        const quest = STORY_QUESTS.find((q) => q.id === id);
-        if (quest && stageIdx >= 0 && stageIdx < quest.stages.length) {
-          storyEntries.push({ quest, stageIdx });
-        }
-      }
+      const quest = STORY_QUESTS.find((q) => q.id === id)!;
+      storyEntries.push({ quest, stageIdx });
     }
     const mainEntry = storyEntries.find((e) => e.quest.line === 'main');
     if (mainEntry) {
@@ -784,7 +780,7 @@ export function adventureTracker(state: GameState): TrackerLine {
         total: mainEntry.quest.stages.length
       };
     }
-    const sideEntry = storyEntries.find((e) => e.quest.line === 'side') || storyEntries[0];
+    const sideEntry = storyEntries.find((e) => e.quest.line === 'side');
     if (sideEntry) {
       const stage = sideEntry.quest.stages[sideEntry.stageIdx];
       return {
