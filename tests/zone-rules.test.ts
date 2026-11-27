@@ -10,7 +10,7 @@ import { DUNGEONS } from '../src/data/dungeons';
 import { combatLevel } from '../src/state/adventure';
 import { isWalkable, moveWithCollision } from '../src/state/collision';
 import { evalCond } from '../src/state/dialogue';
-import { canEnter, savedPose, zoneCamps, zoneSafe, zoneWalk, type Dungeon } from '../src/state/dungeon';
+import { canEnter, openChest, runStep, savedPose, zoneCamps, zoneSafe, zoneWalk, type Dungeon } from '../src/state/dungeon';
 import { BACKPACK_SIZE, createNewGameState } from '../src/state/gameState';
 import { DEAD_SECS, DYING_SECS, createMonsterLogic, onPlayerHit, stepMonster, type MonsterLogic } from '../src/state/monsterAi';
 import { buildWalkGrid, findPath } from '../src/state/pathfind';
@@ -19,11 +19,13 @@ import { addItem, canAddItem, countItem } from '../src/state/inventory';
 import { advanceStory, finishQuest, startQuest } from '../src/state/story';
 import { getTerrainHeight } from '../src/state/terrain';
 import type { GameState } from '../src/state/types';
-import { FX_DUNGEON, bossCampId, clearedRun, freshRun, killCamp, open, seeded } from './support/dungeonFixture';
+import { FX_DUNGEON, bossCampId, clearedRun, freshRun, killCamp, open, seeded, useRules } from './support/dungeonFixture';
 import { raiseCombat, resetCombat } from './support/satisfy';
 
-vi.mock('../src/data/dungeons', async (orig) => (await import('./support/dungeonRows')).withZoneFixture('DUNGEONS', await orig()));
-vi.mock('../src/data/story', async (orig) => (await import('./support/dungeonRows')).withZoneFixture('STORY_QUESTS', await orig()));
+useRules({ openChest, runStep });
+
+vi.mock('../src/data/dungeons', async (orig) => (await import('./support/dungeonFixture')).withZoneFixture('DUNGEONS', await orig()));
+vi.mock('../src/data/story', async (orig) => (await import('./support/dungeonFixture')).withZoneFixture('STORY_QUESTS', await orig()));
 
 const DEF = FX_DUNGEON;
 const [OX, OZ] = DEF.origin;
@@ -114,7 +116,7 @@ describe('zoneWalk', () => {
     expect(changed).toBe(0);
   });
 
-  it('on the zone grid: every open cell is reachable from the entry with the gate open, and the lair is not with it shut', () => {
+  it('on the zone grid: the hall and the chest are reachable from the entry, and the lair only with the gate open', () => {
     const shut = zoneGrid([]);
     const opened = zoneGrid(['lair_gate']);
     const from = w(12.5, 28.5);
@@ -593,7 +595,7 @@ describe('savedPose', () => {
     expect(Number.isFinite(p!.yaw)).toBe(true);
   });
 
-  it('returns the pose as it is with no zone, and null stays null', () => {
+  it('returns the pose as it is with no zone', () => {
     expect(savedPose(pose, null)).toEqual(pose);
   });
 });
